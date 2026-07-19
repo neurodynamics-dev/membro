@@ -18,6 +18,9 @@ padrão dos demais apps do SOMA.
   calendário (férias, processo seletivo, prazos e datas da UFMG).
 - **Organização** — o mesmo Org Explorer do SOMA (estilo Microsoft Teams):
   cadeia de gestão, colegas de equipe e liderados, com busca.
+- **Informações** — biblioteca de documentos e políticas (estatuto,
+  políticas, guias, formulários) publicados como links do Google Drive
+  pelo Depto. de Pessoal; o controle fino de acesso continua no Drive.
 - **Serviços** — solicitações ao Depto. de Pessoal com protocolo:
   - **Solicitação de acesso** a documento, sistema/plataforma ou local,
     com catálogo do SOMA, **justificativa** e **tempo necessário**;
@@ -34,15 +37,16 @@ padrão dos demais apps do SOMA.
 
 | Arquivo        | O que é |
 |----------------|---------|
-| `index.html`   | O portal (rotas por hash: `#/`, `#/calendario`, `#/organizacao`, `#/servicos`, `#/pedidos`) |
-| `admin.html`   | Painel do Depto. de Pessoal: avisos, triagem de solicitações e ouvidoria |
+| `index.html`   | O portal (rotas por hash: `#/`, `#/calendario`, `#/organizacao`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
+| `admin.html`   | Painel do Depto. de Pessoal: avisos, documentos, triagem de solicitações e ouvidoria |
 | `soma_v10.sql` | Migração do banco (tabelas `portal_*`, RLS e funções) |
+| `soma_v11.sql` | Migração da biblioteca de documentos (`portal_documentos`) |
 | `CNAME`        | Domínio do GitHub Pages (`membro.neurodynamics.dev`) |
 
 ## Pré-requisitos
 
-Aplicar a migração **`soma_v10.sql`** (na raiz deste repositório) no SQL
-Editor do Supabase, com a SOMA 9.0 já aplicada. Sem ela o portal entra,
+Aplicar as migrações **`soma_v10.sql`** e **`soma_v11.sql`** (na raiz
+deste repositório) no SQL Editor do Supabase, com a SOMA 9.0 já aplicada. Sem ela o portal entra,
 mas o quadro de avisos e as solicitações ficam indisponíveis (as demais
 abas — agenda, check-in, calendário e organização — usam as tabelas que
 o SOMA já tem).

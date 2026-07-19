@@ -343,6 +343,27 @@ main{max-width:var(--max);margin:0 auto;padding:108px 26px 90px}
 .org-sec h4{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.2em;
   text-transform:uppercase;color:var(--dim);margin-bottom:12px}
 
+/* ============ INFORMAÇÕES ============ */
+.doc-sec{margin-bottom:26px}
+.doc-sec h4{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.doc-sec h4::before{content:'';width:7px;height:7px;background:var(--syn)}
+.doc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media (max-width:820px){.doc-grid{grid-template-columns:1fr}}
+a.doc{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);
+  border-radius:14px;padding:16px 18px;background:var(--card);
+  transition:border-color .2s, transform .2s}
+a.doc:hover{border-color:var(--line2);transform:translateY(-2px)}
+a.doc .ic{flex:none;width:38px;height:38px;border:1px solid var(--line2);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;color:var(--teal)}
+a.doc .ic svg{width:18px;height:18px}
+a.doc .tx{min-width:0;flex:1}
+a.doc .tt{font-family:var(--fd);font-weight:600;font-size:14.5px}
+a.doc .ds{font-size:12.5px;color:var(--muted);margin-top:2px}
+a.doc .go{font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);margin-top:8px;display:inline-block}
+a.doc:hover .go{color:var(--syn)}
+
 /* ============ SERVIÇOS ============ */
 .srv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media (max-width:920px){.srv-grid{grid-template-columns:repeat(2,1fr)}}
@@ -455,6 +476,7 @@ a.srv.anon{border-style:dashed}
       <a href="#/" data-r="home">Início</a>
       <a href="#/calendario" data-r="calendario">Calendário</a>
       <a href="#/organizacao" data-r="organizacao">Organização</a>
+      <a href="#/informacoes" data-r="informacoes">Informações</a>
       <a href="#/servicos" data-r="servicos">Serviços</a>
       <a href="#/pedidos" data-r="pedidos">Meus pedidos</a>
     </nav>
@@ -471,8 +493,9 @@ a.srv.anon{border-style:dashed}
       <a href="#/" data-r="home"><span class="idx">01</span>Início</a>
       <a href="#/calendario" data-r="calendario"><span class="idx">02</span>Calendário</a>
       <a href="#/organizacao" data-r="organizacao"><span class="idx">03</span>Organização</a>
-      <a href="#/servicos" data-r="servicos"><span class="idx">04</span>Serviços</a>
-      <a href="#/pedidos" data-r="pedidos"><span class="idx">05</span>Meus pedidos</a>
+      <a href="#/informacoes" data-r="informacoes"><span class="idx">04</span>Informações</a>
+      <a href="#/servicos" data-r="servicos"><span class="idx">05</span>Serviços</a>
+      <a href="#/pedidos" data-r="pedidos"><span class="idx">06</span>Meus pedidos</a>
     </nav>
     <div class="menu-foot">
       <span id="menu-user">—</span>
@@ -620,7 +643,7 @@ async function abrirPortal(){
 function route(){
   const h = (location.hash || '#/').replace(/^#\//,'');
   const [r, sub] = h.split('/');
-  const PAGES = ['calendario','organizacao','servicos','pedidos'];
+  const PAGES = ['calendario','organizacao','informacoes','servicos','pedidos'];
   return { r: PAGES.includes(r) ? r : 'home', sub: sub || null };
 }
 window.addEventListener('hashchange', ()=>{ if(state.perfil){ render(route()); window.scrollTo({top:0,behavior:'instant'}); } });
@@ -629,7 +652,7 @@ function render(rt){
   document.querySelectorAll('[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === rt.r));
   fecharMenu();
   ({home:pageHome, calendario:pageCalendario, organizacao:pageOrganizacao,
-    servicos:pageServicos, pedidos:pagePedidos}[rt.r])(rt.sub);
+    informacoes:pageInformacoes, servicos:pageServicos, pedidos:pagePedidos}[rt.r])(rt.sub);
 }
 
 /* menu mobile */
@@ -1038,6 +1061,59 @@ function desenhaOrg(filtro){
     </div>`;
   if (q){ const inp = document.getElementById('org-q');
     if (inp){ inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }
+}
+
+/* ============================================================
+   INFORMAÇÕES — documentos e políticas (links do Drive)
+   ============================================================ */
+const CAT_DOC = {
+  institucional: {l:'Institucional', d:'Estatuto, regimento e documentos fundadores'},
+  politica:      {l:'Políticas',     d:'Regras e diretrizes vigentes da equipe'},
+  guia:          {l:'Guias',         d:'Manuais, tutoriais e trilhas de formação'},
+  formulario:    {l:'Formulários',   d:'Modelos e formulários oficiais'},
+  outro:         {l:'Outros',        d:'Demais documentos úteis'}
+};
+const IC_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+async function pageInformacoes(){
+  $('#main').innerHTML = `
+    <div class="pg-head"><span class="eyebrow">Biblioteca da equipe</span>
+      <h1>Informações</h1>
+      <p class="lead">Documentos oficiais, políticas, guias e formulários da NeuroDynamics,
+        mantidos pelo Depto. de Pessoal. Os arquivos abrem no Google Drive.</p></div>
+    <div id="docs-area"><div class="carregando"><span class="spin"></span> Carregando…</div></div>`;
+  const { data, error } = await sb.from('portal_documentos').select('*')
+    .order('ordem').order('titulo');
+  const el = $('#docs-area'); if(!el) return;
+  if (error){
+    el.innerHTML = `<div class="aviso-box err">Não foi possível carregar os documentos: ${esc(error.message)}.
+      A migração <b>soma_v11.sql</b> já foi aplicada?</div>`;
+    return;
+  }
+  const docs = (data||[]).filter(d=>d.publicado!==false);
+  if (!docs.length){
+    el.innerHTML = `<div class="empty">Nenhum documento publicado ainda.<br>
+      O Depto. de Pessoal cadastra os links pelo painel do portal.</div>`;
+    return;
+  }
+  const cats = Object.keys(CAT_DOC).filter(c => docs.some(d=>d.categoria===c));
+  el.innerHTML = cats.map(c => `
+    <div class="doc-sec">
+      <h4>${CAT_DOC[c].l} · <span style="letter-spacing:0;text-transform:none;color:var(--dim)">${CAT_DOC[c].d}</span></h4>
+      <div class="doc-grid">
+        ${docs.filter(d=>d.categoria===c).map(d => `
+          <a class="doc" href="${esc(d.url)}" target="_blank" rel="noopener">
+            <span class="ic">${IC_DOC}</span>
+            <span class="tx">
+              <span class="tt">${esc(d.titulo)}</span>
+              ${d.descricao?`<span class="ds" style="display:block">${esc(d.descricao)}</span>`:''}
+              <span class="go">Abrir no Drive ↗</span>
+            </span>
+          </a>`).join('')}
+      </div>
+    </div>`).join('')
+    + `<div class="aviso-box info" style="margin-top:8px">O Drive negou o acesso a algum arquivo?
+      Abra uma <a href="#/servicos/acesso" style="text-decoration:underline">Solicitação de acesso</a>
+      informando o documento — o Depto. de Pessoal libera e responde por lá.</div>`;
 }
 
 /* ============================================================

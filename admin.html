@@ -202,10 +202,12 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;
   <div id="v-painel" hidden>
     <div class="abas">
       <button id="aba-avisos" class="on" onclick="trocarAba('avisos')">Quadro de avisos</button>
+      <button id="aba-documentos" onclick="trocarAba('documentos')">Documentos</button>
       <button id="aba-solicitacoes" onclick="trocarAba('solicitacoes')">Solicitações<span class="n" id="n-sol"></span></button>
       <button id="aba-ouvidoria" onclick="trocarAba('ouvidoria')">Ouvidoria<span class="n" id="n-ouv"></span></button>
     </div>
     <section id="sec-avisos"></section>
+    <section id="sec-documentos" hidden></section>
     <section id="sec-solicitacoes" hidden></section>
     <section id="sec-ouvidoria" hidden></section>
   </div>
@@ -248,7 +250,7 @@ const CAT_ACESSO = {documento:'Documento', sistema:'Sistema / plataforma', local
 const MES_CURTO = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 
 const state = { perfil:null, membros:[], avisos:[], sel:null, sols:[], filtro:'pendentes',
-                ouvidoria:[], solAbertas:new Set() };
+                ouvidoria:[], solAbertas:new Set(), docs:[], docSel:null };
 const nomeDe = r => state.membros.find(m=>m.registro===r)?.nome || ('Registro '+r);
 function quemSouEu(){ return state.perfil?.nome || state.perfil?.email || '—'; }
 
@@ -287,12 +289,12 @@ async function abrir(){
   if (!['admin','pessoal'].includes(perfil.papel)){ mostra('v-negado'); return; }
   const m = await sb.from('membros').select('registro,nome,cargo,departamento').order('nome');
   state.membros = m.data || [];
-  await Promise.all([carregarAvisos(), carregarSols(), carregarOuvidoria()]);
+  await Promise.all([carregarAvisos(), carregarDocs(), carregarSols(), carregarOuvidoria()]);
   mostra('v-painel');
 }
 
 function trocarAba(ab){
-  ['avisos','solicitacoes','ouvidoria'].forEach(t=>{
+  ['avisos','documentos','solicitacoes','ouvidoria'].forEach(t=>{
     $('#sec-'+t).hidden = (t!==ab);
     $('#aba-'+t).classList.toggle('on', t===ab);
   });
@@ -436,7 +438,114 @@ async function excluirAviso(id){
 }
 
 /* ============================================================
-   ABA 2 — SOLICITAÇÕES
+   ABA 2 — DOCUMENTOS (aba "Informações" do portal)
+   ============================================================ */
+const CAT_DOC = {institucional:'Institucional', politica:'Política', guia:'Guia',
+                 formulario:'Formulário', outro:'Outro'};
+async function carregarDocs(){
+  const { data, error } = await sb.from('portal_documentos').select('*')
+    .order('categoria').order('ordem').order('titulo');
+  if (error){
+    $('#sec-documentos').innerHTML = `<div class="aviso-box err">Erro ao carregar os documentos:
+      ${esc(error.message)}. A migração <b>soma_v11.sql</b> foi aplicada?</div>`;
+    return;
+  }
+  state.docs = data || [];
+  if (!state.docSel || !state.docs.find(d=>d.id===state.docSel))
+    state.docSel = state.docs[0]?.id || null;
+  desenhaDocs();
+}
+function desenhaDocs(){
+  $('#sec-documentos').innerHTML = `
+    <div class="aviso-box info">Os documentos aparecem na aba <b>Informações</b> do portal,
+      agrupados por categoria. Cole o link de compartilhamento do Drive — o controle fino de
+      acesso continua lá; aqui é a vitrine.</div>
+    <div class="editor">
+      <div>
+        <div class="lista">${state.docs.length ? state.docs.map(d=>`
+          <button class="item ${d.id===state.docSel?'on':''}" onclick="selDoc('${d.id}')">
+            <span><span class="nm">${esc(d.titulo)}</span>
+            <span class="sl">${esc(CAT_DOC[d.categoria]||d.categoria)} · ordem ${esc(d.ordem)}</span></span>
+            ${d.publicado ? '' : '<span class="off">oculto</span>'}
+          </button>`).join('')
+          : '<div class="vazio">Nenhum documento ainda.</div>'}</div>
+        <button class="btn ghost" style="width:100%;justify-content:center;margin-top:12px" onclick="novoDoc()">+ Novo documento</button>
+      </div>
+      <div class="form" id="doc-form"></div>
+    </div>`;
+  desenhaFormDoc();
+}
+function selDoc(id){ state.docSel = id; desenhaDocs(); }
+function desenhaFormDoc(){
+  const d = state.docs.find(x=>x.id===state.docSel);
+  const el = $('#doc-form'); if(!el) return;
+  if (!d){ el.innerHTML = '<div class="vazio">Selecione ou crie um documento.</div>'; return; }
+  el.innerHTML = `
+    <h2>${esc(d.titulo)}</h2>
+    <p class="sub">id ${esc(d.id).slice(0,8)} · atualizado ${d.atualizado_em?new Date(d.atualizado_em).toLocaleString('pt-BR'):'—'}</p>
+    <div class="fgrid">
+      <div class="fld full"><label>Título</label><input id="d-titulo" value="${esc(d.titulo)}"></div>
+      <div class="fld full"><label>Descrição (1 frase, opcional)</label>
+        <input id="d-desc" value="${esc(d.descricao||'')}" placeholder="ex.: Regras de uso dos espaços do LABBIO"></div>
+      <div class="fld full"><label>Link do Drive</label>
+        <input id="d-url" value="${esc(d.url||'')}" placeholder="https://drive.google.com/…">
+        <p class="mini">Use o link de compartilhamento ("qualquer pessoa na organização com o link", de preferência).</p></div>
+      <div class="fld"><label>Categoria</label>
+        <select id="d-cat">${Object.entries(CAT_DOC).map(([k,l])=>
+          `<option value="${k}" ${d.categoria===k?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="fld"><label>Ordem na lista</label><input id="d-ordem" type="number" value="${esc(d.ordem)}"></div>
+      <label class="check full"><input id="d-pub" type="checkbox" ${d.publicado?'checked':''}>
+        Publicado na aba Informações</label>
+    </div>
+    <div class="acts">
+      <button class="btn solid" id="d-salvar" onclick="salvarDoc('${d.id}')">Salvar alterações</button>
+      <button class="btn perigo" onclick="excluirDoc('${d.id}')">Excluir</button>
+      ${d.url?`<a class="btn ghost" href="${esc(d.url)}" target="_blank" rel="noopener">Testar link ↗</a>`:''}
+    </div>`;
+}
+async function salvarDoc(id){
+  const v = {
+    titulo: $('#d-titulo').value.trim(),
+    descricao: $('#d-desc').value.trim() || null,
+    url: $('#d-url').value.trim(),
+    categoria: $('#d-cat').value,
+    ordem: parseInt($('#d-ordem').value, 10) || 100,
+    publicado: $('#d-pub').checked
+  };
+  if (!v.titulo){ toast('O título é obrigatório.', true); return; }
+  if (!/^https?:\/\//i.test(v.url)){ toast('O link precisa começar com http(s)://', true); return; }
+  $('#d-salvar').disabled = true;
+  const { error } = await sb.from('portal_documentos').update(v).eq('id', id);
+  $('#d-salvar').disabled = false;
+  if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
+  toast('Documento salvo.');
+  await carregarDocs();
+}
+async function novoDoc(){
+  const titulo = prompt('Título do novo documento:');
+  if (!titulo) return;
+  const url = prompt('Link do Drive (pode ajustar depois):') || 'https://';
+  const { data, error } = await sb.from('portal_documentos')
+    .insert({ titulo, url, categoria:'outro', publicado:false,
+      ordem: 100 + state.docs.length * 10, criado_por: quemSouEu() })
+    .select().single();
+  if (error){ toast('Erro ao criar: ' + error.message, true); return; }
+  toast('Documento criado (começa oculto — publique quando o link estiver certo).');
+  state.docSel = data.id;
+  await carregarDocs();
+}
+async function excluirDoc(id){
+  const d = state.docs.find(x=>x.id===id);
+  if (!confirm(`Excluir "${d?.titulo}" da biblioteca? O arquivo no Drive não é afetado.`)) return;
+  const { error } = await sb.from('portal_documentos').delete().eq('id', id);
+  if (error){ toast('Erro ao excluir: ' + error.message, true); return; }
+  toast('Documento excluído.');
+  state.docSel = null;
+  await carregarDocs();
+}
+
+/* ============================================================
+   ABA 3 — SOLICITAÇÕES
    ============================================================ */
 async function carregarSols(){
   const { data, error } = await sb.from('portal_solicitacoes').select('*')
@@ -540,7 +649,7 @@ async function salvarResposta(id){
 }
 
 /* ============================================================
-   ABA 3 — OUVIDORIA
+   ABA 4 — OUVIDORIA
    ============================================================ */
 const CAT_OUV = {gestao_pessoas:'Gestão de pessoas', conduta:'Conduta', sugestao:'Sugestão', outro:'Outro'};
 async function carregarOuvidoria(){
