@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#050807">
+<title>Portal do Membro — NeuroDynamics</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2300352F'/%3E%3Ccircle cx='11' cy='16' r='5' fill='%23F5F5F7'/%3E%3Ccircle cx='23' cy='9.5' r='2.8' fill='%23F5F5F7'/%3E%3Ccircle cx='23' cy='22.5' r='2.8' fill='%23F5F5F7'/%3E%3Cpath d='M15 13.8 20.6 10.6M15 18.2 20.6 21.4' stroke='%23CEDC00' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050807; --panel:#0B1210; --ink:#F5F5F7; --muted:#9AA5A1; --dim:#616C68;
+  --line:rgba(245,245,247,.08); --line2:rgba(245,245,247,.16);
+  --deep:#00352F; --green:#00594F; --green2:#0B7D6E; --teal:#2DD4BF; --syn:#CEDC00;
+  --bad:#F1806F; --ok:#4ADE97; --warn:#F5C36A; --info:#7FA7F2;
+  --card:rgba(255,255,255,.03); --glass:rgba(7,12,10,.62);
+  --r:18px; --max:1240px;
+  --fd:'Archivo',-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14.5px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.015em}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;color:inherit;border:none;background:none;font-size:inherit}
+input,textarea,select{font-family:inherit;font-size:14.5px;color:var(--ink)}
+img{max-width:100%}
+[hidden]{display:none!important}
+::selection{background:var(--syn);color:var(--deep)}
+
+/* ============ BACKGROUND ============ */
+#bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
+  radial-gradient(120% 90% at 72% -12%, #081511 0%, var(--bg) 58%)}
+#bg::after{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(245,245,247,.028) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(245,245,247,.028) 1px,transparent 1px);
+  background-size:130px 130px;
+  -webkit-mask-image:radial-gradient(85% 62% at 50% 26%, #000 0%, transparent 100%);
+          mask-image:radial-gradient(85% 62% at 50% 26%, #000 0%, transparent 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(120px);will-change:transform;opacity:.32}
+.b1{width:56vmax;height:56vmax;left:-18vmax;top:-24vmax;
+  background:radial-gradient(circle,#00594F 0%,rgba(0,89,79,0) 70%);
+  animation:fl1 38s ease-in-out infinite alternate}
+.b2{width:42vmax;height:42vmax;right:-16vmax;top:8vmax;opacity:.2;
+  background:radial-gradient(circle,#0B7D6E 0%,rgba(11,125,110,0) 70%);
+  animation:fl2 32s ease-in-out infinite alternate}
+.b3{width:30vmax;height:30vmax;left:36vw;bottom:-18vmax;opacity:.06;
+  background:radial-gradient(circle,#CEDC00 0%,rgba(206,220,0,0) 70%);
+  animation:fl3 44s ease-in-out infinite alternate}
+@keyframes fl1{from{transform:translate(0,0) scale(1)}to{transform:translate(8vw,6vh) scale(1.14)}}
+@keyframes fl2{from{transform:translate(0,0) scale(1.08)}to{transform:translate(-10vw,10vh) scale(.94)}}
+@keyframes fl3{from{transform:translate(0,0) scale(1)}to{transform:translate(-7vw,-12vh) scale(1.2)}}
+@media (prefers-reduced-motion:reduce){
+  .blob{animation:none!important}
+  *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+
+/* ============ HEADER ============ */
+#hd{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:60;
+  width:min(var(--max),calc(100vw - 28px));
+  border:1px solid var(--line);border-radius:16px;
+  background:var(--glass);backdrop-filter:blur(18px) saturate(1.5);
+  -webkit-backdrop-filter:blur(18px) saturate(1.5);
+  transition:border-color .3s, box-shadow .3s, background .3s}
+#hd.rolou{border-color:var(--line2);box-shadow:0 18px 50px rgba(0,0,0,.45);background:rgba(7,12,10,.8)}
+.hd-in{display:flex;align-items:center;gap:16px;padding:0 10px 0 20px;height:58px}
+.hd-logo{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-right:auto}
+.hd-logo img{height:18px;width:auto;display:block;filter:brightness(0) invert(1)}
+.logotype{font-family:var(--fd);font-weight:700;font-size:16.5px;letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
+.hd-tag{font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--syn);border:1px solid rgba(206,220,0,.35);border-radius:999px;padding:3px 9px;white-space:nowrap}
+nav.hd-nav{display:flex;gap:2px}
+nav.hd-nav a{font-family:var(--fd);font-size:13px;font-weight:500;color:var(--muted);
+  padding:8px 13px;border-radius:10px;transition:color .15s,background .15s;white-space:nowrap}
+nav.hd-nav a:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+nav.hd-nav a.on{color:var(--ink)}
+nav.hd-nav a.on::after{content:'';display:block;height:1.5px;margin:1px 2px 0;background:var(--syn)}
+.hd-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.hd-user{text-align:right;line-height:1.25}
+.hd-user b{display:block;font-family:var(--fd);font-size:12.5px;font-weight:600}
+.hd-user button{font-size:11px;color:var(--dim);text-decoration:underline;padding:0}
+.hd-user button:hover{color:var(--muted)}
+.hd-burger{width:42px;height:42px;border:1px solid var(--line2);border-radius:11px;display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:5px;
+  transition:border-color .15s, background .15s}
+.hd-burger:hover{border-color:var(--dim);background:rgba(255,255,255,.04)}
+.hd-burger i{display:block;width:16px;height:1.5px;background:var(--ink);transition:transform .25s,opacity .25s}
+body.menu-open .hd-burger i:nth-child(1){transform:translateY(3.25px) rotate(45deg)}
+body.menu-open .hd-burger i:nth-child(2){transform:translateY(-3.25px) rotate(-45deg)}
+@media (max-width:980px){
+  nav.hd-nav{display:none}
+  .hd-burger{display:inline-flex}
+  .hd-user{display:none}
+  .hd-in{height:54px}
+}
+
+/* ============ FULLSCREEN MENU (mobile) ============ */
+#menu{position:fixed;inset:0;z-index:55;background:rgba(4,7,6,.78);
+  backdrop-filter:blur(26px) saturate(1.4);-webkit-backdrop-filter:blur(26px) saturate(1.4);
+  opacity:0;pointer-events:none;transition:opacity .3s ease}
+body.menu-open #menu{opacity:1;pointer-events:auto}
+.menu-in{max-width:var(--max);margin:0 auto;padding:120px 26px 40px;height:100%;display:flex;flex-direction:column}
+.menu-links{display:flex;flex-direction:column}
+.menu-links a{display:flex;align-items:baseline;gap:20px;padding:14px 4px;
+  border-top:1px solid var(--line);font-family:var(--fd);font-weight:600;
+  font-size:clamp(26px,5vw,42px);letter-spacing:-.02em;color:var(--muted)}
+.menu-links a:last-child{border-bottom:1px solid var(--line)}
+.menu-links a:hover,.menu-links a.on{color:var(--ink)}
+.menu-links a .idx{font-family:var(--fm);font-size:12px;font-weight:400;color:var(--dim);letter-spacing:.1em}
+.menu-links a:hover .idx{color:var(--syn)}
+.menu-foot{margin-top:auto;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  font-family:var(--fm);font-size:11px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+.menu-foot button{color:var(--muted);text-decoration:underline}
+
+/* ============ LAYOUT ============ */
+main{max-width:var(--max);margin:0 auto;padding:108px 26px 90px}
+@media (max-width:980px){main{padding-top:96px}}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:var(--fm);font-size:11px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.eyebrow::before{content:'';width:7px;height:7px;background:var(--syn);flex-shrink:0}
+.pg-head{margin:26px 0 30px}
+.pg-head h1{font-size:clamp(28px,4.6vw,44px);font-weight:600;line-height:1.06;margin:14px 0 10px}
+.pg-head .lead{color:var(--muted);max-width:640px;font-size:15px}
+.card{border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  backdrop-filter:blur(6px);padding:22px}
+.card h3{font-size:16.5px;font-weight:600;margin-bottom:4px}
+.card .sub{font-size:12.5px;color:var(--dim);font-family:var(--fm)}
+.empty{color:var(--muted);font-size:13.5px;text-align:center;padding:26px 12px;line-height:1.6;
+  border:1.5px dashed var(--line2);border-radius:14px}
+.btn{display:inline-flex;align-items:center;gap:9px;height:44px;padding:0 20px;border-radius:11px;
+  font-family:var(--fd);font-weight:600;font-size:13.5px;white-space:nowrap;
+  transition:transform .15s, box-shadow .15s, background .15s, border-color .15s}
+.btn.solid{background:var(--syn);color:var(--deep)}
+.btn.solid:hover{transform:translateY(-1px);box-shadow:0 8px 26px rgba(206,220,0,.22)}
+.btn.claro{background:var(--ink);color:#0A0F0E}
+.btn.claro:hover{transform:translateY(-1px);box-shadow:0 8px 26px rgba(245,245,247,.14)}
+.btn.ghost{border:1px solid var(--line2);color:var(--ink);background:rgba(255,255,255,.03)}
+.btn.ghost:hover{background:rgba(255,255,255,.07);border-color:var(--dim)}
+.btn.perigo{border:1px solid rgba(241,128,111,.4);color:var(--bad)}
+.btn.perigo:hover{background:rgba(241,128,111,.08)}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.aviso-box{border-radius:12px;padding:12px 15px;font-size:13px;border:1px solid;margin-bottom:16px;line-height:1.55}
+.aviso-box.warn{background:rgba(245,195,106,.07);border-color:rgba(245,195,106,.3);color:#EFD9A8}
+.aviso-box.err{background:rgba(241,128,111,.09);border-color:rgba(241,128,111,.35);color:#F5B0A5}
+.aviso-box.info{background:rgba(127,167,242,.07);border-color:rgba(127,167,242,.3);color:#B9CEF5}
+.pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--fm);font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line2);
+  border-radius:999px;padding:3px 10px;color:var(--muted);white-space:nowrap}
+.pill .dt{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.mono{font-family:var(--fm)}
+.spin{width:18px;height:18px;border:2.5px solid var(--line2);border-top-color:var(--syn);border-radius:50%;
+  animation:gira .8s linear infinite;display:inline-block;vertical-align:-4px}
+@keyframes gira{to{transform:rotate(360deg)}}
+.carregando{display:flex;align-items:center;justify-content:center;gap:12px;padding:70px 0;color:var(--muted)}
+
+/* ============ LOGIN ============ */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:26px}
+.login{width:100%;max-width:390px;background:var(--panel);border:1px solid var(--line2);
+  border-radius:20px;padding:32px 30px;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+.login .lg{display:flex;justify-content:center;margin-bottom:18px}
+.login .lg img{height:22px;filter:brightness(0) invert(1)}
+.login h1{font-size:19px;text-align:center;margin-bottom:4px}
+.login .hint{font-size:12.5px;color:var(--muted);margin-bottom:22px;text-align:center}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--muted);
+  margin-bottom:6px;text-transform:uppercase}
+.fld input,.fld textarea,.fld select{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line2);
+  border-radius:11px;padding:10px 12px;transition:border-color .15s;outline:none}
+.fld textarea{resize:vertical}
+.fld select option{background:var(--panel);color:var(--ink)}
+.fld input:focus,.fld textarea:focus,.fld select:focus{border-color:var(--syn);background:rgba(206,220,0,.04)}
+.fld .mini{font-size:11.5px;color:var(--dim);margin-top:4px}
+.login .nota{font-size:11.5px;color:var(--dim);margin-top:16px;text-align:center;line-height:1.6}
+
+/* ============ QUADRO DE AVISOS ============ */
+.board{position:relative;border-radius:22px;overflow:hidden;min-height:250px}
+.board .slide{position:absolute;inset:0;opacity:0;pointer-events:none;
+  transition:opacity .55s ease;display:flex}
+.board .slide.on{opacity:1;pointer-events:auto;position:relative}
+.sl-base{flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px;
+  padding:clamp(26px,4.5vw,52px);border-radius:22px;position:relative;overflow:hidden}
+.sl-base h2{font-size:clamp(22px,3.6vw,38px);font-weight:600;line-height:1.1;max-width:760px}
+.sl-base p{color:var(--muted);max-width:640px;font-size:14.5px}
+.sl-base .acts{margin-top:8px}
+.sl-tag{display:inline-flex;align-items:center;gap:9px;font-family:var(--fm);font-size:10.5px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.sl-tag::before{content:'';width:7px;height:7px;background:var(--syn)}
+/* padrão: vidro sóbrio */
+.sl-padrao{background:var(--card);border:1px solid var(--line);backdrop-filter:blur(8px)}
+/* destaque: banda em gradiente (mesma do site) */
+.sl-destaque{background:linear-gradient(118deg,var(--deep) 0%,var(--green) 62%,#0A6F62 100%);
+  border:1px solid rgba(206,220,0,.18)}
+.sl-destaque::after{content:'';position:absolute;right:-90px;top:-90px;width:330px;height:330px;border-radius:50%;
+  background:radial-gradient(circle,rgba(206,220,0,.22),transparent 70%);filter:blur(34px)}
+.sl-destaque p{color:rgba(245,245,247,.78)}
+.sl-destaque .sl-tag{color:rgba(245,245,247,.6)}
+/* urgente: contorno coral + brilho */
+.sl-urgente{background:var(--panel);border:1px solid rgba(241,128,111,.45)}
+.sl-urgente::after{content:'';position:absolute;left:-70px;top:-70px;width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle,rgba(241,128,111,.16),transparent 70%);filter:blur(26px)}
+.sl-urgente .sl-tag{color:var(--bad)}
+.sl-urgente .sl-tag::before{background:var(--bad)}
+/* conquista: acentos lima */
+.sl-conquista{background:var(--card);border:1px solid rgba(206,220,0,.32);backdrop-filter:blur(8px)}
+.sl-conquista::after{content:'';position:absolute;right:-60px;bottom:-90px;width:280px;height:280px;border-radius:50%;
+  background:radial-gradient(circle,rgba(206,220,0,.14),transparent 70%);filter:blur(30px)}
+.sl-conquista .sl-tag{color:var(--syn)}
+.sl-conquista h2 b{box-shadow:inset 0 -2px 0 var(--syn)}
+/* evento: bloco de data à esquerda */
+.sl-evento{background:var(--card);border:1px solid var(--line);backdrop-filter:blur(8px);
+  flex-direction:row;align-items:center;gap:clamp(20px,3.5vw,40px)}
+.sl-evento .quando{flex-shrink:0;text-align:center;border-right:1px solid var(--line2);
+  padding-right:clamp(20px,3.5vw,40px)}
+.sl-evento .quando .d{font-family:var(--fd);font-size:clamp(40px,6vw,62px);font-weight:700;
+  line-height:1;color:var(--ink)}
+.sl-evento .quando .m{font-family:var(--fm);font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--syn);margin-top:6px}
+.sl-evento .quando .a{font-family:var(--fm);font-size:10px;color:var(--dim);margin-top:2px}
+.sl-evento .txt{display:flex;flex-direction:column;gap:8px}
+@media (max-width:640px){
+  .sl-evento{flex-direction:column;align-items:flex-start}
+  .sl-evento .quando{border-right:none;border-bottom:1px solid var(--line2);
+    padding:0 0 12px;text-align:left}
+}
+/* controles */
+.board-ctl{display:flex;align-items:center;gap:12px;margin-top:12px}
+.board-dots{display:flex;gap:7px}
+.board-dots button{width:22px;height:4px;border-radius:4px;background:var(--line2);
+  transition:background .2s;padding:0}
+.board-dots button.on{background:var(--syn)}
+.board-arrows{margin-left:auto;display:flex;gap:8px}
+.board-arrows button{width:34px;height:34px;border:1px solid var(--line2);border-radius:9px;
+  color:var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:15px}
+.board-arrows button:hover{color:var(--ink);border-color:var(--dim)}
+
+/* ============ HOME GRID ============ */
+.home-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;margin-top:26px}
+@media (max-width:900px){.home-grid{grid-template-columns:1fr}}
+.card .head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+.card .head a{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap}
+.card .head a:hover{color:var(--syn)}
+.evt-row{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);align-items:stretch}
+.evt-row:first-of-type{border-top:none}
+.evt-row .barv{width:3.5px;border-radius:4px;flex:none;background:var(--dim)}
+.evt-row .quando{flex-shrink:0;width:52px;text-align:center}
+.evt-row .quando .d{font-family:var(--fd);font-weight:700;font-size:19px;line-height:1.1}
+.evt-row .quando .m{font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--dim)}
+.evt-row .body{flex:1;min-width:0}
+.evt-row .t{font-weight:600;font-size:14.5px}
+.evt-row .meta{font-size:12px;color:var(--muted)}
+.evt-row .meta .evn{font-family:var(--fm);font-size:10px;color:var(--dim)}
+.evt-row .hora{font-family:var(--fm);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.badge-live{display:inline-block;font-family:var(--fm);font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;background:var(--syn);color:var(--deep);border-radius:4px;
+  padding:2px 6px;font-weight:500;margin-left:6px;vertical-align:1px}
+.rsvp{display:flex;gap:8px;margin-top:8px}
+.rsvp button{flex:1;padding:7px 0;border-radius:9px;font-size:12px;font-weight:600;
+  background:rgba(255,255,255,.04);border:1px solid var(--line2);color:var(--muted)}
+.rsvp button.sel-vou{border-color:var(--ok);color:var(--ok);background:rgba(74,222,151,.08)}
+.rsvp button.sel-talvez{border-color:var(--warn);color:var(--warn);background:rgba(245,195,106,.08)}
+.rsvp button.sel-nao{border-color:var(--bad);color:var(--bad);background:rgba(241,128,111,.08)}
+.pres-hero{display:flex;align-items:baseline;gap:12px;margin-bottom:10px}
+.pres-hero .n{font-family:var(--fd);font-size:44px;font-weight:700;color:var(--syn);line-height:1}
+.pres-hero .l{font-size:12px;color:var(--muted);line-height:1.45}
+.pline{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.pline:first-of-type{border-top:none}
+.pline .pinfo{flex:1;min-width:0}
+.pline .pn{font-size:13.5px;font-weight:500}
+.pline .ps{font-size:11px;color:var(--muted)}
+.pline .ps .fma{color:var(--info);font-weight:600}
+.pline .ps .ndp{color:var(--bad);font-weight:600}
+.pline .h{font-family:var(--fm);font-size:11.5px;color:var(--dim);white-space:nowrap}
+.avx{border-radius:50%;background:rgba(255,255,255,.06);color:var(--teal);display:inline-flex;
+  align-items:center;justify-content:center;font-weight:700;font-size:12px;
+  position:relative;overflow:hidden;flex:none;border:1px solid var(--line2)}
+.avx img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.stat-mono{font-family:var(--fm);color:var(--syn);font-weight:500}
+
+/* ============ CALENDÁRIO ============ */
+.cal-top{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.cal-top b{min-width:190px;text-align:center;font-family:var(--fd);font-size:16px}
+.cal-top .nav{width:36px;height:36px;border:1px solid var(--line2);border-radius:9px;color:var(--muted)}
+.cal-top .nav:hover{color:var(--ink);border-color:var(--dim)}
+.cal-legenda{margin-left:auto;font-size:11.5px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.cal-legenda i{font-style:normal;display:inline-flex;align-items:center;gap:6px}
+.cal-legenda i::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--cc,#8E8E93)}
+.cal-grade{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-sem{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);text-align:center;padding:6px 0}
+.cal-cel{min-height:96px;border:1px solid var(--line);border-radius:10px;padding:6px;
+  background:var(--card);display:flex;flex-direction:column;gap:4px;overflow:hidden}
+.cal-cel.fora{background:transparent;border-color:transparent}
+.cal-cel.hoje{border-color:var(--syn)}
+.cal-cel .cal-dia{font-family:var(--fm);font-size:11px;color:var(--dim)}
+.cal-cel.hoje .cal-dia{color:var(--syn);font-weight:500}
+.cal-chip{display:block;width:100%;text-align:left;font-size:11px;line-height:1.35;
+  border-left:3px solid var(--cc,#8E8E93);border-radius:4px;background:rgba(255,255,255,.04);
+  padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.cal-chip:hover{color:var(--ink);background:rgba(255,255,255,.08)}
+@media (max-width:760px){
+  .cal-grade{gap:3px}
+  .cal-cel{min-height:66px;padding:4px}
+  .cal-chip{font-size:9.5px;padding:2px 4px}
+}
+.cal-nota{font-size:12px;color:var(--dim);margin-top:14px;line-height:1.6}
+
+/* ============ ORGANIZAÇÃO ============ */
+.org-busca{position:relative;max-width:420px;margin-bottom:20px}
+.org-busca input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line2);
+  border-radius:11px;padding:11px 13px;outline:none}
+.org-busca input:focus{border-color:var(--syn)}
+.org-res{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:20;background:var(--panel);
+  border:1px solid var(--line2);border-radius:12px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.org-res .op{display:flex;align-items:center;gap:10px;padding:10px 13px;cursor:pointer;font-size:13.5px}
+.org-res .op:hover{background:rgba(255,255,255,.05)}
+.org-card{display:flex;align-items:center;gap:12px;text-align:left;width:100%;
+  border:1px solid var(--line);border-radius:13px;padding:11px 14px;background:var(--card);
+  transition:border-color .15s, transform .15s;margin-bottom:8px}
+.org-card:hover{border-color:var(--dim);transform:translateY(-1px)}
+.org-card .tx{min-width:0}
+.org-card .nm{display:block;font-family:var(--fd);font-weight:600;font-size:13.5px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.org-card .cg{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.org-chain{display:flex;flex-direction:column;align-items:stretch;max-width:560px;margin:0 auto}
+.org-chain .org-card{margin-bottom:0}
+.org-link{width:1.5px;height:18px;background:var(--line2);margin:0 auto}
+.org-focus{border-color:rgba(206,220,0,.4)!important;background:rgba(206,220,0,.04)!important;
+  padding:16px!important}
+.org-focus .small{font-size:11.5px;color:var(--dim)}
+.org-focus a.small{text-decoration:underline}
+.org-focus a.small:hover{color:var(--syn)}
+.org-bottom{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:26px}
+@media (max-width:820px){.org-bottom{grid-template-columns:1fr}}
+.org-sec h4{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:12px}
+
+/* ============ SERVIÇOS ============ */
+.srv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:920px){.srv-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:620px){.srv-grid{grid-template-columns:1fr}}
+a.srv{border:1px solid var(--line);border-radius:var(--r);padding:24px 22px;background:var(--card);
+  display:flex;flex-direction:column;gap:8px;transition:border-color .2s, transform .2s}
+a.srv:hover{border-color:var(--line2);transform:translateY(-3px)}
+a.srv .lb{font-family:var(--fm);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+a.srv h3{font-size:17px;font-weight:600}
+a.srv p{font-size:13px;color:var(--muted);flex:1}
+a.srv .go{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+a.srv:hover .go{color:var(--syn)}
+a.srv.hero{grid-column:1 / -1;border-color:rgba(206,220,0,.3);
+  background:linear-gradient(118deg,rgba(0,53,47,.55),rgba(0,89,79,.28) 70%,rgba(206,220,0,.06))}
+a.srv.hero h3{font-size:clamp(19px,2.6vw,26px)}
+a.srv.hero .lb{color:var(--syn)}
+a.srv.anon{border-style:dashed}
+.form-card{max-width:640px;background:var(--panel);border:1px solid var(--line2);
+  border-radius:20px;padding:28px}
+.form-card .voltar{font-family:var(--fm);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);display:inline-block;margin-bottom:18px}
+.form-card .voltar:hover{color:var(--syn)}
+.form-card h2{font-size:19px;margin-bottom:4px}
+.form-card .desc{font-size:13px;color:var(--muted);margin-bottom:20px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border-radius:18px;font-size:13px;font-weight:500;
+  background:rgba(255,255,255,.04);border:1px solid var(--line2);color:var(--muted);
+  transition:all .15s}
+.chip:hover{border-color:var(--dim);color:var(--ink)}
+.chip.on{background:var(--syn);border-color:var(--syn);color:var(--deep);font-weight:600}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;align-items:center}
+.err-msg{color:var(--bad);font-size:13px;margin-top:12px;min-height:18px}
+.check{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--muted);
+  border:1px solid var(--line2);border-radius:11px;padding:11px 13px;cursor:pointer;line-height:1.5}
+.check input{width:16px;height:16px;accent-color:var(--syn);cursor:pointer;flex:none;margin-top:2px}
+
+/* ============ MEUS PEDIDOS ============ */
+.ped{border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  padding:18px 20px;margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+.ped:hover{border-color:var(--line2)}
+.ped .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ped .prot{font-family:var(--fm);font-size:11px;color:var(--dim)}
+.ped .t{font-family:var(--fd);font-weight:600;font-size:15px;flex:1;min-width:180px}
+.ped .quando{font-size:11.5px;color:var(--dim)}
+.ped .det{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;font-size:13px}
+@media (max-width:640px){.dl{grid-template-columns:1fr}}
+.dl .it dt{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:2px}
+.dl .it dd{color:var(--ink);white-space:pre-wrap}
+.dl .it.full{grid-column:1/-1}
+.resposta{margin-top:12px;border-left:2px solid var(--syn);padding:4px 0 4px 14px;font-size:13px}
+.resposta .quem{font-family:var(--fm);font-size:10.5px;color:var(--dim);margin-top:4px}
+
+/* ============ MODAL / TOAST ============ */
+#veil{position:fixed;inset:0;z-index:80;background:rgba(4,7,6,.66);
+  backdrop-filter:blur(8px);display:none}
+#veil.open{display:block}
+#modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:81;display:none;
+  width:min(520px,calc(100vw - 32px));max-height:86vh;overflow-y:auto;
+  background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:26px;
+  box-shadow:0 30px 90px rgba(0,0,0,.6)}
+#modal.open{display:block}
+#modal h3{font-size:17px;margin-bottom:12px}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;display:flex;
+  flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:92vw}
+.toast{background:#151B19;border:1px solid var(--line2);color:var(--ink);border-radius:12px;
+  padding:12px 20px;font-size:13.5px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.toast.err{border-color:rgba(241,128,111,.4);color:#F5B0A5}
+.ok-page{max-width:520px;margin:40px auto;text-align:center}
+.ok-page .circ{width:92px;height:92px;border-radius:50%;margin:0 auto 20px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--ok);background:rgba(74,222,151,.08)}
+.ok-page .circ svg{width:40px;height:40px;stroke:var(--ok);fill:none;stroke-width:2.2}
+.ok-page h2{font-size:22px;margin-bottom:8px}
+.ok-page p{color:var(--muted);font-size:14px}
+.ok-page .prot{font-family:var(--fm);color:var(--syn);font-size:15px;margin:14px 0}
+</style>
+</head>
+<body>
+
+<div id="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="v-login" hidden>
+  <div class="login">
+    <div class="lg"><img id="logo-login" src="" alt="NeuroDynamics"></div>
+    <h1>Portal do Membro</h1>
+    <p class="hint">Entre com a sua conta do <b>SOMA</b> — o mesmo e-mail e senha
+      do sistema de pessoal.</p>
+    <div class="fld"><label>E-mail</label>
+      <input id="l-email" type="email" autocomplete="email" placeholder="voce@neurodynamics.dev"></div>
+    <div class="fld"><label>Senha</label>
+      <input id="l-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+    <button class="btn solid" style="width:100%;justify-content:center" id="l-btn" onclick="entrar()">Entrar</button>
+    <p class="err-msg" id="l-erro"></p>
+    <p class="nota">Sem acesso? Fale com o Depto. de Pessoal.<br>
+      A conta é a mesma do SOMA · Gestão e do SOMA · App.</p>
+  </div>
+</div>
+
+<!-- SHELL -->
+<header id="hd" hidden>
+  <div class="hd-in">
+    <a class="hd-logo" href="#/" aria-label="Portal do Membro — início">
+      <img id="logo-hd" src="" alt="NeuroDynamics">
+      <span class="hd-tag">Portal do Membro</span>
+    </a>
+    <nav class="hd-nav" id="nav-inline">
+      <a href="#/" data-r="home">Início</a>
+      <a href="#/calendario" data-r="calendario">Calendário</a>
+      <a href="#/organizacao" data-r="organizacao">Organização</a>
+      <a href="#/servicos" data-r="servicos">Serviços</a>
+      <a href="#/pedidos" data-r="pedidos">Meus pedidos</a>
+    </nav>
+    <div class="hd-right">
+      <div class="hd-user"><b id="u-nome">—</b><button onclick="sair()">sair</button></div>
+      <button class="hd-burger" id="burger" aria-label="Menu" aria-expanded="false"><i></i><i></i></button>
+    </div>
+  </div>
+</header>
+
+<div id="menu" aria-hidden="true">
+  <div class="menu-in">
+    <nav class="menu-links" id="nav-menu">
+      <a href="#/" data-r="home"><span class="idx">01</span>Início</a>
+      <a href="#/calendario" data-r="calendario"><span class="idx">02</span>Calendário</a>
+      <a href="#/organizacao" data-r="organizacao"><span class="idx">03</span>Organização</a>
+      <a href="#/servicos" data-r="servicos"><span class="idx">04</span>Serviços</a>
+      <a href="#/pedidos" data-r="pedidos"><span class="idx">05</span>Meus pedidos</a>
+    </nav>
+    <div class="menu-foot">
+      <span id="menu-user">—</span>
+      <button onclick="sair()">Sair da conta</button>
+    </div>
+  </div>
+</div>
+
+<main id="main" hidden></main>
+
+<div id="veil" onclick="fechaModal()"></div>
+<div id="modal" role="dialog" aria-modal="true"></div>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ============================================================
+   CONFIG — os MESMOS dados do SOMA (Settings -> API no Supabase)
+   ============================================================ */
+const CONFIG = {
+  SUPABASE_URL: 'https://rxzmkyjttzzpwtodqkve.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_MJFR-aaQqTS1BthxYJG2kg_5XGhs9wg'
+};
+const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
+const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
+
+/* Tipos de evento considerados "gerais" no calendário expandido
+   (o restante — testes, gerência etc. — vive no SOMA · App). */
+const CAL_TIPOS_GERAIS = ['Reunião geral','Confraternização','Visita de externos'];
+
+/* Marcos do calendário (mesmas cores do SOMA · Gestão, ajustadas
+   para o fundo escuro). Tipos desconhecidos caem no cinza. */
+const TIPOS_MARCO = {
+  ferias:            {l:'Férias',            cor:'#7FA7F2'},
+  processo_seletivo: {l:'Processo seletivo', cor:'#A78BFA'},
+  prazo:             {l:'Prazo',             cor:'#F5C36A'},
+  outro:             {l:'Outro',             cor:'#8E8E93'}
+};
+const COR_EVENTO = '#2DD4BF';
+
+const STATUS_SOL = {
+  aberta:     {l:'Aberta',      c:'#2DD4BF'},
+  em_analise: {l:'Em análise',  c:'#F5C36A'},
+  aprovada:   {l:'Aprovada',    c:'#4ADE97'},
+  recusada:   {l:'Recusada',    c:'#F1806F'},
+  concluida:  {l:'Concluída',   c:'#4ADE97'},
+  cancelada:  {l:'Cancelada',   c:'#8E8E93'}
+};
+const TIPOS_SOL = {
+  acesso:      'Solicitação de acesso',
+  afastamento: 'Afastamento temporário',
+  desligamento:'Desligamento',
+  reuniao_1_1: 'Reunião 1:1',
+  outro:       'Solicitação geral'
+};
+const CAT_ACESSO = {documento:'Documento', sistema:'Sistema / plataforma', local:'Local'};
+const TEMPOS = ['1 semana','1 mês','3 meses','6 meses','Permanente'];
+
+/* ---------------- base ---------------- */
+const sb = window.supabase ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
+const $ = s => document.querySelector(s);
+const esc = v => v == null ? '' : String(v).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function toast(msg, err){ const t=document.createElement('div'); t.className='toast'+(err?' err':'');
+  t.textContent=msg; $('#toast').appendChild(t); setTimeout(()=>t.remove(), 5200); }
+
+const state = {
+  perfil:null, membros:[], itensAcesso:[], avisos:[],
+  eventos:null, presencas:null, statusMembro:[], minhasPresencas:null,
+  cal:{ ano:new Date().getFullYear(), mes:new Date().getMonth() },
+  orgFoco:null, board:{ ix:0, timer:null }
+};
+
+/* ---------------- helpers ---------------- */
+function hojeISO(){ const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtD(iso){ if(!iso) return '—'; const [a,m,d]=iso.split('-'); return `${d}/${m}/${a}`; }
+function hhmm(x){ return new Date(x).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function primeiroNome(n){ return (n||'').split(' ')[0]; }
+function primeirasLetras(n){ return String(n||'?').trim().split(/\s+/).map(p=>p[0]).filter(Boolean).slice(0,2).join('').toUpperCase(); }
+const MES_CURTO = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const pad3 = n => String(n??0).padStart(3,'0');
+const nomeDe = r => state.membros.find(m=>m.registro===r)?.nome || ('Registro '+r);
+
+const FOTO_EXTS = ['jpg','jpeg','png','webp'];
+function fotoErro(img){
+  const i = Number(img.dataset.ext||0) + 1, reg = img.dataset.reg;
+  if (reg && i < FOTO_EXTS.length){ img.dataset.ext = i; img.src = FOTOS_BASE + reg + '.' + FOTO_EXTS[i]; }
+  else img.remove();
+}
+function avatarFoto(m, px, fs){
+  const letras = esc(primeirasLetras(m.nome));
+  const u = m.foto_url || (m.registro!=null ? FOTOS_BASE + m.registro + '.jpg' : null);
+  const cascata = (!m.foto_url && m.registro!=null) ? ` data-reg="${m.registro}" data-ext="0"` : '';
+  const img = u ? `<img src="${esc(u)}" alt="" loading="lazy"${cascata} onerror="fotoErro(this)">` : '';
+  return `<span class="avx" style="width:${px}px;height:${px}px;font-size:${fs||12}px">${letras}${img}</span>`;
+}
+
+/* ---------------- boot / sessão ---------------- */
+async function boot(){
+  [['#logo-hd'],['#logo-login']].forEach(([sel])=>{
+    const img = $(sel); if(!img) return;
+    img.onerror = () => { const s=document.createElement('span'); s.className='logotype'; s.textContent='NeuroDynamics'; img.replaceWith(s); };
+    img.src = LOGO_URL;
+  });
+  if (!sb){ $('#v-login').hidden=false;
+    $('#l-erro').textContent='Não foi possível carregar a biblioteca do Supabase. Recarregue a página.'; return; }
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session) await abrirPortal(); else $('#v-login').hidden = false;
+}
+async function entrar(){
+  $('#l-erro').textContent=''; $('#l-btn').disabled = true;
+  const { error } = await sb.auth.signInWithPassword({
+    email: $('#l-email').value.trim(), password: $('#l-senha').value });
+  $('#l-btn').disabled = false;
+  if (error){ $('#l-erro').textContent = 'E-mail ou senha incorretos. Verifique os dados ou fale com o Depto. de Pessoal.'; return; }
+  $('#v-login').hidden = true;
+  await abrirPortal();
+}
+async function sair(){ await sb.auth.signOut(); location.hash=''; location.reload(); }
+document.addEventListener('keydown', e=>{
+  if (e.key==='Enter' && !$('#v-login').hidden) entrar();
+  if (e.key==='Escape'){ fechaModal(); fecharMenu(); }
+});
+
+async function abrirPortal(){
+  const { data:{ user } } = await sb.auth.getUser();
+  const [p, m] = await Promise.all([
+    sb.from('perfis').select('id,nome,email,papel,registro').eq('id', user.id).single(),
+    sb.from('membros').select('registro,nome,cargo,departamento,status,grupos,gestor_registro,foto_url,email_nro,email_pessoal,telefone').order('nome')
+  ]);
+  if (p.error){ toast('Não foi possível carregar seu perfil: '+p.error.message, true); return; }
+  state.perfil = p.data;
+  state.membros = m.data || [];
+  sb.from('itens_de_acesso').select('*').order('ordem')
+    .then(r => { state.itensAcesso = (r.data||[]).filter(i=>i.ativo!==false); });
+  $('#u-nome').textContent = primeiroNome(state.perfil.nome || state.perfil.email);
+  $('#menu-user').textContent = state.perfil.nome || state.perfil.email;
+  $('#hd').hidden = false; $('#main').hidden = false; $('#v-login').hidden = true;
+  render(route());
+}
+
+/* ---------------- roteador ---------------- */
+function route(){
+  const h = (location.hash || '#/').replace(/^#\//,'');
+  const [r, sub] = h.split('/');
+  const PAGES = ['calendario','organizacao','servicos','pedidos'];
+  return { r: PAGES.includes(r) ? r : 'home', sub: sub || null };
+}
+window.addEventListener('hashchange', ()=>{ if(state.perfil){ render(route()); window.scrollTo({top:0,behavior:'instant'}); } });
+function render(rt){
+  pararBoard();
+  document.querySelectorAll('[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === rt.r));
+  fecharMenu();
+  ({home:pageHome, calendario:pageCalendario, organizacao:pageOrganizacao,
+    servicos:pageServicos, pedidos:pagePedidos}[rt.r])(rt.sub);
+}
+
+/* menu mobile */
+function fecharMenu(){ document.body.classList.remove('menu-open');
+  $('#burger')?.setAttribute('aria-expanded','false'); $('#menu').setAttribute('aria-hidden','true'); }
+$('#burger').addEventListener('click', ()=>{
+  const open = document.body.classList.toggle('menu-open');
+  $('#burger').setAttribute('aria-expanded', open);
+  $('#menu').setAttribute('aria-hidden', !open);
+});
+window.addEventListener('scroll', ()=>{ $('#hd').classList.toggle('rolou', window.scrollY > 8); }, { passive:true });
+
+/* ---------------- modal ---------------- */
+function abreModal(html){ $('#modal').innerHTML = html; $('#modal').classList.add('open'); $('#veil').classList.add('open'); }
+function fechaModal(){ $('#modal').classList.remove('open'); $('#veil').classList.remove('open'); }
+
+/* ============================================================
+   HOME — quadro de avisos + resumos de agenda e check-in
+   ============================================================ */
+async function pageHome(){
+  $('#main').innerHTML = `
+    <section id="sec-board"><div class="carregando"><span class="spin"></span> Carregando avisos…</div></section>
+    <div class="home-grid">
+      <div class="card" id="card-agenda">
+        <div class="head"><h3>Próximos eventos</h3><a href="#/calendario">calendário completo →</a></div>
+        <div class="carregando" style="padding:26px 0"><span class="spin"></span></div>
+      </div>
+      <div class="card" id="card-checkin">
+        <div class="head"><h3>Check-in · LABBIO</h3></div>
+        <div class="carregando" style="padding:26px 0"><span class="spin"></span></div>
+      </div>
+    </div>`;
+  carregarBoard();
+  carregarAgendaResumo();
+  carregarCheckinResumo();
+}
+
+/* ---------- quadro de avisos ---------- */
+async function carregarBoard(){
+  const { data, error } = await sb.from('portal_avisos').select('*')
+    .order('ordem').order('criado_em', {ascending:false});
+  const el = $('#sec-board'); if(!el) return;
+  if (error){
+    el.innerHTML = `<div class="aviso-box err">Não foi possível carregar o quadro de avisos: ${esc(error.message)}.
+      A migração <b>soma_v10.sql</b> já foi aplicada?</div>`;
+    return;
+  }
+  state.avisos = data || [];
+  if (!state.avisos.length){
+    el.innerHTML = `<div class="sl-base sl-padrao" style="min-height:180px">
+      <span class="sl-tag">Quadro de avisos</span>
+      <h2>Nenhum aviso por enquanto.</h2>
+      <p>Quando a gestão publicar novidades, elas aparecem aqui.</p></div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div class="board" id="board" aria-roledescription="carrossel"
+         onmouseenter="pausarBoard()" onmouseleave="retomarBoard()">
+      ${state.avisos.map((a,i)=>`<div class="slide ${i===0?'on':''}" data-ix="${i}">${slideAviso(a)}</div>`).join('')}
+    </div>
+    ${state.avisos.length>1 ? `
+    <div class="board-ctl">
+      <div class="board-dots">${state.avisos.map((_,i)=>
+        `<button class="${i===0?'on':''}" data-dot="${i}" aria-label="Aviso ${i+1}" onclick="irBoard(${i})"></button>`).join('')}</div>
+      <div class="board-arrows">
+        <button aria-label="Aviso anterior" onclick="passoBoard(-1)">‹</button>
+        <button aria-label="Próximo aviso" onclick="passoBoard(1)">›</button>
+      </div>
+    </div>` : ''}`;
+  state.board.ix = 0;
+  iniciarBoard();
+}
+function slideAviso(a){
+  const link = a.link_url ? `<div class="acts"><a class="btn ${a.layout==='destaque'?'claro':'ghost'}"
+      href="${esc(a.link_url)}" target="_blank" rel="noopener">${esc(a.link_rotulo || 'Saiba mais')}</a></div>` : '';
+  const corpo = a.corpo ? `<p>${esc(a.corpo)}</p>` : '';
+  const TAGS = {padrao:'Aviso', destaque:'Quadro de avisos', urgente:'Urgente',
+                conquista:'Conquista', evento:'Evento'};
+  if (a.layout === 'evento'){
+    const d = a.data_evento || a.data_inicio;
+    const dt = d ? new Date(d+'T12:00') : null;
+    const quando = dt ? `<div class="quando">
+        <div class="d">${dt.getDate()}</div>
+        <div class="m">${MES_CURTO[dt.getMonth()]}</div>
+        <div class="a">${dt.getFullYear()}</div></div>` : '';
+    return `<div class="sl-base sl-evento">${quando}
+      <div class="txt"><span class="sl-tag">${TAGS.evento}</span>
+        <h2>${esc(a.titulo)}</h2>${corpo}${link}</div></div>`;
+  }
+  const titulo = a.layout==='conquista' ? `<h2><b>${esc(a.titulo)}</b></h2>` : `<h2>${esc(a.titulo)}</h2>`;
+  return `<div class="sl-base sl-${esc(a.layout)}">
+    <span class="sl-tag">${TAGS[a.layout]||'Aviso'}</span>${titulo}${corpo}${link}</div>`;
+}
+function mostrarSlide(ix){
+  const n = state.avisos.length; if(!n) return;
+  state.board.ix = ((ix % n) + n) % n;
+  document.querySelectorAll('#board .slide').forEach(s =>
+    s.classList.toggle('on', Number(s.dataset.ix)===state.board.ix));
+  document.querySelectorAll('[data-dot]').forEach(d =>
+    d.classList.toggle('on', Number(d.dataset.dot)===state.board.ix));
+}
+function iniciarBoard(){
+  pararBoard();
+  if (state.avisos.length<2) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  state.board.timer = setInterval(()=>{ if(!document.hidden) mostrarSlide(state.board.ix+1); }, 8000);
+}
+function pararBoard(){ if(state.board.timer){ clearInterval(state.board.timer); state.board.timer=null; } }
+function pausarBoard(){ pararBoard(); }
+function retomarBoard(){ iniciarBoard(); }
+function irBoard(i){ mostrarSlide(i); iniciarBoard(); }
+function passoBoard(n){ mostrarSlide(state.board.ix+n); iniciarBoard(); }
+
+/* ---------- resumo da agenda ---------- */
+async function carregarAgendaResumo(){
+  const { data, error } = await sb.from('eventos')
+    .select('*, espacos(nome,cor), evento_participantes(registro,resposta)')
+    .neq('status','Cancelado').gte('data', hojeISO())
+    .order('data').order('hora_inicio', {nullsFirst:false}).limit(30);
+  const el = $('#card-agenda'); if(!el) return;
+  if (error){ el.querySelector('.carregando').outerHTML =
+    `<div class="empty">Erro ao carregar a agenda: ${esc(error.message)}</div>`; return; }
+  state.eventos = data || [];
+  const meu = state.perfil.registro;
+  const pend = meu ? state.eventos.filter(e =>
+    (e.evento_participantes||[]).some(p => p.registro===meu && p.resposta==='pendente')) : [];
+  const prox = state.eventos.slice(0,5);
+  let html = `<div class="head"><h3>Próximos eventos</h3><a href="#/calendario">calendário completo →</a></div>`;
+  if (!meu) html += `<div class="aviso-box info" style="margin-bottom:12px">Sua conta ainda não está vinculada a um
+    registro de membro — dá para ver tudo, mas RSVP e solicitações ficam bloqueados.
+    Fale com o Depto. de Pessoal.</div>`;
+  if (pend.length){
+    html += `<div class="sub" style="margin-bottom:8px">CONVITES PENDENTES · ${pend.length}</div>`;
+    html += pend.slice(0,3).map(e => linhaEvento(e, true)).join('');
+    html += `<div style="height:14px"></div>`;
+  }
+  html += prox.length ? prox.map(e => linhaEvento(e, false)).join('')
+    : '<div class="empty">Nada agendado por enquanto. Os eventos criados no SOMA aparecem aqui.</div>';
+  el.innerHTML = html;
+}
+function linhaEvento(e, comRSVP){
+  const dt = new Date(e.data+'T12:00');
+  const cor = e.espacos?.cor || '#8E8E93';
+  const parts = e.evento_participantes || [];
+  const conf = parts.filter(p=>p.resposta==='vou').length;
+  const minha = state.perfil.registro ? parts.find(p=>p.registro===state.perfil.registro) : null;
+  const hora = e.hora_inicio ? e.hora_inicio.slice(0,5) + (e.hora_fim ? '–'+e.hora_fim.slice(0,5) : '') : 'a definir';
+  const agora = e.data===hojeISO() && e.hora_inicio &&
+    new Date().toTimeString().slice(0,8) >= e.hora_inicio &&
+    new Date().toTimeString().slice(0,8) <= (e.hora_fim||e.hora_inicio);
+  return `<div class="evt-row">
+    <div class="barv" style="background:${esc(cor)}"></div>
+    <div class="quando"><div class="d">${dt.getDate()}</div><div class="m">${MES_CURTO[dt.getMonth()]}</div></div>
+    <div class="body">
+      <div class="t">${esc(e.titulo)}${agora?'<span class="badge-live">agora</span>':''}</div>
+      <div class="meta">${esc(e.espacos?.nome || e.local || 'Local a definir')} · ${esc(e.tipo)}
+        · ${conf} confirmado${conf===1?'':'s'} <span class="evn">· EVT-${pad3(e.numero)}</span></div>
+      ${comRSVP && minha ? `<div class="rsvp">
+        <button class="${minha.resposta==='vou'?'sel-vou':''}" onclick="responderRSVP('${e.id}','vou')">Vou</button>
+        <button class="${minha.resposta==='talvez'?'sel-talvez':''}" onclick="responderRSVP('${e.id}','talvez')">Talvez</button>
+        <button class="${minha.resposta==='nao'?'sel-nao':''}" onclick="responderRSVP('${e.id}','nao')">Não vou</button>
+      </div>` : ''}
+    </div>
+    <div class="hora">${hora}</div>
+  </div>`;
+}
+async function responderRSVP(evId, resp){
+  const { error } = await sb.from('evento_participantes')
+    .update({ resposta: resp, respondido_em: new Date().toISOString() })
+    .eq('evento_id', evId).eq('registro', state.perfil.registro);
+  if (error){ toast('Não foi possível responder: '+error.message, true); return; }
+  toast('Resposta registrada.');
+  carregarAgendaResumo();
+}
+
+/* ---------- resumo do check-in ---------- */
+async function carregarCheckinResumo(){
+  const el = $('#card-checkin'); if(!el) return;
+  const mes0 = new Date(); mes0.setDate(1); mes0.setHours(0,0,0,0);
+  const q = [
+    sb.from('presencas').select('registro,registrado_em')
+      .gte('registrado_em', new Date(Date.now()-14*24*3600e3).toISOString())
+      .order('registrado_em', {ascending:false}).limit(200),
+    sb.from('status_membro').select('*')
+  ];
+  if (state.perfil.registro) q.push(
+    sb.from('presencas').select('registrado_em').eq('registro', state.perfil.registro)
+      .gte('registrado_em', mes0.toISOString()));
+  const [rec, sts, minhas] = await Promise.all(q);
+  if (rec.error){ el.innerHTML = `<div class="head"><h3>Check-in · LABBIO</h3></div>
+    <div class="empty">Erro: ${esc(rec.error.message)}</div>`; return; }
+  const hojeStr = new Date().toDateString();
+  const stMap = {};
+  (sts.data||[]).forEach(s=>{ if (new Date(s.definido_em).toDateString()===hojeStr) stMap[s.registro]=s; });
+  const h4 = new Date(Date.now() - 4*3600e3);
+  const vistos = new Set(), presentes = [];
+  for (const r of (rec.data||[])){
+    if (new Date(r.registrado_em) < h4) break;
+    if (!vistos.has(r.registro)){ vistos.add(r.registro);
+      presentes.push({ registro:r.registro, hora:hhmm(r.registrado_em) }); }
+  }
+  const linha = p => {
+    const m = state.membros.find(x=>x.registro===p.registro) || {registro:p.registro, nome:'Registro '+p.registro};
+    const st = stMap[p.registro];
+    const stTxt = !st ? '' : (st.tipo==='nao_perturbe'
+      ? '<span class="ndp">Não perturbe</span>'
+      : `<span class="fma">Find me at ${esc(st.local||'—')}</span>`);
+    return `<div class="pline">${avatarFoto(m, 30, 11)}
+      <div class="pinfo"><div class="pn">${esc(m.nome)}</div>${stTxt?`<div class="ps">${stTxt}</div>`:''}</div>
+      <span class="h">desde ${p.hora}</span></div>`;
+  };
+  let voce = '';
+  if (state.perfil.registro && minhas && !minhas.error){
+    const dias = new Set((minhas.data||[]).map(r=>new Date(r.registrado_em).toDateString())).size;
+    const mesNome = new Date().toLocaleDateString('pt-BR',{month:'long'});
+    voce = `<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px;font-size:13px">
+      Suas visitas em ${mesNome}: <span class="stat-mono">${dias} dia${dias===1?'':'s'}</span></div>`;
+  }
+  el.innerHTML = `<div class="head"><h3>Check-in · LABBIO</h3></div>
+    <div class="pres-hero"><span class="n">${presentes.length}</span>
+      <span class="l">no LABBIO agora<br>check-ins das últimas 4 horas</span></div>
+    ${presentes.length ? presentes.slice(0,8).map(linha).join('')
+      : '<div class="empty" style="padding:16px">Ninguém fez check-in nas últimas 4 horas.</div>'}
+    ${voce}
+    <div style="font-size:11.5px;color:var(--dim);margin-top:12px">O check-in é feito pelo QR
+      na tela da entrada do LABBIO (SOMA · App).</div>`;
+}
+
+/* ============================================================
+   CALENDÁRIO EXPANDIDO — só o que é geral: reuniões gerais,
+   confraternizações, visitas e os marcos (férias, PS, prazos,
+   calendário UFMG) mantidos pela gestão.
+   ============================================================ */
+async function pageCalendario(){
+  const c = state.cal;
+  const primeiro = new Date(c.ano, c.mes, 1), ultimo = new Date(c.ano, c.mes+1, 0);
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  $('#main').innerHTML = `
+    <div class="pg-head"><span class="eyebrow">Calendário da equipe</span>
+      <h1>Calendário</h1>
+      <p class="lead">A visão expandida do calendário do SOMA: reuniões gerais e demais
+        informações de interesse de toda a equipe, incluindo os marcos do calendário da UFMG.</p></div>
+    <div class="card" id="cal-card"><div class="carregando"><span class="spin"></span> Carregando…</div></div>`;
+  let evs = [], mks = [];
+  try{
+    const [ev, mk] = await Promise.all([
+      sb.from('eventos').select('id,numero,titulo,tipo,data,hora_inicio,hora_fim,local,pauta,status,espacos(nome,cor)')
+        .neq('status','Cancelado').gte('data', iso(primeiro)).lte('data', iso(ultimo)).order('hora_inicio'),
+      sb.from('calendario_itens').select('*')
+        .lte('data_inicio', iso(ultimo)).gte('data_fim', iso(primeiro)).order('data_inicio')
+    ]);
+    if (ev.error) throw ev.error; if (mk.error) throw mk.error;
+    evs = (ev.data||[]).filter(e => CAL_TIPOS_GERAIS.includes(e.tipo));
+    mks = mk.data||[];
+  }catch(e){
+    $('#cal-card').innerHTML = `<div class="empty">Erro ao carregar o calendário: ${esc(e.message)}</div>`;
+    return;
+  }
+  state.calDados = { evs, mks };
+  const porDia = {};
+  evs.forEach(e=>{ (porDia[e.data]=porDia[e.data]||[]).push({t:'ev', o:e}); });
+  mks.forEach(m=>{
+    const di = new Date(m.data_inicio+'T12:00'), df = new Date((m.data_fim||m.data_inicio)+'T12:00');
+    for (let d=new Date(Math.max(di,primeiro)); d<=df && d<=ultimo; d.setDate(d.getDate()+1))
+      (porDia[iso(d)]=porDia[iso(d)]||[]).push({t:'mk', o:m});
+  });
+  const nomeMesRaw = primeiro.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const nomeMes = nomeMesRaw.charAt(0).toUpperCase() + nomeMesRaw.slice(1);
+  const semana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const hj = hojeISO();
+  let cels = '';
+  for (let i=0;i<primeiro.getDay();i++) cels += '<div class="cal-cel fora"></div>';
+  for (let dia=1; dia<=ultimo.getDate(); dia++){
+    const dIso = iso(new Date(c.ano, c.mes, dia));
+    const itens = (porDia[dIso]||[]).slice(0,4);
+    const extra = (porDia[dIso]||[]).length - itens.length;
+    cels += `<div class="cal-cel ${dIso===hj?'hoje':''}"><span class="cal-dia">${dia}</span>
+      ${itens.map(x => x.t==='ev'
+        ? `<button class="cal-chip" style="--cc:${COR_EVENTO}" onclick="verEventoCal('${x.o.id}')">${x.o.hora_inicio?x.o.hora_inicio.slice(0,5)+' ':''}${esc(x.o.titulo)}</button>`
+        : `<button class="cal-chip" style="--cc:${(TIPOS_MARCO[x.o.tipo]||TIPOS_MARCO.outro).cor}" onclick="verMarcoCal('${x.o.id}')">${esc(x.o.titulo)}</button>`
+      ).join('')}
+      ${extra>0?`<span style="font-size:10px;color:var(--dim)">+${extra}</span>`:''}</div>`;
+  }
+  $('#cal-card').innerHTML = `
+    <div class="cal-top">
+      <button class="nav" onclick="mudarMes(-1)" aria-label="Mês anterior">‹</button>
+      <b>${nomeMes}</b>
+      <button class="nav" onclick="mudarMes(1)" aria-label="Próximo mês">›</button>
+      <button class="btn ghost" style="height:36px;padding:0 14px;font-size:12.5px"
+        onclick="state.cal.ano=new Date().getFullYear();state.cal.mes=new Date().getMonth();pageCalendario()">Hoje</button>
+      <div class="cal-legenda">
+        <i style="--cc:${COR_EVENTO}">Eventos gerais</i>
+        ${Object.values(TIPOS_MARCO).map(t=>`<i style="--cc:${t.cor}">${t.l}</i>`).join('')}
+      </div>
+    </div>
+    <div class="cal-grade">${semana.map(s=>`<div class="cal-sem">${s}</div>`).join('')}${cels}</div>
+    <p class="cal-nota">Aqui aparecem apenas os compromissos gerais da equipe — reuniões gerais,
+      confraternizações e visitas — e os marcos mantidos pela gestão (férias, processo seletivo,
+      prazos e datas do calendário da UFMG). A sua agenda completa, com testes e reuniões de
+      grupo, continua no SOMA · App.</p>`;
+}
+function mudarMes(n){
+  const c = state.cal; c.mes += n;
+  if (c.mes<0){ c.mes=11; c.ano--; } if (c.mes>11){ c.mes=0; c.ano++; }
+  pageCalendario();
+}
+function verEventoCal(id){
+  const e = state.calDados.evs.find(x=>x.id===id); if(!e) return;
+  const hora = e.hora_inicio ? e.hora_inicio.slice(0,5) + (e.hora_fim?'–'+e.hora_fim.slice(0,5):'') : 'a definir';
+  abreModal(`<h3><span style="color:${COR_EVENTO}">●</span> ${esc(e.titulo)}</h3>
+    <div class="dl">
+      <div class="it"><dt>Quando</dt><dd>${fmtD(e.data)} · ${esc(hora)}</dd></div>
+      <div class="it"><dt>Onde</dt><dd>${esc(e.espacos?.nome || e.local || 'A definir')}</dd></div>
+      <div class="it"><dt>Tipo</dt><dd>${esc(e.tipo)}</dd></div>
+      <div class="it"><dt>Código</dt><dd class="mono">EVT-${pad3(e.numero)}</dd></div>
+      ${e.pauta?`<div class="it full"><dt>Pauta</dt><dd>${esc(e.pauta)}</dd></div>`:''}
+    </div>
+    <div class="acts"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`);
+}
+function verMarcoCal(id){
+  const m = state.calDados.mks.find(x=>x.id===id); if(!m) return;
+  const t = TIPOS_MARCO[m.tipo] || {l:m.tipo, cor:'#8E8E93'};
+  abreModal(`<h3><span style="color:${t.cor}">●</span> ${esc(m.titulo)}</h3>
+    <div class="dl">
+      <div class="it"><dt>Tipo</dt><dd>${esc(t.l)}</dd></div>
+      <div class="it"><dt>Período</dt><dd>${fmtD(m.data_inicio)}${m.data_fim && m.data_fim!==m.data_inicio?' a '+fmtD(m.data_fim):''}</dd></div>
+      ${m.registro?`<div class="it"><dt>Membro</dt><dd>${esc(nomeDe(m.registro))}</dd></div>`:''}
+      ${m.observacao?`<div class="it full"><dt>Observação</dt><dd>${esc(m.observacao)}</dd></div>`:''}
+    </div>
+    <div class="acts"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`);
+}
+
+/* ============================================================
+   ORGANIZAÇÃO — Org Explorer (mesma lógica do SOMA · Gestão)
+   ============================================================ */
+function orgAtivos(){ return state.membros.filter(m=>m.status==='Ativo' || m.status==='Em pausa / avaliação'); }
+function orgGestorDe(m, ativos){ return (m.gestor_registro && ativos.find(x=>x.registro===m.gestor_registro)) || null; }
+function orgRaiz(ativos){
+  const raizes = ativos.filter(m=>!orgGestorDe(m, ativos));
+  const nsub = r => ativos.filter(m=>m.gestor_registro===r).length;
+  return (raizes.length?raizes:ativos).slice().sort((a,b)=>nsub(b.registro)-nsub(a.registro))[0];
+}
+function pageOrganizacao(){
+  const ativos = orgAtivos();
+  $('#main').innerHTML = `
+    <div class="pg-head"><span class="eyebrow">Quem é quem</span>
+      <h1>Organização</h1>
+      <p class="lead">A mesma visão de organização do SOMA: navegue pela cadeia de gestão,
+        colegas de equipe e liderados de cada pessoa.</p></div>
+    <div id="org-area"></div>`;
+  if (!ativos.length){ $('#org-area').innerHTML = '<div class="empty">Nenhum membro ativo cadastrado.</div>'; return; }
+  if (!state.orgFoco || !ativos.some(m=>m.registro===state.orgFoco)){
+    const eu = (state.perfil.registro && ativos.find(m=>m.registro===state.perfil.registro))
+      || ativos.find(m=>[m.email_nro,m.email_pessoal].some(e=>e && norm(e)===norm(state.perfil.email)));
+    state.orgFoco = (eu || orgRaiz(ativos)).registro;
+  }
+  desenhaOrg('');
+}
+function focarOrg(reg){ state.orgFoco = reg; desenhaOrg(''); }
+function cartaoOrg(m, ativos){
+  const lidera = ativos.filter(x=>x.gestor_registro===m.registro).length;
+  return `<button class="org-card" onclick="focarOrg(${m.registro})" title="${esc(m.nome)}">
+    ${avatarFoto(m, 38, 12)}
+    <span class="tx"><span class="nm">${esc(m.nome)}</span>
+    <span class="cg">${esc(m.cargo||'—')}${lidera?` · lidera ${lidera}`:''}${m.status!=='Ativo'?' · em pausa':''}</span></span></button>`;
+}
+function desenhaOrg(filtro){
+  const ativos = orgAtivos();
+  const foco = ativos.find(m=>m.registro===state.orgFoco);
+  if (!foco){ state.orgFoco=null; pageOrganizacao(); return; }
+  const cadeia = []; const vistos = new Set([foco.registro]);
+  let g = orgGestorDe(foco, ativos);
+  while (g && !vistos.has(g.registro) && cadeia.length<12){ cadeia.unshift(g); vistos.add(g.registro); g = orgGestorDe(g, ativos); }
+  const gestorImediato = cadeia.length ? cadeia[cadeia.length-1] : null;
+  const colegas = ativos.filter(m=> m.registro!==foco.registro &&
+      (gestorImediato ? m.gestor_registro===gestorImediato.registro : !orgGestorDe(m, ativos)))
+    .sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  const sub = ativos.filter(m=>m.gestor_registro===foco.registro)
+    .sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  const q = norm(filtro);
+  const achados = q ? ativos.filter(m=>norm(m.nome).includes(q) && m.registro!==foco.registro).slice(0,6) : [];
+  $('#org-area').innerHTML = `
+    <div class="org-busca">
+      <input id="org-q" placeholder="Buscar por nome…" value="${esc(filtro)}" oninput="desenhaOrg(this.value)">
+      ${achados.length?`<div class="org-res">${achados.map(m=>`<div class="op" onclick="focarOrg(${m.registro})">
+        ${avatarFoto(m, 26, 10)}
+        <span>${esc(m.nome)} <span style="color:var(--dim);font-size:12px">· ${esc(m.cargo||'')}</span></span></div>`).join('')}</div>`:''}
+    </div>
+    <div class="org-chain">
+      ${cadeia.map(m=>cartaoOrg(m, ativos)+'<span class="org-link"></span>').join('')}
+      <div class="org-card org-focus" style="cursor:default">
+        ${avatarFoto(foco, 54, 16)}
+        <span class="tx" style="flex:1;white-space:normal">
+          <span class="nm" style="font-size:15px;white-space:normal">${esc(foco.nome)}</span>
+          <span class="cg" style="white-space:normal">${esc(foco.cargo||'—')} · ${esc(foco.departamento||'—')}</span>
+          <span class="small" style="display:block;margin-top:3px">${esc(foco.email_nro||foco.email_pessoal||'')}</span>
+        </span>
+        <span class="pill"><span class="dt" style="background:${foco.status==='Ativo'?'var(--ok)':'var(--warn)'}"></span>${esc(foco.status)}</span>
+      </div>
+    </div>
+    <div class="org-bottom">
+      <div class="org-sec"><h4>Colegas de equipe (${colegas.length})</h4>
+        ${colegas.length? colegas.map(m=>cartaoOrg(m, ativos)).join('') : '<div class="empty">Ninguém mais responde ao mesmo gestor.</div>'}</div>
+      <div class="org-sec"><h4>Liderados diretos (${sub.length})</h4>
+        ${sub.length? sub.map(m=>cartaoOrg(m, ativos)).join('') : '<div class="empty">Sem liderados diretos.</div>'}</div>
+    </div>`;
+  if (q){ const inp = document.getElementById('org-q');
+    if (inp){ inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }
+}
+
+/* ============================================================
+   SERVIÇOS — solicitações ao Depto de Pessoal
+   ============================================================ */
+function pageServicos(sub){
+  if (sub) return formServico(sub);
+  const semReg = !state.perfil.registro;
+  $('#main').innerHTML = `
+    <div class="pg-head"><span class="eyebrow">Depto. de Pessoal</span>
+      <h1>Serviços</h1>
+      <p class="lead">Abra solicitações direto para o Departamento de Pessoal e acompanhe tudo
+        em <a href="#/pedidos" style="border-bottom:1px solid var(--line2)">Meus pedidos</a>.</p></div>
+    ${semReg ? `<div class="aviso-box warn">Sua conta ainda não está vinculada a um registro de membro,
+      então as solicitações ficam bloqueadas (a ouvidoria continua aberta). Fale com o Depto. de Pessoal.</div>` : ''}
+    <div class="srv-grid">
+      <a class="srv hero" href="#/servicos/acesso">
+        <span class="lb">O mais pedido</span>
+        <h3>Solicitação de acesso</h3>
+        <p>Precisa de acesso a um documento, sistema ou plataforma? Abra um ticket com a
+          justificativa e o tempo necessário — o Depto. de Pessoal concede e registra no SOMA.</p>
+        <span class="go">Abrir ticket →</span>
+      </a>
+      <a class="srv" href="#/servicos/afastamento">
+        <span class="lb">Pausa programada</span>
+        <h3>Afastamento temporário</h3>
+        <p>Provas, intercâmbio, saúde ou outro motivo: informe o período e o contexto.</p>
+        <span class="go">Solicitar →</span>
+      </a>
+      <a class="srv" href="#/servicos/reuniao_1_1">
+        <span class="lb">Conversa individual</span>
+        <h3>Reunião 1:1 com o gestor</h3>
+        <p>Agende uma conversa individual com o seu gestor imediato, com o tema que você quiser.</p>
+        <span class="go">Agendar →</span>
+      </a>
+      <a class="srv" href="#/servicos/desligamento">
+        <span class="lb">Até logo</span>
+        <h3>Pedido de desligamento</h3>
+        <p>Formalize a sua saída da equipe. O Depto. de Pessoal conduz a transição com você.</p>
+        <span class="go">Solicitar →</span>
+      </a>
+      <a class="srv anon" href="#/servicos/ouvidoria">
+        <span class="lb">100% anônima</span>
+        <h3>Ouvidoria</h3>
+        <p>Fale com a Gestão de Pessoas sem se identificar — nada do envio é ligado à sua conta.</p>
+        <span class="go">Enviar mensagem →</span>
+      </a>
+      <a class="srv" href="#/servicos/outro">
+        <span class="lb">Nenhuma das opções</span>
+        <h3>Outra solicitação</h3>
+        <p>Qualquer outro pedido para o Depto. de Pessoal que não se encaixe nas opções acima.</p>
+        <span class="go">Abrir pedido →</span>
+      </a>
+    </div>`;
+}
+
+const srvState = { tempo:null, catAcesso:'', urg:null };
+function formServico(tipo){
+  srvState.tempo = null; srvState.urg = null; srvState.catAcesso = '';
+  const semReg = !state.perfil.registro;
+  const bloqueio = (semReg && tipo!=='ouvidoria')
+    ? `<div class="aviso-box warn">Sua conta ainda não está vinculada a um registro de membro —
+        fale com o Depto. de Pessoal para liberar as solicitações.</div>` : '';
+  let corpo = '';
+  if (tipo==='acesso'){
+    const cats = [...new Set(state.itensAcesso.map(i=>i.categoria))];
+    const temCatalogo = state.itensAcesso.length > 0;
+    corpo = `
+      <h2>Solicitação de acesso</h2>
+      <p class="desc">Peça acesso a um documento, sistema, plataforma ou local. O ticket vai
+        para o Depto. de Pessoal, que responde por aqui.</p>
+      ${temCatalogo ? `
+      <div class="fld"><label>O que você precisa acessar?</label>
+        <select id="f-item" onchange="$('#f-item-outro-wrap').hidden = this.value !== '__outro'">
+          ${cats.map(c=>`<optgroup label="${esc(CAT_ACESSO[c]||c||'Outros')}">
+            ${state.itensAcesso.filter(i=>i.categoria===c).map(i=>
+              `<option value="${esc(i.id)}">${esc(i.nome)}</option>`).join('')}
+          </optgroup>`).join('')}
+          <option value="__outro">Outro — não está na lista</option>
+        </select></div>
+      <div class="fld" id="f-item-outro-wrap" hidden><label>Descreva o acesso</label>
+        <input id="f-item-outro" placeholder="ex.: pasta do projeto Órion no Drive"></div>`
+      : `<div class="fld"><label>O que você precisa acessar?</label>
+        <input id="f-item-outro" placeholder="ex.: repositório no GitHub, pasta do Drive, SOMA…"></div>`}
+      <div class="fld"><label>Justificativa</label>
+        <textarea id="f-just" rows="3" placeholder="Por que você precisa deste acesso? Em qual atividade ou projeto será usado?"></textarea>
+        <p class="mini">Mínimo de 10 caracteres — quanto mais contexto, mais rápida a análise.</p></div>
+      <div class="fld"><label>Por quanto tempo?</label>
+        <div class="chips" id="f-tempo">${TEMPOS.map(t=>
+          `<button type="button" class="chip" data-t="${esc(t)}" onclick="selTempo(this)">${esc(t)}</button>`).join('')}
+          <button type="button" class="chip" data-t="__outro" onclick="selTempo(this)">Outro…</button></div>
+        <div style="margin-top:10px" hidden id="f-tempo-outro-wrap">
+          <input id="f-tempo-outro" placeholder="ex.: até o fim do semestre"></div></div>
+      <div class="fld"><label>Observações <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+        <textarea id="f-obs" rows="2"></textarea></div>`;
+  }
+  else if (tipo==='afastamento'){
+    corpo = `
+      <h2>Afastamento temporário</h2>
+      <p class="desc">Informe o período em que você ficará afastado(a) e o motivo. O seu gestor
+        e o Depto. de Pessoal combinam a cobertura das suas atividades.</p>
+      <div style="display:flex;gap:12px"><div class="fld" style="flex:1"><label>Início</label>
+        <input id="f-ini" type="date" min="${hojeISO()}"></div>
+      <div class="fld" style="flex:1"><label>Fim</label>
+        <input id="f-fim" type="date" min="${hojeISO()}"></div></div>
+      <div class="fld"><label>Motivo</label>
+        <textarea id="f-motivo" rows="3" placeholder="ex.: semana de provas, intercâmbio, questões de saúde…"></textarea></div>
+      <div class="fld"><label>Observações <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+        <textarea id="f-obs" rows="2" placeholder="Combinados de transição, contatos, pendências…"></textarea></div>`;
+  }
+  else if (tipo==='desligamento'){
+    corpo = `
+      <h2>Pedido de desligamento</h2>
+      <p class="desc">Sentiremos a sua falta. Preencha os campos abaixo e o Depto. de Pessoal
+        entra em contato para conduzir a transição — devolução de acessos, certificado e despedida.</p>
+      <div class="fld"><label>Data pretendida de saída</label>
+        <input id="f-data" type="date" min="${hojeISO()}"></div>
+      <div class="fld"><label>Motivo</label>
+        <textarea id="f-motivo" rows="3" placeholder="Conte o que motivou a decisão — ajuda a equipe a melhorar."></textarea></div>
+      <div class="fld"><label>Observações <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+        <textarea id="f-obs" rows="2"></textarea></div>
+      <label class="check"><input type="checkbox" id="f-confirmo">
+        Entendo que este pedido formaliza a minha intenção de desligamento e que o Depto. de
+        Pessoal entrará em contato para os próximos passos.</label>`;
+  }
+  else if (tipo==='reuniao_1_1'){
+    const eu = state.membros.find(m=>m.registro===state.perfil.registro);
+    const gestor = eu?.gestor_registro ? state.membros.find(m=>m.registro===eu.gestor_registro) : null;
+    corpo = `
+      <h2>Reunião 1:1 com o gestor</h2>
+      <p class="desc">Uma conversa individual sobre o que você quiser: carreira, feedback,
+        projetos ou qualquer assunto. O Depto. de Pessoal articula a agenda com o seu gestor.</p>
+      ${gestor ? `<div class="aviso-box info" style="display:flex;align-items:center;gap:12px">
+        ${avatarFoto(gestor, 38, 12)}
+        <span>Seu gestor imediato: <b>${esc(gestor.nome)}</b><br>
+        <span style="font-size:12px">${esc(gestor.cargo||'')}${gestor.departamento?' · '+esc(gestor.departamento):''}</span></span></div>`
+      : `<div class="aviso-box warn">Não encontramos um gestor imediato definido na sua ficha —
+        o Depto. de Pessoal direciona a conversa para a pessoa certa.</div>`}
+      <div class="fld"><label>Tema da conversa</label>
+        <textarea id="f-tema" rows="3" placeholder="ex.: feedback do último ciclo, mudança de grupo, plano de desenvolvimento…"></textarea></div>
+      <div class="fld"><label>Preferência de horários <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+        <input id="f-pref" placeholder="ex.: terças e quintas à tarde"></div>
+      <div class="fld"><label>Urgência</label>
+        <div class="chips" id="f-urg">
+          ${['Esta semana','Próximas 2 semanas','Sem pressa'].map(u=>
+            `<button type="button" class="chip" data-u="${esc(u)}" onclick="selUrg(this)">${esc(u)}</button>`).join('')}
+        </div></div>`;
+  }
+  else if (tipo==='ouvidoria'){
+    corpo = `
+      <h2>Ouvidoria anônima</h2>
+      <p class="desc">Canal direto com a Gestão de Pessoas.</p>
+      <div class="aviso-box info"><b>Como funciona o anonimato:</b> a mensagem é gravada sem
+        nenhum vínculo com a sua conta — sem nome, sem e-mail, sem registro e com a data
+        truncada para o dia. Nem a diretoria consegue saber quem enviou. Por isso, não há
+        acompanhamento nem resposta individual: se quiser retorno, abra uma
+        <a href="#/servicos/outro" style="text-decoration:underline">solicitação identificada</a>.</div>
+      <div class="fld"><label>Assunto</label>
+        <div class="chips" id="f-cat">
+          <button type="button" class="chip on" data-c="gestao_pessoas" onclick="selCat(this)">Gestão de pessoas</button>
+          <button type="button" class="chip" data-c="conduta" onclick="selCat(this)">Conduta</button>
+          <button type="button" class="chip" data-c="sugestao" onclick="selCat(this)">Sugestão</button>
+          <button type="button" class="chip" data-c="outro" onclick="selCat(this)">Outro</button>
+        </div></div>
+      <div class="fld"><label>Mensagem</label>
+        <textarea id="f-msg" rows="6" placeholder="Escreva com liberdade. Evite se identificar no texto, se quiser manter o anonimato."></textarea>
+        <p class="mini">Mínimo de 15 caracteres.</p></div>`;
+  }
+  else if (tipo==='outro'){
+    corpo = `
+      <h2>Outra solicitação</h2>
+      <p class="desc">Qualquer pedido para o Depto. de Pessoal que não se encaixe nas demais opções.</p>
+      <div class="fld"><label>Título <span style="font-weight:400;text-transform:none">(opcional)</span></label>
+        <input id="f-titulo" placeholder="ex.: Declaração de participação"></div>
+      <div class="fld"><label>Descreva o pedido</label>
+        <textarea id="f-desc" rows="4"></textarea></div>`;
+  }
+  else { location.hash = '#/servicos'; return; }
+
+  $('#main').innerHTML = `
+    <div style="max-width:640px;margin:26px auto 0">
+      ${bloqueio}
+      <div class="form-card">
+        <a class="voltar" href="#/servicos">← Todos os serviços</a>
+        ${corpo}
+        <div class="acts">
+          <button class="btn solid" id="f-enviar" ${semReg && tipo!=='ouvidoria' ? 'disabled' : ''}
+            onclick="enviarServico('${tipo}')">${tipo==='ouvidoria'?'Enviar anonimamente':'Enviar solicitação'}</button>
+          <a class="btn ghost" href="#/servicos">Cancelar</a>
+        </div>
+        <p class="err-msg" id="f-erro"></p>
+      </div>
+    </div>`;
+}
+function selTempo(btn){
+  document.querySelectorAll('#f-tempo .chip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  srvState.tempo = btn.dataset.t;
+  $('#f-tempo-outro-wrap').hidden = btn.dataset.t !== '__outro';
+}
+function selUrg(btn){
+  document.querySelectorAll('#f-urg .chip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  srvState.urg = btn.dataset.u;
+}
+function selCat(btn){
+  document.querySelectorAll('#f-cat .chip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+}
+async function enviarServico(tipo){
+  const err = $('#f-erro'); err.textContent = '';
+  const val = id => ($(id)?.value || '').trim();
+
+  if (tipo==='ouvidoria'){
+    const cat = document.querySelector('#f-cat .chip.on')?.dataset.c || 'outro';
+    const msg = val('#f-msg');
+    if (msg.length < 15){ err.textContent = 'Escreva um pouco mais (mínimo de 15 caracteres).'; return; }
+    $('#f-enviar').disabled = true;
+    const { data, error } = await sb.rpc('portal_ouvidoria_enviar', { p_categoria:cat, p_mensagem:msg });
+    $('#f-enviar').disabled = false;
+    if (error || data?.status!=='ok'){
+      err.textContent = 'Não foi possível enviar: ' + (error?.message || data?.status || 'erro'); return; }
+    $('#main').innerHTML = `<div class="ok-page">
+      <div class="circ"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></div>
+      <h2>Mensagem enviada.</h2>
+      <p>Ela chegou à Gestão de Pessoas <b>sem nenhuma identificação</b>. Obrigado por contribuir
+        para uma equipe melhor.</p>
+      <div class="acts" style="justify-content:center"><a class="btn ghost" href="#/">Voltar ao início</a></div></div>`;
+    return;
+  }
+
+  let dados = {};
+  if (tipo==='acesso'){
+    let item = '', item_id = null, categoria = null;
+    const sel = $('#f-item');
+    if (sel && sel.value !== '__outro'){
+      const it = state.itensAcesso.find(i=>String(i.id)===sel.value);
+      item = it?.nome || sel.selectedOptions[0]?.text || '';
+      item_id = sel.value; categoria = it?.categoria || null;
+    } else item = val('#f-item-outro');
+    const just = val('#f-just');
+    let tempo = srvState.tempo === '__outro' ? val('#f-tempo-outro') : srvState.tempo;
+    if (!item || item.length<2){ err.textContent = 'Diga qual acesso você precisa.'; return; }
+    if (just.length<10){ err.textContent = 'A justificativa precisa de pelo menos 10 caracteres.'; return; }
+    if (!tempo){ err.textContent = 'Escolha por quanto tempo você precisa do acesso.'; return; }
+    dados = { item, item_id, categoria, justificativa:just, tempo_necessario:tempo,
+              observacoes: val('#f-obs') || null };
+  }
+  else if (tipo==='afastamento'){
+    const ini = val('#f-ini'), fim = val('#f-fim'), motivo = val('#f-motivo');
+    if (!ini || !fim){ err.textContent = 'Informe o período completo.'; return; }
+    if (fim < ini){ err.textContent = 'O fim precisa ser depois do início.'; return; }
+    if (motivo.length<5){ err.textContent = 'Descreva o motivo do afastamento.'; return; }
+    dados = { data_inicio:ini, data_fim:fim, motivo, observacoes: val('#f-obs') || null };
+  }
+  else if (tipo==='desligamento'){
+    const data = val('#f-data'), motivo = val('#f-motivo');
+    if (!data){ err.textContent = 'Informe a data pretendida.'; return; }
+    if (motivo.length<5){ err.textContent = 'Conte brevemente o motivo.'; return; }
+    if (!$('#f-confirmo').checked){ err.textContent = 'Confirme que entende o que este pedido formaliza.'; return; }
+    dados = { data_prevista:data, motivo, observacoes: val('#f-obs') || null };
+  }
+  else if (tipo==='reuniao_1_1'){
+    const tema = val('#f-tema');
+    if (tema.length<5){ err.textContent = 'Descreva o tema da conversa.'; return; }
+    const eu = state.membros.find(m=>m.registro===state.perfil.registro);
+    dados = { tema, preferencia: val('#f-pref') || null, urgencia: srvState.urg || null,
+              gestor_registro: eu?.gestor_registro || null };
+  }
+  else if (tipo==='outro'){
+    const desc = val('#f-desc');
+    if (desc.length<5){ err.textContent = 'Descreva o pedido.'; return; }
+    dados = { titulo: val('#f-titulo') || null, descricao: desc };
+  }
+
+  $('#f-enviar').disabled = true;
+  const { data, error } = await sb.rpc('portal_abrir_solicitacao', { p: { tipo, dados } });
+  $('#f-enviar').disabled = false;
+  if (error){ err.textContent = 'Não foi possível enviar: ' + error.message; return; }
+  if (data?.status === 'sem_vinculo'){
+    err.textContent = 'Sua conta não está vinculada a um registro de membro ativo — fale com o Depto. de Pessoal.'; return; }
+  if (data?.status !== 'ok'){
+    err.textContent = 'Verifique o campo: ' + (data?.campo || data?.status || 'dados inválidos'); return; }
+  $('#main').innerHTML = `<div class="ok-page">
+    <div class="circ"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></div>
+    <h2>Solicitação aberta.</h2>
+    <div class="prot">${esc(data.protocolo)}</div>
+    <p>O Depto. de Pessoal recebeu o seu pedido. Acompanhe o andamento e a resposta em
+      <b>Meus pedidos</b>.</p>
+    <div class="acts" style="justify-content:center">
+      <a class="btn solid" href="#/pedidos">Ver meus pedidos</a>
+      <a class="btn ghost" href="#/servicos">Novo pedido</a></div></div>`;
+}
+
+/* ============================================================
+   MEUS PEDIDOS
+   ============================================================ */
+const pedAbertos = new Set();
+async function pagePedidos(){
+  $('#main').innerHTML = `
+    <div class="pg-head"><span class="eyebrow">Acompanhamento</span>
+      <h1>Meus pedidos</h1>
+      <p class="lead">Todas as suas solicitações ao Depto. de Pessoal, com status e resposta.
+        A ouvidoria não aparece aqui — ela é anônima por projeto.</p></div>
+    <div id="ped-lista"><div class="carregando"><span class="spin"></span> Carregando…</div></div>`;
+  if (!state.perfil.registro){
+    $('#ped-lista').innerHTML = `<div class="aviso-box warn">Sua conta ainda não está vinculada a um
+      registro de membro — sem vínculo, não há pedidos para mostrar.</div>`;
+    return;
+  }
+  const { data, error } = await sb.from('portal_solicitacoes').select('*')
+    .eq('registro', state.perfil.registro).order('criado_em', {ascending:false});
+  if (error){ $('#ped-lista').innerHTML = `<div class="empty">Erro ao carregar: ${esc(error.message)}</div>`; return; }
+  state.pedidos = data || [];
+  desenhaPedidos();
+}
+function desenhaPedidos(){
+  const el = $('#ped-lista'); if(!el) return;
+  if (!state.pedidos.length){
+    el.innerHTML = `<div class="empty">Você ainda não abriu nenhuma solicitação.<br>
+      Comece pelos <a href="#/servicos" style="text-decoration:underline">Serviços</a>.</div>`;
+    return;
+  }
+  el.innerHTML = state.pedidos.map(p=>{
+    const st = STATUS_SOL[p.status] || {l:p.status, c:'#8E8E93'};
+    const aberto = pedAbertos.has(p.id);
+    return `<div class="ped" onclick="togglePedido('${p.id}')">
+      <div class="top">
+        <span class="prot">${esc(p.protocolo||'—')}</span>
+        <span class="t">${esc(p.titulo)}</span>
+        <span class="pill"><span class="dt" style="background:${st.c}"></span>${st.l}</span>
+        <span class="quando">${new Date(p.criado_em).toLocaleDateString('pt-BR')}</span>
+      </div>
+      ${aberto ? `<div class="det" onclick="event.stopPropagation()">
+        <div class="dl">${dadosPedido(p)}</div>
+        ${p.resposta ? `<div class="resposta">${esc(p.resposta)}
+          <div class="quem">${esc(p.respondido_por||'Depto. de Pessoal')}${p.respondido_em?' · '+new Date(p.respondido_em).toLocaleDateString('pt-BR'):''}</div></div>` : ''}
+        ${['aberta','em_analise'].includes(p.status) ? `<div class="acts">
+          <button class="btn perigo" onclick="cancelarPedido('${p.id}')">Cancelar solicitação</button></div>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+function togglePedido(id){
+  pedAbertos.has(id) ? pedAbertos.delete(id) : pedAbertos.add(id);
+  desenhaPedidos();
+}
+function dadosPedido(p){
+  const d = p.dados || {};
+  const it = (dt, dd, full) => dd ? `<div class="it ${full?'full':''}"><dt>${dt}</dt><dd>${esc(dd)}</dd></div>` : '';
+  if (p.tipo==='acesso') return [
+    it('Acesso', d.item), it('Categoria', CAT_ACESSO[d.categoria]||d.categoria),
+    it('Tempo necessário', d.tempo_necessario),
+    it('Justificativa', d.justificativa, true), it('Observações', d.observacoes, true)].join('');
+  if (p.tipo==='afastamento') return [
+    it('Período', `${fmtD(d.data_inicio)} a ${fmtD(d.data_fim)}`),
+    it('Motivo', d.motivo, true), it('Observações', d.observacoes, true)].join('');
+  if (p.tipo==='desligamento') return [
+    it('Data pretendida', fmtD(d.data_prevista)),
+    it('Motivo', d.motivo, true), it('Observações', d.observacoes, true)].join('');
+  if (p.tipo==='reuniao_1_1') return [
+    it('Gestor', d.gestor_registro ? nomeDe(d.gestor_registro) : null),
+    it('Urgência', d.urgencia), it('Preferência', d.preferencia),
+    it('Tema', d.tema, true)].join('');
+  return it('Descrição', d.descricao || '—', true);
+}
+async function cancelarPedido(id){
+  const p = state.pedidos.find(x=>x.id===id);
+  abreModal(`<h3>Cancelar solicitação</h3>
+    <p style="font-size:13.5px;color:var(--muted)">Cancelar <b class="mono">${esc(p?.protocolo||'')}</b> —
+      ${esc(p?.titulo||'')}? O Depto. de Pessoal deixa de tratá-la.</p>
+    <div class="acts">
+      <button class="btn ghost" onclick="fechaModal()">Manter</button>
+      <button class="btn perigo" onclick="confirmarCancelamento('${id}')">Cancelar solicitação</button></div>`);
+}
+async function confirmarCancelamento(id){
+  fechaModal();
+  const { data, error } = await sb.rpc('portal_cancelar_solicitacao', { p_id: id });
+  if (error || data?.status!=='ok'){ toast('Não foi possível cancelar: '+(error?.message||data?.status), true); return; }
+  toast('Solicitação cancelada.');
+  pagePedidos();
+}
+
+boot();
+</script>
+</body>
+</html>
