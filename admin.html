@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#050807">
+<title>Portal · Pessoal — NeuroDynamics</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2300352F'/%3E%3Ccircle cx='11' cy='16' r='5' fill='%23F5F5F7'/%3E%3Ccircle cx='23' cy='9.5' r='2.8' fill='%23F5F5F7'/%3E%3Ccircle cx='23' cy='22.5' r='2.8' fill='%23F5F5F7'/%3E%3Cpath d='M15 13.8 20.6 10.6M15 18.2 20.6 21.4' stroke='%23CEDC00' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050807; --panel:#0B1210; --ink:#F5F5F7; --muted:#9AA5A1; --dim:#616C68;
+  --line:rgba(245,245,247,.08); --line2:rgba(245,245,247,.16);
+  --deep:#00352F; --green:#00594F; --syn:#CEDC00; --teal:#2DD4BF;
+  --bad:#F1806F; --ok:#4ADE97; --warn:#F5C36A; --info:#7FA7F2;
+  --card:rgba(255,255,255,.03); --r:16px;
+  --fd:'Archivo',-apple-system,sans-serif; --fm:'IBM Plex Mono',monospace;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;min-height:100vh}
+h1,h2,h3{font-family:var(--fd);letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;color:inherit;border:none;background:none;font-size:inherit}
+input,textarea,select{font-family:inherit;font-size:14px;color:var(--ink)}
+[hidden]{display:none!important}
+::selection{background:var(--syn);color:var(--deep)}
+body::before{content:'';position:fixed;inset:0;z-index:-1;
+  background:radial-gradient(110% 80% at 75% -10%, #081511 0%, var(--bg) 58%)}
+
+.wrap{max-width:1160px;margin:0 auto;padding:26px 22px 90px}
+.top{display:flex;align-items:center;gap:14px;padding:6px 0 20px;border-bottom:1px solid var(--line);margin-bottom:22px;flex-wrap:wrap}
+.top img{height:17px;filter:brightness(0) invert(1)}
+.logotype{font-family:var(--fd);font-weight:700;font-size:15.5px;letter-spacing:-.02em;white-space:nowrap}
+.top .tag{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--syn);border:1px solid rgba(206,220,0,.35);border-radius:999px;padding:3px 10px}
+.top .who{margin-left:auto;font-family:var(--fm);font-size:11px;color:var(--dim)}
+.top .sair{font-size:12.5px;color:var(--muted);border:1px solid var(--line2);border-radius:9px;padding:6px 12px}
+.top .sair:hover{color:var(--ink);border-color:var(--dim)}
+
+.abas{display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap}
+.abas button{font-family:var(--fd);font-weight:600;font-size:13px;color:var(--muted);
+  padding:9px 16px;border-radius:10px;border:1px solid transparent}
+.abas button:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+.abas button.on{color:var(--ink);border-color:var(--line2);background:var(--card)}
+.abas button .n{font-family:var(--fm);font-size:10px;color:var(--syn);margin-left:6px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 18px;border-radius:11px;
+  font-family:var(--fd);font-weight:600;font-size:13px;transition:transform .15s,box-shadow .15s;white-space:nowrap}
+.btn.solid{background:var(--syn);color:var(--deep)}
+.btn.solid:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(206,220,0,.25)}
+.btn.ghost{border:1px solid var(--line2);color:var(--ink);background:rgba(255,255,255,.03)}
+.btn.ghost:hover{background:rgba(255,255,255,.07)}
+.btn.perigo{border:1px solid rgba(241,128,111,.4);color:var(--bad)}
+.btn.perigo:hover{background:rgba(241,128,111,.08)}
+.btn.mini{height:32px;padding:0 12px;font-size:12px;border-radius:9px}
+.btn[disabled]{opacity:.5;pointer-events:none}
+
+.login{max-width:380px;margin:14vh auto 0;background:var(--panel);border:1px solid var(--line2);
+  border-radius:20px;padding:30px;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+.login h1{font-size:19px;margin-bottom:4px}
+.login .hint{font-size:12.5px;color:var(--muted);margin-bottom:20px}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--muted);
+  margin-bottom:6px;text-transform:uppercase}
+.fld input,.fld textarea,.fld select{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line2);
+  border-radius:11px;padding:10px 12px;transition:border-color .15s;outline:none}
+.fld textarea{resize:vertical}
+.fld select option{background:var(--panel);color:var(--ink)}
+.fld input:focus,.fld textarea:focus,.fld select:focus{border-color:var(--syn);background:rgba(206,220,0,.04)}
+.fld .mini{font-size:11.5px;color:var(--dim);margin-top:4px}
+
+.editor{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+@media (max-width:860px){.editor{grid-template-columns:1fr}}
+.lista{display:flex;flex-direction:column;gap:8px}
+.lista .item{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid var(--line);
+  border-radius:13px;padding:12px 14px;background:var(--card);transition:border-color .15s;width:100%}
+.lista .item:hover{border-color:var(--dim)}
+.lista .item.on{border-color:var(--syn);background:rgba(206,220,0,.05)}
+.lista .item .nm{font-family:var(--fd);font-weight:600;font-size:14px;display:block}
+.lista .item .sl{font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.lista .item .off{margin-left:auto;font-family:var(--fm);font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--bad);border:1px solid rgba(241,128,111,.35);border-radius:3px;padding:2px 6px}
+.form{background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:26px}
+.form h2{font-size:17px;margin-bottom:2px}
+.form .sub{font-size:12px;color:var(--dim);margin-bottom:20px;font-family:var(--fm)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.fgrid .full{grid-column:1/-1}
+@media (max-width:640px){.fgrid{grid-template-columns:1fr}}
+.check{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted);
+  border:1px solid var(--line2);border-radius:11px;padding:10px 13px;cursor:pointer}
+.check input{width:16px;height:16px;accent-color:var(--syn);cursor:pointer}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;align-items:center}
+.vazio{padding:40px 20px;text-align:center;color:var(--muted);border:1.5px dashed var(--line2);border-radius:var(--r)}
+.aviso-box{border-radius:12px;padding:12px 15px;font-size:13px;border:1px solid;margin-bottom:16px;line-height:1.55}
+.aviso-box.err{background:rgba(241,128,111,.09);border-color:rgba(241,128,111,.35);color:#F5B0A5}
+.aviso-box.info{background:rgba(127,167,242,.07);border-color:rgba(127,167,242,.3);color:#B9CEF5}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:99;display:flex;
+  flex-direction:column;gap:8px;align-items:center}
+.toast{background:#151B19;border:1px solid var(--line2);color:var(--ink);border-radius:12px;
+  padding:11px 18px;font-size:13px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.toast.err{border-color:rgba(241,128,111,.4);color:#F5B0A5}
+.spin{width:18px;height:18px;border:2.5px solid var(--line2);border-top-color:var(--syn);border-radius:50%;
+  animation:gira .8s linear infinite;display:inline-block}
+@keyframes gira{to{transform:rotate(360deg)}}
+.carregando{display:flex;align-items:center;justify-content:center;gap:12px;padding:60px 0;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--fm);font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line2);
+  border-radius:999px;padding:3px 10px;color:var(--muted);white-space:nowrap}
+.pill .dt{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.mono{font-family:var(--fm)}
+
+/* pré-visualização do aviso */
+.preview{border-radius:16px;padding:22px 24px;position:relative;overflow:hidden;min-height:130px;
+  display:flex;flex-direction:column;justify-content:center;gap:6px;margin-bottom:18px}
+.preview h3{font-size:19px;font-weight:600;line-height:1.15}
+.preview p{color:var(--muted);font-size:12.5px}
+.preview .sl-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:9.5px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.preview .sl-tag::before{content:'';width:6px;height:6px;background:var(--syn)}
+.pv-padrao{background:var(--card);border:1px solid var(--line)}
+.pv-destaque{background:linear-gradient(118deg,var(--deep) 0%,var(--green) 62%,#0A6F62 100%);
+  border:1px solid rgba(206,220,0,.18)}
+.pv-destaque p{color:rgba(245,245,247,.78)}
+.pv-urgente{background:var(--panel);border:1px solid rgba(241,128,111,.45)}
+.pv-urgente .sl-tag{color:var(--bad)}.pv-urgente .sl-tag::before{background:var(--bad)}
+.pv-conquista{background:var(--card);border:1px solid rgba(206,220,0,.32)}
+.pv-conquista .sl-tag{color:var(--syn)}
+.pv-evento{background:var(--card);border:1px solid var(--line);flex-direction:row;align-items:center;gap:18px}
+.pv-evento .quando{flex-shrink:0;text-align:center;border-right:1px solid var(--line2);padding-right:18px}
+.pv-evento .quando .d{font-family:var(--fd);font-size:34px;font-weight:700;line-height:1}
+.pv-evento .quando .m{font-family:var(--fm);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--syn);margin-top:4px}
+
+/* solicitações */
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.chip{padding:7px 13px;border-radius:16px;font-size:12.5px;font-weight:500;
+  background:rgba(255,255,255,.04);border:1px solid var(--line2);color:var(--muted)}
+.chip:hover{border-color:var(--dim);color:var(--ink)}
+.chip.on{background:var(--syn);border-color:var(--syn);color:var(--deep);font-weight:600}
+.chip .n{font-family:var(--fm);font-size:10px;margin-left:5px}
+.sol{border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+.sol:hover{border-color:var(--line2)}
+.sol .top-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sol .prot{font-family:var(--fm);font-size:11px;color:var(--dim)}
+.sol .t{font-family:var(--fd);font-weight:600;font-size:14.5px;flex:1;min-width:160px}
+.sol .quem{font-size:12px;color:var(--muted)}
+.sol .quando{font-size:11px;color:var(--dim)}
+.sol .det{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;cursor:default}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;font-size:13px}
+@media (max-width:640px){.dl{grid-template-columns:1fr}}
+.dl .it dt{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:2px}
+.dl .it dd{white-space:pre-wrap}
+.dl .it.full{grid-column:1/-1}
+.st-btns{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 10px}
+
+/* ouvidoria */
+.ouv{border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  padding:16px 18px;margin-bottom:10px}
+.ouv .meta{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.ouv .msg{font-size:14px;white-space:pre-wrap}
+.ouv.tratado{opacity:.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <img id="logo" src="" alt="NeuroDynamics">
+    <span class="tag">Portal · Pessoal</span>
+    <span class="who" id="who" hidden></span>
+    <button class="sair" id="btn-sair" hidden onclick="sair()">Sair</button>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="login" id="v-login" hidden>
+    <h1>Painel do Portal do Membro</h1>
+    <p class="hint">Entre com a sua conta do SOMA. O painel é liberado para os papéis
+      <b>admin</b> e <b>pessoal</b>.</p>
+    <div class="fld"><label>E-mail</label><input id="l-email" type="email" autocomplete="email"></div>
+    <div class="fld"><label>Senha</label><input id="l-senha" type="password" autocomplete="current-password"></div>
+    <button class="btn solid" style="width:100%;justify-content:center" onclick="entrar()">Entrar</button>
+    <p class="fld mini" id="l-erro" style="color:var(--bad);margin-top:12px" hidden></p>
+  </div>
+
+  <!-- SEM PERMISSÃO -->
+  <div id="v-negado" hidden>
+    <div class="vazio" style="max-width:520px;margin:12vh auto 0">
+      <h2 style="margin-bottom:8px">Acesso restrito</h2>
+      <p>Este painel é do Depto. de Pessoal (papéis <b>admin</b> e <b>pessoal</b>).<br>
+      O portal dos membros fica em <a href="index.html" style="text-decoration:underline">membro.neurodynamics.dev</a>.</p>
+      <button class="btn ghost" style="margin-top:18px" onclick="sair()">Entrar com outra conta</button>
+    </div>
+  </div>
+
+  <!-- PAINEL -->
+  <div id="v-painel" hidden>
+    <div class="abas">
+      <button id="aba-avisos" class="on" onclick="trocarAba('avisos')">Quadro de avisos</button>
+      <button id="aba-solicitacoes" onclick="trocarAba('solicitacoes')">Solicitações<span class="n" id="n-sol"></span></button>
+      <button id="aba-ouvidoria" onclick="trocarAba('ouvidoria')">Ouvidoria<span class="n" id="n-ouv"></span></button>
+    </div>
+    <section id="sec-avisos"></section>
+    <section id="sec-solicitacoes" hidden></section>
+    <section id="sec-ouvidoria" hidden></section>
+  </div>
+
+  <div class="carregando" id="v-carregando"><span class="spin"></span> Carregando…</div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* CONFIG — mesmos dados do SOMA (Settings -> API no Supabase). */
+const CONFIG = {
+  SUPABASE_URL: 'https://rxzmkyjttzzpwtodqkve.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_MJFR-aaQqTS1BthxYJG2kg_5XGhs9wg'
+};
+const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
+
+const sb = window.supabase ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
+const $ = s => document.querySelector(s);
+const esc = v => v == null ? '' : String(v).replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg, err){ const t=document.createElement('div'); t.className='toast'+(err?' err':'');
+  t.textContent=msg; $('#toast').appendChild(t); setTimeout(()=>t.remove(), 4800); }
+function fmtD(iso){ if(!iso) return '—'; const [a,m,d]=String(iso).split('T')[0].split('-'); return `${d}/${m}/${a}`; }
+
+const LAYOUTS = {padrao:'Padrão', destaque:'Destaque (banda verde)', urgente:'Urgente',
+                 evento:'Evento (bloco de data)', conquista:'Conquista'};
+const STATUS_SOL = {
+  aberta:     {l:'Aberta',     c:'#2DD4BF'},
+  em_analise: {l:'Em análise', c:'#F5C36A'},
+  aprovada:   {l:'Aprovada',   c:'#4ADE97'},
+  recusada:   {l:'Recusada',   c:'#F1806F'},
+  concluida:  {l:'Concluída',  c:'#4ADE97'},
+  cancelada:  {l:'Cancelada',  c:'#8E8E93'}
+};
+const TIPOS_SOL = {acesso:'Acesso', afastamento:'Afastamento', desligamento:'Desligamento',
+                   reuniao_1_1:'Reunião 1:1', outro:'Geral'};
+const CAT_ACESSO = {documento:'Documento', sistema:'Sistema / plataforma', local:'Local'};
+const MES_CURTO = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+const state = { perfil:null, membros:[], avisos:[], sel:null, sols:[], filtro:'pendentes',
+                ouvidoria:[], solAbertas:new Set() };
+const nomeDe = r => state.membros.find(m=>m.registro===r)?.nome || ('Registro '+r);
+function quemSouEu(){ return state.perfil?.nome || state.perfil?.email || '—'; }
+
+function mostra(view){
+  ['v-login','v-negado','v-painel','v-carregando'].forEach(id => $('#'+id).hidden = (id !== view));
+}
+
+/* ---------------- sessão ---------------- */
+async function boot(){
+  const lg = $('#logo');
+  lg.onerror = () => { const s=document.createElement('span'); s.className='logotype'; s.textContent='NeuroDynamics'; lg.replaceWith(s); };
+  lg.src = LOGO_URL;
+  if (!sb){ mostra('v-login'); $('#l-erro').textContent='Não foi possível carregar a biblioteca do Supabase.'; $('#l-erro').hidden=false; return; }
+  const { data:{ session } } = await sb.auth.getSession();
+  if (session) await abrir(); else mostra('v-login');
+}
+async function entrar(){
+  $('#l-erro').hidden = true;
+  const email = $('#l-email').value.trim(), senha = $('#l-senha').value;
+  if (!email || !senha) return;
+  mostra('v-carregando');
+  const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+  if (error){ mostra('v-login'); $('#l-erro').textContent = 'Não foi possível entrar: ' + error.message; $('#l-erro').hidden = false; return; }
+  await abrir();
+}
+async function sair(){ await sb.auth.signOut(); location.reload(); }
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && !$('#v-login').hidden) entrar(); });
+
+async function abrir(){
+  const { data:{ user } } = await sb.auth.getUser();
+  const { data: perfil, error } = await sb.from('perfis')
+    .select('id,nome,email,papel,registro').eq('id', user.id).single();
+  if (error || !perfil){ toast('Não foi possível carregar seu perfil.', true); mostra('v-login'); return; }
+  state.perfil = perfil;
+  $('#who').textContent = perfil.email; $('#who').hidden = false; $('#btn-sair').hidden = false;
+  if (!['admin','pessoal'].includes(perfil.papel)){ mostra('v-negado'); return; }
+  const m = await sb.from('membros').select('registro,nome,cargo,departamento').order('nome');
+  state.membros = m.data || [];
+  await Promise.all([carregarAvisos(), carregarSols(), carregarOuvidoria()]);
+  mostra('v-painel');
+}
+
+function trocarAba(ab){
+  ['avisos','solicitacoes','ouvidoria'].forEach(t=>{
+    $('#sec-'+t).hidden = (t!==ab);
+    $('#aba-'+t).classList.toggle('on', t===ab);
+  });
+}
+
+/* ============================================================
+   ABA 1 — QUADRO DE AVISOS
+   ============================================================ */
+async function carregarAvisos(){
+  const { data, error } = await sb.from('portal_avisos').select('*')
+    .order('ordem').order('criado_em', {ascending:false});
+  if (error){
+    $('#sec-avisos').innerHTML = `<div class="aviso-box err">Erro ao carregar os avisos: ${esc(error.message)}.
+      A migração <b>soma_v10.sql</b> foi aplicada?</div>`;
+    return;
+  }
+  state.avisos = data || [];
+  if (!state.sel || !state.avisos.find(a=>a.id===state.sel))
+    state.sel = state.avisos[0]?.id || null;
+  desenhaAvisos();
+}
+function desenhaAvisos(){
+  $('#sec-avisos').innerHTML = `
+    <div class="aviso-box info">O quadro rotaciona os avisos <b>publicados</b> na home do portal,
+      na ordem definida. Layouts: banda verde para destaques, coral para urgências, bloco de data
+      para eventos e acento lima para conquistas.</div>
+    <div class="editor">
+      <div>
+        <div class="lista" id="av-lista">${state.avisos.length ? state.avisos.map(a=>`
+          <button class="item ${a.id===state.sel?'on':''}" onclick="selAviso('${a.id}')">
+            <span><span class="nm">${esc(a.titulo)}</span>
+            <span class="sl">${esc(LAYOUTS[a.layout]||a.layout)} · ordem ${esc(a.ordem)}</span></span>
+            ${a.publicado ? '' : '<span class="off">oculto</span>'}
+          </button>`).join('')
+          : '<div class="vazio">Nenhum aviso ainda.</div>'}</div>
+        <button class="btn ghost" style="width:100%;justify-content:center;margin-top:12px" onclick="novoAviso()">+ Novo aviso</button>
+      </div>
+      <div class="form" id="av-form"></div>
+    </div>`;
+  desenhaFormAviso();
+}
+function selAviso(id){ state.sel = id; desenhaAvisos(); }
+function previewAviso(a){
+  const TAGS = {padrao:'Aviso', destaque:'Quadro de avisos', urgente:'Urgente',
+                conquista:'Conquista', evento:'Evento'};
+  if (a.layout==='evento'){
+    const d = a.data_evento || a.data_inicio;
+    const dt = d ? new Date(d+'T12:00') : null;
+    return `<div class="preview pv-evento">
+      ${dt?`<div class="quando"><div class="d">${dt.getDate()}</div><div class="m">${MES_CURTO[dt.getMonth()]}</div></div>`:''}
+      <div><span class="sl-tag">${TAGS.evento}</span>
+      <h3>${esc(a.titulo||'Título do aviso')}</h3>
+      ${a.corpo?`<p>${esc(a.corpo)}</p>`:''}</div></div>`;
+  }
+  return `<div class="preview pv-${esc(a.layout||'padrao')}">
+    <span class="sl-tag">${TAGS[a.layout]||'Aviso'}</span>
+    <h3>${esc(a.titulo||'Título do aviso')}</h3>
+    ${a.corpo?`<p>${esc(a.corpo)}</p>`:''}</div>`;
+}
+function lerFormAviso(){
+  return {
+    titulo: $('#a-titulo').value.trim(),
+    corpo: $('#a-corpo').value.trim() || null,
+    layout: $('#a-layout').value,
+    link_url: $('#a-url').value.trim() || null,
+    link_rotulo: $('#a-rotulo').value.trim() || null,
+    data_evento: $('#a-devento').value || null,
+    data_inicio: $('#a-dini').value || null,
+    data_fim: $('#a-dfim').value || null,
+    ordem: parseInt($('#a-ordem').value, 10) || 100,
+    publicado: $('#a-pub').checked
+  };
+}
+function desenhaFormAviso(){
+  const a = state.avisos.find(x=>x.id===state.sel);
+  const el = $('#av-form'); if(!el) return;
+  if (!a){ el.innerHTML = '<div class="vazio">Selecione ou crie um aviso.</div>'; return; }
+  el.innerHTML = `
+    <h2>${esc(a.titulo)}</h2>
+    <p class="sub">id ${esc(a.id).slice(0,8)} · atualizado ${a.atualizado_em?new Date(a.atualizado_em).toLocaleString('pt-BR'):'—'}</p>
+    <div id="a-preview">${previewAviso(a)}</div>
+    <div class="fgrid">
+      <div class="fld full"><label>Título</label><input id="a-titulo" value="${esc(a.titulo)}" oninput="atualizaPreview()"></div>
+      <div class="fld full"><label>Corpo (1–2 frases)</label>
+        <textarea id="a-corpo" rows="2" oninput="atualizaPreview()">${esc(a.corpo||'')}</textarea></div>
+      <div class="fld"><label>Layout</label>
+        <select id="a-layout" onchange="atualizaPreview();$('#a-devento-wrap').style.display=this.value==='evento'?'':'none'">
+          ${Object.entries(LAYOUTS).map(([k,l])=>`<option value="${k}" ${a.layout===k?'selected':''}>${l}</option>`).join('')}
+        </select></div>
+      <div class="fld" id="a-devento-wrap" style="${a.layout==='evento'?'':'display:none'}">
+        <label>Data do evento (bloco de data)</label>
+        <input id="a-devento" type="date" value="${esc(a.data_evento||'')}" onchange="atualizaPreview()"></div>
+      <div class="fld"><label>Link (opcional)</label><input id="a-url" value="${esc(a.link_url||'')}" placeholder="https://…"></div>
+      <div class="fld"><label>Rótulo do link</label><input id="a-rotulo" value="${esc(a.link_rotulo||'')}" placeholder="Saiba mais"></div>
+      <div class="fld"><label>Exibir a partir de (vazio = já)</label><input id="a-dini" type="date" value="${esc(a.data_inicio||'')}"></div>
+      <div class="fld"><label>Exibir até (vazio = sem prazo)</label><input id="a-dfim" type="date" value="${esc(a.data_fim||'')}"></div>
+      <div class="fld"><label>Ordem no rodízio</label><input id="a-ordem" type="number" value="${esc(a.ordem)}"></div>
+      <label class="check" style="align-self:end"><input id="a-pub" type="checkbox" ${a.publicado?'checked':''}>
+        Publicado no portal</label>
+    </div>
+    <div class="acts">
+      <button class="btn solid" id="a-salvar" onclick="salvarAviso('${a.id}')">Salvar alterações</button>
+      <button class="btn perigo" onclick="excluirAviso('${a.id}')">Excluir</button>
+    </div>`;
+}
+function atualizaPreview(){
+  const el = $('#a-preview'); if(!el) return;
+  el.innerHTML = previewAviso(lerFormAviso());
+}
+async function salvarAviso(id){
+  const v = lerFormAviso();
+  if (!v.titulo){ toast('O título é obrigatório.', true); return; }
+  if (v.data_inicio && v.data_fim && v.data_fim < v.data_inicio){ toast('O fim da exibição vem antes do início.', true); return; }
+  $('#a-salvar').disabled = true;
+  const { error } = await sb.from('portal_avisos').update(v).eq('id', id);
+  $('#a-salvar').disabled = false;
+  if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
+  toast('Aviso salvo' + (v.publicado ? ' — já está girando no portal.' : ' (oculto).'));
+  await carregarAvisos();
+}
+async function novoAviso(){
+  const titulo = prompt('Título do novo aviso:');
+  if (!titulo) return;
+  const { data, error } = await sb.from('portal_avisos')
+    .insert({ titulo, layout:'padrao', publicado:false,
+      ordem: 100 + state.avisos.length * 10, criado_por: quemSouEu() })
+    .select().single();
+  if (error){ toast('Erro ao criar: ' + error.message, true); return; }
+  toast('Aviso criado (começa oculto — publique quando estiver pronto).');
+  state.sel = data.id;
+  await carregarAvisos();
+}
+async function excluirAviso(id){
+  const a = state.avisos.find(x=>x.id===id);
+  if (!confirm(`Excluir "${a?.titulo}"? Se for temporário, prefira desmarcar "Publicado".`)) return;
+  const { error } = await sb.from('portal_avisos').delete().eq('id', id);
+  if (error){ toast('Erro ao excluir: ' + error.message, true); return; }
+  toast('Aviso excluído.');
+  state.sel = null;
+  await carregarAvisos();
+}
+
+/* ============================================================
+   ABA 2 — SOLICITAÇÕES
+   ============================================================ */
+async function carregarSols(){
+  const { data, error } = await sb.from('portal_solicitacoes').select('*')
+    .order('criado_em', {ascending:false});
+  if (error){
+    $('#sec-solicitacoes').innerHTML = `<div class="aviso-box err">Erro ao carregar: ${esc(error.message)}</div>`;
+    return;
+  }
+  state.sols = data || [];
+  const pend = state.sols.filter(s=>['aberta','em_analise'].includes(s.status)).length;
+  $('#n-sol').textContent = pend ? pend : '';
+  desenhaSols();
+}
+function desenhaSols(){
+  const f = state.filtro;
+  const lista = state.sols.filter(s =>
+    f==='todas' ? true :
+    f==='pendentes' ? ['aberta','em_analise'].includes(s.status) :
+    s.status===f);
+  const conta = k => k==='todas' ? state.sols.length
+    : k==='pendentes' ? state.sols.filter(s=>['aberta','em_analise'].includes(s.status)).length
+    : state.sols.filter(s=>s.status===k).length;
+  const chips = [['pendentes','Pendentes'],['todas','Todas'],['aprovada','Aprovadas'],
+                 ['recusada','Recusadas'],['concluida','Concluídas'],['cancelada','Canceladas']];
+  $('#sec-solicitacoes').innerHTML = `
+    <div class="filtros">${chips.map(([k,l])=>
+      `<button class="chip ${f===k?'on':''}" onclick="state.filtro='${k}';desenhaSols()">${l}<span class="n">${conta(k)}</span></button>`).join('')}</div>
+    ${lista.length ? lista.map(cartaoSol).join('')
+      : '<div class="vazio">Nada por aqui com esse filtro.</div>'}`;
+}
+function cartaoSol(s){
+  const st = STATUS_SOL[s.status] || {l:s.status, c:'#8E8E93'};
+  const aberto = state.solAbertas.has(s.id);
+  const d = s.dados || {};
+  const it = (dt, dd, full) => dd ? `<div class="it ${full?'full':''}"><dt>${dt}</dt><dd>${esc(dd)}</dd></div>` : '';
+  let campos = '';
+  if (s.tipo==='acesso') campos = [
+    it('Acesso', d.item), it('Categoria', CAT_ACESSO[d.categoria]||d.categoria),
+    it('Tempo necessário', d.tempo_necessario),
+    it('Justificativa', d.justificativa, true), it('Observações', d.observacoes, true)].join('');
+  else if (s.tipo==='afastamento') campos = [
+    it('Período', `${fmtD(d.data_inicio)} a ${fmtD(d.data_fim)}`),
+    it('Motivo', d.motivo, true), it('Observações', d.observacoes, true)].join('');
+  else if (s.tipo==='desligamento') campos = [
+    it('Data pretendida', fmtD(d.data_prevista)),
+    it('Motivo', d.motivo, true), it('Observações', d.observacoes, true)].join('');
+  else if (s.tipo==='reuniao_1_1') campos = [
+    it('Gestor', d.gestor_registro ? nomeDe(d.gestor_registro) : null),
+    it('Urgência', d.urgencia), it('Preferência', d.preferencia), it('Tema', d.tema, true)].join('');
+  else campos = it('Descrição', d.descricao, true);
+  const stBtn = (novo, label, cls) =>
+    `<button class="btn mini ${cls||'ghost'}" onclick="mudarStatus('${s.id}','${novo}')">${label}</button>`;
+  return `<div class="sol" onclick="toggleSol('${s.id}')">
+    <div class="top-row">
+      <span class="prot">${esc(s.protocolo||'—')}</span>
+      <span class="pill">${esc(TIPOS_SOL[s.tipo]||s.tipo)}</span>
+      <span class="t">${esc(s.titulo)}</span>
+      <span class="quem">${esc(nomeDe(s.registro))}</span>
+      <span class="pill"><span class="dt" style="background:${st.c}"></span>${st.l}</span>
+      <span class="quando">${new Date(s.criado_em).toLocaleDateString('pt-BR')}</span>
+    </div>
+    ${aberto ? `<div class="det" onclick="event.stopPropagation()">
+      <div class="dl">${campos || '<div class="it full"><dd>Sem detalhes.</dd></div>'}</div>
+      <div class="st-btns">
+        ${s.status==='aberta' ? stBtn('em_analise','Marcar em análise') : ''}
+        ${['aberta','em_analise'].includes(s.status) ? stBtn('aprovada','Aprovar','solid')+stBtn('recusada','Recusar','perigo') : ''}
+        ${s.status==='aprovada' ? stBtn('concluida','Concluir','solid') : ''}
+      </div>
+      <div class="fld"><label>Resposta ao membro</label>
+        <textarea id="resp-${s.id}" rows="2" placeholder="O que foi feito, próximos passos, o porquê da decisão…">${esc(s.resposta||'')}</textarea></div>
+      <button class="btn ghost mini" onclick="salvarResposta('${s.id}')">Salvar resposta</button>
+      ${s.tipo==='acesso' ? `<p style="font-size:11.5px;color:var(--dim);margin-top:10px">Ao aprovar,
+        conceda o acesso na ficha do membro no SOMA · Gestão (Acessos) — este painel só registra a decisão.</p>` : ''}
+      ${s.respondido_por ? `<p style="font-size:11px;color:var(--dim);margin-top:8px">Última resposta:
+        ${esc(s.respondido_por)}${s.respondido_em?' · '+new Date(s.respondido_em).toLocaleString('pt-BR'):''}</p>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+function toggleSol(id){
+  state.solAbertas.has(id) ? state.solAbertas.delete(id) : state.solAbertas.add(id);
+  desenhaSols();
+}
+async function mudarStatus(id, novo){
+  const resp = document.getElementById('resp-'+id)?.value.trim() || null;
+  const { error } = await sb.from('portal_solicitacoes').update({
+    status: novo, resposta: resp,
+    respondido_por: quemSouEu(), respondido_em: new Date().toISOString()
+  }).eq('id', id);
+  if (error){ toast('Erro ao atualizar: '+error.message, true); return; }
+  toast('Status atualizado para "' + (STATUS_SOL[novo]?.l||novo) + '".');
+  await carregarSols();
+}
+async function salvarResposta(id){
+  const resp = document.getElementById('resp-'+id)?.value.trim() || null;
+  const { error } = await sb.from('portal_solicitacoes').update({
+    resposta: resp, respondido_por: quemSouEu(), respondido_em: new Date().toISOString()
+  }).eq('id', id);
+  if (error){ toast('Erro ao salvar: '+error.message, true); return; }
+  toast('Resposta salva.');
+  await carregarSols();
+}
+
+/* ============================================================
+   ABA 3 — OUVIDORIA
+   ============================================================ */
+const CAT_OUV = {gestao_pessoas:'Gestão de pessoas', conduta:'Conduta', sugestao:'Sugestão', outro:'Outro'};
+async function carregarOuvidoria(){
+  const { data, error } = await sb.from('portal_ouvidoria').select('*')
+    .order('dia', {ascending:false});
+  if (error){
+    $('#sec-ouvidoria').innerHTML = `<div class="aviso-box err">Erro ao carregar: ${esc(error.message)}</div>`;
+    return;
+  }
+  state.ouvidoria = data || [];
+  const pend = state.ouvidoria.filter(o=>!o.tratado).length;
+  $('#n-ouv').textContent = pend ? pend : '';
+  desenhaOuvidoria();
+}
+function desenhaOuvidoria(){
+  $('#sec-ouvidoria').innerHTML = `
+    <div class="aviso-box info">As mensagens chegam <b>sem nenhuma identificação</b> — sem conta,
+      sem registro e com a data truncada para o dia. Trate cada uma com o cuidado de quem confiou
+      no canal.</div>
+    ${state.ouvidoria.length ? state.ouvidoria.map(o=>`
+      <div class="ouv ${o.tratado?'tratado':''}">
+        <div class="meta">
+          <span class="pill">${esc(CAT_OUV[o.categoria]||o.categoria)}</span>
+          <span class="mono" style="font-size:11px;color:var(--dim)">${fmtD(o.dia)}</span>
+          ${o.tratado ? `<span class="pill"><span class="dt" style="background:var(--ok)"></span>Tratada${o.tratado_por?' · '+esc(o.tratado_por):''}</span>` : ''}
+          <span style="flex:1"></span>
+          <button class="btn mini ${o.tratado?'ghost':'solid'}" onclick="marcarOuv('${o.id}', ${!o.tratado})">
+            ${o.tratado?'Reabrir':'Marcar como tratada'}</button>
+        </div>
+        <div class="msg">${esc(o.mensagem)}</div>
+      </div>`).join('')
+    : '<div class="vazio">Nenhuma mensagem na ouvidoria.</div>'}`;
+}
+async function marcarOuv(id, tratado){
+  const { error } = await sb.from('portal_ouvidoria').update({
+    tratado, tratado_por: tratado ? quemSouEu() : null
+  }).eq('id', id);
+  if (error){ toast('Erro: '+error.message, true); return; }
+  await carregarOuvidoria();
+}
+
+boot();
+</script>
+</body>
+</html>
