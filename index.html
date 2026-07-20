@@ -178,6 +178,8 @@ main{max-width:var(--max);margin:0 auto;padding:108px 26px 90px}
 .fld input:focus,.fld textarea:focus,.fld select:focus{border-color:var(--syn);background:rgba(206,220,0,.04)}
 .fld .mini{font-size:11.5px;color:var(--dim);margin-top:4px}
 .login .nota{font-size:11.5px;color:var(--dim);margin-top:16px;text-align:center;line-height:1.6}
+.login .nota a{color:var(--muted);text-decoration:underline}
+.login .nota a:hover{color:var(--ink)}
 
 /* ============ QUADRO DE AVISOS ============ */
 .board{position:relative;border-radius:22px;overflow:hidden;min-height:250px}
@@ -433,6 +435,9 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
 .ft-grid ul{list-style:none;display:flex;flex-direction:column;gap:9px}
 .ft-grid ul a{font-size:13.5px;color:var(--muted);transition:color .15s}
 .ft-grid ul a:hover{color:var(--ink)}
+.ft-tour{display:inline-block;margin-top:14px;font-size:13px;color:var(--muted);
+  border-bottom:1px solid var(--line2);padding-bottom:2px;transition:color .15s,border-color .15s}
+.ft-tour:hover{color:var(--ink);border-color:var(--syn)}
 .ft-base{border-top:1px solid var(--line);padding-top:22px;display:flex;justify-content:space-between;
   gap:12px;flex-wrap:wrap;font-family:var(--fm);font-size:11px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--dim)}
@@ -471,16 +476,18 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
   <div class="login">
     <div class="lg"><img id="logo-login" src="" alt="NeuroDynamics"></div>
     <h1>Portal do Membro</h1>
-    <p class="hint">Entre com a sua conta NeuroDynamics, a mesma das demais
-      ferramentas internas da equipe.</p>
+    <p class="hint">Entre com a sua conta NeuroDynamics, a mesma do SOMA
+      e das demais ferramentas da equipe.</p>
     <div class="fld"><label>E-mail</label>
       <input id="l-email" type="email" autocomplete="email" placeholder="voce@neurodynamics.dev"></div>
     <div class="fld"><label>Senha</label>
       <input id="l-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
     <button class="btn solid" style="width:100%;justify-content:center" id="l-btn" onclick="entrar()">Entrar</button>
     <p class="err-msg" id="l-erro"></p>
-    <p class="nota">Sem acesso? Fale com o Depto. de Pessoal.<br>
-      O e-mail e a senha são os mesmos das outras ferramentas da equipe.</p>
+    <p class="nota">Ainda não tem conta, ou esqueceu a senha? Resolva no
+      <a href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">SOMA</a>,
+      com o e-mail que está no quadro de pessoal.<br>
+      Sem acesso? Fale com o Depto. de Pessoal.</p>
   </div>
 </div>
 
@@ -532,6 +539,7 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
         <img id="logo-ft" src="" alt="NeuroDynamics">
         <p class="desc">O espaço do membro da NeuroDynamics: avisos, calendário, organização,
           documentos e serviços do Depto. de Pessoal em um lugar só.</p>
+        <a class="ft-tour" href="tour.html">Novo por aqui? Faça o tour pelos sistemas da equipe</a>
       </div>
       <div>
         <h4>Páginas da equipe</h4>
@@ -540,6 +548,7 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
           <li><a href="https://selecao.neurodynamics.dev" target="_blank" rel="noopener">Processo seletivo</a></li>
           <li><a href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">Brand guidelines</a></li>
           <li><a href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">Sistema de gestão (SOMA)</a></li>
+          <li><a href="https://pessoal.neurodynamics.dev/app.html" target="_blank" rel="noopener">Eventos e presença (SOMA App)</a></li>
         </ul>
       </div>
       <div>

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="O guia dos sistemas da NeuroDynamics: conheça o site institucional, o processo seletivo, o portal do membro, o SOMA, o app de presença e a central da marca, e veja como tudo se conecta com uma única conta.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#050807">
+<title>Conheça os sistemas | NeuroDynamics</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050807; --panel:#0B1210; --ink:#F5F5F7; --muted:#9AA5A1; --dim:#616C68;
+  --line:rgba(245,245,247,.08); --line2:rgba(245,245,247,.16);
+  --deep:#00352F; --green:#00594F; --green2:#0B7D6E; --teal:#2DD4BF; --syn:#CEDC00;
+  --card:rgba(255,255,255,.03); --glass:rgba(7,12,10,.62);
+  --r:18px; --max:1240px;
+  --fd:'Archivo',-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  --fm:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh}
+h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.015em}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;color:inherit;border:none;background:none}
+img{max-width:100%}
+::selection{background:var(--syn);color:var(--deep)}
+
+/* ============ BACKGROUND ============ */
+#bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
+  radial-gradient(120% 90% at 72% -12%, #081511 0%, var(--bg) 58%)}
+#bg::after{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(245,245,247,.028) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(245,245,247,.028) 1px,transparent 1px);
+  background-size:130px 130px;
+  -webkit-mask-image:radial-gradient(85% 62% at 50% 26%, #000 0%, transparent 100%);
+          mask-image:radial-gradient(85% 62% at 50% 26%, #000 0%, transparent 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(120px);will-change:transform;opacity:.32}
+.b1{width:56vmax;height:56vmax;left:-18vmax;top:-24vmax;
+  background:radial-gradient(circle,#00594F 0%,rgba(0,89,79,0) 70%);
+  animation:fl1 38s ease-in-out infinite alternate}
+.b2{width:42vmax;height:42vmax;right:-16vmax;top:8vmax;opacity:.2;
+  background:radial-gradient(circle,#0B7D6E 0%,rgba(11,125,110,0) 70%);
+  animation:fl2 32s ease-in-out infinite alternate}
+.b3{width:30vmax;height:30vmax;left:36vw;bottom:-18vmax;opacity:.06;
+  background:radial-gradient(circle,#CEDC00 0%,rgba(206,220,0,0) 70%);
+  animation:fl3 44s ease-in-out infinite alternate}
+@keyframes fl1{from{transform:translate(0,0) scale(1)}to{transform:translate(8vw,6vh) scale(1.14)}}
+@keyframes fl2{from{transform:translate(0,0) scale(1.08)}to{transform:translate(-10vw,10vh) scale(.94)}}
+@keyframes fl3{from{transform:translate(0,0) scale(1)}to{transform:translate(-7vw,-12vh) scale(1.2)}}
+@media (prefers-reduced-motion:reduce){
+  .blob{animation:none!important}
+  *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+
+/* ============ HEADER ============ */
+#hd{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:60;
+  width:min(var(--max),calc(100vw - 28px));
+  border:1px solid var(--line);border-radius:16px;
+  background:var(--glass);backdrop-filter:blur(18px) saturate(1.5);
+  -webkit-backdrop-filter:blur(18px) saturate(1.5);
+  transition:border-color .3s, box-shadow .3s, background .3s}
+#hd.rolou{border-color:var(--line2);box-shadow:0 18px 50px rgba(0,0,0,.45);background:rgba(7,12,10,.8)}
+.hd-in{display:flex;align-items:center;gap:16px;padding:0 10px 0 20px;height:58px}
+.hd-logo{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-right:auto}
+.hd-logo img{height:18px;width:auto;display:block;filter:brightness(0) invert(1)}
+.logotype{font-family:var(--fd);font-weight:700;font-size:16.5px;letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
+.hd-tag{font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--syn);border:1px solid rgba(206,220,0,.35);border-radius:999px;padding:3px 9px;white-space:nowrap}
+nav.hd-nav{display:flex;gap:2px}
+nav.hd-nav a{font-family:var(--fd);font-size:13px;font-weight:500;color:var(--muted);
+  padding:8px 13px;border-radius:10px;transition:color .15s,background .15s;white-space:nowrap}
+nav.hd-nav a:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.hd-cta{display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:11px;
+  background:var(--ink);color:#0A0F0E;font-family:var(--fd);font-weight:600;font-size:13px;
+  white-space:nowrap;transition:transform .15s, box-shadow .15s;flex-shrink:0}
+.hd-cta:hover{transform:translateY(-1px);box-shadow:0 8px 26px rgba(245,245,247,.15)}
+@media (max-width:920px){ nav.hd-nav{display:none} .hd-in{height:54px} }
+
+/* ============ LAYOUT ============ */
+main{max-width:var(--max);margin:0 auto;padding:0 26px}
+section{margin:0 0 clamp(90px,12vh,150px);scroll-margin-top:96px}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:var(--fm);font-size:11px;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.eyebrow::before{content:'';width:7px;height:7px;background:var(--syn);flex-shrink:0}
+.sec-head{display:grid;grid-template-columns:220px 1fr;gap:26px;align-items:start;margin-bottom:48px}
+.sec-head h2{font-size:clamp(28px,4vw,46px);font-weight:600;line-height:1.08;max-width:640px}
+.sec-head .sub{color:var(--muted);max-width:600px;margin-top:14px;font-size:15.5px}
+.sec-head .sub b{color:var(--ink);font-weight:600}
+@media (max-width:820px){.sec-head{grid-template-columns:1fr;gap:14px}}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.reveal.viu{opacity:1;transform:none}
+.btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 24px;border-radius:12px;
+  font-family:var(--fd);font-weight:600;font-size:14px;white-space:nowrap;
+  transition:transform .15s, box-shadow .15s, background .15s, border-color .15s}
+.btn.solid{background:var(--ink);color:#0A0F0E}
+.btn.solid:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(245,245,247,.14)}
+.btn.lima{background:var(--syn);color:var(--deep)}
+.btn.lima:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(206,220,0,.24)}
+.btn.ghost{border:1px solid var(--line2);color:var(--ink);background:rgba(255,255,255,.03)}
+.btn.ghost:hover{background:rgba(255,255,255,.07);border-color:var(--dim)}
+.btn .ar{width:15px;height:15px}
+.btn .ar svg{width:100%;height:100%}
+
+/* ============ HERO ============ */
+#hero{min-height:92svh;display:flex;flex-direction:column;justify-content:center;
+  padding:150px 0 34px;position:relative}
+#hero h1{font-size:clamp(40px,6.8vw,86px);font-weight:600;letter-spacing:-.03em;line-height:1;
+  margin:22px 0 26px;max-width:960px}
+#hero h1 em{font-style:normal;background:linear-gradient(94deg,var(--syn) 10%,#7BE8C4 90%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-sub{font-size:clamp(15.5px,1.75vw,18.5px);color:var(--muted);max-width:660px;margin-bottom:38px}
+.hero-sub b{color:var(--ink);font-weight:600}
+.hero-acts{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.hero-meta{margin-top:auto;padding-top:56px;display:flex;justify-content:space-between;gap:14px;
+  flex-wrap:wrap;border-top:1px solid var(--line)}
+.hero-meta span{font-family:var(--fm);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.hero-meta span em{font-style:normal;color:var(--muted)}
+
+/* ============ PASSOS DA CONTA ============ */
+.passos{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:860px){.passos{grid-template-columns:1fr}}
+.passo{border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  backdrop-filter:blur(6px);padding:26px 24px;display:flex;flex-direction:column;gap:10px;
+  transition:border-color .2s, transform .2s}
+.passo:hover{border-color:var(--line2);transform:translateY(-3px)}
+.passo .no{font-family:var(--fm);font-size:11px;letter-spacing:.14em;color:var(--syn)}
+.passo h3{font-size:18px;font-weight:600}
+.passo p{font-size:13.5px;color:var(--muted)}
+.passo .dom{font-family:var(--fm);font-size:12px;color:var(--ink);word-break:break-all}
+.passo .go{margin-top:auto;padding-top:8px}
+.aviso-conta{margin-top:16px;border:1px solid var(--line);border-left:2px solid var(--syn);
+  border-radius:12px;padding:16px 20px;font-size:13.5px;color:var(--muted);max-width:760px}
+.aviso-conta b{color:var(--ink)}
+
+/* ============ CARDS DAS PLATAFORMAS ============ */
+.plat{display:grid;grid-template-columns:1fr 1.05fr;gap:clamp(24px,4vw,56px);align-items:center;
+  padding:clamp(40px,6vh,64px) 0;border-top:1px solid var(--line)}
+.plat:last-of-type{border-bottom:1px solid var(--line)}
+.plat:nth-of-type(even) .plat-media{order:-1}
+@media (max-width:860px){
+  .plat{grid-template-columns:1fr}
+  .plat:nth-of-type(even) .plat-media{order:0}
+}
+.plat .meta{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.plat .meta .no{font-family:var(--fm);font-size:12px;letter-spacing:.12em;color:var(--syn)}
+.tag-amb{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid;border-radius:3px;padding:3px 8px;white-space:nowrap}
+.tag-amb.pub{color:var(--syn);border-color:rgba(206,220,0,.45)}
+.tag-amb.int{color:var(--ink);border-color:var(--line2)}
+.plat h3{font-size:clamp(26px,3.6vw,42px);font-weight:600;letter-spacing:-.02em;line-height:1.05;margin-bottom:6px}
+.plat .dom{font-family:var(--fm);font-size:13px;color:var(--teal);margin-bottom:16px;display:inline-block}
+.plat .ds{font-size:15px;color:var(--muted);max-width:560px}
+.plat .ds b{color:var(--ink);font-weight:600}
+.plat ul.itens{list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:8px}
+.plat ul.itens li{display:flex;gap:10px;font-size:13.5px;color:var(--muted);align-items:baseline}
+.plat ul.itens li::before{content:'';width:6px;height:6px;background:var(--syn);flex-shrink:0;
+  transform:translateY(-1px)}
+.plat .acts{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+
+/* mockup de navegador */
+.mock{border:1px solid var(--line2);border-radius:16px;overflow:hidden;background:var(--panel);
+  box-shadow:0 24px 70px rgba(0,0,0,.35)}
+.mock .bar{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-bottom:1px solid var(--line);background:rgba(255,255,255,.03)}
+.mock .dots{display:flex;gap:5px;flex-shrink:0}
+.mock .dots i{width:8px;height:8px;border-radius:50%;background:var(--line2)}
+.mock .url{flex:1;display:flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10.5px;
+  color:var(--muted);background:rgba(255,255,255,.045);border:1px solid var(--line);
+  border-radius:8px;padding:5px 10px;min-width:0}
+.mock .url span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mock .fv{width:12px;height:12px;border-radius:3.5px;background:#10201C;border:1px solid var(--line2);
+  flex-shrink:0;display:grid;place-items:center}
+.mock .fv i{width:5.5px;height:5.5px;border-radius:50%}
+.mock .fv.pub i{background:var(--syn)}
+.mock .fv.int i{background:var(--ink)}
+.mock .page{padding:20px;min-height:210px;display:flex;flex-direction:column;gap:11px;position:relative;
+  background:radial-gradient(120% 130% at 18% -10%,rgba(0,89,79,.18),transparent 58%)}
+.sk{height:9px;border-radius:5px;background:rgba(245,245,247,.08)}
+.sk.t{height:15px;width:52%;background:rgba(245,245,247,.16)}
+.sk.acc{background:rgba(206,220,0,.4)}
+.sk.teal{background:rgba(45,212,191,.35)}
+.sk.w30{width:30%}.sk.w45{width:45%}.sk.w60{width:60%}.sk.w75{width:75%}.sk.w90{width:90%}
+.sk-row{display:flex;gap:10px}
+.sk-row .sk{flex:none}
+.sk-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.sk-card{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;
+  flex-direction:column;gap:8px;background:rgba(255,255,255,.02)}
+.sk-chip{height:20px;border-radius:999px;border:1px solid var(--line2);width:76px}
+.sk-chip.on{background:rgba(206,220,0,.25);border-color:rgba(206,220,0,.4)}
+.sk-av{display:flex;gap:8px;align-items:center}
+.sk-av i{width:22px;height:22px;border-radius:50%;background:rgba(245,245,247,.12);flex-shrink:0}
+.sk-band{border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;
+  background:linear-gradient(118deg,var(--deep) 0%,var(--green) 62%,#0A6F62 100%)}
+
+/* ============ CONEXÕES ============ */
+.fios{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media (max-width:820px){.fios{grid-template-columns:1fr}}
+.fio{border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  backdrop-filter:blur(6px);padding:28px 26px;transition:border-color .2s}
+.fio:hover{border-color:var(--line2)}
+.fio .no{font-family:var(--fm);font-size:11px;letter-spacing:.14em;color:var(--dim);margin-bottom:18px;display:block}
+.fio h3{font-size:19px;font-weight:600;margin-bottom:9px}
+.fio p{font-size:14px;color:var(--muted)}
+.fio p b{color:var(--ink);font-weight:600}
+
+/* ============ GUIA RÁPIDO ============ */
+.guia{border-bottom:1px solid var(--line)}
+.grow{display:grid;grid-template-columns:1.2fr 34px 1.3fr;gap:18px;align-items:baseline;
+  padding:19px 6px;border-top:1px solid var(--line);transition:background .2s}
+.grow:hover{background:linear-gradient(90deg,rgba(255,255,255,.025),transparent 70%)}
+.grow .q{font-family:var(--fd);font-size:15px;font-weight:600}
+.grow .seta{color:var(--dim);text-align:center;font-family:var(--fm);font-size:13px}
+.grow:hover .seta{color:var(--syn)}
+.grow .r{font-size:14px;color:var(--muted)}
+.grow .r a{color:var(--ink);border-bottom:1px solid var(--line2);transition:border-color .15s}
+.grow .r a:hover{border-color:var(--syn)}
+@media (max-width:720px){
+  .grow{grid-template-columns:1fr;gap:6px}
+  .grow .seta{display:none}
+}
+
+/* ============ BAND ============ */
+.band{background:linear-gradient(118deg,var(--deep) 0%,var(--green) 62%,#0A6F62 100%);
+  border-radius:24px;padding:clamp(38px,6vw,68px);position:relative;overflow:hidden;
+  border:1px solid rgba(206,220,0,.18)}
+.band::after{content:'';position:absolute;right:-90px;top:-90px;width:330px;height:330px;border-radius:50%;
+  background:radial-gradient(circle,rgba(206,220,0,.22),transparent 70%);filter:blur(34px)}
+.band .eyebrow{color:rgba(245,245,247,.6)}
+.band h2{font-size:clamp(28px,4.6vw,50px);font-weight:600;line-height:1.05;max-width:640px;margin:14px 0 14px}
+.band p{color:rgba(245,245,247,.78);max-width:560px;margin-bottom:30px;font-size:15px}
+.band .acts{display:flex;gap:12px;flex-wrap:wrap;position:relative;z-index:1}
+
+/* ============ FOOTER ============ */
+footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
+.ft-in{max-width:var(--max);margin:0 auto;padding:36px 26px;display:flex;align-items:center;
+  justify-content:space-between;gap:18px;flex-wrap:wrap}
+.ft-in img{height:18px;filter:brightness(0) invert(.9)}
+.ft-links{display:flex;gap:18px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.ft-links a:hover{color:var(--ink)}
+.ft-in .tx{font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+</style>
+</head>
+<body>
+
+<div id="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+
+<header id="hd">
+  <div class="hd-in">
+    <a class="hd-logo" href="#topo" aria-label="NeuroDynamics, início da página">
+      <img id="logo-hd" src="" alt="NeuroDynamics">
+      <span class="hd-tag">Guia dos sistemas</span>
+    </a>
+    <nav class="hd-nav">
+      <a href="#conta">Sua conta</a>
+      <a href="#mapa">O mapa</a>
+      <a href="#conexoes">Conexões</a>
+      <a href="#guia">Guia rápido</a>
+    </nav>
+    <a class="hd-cta" href="index.html">Entrar no portal</a>
+  </div>
+</header>
+
+<main id="topo">
+
+<!-- ================= HERO ================= -->
+<section id="hero">
+  <span class="eyebrow">NeuroDynamics · Bem-vindo</span>
+  <h1>A equipe cresceu.<br>Nossa casa digital <em>cresceu junto</em>.</h1>
+  <p class="hero-sub">Modernizamos toda a presença da NeuroDynamics na web: um novo site
+    institucional, um site próprio para o processo seletivo, um portal para o dia a dia do
+    membro, o SOMA cuidando da gestão e uma central para a marca. Cada peça tem um papel
+    claro, todas conversam entre si e <b>uma única conta abre tudo</b>. Esta página é o seu
+    guia: siga na ordem, ou pule direto para o que procura.</p>
+  <div class="hero-acts">
+    <a class="btn lima" href="#conta">Começar pela conta
+      <span class="ar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 5.5 19.5 12 13 18.5"/></svg></span></a>
+    <a class="btn ghost" href="#mapa">Ver o mapa dos sistemas</a>
+  </div>
+  <div class="hero-meta reveal">
+    <span>Plataformas · <em>seis</em></span>
+    <span>Conta · <em>uma só</em></span>
+    <span>Identidade · <em>uma só</em></span>
+    <span>Base · <em>LABBIO, UFMG</em></span>
+  </div>
+</section>
+
+<!-- ================= CONTA ================= -->
+<section id="conta">
+  <div class="sec-head reveal">
+    <span class="eyebrow">01 · Comece por aqui</span>
+    <div>
+      <h2>Uma conta abre tudo.</h2>
+      <p class="sub">A sua conta NeuroDynamics nasce no <b>SOMA</b>, o sistema de gestão da
+        equipe, e vale para o portal, o check-in, as assinaturas de e-mail e o que mais
+        chegar. Se você ainda não tem a sua, o caminho leva uns dois minutos.</p>
+    </div>
+  </div>
+  <div class="passos">
+    <div class="passo reveal">
+      <span class="no">PASSO 1</span>
+      <h3>Abra o SOMA</h3>
+      <p>Acesse o sistema de gestão e clique em <b style="color:var(--ink)">Criar conta</b>,
+        na tela de login.</p>
+      <span class="dom">pessoal.neurodynamics.dev</span>
+      <span class="go"><a class="btn ghost" href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">Abrir o SOMA ↗</a></span>
+    </div>
+    <div class="passo reveal">
+      <span class="no">PASSO 2</span>
+      <h3>Use o e-mail do quadro</h3>
+      <p>Cadastre-se com o e-mail que está no quadro de pessoal, o institucional ou o pessoal
+        que você informou ao entrar na equipe. O sistema reconhece o endereço e vincula a
+        conta ao seu registro automaticamente.</p>
+    </div>
+    <div class="passo reveal">
+      <span class="no">PASSO 3</span>
+      <h3>Confirme e entre</h3>
+      <p>Você recebe um link de confirmação por e-mail. Depois de confirmar, é só entrar:
+        a partir daí, o mesmo e-mail e a mesma senha funcionam em todas as ferramentas
+        desta página.</p>
+    </div>
+  </div>
+  <div class="aviso-conta reveal">
+    <b>Algo não funcionou?</b> Se o seu e-mail não for reconhecido, ou qualquer passo travar,
+    fale com o Depto. de Pessoal. Eles ajustam o cadastro e destravam o acesso.
+  </div>
+</section>
+
+<!-- ================= MAPA ================= -->
+<section id="mapa">
+  <div class="sec-head reveal">
+    <span class="eyebrow">02 · O mapa</span>
+    <div>
+      <h2>Seis lugares, cada um com o seu papel.</h2>
+      <p class="sub">Dois são <b>públicos</b> e falam com quem está fora; quatro são
+        <b>internos</b>, para o dia a dia de quem é da equipe. Uma dica de orientação:
+        repare no símbolo na aba do navegador. Ele é <b>verde nas páginas públicas</b> e
+        <b>branco nas ferramentas internas</b>.</p>
+    </div>
+  </div>
+
+  <article class="plat reveal">
+    <div>
+      <div class="meta"><span class="no">01 / 06</span><span class="tag-amb pub">Pública</span></div>
+      <h3>Site institucional</h3>
+      <a class="dom" href="https://neurodynamics.dev" target="_blank" rel="noopener">neurodynamics.dev</a>
+      <p class="ds">A vitrine da NeuroDynamics para o mundo, em inglês: quem somos, o que
+        construímos e como falar com a gente. É o endereço que você compartilha com
+        professores, parceiros e qualquer pessoa curiosa sobre a equipe. Os projetos exibidos
+        ali saem do banco de dados e são mantidos pela gestão, sem mexer em código.</p>
+      <ul class="itens">
+        <li>Apresenta a equipe como iniciativa de P&amp;D em health-tech</li>
+        <li>Portfólio com os projetos (Calima, Opalina, Órion, Deriva, Nebula)</li>
+        <li>Canal de contato para parcerias e colaborações</li>
+      </ul>
+      <div class="acts"><a class="btn ghost" href="https://neurodynamics.dev" target="_blank" rel="noopener">Visitar o site ↗</a></div>
+    </div>
+    <div class="plat-media">
+      <div class="mock">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span>
+          <span class="url"><span class="fv pub"><i></i></span><span>neurodynamics.dev</span></span></div>
+        <div class="page">
+          <div class="sk-row"><div class="sk acc w30" style="height:7px"></div></div>
+          <div class="sk t" style="width:68%"></div>
+          <div class="sk w75"></div>
+          <div class="sk w60"></div>
+          <div class="sk-row" style="margin-top:6px"><div class="sk-chip on"></div><div class="sk-chip"></div></div>
+          <div class="sk-cards">
+            <div class="sk-card"><div class="sk teal w45"></div><div class="sk w90"></div><div class="sk w60"></div></div>
+            <div class="sk-card"><div class="sk teal w45"></div><div class="sk w90"></div><div class="sk w60"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="plat reveal">
+    <div>
+      <div class="meta"><span class="no">02 / 06</span><span class="tag-amb pub">Pública</span></div>
+      <h3>Processo seletivo</h3>
+      <a class="dom" href="https://selecao.neurodynamics.dev" target="_blank" rel="noopener">selecao.neurodynamics.dev</a>
+      <p class="ds">Tudo do PS em um só lugar: edital, cronograma, inscrição, resultados e o
+        agendamento das dinâmicas e entrevistas. O candidato acompanha o próprio processo com
+        protocolo e e-mail, sem precisar de senha. É a página que você indica para quem quer
+        entrar na equipe.</p>
+      <ul class="itens">
+        <li>Inscrição e acompanhamento por protocolo</li>
+        <li>Cronograma vivo, com edital e resultados publicados</li>
+        <li>Agendamento de dinâmica e entrevista pelo próprio site</li>
+      </ul>
+      <div class="acts"><a class="btn ghost" href="https://selecao.neurodynamics.dev" target="_blank" rel="noopener">Visitar o site ↗</a></div>
+    </div>
+    <div class="plat-media">
+      <div class="mock">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span>
+          <span class="url"><span class="fv pub"><i></i></span><span>selecao.neurodynamics.dev</span></span></div>
+        <div class="page">
+          <div class="sk-row"><div class="sk-chip on" style="width:110px"></div></div>
+          <div class="sk t" style="width:60%"></div>
+          <div class="sk w45"></div>
+          <div class="sk-row" style="margin-top:6px;align-items:center">
+            <div class="sk acc" style="width:34px;height:34px;border-radius:10px"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="sk w60"></div><div class="sk w30"></div></div>
+          </div>
+          <div class="sk-row" style="align-items:center">
+            <div class="sk" style="width:34px;height:34px;border-radius:10px"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:7px"><div class="sk w75"></div><div class="sk w45"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="plat reveal">
+    <div>
+      <div class="meta"><span class="no">03 / 06</span><span class="tag-amb int">Interna</span></div>
+      <h3>Portal do Membro</h3>
+      <a class="dom" href="https://membro.neurodynamics.dev" target="_blank" rel="noopener">membro.neurodynamics.dev</a>
+      <p class="ds">O seu ponto de partida no dia a dia. É onde a equipe se informa e se
+        resolve: o quadro de avisos, os próximos eventos com confirmação de presença, quem
+        está no LABBIO agora, o calendário do semestre, o organograma com busca, a biblioteca
+        de documentos oficiais e os serviços do Depto. de Pessoal.</p>
+      <ul class="itens">
+        <li>Avisos, agenda e check-in da equipe em tempo real</li>
+        <li>Documentos oficiais: estatuto, políticas, guias e formulários</li>
+        <li>Solicitações com protocolo: acesso, afastamento, 1:1 com o gestor</li>
+        <li>Ouvidoria anônima, sem vínculo com a sua conta</li>
+      </ul>
+      <div class="acts"><a class="btn solid" href="index.html">Entrar no portal</a></div>
+    </div>
+    <div class="plat-media">
+      <div class="mock">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span>
+          <span class="url"><span class="fv int"><i></i></span><span>membro.neurodynamics.dev</span></span></div>
+        <div class="page">
+          <div class="sk-band"><div class="sk acc w30" style="height:7px"></div><div class="sk t" style="width:74%;background:rgba(245,245,247,.28)"></div><div class="sk w60" style="background:rgba(245,245,247,.14)"></div></div>
+          <div class="sk-cards">
+            <div class="sk-card"><div class="sk acc w45"></div><div class="sk-av"><i></i><div class="sk w60" style="flex:1"></div></div><div class="sk-av"><i></i><div class="sk w45" style="flex:1"></div></div></div>
+            <div class="sk-card"><div class="sk teal w45"></div><div class="sk w90"></div><div class="sk w75"></div><div class="sk w45"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="plat reveal">
+    <div>
+      <div class="meta"><span class="no">04 / 06</span><span class="tag-amb int">Interna</span></div>
+      <h3>SOMA · Gestão</h3>
+      <a class="dom" href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">pessoal.neurodynamics.dev</a>
+      <p class="ds">O coração administrativo da equipe, e o lugar onde a sua conta nasce.
+        O SOMA guarda o cadastro oficial: membros, organização, OKRs, relatórios, calendário
+        e operações. Todo membro entra com acesso de consulta; os módulos de gestão aparecem
+        conforme o papel de cada um, como Depto. de Pessoal ou Comitê de Seleção.</p>
+      <ul class="itens">
+        <li>Cadastro da equipe e cadeia de gestão</li>
+        <li>OKRs, relatórios e operações do dia a dia</li>
+        <li>Bastidores do PS para o Comitê de Seleção</li>
+      </ul>
+      <div class="acts"><a class="btn ghost" href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">Abrir o SOMA ↗</a></div>
+    </div>
+    <div class="plat-media">
+      <div class="mock">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span>
+          <span class="url"><span class="fv int"><i></i></span><span>pessoal.neurodynamics.dev</span></span></div>
+        <div class="page" style="flex-direction:row;gap:14px">
+          <div style="width:74px;border-right:1px solid var(--line);padding-right:12px;display:flex;flex-direction:column;gap:9px">
+            <div class="sk acc" style="width:100%"></div><div class="sk" style="width:100%"></div>
+            <div class="sk" style="width:100%"></div><div class="sk" style="width:100%"></div>
+            <div class="sk" style="width:100%"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:10px">
+            <div class="sk t" style="width:46%"></div>
+            <div class="sk-cards" style="grid-template-columns:1fr 1fr 1fr">
+              <div class="sk-card"><div class="sk acc w60"></div><div class="sk w90"></div></div>
+              <div class="sk-card"><div class="sk teal w60"></div><div class="sk w90"></div></div>
+              <div class="sk-card"><div class="sk w60"></div><div class="sk w90"></div></div>
+            </div>
+            <div class="sk w90"></div><div class="sk w75"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="plat reveal">
+    <div>
+      <div class="meta"><span class="no">05 / 06</span><span class="tag-amb int">Interna</span></div>
+      <h3>SOMA · App</h3>
+      <a class="dom" href="https://pessoal.neurodynamics.dev/app.html" target="_blank" rel="noopener">pessoal.neurodynamics.dev/app.html</a>
+      <p class="ds">O companheiro de bolso para eventos e presença. É por ele que você faz
+        check-in ao chegar no LABBIO, confirma presença nos eventos e acompanha quem está
+        por lá. Vale salvar na tela inicial do celular: o painel na parede do laboratório
+        mostra essas presenças em tempo real, e a home do portal também.</p>
+      <ul class="itens">
+        <li>Check-in no LABBIO pelo QR do laboratório</li>
+        <li>Convites de eventos com RSVP</li>
+        <li>Histórico das suas presenças</li>
+      </ul>
+      <div class="acts"><a class="btn ghost" href="https://pessoal.neurodynamics.dev/app.html" target="_blank" rel="noopener">Abrir o app ↗</a></div>
+    </div>
+    <div class="plat-media">
+      <div class="mock" style="max-width:290px;margin:0 auto">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span>
+          <span class="url"><span class="fv int"><i></i></span><span>…dev/app.html</span></span></div>
+        <div class="page" style="min-height:240px">
+          <div class="sk acc" style="width:56px;height:56px;border-radius:50%;margin:8px auto 2px"></div>
+          <div class="sk t" style="width:60%;margin:0 auto"></div>
+          <div class="sk w45" style="margin:0 auto"></div>
+          <div class="sk-card" style="margin-top:8px"><div class="sk-av"><i></i><div class="sk w60" style="flex:1"></div></div><div class="sk-av"><i></i><div class="sk w45" style="flex:1"></div></div></div>
+          <div class="sk-row" style="margin-top:auto;justify-content:space-around"><div class="sk w30" style="height:7px"></div><div class="sk acc w30" style="height:7px"></div><div class="sk w30" style="height:7px"></div></div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="plat reveal">
+    <div>
+      <div class="meta"><span class="no">06 / 06</span><span class="tag-amb int">Interna</span></div>
+      <h3>Brand</h3>
+      <a class="dom" href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">brand.neurodynamics.dev</a>
+      <p class="ds">A central da marca. Reúne as regras que mantêm a identidade coesa
+        (cores, tipografia, usos do logo) e as ferramentas que colocam isso na prática:
+        geradores de posts, banners, wallpapers e capas, downloads oficiais e a sua
+        assinatura de e-mail, montada na hora com os dados do cadastro.</p>
+      <ul class="itens">
+        <li>Paleta, tipografia e regras de uso do imagotipo</li>
+        <li>Estúdio: peças para redes sociais prontas em PNG</li>
+        <li>Assinatura de e-mail com os seus dados, em dois cliques</li>
+      </ul>
+      <div class="acts"><a class="btn ghost" href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">Visitar o brand ↗</a></div>
+    </div>
+    <div class="plat-media">
+      <div class="mock">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span>
+          <span class="url"><span class="fv int"><i></i></span><span>brand.neurodynamics.dev</span></span></div>
+        <div class="page">
+          <div class="sk t" style="width:56%"></div>
+          <div class="sk-row" style="margin-top:4px">
+            <div class="sk" style="width:42px;height:42px;border-radius:10px;background:var(--deep)"></div>
+            <div class="sk" style="width:42px;height:42px;border-radius:10px;background:var(--green)"></div>
+            <div class="sk" style="width:42px;height:42px;border-radius:10px;background:rgba(206,220,0,.85)"></div>
+            <div class="sk" style="width:42px;height:42px;border-radius:10px;background:rgba(245,245,247,.85)"></div>
+          </div>
+          <div class="sk w75"></div>
+          <div class="sk-cards">
+            <div class="sk-card"><div class="sk acc w45"></div><div class="sk w90"></div></div>
+            <div class="sk-card"><div class="sk w45"></div><div class="sk w90"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ================= CONEXÕES ================= -->
+<section id="conexoes">
+  <div class="sec-head reveal">
+    <span class="eyebrow">03 · Como tudo se amarra</span>
+    <div>
+      <h2>Parece muita coisa.<br>Por trás, é um sistema só.</h2>
+      <p class="sub">As seis plataformas compartilham a mesma base de dados e a mesma
+        identidade. Na prática, isso significa quatro fios que costuram tudo:</p>
+    </div>
+  </div>
+  <div class="fios">
+    <div class="fio reveal">
+      <span class="no">FIO 01</span>
+      <h3>Uma conta</h3>
+      <p>Criada uma vez no <b>SOMA</b>, a conta NeuroDynamics abre o portal, o check-in,
+        as assinaturas e os painéis de administração. Nada de senhas paralelas: se você
+        trocar a senha, troca para tudo.</p>
+    </div>
+    <div class="fio reveal">
+      <span class="no">FIO 02</span>
+      <h3>Um cadastro</h3>
+      <p>O quadro de pessoal do SOMA alimenta o organograma do portal, a assinatura de
+        e-mail do brand e os relatórios da gestão. Atualizou lá, refletiu em todo lugar,
+        sem retrabalho.</p>
+    </div>
+    <div class="fio reveal">
+      <span class="no">FIO 03</span>
+      <h3>Um fluxo de pedidos</h3>
+      <p>O que você solicita no portal chega ao painel do Depto. de Pessoal com protocolo,
+        e a resposta volta para a sua área de <b>Meus pedidos</b>. Nada se perde em
+        conversas soltas.</p>
+    </div>
+    <div class="fio reveal">
+      <span class="no">FIO 04</span>
+      <h3>Uma presença</h3>
+      <p>O check-in feito no app aparece na home do portal e no painel do LABBIO em tempo
+        real. A equipe sabe quem está no laboratório sem perguntar em grupo nenhum.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUIA RÁPIDO ================= -->
+<section id="guia">
+  <div class="sec-head reveal">
+    <span class="eyebrow">04 · Guia rápido</span>
+    <div>
+      <h2>Procurando algo?<br>Comece por aqui.</h2>
+      <p class="sub">Um mapa de bolso para os primeiros dias. Com o tempo, o caminho vira
+        reflexo.</p>
+    </div>
+  </div>
+  <div class="guia reveal">
+    <div class="grow"><span class="q">Saber o que está acontecendo na equipe</span><span class="seta">→</span>
+      <span class="r"><a href="index.html">Portal</a>, quadro de avisos na página inicial</span></div>
+    <div class="grow"><span class="q">Confirmar presença em um evento</span><span class="seta">→</span>
+      <span class="r"><a href="index.html">Portal</a> (home) ou <a href="https://pessoal.neurodynamics.dev/app.html" target="_blank" rel="noopener">SOMA App</a></span></div>
+    <div class="grow"><span class="q">Fazer check-in ao chegar no LABBIO</span><span class="seta">→</span>
+      <span class="r"><a href="https://pessoal.neurodynamics.dev/app.html" target="_blank" rel="noopener">SOMA App</a>, pelo QR code do laboratório</span></div>
+    <div class="grow"><span class="q">Ver quem é quem e a cadeia de gestão</span><span class="seta">→</span>
+      <span class="r"><a href="index.html#/organizacao">Portal</a>, seção Organização</span></div>
+    <div class="grow"><span class="q">Achar o estatuto, uma política ou um formulário</span><span class="seta">→</span>
+      <span class="r"><a href="index.html#/informacoes">Portal</a>, seção Informações</span></div>
+    <div class="grow"><span class="q">Pedir acesso a um sistema, documento ou local</span><span class="seta">→</span>
+      <span class="r"><a href="index.html#/servicos">Portal</a>, seção Serviços</span></div>
+    <div class="grow"><span class="q">Falar com a Gestão de Pessoas sem me identificar</span><span class="seta">→</span>
+      <span class="r"><a href="index.html#/servicos">Portal</a>, Serviços, ouvidoria anônima</span></div>
+    <div class="grow"><span class="q">Acompanhar um pedido que já fiz</span><span class="seta">→</span>
+      <span class="r"><a href="index.html#/pedidos">Portal</a>, seção Meus pedidos</span></div>
+    <div class="grow"><span class="q">Consultar o cadastro completo, OKRs e relatórios</span><span class="seta">→</span>
+      <span class="r"><a href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">SOMA · Gestão</a></span></div>
+    <div class="grow"><span class="q">Montar um post, banner ou wallpaper no padrão</span><span class="seta">→</span>
+      <span class="r"><a href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">Brand</a>, seção Estúdio</span></div>
+    <div class="grow"><span class="q">Configurar a minha assinatura de e-mail</span><span class="seta">→</span>
+      <span class="r"><a href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">Brand</a>, seção Assinaturas</span></div>
+    <div class="grow"><span class="q">Apresentar a NeuroDynamics a alguém de fora</span><span class="seta">→</span>
+      <span class="r"><a href="https://neurodynamics.dev" target="_blank" rel="noopener">Site institucional</a></span></div>
+    <div class="grow"><span class="q">Indicar a equipe para quem quer entrar</span><span class="seta">→</span>
+      <span class="r"><a href="https://selecao.neurodynamics.dev" target="_blank" rel="noopener">Site do processo seletivo</a></span></div>
+  </div>
+</section>
+
+<!-- ================= FECHAMENTO ================= -->
+<section>
+  <div class="band reveal">
+    <span class="eyebrow">Agora é com você</span>
+    <h2>Crie a conta, entre no portal e explore.</h2>
+    <p>Percorra cada canto sem medo: nada quebra. E se algo não fizer sentido, o Depto. de
+      Pessoal está a uma solicitação de distância. Guarde esta página nos favoritos para
+      consultar quando precisar; ela também fica no rodapé do portal.</p>
+    <div class="acts">
+      <a class="btn lima" href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">Criar minha conta no SOMA</a>
+      <a class="btn solid" href="index.html">Entrar no Portal do Membro</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="ft-in">
+    <div style="display:flex;align-items:center;gap:12px">
+      <img id="logo-ft" src="" alt="NeuroDynamics">
+      <span class="tx">Guia dos sistemas</span>
+    </div>
+    <div class="ft-links">
+      <a href="https://neurodynamics.dev" target="_blank" rel="noopener">Site</a>
+      <a href="https://selecao.neurodynamics.dev" target="_blank" rel="noopener">Seleção</a>
+      <a href="index.html">Portal</a>
+      <a href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">SOMA</a>
+      <a href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">Brand</a>
+    </div>
+    <span class="tx">© <span id="ft-ano">2026</span> NeuroDynamics · LABBIO, Escola de Engenharia, UFMG</span>
+  </div>
+</footer>
+
+<script>
+const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
+[['#logo-hd'],['#logo-ft']].forEach(([sel])=>{
+  const img = document.querySelector(sel);
+  img.onerror = () => { const s=document.createElement('span'); s.className='logotype'; s.textContent='NeuroDynamics'; img.replaceWith(s); };
+  img.src = LOGO_URL;
+});
+document.getElementById('ft-ano').textContent = new Date().getFullYear();
+window.addEventListener('scroll', ()=>{
+  document.getElementById('hd').classList.toggle('rolou', window.scrollY > 8);
+}, { passive:true });
+const obs = new IntersectionObserver(es => es.forEach(e=>{
+  if (e.isIntersecting){ e.target.classList.add('viu'); obs.unobserve(e.target); }
+}), { threshold:.12 });
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
