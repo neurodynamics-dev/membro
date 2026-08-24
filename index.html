@@ -317,6 +317,141 @@ main{max-width:var(--max);margin:0 auto;padding:108px 26px 90px}
 }
 .cal-nota{font-size:12px;color:var(--dim);margin-top:14px;line-height:1.6}
 
+/* ============ ABAS (calendário) ============ */
+.abas{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:22px;overflow-x:auto}
+.abas a{font-family:var(--fd);font-size:13.5px;font-weight:600;color:var(--muted);
+  padding:10px 15px;border-bottom:2px solid transparent;white-space:nowrap;
+  transition:color .15s,border-color .15s}
+.abas a:hover{color:var(--ink)}
+.abas a.on{color:var(--ink);border-bottom-color:var(--syn)}
+
+/* ============ ASSISTENTE DE AGENDAMENTO ============ */
+.ag-wrap{display:grid;grid-template-columns:268px 1fr;gap:16px;align-items:start}
+@media (max-width:980px){.ag-wrap{grid-template-columns:1fr}}
+.ag-lado{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:18px}
+.ag-sec{margin-bottom:18px}
+.ag-sec:last-child{margin-bottom:0}
+.ag-sec h5{font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:9px;display:flex;
+  align-items:center;justify-content:space-between;gap:8px}
+.ag-sec h5 b{font-family:var(--fd);letter-spacing:0;text-transform:none;font-size:11px;color:var(--muted)}
+.ag-part{display:flex;align-items:center;gap:9px;padding:6px 0}
+.ag-part .tx{flex:1;min-width:0}
+.ag-part .nm{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ag-part .st{font-size:10.5px;font-family:var(--fm);color:var(--dim)}
+.ag-part .st.livre{color:var(--ok)}
+.ag-part .st.ocupado{color:var(--bad)}
+.ag-part .st.desconhecido{color:var(--warn)}
+.ag-part .rm{width:22px;height:22px;border-radius:6px;color:var(--dim);font-size:15px;line-height:1;
+  display:flex;align-items:center;justify-content:center;flex:none}
+.ag-part .rm:hover{background:rgba(241,128,111,.12);color:var(--bad)}
+.ag-add{width:100%;text-align:left;font-size:12.5px;color:var(--dim);padding:7px 0;
+  border-top:1px dashed var(--line2);margin-top:4px}
+.ag-add:hover{color:var(--syn)}
+.ag-busca{position:relative;margin-bottom:8px}
+.ag-busca input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line2);
+  border-radius:10px;padding:9px 11px;outline:none;font-size:13px}
+.ag-busca input:focus{border-color:var(--syn)}
+.ag-res{position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:30;background:var(--panel);
+  border:1px solid var(--line2);border-radius:11px;overflow:hidden auto;max-height:238px;
+  box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.ag-res .op{display:flex;align-items:center;gap:9px;padding:8px 11px;cursor:pointer;font-size:12.5px}
+.ag-res .op:hover{background:rgba(255,255,255,.06)}
+.ag-res .op .cg{color:var(--dim);font-size:11px}
+.ag-res .vazio{padding:10px 12px;font-size:12px;color:var(--dim)}
+
+.ag-main{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:18px;min-width:0}
+.ag-ctl{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.ag-ctl .cmp{display:flex;flex-direction:column;gap:5px}
+.ag-ctl label{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ag-ctl input,.ag-ctl select{background:rgba(255,255,255,.05);border:1px solid var(--line2);
+  border-radius:10px;padding:8px 10px;outline:none;font-size:13px;color-scheme:dark}
+.ag-ctl input:focus,.ag-ctl select:focus{border-color:var(--syn)}
+.ag-ctl select option{background:var(--panel);color:var(--ink)}
+.ag-ctl .nav{width:34px;height:36px;border:1px solid var(--line2);border-radius:9px;color:var(--muted)}
+.ag-ctl .nav:hover{color:var(--ink);border-color:var(--dim)}
+.ag-dia{font-family:var(--fd);font-size:14px;font-weight:600;min-width:172px}
+.ag-dia small{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);font-weight:400}
+
+.ag-sug{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;font-size:12.5px;color:var(--muted)}
+.ag-sug .lb{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ag-sug button{border:1px solid var(--line2);border-radius:9px;padding:5px 11px;font-size:12.5px;
+  font-family:var(--fm);color:var(--muted);background:rgba(255,255,255,.03)}
+.ag-sug button:hover{border-color:var(--syn);color:var(--ink)}
+.ag-sug button.outro-dia{border-style:dashed}
+.ag-sug .nada{color:var(--warn)}
+
+.ag-grade{display:flex;border:1px solid var(--line);border-radius:14px;overflow:hidden;--rh:46px}
+.ag-nomes{flex:none;width:184px;border-right:1px solid var(--line);background:rgba(0,0,0,.16)}
+@media (max-width:620px){.ag-nomes{width:128px}}
+.ag-tempo{flex:1;overflow-x:auto;min-width:0}
+.ag-tempo-in{min-width:620px;position:relative}
+.ag-cabec{height:30px;display:flex;align-items:center;padding:0 10px;
+  border-bottom:1px solid var(--line);font-family:var(--fm);font-size:9.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ag-regua{height:30px;position:relative;border-bottom:1px solid var(--line)}
+.ag-regua span{position:absolute;top:8px;font-family:var(--fm);font-size:10px;color:var(--dim);
+  transform:translateX(-50%);white-space:nowrap}
+.ag-nome{height:var(--rh);display:flex;align-items:center;gap:8px;padding:0 10px;
+  border-top:1px solid var(--line)}
+.ag-nome:first-of-type{border-top:none}
+.ag-nome .tx{min-width:0}
+.ag-nome .nm{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ag-nome .op{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.ag-corpo{position:relative;touch-action:pan-x pan-y;cursor:crosshair}
+.ag-trilha{height:var(--rh);position:relative;border-top:1px solid var(--line);
+  background-image:linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:var(--passo) 100%}
+.ag-trilha:first-child{border-top:none}
+.ag-fora{position:absolute;top:0;bottom:0;background:
+  repeating-linear-gradient(135deg,rgba(245,245,247,.07) 0 5px,transparent 5px 10px)}
+.ag-ocup{position:absolute;top:6px;bottom:6px;border-radius:5px;min-width:2px;
+  background:rgba(241,128,111,.5);border:1px solid rgba(241,128,111,.65);
+  font-size:10px;line-height:1.5;color:#FFE8E3;padding:0 5px;overflow:hidden;
+  white-space:nowrap;text-overflow:ellipsis}
+.ag-ocup.soma{background:rgba(45,212,191,.34);border-color:rgba(45,212,191,.6);color:#D6FBF6}
+.ag-ocup.ausencia{background:rgba(142,142,147,.34);border-color:rgba(142,142,147,.6);color:#E4E4E6}
+.ag-sel{position:absolute;top:0;bottom:0;z-index:4;pointer-events:none;
+  background:rgba(206,220,0,.14);border-left:2px solid var(--syn);border-right:2px solid var(--syn)}
+.ag-sel.conflito{background:rgba(241,128,111,.16);border-color:var(--bad)}
+.ag-agora{position:absolute;top:0;bottom:0;width:1.5px;background:var(--teal);z-index:3;pointer-events:none}
+.ag-agora::before{content:'';position:absolute;top:-3px;left:-2.75px;width:7px;height:7px;
+  border-radius:50%;background:var(--teal)}
+.ag-legenda{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:var(--muted)}
+.ag-legenda i{font-style:normal;display:inline-flex;align-items:center;gap:6px}
+.ag-legenda i::before{content:'';width:11px;height:11px;border-radius:3px;background:var(--cc,#8E8E93)}
+.ag-legenda i.hach::before{background:transparent;border:1px solid var(--line2);
+  background-image:repeating-linear-gradient(135deg,rgba(245,245,247,.16) 0 3px,transparent 3px 6px)}
+.ag-rodape{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;
+  padding-top:16px;border-top:1px solid var(--line)}
+.ag-rodape .resumo{font-size:13px;color:var(--muted);flex:1;min-width:200px}
+.ag-rodape .resumo b{color:var(--ink);font-family:var(--fd)}
+
+/* ============ MINHA AGENDA ============ */
+.mag-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:16px;align-items:start}
+@media (max-width:900px){.mag-grid{grid-template-columns:1fr}}
+.passos{counter-reset:passo;margin:12px 0 18px;display:flex;flex-direction:column;gap:9px}
+.passos li{list-style:none;counter-increment:passo;display:flex;gap:11px;font-size:13px;color:var(--muted);line-height:1.55}
+.passos li::before{content:counter(passo);flex:none;width:21px;height:21px;border-radius:50%;
+  border:1px solid var(--line2);font-family:var(--fm);font-size:10.5px;color:var(--syn);
+  display:flex;align-items:center;justify-content:center;margin-top:1px}
+.mag-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;
+  color:var(--muted);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  background:rgba(255,255,255,.02);margin-bottom:14px}
+.mag-status .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--dim)}
+.mag-status .dot.ok{background:var(--ok)}
+.mag-status .dot.erro{background:var(--bad)}
+.mag-status .dot.espera{background:var(--warn)}
+.mag-dias{display:flex;gap:6px;flex-wrap:wrap}
+.mag-dias button{width:38px;height:34px;border-radius:9px;font-size:12px;font-weight:600;
+  border:1px solid var(--line2);background:rgba(255,255,255,.03);color:var(--muted)}
+.mag-dias button.on{background:var(--syn);border-color:var(--syn);color:var(--deep)}
+.mag-prev{font-family:var(--fm);font-size:11.5px;color:var(--muted);display:flex;
+  flex-direction:column;gap:5px;max-height:210px;overflow:auto}
+.mag-prev div{display:flex;gap:10px;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:4px}
+.mag-prev span{color:var(--dim)}
+
 /* ============ ORGANIZAÇÃO ============ */
 .org-busca{position:relative;max-width:420px;margin-bottom:20px}
 .org-busca input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line2);
@@ -592,6 +727,11 @@ const GITHUB_CTA_URL = '';
    de eventos e presença). */
 const CAL_TIPOS_GERAIS = ['Reunião geral','Confraternização','Visita de externos'];
 
+/* Tipos de evento do SOMA — a reunião marcada pelo assistente
+   entra como um evento normal, com convite e RSVP. */
+const EVENTO_TIPOS = ['Reunião geral','Teste','Reunião de gerência','Confraternização',
+  'Reunião com stakeholder','Visita de externos','Viagem','Outro'];
+
 /* Marcos vindos do banco. Férias e marcos individuais não aparecem
    no portal; tipos desconhecidos caem no cinza. */
 const TIPOS_MARCO = {
@@ -600,6 +740,16 @@ const TIPOS_MARCO = {
   outro:             {l:'Outro',             cor:'#8E8E93'}
 };
 const COR_EVENTO = '#2DD4BF';
+
+/* Assistente de agendamento: faixa mostrada na grade, passo da
+   escolha de horário e expediente padrão de quem ainda não
+   ajustou o seu em "Minha agenda". */
+const AG_H0 = 7, AG_H1 = 22;            // 07h às 22h na grade
+const AG_PASSO = 15;                    // granularidade, em minutos
+const AG_JANELA = 8;                    // dias carregados de uma vez
+const AG_DURACOES = [15, 30, 45, 60, 90, 120];
+const EXPEDIENTE = { inicio:'08:00', fim:'18:00', dias:[1,2,3,4,5] };
+const DIAS_LB = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];   // ISO: 1 = segunda
 
 /* Agenda fixa do 2º semestre de 2026 (calendário oficial da equipe).
    Itens "feriado" pintam os dias de laranja: são datas próximas a
@@ -671,6 +821,7 @@ const state = {
   perfil:null, membros:[], itensAcesso:[], avisos:[],
   eventos:null, presencas:null, statusMembro:[], minhasPresencas:null,
   cal:{ ano:new Date().getFullYear(), mes:new Date().getMonth() },
+  agendas:null, ag:null,
   orgFoco:null, board:{ ix:0, timer:null }
 };
 
@@ -680,6 +831,16 @@ function hojeISO(){ const d=new Date();
 function fmtD(iso){ if(!iso) return '—'; const [a,m,d]=iso.split('-'); return `${d}/${m}/${a}`; }
 function hhmm(x){ return new Date(x).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
 function primeiroNome(n){ return (n||'').split(' ')[0]; }
+const isoDia = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const isoDow = d => ((d.getDay()+6) % 7) + 1;                    // 1 = segunda … 7 = domingo
+const hhmmMin = t => { const [h,m] = String(t||'0:0').split(':'); return (+h)*60 + (+m||0); };
+const minHHMM = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+const dataHora = (iso, min) => { const [a,m,d] = iso.split('-').map(Number);
+  return new Date(a, m-1, d, Math.floor(min/60), min%60, 0, 0); };
+const diaCurto = iso => dataHora(iso,0)
+  .toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).replace('.','');
+const fusoLocal = () => { try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'; }
+  catch{ return 'America/Sao_Paulo'; } };
 function primeirasLetras(n){ return String(n||'?').trim().split(/\s+/).map(p=>p[0]).filter(Boolean).slice(0,2).join('').toUpperCase(); }
 const MES_CURTO = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 const pad3 = n => String(n??0).padStart(3,'0');
@@ -889,7 +1050,9 @@ async function carregarAgendaResumo(){
   const pend = meu ? state.eventos.filter(e =>
     (e.evento_participantes||[]).some(p => p.registro===meu && p.resposta==='pendente')) : [];
   const prox = state.eventos.slice(0,5);
-  let html = `<div class="head"><h3>Próximos eventos</h3><a href="#/calendario">calendário completo →</a></div>`;
+  let html = `<div class="head"><h3>Próximos eventos</h3>
+    <span style="display:flex;gap:14px"><a href="#/calendario/agendar">agendar reunião →</a>
+    <a href="#/calendario">calendário completo →</a></span></div>`;
   if (!meu) html += `<div class="aviso-box info" style="margin-bottom:12px">Sua conta ainda não está vinculada a um
     registro de membro. Dá para ver tudo, mas RSVP e solicitações ficam bloqueados.
     Fale com o Depto. de Pessoal.</div>`;
@@ -991,27 +1154,47 @@ async function carregarCheckinResumo(){
 }
 
 /* ============================================================
-   CALENDÁRIO EXPANDIDO — só o que é geral: reuniões gerais,
-   confraternizações, visitas e os marcos (férias, PS, prazos,
-   calendário UFMG) mantidos pela gestão.
+   CALENDÁRIO — três abas:
+     Mês            visão geral da equipe (o que sempre existiu)
+     Agendar        assistente de agendamento (livre/ocupado)
+     Minha agenda   conexão com o Google Agenda de cada um
    ============================================================ */
-async function pageCalendario(){
-  const c = state.cal;
-  const primeiro = new Date(c.ano, c.mes, 1), ultimo = new Date(c.ano, c.mes+1, 0);
-  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function pageCalendario(sub){
+  const abas = [['','Mês'],['agendar','Agendar reunião'],['minha','Minha agenda']];
+  const atual = ['agendar','minha'].includes(sub) ? sub : '';
+  const textos = {
+    '':        'A agenda geral da equipe para o semestre: reuniões gerais, eventos, prazos e as datas do calendário da UFMG.',
+    'agendar': 'Escolha as pessoas ou o grupo e veja, lado a lado, quando cada um está livre. As sugestões consideram o expediente de todo mundo.',
+    'minha':   'Conecte o seu Google Agenda para que os colegas vejam quando você está ocupado — sem ver do quê.'
+  };
   $('#main').innerHTML = `
     <div class="pg-head"><span class="eyebrow">Calendário da equipe</span>
       <h1>Calendário</h1>
-      <p class="lead">A agenda geral da equipe para o semestre: reuniões gerais, eventos,
-        prazos e as datas do calendário da UFMG.</p></div>
-    <div class="card" id="cal-card"><div class="carregando"><span class="spin"></span> Carregando…</div></div>`;
+      <p class="lead">${textos[atual]}</p></div>
+    <nav class="abas">${abas.map(([s,l]) =>
+      `<a href="#/calendario${s?'/'+s:''}" class="${s===atual?'on':''}">${l}</a>`).join('')}</nav>
+    <div id="cal-body"><div class="carregando"><span class="spin"></span> Carregando…</div></div>`;
+  if (atual === 'agendar') return telaAgendar();
+  if (atual === 'minha')   return telaMinhaAgenda();
+  return telaMes();
+}
+
+/* ------------------------------------------------------------
+   ABA "MÊS" — só o que é geral: reuniões gerais, confraternizações,
+   visitas e os marcos (férias, PS, prazos, UFMG) da gestão.
+   ------------------------------------------------------------ */
+async function telaMes(){
+  const c = state.cal;
+  const primeiro = new Date(c.ano, c.mes, 1), ultimo = new Date(c.ano, c.mes+1, 0);
+  const alvo = $('#cal-body');
+  alvo.innerHTML = `<div class="card" id="cal-card"><div class="carregando"><span class="spin"></span> Carregando…</div></div>`;
   let evs = [], mks = [];
   try{
     const [ev, mk] = await Promise.all([
       sb.from('eventos').select('id,numero,titulo,tipo,data,hora_inicio,hora_fim,local,pauta,status,espacos(nome,cor)')
-        .neq('status','Cancelado').gte('data', iso(primeiro)).lte('data', iso(ultimo)).order('hora_inicio'),
+        .neq('status','Cancelado').gte('data', isoDia(primeiro)).lte('data', isoDia(ultimo)).order('hora_inicio'),
       sb.from('calendario_itens').select('*')
-        .lte('data_inicio', iso(ultimo)).gte('data_fim', iso(primeiro)).order('data_inicio')
+        .lte('data_inicio', isoDia(ultimo)).gte('data_fim', isoDia(primeiro)).order('data_inicio')
     ]);
     if (ev.error) throw ev.error; if (mk.error) throw mk.error;
     evs = (ev.data||[]).filter(e => CAL_TIPOS_GERAIS.includes(e.tipo));
@@ -1020,7 +1203,7 @@ async function pageCalendario(){
     $('#cal-card').innerHTML = `<div class="empty">Erro ao carregar o calendário: ${esc(e.message)}</div>`;
     return;
   }
-  const fixos = CAL_FIXO.filter(f => f.fim >= iso(primeiro) && f.inicio <= iso(ultimo));
+  const fixos = CAL_FIXO.filter(f => f.fim >= isoDia(primeiro) && f.inicio <= isoDia(ultimo));
   state.calDados = { evs, mks, fixos };
   const porDia = {};
   const semPresencial = new Set();
@@ -1028,13 +1211,13 @@ async function pageCalendario(){
   mks.forEach(m=>{
     const di = new Date(m.data_inicio+'T12:00'), df = new Date((m.data_fim||m.data_inicio)+'T12:00');
     for (let d=new Date(Math.max(di,primeiro)); d<=df && d<=ultimo; d.setDate(d.getDate()+1))
-      (porDia[iso(d)]=porDia[iso(d)]||[]).push({t:'mk', o:m});
+      (porDia[isoDia(d)]=porDia[isoDia(d)]||[]).push({t:'mk', o:m});
   });
   fixos.forEach(f=>{
     const di = new Date(f.inicio+'T12:00'), df = new Date(f.fim+'T12:00');
     let primeiroDia = true;
     for (let d=new Date(Math.max(di,primeiro)); d<=df && d<=ultimo; d.setDate(d.getDate()+1)){
-      const dd = iso(d);
+      const dd = isoDia(d);
       if (f.tipo === 'feriado'){
         semPresencial.add(dd);
         if (primeiroDia) (porDia[dd]=porDia[dd]||[]).push({t:'fx', o:f});
@@ -1051,7 +1234,7 @@ async function pageCalendario(){
   let cels = '';
   for (let i=0;i<primeiro.getDay();i++) cels += '<div class="cal-cel fora"></div>';
   for (let dia=1; dia<=ultimo.getDate(); dia++){
-    const dIso = iso(new Date(c.ano, c.mes, dia));
+    const dIso = isoDia(new Date(c.ano, c.mes, dia));
     const itens = (porDia[dIso]||[]).slice(0,4);
     const extra = (porDia[dIso]||[]).length - itens.length;
     cels += `<div class="cal-cel ${dIso===hj?'hoje':''} ${semPresencial.has(dIso)?'sem-presencial':''}"><span class="cal-dia">${dia}</span>
@@ -1069,7 +1252,7 @@ async function pageCalendario(){
       <b>${nomeMes}</b>
       <button class="nav" onclick="mudarMes(1)" aria-label="Próximo mês">›</button>
       <button class="btn ghost" style="height:36px;padding:0 14px;font-size:12.5px"
-        onclick="state.cal.ano=new Date().getFullYear();state.cal.mes=new Date().getMonth();pageCalendario()">Hoje</button>
+        onclick="state.cal.ano=new Date().getFullYear();state.cal.mes=new Date().getMonth();telaMes()">Hoje</button>
       <div class="cal-legenda">
         <i style="--cc:${COR_EVENTO}">Eventos gerais</i>
         ${Object.values(TIPOS_FIXO).map(t=>`<i style="--cc:${t.cor}">${t.l}</i>`).join('')}
@@ -1081,7 +1264,9 @@ async function pageCalendario(){
       confraternizações e visitas), a agenda fixa do semestre 2026/2 e os marcos mantidos
       pela gestão. Os dias em tom de laranja estão próximos de feriados e recessos: evite
       agendar atividades presenciais neles. A sua agenda pessoal, com testes e reuniões de
-      grupo, continua no aplicativo de eventos e presença.</p>`;
+      grupo, continua no aplicativo de eventos e presença; para marcar uma reunião com alguém
+      da equipe, use a aba
+      <a href="#/calendario/agendar" style="color:var(--syn);text-decoration:underline">Agendar reunião</a>.</p>`;
 }
 function verFixoCal(id){
   const f = (state.calDados.fixos||[]).find(x=>x.id===id) || CAL_FIXO.find(x=>x.id===id);
@@ -1100,7 +1285,7 @@ function verFixoCal(id){
 function mudarMes(n){
   const c = state.cal; c.mes += n;
   if (c.mes<0){ c.mes=11; c.ano--; } if (c.mes>11){ c.mes=0; c.ano++; }
-  pageCalendario();
+  telaMes();
 }
 function verEventoCal(id){
   const e = state.calDados.evs.find(x=>x.id===id); if(!e) return;
@@ -1126,6 +1311,690 @@ function verMarcoCal(id){
       ${m.observacao?`<div class="it full"><dt>Observação</dt><dd>${esc(m.observacao)}</dd></div>`:''}
     </div>
     <div class="acts"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`);
+}
+
+/* ============================================================
+   ASSISTENTE DE AGENDAMENTO
+   A grade mostra, lado a lado, o livre/ocupado de cada
+   convidado — como o Scheduling Assistant do Teams. A ocupação
+   vem da função portal_agenda_ocupacao, que junta o Google
+   Agenda de cada um, os eventos do SOMA e as ausências.
+   ============================================================ */
+function iniciaAg(){
+  if (state.ag) return;
+  const agora = new Date();
+  const dia = new Date(agora);
+  let ini = Math.ceil((agora.getHours()*60 + agora.getMinutes() + 10) / 30) * 30;
+  // Depois do expediente (ou no fim de semana), começa no próximo dia útil.
+  if (ini + 30 > AG_H1*60 || ![1,2,3,4,5].includes(isoDow(dia))){
+    do { dia.setDate(dia.getDate()+1); } while (![1,2,3,4,5].includes(isoDow(dia)));
+    ini = hhmmMin(EXPEDIENTE.inicio) + 60;
+  }
+  state.ag = {
+    data: isoDia(dia), ini: Math.max(ini, AG_H0*60), dur: 30,
+    obrig: new Set(), opc: new Set(), grupos: new Set(), manual: new Set(),
+    ocup: {}, erro: null, soExpediente: true, busca: '', buscaAlvo: null
+  };
+}
+
+async function telaAgendar(){
+  const alvo = $('#cal-body');
+  if (!state.perfil.registro){
+    alvo.innerHTML = `<div class="aviso-box info" style="margin:0">Sua conta ainda não está vinculada a
+      um registro de membro, então o portal não sabe quem convidar em seu nome. Dá para ver o
+      calendário normalmente; para marcar reuniões, peça o vínculo ao Depto. de Pessoal.</div>`;
+    return;
+  }
+  iniciaAg();
+  state.ag.obrig.add(state.perfil.registro);
+  await carregarAgendas();
+  await carregarOcupacao();
+  desenhaAgendar();
+}
+
+/* ---------------- dados ---------------- */
+async function carregarAgendas(force){
+  if (state.agendas && !force) return;
+  const { data, error } = await sb.from('portal_agendas')
+    .select('registro,conectado,ativo,fuso,expediente_inicio,expediente_fim,dias_uteis,ultima_sync,ultimo_erro,blocos_sync');
+  state.agendas = {};
+  if (error){ state.agendasErro = error.message; return; }
+  state.agendasErro = null;
+  (data||[]).forEach(a => { state.agendas[a.registro] = a; });
+}
+function expedienteDe(reg){
+  const a = state.agendas && state.agendas[reg];
+  return {
+    ini:  hhmmMin(a?.expediente_inicio || EXPEDIENTE.inicio),
+    fim:  hhmmMin(a?.expediente_fim    || EXPEDIENTE.fim),
+    dias: (a?.dias_uteis && a.dias_uteis.length) ? a.dias_uteis : EXPEDIENTE.dias
+  };
+}
+function agendaLigada(reg){
+  const a = state.agendas && state.agendas[reg];
+  return !!(a && a.conectado && a.ativo);
+}
+async function carregarOcupacao(){
+  const ag = state.ag;
+  const regs = [...new Set([...ag.obrig, ...ag.opc])];
+  ag.ocup = {}; ag.erro = null;
+  regs.forEach(r => { ag.ocup[r] = []; });
+  if (!regs.length) return;
+  const de  = dataHora(ag.data, 0);
+  const ate = new Date(de.getTime() + AG_JANELA*86400000);
+  const { data, error } = await sb.rpc('portal_agenda_ocupacao', {
+    p_registros: regs, p_de: de.toISOString(), p_ate: ate.toISOString() });
+  if (error){ ag.erro = error.message; return; }
+  (data||[]).forEach(b => {
+    (ag.ocup[b.registro] = ag.ocup[b.registro] || []).push({
+      i: new Date(b.inicio).getTime(), f: new Date(b.fim).getTime(),
+      t: b.titulo, o: b.origem, dia: b.dia_inteiro });
+  });
+}
+async function recarregaAg(){
+  const el = $('#ag-main');
+  if (el) el.style.opacity = '.55';
+  await carregarOcupacao();
+  desenhaAgendar();
+}
+function ocupado(reg, ini, fim){
+  return (state.ag.ocup[reg] || []).some(b => b.i < fim && b.f > ini);
+}
+function conflitosAtuais(){
+  const ag = state.ag;
+  const ini = dataHora(ag.data, ag.ini).getTime(), fim = ini + ag.dur*60000;
+  return [...ag.obrig, ...ag.opc].filter(r => ocupado(r, ini, fim));
+}
+
+/* ---------------- sugestões de horário ---------------- */
+function candidatosDoDia(offset){
+  const ag = state.ag;
+  const req = [...ag.obrig], opc = [...ag.opc];
+  const dia = dataHora(ag.data, 0); dia.setDate(dia.getDate() + offset);
+  const iso = isoDia(dia), dow = isoDow(dia);
+  let a = AG_H0*60, b = AG_H1*60;
+  if (ag.soExpediente){
+    for (const r of req){
+      const e = expedienteDe(r);
+      if (!e.dias.includes(dow)) return [];
+      a = Math.max(a, e.ini); b = Math.min(b, e.fim);
+    }
+  }
+  const agora = Date.now(), saida = [];
+  for (let m = Math.ceil(a/AG_PASSO)*AG_PASSO; m + ag.dur <= b; m += AG_PASSO){
+    const ini = dataHora(iso, m).getTime(), fim = ini + ag.dur*60000;
+    if (ini < agora) continue;
+    if (req.some(r => ocupado(r, ini, fim))) continue;
+    saida.push({ iso, min: m, offset, livresOpc: opc.filter(r => !ocupado(r, ini, fim)).length });
+    if (saida.length > 120) break;
+  }
+  return saida;
+}
+function sugestoes(){
+  const ag = state.ag;
+  const nOpc = ag.opc.size;
+  let hoje = candidatosDoDia(0);
+  if (nOpc){
+    const perfeitos = hoje.filter(c => c.livresOpc === nOpc);
+    if (perfeitos.length) hoje = perfeitos;
+  }
+  if (hoje.length){
+    // Sem sobreposição entre as sugestões: uma a cada "dur".
+    const out = []; let ultimo = -1e9;
+    for (const c of hoje){ if (c.min - ultimo >= ag.dur){ out.push(c); ultimo = c.min; } if (out.length===3) break; }
+    return { mesmoDia: true, itens: out };
+  }
+  const out = [];
+  for (let d=1; d<AG_JANELA && out.length<3; d++){
+    const c = candidatosDoDia(d)[0];
+    if (c) out.push(c);
+  }
+  return { mesmoDia: false, itens: out };
+}
+function usarSugestao(iso, min){
+  state.ag.data = iso; state.ag.ini = min;
+  if (iso !== state.ag.dataCarregada) recarregaAg(); else desenhaAgendar();
+}
+
+/* ---------------- desenho ---------------- */
+const agPct = m => ((m - AG_H0*60) / ((AG_H1-AG_H0)*60)) * 100;
+function agBarras(reg){
+  const ag = state.ag;
+  const d0 = dataHora(ag.data, 0).getTime();
+  const lo = dataHora(ag.data, AG_H0*60).getTime(), hi = dataHora(ag.data, AG_H1*60).getTime();
+  return (ag.ocup[reg] || [])
+    .filter(b => b.f > lo && b.i < hi)
+    .map(b => {
+      const i = Math.max(b.i, lo), f = Math.min(b.f, hi);
+      const l = agPct((i-d0)/60000), w = agPct((f-d0)/60000) - l;
+      return { l, w, t: b.t, o: b.o, dia: b.dia };
+    })
+    .sort((x,y) => x.l - y.l);
+}
+function agLinhaPessoa(reg){
+  const ag = state.ag;
+  const e = expedienteDe(reg);
+  const dow = isoDow(dataHora(ag.data, 0));
+  const trabalha = e.dias.includes(dow);
+  const fora = trabalha
+    ? [[AG_H0*60, e.ini], [e.fim, AG_H1*60]].filter(([a,b]) => b > a)
+    : [[AG_H0*60, AG_H1*60]];
+  const barras = agBarras(reg);
+  const rotulo = { google:'Ocupado', soma:'Evento da equipe', ausencia:'Indisponível' };
+  return `<div class="ag-trilha" data-reg="${reg}">
+    ${fora.map(([a,b]) => `<div class="ag-fora" style="left:${agPct(a)}%;width:${agPct(b)-agPct(a)}%"></div>`).join('')}
+    ${barras.map(b => `<div class="ag-ocup ${b.o}" style="left:${b.l}%;width:${b.w}%"
+        title="${esc(b.t || rotulo[b.o] || 'Ocupado')}">${b.w > 7 ? esc(b.t || rotulo[b.o] || 'Ocupado') : ''}</div>`).join('')}
+  </div>`;
+}
+function agStatus(reg){
+  const ag = state.ag;
+  const ini = dataHora(ag.data, ag.ini).getTime(), fim = ini + ag.dur*60000;
+  if (ocupado(reg, ini, fim)) return ['ocupado','Ocupado'];
+  if (!agendaLigada(reg) && reg !== state.perfil.registro) return ['desconhecido','Sem agenda'];
+  return ['livre','Livre'];
+}
+function desenhaAgendar(){
+  const ag = state.ag;
+  ag.dataCarregada = ag.data;
+  const eu = state.perfil.registro;
+  const horas = AG_H1 - AG_H0;
+  const dia = dataHora(ag.data, 0);
+  const rotuloDia = dia.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+  const conflitos = conflitosAtuais();
+  const sug = sugestoes();
+  const lista = r => {
+    const m = state.membros.find(x => x.registro === r) || { registro:r, nome: nomeDe(r) };
+    const [cls, txt] = agStatus(r);
+    return `<div class="ag-part">${avatarFoto(m, 28, 11)}
+      <div class="tx"><div class="nm">${esc(m.nome)}${r===eu?' (você)':''}</div>
+        <div class="st ${cls}">${txt}</div></div>
+      ${r===eu?'':`<button class="rm" title="Remover" onclick="agRemover(${r})">×</button>`}</div>`;
+  };
+  const linhaNome = (r, opcional) => {
+    const m = state.membros.find(x => x.registro === r) || { registro:r, nome: nomeDe(r) };
+    return `<div class="ag-nome">${avatarFoto(m, 24, 10)}
+      <div class="tx"><div class="nm">${esc(m.nome)}</div>
+      ${opcional?'<div class="op">Opcional</div>':''}</div></div>`;
+  };
+  const pessoas = [...ag.obrig].map(r => [r,false]).concat([...ag.opc].map(r => [r,true]));
+  const grupos = gruposDaEquipe();
+  const fimSel = Math.min(ag.ini + ag.dur, AG_H1*60);
+  const agoraPct = ag.data === hojeISO()
+    ? agPct(new Date().getHours()*60 + new Date().getMinutes()) : null;
+
+  $('#cal-body').innerHTML = `
+  <div class="ag-wrap">
+    <aside class="ag-lado">
+      <div class="ag-sec">
+        <h5>Participantes <b>${ag.obrig.size}</b></h5>
+        ${[...ag.obrig].map(r => lista(r)).join('')}
+        ${ag.buscaAlvo==='obrig' ? campoBuscaAg('obrig') :
+          `<button class="ag-add" onclick="agAbrirBusca('obrig')">+ adicionar pessoa</button>`}
+      </div>
+      <div class="ag-sec">
+        <h5>Opcionais <b>${ag.opc.size||''}</b></h5>
+        ${[...ag.opc].map(r => lista(r)).join('') || '<div class="ag-part" style="color:var(--dim);font-size:12px">Ninguém por enquanto.</div>'}
+        ${ag.buscaAlvo==='opc' ? campoBuscaAg('opc') :
+          `<button class="ag-add" onclick="agAbrirBusca('opc')">+ adicionar opcional</button>`}
+      </div>
+      ${grupos.length ? `<div class="ag-sec">
+        <h5>Grupos</h5>
+        <div class="chips">${grupos.map((g,i) =>
+          `<button class="chip ${ag.grupos.has(g)?'on':''}" onclick="agGrupo(${i})">${esc(g)}</button>`).join('')}</div>
+      </div>` : ''}
+    </aside>
+
+    <section class="ag-main" id="ag-main">
+      <div class="ag-ctl">
+        <button class="nav" onclick="agDia(-1)" aria-label="Dia anterior">‹</button>
+        <div class="ag-dia">${rotuloDia.charAt(0).toUpperCase()+rotuloDia.slice(1)}
+          <small>${fusoLocal()}</small></div>
+        <button class="nav" onclick="agDia(1)" aria-label="Próximo dia">›</button>
+        <div class="cmp"><label>Data</label>
+          <input type="date" id="ag-data" value="${ag.data}" onchange="agSetData(this.value)"></div>
+        <div class="cmp"><label>Início</label>
+          <input type="time" id="ag-hora" step="900" value="${minHHMM(ag.ini)}" onchange="agSetHora(this.value)"></div>
+        <div class="cmp"><label>Duração</label>
+          <select id="ag-dur" onchange="agSetDur(this.value)">
+            ${AG_DURACOES.map(d => `<option value="${d}" ${d===ag.dur?'selected':''}>${d>=60?(d/60)+'h'+(d%60?' '+(d%60)+'min':''):d+' min'}</option>`).join('')}
+          </select></div>
+        <div class="cmp"><label>Termina</label>
+          <input type="time" value="${minHHMM(fimSel)}" disabled></div>
+        <label class="check" style="border:none;padding:6px 0;align-self:flex-end">
+          <input type="checkbox" ${ag.soExpediente?'checked':''} onchange="agSetExpediente(this.checked)">
+          Sugerir só no expediente</label>
+      </div>
+
+      <div class="ag-sug">
+        <span class="lb">Sugestões</span>
+        ${sug.itens.length
+          ? sug.itens.map(c => `<button class="${sug.mesmoDia?'':'outro-dia'}"
+              onclick="usarSugestao('${c.iso}',${c.min})">${sug.mesmoDia ? '' :
+                diaCurto(c.iso)+', '
+              }${minHHMM(c.min)}–${minHHMM(c.min + ag.dur)}${
+                ag.opc.size && c.livresOpc < ag.opc.size ? ` · ${c.livresOpc}/${ag.opc.size} opcionais` : ''}</button>`).join('')
+          : `<span class="nada">Ninguém está livre ao mesmo tempo nos próximos ${AG_JANELA} dias — tente uma duração menor ou tire alguém da lista.</span>`}
+      </div>
+
+      ${ag.erro ? `<div class="aviso-box err">Não foi possível ler a disponibilidade: ${esc(ag.erro)}
+        Aplique a migração <span class="mono">soma_v12.sql</span> no Supabase.</div>` : ''}
+
+      <div class="ag-grade" style="--passo:${(100/horas).toFixed(4)}%">
+        <div class="ag-nomes">
+          <div class="ag-cabec">Convidados</div>
+          ${pessoas.map(([r,o]) => linhaNome(r,o)).join('')}
+        </div>
+        <div class="ag-tempo">
+          <div class="ag-tempo-in">
+            <div class="ag-regua">
+              ${Array.from({length: horas+1}, (_,k) => AG_H0+k).map(h =>
+                `<span style="left:${agPct(h*60)}%;transform:translateX(${h===AG_H0?'0':h===AG_H1?'-100%':'-50%'})">${String(h).padStart(2,'0')}h</span>`).join('')}
+            </div>
+            <div class="ag-corpo" id="ag-corpo">
+              ${pessoas.map(([r]) => agLinhaPessoa(r)).join('')}
+              <div class="ag-sel ${conflitos.length?'conflito':''}" id="ag-sel"
+                style="left:${agPct(ag.ini)}%;width:${agPct(fimSel)-agPct(ag.ini)}%"></div>
+              ${agoraPct !== null && agoraPct >= 0 && agoraPct <= 100
+                ? `<div class="ag-agora" style="left:${agoraPct}%"></div>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ag-legenda">
+        <i style="--cc:rgba(241,128,111,.6)">Google Agenda</i>
+        <i style="--cc:rgba(45,212,191,.5)">Evento do SOMA</i>
+        <i style="--cc:rgba(142,142,147,.5)">Ausência</i>
+        <i class="hach">Fora do expediente</i>
+        <i style="--cc:var(--syn)">Horário escolhido</i>
+      </div>
+
+      <div class="ag-rodape">
+        <div class="resumo" id="ag-resumo">${resumoAg(conflitos)}</div>
+        <button class="btn ghost" onclick="sincronizarAgenda(true)">Atualizar agendas</button>
+        <button class="btn solid" onclick="modalReuniao()">Agendar reunião</button>
+      </div>
+    </section>
+  </div>`;
+  ligarArrasteAg();
+  if (ag.buscaAlvo){ const i = $('#ag-busca'); if (i){ i.value = ag.busca; i.focus(); agFiltrar(ag.busca); } }
+}
+function resumoAg(conflitos){
+  const ag = state.ag;
+  const quando = `${fmtD(ag.data)}, ${minHHMM(ag.ini)}–${minHHMM(Math.min(ag.ini+ag.dur, AG_H1*60))}`;
+  const semAgenda = [...ag.obrig, ...ag.opc]
+    .filter(r => r !== state.perfil.registro && !agendaLigada(r));
+  let txt = `<b>${quando}</b> · ${ag.obrig.size + ag.opc.size} convidado${ag.obrig.size+ag.opc.size===1?'':'s'}`;
+  if (conflitos.length) txt += ` · <span style="color:var(--bad)">${conflitos.length} com conflito: ${
+    conflitos.slice(0,3).map(r => esc(primeiroNome(nomeDe(r)))).join(', ')}${conflitos.length>3?'…':''}</span>`;
+  else txt += ` · <span style="color:var(--ok)">todo mundo livre</span>`;
+  if (semAgenda.length) txt += `<br><span style="font-size:11.5px;color:var(--dim)">${semAgenda.length}
+    ${semAgenda.length===1?'pessoa ainda não conectou o Google Agenda':'pessoas ainda não conectaram o Google Agenda'} —
+    para elas, só aparecem os eventos do SOMA.</span>`;
+  return txt;
+}
+
+/* ---------------- interação ---------------- */
+function agDia(n){
+  const d = dataHora(state.ag.data, 0); d.setDate(d.getDate()+n);
+  agSetData(isoDia(d));
+}
+function agSetData(v){ if(!v) return; state.ag.data = v; recarregaAg(); }
+function agSetHora(v){
+  const m = hhmmMin(v);
+  state.ag.ini = Math.min(Math.max(m, AG_H0*60), AG_H1*60 - state.ag.dur);
+  desenhaAgendar();
+}
+function agSetDur(v){
+  state.ag.dur = parseInt(v,10) || 30;
+  state.ag.ini = Math.min(state.ag.ini, AG_H1*60 - state.ag.dur);
+  desenhaAgendar();
+}
+function agSetExpediente(v){ state.ag.soExpediente = v; desenhaAgendar(); }
+function agAbrirBusca(alvo){ state.ag.buscaAlvo = alvo; state.ag.busca = ''; desenhaAgendar(); }
+function campoBuscaAg(alvo){
+  return `<div class="ag-busca">
+    <input id="ag-busca" placeholder="Nome do colega…" autocomplete="off"
+      oninput="agFiltrar(this.value)" onkeydown="if(event.key==='Escape')agFecharBusca()">
+    <div class="ag-res" id="ag-res"></div></div>`;
+}
+function agFecharBusca(){ state.ag.buscaAlvo = null; state.ag.busca=''; desenhaAgendar(); }
+function agFiltrar(v){
+  const ag = state.ag; ag.busca = v;
+  const cx = $('#ag-res'); if (!cx) return;
+  const q = norm(v);
+  const jaTem = r => ag.obrig.has(r) || ag.opc.has(r);
+  const achados = state.membros
+    .filter(m => ['Ativo','Em pausa / avaliação'].includes(m.status) && !jaTem(m.registro))
+    .filter(m => !q || norm(m.nome).includes(q) || norm(m.cargo||'').includes(q) || norm(m.departamento||'').includes(q))
+    .slice(0, 8);
+  cx.innerHTML = achados.length
+    ? achados.map(m => `<div class="op" onclick="agAdicionar(${m.registro})">${avatarFoto(m,22,9)}
+        <span>${esc(m.nome)}</span><span class="cg">${esc(m.cargo||m.departamento||'')}</span></div>`).join('')
+    : '<div class="vazio">Ninguém encontrado com esse nome.</div>';
+}
+function agAdicionar(reg){
+  const ag = state.ag;
+  ag.manual.add(reg);
+  (ag.buscaAlvo === 'opc' ? ag.opc : ag.obrig).add(reg);
+  ag.buscaAlvo = null; ag.busca = '';
+  recarregaAg();
+}
+function agRemover(reg){
+  const ag = state.ag;
+  if (reg === state.perfil.registro) return;
+  ag.obrig.delete(reg); ag.opc.delete(reg); ag.manual.delete(reg);
+  recarregaAg();
+}
+function membrosDoGrupo(g){
+  return state.membros.filter(m => ['Ativo','Em pausa / avaliação'].includes(m.status)
+    && (m.grupos||[]).includes(g));
+}
+function gruposDaEquipe(){
+  return [...new Set(state.membros.flatMap(m => m.grupos||[]))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+}
+function agGrupo(ix){
+  const ag = state.ag;
+  const g = gruposDaEquipe()[ix];
+  if (!g) return;
+  const regs = membrosDoGrupo(g).map(m => m.registro);
+  if (ag.grupos.has(g)){
+    ag.grupos.delete(g);
+    const noutros = new Set([...ag.grupos].flatMap(x => membrosDoGrupo(x).map(m => m.registro)));
+    regs.forEach(r => {
+      if (r !== state.perfil.registro && !ag.manual.has(r) && !noutros.has(r)){
+        ag.obrig.delete(r); ag.opc.delete(r);
+      }
+    });
+  } else {
+    ag.grupos.add(g);
+    regs.forEach(r => { ag.opc.delete(r); ag.obrig.add(r); });
+  }
+  recarregaAg();
+}
+/* Arrastar na grade escolhe o horário, como no Teams. */
+function ligarArrasteAg(){
+  const corpo = $('#ag-corpo'); if (!corpo) return;
+  const minDeX = x => {
+    const r = corpo.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, (x - r.left) / r.width));
+    return Math.round((AG_H0*60 + p*(AG_H1-AG_H0)*60) / AG_PASSO) * AG_PASSO;
+  };
+  let base = null;
+  corpo.addEventListener('pointerdown', e => {
+    base = Math.min(minDeX(e.clientX), AG_H1*60 - AG_PASSO);
+    state.ag.ini = Math.min(base, AG_H1*60 - state.ag.dur);
+    corpo.setPointerCapture(e.pointerId);
+    pintaSelecao();
+  });
+  corpo.addEventListener('pointermove', e => {
+    if (base === null) return;
+    const m = minDeX(e.clientX);
+    if (m - base >= AG_PASSO){ state.ag.ini = base; state.ag.dur = Math.min(m - base, AG_H1*60 - base); }
+    pintaSelecao();
+  });
+  const solta = () => { if (base === null) return; base = null; desenhaAgendar(); };
+  corpo.addEventListener('pointerup', solta);
+  corpo.addEventListener('pointercancel', solta);
+}
+function pintaSelecao(){
+  const ag = state.ag, sel = $('#ag-sel'); if (!sel) return;
+  const fim = Math.min(ag.ini + ag.dur, AG_H1*60);
+  sel.style.left = agPct(ag.ini)+'%';
+  sel.style.width = (agPct(fim)-agPct(ag.ini))+'%';
+  const c = conflitosAtuais();
+  sel.classList.toggle('conflito', c.length > 0);
+  const res = $('#ag-resumo'); if (res) res.innerHTML = resumoAg(c);
+}
+
+/* ---------------- criar a reunião ---------------- */
+function tituloPadrao(){
+  const ag = state.ag;
+  const outros = [...ag.obrig, ...ag.opc].filter(r => r !== state.perfil.registro);
+  if (!outros.length) return 'Reunião';
+  if (ag.grupos.size) return 'Reunião: ' + [...ag.grupos].join(', ');
+  if (outros.length === 1) return `Reunião: ${primeiroNome(nomeDe(outros[0]))} e ${primeiroNome(state.perfil.nome)}`;
+  return `Reunião com ${outros.length + 1} pessoas`;
+}
+function modalReuniao(){
+  const ag = state.ag;
+  const conflitos = conflitosAtuais();
+  const fim = Math.min(ag.ini + ag.dur, AG_H1*60);
+  abreModal(`<h3>Agendar reunião</h3>
+    <p class="sub" style="margin-bottom:14px">${fmtD(ag.data)}, ${minHHMM(ag.ini)}–${minHHMM(fim)} ·
+      ${ag.obrig.size + ag.opc.size} convidado${ag.obrig.size+ag.opc.size===1?'':'s'}</p>
+    ${conflitos.length ? `<div class="aviso-box warn">${conflitos.length===1?'Uma pessoa está':'Algumas pessoas estão'}
+      ocupada nesse horário: ${conflitos.map(r=>esc(primeiroNome(nomeDe(r)))).join(', ')}. Dá para
+      marcar assim mesmo — cada um responde ao convite.</div>` : ''}
+    <div class="fld"><label>Título</label>
+      <input id="rn-tit" value="${esc(tituloPadrao())}" maxlength="120"></div>
+    <div class="fld"><label>Tipo</label>
+      <select id="rn-tipo">${EVENTO_TIPOS.map(t => `<option ${t==='Outro'?'selected':''}>${esc(t)}</option>`).join('')}</select></div>
+    <div class="fld"><label>Espaço do LABBIO</label>
+      <select id="rn-espaco"><option value="">Outro / fora do LABBIO</option></select></div>
+    <div class="fld"><label>Local ou link</label>
+      <input id="rn-local" placeholder="ex.: Sala de reuniões, ou o link da chamada"></div>
+    <div class="fld"><label>Pauta (opcional)</label>
+      <textarea id="rn-pauta" rows="3" placeholder="O que precisa ser tratado"></textarea></div>
+    <p class="err-msg" id="rn-erro"></p>
+    <div class="acts">
+      <button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" id="rn-btn" onclick="criarReuniao()">Enviar convites</button>
+    </div>`);
+  sb.from('espacos').select('id,nome').eq('ativo', true).order('ordem').then(({data}) => {
+    const s = $('#rn-espaco');
+    if (s && data && data.length) s.innerHTML = '<option value="">Outro / fora do LABBIO</option>' +
+      data.map(e => `<option value="${e.id}">${esc(e.nome)}</option>`).join('');
+  });
+}
+async function criarReuniao(){
+  const ag = state.ag, eu = state.perfil.registro;
+  const erro = $('#rn-erro'); erro.textContent = '';
+  $('#rn-btn').disabled = true;
+  const hi = minHHMM(ag.ini), hf = minHHMM(Math.min(ag.ini + ag.dur, AG_H1*60));
+  const espSel = $('#rn-espaco');
+  const espId = espSel.value ? parseInt(espSel.value, 10) : null;
+  const local = espId ? espSel.selectedOptions[0].text : ($('#rn-local').value.trim() || null);
+  try{
+    const { data: ev, error } = await sb.from('eventos').insert({
+      titulo: $('#rn-tit').value.trim() || tituloPadrao(),
+      tipo: $('#rn-tipo').value,
+      data: ag.data, hora: `${hi} às ${hf}`, hora_inicio: hi, hora_fim: hf,
+      espaco_id: espId, local, recorrencia: 'Única',
+      owner_registro: eu, grupos: [...ag.grupos],
+      pauta: $('#rn-pauta').value.trim() || null,
+      criado_por: state.perfil.nome || state.perfil.email
+    }).select('id,numero').single();
+    if (error) throw error;
+    const linhas = [...ag.obrig].map(r => [r,'obrigatorio']).concat([...ag.opc].map(r => [r,'opcional']));
+    const parts = linhas.map(([r, papel]) => ({
+      evento_id: ev.id, registro: r,
+      origem: papel === 'opcional' ? 'opcional' : (ag.grupos.size ? 'grupo' : 'manual'),
+      resposta: r === eu ? 'vou' : 'pendente',
+      respondido_em: r === eu ? new Date().toISOString() : null
+    }));
+    const r1 = await sb.from('evento_participantes').insert(parts);
+    if (r1.error) throw r1.error;
+    fechaModal();
+    toast(`Reunião EVT-${pad3(ev.numero)} criada. Os convites já estão na agenda de cada um.`);
+    await recarregaAg();
+  }catch(e){
+    erro.textContent = 'Não foi possível criar a reunião: ' + e.message;
+    const b = $('#rn-btn'); if (b) b.disabled = false;
+  }
+}
+
+/* ============================================================
+   MINHA AGENDA — conexão com o Google Agenda
+   O portal guarda o link secreto .ics e, a partir dele, só os
+   horários ocupados. Título só vai junto se a pessoa marcar.
+   ============================================================ */
+async function telaMinhaAgenda(){
+  const alvo = $('#cal-body');
+  if (!state.perfil.registro){
+    alvo.innerHTML = `<div class="aviso-box info" style="margin:0">Sua conta ainda não está vinculada a
+      um registro de membro, então não há onde guardar a sua agenda. Fale com o Depto. de Pessoal.</div>`;
+    return;
+  }
+  await carregarAgendas(true);
+  const meu = state.agendas[state.perfil.registro] || null;
+  const [seg, blocos] = await Promise.all([
+    sb.from('portal_agenda_segredo').select('ics_url').eq('registro', state.perfil.registro).maybeSingle(),
+    sb.from('portal_agenda_blocos').select('inicio,fim,dia_inteiro,titulo')
+      .gte('fim', new Date().toISOString()).order('inicio').limit(12)
+  ]);
+  const url = seg.data?.ics_url || '';
+  const exp = expedienteDe(state.perfil.registro);
+  const conectado = !!meu?.conectado;
+  const fusos = ['America/Sao_Paulo','America/Manaus','America/Belem','America/Fortaleza',
+                 'America/Cuiaba','America/Rio_Branco','Europe/Lisbon','UTC'];
+  const fusoAtual = meu?.fuso || fusoLocal();
+
+  let dot = 'espera', txt = 'Ainda não conectada.';
+  if (conectado && meu.ultimo_erro){ dot = 'erro'; txt = 'Erro na última sincronização: ' + meu.ultimo_erro; }
+  else if (conectado && meu.ultima_sync){
+    dot = 'ok';
+    txt = `Sincronizada em ${fmtD(meu.ultima_sync.slice(0,10))} às ${hhmm(meu.ultima_sync)} · ` +
+          `${meu.blocos_sync ?? 0} compromisso${meu.blocos_sync===1?'':'s'} nos próximos 60 dias.`;
+  } else if (conectado){ dot = 'espera'; txt = 'Link guardado, esperando a primeira sincronização.'; }
+
+  alvo.innerHTML = `
+  <div class="mag-status">
+    <span class="dot ${dot}"></span><span>${esc(txt)}</span>
+    ${conectado?`<button class="btn ghost" style="height:32px;padding:0 12px;font-size:12px;margin-left:auto"
+      onclick="sincronizarAgenda()">Sincronizar agora</button>`:''}
+  </div>
+  <div class="mag-grid">
+    <div class="card">
+      <h3>Conectar o Google Agenda</h3>
+      <p class="sub">O portal lê o seu calendário só para saber quando você está ocupado.</p>
+      <ol class="passos">
+        <li>No <a href="https://calendar.google.com" target="_blank" rel="noopener"
+            style="color:var(--syn);text-decoration:underline">Google Agenda</a>, abra
+            <b>Configurações</b> e escolha o calendário que você usa no dia a dia.</li>
+        <li>Desça até <b>Integrar agenda</b>.</li>
+        <li>Copie o <b>Endereço secreto no formato iCal</b> (o que termina em
+            <span class="mono">basic.ics</span>).</li>
+        <li>Cole aqui embaixo e salve.</li>
+      </ol>
+      <div class="fld"><label>Endereço secreto em formato iCal</label>
+        <input id="mag-url" type="url" spellcheck="false"
+          placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
+          value="${esc(url)}">
+        <p class="mini">Esse link dá acesso de leitura ao seu calendário: só você o vê aqui —
+          nem o Depto. de Pessoal consegue lê-lo. Se um dia quiser cortar o acesso, use
+          <b>Redefinir</b> no próprio Google Agenda.</p></div>
+      <label class="check" style="margin-bottom:12px">
+        <input type="checkbox" id="mag-tit" ${meu?.compartilha_titulos?'checked':''}>
+        <span>Mostrar também o <b>título</b> dos compromissos para os colegas.
+          Desmarcado (o padrão), eles veem só "Ocupado".</span></label>
+      <div class="acts">
+        <button class="btn solid" id="mag-btn" onclick="salvarAgenda()">Salvar e sincronizar</button>
+        ${conectado?`<button class="btn perigo" onclick="confirmarDesconectar()">Desconectar</button>`:''}
+      </div>
+      <p class="err-msg" id="mag-erro"></p>
+    </div>
+
+    <div class="card">
+      <h3>Seu expediente</h3>
+      <p class="sub">É o que a grade pinta como disponível e o que as sugestões respeitam.</p>
+      <div style="display:flex;gap:12px;margin:14px 0">
+        <div class="fld" style="flex:1;margin:0"><label>Começa</label>
+          <input type="time" id="mag-ini" step="900" value="${minHHMM(exp.ini)}"></div>
+        <div class="fld" style="flex:1;margin:0"><label>Termina</label>
+          <input type="time" id="mag-fim" step="900" value="${minHHMM(exp.fim)}"></div>
+      </div>
+      <div class="fld"><label>Dias</label>
+        <div class="mag-dias" id="mag-dias">${DIAS_LB.map((l,i) =>
+          `<button type="button" class="${exp.dias.includes(i+1)?'on':''}" data-d="${i+1}"
+            onclick="this.classList.toggle('on')">${l}</button>`).join('')}</div></div>
+      <div class="fld"><label>Fuso horário</label>
+        <select id="mag-fuso">${fusos.map(f =>
+          `<option ${f===fusoAtual?'selected':''}>${f}</option>`).join('')}</select>
+        <p class="mini">Usado para interpretar os horários que vêm do Google.</p></div>
+
+      <h3 style="margin-top:22px">O que já foi sincronizado</h3>
+      <p class="sub" style="margin-bottom:10px">Seus próximos compromissos, como o portal os enxerga.</p>
+      ${(blocos.data||[]).length ? `<div class="mag-prev">${blocos.data.map(b => `<div>
+          <span>${fmtD(b.inicio.slice(0,10))} ${b.dia_inteiro?'dia inteiro':hhmm(b.inicio)+'–'+hhmm(b.fim)}</span>
+          <span style="color:var(--muted)">${esc(b.titulo || 'Ocupado')}</span></div>`).join('')}</div>`
+        : '<div class="empty">Nada sincronizado ainda.</div>'}
+    </div>
+  </div>`;
+}
+
+function diasMarcados(){
+  return [...document.querySelectorAll('#mag-dias button.on')].map(b => parseInt(b.dataset.d,10));
+}
+async function salvarAgenda(){
+  const erro = $('#mag-erro'); erro.textContent = '';
+  const dias = diasMarcados();
+  if (!dias.length){ erro.textContent = 'Escolha pelo menos um dia de expediente.'; return; }
+  const url = $('#mag-url').value.trim();
+  $('#mag-btn').disabled = true;
+  const { data, error } = await sb.rpc('portal_agenda_salvar', { p: {
+    ics_url: url,
+    compartilha_titulos: $('#mag-tit').checked,
+    fuso: $('#mag-fuso').value,
+    expediente_inicio: $('#mag-ini').value,
+    expediente_fim: $('#mag-fim').value,
+    dias_uteis: dias,
+    ativo: true
+  }});
+  $('#mag-btn').disabled = false;
+  if (error){ erro.textContent = 'Erro ao salvar: ' + error.message; return; }
+  const msgs = {
+    sem_vinculo: 'Sua conta ainda não está vinculada a um registro de membro.',
+    ics_url: 'Esse link não parece o endereço secreto em formato iCal do Google Agenda. Ele começa com https://calendar.google.com/calendar/ical/ e termina em .ics.',
+    expediente: 'O fim do expediente precisa ser depois do começo.',
+    dias_uteis: 'Escolha pelo menos um dia de expediente.'
+  };
+  if (data?.status !== 'ok'){ erro.textContent = msgs[data?.campo] || msgs[data?.status] || 'Não foi possível salvar.'; return; }
+  toast('Agenda salva.');
+  state.agendas = null;
+  if (url) await sincronizarAgenda(); else telaMinhaAgenda();
+}
+async function sincronizarAgenda(todas){
+  const erro = $('#mag-erro');
+  toast('Sincronizando com o Google…');
+  try{
+    const { data, error } = await sb.functions.invoke('agenda-sync', { body: todas ? { todos:true } : {} });
+    if (error) throw error;
+    const falhas = (data?.resultados||[]).filter(r => r.erro);
+    if (falhas.length && falhas.some(f => f.registro === state.perfil.registro)){
+      const meu = falhas.find(f => f.registro === state.perfil.registro);
+      if (erro) erro.textContent = 'O Google recusou a sincronização: ' + meu.erro;
+      toast('Não foi possível sincronizar a sua agenda.', true);
+    } else {
+      toast(`Pronto: ${data?.sincronizadas || 0} agenda${data?.sincronizadas===1?'':'s'} atualizada${data?.sincronizadas===1?'':'s'}.`);
+    }
+  }catch(e){
+    const msg = String(e?.message || e);
+    const aviso = /Function not found|404|Failed to send/i.test(msg)
+      ? 'A sincronização automática ainda não foi publicada no Supabase (Edge Function "agenda-sync"). Fale com o Depto. de Pessoal.'
+      : 'Não foi possível falar com a sincronização: ' + msg;
+    if (erro) erro.textContent = aviso; else toast(aviso, true);
+  }
+  state.agendas = null;
+  await carregarAgendas(true);
+  if (route().sub === 'minha') telaMinhaAgenda(); else if (route().sub === 'agendar') recarregaAg();
+}
+function confirmarDesconectar(){
+  abreModal(`<h3>Desconectar a agenda?</h3>
+    <p style="color:var(--muted);font-size:13.5px">O link é apagado e, junto com ele, todos os
+      horários que vieram do Google. Você volta a aparecer como "sem agenda" para os colegas —
+      só os eventos do SOMA continuam visíveis. Dá para reconectar quando quiser.</p>
+    <div class="acts"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn perigo" onclick="desconectarAgenda()">Desconectar</button></div>`);
+}
+async function desconectarAgenda(){
+  const { error } = await sb.rpc('portal_agenda_desconectar');
+  fechaModal();
+  if (error){ toast('Erro ao desconectar: ' + error.message, true); return; }
+  toast('Agenda desconectada.');
+  state.agendas = null;
+  telaMinhaAgenda();
 }
 
 /* ============================================================
