@@ -161,6 +161,9 @@ section{margin:0 0 clamp(90px,12vh,150px);scroll-margin-top:96px}
 .plat .ds b{color:var(--ink);font-weight:600}
 .plat ul.itens{list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:8px}
 .plat ul.itens li{display:flex;gap:10px;font-size:13.5px;color:var(--muted);align-items:baseline}
+.plat ul.itens li > span{min-width:0}
+.plat ul.itens li b{color:var(--ink);font-weight:600}
+.plat ul.itens li i{font-style:italic;color:var(--ink)}
 .plat ul.itens li::before{content:'';width:6px;height:6px;background:var(--syn);flex-shrink:0;
   transform:translateY(-1px)}
 .plat .acts{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
@@ -285,7 +288,7 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
     <a class="btn ghost" href="#mapa">Ver o mapa dos sistemas</a>
   </div>
   <div class="hero-meta reveal">
-    <span>Plataformas · <em>seis</em></span>
+    <span>Plataformas · <em>cinco</em></span>
     <span>Conta · <em>uma só</em></span>
     <span>Identidade · <em>uma só</em></span>
     <span>Base · <em>LABBIO, UFMG</em></span>
@@ -338,7 +341,7 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
   <div class="sec-head reveal">
     <span class="eyebrow">02 · O mapa</span>
     <div>
-      <h2>Seis lugares, cada um com o seu papel.</h2>
+      <h2>Cinco lugares, cada um com o seu papel.</h2>
       <p class="sub">Dois são <b>públicos</b> e falam com quem está fora; quatro são
         <b>internos</b>, para o dia a dia de quem é da equipe. Uma dica de orientação:
         repare no símbolo na aba do navegador. Ele é <b>verde nas páginas públicas</b> e
@@ -348,7 +351,7 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
 
   <article class="plat reveal">
     <div>
-      <div class="meta"><span class="no">01 / 06</span><span class="tag-amb pub">Pública</span></div>
+      <div class="meta"><span class="no">01 / 05</span><span class="tag-amb pub">Pública</span></div>
       <h3>Site institucional</h3>
       <a class="dom" href="https://neurodynamics.dev" target="_blank" rel="noopener">neurodynamics.dev</a>
       <p class="ds">A vitrine da NeuroDynamics para o mundo, em inglês: quem somos, o que
@@ -383,7 +386,7 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
 
   <article class="plat reveal">
     <div>
-      <div class="meta"><span class="no">02 / 06</span><span class="tag-amb pub">Pública</span></div>
+      <div class="meta"><span class="no">02 / 05</span><span class="tag-amb pub">Pública</span></div>
       <h3>Processo seletivo</h3>
       <a class="dom" href="https://selecao.neurodynamics.dev" target="_blank" rel="noopener">selecao.neurodynamics.dev</a>
       <p class="ds">Tudo do PS em um só lugar: edital, cronograma, inscrição, resultados e o
@@ -420,20 +423,24 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
 
   <article class="plat reveal">
     <div>
-      <div class="meta"><span class="no">03 / 06</span><span class="tag-amb int">Interna</span></div>
+      <div class="meta"><span class="no">03 / 05</span><span class="tag-amb int">Interna</span></div>
       <h3>Portal do Membro</h3>
       <a class="dom" href="https://membro.neurodynamics.dev" target="_blank" rel="noopener">membro.neurodynamics.dev</a>
-      <p class="ds">O seu ponto de partida no dia a dia. É onde a equipe se informa e se
-        resolve: o quadro de avisos, os próximos eventos com confirmação de presença, quem
-        está no LABBIO agora, o calendário do semestre, o agendamento de reuniões, o
-        organograma com busca, a biblioteca de documentos oficiais e os serviços do
-        Depto. de Pessoal.</p>
+      <p class="ds">O seu ponto de partida no dia a dia — e, desde a última virada, o único.
+        O antigo <b>SOMA App</b> virou a aba Agenda daqui, então check-in, convites e presença
+        moram no mesmo lugar que os avisos, o organograma, os documentos e os pedidos. Na
+        página inicial, uma coluna à direita guarda o atalho para todas as outras ferramentas
+        da equipe.</p>
       <ul class="itens">
-        <li>Avisos, agenda e check-in da equipe em tempo real</li>
-        <li>Agendamento de reuniões com o livre/ocupado de cada um, do Google Agenda</li>
-        <li>Documentos oficiais: estatuto, políticas, guias e formulários</li>
-        <li>Solicitações com protocolo: acesso, afastamento, 1:1 com o gestor</li>
-        <li>Ouvidoria anônima, sem vínculo com a sua conta</li>
+        <li><span><b>Agenda</b> — uma agenda só: convites com RSVP, convidados editáveis a
+          qualquer momento, recorrência de verdade e as cerimônias do seu grupo</span></li>
+        <li><span><b>Agendar</b> — o livre/ocupado de todo mundo lado a lado, com sugestões
+          de horário</span></li>
+        <li><span><b>Presença</b> — check-in pelo QR da entrada, quem está no LABBIO agora,
+          <i>find me at</i> e "estou no laboratório até as 18h"</span></li>
+        <li><span><b>Minha agenda</b> — o seu Google Agenda ligado nos dois sentidos</span></li>
+        <li><span><b>Organização, Informações e Serviços</b> — organograma com busca,
+          documentos oficiais e pedidos com protocolo, incluindo a ouvidoria anônima</span></li>
       </ul>
       <div class="acts"><a class="btn solid" href="./">Entrar no portal</a></div>
     </div>
@@ -446,6 +453,7 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
           <div class="sk-cards">
             <div class="sk-card"><div class="sk acc w45"></div><div class="sk-av"><i></i><div class="sk w60" style="flex:1"></div></div><div class="sk-av"><i></i><div class="sk w45" style="flex:1"></div></div></div>
             <div class="sk-card"><div class="sk teal w45"></div><div class="sk w90"></div><div class="sk w75"></div><div class="sk w45"></div></div>
+            <div class="sk-card" style="border-color:rgba(206,220,0,.3)"><div class="sk acc w60"></div><div class="sk-av"><i></i><div class="sk w75" style="flex:1"></div></div><div class="sk-av"><i></i><div class="sk w60" style="flex:1"></div></div><div class="sk-av"><i></i><div class="sk w45" style="flex:1"></div></div></div>
           </div>
         </div>
       </div>
@@ -454,7 +462,7 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
 
   <article class="plat reveal">
     <div>
-      <div class="meta"><span class="no">04 / 06</span><span class="tag-amb int">Interna</span></div>
+      <div class="meta"><span class="no">04 / 05</span><span class="tag-amb int">Interna</span></div>
       <h3>SOMA · Gestão</h3>
       <a class="dom" href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">pessoal.neurodynamics.dev</a>
       <p class="ds">O coração administrativo da equipe, e o lugar onde a sua conta nasce.
@@ -464,6 +472,8 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
       <ul class="itens">
         <li>Cadastro da equipe e cadeia de gestão</li>
         <li>OKRs, relatórios e operações do dia a dia</li>
+        <li>Eventos e marcos do calendário — os mesmos que o portal mostra, com recorrência
+          e controle de quem vê</li>
         <li>Bastidores do PS para o Comitê de Seleção</li>
       </ul>
       <div class="acts"><a class="btn ghost" href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">Abrir o SOMA ↗</a></div>
@@ -494,39 +504,7 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
 
   <article class="plat reveal">
     <div>
-      <div class="meta"><span class="no">05 / 06</span><span class="tag-amb int">Interna</span></div>
-      <h3>Agenda do Portal</h3>
-      <a class="dom" href="./#/agenda">membro.neurodynamics.dev/#/agenda</a>
-      <p class="ds">O que era o SOMA App agora é uma aba do Portal — e cresceu. É por aqui que
-        você faz check-in ao chegar no LABBIO, responde aos convites, marca compromissos com
-        quem precisa, avisa onde está e liga a sua agenda ao Google. Vale salvar na tela
-        inicial do celular: o painel na parede do laboratório mostra as presenças em tempo real.</p>
-      <ul class="itens">
-        <li>Check-in no LABBIO pelo QR do laboratório</li>
-        <li>Convites com RSVP, convidados editáveis e recorrência</li>
-        <li>Assistente de disponibilidade e sincronização com o Google Agenda</li>
-        <li>Find me at, não perturbe e intervalos de presença</li>
-      </ul>
-      <div class="acts"><a class="btn ghost" href="./#/agenda">Abrir a agenda →</a></div>
-    </div>
-    <div class="plat-media">
-      <div class="mock" style="max-width:290px;margin:0 auto">
-        <div class="bar"><span class="dots"><i></i><i></i><i></i></span>
-          <span class="url"><span class="fv int"><i></i></span><span>…dev/#/agenda</span></span></div>
-        <div class="page" style="min-height:240px">
-          <div class="sk acc" style="width:56px;height:56px;border-radius:50%;margin:8px auto 2px"></div>
-          <div class="sk t" style="width:60%;margin:0 auto"></div>
-          <div class="sk w45" style="margin:0 auto"></div>
-          <div class="sk-card" style="margin-top:8px"><div class="sk-av"><i></i><div class="sk w60" style="flex:1"></div></div><div class="sk-av"><i></i><div class="sk w45" style="flex:1"></div></div></div>
-          <div class="sk-row" style="margin-top:auto;justify-content:space-around"><div class="sk w30" style="height:7px"></div><div class="sk acc w30" style="height:7px"></div><div class="sk w30" style="height:7px"></div></div>
-        </div>
-      </div>
-    </div>
-  </article>
-
-  <article class="plat reveal">
-    <div>
-      <div class="meta"><span class="no">06 / 06</span><span class="tag-amb int">Interna</span></div>
+      <div class="meta"><span class="no">05 / 05</span><span class="tag-amb int">Interna</span></div>
       <h3>Brand</h3>
       <a class="dom" href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">brand.neurodynamics.dev</a>
       <p class="ds">A central da marca. Reúne as regras que mantêm a identidade coesa
@@ -569,8 +547,8 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
     <span class="eyebrow">03 · Como tudo se amarra</span>
     <div>
       <h2>Parece muita coisa.<br>Por trás, é um sistema só.</h2>
-      <p class="sub">As seis plataformas compartilham a mesma base de dados e a mesma
-        identidade. Na prática, isso significa quatro fios que costuram tudo:</p>
+      <p class="sub">As cinco plataformas compartilham a mesma base de dados e a mesma
+        identidade. Na prática, isso significa cinco fios que costuram tudo:</p>
     </div>
   </div>
   <div class="fios">
@@ -585,8 +563,9 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
       <span class="no">FIO 02</span>
       <h3>Um cadastro</h3>
       <p>O quadro de pessoal do SOMA alimenta o organograma do portal, a assinatura de
-        e-mail do brand e os relatórios da gestão. Atualizou lá, refletiu em todo lugar,
-        sem retrabalho.</p>
+        e-mail do brand e os relatórios da gestão. É de lá que sai também o <b>e-mail
+        pessoal</b> por onde chegam os convites do Google. Atualizou lá, refletiu em todo
+        lugar, sem retrabalho.</p>
     </div>
     <div class="fio reveal">
       <span class="no">FIO 03</span>
@@ -598,8 +577,19 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
     <div class="fio reveal">
       <span class="no">FIO 04</span>
       <h3>Uma presença</h3>
-      <p>O check-in feito no app aparece na home do portal e no painel do LABBIO em tempo
-        real. A equipe sabe quem está no laboratório sem perguntar em grupo nenhum.</p>
+      <p>O check-in feito pelo <b>QR da entrada</b> aparece na aba Presença, na home do
+        portal e no painel do LABBIO em tempo real. Quem avisa que está no laboratório até
+        as 18h entra na mesma conta. A equipe sabe quem está lá sem perguntar em grupo nenhum.</p>
+    </div>
+    <div class="fio reveal" style="grid-column:1/-1">
+      <span class="no">FIO 05</span>
+      <h3>Uma agenda</h3>
+      <p>Reunião marcada no portal, evento criado no SOMA, férias lançadas pela gestão,
+        feriado do calendário da UFMG: tudo vive na <b>mesma agenda</b>, e cada pessoa vê só
+        o que lhe diz respeito — a reunião geral aparece para todos, o compromisso do grupo
+        para o grupo, as férias só para você e o Depto. de Pessoal. Quem liga o
+        <b>Google Agenda</b> leva essa agenda para o celular e traz de volta os próprios
+        horários ocupados, sem revelar do quê.</p>
     </div>
   </div>
 </section>
@@ -619,8 +609,18 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
       <span class="r"><a href="./">Portal</a>, quadro de avisos na página inicial</span></div>
     <div class="grow"><span class="q">Confirmar presença em um evento</span><span class="seta">→</span>
       <span class="r"><a href="./#/agenda">Portal</a>, aba Agenda (ou direto na home)</span></div>
+    <div class="grow"><span class="q">Marcar uma reunião achando horário para todo mundo</span><span class="seta">→</span>
+      <span class="r"><a href="./#/agenda/agendar">Portal</a>, Agenda → Agendar</span></div>
+    <div class="grow"><span class="q">Mudar os convidados de algo que eu marquei</span><span class="seta">→</span>
+      <span class="r"><a href="./#/agenda">Portal</a>, Agenda → Convidados, no próprio compromisso</span></div>
+    <div class="grow"><span class="q">Definir a daily e as sprints do meu grupo</span><span class="seta">→</span>
+      <span class="r"><a href="./#/agenda">Portal</a>, Agenda → Cerimônias do grupo</span></div>
+    <div class="grow"><span class="q">Ver a agenda da NeuroDynamics no meu Google Agenda</span><span class="seta">→</span>
+      <span class="r"><a href="./#/agenda/minha">Portal</a>, Agenda → Minha agenda</span></div>
     <div class="grow"><span class="q">Fazer check-in ao chegar no LABBIO</span><span class="seta">→</span>
       <span class="r"><a href="./#/agenda/presenca">Portal</a>, pelo QR code na entrada do laboratório</span></div>
+    <div class="grow"><span class="q">Avisar que estou no laboratório, ou que saí um pouco</span><span class="seta">→</span>
+      <span class="r"><a href="./#/agenda/presenca">Portal</a>, Agenda → Presença</span></div>
     <div class="grow"><span class="q">Ver quem é quem e a cadeia de gestão</span><span class="seta">→</span>
       <span class="r"><a href="./#/organizacao">Portal</a>, seção Organização</span></div>
     <div class="grow"><span class="q">Achar o estatuto, uma política ou um formulário</span><span class="seta">→</span>
