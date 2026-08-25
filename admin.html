@@ -97,6 +97,17 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;
 .check input{width:16px;height:16px;accent-color:var(--syn);cursor:pointer}
 .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;align-items:center}
 .vazio{padding:40px 20px;text-align:center;color:var(--muted);border:1.5px dashed var(--line2);border-radius:var(--r)}
+.ag-linha{display:flex;align-items:center;gap:12px;border:1px solid var(--line);
+  border-radius:13px;padding:11px 14px;background:var(--card)}
+.ag-linha .nm{font-family:var(--fd);font-weight:600;font-size:13.5px}
+.ag-linha .sl{font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.ag-linha .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--dim)}
+.ag-linha .dot.ok{background:var(--ok)}
+.ag-linha .dot.erro{background:var(--bad)}
+.ag-linha .dot.espera{background:var(--warn)}
+.ag-linha .quando{margin-left:auto;font-family:var(--fm);font-size:11px;color:var(--muted);text-align:right}
+.ag-linha .quando b{display:block;font-family:var(--fd);font-size:12px;color:var(--ink);font-weight:600}
+.ag-erro{font-size:11.5px;color:#F5B0A5;margin-top:3px;max-width:520px}
 .aviso-box{border-radius:12px;padding:12px 15px;font-size:13px;border:1px solid;margin-bottom:16px;line-height:1.55}
 .aviso-box.err{background:rgba(241,128,111,.09);border-color:rgba(241,128,111,.35);color:#F5B0A5}
 .aviso-box.info{background:rgba(127,167,242,.07);border-color:rgba(127,167,242,.3);color:#B9CEF5}
@@ -206,11 +217,13 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;
       <button id="aba-documentos" onclick="trocarAba('documentos')">Documentos</button>
       <button id="aba-solicitacoes" onclick="trocarAba('solicitacoes')">Solicitações<span class="n" id="n-sol"></span></button>
       <button id="aba-ouvidoria" onclick="trocarAba('ouvidoria')">Ouvidoria<span class="n" id="n-ouv"></span></button>
+      <button id="aba-agendas" onclick="trocarAba('agendas')">Agendas<span class="n" id="n-ag"></span></button>
     </div>
     <section id="sec-avisos"></section>
     <section id="sec-documentos" hidden></section>
     <section id="sec-solicitacoes" hidden></section>
     <section id="sec-ouvidoria" hidden></section>
+    <section id="sec-agendas" hidden></section>
   </div>
 
   <div class="carregando" id="v-carregando"><span class="spin"></span> Carregando…</div>
@@ -251,7 +264,7 @@ const CAT_ACESSO = {documento:'Documento', sistema:'Sistema / plataforma', local
 const MES_CURTO = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 
 const state = { perfil:null, membros:[], avisos:[], sel:null, sols:[], filtro:'pendentes',
-                ouvidoria:[], solAbertas:new Set(), docs:[], docSel:null };
+                ouvidoria:[], solAbertas:new Set(), docs:[], docSel:null, agendas:[] };
 const nomeDe = r => state.membros.find(m=>m.registro===r)?.nome || ('Registro '+r);
 function quemSouEu(){ return state.perfil?.nome || state.perfil?.email || '—'; }
 
@@ -290,12 +303,12 @@ async function abrir(){
   if (!['admin','pessoal'].includes(perfil.papel)){ mostra('v-negado'); return; }
   const m = await sb.from('membros').select('registro,nome,cargo,departamento').order('nome');
   state.membros = m.data || [];
-  await Promise.all([carregarAvisos(), carregarDocs(), carregarSols(), carregarOuvidoria()]);
+  await Promise.all([carregarAvisos(), carregarDocs(), carregarSols(), carregarOuvidoria(), carregarAgendas()]);
   mostra('v-painel');
 }
 
 function trocarAba(ab){
-  ['avisos','documentos','solicitacoes','ouvidoria'].forEach(t=>{
+  ['avisos','documentos','solicitacoes','ouvidoria','agendas'].forEach(t=>{
     $('#sec-'+t).hidden = (t!==ab);
     $('#aba-'+t).classList.toggle('on', t===ab);
   });
@@ -693,6 +706,84 @@ async function marcarOuv(id, tratado){
 }
 
 boot();
+/* ============================================================
+   AGENDAS — quem conectou o Google Agenda e como está a
+   sincronização. O painel NÃO lê o link .ics de ninguém: a RLS
+   do banco só devolve o link para o próprio dono. Aqui só
+   aparecem o estado e o erro da última tentativa.
+   ============================================================ */
+async function carregarAgendas(){
+  const { data, error } = await sb.from('portal_agendas')
+    .select('registro,conectado,ativo,fuso,expediente_inicio,expediente_fim,dias_uteis,ultima_sync,ultimo_erro,blocos_sync');
+  if (error){
+    $('#sec-agendas').innerHTML = `<div class="aviso-box err">Erro ao carregar as agendas:
+      ${esc(error.message)}. A migração <b>soma_v12.sql</b> foi aplicada?</div>`;
+    return;
+  }
+  state.agendas = data || [];
+  const comErro = state.agendas.filter(a => a.conectado && a.ultimo_erro).length;
+  const n = $('#n-ag');
+  if (comErro){ n.textContent = comErro; n.style.display = ''; } else { n.style.display = 'none'; }
+  desenhaAgendas();
+}
+function desenhaAgendas(){
+  const porReg = {};
+  state.agendas.forEach(a => { porReg[a.registro] = a; });
+  const conectadas = state.agendas.filter(a => a.conectado);
+  const semAgenda = state.membros.filter(m => !porReg[m.registro]?.conectado);
+  const linha = a => {
+    const m = state.membros.find(x => x.registro === a.registro);
+    let dot = 'espera', txt = 'Esperando a primeira sincronização';
+    if (a.ultimo_erro){ dot = 'erro'; txt = 'Falhou na última tentativa'; }
+    else if (a.ultima_sync){ dot = 'ok'; txt = `${a.blocos_sync ?? 0} compromisso${a.blocos_sync === 1 ? '' : 's'}`; }
+    if (!a.ativo){ dot = 'espera'; txt = 'Sincronização pausada pelo membro'; }
+    return `<div class="ag-linha">
+      <span class="dot ${dot}"></span>
+      <div><span class="nm">${esc(m?.nome || 'Registro ' + a.registro)}</span>
+        <span class="sl">${esc(m?.departamento || '')}${m?.departamento ? ' · ' : ''}${
+          esc(String(a.expediente_inicio || '').slice(0,5))}–${esc(String(a.expediente_fim || '').slice(0,5))} · ${esc(a.fuso)}</span>
+        ${a.ultimo_erro ? `<div class="ag-erro">${esc(a.ultimo_erro)}</div>` : ''}</div>
+      <div class="quando"><b>${esc(txt)}</b>${a.ultima_sync ? fmtD(a.ultima_sync) : '—'}</div>
+    </div>`;
+  };
+  $('#sec-agendas').innerHTML = `
+    <div class="aviso-box info">Cada membro conecta a própria agenda em
+      <b>membro.neurodynamics.dev/#/calendario/minha</b>, colando o endereço secreto em formato
+      iCal do Google Agenda. O link fica visível só para o dono — nem por aqui dá para lê-lo.
+      Daqui você acompanha o estado e força uma sincronização geral.</div>
+    <div class="acts" style="margin:0 0 16px">
+      <button class="btn solid" id="ag-btn" onclick="sincronizarTodas()">Sincronizar todas agora</button>
+      <button class="btn ghost" onclick="carregarAgendas()">Atualizar a lista</button>
+      <span class="mono" style="font-size:11.5px;color:var(--dim)">${conectadas.length} de
+        ${state.membros.length} ${state.membros.length === 1 ? 'membro conectou' : 'membros conectaram'}</span>
+    </div>
+    ${conectadas.length
+      ? `<div class="lista">${conectadas
+          .sort((a,b) => (b.ultimo_erro ? 1 : 0) - (a.ultimo_erro ? 1 : 0))
+          .map(linha).join('')}</div>`
+      : `<div class="vazio">Ninguém conectou o Google Agenda ainda. Sem isso, o assistente de
+          agendamento mostra apenas os eventos do SOMA.</div>`}
+    ${semAgenda.length ? `<h2 style="font-size:14px;margin:26px 0 10px">Ainda sem agenda conectada</h2>
+      <p class="mono" style="font-size:11.5px;color:var(--dim);line-height:1.9">${
+        semAgenda.map(m => esc(m.nome)).join(' · ')}</p>` : ''}`;
+}
+async function sincronizarTodas(){
+  const b = $('#ag-btn'); b.disabled = true; b.textContent = 'Sincronizando…';
+  try{
+    const { data, error } = await sb.functions.invoke('agenda-sync', { body:{ todos:true } });
+    if (error) throw error;
+    const falhas = data?.falhas || 0;
+    toast(`${data?.sincronizadas || 0} agenda(s) atualizada(s)` + (falhas ? `, ${falhas} com erro.` : '.'), !!falhas);
+  }catch(e){
+    const msg = String(e?.message || e);
+    toast(/Function not found|404|Failed to send/i.test(msg)
+      ? 'A Edge Function "agenda-sync" ainda não foi publicada no Supabase.'
+      : 'Erro ao sincronizar: ' + msg, true);
+  }
+  b.disabled = false; b.textContent = 'Sincronizar todas agora';
+  await carregarAgendas();
+}
+
 </script>
 </body>
 </html>
