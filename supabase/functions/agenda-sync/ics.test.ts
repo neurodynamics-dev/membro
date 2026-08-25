@@ -5,7 +5,7 @@
    ou com Deno:
      deno run ics.test.ts
    ============================================================ */
-import { blocosDoIcs } from './ics.ts';
+import { blocosDoIcs } from "./index.ts";
 
 const TZ = 'America/Sao_Paulo';
 const local = (d: Date) => d.toLocaleString('sv-SE', { timeZone: TZ });

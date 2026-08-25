@@ -38,6 +38,44 @@
 -- ============================================================
 
 -- ------------------------------------------------------------
+-- 0. CONFERÊNCIA DOS PRÉ-REQUISITOS
+--    Parar aqui, dizendo qual arquivo falta, é melhor do que
+--    quebrar trinta linhas adiante com um "relation does not
+--    exist" que não explica nada. Nada foi criado ainda: o SQL
+--    Editor roda o arquivo inteiro numa transação só, então uma
+--    falha aqui deixa o banco exatamente como estava.
+-- ------------------------------------------------------------
+do $$
+begin
+  if to_regclass('public.eventos') is null then
+    raise exception using
+      message = 'Este banco não parece ser o do SOMA.',
+      detail  = 'A tabela public.eventos não existe.',
+      hint    = 'Confira se você está no projeto certo do Supabase.';
+  end if;
+
+  if to_regclass('public.portal_solicitacoes') is null then
+    raise exception using
+      message = 'Falta aplicar o soma_v10.sql antes desta migração.',
+      detail  = 'A SOMA 13.0 usa a função portal_registro_atual(), criada pela 10.0.',
+      hint    = 'Rode, na ordem: soma_v10.sql, soma_v11.sql, soma_v12.sql e só então este arquivo.';
+  end if;
+
+  if to_regclass('public.portal_documentos') is null then
+    raise exception using
+      message = 'Falta aplicar o soma_v11.sql antes desta migração.',
+      hint    = 'Rode, na ordem: soma_v11.sql, soma_v12.sql e só então este arquivo.';
+  end if;
+
+  if to_regclass('public.portal_agendas') is null then
+    raise exception using
+      message = 'Falta aplicar o soma_v12.sql antes desta migração.',
+      detail  = 'A SOMA 13.0 mexe em tabelas que a 12.0 cria (portal_agendas, portal_agenda_blocos).',
+      hint    = 'Rode o soma_v12.sql INTEIRO no SQL Editor e depois volte para este arquivo.';
+  end if;
+end $$;
+
+-- ------------------------------------------------------------
 -- 1. CATÁLOGO DE TIPOS DE EVENTO
 --    "categoria" agrupa o que se parece: reunião, cerimônia de
 --    scrum, trabalho no laboratório, viagem. "rapido" marca os

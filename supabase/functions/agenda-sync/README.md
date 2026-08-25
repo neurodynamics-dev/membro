@@ -11,9 +11,12 @@ Ela existe porque o navegador não consegue buscar o `.ics`: o
 
 | Arquivo        | O que é |
 |----------------|---------|
-| `index.ts`     | A função: autenticação, busca do `.ics` e gravação dos blocos |
-| `ics.ts`       | Leitor de iCalendar (RFC 5545): recorrências, exceções, fusos |
+| `index.ts`     | **Tudo**: o leitor de iCalendar (parte 1) e a função em si (parte 2) |
 | `ics.test.ts`  | 20 casos de conferência do leitor |
+
+O leitor mora no mesmo arquivo de propósito. O painel do Supabase publica
+colando **um** arquivo no editor, e um `import` relativo a um segundo arquivo
+não sobrevive a isso — o deploy falha com *Module not found*.
 
 ## Publicar
 
@@ -21,7 +24,7 @@ Não precisa de CLI nem de Docker — dá para colar pelo painel:
 
 1. Supabase → **Edge Functions** → *Deploy a new function* → **via editor**.
 2. Nome: `agenda-sync`.
-3. Cole `index.ts` e `ics.ts` como dois arquivos da mesma função.
+3. Cole o `index.ts` inteiro.
 4. Deploy.
 
 Pelo CLI, se preferir: `supabase functions deploy agenda-sync`.
