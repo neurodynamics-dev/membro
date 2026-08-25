@@ -58,8 +58,8 @@ padrão dos demais apps do SOMA.
 | `soma_v11.sql` | Migração da biblioteca de documentos (`portal_documentos`) |
 | `soma_v12.sql` | Migração da agenda: `portal_agendas`, blocos de ocupação e o RPC que alimenta o assistente |
 | `soma_v13.sql` | Migração da **agenda unificada**: catálogo de tipos, visibilidade, recorrência de verdade, ausências, cerimônias de scrum e o feed do Google |
-| `supabase/functions/agenda-sync/` | Edge Function que lê o `.ics` de cada um e grava os horários ocupados ([detalhes](supabase/functions/agenda-sync/README.md)) |
-| `supabase/functions/agenda-ics/`  | Edge Function que serve o feed da agenda para assinar no Google ([detalhes](supabase/functions/agenda-ics/README.md)) |
+| `supabase/functions/agenda-sync/` | Edge Function (arquivo único) que lê o `.ics` de cada um e grava os horários ocupados ([detalhes](supabase/functions/agenda-sync/README.md)) |
+| `supabase/functions/agenda-ics/`  | Edge Function (arquivo único) que serve o feed da agenda para assinar no Google ([detalhes](supabase/functions/agenda-ics/README.md)) |
 | `CNAME`        | Domínio do GitHub Pages (`membro.neurodynamics.dev`) |
 
 ## Pré-requisitos

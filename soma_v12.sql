@@ -30,6 +30,28 @@
 -- ============================================================
 
 -- ------------------------------------------------------------
+-- 0. CONFERÊNCIA DOS PRÉ-REQUISITOS
+--    Falhar dizendo qual arquivo falta é melhor do que falhar
+--    com "function does not exist" no meio do caminho.
+-- ------------------------------------------------------------
+do $$
+begin
+  if to_regclass('public.membros') is null then
+    raise exception using
+      message = 'Este banco não parece ser o do SOMA.',
+      detail  = 'A tabela public.membros não existe.',
+      hint    = 'Confira se você está no projeto certo do Supabase.';
+  end if;
+
+  if to_regproc('public.portal_registro_atual') is null then
+    raise exception using
+      message = 'Falta aplicar o soma_v10.sql antes desta migração.',
+      detail  = 'A SOMA 12.0 usa a função portal_registro_atual(), criada pela 10.0.',
+      hint    = 'Rode, na ordem: soma_v10.sql, soma_v11.sql e só então este arquivo.';
+  end if;
+end $$;
+
+-- ------------------------------------------------------------
 -- 1. AGENDA DE CADA MEMBRO
 --    Preferências e estado da sincronização. É a parte NÃO
 --    sensível: qualquer membro logado lê, porque o assistente
