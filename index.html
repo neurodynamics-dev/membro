@@ -34,6 +34,8 @@ input,textarea,select{font-family:inherit;font-size:14.5px;color:var(--ink)}
 img{max-width:100%}
 [hidden]{display:none!important}
 ::selection{background:var(--syn);color:var(--deep)}
+/* foco visível na cor da marca — o anel padrão do navegador não é dela */
+:focus-visible{outline:2px solid var(--syn);outline-offset:2px;border-radius:4px}
 
 /* ============ BACKGROUND ============ */
 #bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
@@ -82,6 +84,29 @@ nav.hd-nav a{font-family:var(--fd);font-size:13px;font-weight:500;color:var(--mu
 nav.hd-nav a:hover{color:var(--ink);background:rgba(255,255,255,.05)}
 nav.hd-nav a.on{color:var(--ink)}
 nav.hd-nav a.on::after{content:'';display:block;height:1.5px;margin:1px 2px 0;background:var(--syn)}
+
+/* grupo "Gestão" — só aparece para quem tem papel de gestão */
+.hd-grupo{position:relative}
+.hd-grupo-bt{display:flex;align-items:center;gap:5px;font-family:var(--fd);font-size:13px;
+  font-weight:500;color:var(--muted);padding:8px 13px;border-radius:10px;
+  transition:color .15s,background .15s;white-space:nowrap}
+.hd-grupo-bt:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.hd-grupo-bt svg{width:13px;height:13px;transition:transform .2s}
+.hd-grupo.aberto .hd-grupo-bt{color:var(--ink)}
+.hd-grupo.aberto .hd-grupo-bt svg{transform:rotate(180deg)}
+.hd-grupo:has(a.on) .hd-grupo-bt{color:var(--ink)}
+.hd-grupo:has(a.on) .hd-grupo-bt::after{content:'';position:absolute;left:13px;right:24px;bottom:2px;
+  height:1.5px;background:var(--syn)}
+.hd-grupo-menu{position:absolute;top:calc(100% + 10px);right:0;min-width:210px;padding:7px;
+  border:1px solid var(--line2);border-radius:13px;background:rgba(9,15,13,.94);
+  backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 20px 50px rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transform:translateY(-5px);transition:opacity .18s,transform .18s}
+.hd-grupo.aberto .hd-grupo-menu{opacity:1;pointer-events:auto;transform:none}
+.hd-grupo-menu a{display:block;padding:9px 12px;border-radius:9px;font-family:var(--fd);
+  font-size:13px;font-weight:500;color:var(--muted)}
+.hd-grupo-menu a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.hd-grupo-menu a.on{color:var(--syn)}
+.hd-grupo-menu a.on::after{display:none}
 .hd-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .hd-user{text-align:right;line-height:1.25}
 .hd-user b{display:block;font-family:var(--fd);font-size:12.5px;font-weight:600}
@@ -180,6 +205,8 @@ main{max-width:var(--max);margin:0 auto;padding:108px 26px 90px}
 .login .nota{font-size:11.5px;color:var(--dim);margin-top:16px;text-align:center;line-height:1.6}
 .login .nota a{color:var(--muted);text-decoration:underline}
 .login .nota a:hover{color:var(--ink)}
+.login .err-msg{font-size:12px;color:var(--bad);margin-top:10px;text-align:center;line-height:1.55}
+.login .err-msg:empty{display:none}
 
 /* ============ QUADRO DE AVISOS ============ */
 .board{position:relative;border-radius:22px;overflow:hidden;min-height:250px}
@@ -749,8 +776,8 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
 .barras{display:flex;flex-direction:column;gap:11px}
 .barra{display:grid;grid-template-columns:130px 1fr 52px;gap:14px;align-items:center}
 .barra .k{font-size:12.5px;color:var(--muted)}
-.barra .trilho{height:9px;border-radius:5px;background:rgba(255,255,255,.05);overflow:hidden}
-.barra .fill{height:100%;border-radius:5px;background:var(--green2)}
+.barra .trilho{display:block;height:9px;border-radius:5px;background:rgba(255,255,255,.05);overflow:hidden}
+.barra .fill{display:block;height:100%;border-radius:5px;background:var(--green2)}
 .barra .n{font-family:var(--fm);font-size:11.5px;color:var(--muted);text-align:right}
 @media (max-width:640px){.barra{grid-template-columns:96px 1fr 44px;gap:10px}}
 
@@ -768,6 +795,82 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
   line-height:1;margin-bottom:12px;user-select:none}
 .vazio h3{font-size:16px;font-weight:600;margin-bottom:5px}
 .vazio p{font-size:12.5px;color:var(--muted);max-width:360px;margin:0 auto 18px}
+
+/* ============ PLANO DE GESTÃO ============
+   O vocabulário que os módulos de gestão usam e que a casca ainda não
+   tinha. Tudo sobre os tokens da marca — no SOMA claro estas peças eram
+   cinza sobre branco, com sombra; aqui a elevação é borda e vidro, e a
+   ação é Synapse. */
+
+/* estados: o ponto colorido dentro da .pill */
+.pill .dt-ok{background:var(--ok)}     .pill.p-ok{color:var(--ok);border-color:rgba(74,222,151,.35)}
+.pill .dt-warn{background:var(--warn)} .pill.p-warn{color:var(--warn);border-color:rgba(245,195,106,.35)}
+.pill .dt-bad{background:var(--bad)}   .pill.p-bad{color:var(--bad);border-color:rgba(241,128,111,.35)}
+.pill .dt-info{background:var(--info)} .pill.p-info{color:var(--info);border-color:rgba(127,167,242,.35)}
+.pill .dt-gray{background:var(--dim)}
+
+/* botão de ícone — ações discretas no topo da página e nas linhas */
+.icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line2);
+  display:inline-flex;align-items:center;justify-content:center;flex:none;color:var(--muted);
+  background:rgba(255,255,255,.03);transition:color .15s,border-color .15s,background .15s}
+.icon-btn:hover{color:var(--ink);border-color:var(--dim);background:rgba(255,255,255,.07)}
+.icon-btn.primary{background:var(--syn);border-color:var(--syn);color:var(--deep)}
+.icon-btn.primary:hover{color:var(--deep);box-shadow:0 8px 22px rgba(206,220,0,.22)}
+.icon-btn.perigo{color:var(--bad);border-color:rgba(241,128,111,.35)}
+.icon-btn.perigo:hover{background:rgba(241,128,111,.1);color:var(--bad)}
+.icon-btn.sm{width:30px;height:30px;border-radius:9px}
+.icon-btn .ic{width:17px;height:17px}
+.icon-btn.sm .ic{width:15px;height:15px}
+
+/* formulário em grade, para as fichas */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.form-grid .fld.full{grid-column:1/-1}
+@media (max-width:700px){.form-grid{grid-template-columns:1fr}}
+.check{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);cursor:pointer;
+  text-transform:none;letter-spacing:0;font-weight:400}
+.check input{width:auto}
+
+/* utilitárias que o código portado usa */
+.small{font-size:12px} .muted{color:var(--muted)} .dim{color:var(--dim)}
+.chip.mini{padding:2px 8px;font-size:11px;border-radius:14px}
+.topo-gestao{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:26px 0 22px}
+.topo-gestao .tx{flex:1;min-width:240px}
+.topo-gestao h1{font-size:clamp(24px,3.4vw,34px);font-weight:600;line-height:1.1;margin:10px 0 6px}
+.topo-gestao .lead{color:var(--muted);font-size:14px;max-width:640px}
+.topo-gestao .acoes{display:flex;gap:8px;align-items:center;padding-top:34px}
+@media (max-width:700px){.topo-gestao .acoes{padding-top:0}}
+
+/* linha do tempo das ocorrências */
+.timeline{display:flex;flex-direction:column;gap:2px;position:relative;padding-left:20px}
+.timeline::before{content:'';position:absolute;left:4px;top:8px;bottom:8px;width:1px;background:var(--line2)}
+.tl-item{position:relative;padding:11px 0}
+.tl-item::before{content:'';position:absolute;left:-20px;top:16px;width:9px;height:9px;border-radius:50%;
+  background:var(--painel-dot,var(--bg));border:2px solid var(--syn)}
+.tl-item .dt{font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.tl-item .tp{font-family:var(--fd);font-weight:600;font-size:13.5px;margin-top:3px}
+.tl-item .tp a{color:var(--ion);text-decoration:underline}
+.tl-item .ds{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.55;white-space:pre-wrap}
+.tl-item .rp{font-size:11.5px;color:var(--dim);margin-top:5px}
+.tl-item .rp a{color:var(--bad);text-decoration:underline}
+
+/* acessos: grupos e linhas */
+.acc-group{margin-bottom:20px}
+.acc-group h4{font-family:var(--fm);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:8px;font-weight:500}
+.acc-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.acc-row .nm{font-size:13.5px;font-weight:500;flex:1;min-width:140px}
+.acc-row .mt{font-size:11.5px;color:var(--dim);font-family:var(--fm)}
+@media (max-width:620px){.acc-row{flex-wrap:wrap;gap:7px}.acc-row .nm{min-width:100%}}
+
+/* avaliações */
+.aval-card{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px;
+  background:rgba(255,255,255,.02)}
+.aval-card .hd{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.score{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:11px;
+  color:var(--muted);margin-left:12px}
+.light{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--dim)}
+.lt-ok{background:var(--ok)} .lt-bad{background:var(--bad)}
+.lt-off{background:transparent;border:1px solid var(--line2)}
 
 /* ============ MODAL / TOAST ============ */
 #veil{position:fixed;inset:0;z-index:80;background:rgba(4,7,6,.66);
@@ -802,21 +905,74 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
 <div class="login-wrap" id="v-login" hidden>
   <div class="login">
     <div class="lg"><img id="logo-login" src="" alt="NeuroDynamics"></div>
-    <h1>Portal do Membro</h1>
-    <p class="hint">Entre com a sua conta NeuroDynamics, a mesma do SOMA
-      e das demais ferramentas da equipe.</p>
-    <div class="aviso-box info" id="l-checkin" hidden>Entre para registrar o seu
-      <b>check-in no LABBIO</b> — ele é gravado assim que você entrar.</div>
-    <div class="fld"><label>E-mail</label>
-      <input id="l-email" type="email" autocomplete="email" placeholder="voce@neurodynamics.dev"></div>
-    <div class="fld"><label>Senha</label>
-      <input id="l-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
-    <button class="btn solid" style="width:100%;justify-content:center" id="l-btn" onclick="entrar()">Entrar</button>
-    <p class="err-msg" id="l-erro"></p>
-    <p class="nota">Ainda não tem conta, ou esqueceu a senha? Resolva no
-      <a href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">SOMA</a>,
-      com o e-mail que está no quadro de pessoal.<br>
-      Sem acesso? Fale com o Depto. de Pessoal.</p>
+
+    <!-- entrar -->
+    <div class="lg-modo" id="lg-login">
+      <h1>Portal do Membro</h1>
+      <p class="hint">Entre com a sua conta NeuroDynamics, a mesma do SOMA
+        e das demais ferramentas da equipe.</p>
+      <div class="aviso-box info" id="l-checkin" hidden>Entre para registrar o seu
+        <b>check-in no LABBIO</b> — ele é gravado assim que você entrar.</div>
+      <div class="fld"><label for="l-email">E-mail</label>
+        <input id="l-email" type="email" autocomplete="username" placeholder="voce@neurodynamics.dev"></div>
+      <div class="fld"><label for="l-senha">Senha</label>
+        <input id="l-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+      <button class="btn solid lg-go" style="width:100%;justify-content:center" id="l-btn" onclick="entrar()">Entrar</button>
+      <p class="err-msg lg-err" id="l-erro"></p>
+      <p class="nota">
+        <a href="#" onclick="lgModo('signup');return false">Criar conta</a> ·
+        <a href="#" onclick="lgModo('reset');return false">Esqueci minha senha</a><br>
+        Sem acesso? Fale com o Depto. de Pessoal.</p>
+    </div>
+
+    <!-- criar conta -->
+    <div class="lg-modo" id="lg-signup" hidden>
+      <h1>Criar conta</h1>
+      <p class="hint">Use o e-mail que está no quadro de pessoal (NRO ou pessoal): o seu
+        perfil é vinculado ao seu registro automaticamente. A conta vale para todas as
+        ferramentas da equipe e nasce com acesso de consulta — papéis adicionais são
+        atribuídos pelo Depto. de Pessoal.</p>
+      <div class="fld"><label for="su-email">E-mail</label>
+        <input id="su-email" type="email" autocomplete="username"></div>
+      <div class="fld"><label for="su-senha">Senha (mín. 8 caracteres)</label>
+        <input id="su-senha" type="password" autocomplete="new-password"></div>
+      <div class="fld"><label for="su-senha2">Confirmar senha</label>
+        <input id="su-senha2" type="password" autocomplete="new-password"></div>
+      <button class="btn solid lg-go" style="width:100%;justify-content:center" id="su-btn" onclick="criarConta()">Criar conta</button>
+      <p class="err-msg lg-err" id="su-erro"></p>
+      <p class="nota"><a href="#" onclick="lgModo('login');return false">Voltar ao login</a></p>
+    </div>
+
+    <!-- recuperar -->
+    <div class="lg-modo" id="lg-reset" hidden>
+      <h1>Recuperar</h1>
+      <p class="hint">Informe o e-mail da sua conta. Você recebe um link para definir uma
+        nova senha — abra-o neste mesmo navegador.</p>
+      <div class="fld"><label for="rs-email">E-mail</label>
+        <input id="rs-email" type="email" autocomplete="username"></div>
+      <button class="btn solid lg-go" style="width:100%;justify-content:center" id="rs-btn" onclick="pedirReset()">Enviar link</button>
+      <p class="err-msg lg-err" id="rs-erro"></p>
+      <p class="nota"><a href="#" onclick="lgModo('login');return false">Voltar ao login</a></p>
+    </div>
+
+    <!-- nova senha (chega pelo link do e-mail) -->
+    <div class="lg-modo" id="lg-novasenha" hidden>
+      <h1>Nova senha</h1>
+      <p class="hint">Defina a nova senha da sua conta para continuar.</p>
+      <div class="fld"><label for="ns-senha">Nova senha (mín. 8 caracteres)</label>
+        <input id="ns-senha" type="password" autocomplete="new-password"></div>
+      <div class="fld"><label for="ns-senha2">Confirmar senha</label>
+        <input id="ns-senha2" type="password" autocomplete="new-password"></div>
+      <button class="btn solid lg-go" style="width:100%;justify-content:center" id="ns-btn" onclick="salvarNovaSenha()">Salvar</button>
+      <p class="err-msg lg-err" id="ns-erro"></p>
+    </div>
+
+    <!-- confirmação -->
+    <div class="lg-modo" id="lg-ok" hidden>
+      <h1 id="lgok-t">Confira seu e-mail</h1>
+      <p class="hint" id="lgok-p"></p>
+      <p class="nota"><a href="#" onclick="lgModo('login');return false">Voltar ao login</a></p>
+    </div>
   </div>
 </div>
 
@@ -834,6 +990,18 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
       <a href="#/informacoes" data-r="informacoes">Informações</a>
       <a href="#/servicos" data-r="servicos">Serviços</a>
       <a href="#/pedidos" data-r="pedidos">Meus pedidos</a>
+      <!-- plano de gestão: revelado por papel em abrirPortal() -->
+      <div class="hd-grupo" id="grupo-gestao" hidden>
+        <button class="hd-grupo-bt" aria-expanded="false"
+          onclick="this.parentElement.classList.toggle('aberto');
+                   this.setAttribute('aria-expanded', this.parentElement.classList.contains('aberto'))">Gestão
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="hd-grupo-menu">
+          <a href="#/quadro" data-r="quadro">Quadro de pessoal</a>
+          <a href="#/auditoria" data-r="auditoria" class="so-admin" hidden>Auditoria</a>
+        </div>
+      </div>
     </nav>
     <div class="hd-right">
       <div class="hd-user"><b id="u-nome">—</b><button onclick="sair()">sair</button></div>
@@ -851,6 +1019,8 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
       <a href="#/informacoes" data-r="informacoes"><span class="idx">04</span>Informações</a>
       <a href="#/servicos" data-r="servicos"><span class="idx">05</span>Serviços</a>
       <a href="#/pedidos" data-r="pedidos"><span class="idx">06</span>Meus pedidos</a>
+      <a href="#/quadro" data-r="quadro" class="so-gestao" hidden><span class="idx">07</span>Quadro de pessoal</a>
+      <a href="#/auditoria" data-r="auditoria" class="so-admin" hidden><span class="idx">08</span>Auditoria</a>
     </nav>
     <div class="menu-foot">
       <span id="menu-user">—</span>
@@ -1044,6 +1214,78 @@ function carregarScript(src){
 const carregarModulo = nome => carregarScript(`mod-${nome}.js?v=${VERSAO}`);
 const carregarLib    = carregarScript;
 
+/* ---------------- autenticação ---------------- */
+/* Os cinco modos da tela de entrada. Até a unificação, só o primeiro
+   morava aqui: criar conta e recuperar senha eram do SOMA, e o portal
+   mandava a pessoa para lá. Agora é tudo no mesmo lugar.
+
+   URL_APP se deriva do endereço atual de propósito — é o que faz os
+   links de confirmação e de redefinição continuarem certos quando o
+   domínio mudar. O que precisa acompanhar a mudança é a lista de
+   Redirect URLs no painel do Supabase. */
+const URL_APP = () => location.origin + location.pathname;
+let recuperandoSenha = false;
+
+function lgModo(m){
+  ['login','signup','reset','novasenha','ok'].forEach(x => {
+    const el = $('#lg-'+x); if (el) el.hidden = (x !== m);
+  });
+  document.querySelectorAll('.lg-err').forEach(e => e.textContent = '');
+  const foco = {login:'#l-email', signup:'#su-email', reset:'#rs-email', novasenha:'#ns-senha'}[m];
+  $(foco)?.focus();
+}
+function lgErro(id, msg){ $('#'+id).textContent = msg; }
+function lgOk(titulo, txt){ $('#lgok-t').textContent = titulo; $('#lgok-p').textContent = txt; lgModo('ok'); }
+
+async function criarConta(){
+  const email = $('#su-email').value.trim().toLowerCase();
+  const p1 = $('#su-senha').value, p2 = $('#su-senha2').value;
+  if (!email || !p1) return lgErro('su-erro','Preencha e-mail e senha.');
+  if (p1.length < 8) return lgErro('su-erro','A senha precisa ter pelo menos 8 caracteres.');
+  if (p1 !== p2)     return lgErro('su-erro','As senhas não conferem — digite a mesma senha nos dois campos.');
+  $('#su-btn').disabled = true; lgErro('su-erro','');
+  const { data, error } = await sb.auth.signUp({ email, password:p1, options:{ emailRedirectTo:URL_APP() } });
+  $('#su-btn').disabled = false;
+  const jaTem = 'Este e-mail já tem conta. Volte ao login ou use "Esqueci minha senha".';
+  if (error) return lgErro('su-erro', /already|registered/i.test(error.message||'')
+    ? jaTem : 'Não foi possível criar a conta: ' + (error.message || 'tente novamente.'));
+  /* Com confirmação de e-mail ligada, o Supabase devolve um user sem
+     identities quando o endereço já existia — é a proteção dele contra
+     descobrir quem tem conta. Tratamos como "já tem". */
+  if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
+    return lgErro('su-erro', jaTem);
+  if (data?.session) return;   /* projeto sem confirmação: o SIGNED_IN abre o portal */
+  lgOk('Confira seu e-mail',
+    `Enviamos um link de confirmação para ${email}. Depois de confirmar, volte aqui e entre.`);
+}
+
+async function pedirReset(){
+  const email = $('#rs-email').value.trim().toLowerCase();
+  if (!email) return lgErro('rs-erro','Informe o e-mail da conta.');
+  $('#rs-btn').disabled = true; lgErro('rs-erro','');
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo:URL_APP() });
+  $('#rs-btn').disabled = false;
+  if (error) return lgErro('rs-erro','Não deu para enviar agora: ' + (error.message || 'tente de novo em instantes.'));
+  lgOk('Link enviado', `Se ${email} tiver conta, o link de redefinição chega em instantes `
+    + '(confira o spam). Abra-o neste mesmo navegador para definir a nova senha.');
+}
+
+async function salvarNovaSenha(){
+  const p1 = $('#ns-senha').value, p2 = $('#ns-senha2').value;
+  if (p1.length < 8) return lgErro('ns-erro','A senha precisa ter pelo menos 8 caracteres.');
+  if (p1 !== p2)     return lgErro('ns-erro','As senhas não conferem — digite a mesma senha nos dois campos.');
+  $('#ns-btn').disabled = true; lgErro('ns-erro','');
+  const { error } = await sb.auth.updateUser({ password:p1 });
+  $('#ns-btn').disabled = false;
+  if (error) return lgErro('ns-erro','Não foi possível salvar: '
+    + (error.message || 'peça um novo link em "Esqueci minha senha".'));
+  recuperandoSenha = false;
+  history.replaceState(null, '', location.pathname + location.search);
+  toast('Senha atualizada.');
+  $('#v-login').hidden = true;
+  await abrirPortal();
+}
+
 /* ---------------- boot / sessão ---------------- */
 /* O quiosque da entrada abre membro.neurodynamics.dev/?t=<token>.
    Se ninguém estiver logado, o portal guarda o token, pede o login
@@ -1058,6 +1300,28 @@ async function boot(){
   });
   if (!sb){ $('#v-login').hidden=false;
     $('#l-erro').textContent='Não foi possível carregar a biblioteca do Supabase. Recarregue a página.'; return; }
+
+  /* Link de redefinição: a pessoa chega autenticada, mas define a nova
+     senha antes de o portal abrir. O endereço vem como
+     #access_token=…&type=recovery — que não é rota, e por isso é lido
+     antes do roteador. A biblioteca costuma consumir e limpar esse hash
+     sozinha, então o evento PASSWORD_RECOVERY abaixo é a outra metade da
+     checagem, não um luxo. */
+  recuperandoSenha = location.hash.includes('type=recovery');
+  sb.auth.onAuthStateChange((ev) => {
+    if (ev === 'PASSWORD_RECOVERY'){
+      recuperandoSenha = true;
+      $('#v-login').hidden = false;
+      lgModo('novasenha');
+    }
+  });
+  if (recuperandoSenha){
+    history.replaceState(null, '', location.pathname + location.search);
+    $('#v-login').hidden = false;
+    lgModo('novasenha');
+    return;
+  }
+
   const { data:{ session } } = await sb.auth.getSession();
   if (session){
     if (checkinPendente){ await registrarCheckin(checkinPendente); checkinPendente = null; return; }
@@ -1072,7 +1336,8 @@ async function entrar(){
   const { error } = await sb.auth.signInWithPassword({
     email: $('#l-email').value.trim(), password: $('#l-senha').value });
   $('#l-btn').disabled = false;
-  if (error){ $('#l-erro').textContent = 'E-mail ou senha incorretos. Verifique os dados ou fale com o Depto. de Pessoal.'; return; }
+  if (error){ $('#l-erro').textContent = 'E-mail ou senha incorretos. Se esqueceu a senha, use '
+    + '"Esqueci minha senha" abaixo; se ainda não tem conta, crie a sua.'; return; }
   $('#v-login').hidden = true;
   if (checkinPendente){
     await abrirPortal();
@@ -1084,7 +1349,12 @@ async function entrar(){
 }
 async function sair(){ await sb.auth.signOut(); location.hash=''; location.reload(); }
 document.addEventListener('keydown', e=>{
-  if (e.key==='Enter' && !$('#v-login').hidden) entrar();
+  /* Enter aciona o botão do modo visível, não sempre o de entrar */
+  if (e.key==='Enter' && !$('#v-login').hidden){
+    const modo = e.target?.closest?.('.lg-modo') || document.querySelector('.lg-modo:not([hidden])');
+    const botao = modo?.querySelector('.lg-go');
+    if (botao && !botao.disabled) botao.click();
+  }
   if (e.key==='Escape'){ fechaModal(); fecharMenu(); }
 });
 
@@ -1106,6 +1376,13 @@ async function abrirPortal(){
   lf.src = LOGO_URL;
   $('#ft-ano').textContent = new Date().getFullYear();
   if (GITHUB_CTA_URL){ $('#ft-cta').hidden = false; $('#ft-cta-a').href = GITHUB_CTA_URL; }
+  /* o plano de gestão só existe para quem tem papel — a barreira de
+     verdade é a RLS do banco; isto aqui é só não oferecer porta fechada */
+  if (podeQuadro()){
+    $('#grupo-gestao').hidden = false;
+    document.querySelectorAll('.so-gestao').forEach(e => e.hidden = false);
+  }
+  if (can()) document.querySelectorAll('.so-admin').forEach(e => e.hidden = false);
   $('#hd').hidden = false; $('#main').hidden = false; $('#ft').hidden = false; $('#v-login').hidden = true;
   render(route());
 }
@@ -1125,7 +1402,10 @@ const ROTAS = {
   organizacao: { desenha:'pageOrganizacao' },
   informacoes: { desenha:'pageInformacoes' },
   servicos:    { desenha:'pageServicos' },
-  pedidos:     { desenha:'pagePedidos' }
+  pedidos:     { desenha:'pagePedidos' },
+  /* plano de gestão — vem do SOMA, carregado sob demanda */
+  quadro:      { desenha:'pageQuadro',    modulo:'gestao', permite: podeQuadro },
+  auditoria:   { desenha:'pageAuditoria', modulo:'gestao', permite: can }
 };
 
 function route(){
@@ -1167,7 +1447,15 @@ async function render(rt){
 
 /* menu mobile */
 function fecharMenu(){ document.body.classList.remove('menu-open');
-  $('#burger')?.setAttribute('aria-expanded','false'); $('#menu').setAttribute('aria-hidden','true'); }
+  $('#burger')?.setAttribute('aria-expanded','false'); $('#menu').setAttribute('aria-hidden','true');
+  const g = $('#grupo-gestao');
+  if (g){ g.classList.remove('aberto'); g.querySelector('.hd-grupo-bt')?.setAttribute('aria-expanded','false'); }
+}
+/* clique fora fecha o grupo "Gestão" */
+document.addEventListener('click', e => {
+  const g = $('#grupo-gestao');
+  if (g && g.classList.contains('aberto') && !g.contains(e.target)) fecharMenu();
+});
 $('#burger').addEventListener('click', ()=>{
   const open = document.body.classList.toggle('menu-open');
   $('#burger').setAttribute('aria-expanded', open);
@@ -3247,6 +3535,8 @@ function desenhaOrg(filtro){
           <span class="small" style="display:block;margin-top:3px">${esc(foco.email_nro||foco.email_pessoal||'')}</span>
         </span>
         <span class="pill"><span class="dt" style="background:${foco.status==='Ativo'?'var(--ok)':'var(--warn)'}"></span>${esc(foco.status)}</span>
+        ${podeQuadro() ? `<a class="btn ghost" style="height:34px;padding:0 14px;font-size:12.5px"
+          href="#/quadro/${foco.registro}">Abrir ficha</a>` : ''}
       </div>
     </div>
     <div class="org-bottom">

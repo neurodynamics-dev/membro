@@ -51,13 +51,36 @@ SOMA · Gestão está sendo trazido, conforme o
   NeuroDynamics usa: agenda, organização, documentos, SOMA · Gestão, tour,
   site institucional, brand guidelines, processo seletivo e GitHub.
 
+## O plano de gestão
+
+Para quem tem papel de gestão (`admin` ou `pessoal`), o menu ganha o grupo
+**Gestão** — as telas que até aqui só existiam no `pessoal.neurodynamics.dev`:
+
+- **Quadro de pessoal** (`#/quadro`) — quantos estão ativos, em pausa, sob
+  demanda e desligados; ativos por departamento; a lista inteira com busca e
+  filtros por status, departamento e grupo; e as ocorrências recentes.
+- **Ficha do membro** (`#/quadro/<registro>`) — dados institucionais (com
+  edição, que gera ocorrência e entra na auditoria), linha do tempo de
+  ocorrências, acessos concedidos e revogados, avaliações periódicas com os
+  apontamentos semanais, e dados pessoais sob a LGPD.
+- **Auditoria** (`#/auditoria`) — quem mudou o quê e quando, com busca.
+
+Duas coisas que a unificação trouxe de graça:
+
+- **cada ficha tem endereço.** No SOMA a navegação era por `showView()`, sem
+  URL — não dava para mandar "olha a ficha da fulana" por mensagem;
+- **quem não tem o papel não baixa o código.** O `mod-gestao.js` só desce
+  para quem abre a rota, e a rota só abre para quem pode. A barreira de
+  verdade continua sendo a RLS do banco — isto é só não oferecer porta
+  fechada, e não pesar no celular de quem nunca vai usar.
+
 ## Conteúdo
 
 | Arquivo        | O que é |
 |----------------|---------|
-| `index.html`   | O portal (rotas por hash: `#/`, `#/calendario`, `#/calendario/agendar`, `#/calendario/minha`, `#/organizacao`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
+| `index.html`   | A casca e o plano do membro (`#/`, `#/agenda`, `#/organizacao`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
+| `mod-gestao.js`| Plano de gestão: quadro de pessoal, ficha e auditoria (`#/quadro`, `#/quadro/<registro>`, `#/auditoria`) |
 | `admin.html`   | Painel do Depto. de Pessoal: avisos, documentos, triagem de solicitações, ouvidoria e estado das agendas |
-| `mod-*.js`     | Módulos carregados sob demanda pela casca — um por plano da navegação (ver [Arquitetura](#arquitetura)) |
 | `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |
 | `supabase/functions/agenda-sync/` | Edge Function (arquivo único) que lê o `.ics` de cada um e grava os horários ocupados ([detalhes](supabase/functions/agenda-sync/README.md)) |
 | `supabase/functions/agenda-ics/`  | Edge Function (arquivo único) que serve o feed da agenda para assinar no Google ([detalhes](supabase/functions/agenda-ics/README.md)) |

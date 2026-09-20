@@ -5,8 +5,31 @@ Trazer tudo o que hoje mora em `pessoal.neurodynamics.dev` (repositório
 passa a se chamar `soma.neurodynamics.dev`. Um endereço, um login, uma
 navegação, o layout da marca.
 
-Este documento é o plano — não há código novo nele. As decisões estão na
-seção 2; quem quiser só a ordem das coisas, pule para a 7.
+As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para a 7.
+
+## Estado
+
+| Fase | Situação |
+|---|---|
+| **0 · Preparo** | **Feita.** Casca com módulos sob demanda, papéis, componentes de tela de trabalho no design system, `db/` renumerado com registro de migrações, cópia velha do site apagada |
+| **1 · Quadro** | **Feita.** Login com os cinco modos; `#/quadro`, `#/quadro/<registro>` e `#/auditoria` em `mod-gestao.js`; organograma com "abrir ficha" |
+| 2 · Operações | a fazer |
+| 3 · Agenda e eventos | a fazer |
+| 4 · Painéis | a fazer |
+| 5 · Corte | a fazer |
+| 6 · Renomeação | a fazer |
+
+Duas correções que a execução trouxe ao que estava escrito aqui:
+
+- **os componentes não faltavam no design system — faltavam na folha.**
+  Abas, métricas, barras, carregamento, estado vazio e diálogo já eram da
+  marca, mas viviam só dentro dos previews; o `neuro.css`, que é o que os
+  apps consomem, não os tinha. Foram promovidos. Genuinamente novos eram
+  três: tabela de trabalho, barra de filtros e galeria de tiles. Tudo isso
+  virou o card 15, *Telas de trabalho*;
+- **o `gerarRelatorioMembro()` da ficha ficou para a Fase 2**, junto com o
+  resto dos relatórios — ele depende do jsPDF, que é carregado sob demanda
+  pelo `mod-relatorios.js`.
 
 ---
 
@@ -303,18 +326,26 @@ Portar os links verdes do SOMA como estão é o erro mais provável desta fusão
 ⚠ **Sombra não existe no escuro.** Onde o SOMA usa `--sh` para destacar cartão,
 o equivalente da marca é `1px` de borda (`--line`) mais `backdrop-filter`.
 
-### 5.2 O que falta no design system
+### 5.2 O que faltava no design system *(feito)*
 
-Cinco componentes que a gestão usa e o `neuro.css` ainda não tem. Entram como
-cards 15–19, com preview, antes de serem consumidos aqui:
+A leitura do `brand/` mostrou que o problema não era o que a marca não tinha,
+e sim onde estava: **abas, métricas, barras, carregamento, estado vazio e
+diálogo já eram do design system, mas só existiam dentro dos previews.** O
+`neuro.css` — a folha que os apps consomem — não os tinha, e foi por isso que
+cada app acabou copiando CSS do outro. Esses foram promovidos, sem mudar de
+desenho.
+
+Genuinamente novos eram três:
 
 | Componente | De onde vem | Por que precisa existir no design system |
 |---|---|---|
-| **Tabela densa** | `.tb`, `.tb-fixa` do SOMA | `.tabela` de hoje é de leitura, não de trabalho: falta cabeçalho fixo, linha clicável, coluna numérica em mono, largura fixa e estado vazio |
-| **Galeria de tiles** | `.gal` / `.tile` (Relatórios, Operações) | é o padrão de "escolha uma ferramenta" da equipe, usado em três telas |
-| **Barra de filtros** | `.filters` (Membros, Auditoria) | busca + selects alinhados, com comportamento definido no celular |
-| **Abas de página** | `.abas` (Agenda, já neste repo) | é a resposta da marca para profundidade — formalizar em vez de copiar |
-| **Cartão de indicador** | `.stat`, `.bar-row` (Visão geral) | número grande + rótulo, e a barra de proporção |
+| **Tabela de trabalho** | `.tb`, `.tb-fixa` do SOMA | a `.tabela` é de leitura; esta é de trabalho — cabeçalho fixo, linha clicável, corte em reticências, registro em mono |
+| **Barra de filtros** | `.filters` (Membros, Auditoria) | busca que cresce + recortes em select, empilhando no celular |
+| **Galeria de tiles** | `.gal` / `.tile` (Relatórios, Operações) | o "escolha uma ferramenta" que aparece em três telas |
+
+Os três saíram no card 15, *Telas de trabalho*, que fecha com as três
+proibições que mais aparecem ao portar uma interface clara para o escuro —
+zebra, sombra e verde em texto.
 
 A superfície clara **continua valendo** onde é certa: PDF de portaria, lista de
 assinatura, lista de autorizados, relatório do membro, assinatura de e-mail e
