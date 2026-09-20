@@ -101,11 +101,23 @@ só existiam no `pessoal.neurodynamics.dev`:
   edição, que gera ocorrência e entra na auditoria), linha do tempo de
   ocorrências, acessos concedidos e revogados, avaliações periódicas com os
   apontamentos semanais, e dados pessoais sob a LGPD.
-- **Auditoria** (`#/admin/auditoria`) — quem mudou o quê e quando, com busca.
-- **Administração** (`#/admin`) — avisos, documentos, triagem de solicitações,
-  ouvidoria, estado das agendas e os projetos do site institucional. Os dois
-  `admin.html` que existiam (deste repositório e do `website`) deixam de ser
-  páginas: eram duas telas de login a mais para a mesma conta.
+- **Apontamento semanal** (`#/equipe/apontamento`) — a avaliação de assiduidade
+  e entregas do seu grupo, com sinalização ao Depto. de Pessoal. Não é papel de
+  gestão: é de quem lidera um grupo.
+- **Administração** (`#/admin`) — onze painéis, em galeria e não em abas, cada
+  um com endereço próprio:
+
+  | Grupo | Painéis |
+  |---|---|
+  | **Portal** | Quadro de avisos · Documentos · Solicitações · Ouvidoria · Agendas |
+  | **Pessoas** | Contas e perfis · Catálogo de acessos · Importar planilha |
+  | **Registro** | Relatórios · Auditoria |
+  | **Conteúdo** | Site institucional |
+
+  Os dois `admin.html` que existiam (deste repositório e do `website`) deixam
+  de ser páginas: eram duas telas de login a mais para a mesma conta. E o
+  Comitê de Seleção chega aos e-mails dos candidatos por Relatórios, que é o
+  único painel aberto a ele.
 
 Duas coisas que a unificação trouxe de graça:
 
@@ -123,7 +135,8 @@ Duas coisas que a unificação trouxe de graça:
 | `index.html`   | A casca e o plano do membro (`#/`, `#/agenda`, `#/equipe`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
 | `mod-atividades.js` | O quadro de trabalho de cada grupo (`#/atividades`) |
 | `mod-gestao.js`| Quadro de pessoal, ficha e auditoria (`#/equipe/quadro`, `#/equipe/<registro>`) |
-| `mod-admin.js` | Os painéis: avisos, documentos, solicitações, ouvidoria, agendas, site e auditoria (`#/admin`) |
+| `mod-admin.js` | Os onze painéis da gestão (`#/admin`, `#/admin/<painel>`) |
+| `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados, quadro completo e o Full mailer |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
 | [`PADROES.md`](PADROES.md) | Os padrões do sistema: navegação, rotas, busca, módulos, identidade |
 | `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |
@@ -145,6 +158,14 @@ as pede é o módulo que precisa delas, não todo mundo em todo login.
 
 São scripts clássicos, não módulos ES, de propósito — o código usa
 `onclick="…"` em toda parte e isso depende de escopo global.
+
+**Módulo não depende de módulo.** O que mais de um usa (`ic`, `ibtn`,
+`quemSouEu`, `CAT_LABEL`, `fmtD`) mora na casca — senão abrir uma tela
+quebraria porque outra ainda não foi carregada.
+
+As bibliotecas pesadas descem com quem precisa delas: jsPDF e autotable com
+os relatórios, xlsx com a importação e com a exportação do quadro. No SOMA as
+três vinham no `<head>`, quase 1,3 MB em todo login, para todo papel.
 
 Declarar uma rota nova é uma linha em `ROTAS`:
 

@@ -15,9 +15,9 @@ As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para 
 | **1 · Quadro** | **Feita.** Login com os cinco modos; `#/quadro`, `#/quadro/<registro>` e `#/auditoria` em `mod-gestao.js`; organograma com "abrir ficha" |
 | **Reorganização** | **Feita.** Navegação por espaços, busca global (`/` ou `Ctrl/⌘ K`), notificações no sino |
 | **Atividades** | **Feita.** Quadro por grupo, cartões com código, comentários com menção, sinalização, carga da equipe — pedido fora do plano original |
-| **4 · Painéis** | **Feita.** Os dois `admin.html` (portal e site) viraram `#/admin`, em abas |
+| **4 · Painéis** | **Feita.** Os dois `admin.html` (portal e site) viraram `#/admin` — hoje uma galeria de onze painéis |
 | **Agenda (revisão)** | **Feita.** Tudo editável depois de criado; marcos e ausências saem do back-end; nenhum tipo força recorrência |
-| 2 · Operações | a fazer — apontamento, relatórios, importação, contas, catálogo |
+| **2 · Operações** | **Feita.** Apontamento em Equipe; relatórios, importação, contas e catálogo viram painéis de Administração, agora em galeria |
 | 3 · Eventos | a fazer — dossiê do evento com checklist e ata |
 | 5 · Corte | a fazer |
 | 6 · Renomeação | a fazer |

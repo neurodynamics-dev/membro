@@ -18,42 +18,24 @@
    - os tipos de ocorrência moram aqui como gestao.tiposOcorrencia: na
      casca, state.tipos já é o catálogo de tipos de evento da agenda.
 
-   Depende da casca para: sb, $, esc, norm, state, can, podeQuadro,
+   Depende da casca para: sb, $, esc, norm, state, can, podeQuadro, ic, ibtn,
    toast, abreModal, fechaModal, fmtD, hojeISO, pad3, nomeDe,
    quemSouEu, avatarFoto, carregarLib.
    ============================================================ */
 
 /* ---------------- estado do módulo ---------------- */
 const gestao = {
-  pronto: false,
+  pronto: false, apont: null,
   tiposOcorrencia: [],
   filtros: { q:'', status:'Ativo', dep:'', grupo:'' },
   ficha: null,
   aud: []
 };
 
-/* ---------------- ícones ---------------- */
-const ICONS = {
-  back:'<path d="M14.5 5.5 8 12l6.5 6.5"/>',
-  plus:'<path d="M12 5v14M5 12h14"/>',
-  pencil:'<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M13.5 6.5l3 3"/>',
-  x:'<path d="M6 6l12 12M18 6 6 18"/>',
-  check:'<path d="M5 12.5 10 17.5 19 7"/>',
-  key:'<circle cx="8.5" cy="14.5" r="4.5"/><path d="M12 11.5 20 4M17 6.5l2.5 2.5M14.5 9l2 2"/>',
-  users:'<circle cx="9" cy="8.5" r="3.5"/><path d="M2.8 19.5c.7-3.2 3.2-5 6.2-5s5.5 1.8 6.2 5"/><circle cx="17" cy="9.5" r="2.6"/><path d="M15.6 14.7c2.7.2 4.8 1.8 5.5 4.4"/>',
-  shield:'<path d="M12 3.5 5 6v6c0 4.5 3 7.5 7 8.5 4-1 7-4 7-8.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
-  doc:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>'
-};
-const ic = (n, cls) => `<svg class="ic${cls?' '+cls:''}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;
-const ibtn = (icone, titulo, onclick, extra) =>
-  `<button class="icon-btn ${extra||''}" title="${titulo}" aria-label="${titulo}" onclick="${onclick}">${ic(icone)}</button>`;
-
 /* ---------------- constantes do quadro ---------------- */
 const STATUS_LIST = ['Ativo','Em pausa / avaliação','Sob demanda','Desligado','Egresso'];
 const STATUS_DOT  = {'Ativo':['dt-ok','p-ok'], 'Em pausa / avaliação':['dt-warn','p-warn'],
   'Sob demanda':['dt-info','p-info'], 'Desligado':['dt-bad','p-bad'], 'Egresso':['dt-gray','']};
-const CAT_LABEL = {documento:'Termos e documentos', local:'Acessos físicos', sistema:'Sistemas e contas'};
 const TAB_LABEL = {membros:'Membros', dados_pessoais:'Dados pessoais', acessos_concedidos:'Acessos',
   ocorrencias:'Ocorrências', avaliacoes:'Avaliações', itens_de_acesso:'Catálogo',
   apontamentos:'Apontamentos', apontamento_itens:'Apontamentos', eventos:'Eventos',
@@ -380,8 +362,9 @@ function renderFicha(){
     olho: 'Ficha do membro',
     titulo: m.nome,
     voltar: podeQuadro() ? "location.hash='#/equipe/quadro'" : "location.hash='#/equipe'",
-    acoes: can() ? ibtn('pencil','Editar dados',
-      "gestao.ficha.editando=true;gestao.ficha.tab='dados';renderFicha()") : ''
+    acoes: ibtn('doc','Gerar relatório do membro','relatorioDoMembro()')
+      + (can() ? ibtn('pencil','Editar dados',
+        "gestao.ficha.editando=true;gestao.ficha.tab='dados';renderFicha()") : '')
   }) + `
     <div class="card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px">
       <span onclick="alternarCampoFoto()" style="line-height:0;cursor:${f.editando&&f.tab==='dados'?'pointer':'default'}"
@@ -800,3 +783,139 @@ registrarBusca({
     })), t, 6);
   }
 });
+
+/* ============================================================
+   APONTAMENTO SEMANAL — aba de Equipe
+   ============================================================ */
+/* ---------------- apontamento semanal ---------------- */
+function pageApontamento(){
+  const topo = topoGestao({ olho:'Equipe', titulo:'Apontamento semanal',
+    lead:'Avaliação rápida de assiduidade e entregas do seu grupo, com sinalização ao Depto. de Pessoal.'
+  }) + abasEquipe('apontamento');
+  if(!gestao.apont){
+    const gs = todosGrupos();
+    $('#main').innerHTML = topo + `<div class="card" style="max-width:560px">
+      <h3>Iniciar apontamento</h3>
+      <p class="small muted" style="line-height:1.6;margin-bottom:14px">Selecione o grupo sob a sua liderança.
+      Serão listados os membros ativos e em pausa, para avaliar <b>assiduidade</b> e <b>entregas</b> da semana e,
+      se necessário, <b>sinalizar</b> alguém para o Depto de Pessoal.</p>
+      ${gs.length?`<div class="fld"><label>Grupo</label><select id="ap-grupo">${gs.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div>
+      <button class="btn solid" onclick="iniciarApontamento()">${ic('fwd')} Iniciar</button>`
+      :'<div class="empty">Nenhum grupo cadastrado no quadro.</div>'}
+    </div>`;
+    return;
+  }
+  renderApontamentoLista();
+}
+function iniciarApontamento(){
+  const g = $('#ap-grupo').value;
+  const itens = state.membros
+    .filter(m=>['Ativo','Em pausa / avaliação'].includes(m.status) && (m.grupos||[]).includes(g))
+    .filter(m=>m.registro !== state.perfil?.registro)
+    .sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'))
+    .map(m=>({registro:m.registro, nome:m.nome, cargo:m.cargo, status:m.status,
+      assiduidade:'SUFICIENTE', entregas:'SUFICIENTE', sinalizado:false, justificativa:null, abrirOcorrencia:false}));
+  if(!itens.length){ toast('Esse grupo não tem membros ativos ou em pausa.', true); return; }
+  gestao.apont = {grupo:g, itens};
+  renderApontamentoLista();
+}
+function segNota(i, campo){
+  const v = gestao.apont.itens[i][campo];
+  return `<span class="seg">
+    <button class="${v==='SUFICIENTE'?'on-ok':''}" onclick="setNota(${i},'${campo}','SUFICIENTE')"><span class="light ${v==='SUFICIENTE'?'lt-ok':'lt-off'}"></span>Suficiente</button>
+    <button class="${v==='INSUFICIENTE'?'on-bad':''}" onclick="setNota(${i},'${campo}','INSUFICIENTE')"><span class="light ${v==='INSUFICIENTE'?'lt-bad':'lt-off'}"></span>Insuficiente</button>
+  </span>`;
+}
+function setNota(i, campo, v){ gestao.apont.itens[i][campo]=v; renderApontamentoLista(); }
+function renderApontamentoLista(){
+  const topo = topoGestao({ olho:'Equipe', titulo:'Apontamento semanal' }) + abasEquipe('apontamento');
+  const a = gestao.apont;
+  const nSin = a.itens.filter(x=>x.sinalizado).length;
+  $('#main').innerHTML = topo + `
+    <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px"><b>Grupo:</b> ${esc(a.grupo)} <span class="muted small">· ${a.itens.length} membro(s) · ${fmtD(hojeISO())}</span></div>
+      <button class="btn" onclick="gestao.apont=null;pageApontamento()">Trocar grupo</button>
+      <button class="btn solid" onclick="salvarApontamento()">${ic('check')} Registrar apontamento</button>
+    </div>
+    ${nSin?`<div class="aviso-box warn">${nSin} membro(s) sinalizado(s) — o Depto de Pessoal será notificado no painel.</div>`:''}
+    <div class="card" style="padding:6px 14px">
+      <table class="tabela trabalho"><thead><tr><th>Reg.</th><th>Membro</th><th>Assiduidade</th><th>Entregas</th><th style="text-align:right">Sinalizar</th></tr></thead>
+      <tbody>${a.itens.map((it,i)=>`<tr>
+        <td class="reg">${pad3(it.registro)}</td>
+        <td><span style="font-weight:600">${esc(it.nome)}</span><br><span class="small muted">${esc(it.cargo||'—')}${it.status!=='Ativo'?' · '+esc(it.status):''}</span>
+          ${it.sinalizado?`<br><span class="small" style="color:var(--bad)">⚑ ${esc(it.justificativa)}</span>`:''}</td>
+        <td>${segNota(i,'assiduidade')}</td>
+        <td>${segNota(i,'entregas')}</td>
+        <td style="text-align:right">${ibtn('flag', it.sinalizado?'Remover sinalização':'Sinalizar para o Depto de Pessoal', `clicarFlag(${i})`, it.sinalizado?'danger':'')}</td>
+      </tr>`).join('')}</tbody></table>
+    </div>`;
+}
+async function clicarFlag(i){
+  const it = gestao.apont.itens[i];
+  if(it.sinalizado){ it.sinalizado=false; it.justificativa=null; it.abrirOcorrencia=false; renderApontamentoLista(); return; }
+  let recentes = [];
+  try{
+    const desde = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+    const {data} = await sb.from('apontamento_itens').select('data').eq('registro',it.registro)
+      .eq('sinalizado',true).gte('data',desde).order('data',{ascending:false});
+    recentes = data||[];
+  }catch(e){ /* segue sem histórico */ }
+  const reinc = recentes.length>0;
+  abreModal(`<h3>Sinalizar ${esc(it.nome)}</h3>
+    ${reinc?`<div class="aviso-box warn"><b>Sinalização reincidente:</b> a última foi em ${fmtD(recentes[0].data)},
+      dentro da janela de 30 dias. Você pode abrir uma ocorrência formal junto com esta sinalização —
+      nesses casos, o Depto de Pessoal agenda uma reunião com o membro.</div>`
+    :`<div class="aviso-box info">Primeira sinalização recente. O Depto de Pessoal será orientado a <b>fazer contato</b> com o membro para avaliar o comprometimento e dialogar.</div>`}
+    <div class="fld"><label>Justificativa</label><select id="sn-just">${JUSTIFICATIVAS.map(j=>`<option>${j}</option>`).join('')}</select></div>
+    <div class="fld"><label>Detalhes (opcional)</label><textarea id="sn-det" placeholder="Contexto que ajude o Depto de Pessoal…"></textarea></div>
+    ${reinc?`<div class="fld"><label class="check"><input type="checkbox" id="sn-oc" checked> Abrir ocorrência de "Sinalização reincidente" na ficha do membro</label></div>`:''}
+    <div class="acts" style="justify-content:flex-end"><button class="btn" onclick="fechaModal()">Cancelar</button>
+    <button class="btn solid" onclick="confirmarSinalizacao(${i}, ${reinc})">${ic('flag')} Sinalizar</button></div>`);
+}
+function confirmarSinalizacao(i, reinc){
+  const it = gestao.apont.itens[i];
+  const det = $('#sn-det').value.trim();
+  it.sinalizado = true;
+  it.justificativa = $('#sn-just').value + (det? ' — '+det : '');
+  it.abrirOcorrencia = reinc && $('#sn-oc') ? $('#sn-oc').checked : false;
+  fechaModal(); renderApontamentoLista();
+}
+async function salvarApontamento(){
+  const a = gestao.apont; if(!a) return;
+  try{
+    const {data:cab, error} = await sb.from('apontamentos')
+      .insert({grupo:a.grupo, data:hojeISO(), responsavel:quemSouEu(), responsavel_id:state.perfil.id})
+      .select('id').single();
+    if(error) throw error;
+    const itens = a.itens.map(it=>({apontamento_id:cab.id, registro:it.registro, data:hojeISO(),
+      assiduidade:it.assiduidade, entregas:it.entregas, sinalizado:it.sinalizado, justificativa:it.justificativa}));
+    const r = await sb.from('apontamento_itens').insert(itens);
+    if(r.error) throw r.error;
+    const ocs = a.itens.filter(it=>it.abrirOcorrencia).map(it=>({registro:it.registro,
+      tipo:'Sinalização reincidente', descricao:it.justificativa, responsavel:quemSouEu(), data:hojeISO()}));
+    if(ocs.length){ const r2 = await sb.from('ocorrencias').insert(ocs); if(r2.error) throw r2.error; }
+    const nSin = a.itens.filter(x=>x.sinalizado).length;
+    gestao.apont = null;
+    $('#main').innerHTML = topo + `<div class="card" style="max-width:560px;text-align:center;padding:36px">
+      <div class="sq" style="width:52px;height:52px;border-radius:16px;background:var(--soft);color:var(--green);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">${ic('check')}</div>
+      <h3 style="margin-bottom:8px">Apontamento registrado</h3>
+      <p class="small muted" style="line-height:1.6;margin-bottom:18px">Grupo ${esc(a.grupo)} · ${a.itens.length} membro(s) avaliado(s)
+      ${nSin?` · ${nSin} sinalização(ões) encaminhada(s) ao Depto de Pessoal`:''}${ocs.length?` · ${ocs.length} ocorrência(s) aberta(s)`:''}.</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn ghost" onclick="gestao.apont=null;pageApontamento()">Novo apontamento</button>
+        <a class="btn solid" href="#/equipe">Voltar à equipe</a></div>
+    </div>`;
+    toast('Apontamento registrado.');
+  }catch(e){ falha(e,'Erro ao registrar o apontamento'); }
+}
+
+/* O relatório em PDF mora no módulo de relatórios, que é quem carrega o
+   jsPDF. A ficha só pede — e a biblioteca desce na primeira vez. */
+async function relatorioDoMembro(){
+  if (typeof gerarRelatorioMembro !== 'function'){
+    toast('Preparando o relatório…');
+    try { await carregarModulo('relatorios'); }
+    catch(e){ toast('Não foi possível carregar o gerador de relatório.', true); return; }
+  }
+  gerarRelatorioMembro();
+}

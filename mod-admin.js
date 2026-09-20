@@ -31,76 +31,123 @@ const LAYOUTS = {padrao:'Padrão', destaque:'Destaque (banda verde)', urgente:'U
 const CAT_DOC_ADM = {institucional:'Institucional', politica:'Política', guia:'Guia',
                      formulario:'Formulário', outro:'Outro'};
 
-const ABAS_ADMIN = [
-  ['avisos',       'Quadro de avisos'],
-  ['documentos',   'Documentos'],
-  ['solicitacoes', 'Solicitações'],
-  ['ouvidoria',    'Ouvidoria'],
-  ['agendas',      'Agendas'],
-  ['site',         'Site institucional'],
-  ['auditoria',    'Auditoria']
+/* Com onze painéis, aba não cabe mais: a Administração vira galeria —
+   o componente "galeria de tiles" do design system — e cada painel tem
+   endereço próprio. */
+/* O quarto campo diz quem abre. Relatórios é o único que o Comitê de
+   Seleção também precisa: a lista de e-mails dos candidatos mora lá, e
+   antes ficava numa tela que o comitê alcançava. */
+const PAINEIS = [
+  ['avisos',       'Quadro de avisos',    'Portal',   'O banner rotativo da home, com layout e ordem', can],
+  ['documentos',   'Documentos',          'Portal',   'A biblioteca de estatuto, políticas, guias e formulários', can],
+  ['solicitacoes', 'Solicitações',        'Portal',   'Triagem dos pedidos ao Depto. de Pessoal', can],
+  ['ouvidoria',    'Ouvidoria',           'Portal',   'As mensagens anônimas, para ler e tratar', can],
+  ['agendas',      'Agendas',             'Portal',   'Quem conectou o Google Agenda e como está a sincronização', can],
+  ['contas',       'Contas e perfis',     'Pessoas',  'Papéis de acesso, vínculo com o quadro e senha', can],
+  ['acessos',      'Catálogo de acessos', 'Pessoas',  'Os sistemas, locais e documentos controlados pela NRO', can],
+  ['importar',     'Importar planilha',   'Pessoas',  'Atualizar o quadro em massa pelo NRO-PES-005 ou pelo Excel do SOMA', can],
+  ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
+                                                       () => can() || podeSelecao()],
+  ['auditoria',    'Auditoria',           'Registro', 'Quem mudou o quê, quando', can],
+  ['site',         'Site institucional',  'Conteúdo', 'Os projetos que aparecem em neurodynamics.dev', can]
 ];
+const painelPermitido = (p) => !p[4] || p[4]();
+const GRUPOS_PAINEL = ['Portal','Pessoas','Registro','Conteúdo'];
+
+const ICONES_ADM = {
+  avisos:'<path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8A3 3 0 0 1 6 15.4"/>',
+  documentos:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
+  solicitacoes:'<path d="M4 5.5h16v11H10L5.5 20v-3.5H4z"/>',
+  ouvidoria:'<path d="M12 3a4 4 0 0 1 4 4v4a4 4 0 0 1-8 0V7a4 4 0 0 1 4-4z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  agendas:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/>',
+  contas:'<path d="M12 3.5 5 6v6c0 4.5 3 7.5 7 8.5 4-1 7-4 7-8.5V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
+  acessos:'<circle cx="8.5" cy="14.5" r="4.5"/><path d="M12 11.5 20 4M17 6.5l2.5 2.5M14.5 9l2 2"/>',
+  importar:'<path d="M12 16V5M6.5 9.5 12 4l5.5 5.5M5 20h14"/>',
+  relatorios:'<path d="M4 20h16M7 20V9M12 20V4M17 20v-7"/>',
+  auditoria:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.5M4.5 12h.5M4.5 18h.5"/>',
+  site:'<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>'
+};
+const icAdm = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+  stroke-linecap="round" stroke-linejoin="round">${ICONES_ADM[n]||''}</svg>`;
 
 /* ============================================================
    ROTA
    ============================================================ */
 async function pageAdmin(sub){
-  const aba = ABAS_ADMIN.some(([k]) => k === sub) ? sub : 'avisos';
-  adminP.aba = aba;
+  const p = PAINEIS.find(([k]) => k === sub);
+  if (!p || !painelPermitido(p)) return galeriaAdmin();
 
+  const [k, titulo, , lead] = p;
   $('#main').innerHTML = `
-    <div class="topo-gestao"><div class="tx">
-      <span class="eyebrow">Administração</span>
-      <h1>Painéis</h1>
-      <p class="lead">O que a gestão mantém: avisos, documentos, solicitações, ouvidoria,
-        agendas, o site institucional e a trilha de auditoria.</p></div></div>
-    <nav class="abas">${ABAS_ADMIN.map(([k,l]) =>
-      `<a href="#/admin/${k}" class="${k===aba?'on':''}">${l}<span class="n" id="n-${k}"></span></a>`).join('')}</nav>
-    <section id="sec-avisos"       ${aba!=='avisos'?'hidden':''}></section>
-    <section id="sec-documentos"   ${aba!=='documentos'?'hidden':''}></section>
-    <section id="sec-solicitacoes" ${aba!=='solicitacoes'?'hidden':''}></section>
-    <section id="sec-ouvidoria"    ${aba!=='ouvidoria'?'hidden':''}></section>
-    <section id="sec-agendas"      ${aba!=='agendas'?'hidden':''}></section>
-    <section id="sec-site"         ${aba!=='site'?'hidden':''}></section>
-    <section id="sec-auditoria"    ${aba!=='auditoria'?'hidden':''}></section>`;
+    <div class="topo-gestao">
+      <div style="padding-top:34px"><a class="icon-btn" href="#/admin" title="Voltar" aria-label="Voltar">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+          stroke-linecap="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></a></div>
+      <div class="tx"><span class="eyebrow">Administração</span>
+        <h1>${esc(titulo)}</h1><p class="lead">${esc(lead)}</p></div></div>
+    ${PAINEIS.filter(painelPermitido).map(([x]) => `<section id="sec-${x}" ${x===k?'':'hidden'}>${
+      x===k ? '<div class="carregando"><span class="spin"></span> Carregando…</div>' : ''}</section>`).join('')}`;
 
-  if (aba === 'auditoria'){
-    $('#sec-auditoria').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
-    try {
-      await carregarModulo('gestao');
-      /* a auditoria desenha em #main; aqui ela fica dentro da aba */
-      const alvo = $('#sec-auditoria');
-      const guarda = $('#main').innerHTML;
-      await pageAuditoria();
-      alvo.innerHTML = $('#main').innerHTML;
-      $('#main').innerHTML = guarda;
-      $('#sec-auditoria').innerHTML = alvo.innerHTML;
-      $('#sec-auditoria').hidden = false;
-      renderTabelaAud();
-    } catch(e){
-      $('#sec-auditoria').innerHTML = `<div class="aviso-box err">Não foi possível carregar a auditoria: ${esc(e.message)}</div>`;
-    }
+  if (k === 'site')       return admCarregarProjetos();
+  if (k === 'relatorios') return comModulo('relatorios', () => pageRelatorios());
+  if (k === 'auditoria')  return comModulo('gestao', async () => {
+    await pageAuditoria();
+    /* pageAuditoria desenha em #main; aqui ela mora dentro do painel */
+    const corpo = $('#main').innerHTML;
+    $('#main').innerHTML = guardaTopo + `<section id="sec-auditoria">${corpo}</section>`;
+    renderTabelaAud();
+  });
+  if (k === 'contas')     return pageContas();
+  if (k === 'acessos')    return admCarregarCatalogo();
+  if (k === 'importar')   return pageImportar();
+
+  /* Um painel por vez: só existe um #sec-* na tela, e carregar os cinco
+     juntos fazia quatro deles escreverem em contêiner inexistente. */
+  const carga = { avisos: admCarregarAvisos, documentos: admCarregarDocs,
+                  solicitacoes: admCarregarSols, ouvidoria: admCarregarOuvidoria,
+                  agendas: admCarregarAgendas };
+  if (carga[k]) await carga[k]();
+}
+
+/* O cabeçalho antigo tinha um contador por aba; agora a contagem vive nos
+   tiles da galeria, então escrever nele é opcional. */
+function porTexto(id, txt){ const el = $('#'+id); if (el) el.textContent = txt; }
+
+let guardaTopo = '';
+async function comModulo(nome, fn){
+  guardaTopo = $('#main').innerHTML.replace(/<section id="sec-[a-z]+">[\s\S]*<\/section>/, '');
+  try { await carregarModulo(nome); }
+  catch(e){
+    $('#main').innerHTML = guardaTopo
+      + `<div class="aviso-box err">Não foi possível carregar: ${esc(e.message)}</div>`;
     return;
   }
-
-  if (aba === 'site') return admCarregarProjetos();
-
-  if (!adminP.pronto){
-    $('#sec-'+aba).innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
-    await Promise.all([admCarregarAvisos(), admCarregarDocs(), admCarregarSols(),
-                       admCarregarOuvidoria(), admCarregarAgendas()]);
-    adminP.pronto = true;
-  }
-  admContagens();
+  await fn();
 }
 
-function admContagens(){
-  const p = adminP.sols.filter(s => ['aberta','em_analise'].includes(s.status)).length;
-  const o = adminP.ouvidoria.filter(m => !m.tratada).length;
-  const a = adminP.agendas.filter(x => x.erro).length;
-  const põe = (id, n) => { const el = $('#n-'+id); if (el) el.textContent = n ? ' ' + n : ''; };
-  põe('solicitacoes', p); põe('ouvidoria', o); põe('agendas', a);
+function galeriaAdmin(){
+  const pend = adminP.sols.filter(s => ['aberta','em_analise'].includes(s.status)).length;
+  const ouv  = adminP.ouvidoria.filter(m => !m.tratada).length;
+  const conta = { solicitacoes: pend, ouvidoria: ouv };
+  $('#main').innerHTML = `
+    <div class="topo-gestao"><div class="tx"><span class="eyebrow">Administração</span>
+      <h1>Painéis</h1>
+      <p class="lead">O que a gestão mantém. Cada painel tem endereço próprio — dá para
+        mandar o link de um deles por mensagem.</p></div></div>
+    ${GRUPOS_PAINEL.map(g => {
+      const itens = PAINEIS.filter(([,, gr]) => gr === g).filter(painelPermitido);
+      if (!itens.length) return '';
+      return `<div class="adm-grupo">${g}</div>
+        <div class="gal" style="margin-bottom:26px">${itens.map(([k, titulo, , lead]) =>
+          `<a class="tile" href="#/admin/${k}"><span class="sq">${icAdm(k)}</span>
+            <span class="tt">${esc(titulo)}${conta[k] ? ` <span class="tile-n">${conta[k]}</span>` : ''}</span>
+            <span class="td">${esc(lead)}</span></a>`).join('')}</div>`;
+    }).join('')}`;
+  /* as contagens dos tiles pedem os dados; carrega em segundo plano */
+  if (!adminP.pronto) Promise.all([admCarregarSols(), admCarregarOuvidoria()])
+    .then(() => { if (location.hash.replace(/^#\//,'') === 'admin') galeriaAdmin(); }, () => {});
 }
+
 /* ============================================================
    ABA 1 — QUADRO DE AVISOS
    ============================================================ */
@@ -355,7 +402,7 @@ async function admCarregarSols(){
   }
   adminP.sols = data || [];
   const pend = adminP.sols.filter(s=>['aberta','em_analise'].includes(s.status)).length;
-  $('#n-solicitacoes').textContent = pend ? pend : '';
+  porTexto('n-solicitacoes', pend ? pend : '');
   desenhaSols();
 }
 function desenhaSols(){
@@ -460,7 +507,7 @@ async function admCarregarOuvidoria(){
   }
   adminP.ouvidoria = data || [];
   const pend = adminP.ouvidoria.filter(o=>!o.tratado).length;
-  $('#n-ouvidoria').textContent = pend ? pend : '';
+  porTexto('n-ouvidoria', pend ? pend : '');
   desenhaOuvidoria();
 }
 function desenhaOuvidoria(){
@@ -507,8 +554,7 @@ async function admCarregarAgendas(){
   }
   adminP.agendas = data || [];
   const comErro = adminP.agendas.filter(a => a.conectado && a.ultimo_erro).length;
-  const n = $('#n-agendas');
-  if (comErro){ n.textContent = comErro; n.style.display = ''; } else { n.style.display = 'none'; }
+  porTexto('n-agendas', comErro ? String(comErro) : '');
   desenhaAgendas();
 }
 function desenhaAgendas(){
@@ -568,6 +614,396 @@ async function sincronizarTodas(){
   b.disabled = false; b.textContent = 'Sincronizar todas agora';
   await admCarregarAgendas();
 }
+/* ============================================================
+   PAINÉIS · CATÁLOGO DE ACESSOS, IMPORTAÇÃO E CONTAS
+   Vieram de Operações no SOMA, que deixa de existir como tela:
+   cada ferramenta virou um painel com endereço próprio.
+   ============================================================ */
+/* ---------------- catálogo de acessos ---------------- */
+async function admCarregarCatalogo(){
+  const { data } = await sb.from('itens_de_acesso').select('*').order('ordem');
+  state.itensAcesso = data || [];
+  pageCatalogo();
+}
+function pageCatalogo(){
+  $('#sec-acessos').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px">
+      <p class="sub" style="margin:0">Os sistemas, locais e documentos cujo acesso a NRO controla</p>
+      ${can() ? ibtn('plus','Novo item','modalItem()','primary') : ''}</div>
+    <div class="card">
+    <p class="small muted" style="line-height:1.6;margin-bottom:14px">Cada linha é um sistema, local ou documento controlado.
+    Um item novo passa a valer para todos os membros na hora, sem alterar a estrutura.</p>
+    <table class="tabela trabalho"><thead><tr><th>Item</th><th>Categoria</th><th>Situação</th>${can()?'<th></th>':''}</tr></thead>
+    <tbody>${state.itensAcesso.map(i=>`<tr>
+      <td style="font-weight:600">${esc(i.nome)}</td>
+      <td>${CAT_LABEL[i.categoria]||esc(i.categoria)}</td>
+      <td><span class="pill"><span class="dt ${i.ativo?'dt-ok':'dt-gray'}"></span>${i.ativo?'Em uso':'Desativado'}</span></td>
+      ${can()?`<td style="text-align:right;white-space:nowrap">
+        ${ibtn('pencil','Editar item',`modalItem('${i.id}')`,'sm')}
+        ${ibtn(i.ativo?'x':'check', i.ativo?'Desativar':'Reativar', `alternarItem('${i.id}', ${!i.ativo})`,'sm')}</td>`:''}
+    </tr>`).join('')}</tbody></table></div>`;
+}
+function modalItem(id){
+  const i = id ? state.itensAcesso.find(x=>x.id===id) : null;
+  abreModal(`<h3>${i?'Editar item de acesso':'Novo item de acesso'}</h3>
+    <div class="fld"><label>Nome</label><input id="it-nome" value="${esc(i?.nome||'')}" placeholder="ex.: Figma, Sala de reuniões, Termo de sigilo — Parceiro X"></div>
+    <div class="fld"><label>Categoria</label><select id="it-cat">
+      ${['sistema','local','documento'].map(c=>`<option value="${c}" ${i?.categoria===c?'selected':''}>${CAT_LABEL[c]}</option>`).join('')}</select></div>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+    <button class="btn solid" onclick="salvarItem(${i?`'${i.id}'`:'null'})">${i?'Salvar':'Criar item'}</button></div>`, true);
+}
+async function salvarItem(id){
+  const nome = $('#it-nome').value.trim(), categoria = $('#it-cat').value;
+  if(!nome){ toast('Informe o nome do item.', true); return; }
+  try{
+    const {error} = id
+      ? await sb.from('itens_de_acesso').update({nome, categoria}).eq('id', id)
+      : await sb.from('itens_de_acesso').insert({nome, categoria});
+    if(error) throw error;
+    const {data} = await sb.from('itens_de_acesso').select('*').order('ordem'); state.itensAcesso = data||[];
+    fechaModal(); pageCatalogo(); toast(id?'Item atualizado.':'Item criado.');
+  }catch(e){ falha(e, e?.code==='23505'?'Já existe um item com esse nome':'Erro ao salvar'); }
+}
+async function alternarItem(id, ativo){
+  try{
+    const {error} = await sb.from('itens_de_acesso').update({ativo}).eq('id', id); if(error) throw error;
+    const it = state.itensAcesso.find(x=>x.id===id); if(it) it.ativo = ativo;
+    pageCatalogo(); toast(ativo?'Item reativado.':'Item desativado. Concessões existentes foram preservadas.');
+  }catch(e){ falha(e,'Erro ao atualizar'); }
+}
+
+/* ---------------- importar planilha ---------------- */
+const MAPA_INST = {'REGISTRO':'registro','STATUS':'status','NOME':'nome','DEPARTAMENTO':'departamento',
+  'CARGO ATUAL':'cargo','GRUPOS':'grupos','EMAIL NRO':'email_nro','EMAIL PESSOAL':'email_pessoal','TELEFONE':'telefone',
+  'DATA DE INGRESSO':'data_ingresso','FORMA DE INGRESSO':'forma_ingresso','DATA DE DESLIGAMENTO':'data_desligamento',
+  'PROJETO REGISTRADO NO SISTEMA DE FOMENTO':'projeto_fomento','CLASSIFICAÇÃO':'classificacao','BOLSA':'bolsa',
+  'DATA DE ENCERRAMENTO':'data_encerramento'};
+/* Cabeçalhos do Excel que o próprio SOMA exporta (Relatórios → Quadro
+   completo). Permitem reimportar o arquivo exportado — inclusive editado —
+   para manutenção em massa (renomear cargos, trocar grupos, e-mails etc.).
+   "Gestor imediato" traz o NOME do gestor; vira gestor_registro numa segunda
+   passada da importação. Os cabeçalhos oficiais acima têm prioridade. */
+const ALIAS_INST = {'CARGO':'cargo','E-MAIL NRO':'email_nro','E-MAIL PESSOAL':'email_pessoal',
+  'PROJETO NO FOMENTO':'projeto_fomento','GESTOR IMEDIATO':'_gestor_nome'};
+const MAPA_ACESSOS = {
+  'POSSUI TERMO DE SIGILO DO LABBIO ASSINADO?':'Termo de sigilo — LABBIO',
+  'POSSUI TERMO DE SIGILO DA VISURI ASSINADO?':'Termo de sigilo — Visuri',
+  'POSSUI TERMO DE SIGILO DA NRO ASSINADO?':'Termo de sigilo — NRO',
+  'ACESSO BIOMÉTRICO AO LABBIO':'Biometria — LABBIO',
+  'ACESSO BIOMÉTRICO AO LEB':'Biometria — LEB',
+  'PASTAS COM ACESSO NO DRIVE CTA-EEUFMG':'Drive CTA-EEUFMG',
+  'ACESSO A TIMES NO GITHUB CTA-EEUFMG':'GitHub CTA-EEUFMG',
+  'ACESSO À CONTA DE EMAIL ZIMBRA':'E-mail Zimbra',
+  'ACESSO À CONTA GOOGLE NRO':'Conta Google NRO',
+  'ACESSO À CONTA GOOGLE CTA-EEUFMG':'Conta Google CTA-EEUFMG',
+  'ACESSO AO TIME CANVA':'Canva',
+  'ACESSO AO INSTAGRAM':'Instagram',
+  'ACESSO AO LINKEDIN':'LinkedIn',
+  'ACESSO AO WIX':'Wix',
+  'ACESSO AO CLOUDFLARE':'Cloudflare',
+  'ACESSO AO WHATSAPP BUSINESS':'WhatsApp Business',
+  'ACESSO AO NOTION':'Notion'};
+const MAPA_FORM = {'CPF':'cpf','DATA DE NASCIMENTO':'data_nascimento','ENDEREÇO':'endereco','CIDADE DE ORIGEM':'cidade_origem',
+  'INSTITUIÇÃO DE ENSINO':'instituicao','CURSO':'curso','MATRÍCULA':'matricula','PERÍODO DE INGRESSO':'periodo_ingresso',
+  'BACKGROUND':'background','LINK DO CURRÍCULO LATTES':'lattes','TEMPO DE DESLOCAMENTO ATÉ A UNIVERSIDADE':'tempo_deslocamento',
+  'AUTODECLARAÇÃO RACIAL':'autodeclaracao_racial','SITUAÇÃO JUNTO À FUMP':'situacao_fump',
+  'NECESSIDADES ESPECÍFICAS DE ACESSIBILIDADE':'acessibilidade','GÊNERO':'genero','PERFIL DO INSTAGRAM':'instagram',
+  'USUÁRIO DO GITHUB':'github'};
+let pacote = null;
+
+const t = (v)=>{ if(v==null) return null; const s=String(v).trim(); return s===''||s==='--' ? null : s; };
+const textoNum = (v)=>{ if(v==null||v==='') return null; if(typeof v==='number') return v.toFixed(0); return t(v); };
+const ehVerdade = (v)=> v===true || String(v).trim().toUpperCase()==='TRUE';
+function dataISO(v){
+  if(v==null||v==='') return null;
+  if(typeof v==='number'){ if(v<20000||v>80000) return null;
+    return new Date(Math.round((v-25569)*86400*1000)).toISOString().slice(0,10); }
+  if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
+  const s=String(v).trim();
+  let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  return null;
+}
+function normLinhas(ws){
+  return window.XLSX.utils.sheet_to_json(ws, {defval:null, raw:true}).map(r=>{
+    const o={}; Object.keys(r).forEach(k=> o[k.trim().toUpperCase()] = r[k]); return o;
+  });
+}
+function pageImportar(){
+  pacote = null;
+  $('#sec-importar').innerHTML = `
+    <div class="card"><h3>Importar planilha do quadro</h3>
+      <p class="small muted" style="line-height:1.65;margin-bottom:16px">
+        Dois formatos são aceitos: a planilha oficial <b>NRO-PES-005</b> (abas INSTITUCIONAL, FORM e
+        ACESSOS) e o <b>Excel exportado pelo próprio SOMA</b> (Relatórios → Quadro completo), inclusive
+        editado — ideal para manutenção em massa, como renomear cargos ou reorganizar grupos.
+        Só as colunas presentes no arquivo são atualizadas; registros existentes são casados pelo
+        número de registro — pode importar quantas vezes quiser sem duplicar.</p>
+      <div class="dropzone" onclick="document.getElementById('imp-file').click()">
+        Clique para selecionar o arquivo<br><b>NRO-PES-005 ou exportação do SOMA (.xlsx)</b>
+      </div>
+      <input id="imp-file" type="file" accept=".xlsx,.xls,.csv" hidden onchange="lerArquivo(this.files[0])">
+    </div>
+    <div id="imp-resumo"></div>`;
+}
+async function lerArquivo(file){
+  if(!file) return;
+  if(!window.XLSX){ toast('Preparando o leitor de planilha…');
+    try{ await carregarLib('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'); }
+    catch(e){ toast('Não foi possível carregar o leitor de planilha.', true); return; } }
+  try{
+    const wb = window.XLSX.read(new Uint8Array(await file.arrayBuffer()), {type:'array'});
+    const acha = (nome)=>{ const n = wb.SheetNames.find(s=>s.trim().toUpperCase()===nome); return n? wb.Sheets[n] : null; };
+    let wsInst = acha('INSTITUCIONAL') || acha('QUADRO'), wsForm = acha('FORM'), wsAcc = acha('ACESSOS');
+    if(!wsInst && wb.SheetNames.length===1){
+      const unica = wb.Sheets[wb.SheetNames[0]];
+      const teste = normLinhas(unica)[0]||{};
+      if('REGISTRO' in teste && 'NOME' in teste) wsInst = unica;
+    }
+    const linhasInst = wsInst ? normLinhas(wsInst) : [];
+    /* Só as colunas presentes no arquivo entram na atualização — uma planilha
+       com apenas REGISTRO e CARGO ATUAL, por exemplo, mexe só nos cargos e
+       preserva todo o resto do cadastro. */
+    const presentes = new Set(); linhasInst.forEach(r=> Object.keys(r).forEach(k=> presentes.add(k)));
+    const PARES_INST = [...Object.entries(MAPA_INST), ...Object.entries(ALIAS_INST)];
+    const jaExiste = new Set(state.membros.map(m=>m.registro));
+    const membros = linhasInst.map(r=>{
+      const o={};
+      PARES_INST.forEach(([h,k])=>{
+        if(!presentes.has(h) || (k in o)) return;
+        const v=r[h];
+        if(k==='registro') o[k] = v==null||v===''? null : Math.round(Number(v));
+        else if(k==='grupos') o[k] = t(v)? String(v).split(',').map(x=>x.trim()).filter(Boolean) : [];
+        else if(k.startsWith('data_')) o[k] = dataISO(v);
+        else o[k] = t(v);
+      });
+      if(presentes.has('STATUS') && !o.status) o.status='Ativo';
+      return o;
+    }).filter(o=> o.registro && (o.nome || (!presentes.has('NOME') && jaExiste.has(o.registro))));
+    const colunasInst = PARES_INST.filter(([h])=>presentes.has(h)).map(([h])=>h);
+    const pess = !wsForm ? [] : normLinhas(wsForm).map(r=>{
+      const o={_nome: t(r['NOME COMPLETO'])};
+      Object.entries(MAPA_FORM).forEach(([h,k])=>{
+        const v=r[h];
+        if(k==='data_nascimento') o[k]=dataISO(v);
+        else if(k==='matricula') o[k]=textoNum(v);
+        else o[k]=t(v);
+      });
+      const term = t(r['TERMO DE AUTORIZAÇÃO DO USO DE IMAGEM']);
+      o.autorizacao_imagem = term ? term.toLowerCase().startsWith('autorizo') : null;
+      return o;
+    }).filter(o=>o._nome);
+    const acessos = [];
+    if(wsAcc) normLinhas(wsAcc).forEach(r=>{
+      const nome = t(r['NOME']); if(!nome) return;
+      Object.entries(MAPA_ACESSOS).forEach(([h,item])=>{ if(ehVerdade(r[h])) acessos.push({_nome:nome, _item:item}); });
+    });
+    if(!membros.length && !pess.length && !acessos.length){
+      toast('Não encontrei dados reconhecíveis nesse arquivo. Confira se é a planilha NRO-PES-005 ou uma exportação do SOMA.', true); return;
+    }
+    pacote = {membros, pess, acessos};
+    const nNovos = membros.filter(m=>!jaExiste.has(m.registro)).length;
+    $('#imp-resumo').innerHTML = `<div class="card"><h3>Pronto para importar — ${esc(file.name)}</h3>
+      <label class="check"><input type="checkbox" id="ck-m" ${membros.length?'checked':'disabled'}>
+        <span><b>${membros.length}</b> membros — ${nNovos} novo(s), ${membros.length-nNovos} atualização(ões)</span></label>
+      ${membros.length?`<p class="small muted" style="margin:2px 0 6px 26px">Colunas reconhecidas (só elas serão atualizadas): ${esc(colunasInst.join(', '))}</p>`:''}
+      <label class="check"><input type="checkbox" id="ck-p" ${pess.length?'checked':'disabled'}>
+        <span><b>${pess.length}</b> fichas de dados pessoais (aba FORM)</span></label>
+      <label class="check"><input type="checkbox" id="ck-a" ${acessos.length?'checked':'disabled'}>
+        <span><b>${acessos.length}</b> concessões de acesso marcadas (aba ACESSOS)</span></label>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn solid" id="imp-go" onclick="executarImport()">${ic('upload')} Importar agora</button>
+        <button class="btn ghost" onclick="pageImportar()">Escolher outro arquivo</button></div>
+      <div id="imp-log" class="log" style="margin-top:16px" hidden></div></div>`;
+  }catch(e){ falha(e,'Não consegui ler o arquivo'); }
+}
+async function executarImport(){
+  if(!pacote) return;
+  const log = $('#imp-log'); log.hidden=false; log.textContent='';
+  const diz = (s)=>{ log.textContent += s+'\n'; log.scrollTop = log.scrollHeight; };
+  $('#imp-go').disabled = true;
+  try{
+    if($('#ck-m').checked && pacote.membros.length){
+      const jaExiste = new Set(state.membros.map(m=>m.registro));
+      /* o lote precisa ter as mesmas colunas em todas as linhas; além disso,
+         cadastros novos nascem com status mesmo quando a coluna não veio. */
+      const linhas = pacote.membros.map(({_gestor_nome, ...m})=>m);
+      const novos  = linhas.filter(m=>!jaExiste.has(m.registro)).map(m=>({status:'Ativo', ...m}));
+      const atuais = linhas.filter(m=> jaExiste.has(m.registro));
+      diz(`Importando ${linhas.length} membros (${novos.length} novo(s), ${atuais.length} atualização(ões))…`);
+      if(atuais.length) await upsertLotes('membros', atuais, 'registro');
+      if(novos.length)  await upsertLotes('membros', novos, 'registro');
+      const {data} = await sb.from('membros').select('*').order('registro');
+      state.membros = data||[];
+      diz(`✔ Membros importados. O quadro agora tem ${state.membros.length} registros.`);
+      /* 2ª passada: coluna "Gestor imediato" (arquivo exportado pelo SOMA)
+         traz o nome do gestor — resolvida aqui, depois que todos os membros
+         do arquivo já existem no quadro. Célula vazia desfaz o vínculo. */
+      const comGestor = pacote.membros.filter(m=>'_gestor_nome' in m);
+      if(comGestor.length){
+        const porNomeM = new Map(state.membros.map(m=>[norm(m.nome), m.registro]));
+        const vinc=[], semPar=[];
+        comGestor.forEach(m=>{
+          if(m._gestor_nome==null){ vinc.push({registro:m.registro, gestor_registro:null}); return; }
+          const g = porNomeM.get(norm(m._gestor_nome));
+          if(g && g!==m.registro) vinc.push({registro:m.registro, gestor_registro:g});
+          else semPar.push(`${m._gestor_nome} (reg. ${m.registro})`);
+        });
+        if(vinc.length){
+          await upsertLotes('membros', vinc, 'registro');
+          const r2 = await sb.from('membros').select('*').order('registro');
+          state.membros = r2.data||[];
+          diz(`✔ Gestor imediato atualizado em ${vinc.length} registro(s).`);
+        }
+        if(semPar.length) diz(`⚠ Gestor não encontrado pelo nome em ${semPar.length} caso(s): ${semPar.join('; ')}`);
+      }
+    }
+    const porNome = new Map(state.membros.map(m=>[norm(m.nome), m.registro]));
+    if($('#ck-p').checked && pacote.pess.length){
+      const linhas=[], semPar=[];
+      pacote.pess.forEach(p=>{
+        const reg = porNome.get(norm(p._nome));
+        if(!reg){ semPar.push(p._nome); return; }
+        const {_nome, ...resto} = p; linhas.push({registro:reg, ...resto});
+      });
+      diz(`Importando ${linhas.length} fichas de dados pessoais…`);
+      await upsertLotes('dados_pessoais', linhas, 'registro');
+      diz(`✔ Dados pessoais importados.`);
+      if(semPar.length) diz(`⚠ ${semPar.length} resposta(s) do FORM sem membro correspondente: ${semPar.join('; ')}`);
+    }
+    if($('#ck-a').checked && pacote.acessos.length){
+      const porItem = new Map(state.itensAcesso.map(i=>[i.nome, i.id]));
+      const linhas=[]; let semMembro=0, semItem=0;
+      pacote.acessos.forEach(a=>{
+        const reg = porNome.get(norm(a._nome)); if(!reg){ semMembro++; return; }
+        const item = porItem.get(a._item); if(!item){ semItem++; return; }
+        linhas.push({registro:reg, item_id:item, ativo:true, responsavel:'Importação da planilha'});
+      });
+      diz(`Importando ${linhas.length} concessões de acesso…`);
+      await upsertLotes('acessos_concedidos', linhas, 'registro,item_id');
+      diz(`✔ Acessos importados.`);
+      if(semMembro) diz(`⚠ ${semMembro} concessão(ões) ignorada(s): nome sem membro correspondente.`);
+      if(semItem) diz(`⚠ ${semItem} concessão(ões) ignorada(s): item fora do catálogo.`);
+    }
+    diz('');
+    diz('Importação concluída. Confira o quadro na aba Membros.');
+    toast('Importação concluída.');
+  }catch(e){ diz('✖ ERRO: '+(e?.message||e)); falha(e,'A importação foi interrompida'); }
+  $('#imp-go').disabled = false;
+}
+
+/* ---------------- operações ---------------- */
+
+function modalReuniaoDP(){
+  const opts = state.membros.filter(m=>['Ativo','Em pausa / avaliação','Sob demanda'].includes(m.status))
+    .sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'))
+    .map(m=>`<option value="${m.registro}">${esc(m.nome)}</option>`).join('');
+  abreModal(`<h3>Reunião com o Depto de Pessoal</h3>
+    <div class="fld"><label>Membro</label><select id="dp-reg">${opts}</select></div>
+    <div class="fld"><label>Data</label><input id="dp-data" type="date" value="${hojeISO()}"></div>
+    <div class="fld"><label>Resumo do alinhamento</label><textarea id="dp-desc" placeholder="Pontos conversados, combinados e próximos passos…"></textarea></div>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+    <button class="btn solid" onclick="salvarReuniaoDP()">Registrar</button></div>`, true);
+}
+async function salvarReuniaoDP(){
+  try{
+    const {error} = await sb.from('ocorrencias').insert({registro:parseInt($('#dp-reg').value,10),
+      tipo:'Conversa com o Depto de Pessoal', data:$('#dp-data').value||hojeISO(),
+      descricao:$('#dp-desc').value.trim()||null, responsavel:quemSouEu()});
+    if(error) throw error;
+    fechaModal(); toast('Reunião registrada na ficha do membro.');
+  }catch(e){ falha(e,'Erro ao registrar'); }
+}
+
+/* Upsert em lotes de 100 — o PostgREST tem limite de tamanho de corpo,
+   e uma planilha inteira em uma chamada só estoura. */
+async function upsertLotes(tabela, linhas, conflito){
+  for (let i = 0; i < linhas.length; i += 100){
+    const { error } = await sb.from(tabela).upsert(linhas.slice(i, i+100), { onConflict: conflito });
+    if (error) throw error;
+  }
+}
+
+/* ---------------- contas e perfis ---------------- */
+let _contas = [];
+/* renderContas veio do SOMA escrevendo num modal; aqui ela é um painel. */
+function porContas(html){
+  const el = $('#sec-contas');
+  if (el) el.innerHTML = html.replace(/^<h3>Contas e perfis<\/h3>/, '');
+  else abreModal(html, true);
+}
+async function pageContas(){
+  try{
+    const {data, error} = await sb.from('perfis').select('id,email,nome,papel,registro').order('email');
+    if(error) throw error;
+    _contas = data||[];
+    renderContas(_contas);
+  }catch(e){ const el = $('#sec-contas');
+    if (el) el.innerHTML = `<div class="aviso-box err">Erro ao carregar as contas: ${esc(e.message)}</div>`;
+    else falha(e,'Erro ao carregar as contas'); }
+}
+function renderContas(perfis){
+  const souAdmin = state.perfil.papel==='admin';
+  const emailsComConta = new Set(perfis.map(p=>norm(p.email)));
+  const semConta = state.membros.filter(m=> m.status==='Ativo'
+    && ![m.email_nro, m.email_pessoal].some(e=> e && emailsComConta.has(norm(e))));
+  const regOpts = (sel)=> `<option value="">— sem vínculo —</option>` + state.membros.slice()
+    .sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'))
+    .map(m=>`<option value="${m.registro}" ${m.registro===sel?'selected':''}>${esc(m.nome)}</option>`).join('');
+  porContas(`<h3>Contas e perfis</h3>
+    <p class="small muted" style="line-height:1.6;margin-bottom:12px">Cada conta nasce com papel <b>Consulta</b>,
+    vinculada ao membro pelo e-mail usado no cadastro. Ajuste aqui o papel e o vínculo${souAdmin?'':' (somente administradores alteram papéis)'};
+    a chavinha envia o link de redefinição de senha para o e-mail da conta.</p>
+    <div style="overflow:auto;max-height:56vh">
+    <table class="tabela trabalho"><thead><tr><th>Conta</th><th>Membro vinculado</th><th>Papel</th><th style="text-align:right">Senha</th></tr></thead>
+    <tbody>${perfis.map(p=>`<tr>
+      <td><b>${esc(p.nome||p.email)}</b><br><span class="small muted">${esc(p.email)}</span></td>
+      <td><select onchange="ctVincular('${p.id}', this.value)" ${souAdmin?'':'disabled'} style="min-width:170px">${regOpts(p.registro)}</select></td>
+      <td><select onchange="ctPapel('${p.id}', this.value)" ${souAdmin && p.id!==state.perfil.id?'':'disabled'}
+          title="${p.id===state.perfil.id?'Seu próprio papel não pode ser alterado por aqui':''}">
+        ${Object.entries(PAPEIS).map(([k,l])=>`<option value="${k}" ${p.papel===k?'selected':''}>${l}</option>`).join('')}</select></td>
+      <td style="text-align:right">${ibtn('key','Enviar link de redefinição de senha',`ctReset('${p.id}')`,'sm ghost')}</td>
+    </tr>`).join('')}</tbody></table></div>
+    ${semConta.length?`<div class="aviso-box info" style="margin-top:14px"><b>${semConta.length} membro(s) ativo(s) ainda sem conta.</b>
+      Peçam que criem a conta na própria tela de login do SOMA, com o e-mail do quadro — o vínculo é automático.<br>
+      <button class="btn ghost" style="margin-top:8px" onclick="ctConvite()">${ic('copy')} Copiar instruções de acesso</button></div>`:''}
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`);
+  const m = document.querySelector('.modal'); if(m) m.classList.add('larga');
+}
+async function ctPapel(id, papel){
+  try{
+    const {error} = await sb.from('perfis').update({papel}).eq('id', id);
+    if(error) throw error;
+    toast('Papel atualizado para '+(PAPEIS[papel]||papel)+'.');
+  }catch(e){ falha(e,'Erro ao mudar o papel'); pageContas(); }
+}
+async function ctVincular(id, reg){
+  try{
+    const r = reg ? parseInt(reg,10) : null;
+    const nome = r ? nomeDe(r) : null;
+    const {error} = await sb.from('perfis').update({registro:r, ...(nome?{nome}:{})}).eq('id', id);
+    if(error) throw error;
+    toast(r ? 'Conta vinculada a '+nome+'.' : 'Vínculo removido.');
+  }catch(e){ falha(e,'Erro ao vincular'); pageContas(); }
+}
+async function ctReset(id){
+  const email = _contas.find(p=>p.id===id)?.email;
+  if(!email) return;
+  try{
+    const {error} = await sb.auth.resetPasswordForEmail(email, {redirectTo:URL_APP()});
+    if(error) throw error;
+    toast('Link de redefinição enviado para '+email+'.');
+  }catch(e){ falha(e,'Erro ao enviar o link'); }
+}
+function ctConvite(){
+  copiar(`Acesso ao SOMA — NeuroDynamics
+1) Abra ${URL_APP()}
+2) Clique em "Criar conta" e use o e-mail que está no quadro de pessoal (NRO ou pessoal).
+3) Confirme o e-mail pelo link recebido e faça login.
+A conta começa com acesso de consulta; papéis adicionais são atribuídos pelo Depto de Pessoal.`);
+}
+
+
 /* ============================================================
    ABA · SITE INSTITUCIONAL
    Veio do admin.html do repositório website. Os projetos que
