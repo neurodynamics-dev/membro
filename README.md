@@ -2,8 +2,11 @@
 
 Portal restrito aos membros da NeuroDynamics, com o **mesmo login do SOMA**
 e a linguagem visual do site institucional (paleta escura, vidro, fundo
-animado, Archivo + IBM Plex Mono). Arquivo único (`index.html`), no mesmo
-padrão dos demais apps do SOMA.
+animado, Archivo + IBM Plex Mono).
+
+Uma casca (`index.html`) e módulos carregados sob demanda — é para aqui que o
+SOMA · Gestão está sendo trazido, conforme o
+[plano de unificação](PLANO-UNIFICACAO.md).
 
 ## O que o portal faz
 
@@ -40,7 +43,7 @@ padrão dos demais apps do SOMA.
   - pedido de desligamento;
   - reunião 1:1 com o gestor imediato;
   - **ouvidoria anônima** para a Gestão de Pessoas (sem vínculo com a
-    conta, por projeto de banco — ver `soma_v10.sql`);
+    conta, por projeto de banco — ver `db/aplicadas/soma_v10_portal.sql`);
   - outras solicitações.
 - **Meus pedidos** — acompanhamento das solicitações, com status e
   resposta do Depto. de Pessoal, e cancelamento enquanto pendente.
@@ -54,20 +57,56 @@ padrão dos demais apps do SOMA.
 |----------------|---------|
 | `index.html`   | O portal (rotas por hash: `#/`, `#/calendario`, `#/calendario/agendar`, `#/calendario/minha`, `#/organizacao`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
 | `admin.html`   | Painel do Depto. de Pessoal: avisos, documentos, triagem de solicitações, ouvidoria e estado das agendas |
-| `soma_v10.sql` | Migração do banco (tabelas `portal_*`, RLS e funções) |
-| `soma_v11.sql` | Migração da biblioteca de documentos (`portal_documentos`) |
-| `soma_v12.sql` | Migração da agenda: `portal_agendas`, blocos de ocupação e o RPC que alimenta o assistente |
-| `soma_v13.sql` | Migração da **agenda unificada**: catálogo de tipos, visibilidade, recorrência de verdade, ausências, cerimônias de scrum e o feed do Google |
+| `mod-*.js`     | Módulos carregados sob demanda pela casca — um por plano da navegação (ver [Arquitetura](#arquitetura)) |
+| `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |
 | `supabase/functions/agenda-sync/` | Edge Function (arquivo único) que lê o `.ics` de cada um e grava os horários ocupados ([detalhes](supabase/functions/agenda-sync/README.md)) |
 | `supabase/functions/agenda-ics/`  | Edge Function (arquivo único) que serve o feed da agenda para assinar no Google ([detalhes](supabase/functions/agenda-ics/README.md)) |
 | `CNAME`        | Domínio do GitHub Pages (`membro.neurodynamics.dev`) |
+| [`PLANO-UNIFICACAO.md`](PLANO-UNIFICACAO.md) | O plano de fusão com o SOMA · Gestão |
+
+## Arquitetura
+
+O `index.html` é a **casca**: tokens da marca, cabeçalho, menu, login,
+roteador, modal e toast — mais as telas do plano do membro (início, agenda,
+organização, informações, serviços e pedidos).
+
+O resto desce sob demanda. Quando alguém abre uma rota de outro plano, o
+roteador injeta o `mod-<nome>.js` correspondente, uma vez por sessão, e só
+então desenha. O mesmo vale para as bibliotecas pesadas (planilha, PDF): quem
+as pede é o módulo que precisa delas, não todo mundo em todo login.
+
+São scripts clássicos, não módulos ES, de propósito — o código usa
+`onclick="…"` em toda parte e isso depende de escopo global.
+
+Declarar uma rota nova é uma linha em `ROTAS`:
+
+```js
+quadro: { desenha:'pageQuadro', modulo:'gestao', permite: podeQuadro }
+```
+
+`desenha` é o nome da função que o módulo define; `modulo`, o arquivo a
+buscar antes; `permite`, a mesma barreira de papel do menu — rota sem
+permissão devolve para o início, em vez de desenhar uma tela vazia.
+
+O layout segue o design system da marca
+([brand.neurodynamics.dev](https://brand.neurodynamics.dev)). Os componentes
+de tela densa — tabela de trabalho, barra de filtros, galeria de tiles,
+métricas — são o card *Telas de trabalho* do `design-system/neuro.css`,
+copiados para o `<style>` da casca. **Ao mexer neles, mexa lá primeiro:**
+aqui é cópia, não fonte.
 
 ## Pré-requisitos
 
-Aplicar as migrações **`soma_v10.sql`**, **`soma_v11.sql`**,
-**`soma_v12.sql`** e **`soma_v13.sql`** (na raiz deste repositório, nesta
-ordem) no SQL Editor do Supabase, com a SOMA 9.0 já aplicada. Sem elas o portal entra, mas o quadro de avisos,
-as solicitações e o assistente de agendamento ficam indisponíveis (as demais
+Aplicar as migrações de [`db/`](db/LEIAME.md) no SQL Editor do Supabase, em
+ordem numérica, com a SOMA 9.0 já aplicada. Depois da 14.0, o banco responde
+sozinho o que já rodou:
+
+```sql
+select id, aplicada_em from public.migracoes order by id;
+```
+
+Sem as migrações do portal o app entra, mas o quadro de avisos, as
+solicitações e o assistente de agendamento ficam indisponíveis (as demais
 abas — agenda, check-in, calendário e organização — usam as tabelas que
 o SOMA já tem).
 
@@ -181,7 +220,7 @@ A visibilidade dos eventos (`equipe` / `convidados` / `privado`) é aplicada
 na leitura da agenda, em `agenda_itens`. A tabela `eventos` continua com as
 políticas de RLS que o SOMA já tinha: a migração não as toca, porque
 políticas permissivas só somam acesso e apagar as antigas às cegas quebraria
-a Gestão. O rodapé do `soma_v13.sql` traz a consulta para conferir os nomes
+a Gestão. O rodapé do `db/aplicadas/soma_v13_agenda_unificada.sql` traz a consulta para conferir os nomes
 das políticas atuais, caso a equipe queira fechar também a leitura direta da
 tabela num passo à parte.
 

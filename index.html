@@ -359,7 +359,7 @@ main{max-width:var(--max);margin:0 auto;padding:108px 26px 90px}
 .ag-res .op{display:flex;align-items:center;gap:9px;padding:8px 11px;cursor:pointer;font-size:12.5px}
 .ag-res .op:hover{background:rgba(255,255,255,.06)}
 .ag-res .op .cg{color:var(--dim);font-size:11px}
-.ag-res .vazio{padding:10px 12px;font-size:12px;color:var(--dim)}
+.ag-res .ag-vazio{padding:10px 12px;font-size:12px;color:var(--dim)}
 
 .ag-main{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:18px;min-width:0}
 .ag-ctl{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px}
@@ -486,10 +486,10 @@ a.fer:hover .go{color:var(--syn)}
 .tag-mini.equipe{border-color:rgba(45,212,191,.4);color:var(--teal)}
 .tag-mini.privado{border-color:rgba(241,128,111,.4);color:var(--bad)}
 .ag-topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
-.ag-topo .filtros{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
-.ag-topo .filtros button{font-size:12px;padding:6px 12px;border-radius:9px;
+.ag-topo .ag-filtros{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.ag-topo .ag-filtros button{font-size:12px;padding:6px 12px;border-radius:9px;
   border:1px solid var(--line2);color:var(--muted)}
-.ag-topo .filtros button.on{background:var(--syn);border-color:var(--syn);color:var(--deep);font-weight:600}
+.ag-topo .ag-filtros button.on{background:var(--syn);border-color:var(--syn);color:var(--deep);font-weight:600}
 
 /* ============ CRIAÇÃO RÁPIDA ============ */
 #modal.largo{width:min(700px,calc(100vw - 32px))}
@@ -694,6 +694,81 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
   gap:12px;flex-wrap:wrap;font-family:var(--fm);font-size:11px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--dim)}
 
+/* ============ TELAS DE TRABALHO ============
+   Os componentes do card 15 do design system (brand.neurodynamics.dev
+   → design-system/neuro.css). Ficam na casca porque é aqui que os
+   módulos carregados sob demanda encontram estilo: eles injetam
+   marcação neste mesmo documento.
+   Ao mexer, mexa lá primeiro — aqui é cópia, não fonte. */
+.tabela{width:100%;border-collapse:collapse;font-size:13.5px}
+.tabela th{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);text-align:left;font-weight:500;padding:10px 12px;border-bottom:1px solid var(--line2)}
+.tabela td{padding:13px 12px;border-bottom:1px solid var(--line)}
+.tabela tr:hover td{background:rgba(255,255,255,.02)}
+.tabela .num{font-family:var(--fm);text-align:right;color:var(--muted)}
+.tabela th.num{text-align:right}
+
+.wrap{overflow:auto;max-height:70vh;border-radius:14px}
+.tabela.trabalho{font-size:12.5px}
+.tabela.trabalho th{position:sticky;top:0;z-index:1;background:var(--panel);padding:9px 12px}
+.tabela.trabalho td{padding:9px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tabela.trabalho.fixa{table-layout:fixed}
+.tabela.trabalho tr.click{cursor:pointer}
+.tabela.trabalho tr.click:hover td{background:rgba(255,255,255,.04)}
+.tabela.trabalho tr.click:focus-visible{outline:2px solid var(--syn);outline-offset:-2px}
+.tabela.trabalho .reg{font-family:var(--fm);font-size:11px;color:var(--dim)}
+.tabela.trabalho .nome{font-weight:600;color:var(--ink)}
+
+.filtros{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.filtros .fld{margin-bottom:0;min-width:170px}
+.filtros .fld.cresce{flex:1;min-width:220px}
+@media (max-width:640px){.filtros .fld,.filtros .fld.cresce{min-width:100%}}
+
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.tile{border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  padding:22px;text-align:left;cursor:pointer;display:flex;flex-direction:column;
+  transition:border-color .15s,background .15s,transform .15s}
+.tile:hover{border-color:var(--line2);background:rgba(255,255,255,.05);transform:translateY(-2px)}
+.tile .sq{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+  background:rgba(206,220,0,.1);color:var(--syn);margin-bottom:14px}
+.tile .sq svg{width:19px;height:19px}
+.tile .tt{font-family:var(--fd);font-weight:600;font-size:16px;margin-bottom:5px}
+.tile .td{font-size:12.5px;color:var(--muted);line-height:1.55}
+
+.metricas{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media (max-width:900px){.metricas{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.metricas{grid-template-columns:1fr}}
+.metrica{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:18px 20px}
+.metrica .rot{font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);display:block;margin-bottom:9px}
+.metrica .val{font-family:var(--fd);font-weight:600;font-size:30px;letter-spacing:-.02em;line-height:1}
+.metrica .var{font-family:var(--fm);font-size:11px;margin-top:7px;display:block}
+.metrica .var.sobe{color:var(--ok)} .metrica .var.desce{color:var(--bad)}
+.metrica .var.neutro{color:var(--dim)}
+
+.barras{display:flex;flex-direction:column;gap:11px}
+.barra{display:grid;grid-template-columns:130px 1fr 52px;gap:14px;align-items:center}
+.barra .k{font-size:12.5px;color:var(--muted)}
+.barra .trilho{height:9px;border-radius:5px;background:rgba(255,255,255,.05);overflow:hidden}
+.barra .fill{height:100%;border-radius:5px;background:var(--green2)}
+.barra .n{font-family:var(--fm);font-size:11.5px;color:var(--muted);text-align:right}
+@media (max-width:640px){.barra{grid-template-columns:96px 1fr 44px;gap:10px}}
+
+/* abas em <button>, como o design system as define. As de <a> logo
+   acima continuam valendo para as rotas da agenda. */
+.aba{padding:10px 16px;font-size:13.5px;color:var(--muted);position:relative;white-space:nowrap;
+  transition:color .15s,background .15s}
+.aba:hover{color:var(--ink);background:rgba(255,255,255,.03)}
+.aba.on{color:var(--ink);font-weight:600}
+.aba.on::after{content:'';position:absolute;left:12px;right:12px;bottom:-1px;height:2px;background:var(--syn)}
+
+.vazio{border:1px dashed var(--line2);border-radius:var(--r);padding:40px 26px;text-align:center;
+  background:rgba(255,255,255,.015)}
+.vazio .glyph{font-family:var(--fd);font-weight:700;font-size:44px;color:rgba(245,245,247,.09);
+  line-height:1;margin-bottom:12px;user-select:none}
+.vazio h3{font-size:16px;font-weight:600;margin-bottom:5px}
+.vazio p{font-size:12.5px;color:var(--muted);max-width:360px;margin:0 auto 18px}
+
 /* ============ MODAL / TOAST ============ */
 #veil{position:fixed;inset:0;z-index:80;background:rgba(4,7,6,.66);
   backdrop-filter:blur(8px);display:none}
@@ -835,6 +910,9 @@ const CONFIG = {
   SUPABASE_URL: 'https://rxzmkyjttzzpwtodqkve.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_MJFR-aaQqTS1BthxYJG2kg_5XGhs9wg'
 };
+/* Versão do portal. Acompanha a query dos módulos carregados sob
+   demanda, para um deploy não deixar módulo velho em cache. */
+const VERSAO = '14.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -927,6 +1005,45 @@ function avatarFoto(m, px, fs){
   return `<span class="avx" style="width:${px}px;height:${px}px;font-size:${fs||12}px">${letras}${img}</span>`;
 }
 
+/* ---------------- papéis ---------------- */
+/* A mesma semântica do SOMA · Gestão, palavra por palavra: a Diretoria
+   e o Depto. de Pessoal editam; consulta e comitê de seleção chegam às
+   fichas pelo organograma, nunca pela lista direta do quadro. */
+const can         = () => ['admin','pessoal'].includes(state.perfil?.papel);
+const podeQuadro  = () => can();
+const podeSelecao = () => ['admin','pessoal','selecao'].includes(state.perfil?.papel);
+const PAPEIS = {admin:'Administração', pessoal:'Depto. de Pessoal',
+                selecao:'Comitê de Seleção', leitura:'Consulta'};
+
+/* ---------------- módulos sob demanda ---------------- */
+/* O plano do membro mora neste arquivo. O resto — quadro, operações,
+   painel do Depto. de Pessoal, relatórios, seleção — desce em <script>
+   só quando alguém abre a rota, e uma vez só por sessão.
+
+   Script clássico, não módulo ES, de propósito: o código usa
+   onclick="…" em toda parte e isso depende de escopo global. Assim
+   cada módulo migra recortado do SOMA, sem reescrever os handlers.
+
+   Vale o mesmo para as bibliotecas pesadas (xlsx, jsPDF): quem as puxa
+   é o módulo que precisa delas — não todo mundo, em todo login. */
+const _scripts = new Map();
+function carregarScript(src){
+  if (_scripts.has(src)) return _scripts.get(src);
+  const p = new Promise((ok, falha) => {
+    const s = document.createElement('script');
+    s.src = src; s.async = false;
+    s.onload  = () => ok(src);
+    s.onerror = () => { _scripts.delete(src); falha(new Error('não foi possível carregar ' + src)); };
+    document.head.appendChild(s);
+  });
+  _scripts.set(src, p);
+  return p;
+}
+/* VERSAO acompanha a query para o GitHub Pages não servir módulo velho
+   depois de um deploy. Suba junto com a versão do portal. */
+const carregarModulo = nome => carregarScript(`mod-${nome}.js?v=${VERSAO}`);
+const carregarLib    = carregarScript;
+
 /* ---------------- boot / sessão ---------------- */
 /* O quiosque da entrada abre membro.neurodynamics.dev/?t=<token>.
    Se ninguém estiver logado, o portal guarda o token, pede o login
@@ -994,20 +1111,58 @@ async function abrirPortal(){
 }
 
 /* ---------------- roteador ---------------- */
+/* Cada rota diz qual função a desenha e, quando vem de fora deste
+   arquivo, de qual módulo. O par rota→módulo precisa morar aqui: é
+   preciso saber qual arquivo buscar antes de ele existir. A função em
+   si o módulo define ao carregar — por isso `desenha` é o nome dela,
+   procurado em window na hora de desenhar.
+
+   `permite` é a mesma barreira do NAV: rota sem permissão devolve
+   para o início, em vez de desenhar uma tela vazia. */
+const ROTAS = {
+  home:        { desenha:'pageHome' },
+  agenda:      { desenha:'pageAgenda' },
+  organizacao: { desenha:'pageOrganizacao' },
+  informacoes: { desenha:'pageInformacoes' },
+  servicos:    { desenha:'pageServicos' },
+  pedidos:     { desenha:'pagePedidos' }
+};
+
 function route(){
   const h = (location.hash || '#/').replace(/^#\//,'');
   let [r, sub] = h.split('/');
   if (r === 'calendario') r = 'agenda';          // endereços antigos continuam valendo
-  const PAGES = ['agenda','organizacao','informacoes','servicos','pedidos'];
-  return { r: PAGES.includes(r) ? r : 'home', sub: sub || null };
+  return { r: ROTAS[r] ? r : 'home', sub: sub || null };
 }
 window.addEventListener('hashchange', ()=>{ if(state.perfil){ render(route()); window.scrollTo({top:0,behavior:'instant'}); } });
-function render(rt){
+
+async function render(rt){
   pararBoard();
+  let def = ROTAS[rt.r];
+  if (def.permite && !def.permite()){
+    history.replaceState(null, '', location.pathname + '#/');
+    rt = { r:'home', sub:null }; def = ROTAS.home;
+  }
   document.querySelectorAll('[data-r]').forEach(a => a.classList.toggle('on', a.dataset.r === rt.r));
   fecharMenu();
-  ({home:pageHome, agenda:pageAgenda, organizacao:pageOrganizacao,
-    informacoes:pageInformacoes, servicos:pageServicos, pedidos:pagePedidos}[rt.r])(rt.sub);
+  if (def.modulo && typeof window[def.desenha] !== 'function'){
+    $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
+    try { await carregarModulo(def.modulo); }
+    catch(e){
+      $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1>
+        <p class="lead">Esta parte do portal não pôde ser carregada (${esc(e.message)}).
+        Verifique a conexão e recarregue a página.</p></div>`;
+      return;
+    }
+  }
+  const desenhar = window[def.desenha];
+  if (typeof desenhar !== 'function'){
+    $('#main').innerHTML = `<div class="pg-head"><h1>Tela indisponível</h1>
+      <p class="lead">A rota existe, mas ninguém a desenha. Isso é defeito do portal —
+      avise o Depto. de Pessoal.</p></div>`;
+    return;
+  }
+  desenhar(rt.sub);
 }
 
 /* menu mobile */
@@ -1093,7 +1248,7 @@ async function carregarBoard(){
   const el = $('#sec-board'); if(!el) return;
   if (error){
     el.innerHTML = `<div class="aviso-box err">Não foi possível carregar o quadro de avisos: ${esc(error.message)}.
-      A migração <b>soma_v10.sql</b> já foi aplicada?</div>`;
+      A migração <b>soma_v10_portal.sql</b> já foi aplicada?</div>`;
     return;
   }
   state.avisos = data || [];
@@ -1352,7 +1507,7 @@ async function telaProximos(){
   try{ itens = await carregarItens(de, ate); }
   catch(e){
     alvo.innerHTML = `<div class="empty">Não foi possível carregar a agenda: ${esc(e.message)}<br>
-      A migração <span class="mono">soma_v13.sql</span> foi aplicada?</div>`;
+      A migração <span class="mono">soma_v13_agenda_unificada.sql</span> foi aplicada?</div>`;
     return;
   }
   state.itens = itens;
@@ -1372,7 +1527,7 @@ async function telaProximos(){
     <div class="ag-topo">
       <button class="btn solid" onclick="sheetNovoEvento()">Novo compromisso</button>
       <button class="btn ghost" onclick="modalScrum()">Cerimônias do grupo</button>
-      <div class="filtros">
+      <div class="ag-filtros">
         ${[['tudo','Tudo'],['meus','Meus'],['equipe','Da equipe'],['grupo','Só eventos']].map(([k,l]) =>
           `<button class="${f===k?'on':''}" onclick="state.agFiltro='${k}';telaProximos()">${l}</button>`).join('')}
       </div>
@@ -1826,7 +1981,7 @@ async function telaMes(){
   try{ itens = await carregarItens(isoDia(primeiro), isoDia(ultimo)); }
   catch(e){
     $('#cal-card').innerHTML = `<div class="empty">Erro ao carregar a agenda: ${esc(e.message)}<br>
-      A migração <span class="mono">soma_v13.sql</span> foi aplicada?</div>`;
+      A migração <span class="mono">soma_v13_agenda_unificada.sql</span> foi aplicada?</div>`;
     return;
   }
   state.itensMes = {};
@@ -2297,7 +2452,7 @@ function desenhaAgendar(){
       </div>
 
       ${ag.erro ? `<div class="aviso-box err">Não foi possível ler a disponibilidade: ${esc(ag.erro)}
-        Aplique a migração <span class="mono">soma_v12.sql</span> no Supabase.</div>` : ''}
+        Aplique a migração <span class="mono">soma_v12_portal_agenda.sql</span> no Supabase.</div>` : ''}
 
       <div class="ag-grade" style="--passo:${(100/horas).toFixed(4)}%">
         <div class="ag-nomes">
@@ -2391,7 +2546,7 @@ function agFiltrar(v){
   cx.innerHTML = achados.length
     ? achados.map(m => `<div class="op" onclick="agAdicionar(${m.registro})">${avatarFoto(m,22,9)}
         <span>${esc(m.nome)}</span><span class="cg">${esc(m.cargo||m.departamento||'')}</span></div>`).join('')
-    : '<div class="vazio">Ninguém encontrado com esse nome.</div>';
+    : '<div class="ag-vazio">Ninguém encontrado com esse nome.</div>';
 }
 function agAdicionar(reg){
   const ag = state.ag;
@@ -3127,7 +3282,7 @@ async function pageInformacoes(){
   const el = $('#docs-area'); if(!el) return;
   if (error){
     el.innerHTML = `<div class="aviso-box err">Não foi possível carregar os documentos: ${esc(error.message)}.
-      A migração <b>soma_v11.sql</b> já foi aplicada?</div>`;
+      A migração <b>soma_v11_portal_documentos.sql</b> já foi aplicada?</div>`;
     return;
   }
   const docs = (data||[]).filter(d=>d.publicado!==false);

@@ -322,7 +322,7 @@ async function carregarAvisos(){
     .order('ordem').order('criado_em', {ascending:false});
   if (error){
     $('#sec-avisos').innerHTML = `<div class="aviso-box err">Erro ao carregar os avisos: ${esc(error.message)}.
-      A migração <b>soma_v10.sql</b> foi aplicada?</div>`;
+      A migração <b>soma_v10_portal.sql</b> foi aplicada?</div>`;
     return;
   }
   state.avisos = data || [];
@@ -461,7 +461,7 @@ async function carregarDocs(){
     .order('categoria').order('ordem').order('titulo');
   if (error){
     $('#sec-documentos').innerHTML = `<div class="aviso-box err">Erro ao carregar os documentos:
-      ${esc(error.message)}. A migração <b>soma_v11.sql</b> foi aplicada?</div>`;
+      ${esc(error.message)}. A migração <b>soma_v11_portal_documentos.sql</b> foi aplicada?</div>`;
     return;
   }
   state.docs = data || [];
@@ -717,7 +717,7 @@ async function carregarAgendas(){
     .select('registro,conectado,ativo,fuso,expediente_inicio,expediente_fim,dias_uteis,ultima_sync,ultimo_erro,blocos_sync');
   if (error){
     $('#sec-agendas').innerHTML = `<div class="aviso-box err">Erro ao carregar as agendas:
-      ${esc(error.message)}. A migração <b>soma_v12.sql</b> foi aplicada?</div>`;
+      ${esc(error.message)}. A migração <b>soma_v12_portal_agenda.sql</b> foi aplicada?</div>`;
     return;
   }
   state.agendas = data || [];
