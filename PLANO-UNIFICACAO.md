@@ -13,9 +13,12 @@ As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para 
 |---|---|
 | **0 · Preparo** | **Feita.** Casca com módulos sob demanda, papéis, componentes de tela de trabalho no design system, `db/` renumerado com registro de migrações, cópia velha do site apagada |
 | **1 · Quadro** | **Feita.** Login com os cinco modos; `#/quadro`, `#/quadro/<registro>` e `#/auditoria` em `mod-gestao.js`; organograma com "abrir ficha" |
-| 2 · Operações | a fazer |
-| 3 · Agenda e eventos | a fazer |
-| 4 · Painéis | a fazer |
+| **Reorganização** | **Feita.** Navegação por espaços, busca global (`/` ou `Ctrl/⌘ K`), notificações no sino |
+| **Atividades** | **Feita.** Quadro por grupo, cartões com código, comentários com menção, sinalização, carga da equipe — pedido fora do plano original |
+| **4 · Painéis** | **Feita.** Os dois `admin.html` (portal e site) viraram `#/admin`, em abas |
+| **Agenda (revisão)** | **Feita.** Tudo editável depois de criado; marcos e ausências saem do back-end; nenhum tipo força recorrência |
+| 2 · Operações | a fazer — apontamento, relatórios, importação, contas, catálogo |
+| 3 · Eventos | a fazer — dossiê do evento com checklist e ata |
 | 5 · Corte | a fazer |
 | 6 · Renomeação | a fazer |
 

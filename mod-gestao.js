@@ -1,7 +1,7 @@
 /* ============================================================
    MÓDULO · GESTÃO DO QUADRO
    Carregado sob demanda pela casca (index.html) quando alguém abre
-   #/quadro ou #/auditoria. Script clássico, não módulo ES: os
+   o quadro (#/equipe/quadro), uma ficha ou a auditoria (#/admin/auditoria). Script clássico, não módulo ES: os
    handlers são onclick="…" e dependem de escopo global.
 
    Veio do SOMA · Gestão (pessoal.neurodynamics.dev), re-vestido nos
@@ -10,8 +10,8 @@
    - o tema claro virou o escuro do design system: cartão é borda e
      vidro, não sombra; a ação é Synapse, não o verde institucional,
      que não tem contraste sobre o Void;
-   - as telas ganharam endereço (#/quadro, #/quadro/<registro>) — no
-     SOMA a navegação era por showView() e nenhuma ficha podia ser
+   - as telas ganharam endereço (#/equipe/quadro, #/equipe/<registro>)
+     — no SOMA a navegação era por showView() e nenhuma ficha podia ser
      mandada por mensagem;
    - .tb virou .tabela.trabalho, .filters virou .filtros, .stat virou
      .metrica, .banner virou .aviso-box — os nomes do design system;
@@ -20,7 +20,7 @@
 
    Depende da casca para: sb, $, esc, norm, state, can, podeQuadro,
    toast, abreModal, fechaModal, fmtD, hojeISO, pad3, nomeDe,
-   avatarFoto, carregarLib.
+   quemSouEu, avatarFoto, carregarLib.
    ============================================================ */
 
 /* ---------------- estado do módulo ---------------- */
@@ -64,7 +64,6 @@ const fmtDT = (d) => { if(!d) return '—'; const x = new Date(d);
   return x.toLocaleDateString('pt-BR') + ' ' + x.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
 const pill = (st) => { const [dot, cor] = STATUS_DOT[st] || ['dt-gray',''];
   return `<span class="pill ${cor}"><span class="dt ${dot}"></span>${esc(st||'—')}</span>`; };
-const quemSouEu = () => state.perfil ? (state.perfil.nome || state.perfil.email) : '';
 const falha = (e, ctx) => { console.error(ctx, e); toast((ctx ? ctx+': ' : '') + (e?.message || 'erro inesperado'), true); };
 function chips(arr, max){
   if (!arr || !arr.length) return '<span class="muted">—</span>';
@@ -108,7 +107,7 @@ async function gestaoCarregar(){
 }
 
 /* ============================================================
-   #/quadro — visão geral + lista, ou a ficha quando vem registro
+   #/equipe/quadro — visão geral + lista, ou a ficha quando vem registro
    ============================================================ */
 async function pageQuadro(sub){
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando o quadro…</div>`;
@@ -138,7 +137,7 @@ function renderQuadro(){
     titulo: 'Quadro',
     lead: 'O quadro inteiro: quem está ativo, em pausa, sob demanda e desligado — e a ficha de cada um.',
     acoes: can() ? ibtn('plus','Novo membro','modalMembro()','primary') : ''
-  }) + `
+  }) + abasEquipe('quadro') + `
     <div class="metricas" style="margin-bottom:18px">
       <div class="metrica"><span class="rot">Membros ativos</span><span class="val">${c('Ativo')}</span></div>
       <div class="metrica"><span class="rot">Em pausa / avaliação</span><span class="val">${c('Em pausa / avaliação')}</span></div>
@@ -241,7 +240,7 @@ async function carregarOcorrenciasRecentes(){
       <p class="sub" style="margin-bottom:14px">Os últimos movimentos registrados no quadro</p>
       ${(oc && oc.length) ? `<div class="timeline">${oc.map(o=>`
         <div class="tl-item"><div class="dt">${fmtD(o.data)}</div>
-          <div class="tp">${esc(o.tipo)} · <a href="#/quadro/${o.registro}">${esc(o.membro?.nome || 'registro '+o.registro)}</a></div>
+          <div class="tp">${esc(o.tipo)} · <a href="#/equipe/${o.registro}">${esc(o.membro?.nome || 'registro '+o.registro)}</a></div>
           ${o.descricao ? `<div class="ds">${esc(o.descricao)}</div>` : ''}</div>`).join('')}</div>`
         : '<div class="empty">Nenhuma ocorrência registrada ainda.</div>'}</div>`;
   }catch(e){
@@ -250,7 +249,7 @@ async function carregarOcorrenciasRecentes(){
 }
 
 /* ============================================================
-   FICHA DO MEMBRO — #/quadro/<registro>
+   FICHA DO MEMBRO — #/equipe/<registro>
    ============================================================ */
 const CAMPOS_MEMBRO = [
   {k:'nome', l:'Nome completo', t:'text'},
@@ -318,7 +317,7 @@ function lerCampos(defs){
 const membroAtual = () => state.membros.find(m => m.registro === gestao.ficha?.reg);
 
 async function abrirFicha(reg){
-  if (location.hash !== '#/quadro/' + reg) { location.hash = '#/quadro/' + reg; return; }
+  if (location.hash !== '#/equipe/' + reg) { location.hash = '#/equipe/' + reg; return; }
   gestao.ficha = { reg, tab:'dados', ocorr:[], acessos:[], avals:[], aponts:[], pess:null, editando:false };
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando a ficha…</div>`;
   try { await gestaoCarregar(); await carregarFicha(); renderFicha(); }
@@ -366,7 +365,7 @@ async function juntarCabecalhos(itens){
 function renderFicha(){
   const m = membroAtual();
   if (!m){
-    $('#main').innerHTML = topoGestao({titulo:'Registro não encontrado', voltar:"location.hash='#/quadro'"})
+    $('#main').innerHTML = topoGestao({titulo:'Registro não encontrado', voltar:"location.hash='#/equipe/quadro'"})
       + '<div class="empty">Nenhum membro com este número de registro.</div>';
     return;
   }
@@ -380,7 +379,7 @@ function renderFicha(){
   $('#main').innerHTML = topoGestao({
     olho: 'Ficha do membro',
     titulo: m.nome,
-    voltar: podeQuadro() ? "location.hash='#/quadro'" : "location.hash='#/organizacao'",
+    voltar: podeQuadro() ? "location.hash='#/equipe/quadro'" : "location.hash='#/equipe'",
     acoes: can() ? ibtn('pencil','Editar dados',
       "gestao.ficha.editando=true;gestao.ficha.tab='dados';renderFicha()") : ''
   }) + `
@@ -785,3 +784,19 @@ function renderTabelaAud(){
     <div class="small muted" style="padding:10px 4px">Exibindo ${Math.min(rows.length,200)} de ${rows.length} eventos</div>`
     : '<div class="empty">Nenhum evento encontrado.</div>';
 }
+
+/* ============================================================
+   O QUE ESTE MÓDULO SABE ACHAR
+   ============================================================ */
+registrarBusca({
+  fonte:'quadro', rotulo:'No quadro',
+  buscar: (t) => {
+    if (!podeQuadro()) return [];
+    return filtrarSimples(state.membros.map(m => ({
+      titulo: m.nome,
+      sub: `${m.status}${m.cargo ? ' · ' + m.cargo : ''}`,
+      codigo: pad3(m.registro),
+      href: '#/equipe/' + m.registro
+    })), t, 6);
+  }
+});

@@ -85,6 +85,137 @@ nav.hd-nav a:hover{color:var(--ink);background:rgba(255,255,255,.05)}
 nav.hd-nav a.on{color:var(--ink)}
 nav.hd-nav a.on::after{content:'';display:block;height:1.5px;margin:1px 2px 0;background:var(--syn)}
 
+/* ---- busca e sino no cabeçalho ---- */
+.hd-busca{display:flex;align-items:center;gap:8px;height:34px;padding:0 11px;border-radius:10px;
+  border:1px solid var(--line2);background:rgba(255,255,255,.03);color:var(--dim);
+  font-size:12.5px;transition:color .15s,border-color .15s,background .15s}
+.hd-busca:hover{color:var(--ink);border-color:var(--dim);background:rgba(255,255,255,.07)}
+.hd-busca svg{width:14px;height:14px;flex:none}
+.hd-busca kbd{font-family:var(--fm);font-size:10px;border:1px solid var(--line2);border-radius:5px;
+  padding:1px 5px;color:var(--dim)}
+@media (max-width:1180px){.hd-busca span,.hd-busca kbd{display:none}
+  .hd-busca{width:34px;justify-content:center;padding:0}}
+.hd-sino{position:relative;width:34px;height:34px;border-radius:10px;border:1px solid var(--line2);
+  display:flex;align-items:center;justify-content:center;color:var(--dim);
+  background:rgba(255,255,255,.03);transition:color .15s,border-color .15s}
+.hd-sino:hover{color:var(--ink);border-color:var(--dim)}
+.hd-sino svg{width:16px;height:16px}
+.hd-sino .bolha{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:9px;background:var(--syn);color:var(--deep);font-family:var(--fm);font-size:9.5px;
+  font-weight:600;display:flex;align-items:center;justify-content:center}
+
+/* ---- paleta de busca ---- */
+#paleta{position:fixed;inset:0;z-index:90;background:rgba(4,7,6,.72);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:flex-start;justify-content:center;padding:12vh 20px 20px}
+.pl-cx{width:min(620px,100%);background:rgba(11,18,16,.97);border:1px solid var(--line2);
+  border-radius:16px;box-shadow:0 30px 90px rgba(0,0,0,.65);overflow:hidden;
+  display:flex;flex-direction:column;max-height:70vh}
+.pl-topo{display:flex;align-items:center;gap:11px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.pl-topo svg{width:17px;height:17px;color:var(--dim);flex:none}
+.pl-topo input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-size:15px}
+.pl-topo input::placeholder{color:var(--dim)}
+.pl-fecha{font-family:var(--fm);font-size:10px;color:var(--dim);border:1px solid var(--line2);
+  border-radius:6px;padding:3px 7px}
+.pl-res{overflow-y:auto;padding:6px}
+.pl-grp{font-family:var(--fm);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);padding:11px 12px 5px}
+.pl-item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;cursor:pointer;
+  width:100%;text-align:left}
+.pl-item:hover,.pl-item.sel{background:rgba(255,255,255,.07)}
+.pl-item.sel{outline:1px solid var(--line2)}
+.pl-item .tx{flex:1;min-width:0}
+.pl-item .tt{font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-item .sb{font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-item .cod{font-family:var(--fm);font-size:10.5px;color:var(--syn);flex:none}
+.pl-vazio{padding:28px 16px;text-align:center;color:var(--dim);font-size:13px}
+.pl-pe{display:flex;gap:16px;padding:10px 16px;border-top:1px solid var(--line);
+  font-size:10.5px;color:var(--dim)}
+.pl-pe kbd{font-family:var(--fm);border:1px solid var(--line2);border-radius:4px;padding:0 4px;margin-right:3px}
+@media (max-width:640px){.pl-pe{display:none}#paleta{padding:8vh 12px 12px}}
+
+/* ---- painel de notificações ---- */
+#sino-painel{position:fixed;z-index:85;top:76px;right:calc((100vw - min(var(--max),100vw - 28px))/2 + 8px);
+  width:min(360px,calc(100vw - 24px));max-height:70vh;overflow-y:auto;
+  background:rgba(11,18,16,.97);border:1px solid var(--line2);border-radius:14px;
+  box-shadow:0 24px 60px rgba(0,0,0,.55)}
+.sn-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:13px 15px;border-bottom:1px solid var(--line);font-size:13.5px}
+.sn-topo button{font-size:11.5px;color:var(--dim);text-decoration:underline}
+.sn-topo button:hover{color:var(--ink)}
+.sn-item{display:block;padding:12px 15px;border-bottom:1px solid var(--line);cursor:pointer;width:100%;text-align:left}
+.sn-item:hover{background:rgba(255,255,255,.04)}
+.sn-item.nova{border-left:2px solid var(--syn)}
+.sn-item .tt{font-size:13px;font-weight:600;margin-bottom:2px}
+.sn-item .cp{font-size:12px;color:var(--muted);line-height:1.5}
+.sn-item .qd{font-family:var(--fm);font-size:10px;color:var(--dim);margin-top:4px}
+.sn-vazio{padding:28px 16px;text-align:center;color:var(--dim);font-size:12.5px}
+
+/* ============ QUADRO DE ATIVIDADES ============
+   Componentes do design system (neuro.css). Ao mexer, mexa lá primeiro. */
+.kanban{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(258px,1fr);
+  gap:12px;overflow-x:auto;padding-bottom:12px;align-items:start}
+.kb-col{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;
+  padding:12px;min-height:180px;transition:border-color .15s,background .15s}
+.kb-col.sobre{border-color:var(--syn);background:rgba(206,220,0,.05)}
+.kb-col header{display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);padding:2px 4px 12px}
+.kb-col header .n{color:var(--muted)}
+.kb-itens{display:flex;flex-direction:column;gap:8px;min-height:40px}
+.kb-card{background:var(--panel);border:1px solid var(--line2);border-radius:11px;
+  padding:11px 12px;cursor:pointer;transition:border-color .15s,transform .15s}
+.kb-card:hover{border-color:var(--dim);transform:translateY(-1px)}
+.kb-card.mov{opacity:.45}
+.kb-card.sinalizada{border-left:2px solid var(--warn)}
+.kb-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.kb-top .cod{font-family:var(--fm);font-size:10px;letter-spacing:.06em;color:var(--syn)}
+.kb-top .pri{width:7px;height:7px;border-radius:50%;flex:none}
+.kb-tit{font-size:13.5px;line-height:1.4;color:var(--ink)}
+.kb-flag{font-size:12px;color:var(--warn);margin-top:6px;line-height:1.45}
+.kb-pe{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.kb-sem{font-size:11px;color:var(--dim);font-style:italic}
+.kb-meta{display:flex;gap:9px;font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.kb-meta .atrasado{color:var(--bad);font-weight:500}
+.kb-vazio{font-size:12px;color:var(--dim);text-align:center;padding:14px 0}
+.kb-add{width:100%;margin-top:8px;padding:8px;border-radius:11px;border:1px dashed var(--line2);
+  font-size:12px;color:var(--dim);transition:color .15s,border-color .15s}
+.kb-add:hover{color:var(--ink);border-color:var(--dim)}
+@media (max-width:760px){.kanban{grid-auto-flow:row;grid-auto-columns:auto}}
+
+.atv-resumo{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.res-pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--fm);font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--line2);
+  border-radius:999px;padding:5px 12px;color:var(--muted)}
+.res-pill.bad{color:var(--bad);border-color:rgba(241,128,111,.35)}
+.res-pill.warn{color:var(--warn);border-color:rgba(245,195,106,.35)}
+button.res-pill:hover{background:rgba(255,255,255,.05)}
+
+/* ---- o cartão aberto ---- */
+.cd-grade{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
+@media (max-width:920px){.cd-grade{grid-template-columns:1fr}}
+.editavel{cursor:text;border-radius:10px;transition:background .15s}
+.editavel:hover{background:rgba(255,255,255,.04)}
+.cd-desc{font-size:13.5px;line-height:1.65;color:var(--muted);white-space:pre-wrap;
+  margin-top:10px;padding:8px 10px;margin-left:-10px}
+.cd-campos{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.cd-campos .fld{margin-bottom:12px}
+@media (max-width:480px){.cd-campos{grid-template-columns:1fr}}
+.cd-coments{display:flex;flex-direction:column;gap:14px;margin-bottom:18px}
+.cm{display:flex;gap:11px;align-items:flex-start}
+.cm-cx{flex:1;min-width:0}
+.cm-tp{display:flex;gap:9px;align-items:baseline;font-size:12.5px;margin-bottom:3px}
+.cm-tp span{font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.cm-cp{font-size:13px;color:var(--muted);line-height:1.6;white-space:pre-wrap}
+.cd-novo{border-top:1px solid var(--line);padding-top:16px}
+.cd-novo textarea{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line2);
+  border-radius:11px;padding:10px 12px;color:var(--ink);font:inherit;font-size:13.5px;outline:none}
+.cd-novo textarea:focus{border-color:var(--syn);background:rgba(206,220,0,.04)}
+.cd-menc{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.barra.carga{grid-template-columns:150px 1fr 40px auto}
+.barra.carga .tags{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+@media (max-width:640px){.barra.carga{grid-template-columns:1fr;gap:6px}}
+
 /* grupo "Gestão" — só aparece para quem tem papel de gestão */
 .hd-grupo{position:relative}
 .hd-grupo-bt{display:flex;align-items:center;gap:5px;font-family:var(--fd);font-size:13px;
@@ -872,6 +1003,72 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
 .lt-ok{background:var(--ok)} .lt-bad{background:var(--bad)}
 .lt-off{background:transparent;border:1px solid var(--line2)}
 
+
+/* ============ PAINÉIS DE ADMINISTRAÇÃO ============
+   Vindas do admin.html deste repositório e do repositório website,
+   que deixam de existir. Só as classes que a casca ainda não tinha. */
+.adm-grade{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+@media (max-width:900px){.adm-grade{grid-template-columns:1fr}}
+.adm-item{display:flex;align-items:center;gap:12px;text-align:left;width:100%;
+  border:1px solid var(--line);border-radius:13px;padding:11px 13px;margin-bottom:8px;
+  background:var(--card);transition:border-color .15s,background .15s}
+.adm-item:hover{border-color:var(--dim)}
+.adm-item.on{border-color:var(--syn);background:rgba(206,220,0,.05)}
+.adm-item .ordem{font-family:var(--fm);font-size:10.5px;color:var(--dim);flex:none;min-width:22px}
+.adm-item .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.adm-item .nm{font-family:var(--fd);font-weight:600;font-size:13.5px}
+.adm-item .sl{font-family:var(--fm);font-size:11px;color:var(--dim)}
+.adm-item .off{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);border:1px solid var(--line2);border-radius:999px;padding:2px 8px}
+.abas .n{font-family:var(--fm);font-size:10px;color:var(--syn);margin-left:6px}
+.editor{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+@media (max-width:860px){.editor{grid-template-columns:1fr}}
+.lista{display:flex;flex-direction:column;gap:8px}
+.lista .item{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid var(--line);
+  border-radius:13px;padding:12px 14px;background:var(--card);transition:border-color .15s;width:100%}
+.lista .item:hover{border-color:var(--dim)}
+.lista .item.on{border-color:var(--syn);background:rgba(206,220,0,.05)}
+.lista .item .nm{font-family:var(--fd);font-weight:600;font-size:14px;display:block}
+.lista .item .sl{font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.lista .item .off{margin-left:auto;font-family:var(--fm);font-size:9px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--bad);border:1px solid rgba(241,128,111,.35);border-radius:3px;padding:2px 6px}
+.form{background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:26px}
+.form h2{font-size:17px;margin-bottom:2px}
+.form .sub{font-size:12px;color:var(--dim);margin-bottom:20px;font-family:var(--fm)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.fgrid .full{grid-column:1/-1}
+@media (max-width:640px){.fgrid{grid-template-columns:1fr}}
+.ag-linha{display:flex;align-items:center;gap:12px;border:1px solid var(--line);
+  border-radius:13px;padding:11px 14px;background:var(--card)}
+.ag-linha .nm{font-family:var(--fd);font-weight:600;font-size:13.5px}
+.ag-linha .sl{font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.ag-linha .dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--dim)}
+.ag-linha .dot.ok{background:var(--ok)}
+.ag-linha .dot.erro{background:var(--bad)}
+.ag-linha .dot.espera{background:var(--warn)}
+.ag-linha .quando{margin-left:auto;font-family:var(--fm);font-size:11px;color:var(--muted);text-align:right}
+.ag-linha .quando b{display:block;font-family:var(--fd);font-size:12px;color:var(--ink);font-weight:600}
+.ag-erro{font-size:11.5px;color:#F5B0A5;margin-top:3px;max-width:520px}
+.preview h3{font-size:19px;font-weight:600;line-height:1.15}
+.preview p{color:var(--muted);font-size:12.5px}
+.preview .sl-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:9.5px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.preview .sl-tag::before{content:'';width:6px;height:6px;background:var(--syn)}
+.pv-evento{background:var(--card);border:1px solid var(--line);flex-direction:row;align-items:center;gap:18px}
+.pv-evento .quando{flex-shrink:0;text-align:center;border-right:1px solid var(--line2);padding-right:18px}
+.pv-evento .quando .d{font-family:var(--fd);font-size:34px;font-weight:700;line-height:1}
+.pv-evento .quando .m{font-family:var(--fm);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--syn);margin-top:4px}
+.sol{border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+.sol:hover{border-color:var(--line2)}
+.sol .top-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sol .prot{font-family:var(--fm);font-size:11px;color:var(--dim)}
+.sol .t{font-family:var(--fd);font-weight:600;font-size:14.5px;flex:1;min-width:160px}
+.sol .quem{font-size:12px;color:var(--muted)}
+.sol .quando{font-size:11px;color:var(--dim)}
+.sol .det{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;cursor:default}
+.st-btns{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 10px}
+
 /* ============ MODAL / TOAST ============ */
 #veil{position:fixed;inset:0;z-index:80;background:rgba(4,7,6,.66);
   backdrop-filter:blur(8px);display:none}
@@ -986,24 +1183,22 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
     <nav class="hd-nav" id="nav-inline">
       <a href="#/" data-r="home">Início</a>
       <a href="#/agenda" data-r="agenda">Agenda</a>
-      <a href="#/organizacao" data-r="organizacao">Organização</a>
+      <a href="#/atividades" data-r="atividades">Atividades</a>
+      <a href="#/equipe" data-r="equipe">Equipe</a>
       <a href="#/informacoes" data-r="informacoes">Informações</a>
       <a href="#/servicos" data-r="servicos">Serviços</a>
-      <a href="#/pedidos" data-r="pedidos">Meus pedidos</a>
-      <!-- plano de gestão: revelado por papel em abrirPortal() -->
-      <div class="hd-grupo" id="grupo-gestao" hidden>
-        <button class="hd-grupo-bt" aria-expanded="false"
-          onclick="this.parentElement.classList.toggle('aberto');
-                   this.setAttribute('aria-expanded', this.parentElement.classList.contains('aberto'))">Gestão
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
-        <div class="hd-grupo-menu">
-          <a href="#/quadro" data-r="quadro">Quadro de pessoal</a>
-          <a href="#/auditoria" data-r="auditoria" class="so-admin" hidden>Auditoria</a>
-        </div>
-      </div>
+      <a href="#/admin" data-r="admin" class="so-admin" hidden>Administração</a>
     </nav>
     <div class="hd-right">
+      <button class="hd-busca" id="busca-abre" onclick="abrirPaleta()" aria-label="Buscar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+        <span>Buscar</span><kbd>/</kbd></button>
+      <button class="hd-sino" id="sino" onclick="abrirSino(event)" aria-label="Notificações" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span class="bolha" id="sino-n" hidden>0</span></button>
       <div class="hd-user"><b id="u-nome">—</b><button onclick="sair()">sair</button></div>
       <button class="hd-burger" id="burger" aria-label="Menu" aria-expanded="false"><i></i><i></i></button>
     </div>
@@ -1015,18 +1210,42 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
     <nav class="menu-links" id="nav-menu">
       <a href="#/" data-r="home"><span class="idx">01</span>Início</a>
       <a href="#/agenda" data-r="agenda"><span class="idx">02</span>Agenda</a>
-      <a href="#/organizacao" data-r="organizacao"><span class="idx">03</span>Organização</a>
-      <a href="#/informacoes" data-r="informacoes"><span class="idx">04</span>Informações</a>
-      <a href="#/servicos" data-r="servicos"><span class="idx">05</span>Serviços</a>
-      <a href="#/pedidos" data-r="pedidos"><span class="idx">06</span>Meus pedidos</a>
-      <a href="#/quadro" data-r="quadro" class="so-gestao" hidden><span class="idx">07</span>Quadro de pessoal</a>
-      <a href="#/auditoria" data-r="auditoria" class="so-admin" hidden><span class="idx">08</span>Auditoria</a>
+      <a href="#/atividades" data-r="atividades"><span class="idx">03</span>Atividades</a>
+      <a href="#/equipe" data-r="equipe"><span class="idx">04</span>Equipe</a>
+      <a href="#/informacoes" data-r="informacoes"><span class="idx">05</span>Informações</a>
+      <a href="#/servicos" data-r="servicos"><span class="idx">06</span>Serviços</a>
+      <a href="#/pedidos" data-r="pedidos"><span class="idx">07</span>Meus pedidos</a>
+      <a href="#/admin" data-r="admin" class="so-admin" hidden><span class="idx">08</span>Administração</a>
     </nav>
     <div class="menu-foot">
       <span id="menu-user">—</span>
       <button onclick="sair()">Sair da conta</button>
     </div>
   </div>
+</div>
+
+<!-- BUSCA GLOBAL — atalho "/" ou Ctrl/⌘ K -->
+<div id="paleta" hidden>
+  <div class="pl-cx" role="dialog" aria-label="Buscar">
+    <div class="pl-topo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+        stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+      <input id="pl-q" autocomplete="off" spellcheck="false"
+        placeholder="Buscar telas, pessoas, atividades, compromissos…"
+        oninput="buscarNaPaleta()" onkeydown="teclaPaleta(event)">
+      <button class="pl-fecha" onclick="fecharPaleta()" aria-label="Fechar">esc</button>
+    </div>
+    <div id="pl-res" class="pl-res"></div>
+    <div class="pl-pe"><span><kbd>↑</kbd><kbd>↓</kbd> navegar</span>
+      <span><kbd>Enter</kbd> abrir</span><span><kbd>Esc</kbd> fechar</span></div>
+  </div>
+</div>
+
+<!-- NOTIFICAÇÕES -->
+<div id="sino-painel" hidden>
+  <div class="sn-topo"><b>Notificações</b>
+    <button onclick="marcarTudoLido()" id="sn-lidas">marcar todas como lidas</button></div>
+  <div id="sn-lista"></div>
 </div>
 
 <main id="main" hidden></main>
@@ -1053,8 +1272,8 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
       <div>
         <h4>Administração e código</h4>
         <ul>
-          <li><a href="admin">Painel deste portal</a></li>
-          <li><a href="https://neurodynamics.dev/admin" target="_blank" rel="noopener">Admin do site institucional</a></li>
+          <li><a href="#/admin">Painéis de administração</a></li>
+          <li><a href="#/admin/site">Site institucional</a></li>
           <li><a href="https://github.com/neurodynamics-dev" target="_blank" rel="noopener">GitHub NeuroDynamics</a></li>
           <li id="ft-cta" hidden><a id="ft-cta-a" href="#" target="_blank" rel="noopener">GitHub CTA</a></li>
         </ul>
@@ -1137,13 +1356,15 @@ const state = {
   cal:{ ano:new Date().getFullYear(), mes:new Date().getMonth() },
   agendas:null, ag:null, tipos:null, itens:null, itensMes:null,
   novo:null, conv:null, scrumCfg:null, scrumGrupo:null, agFiltro:'tudo', seriesOk:false,
-  orgFoco:null, board:{ ix:0, timer:null }
+  orgFoco:null, board:{ ix:0, timer:null }, notifs:null
 };
 
 /* ---------------- helpers ---------------- */
 function hojeISO(){ const d=new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-function fmtD(iso){ if(!iso) return '—'; const [a,m,d]=iso.split('-'); return `${d}/${m}/${a}`; }
+function fmtD(iso){ if(!iso) return '—';
+  /* aceita '2026-09-20' e '2026-09-20T14:03:00Z' — os painéis passam timestamp */
+  const [a,m,d] = String(iso).split('T')[0].split('-'); return `${d}/${m}/${a}`; }
 function hhmm(x){ return new Date(x).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
 function primeiroNome(n){ return (n||'').split(' ')[0]; }
 const isoDia = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1160,6 +1381,7 @@ function primeirasLetras(n){ return String(n||'?').trim().split(/\s+/).map(p=>p[
 const MES_CURTO = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 const pad3 = n => String(n??0).padStart(3,'0');
 const nomeDe = r => state.membros.find(m=>m.registro===r)?.nome || ('Registro '+r);
+const quemSouEu = () => state.perfil ? (state.perfil.nome || state.perfil.email) : '';
 
 const FOTO_EXTS = ['jpg','jpeg','png','webp'];
 function fotoErro(img){
@@ -1213,6 +1435,44 @@ function carregarScript(src){
    depois de um deploy. Suba junto com a versão do portal. */
 const carregarModulo = nome => carregarScript(`mod-${nome}.js?v=${VERSAO}`);
 const carregarLib    = carregarScript;
+
+/* ---------------- busca global ---------------- */
+/* Cada módulo anuncia o que sabe achar. `buscar` é síncrono e roda sobre o
+   que já está em memória: a paleta é para navegar, não para consultar o
+   banco — quem precisa de recorte de verdade usa os filtros da tela. */
+const FONTES_BUSCA = [];
+function registrarBusca(f){
+  const ix = FONTES_BUSCA.findIndex(x => x.fonte === f.fonte);
+  if (ix >= 0) FONTES_BUSCA[ix] = f; else FONTES_BUSCA.push(f);
+}
+
+/* As ações e telas da casca. Cada módulo acrescenta as suas ao carregar —
+   por isso "novo evento" aparece antes de a agenda ter sido aberta, mas
+   "ORT-14" só depois de Atividades. É o preço de não consultar o banco. */
+function acoesDaCasca(){
+  const a = [
+    ['Início', 'A home: avisos, agenda e pendências', '#/'],
+    ['Agenda', 'Seus compromissos', '#/agenda'],
+    ['Novo compromisso', 'Marcar na agenda da equipe', '#/agenda/novo'],
+    ['Agenda do mês', 'A grade do mês', '#/agenda/mes'],
+    ['Assistente de agendamento', 'Achar horário livre de várias pessoas', '#/agenda/agendar'],
+    ['Presença e check-in', 'Quem está no LABBIO agora', '#/agenda/presenca'],
+    ['Minha agenda', 'Conectar o Google Agenda', '#/agenda/minha'],
+    ['Atividades', 'O quadro do seu grupo', '#/atividades'],
+    ['Equipe', 'Organograma e fichas', '#/equipe'],
+    ['Informações', 'Documentos e políticas', '#/informacoes'],
+    ['Serviços', 'Pedidos ao Depto. de Pessoal', '#/servicos'],
+    ['Solicitar acesso', 'Documento, sistema ou local', '#/servicos/acesso'],
+    ['Pedir afastamento', 'Afastamento temporário', '#/servicos/afastamento'],
+    ['Ouvidoria anônima', 'Mensagem sem vínculo com a sua conta', '#/servicos/ouvidoria'],
+    ['Meus pedidos', 'Acompanhar as suas solicitações', '#/pedidos']
+  ];
+  if (can()) a.push(
+    ['Administração', 'Painéis do portal, do site e da seleção', '#/admin'],
+    ['Quadro de pessoal', 'A lista inteira, com filtros', '#/equipe/quadro'],
+    ['Auditoria', 'Quem mudou o quê', '#/admin/auditoria']);
+  return a.map(([titulo, sub, href]) => ({ titulo, sub, href }));
+}
 
 /* ---------------- autenticação ---------------- */
 /* Os cinco modos da tela de entrada. Até a unificação, só o primeiro
@@ -1355,7 +1615,13 @@ document.addEventListener('keydown', e=>{
     const botao = modo?.querySelector('.lg-go');
     if (botao && !botao.disabled) botao.click();
   }
-  if (e.key==='Escape'){ fechaModal(); fecharMenu(); }
+  if (e.key==='Escape'){ fechaModal(); fecharMenu(); fecharSino(); fecharPaleta(); }
+  /* busca: "/" ou Ctrl/⌘ K, desde que não se esteja digitando em outro campo */
+  if (!state.perfil) return;
+  const digitando = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable;
+  if ((e.key === '/' && !digitando) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')){
+    e.preventDefault(); abrirPaleta();
+  }
 });
 
 async function abrirPortal(){
@@ -1372,18 +1638,21 @@ async function abrirPortal(){
   $('#u-nome').textContent = primeiroNome(state.perfil.nome || state.perfil.email);
   $('#menu-user').textContent = state.perfil.nome || state.perfil.email;
   const lf = $('#logo-ft');
-  lf.onerror = () => { const sp=document.createElement('span'); sp.className='logotype'; sp.textContent='NeuroDynamics'; lf.replaceWith(sp); };
-  lf.src = LOGO_URL;
+  if (lf){   /* o handler de erro troca a <img> por um <span>: na segunda
+                passada ela não existe mais, e ler .onerror de null derrubava
+                o resto desta função — inclusive mostrar o cabeçalho */
+    lf.onerror = () => { const sp=document.createElement('span'); sp.className='logotype';
+      sp.textContent='NeuroDynamics'; lf.replaceWith(sp); };
+    lf.src = LOGO_URL;
+  }
   $('#ft-ano').textContent = new Date().getFullYear();
   if (GITHUB_CTA_URL){ $('#ft-cta').hidden = false; $('#ft-cta-a').href = GITHUB_CTA_URL; }
-  /* o plano de gestão só existe para quem tem papel — a barreira de
-     verdade é a RLS do banco; isto aqui é só não oferecer porta fechada */
-  if (podeQuadro()){
-    $('#grupo-gestao').hidden = false;
-    document.querySelectorAll('.so-gestao').forEach(e => e.hidden = false);
-  }
+  /* Administração é o único espaço que some por papel — os outros
+     degradam. A barreira de verdade é a RLS do banco; isto aqui é só
+     não oferecer porta fechada. */
   if (can()) document.querySelectorAll('.so-admin').forEach(e => e.hidden = false);
   $('#hd').hidden = false; $('#main').hidden = false; $('#ft').hidden = false; $('#v-login').hidden = true;
+  carregarNotificacoes();
   render(route());
 }
 
@@ -1399,20 +1668,28 @@ async function abrirPortal(){
 const ROTAS = {
   home:        { desenha:'pageHome' },
   agenda:      { desenha:'pageAgenda' },
-  organizacao: { desenha:'pageOrganizacao' },
+  atividades:  { desenha:'pageAtividades', modulo:'atividades' },
+  equipe:      { desenha:'pageEquipe' },   /* carrega mod-gestao por dentro, conforme a aba */
   informacoes: { desenha:'pageInformacoes' },
   servicos:    { desenha:'pageServicos' },
   pedidos:     { desenha:'pagePedidos' },
-  /* plano de gestão — vem do SOMA, carregado sob demanda */
-  quadro:      { desenha:'pageQuadro',    modulo:'gestao', permite: podeQuadro },
-  auditoria:   { desenha:'pageAuditoria', modulo:'gestao', permite: can }
+  admin:       { desenha:'pageAdmin', modulo:'admin', permite: can }
+};
+
+/* Endereço antigo nunca quebra. Cada alias devolve [rota, sub] — o sub
+   importa: #/quadro/4 precisa virar #/equipe/4, não só #/equipe. */
+const ALIAS = {
+  calendario:  (sub) => ['agenda', sub],
+  organizacao: ()    => ['equipe', null],
+  quadro:      (sub) => ['equipe', sub || 'quadro'],
+  auditoria:   ()    => ['admin', 'auditoria']
 };
 
 function route(){
   const h = (location.hash || '#/').replace(/^#\//,'');
-  let [r, sub] = h.split('/');
-  if (r === 'calendario') r = 'agenda';          // endereços antigos continuam valendo
-  return { r: ROTAS[r] ? r : 'home', sub: sub || null };
+  let [r, sub, sub2] = h.split('/');
+  if (ALIAS[r]) [r, sub] = ALIAS[r](sub || null);
+  return { r: ROTAS[r] ? r : 'home', sub: sub || null, sub2: sub2 || null };
 }
 window.addEventListener('hashchange', ()=>{ if(state.perfil){ render(route()); window.scrollTo({top:0,behavior:'instant'}); } });
 
@@ -1442,7 +1719,7 @@ async function render(rt){
       avise o Depto. de Pessoal.</p></div>`;
     return;
   }
-  desenhar(rt.sub);
+  desenhar(rt.sub, rt.sub2);
 }
 
 /* menu mobile */
@@ -1462,6 +1739,151 @@ $('#burger').addEventListener('click', ()=>{
   $('#menu').setAttribute('aria-hidden', !open);
 });
 window.addEventListener('scroll', ()=>{ $('#hd').classList.toggle('rolou', window.scrollY > 8); }, { passive:true });
+
+/* ============================================================
+   PALETA DE BUSCA
+   ============================================================ */
+let plSel = 0, plItens = [];
+
+function abrirPaleta(){
+  $('#paleta').hidden = false;
+  const q = $('#pl-q'); q.value = ''; q.focus();
+  buscarNaPaleta();
+}
+function fecharPaleta(){ $('#paleta').hidden = true; }
+$('#paleta').addEventListener('click', e => { if (e.target.id === 'paleta') fecharPaleta(); });
+
+function buscarNaPaleta(){
+  const termo = $('#pl-q').value.trim();
+  const grupos = [];
+  /* Ações primeiro, sempre: quem digita "novo" quer criar, não ler. */
+  const acoes = filtrarSimples(acoesDaCasca(), termo, 6);
+  if (acoes.length) grupos.push({ rotulo:'Ir para', itens:acoes });
+  for (const f of FONTES_BUSCA){
+    if (!termo) continue;
+    let itens = [];
+    try { itens = f.buscar(termo) || []; }
+    catch(e){ console.error('busca em ' + f.fonte, e); }
+    if (itens.length) grupos.push({ rotulo:f.rotulo || f.fonte, itens:itens.slice(0,8) });
+  }
+  plItens = grupos.flatMap(g => g.itens);
+  plSel = 0;
+  const el = $('#pl-res');
+  if (!plItens.length){
+    el.innerHTML = `<div class="pl-vazio">${termo
+      ? 'Nada encontrado para <b>' + esc(termo) + '</b>.'
+      : 'Digite para buscar telas, pessoas, atividades e compromissos.'}</div>`;
+    return;
+  }
+  let i = 0;
+  el.innerHTML = grupos.map(g => `<div class="pl-grp">${esc(g.rotulo)}</div>` + g.itens.map(it => {
+    const ix = i++;
+    return `<button class="pl-item${ix===0?' sel':''}" data-ix="${ix}" onclick="abrirDaPaleta(${ix})">
+      ${it.codigo ? `<span class="cod">${esc(it.codigo)}</span>` : ''}
+      <span class="tx"><span class="tt">${esc(it.titulo)}</span>
+      ${it.sub ? `<span class="sb">${esc(it.sub)}</span>` : ''}</span></button>`;
+  }).join('')).join('');
+}
+/* Busca simples por prefixo de palavra — o suficiente para uma lista curta. */
+function filtrarSimples(lista, termo, max){
+  if (!termo) return lista.slice(0, max);
+  const q = norm(termo);
+  return lista
+    .map(x => ({ x, p: pontuar(norm([x.codigo, x.titulo, x.sub].filter(Boolean).join(' ')), q) }))
+    .filter(r => r.p > 0)
+    .sort((a,b) => b.p - a.p)
+    .slice(0, max).map(r => r.x);
+}
+function pontuar(alvo, q){
+  if (alvo.startsWith(q)) return 100;
+  if (alvo.includes(' ' + q)) return 60;   // começo de palavra
+  if (alvo.includes(q)) return 30;
+  return 0;
+}
+function marcarPaleta(){
+  document.querySelectorAll('.pl-item').forEach(b =>
+    b.classList.toggle('sel', +b.dataset.ix === plSel));
+  document.querySelector('.pl-item.sel')?.scrollIntoView({ block:'nearest' });
+}
+function teclaPaleta(e){
+  if (e.key === 'ArrowDown'){ e.preventDefault(); plSel = Math.min(plSel+1, plItens.length-1); marcarPaleta(); }
+  else if (e.key === 'ArrowUp'){ e.preventDefault(); plSel = Math.max(plSel-1, 0); marcarPaleta(); }
+  else if (e.key === 'Enter'){ e.preventDefault(); abrirDaPaleta(plSel); }
+  else if (e.key === 'Escape'){ e.preventDefault(); fecharPaleta(); }
+}
+function abrirDaPaleta(ix){
+  const it = plItens[ix]; if (!it) return;
+  fecharPaleta();
+  if (it.acao) it.acao(); else if (it.href) location.hash = it.href.replace(/^#/,'');
+}
+
+/* As fontes da própria casca. */
+registrarBusca({
+  fonte:'pessoas', rotulo:'Pessoas',
+  buscar: (t) => filtrarSimples((state.membros||[]).map(m => ({
+    titulo: m.nome,
+    sub: [m.cargo, m.departamento, (m.grupos||[]).join(', ')].filter(Boolean).join(' · '),
+    codigo: pad3(m.registro),
+    href: podeQuadro() ? '#/equipe/' + m.registro : '#/equipe'
+  })), t, 6)
+});
+registrarBusca({
+  fonte:'agenda', rotulo:'Na agenda',
+  buscar: (t) => filtrarSimples(Object.values(state.itensMes || {}).map(it => ({
+    titulo: it.titulo || 'Compromisso',
+    sub: fmtD(it.data_inicio) + (it.local ? ' · ' + it.local : ''),
+    href: '#/agenda/mes'
+  })), t, 5)
+});
+
+/* ============================================================
+   NOTIFICAÇÕES
+   ============================================================ */
+async function carregarNotificacoes(){
+  if (!state.perfil?.registro) return;
+  const { data, error } = await sb.from('notificacoes').select('*')
+    .order('criado_em', { ascending:false }).limit(30);
+  if (error) return;                       /* sem a 15.0 aplicada, o sino some */
+  state.notifs = data || [];
+  const novas = state.notifs.filter(n => !n.lida).length;
+  $('#sino').hidden = false;
+  const b = $('#sino-n'); b.hidden = !novas; b.textContent = novas > 9 ? '9+' : novas;
+}
+function abrirSino(e){
+  e?.stopPropagation();
+  const p = $('#sino-painel');
+  if (!p.hidden){ p.hidden = true; return; }
+  const ns = state.notifs || [];
+  $('#sn-lista').innerHTML = ns.length ? ns.map(n => `
+    <button class="sn-item ${n.lida?'':'nova'}" onclick="irNotificacao(${n.id}, '${esc(n.href||'')}')">
+      <span class="tt">${esc(n.titulo)}</span>
+      ${n.corpo ? `<span class="cp">${esc(n.corpo)}</span>` : ''}
+      <span class="qd">${fmtQuando(n.criado_em)}</span></button>`).join('')
+    : '<div class="sn-vazio">Nada por aqui. Você é avisado quando uma atividade sua anda, vence ou é sinalizada.</div>';
+  p.hidden = false;
+}
+function fecharSino(){ const p = $('#sino-painel'); if (p) p.hidden = true; }
+document.addEventListener('click', e => {
+  if (!$('#sino-painel')?.hidden && !e.target.closest('#sino-painel') && !e.target.closest('#sino')) fecharSino();
+});
+async function irNotificacao(id, href){
+  fecharSino();
+  await sb.rpc('notificacoes_marcar_lidas', { p_ids: [id] });
+  await carregarNotificacoes();
+  if (href) location.hash = href.replace(/^#/,'');
+}
+async function marcarTudoLido(){
+  await sb.rpc('notificacoes_marcar_lidas', { p_ids: null });
+  await carregarNotificacoes(); fecharSino();
+}
+function fmtQuando(iso){
+  const d = new Date(iso), min = Math.floor((Date.now() - d) / 60000);
+  if (min < 1)  return 'agora';
+  if (min < 60) return `há ${min} min`;
+  if (min < 1440) return `há ${Math.floor(min/60)} h`;
+  if (min < 2880) return 'ontem';
+  return fmtD(d.toISOString().slice(0,10));
+}
 
 /* ---------------- modal ---------------- */
 function abreModal(html, largo){
@@ -2047,12 +2469,9 @@ function nvAplicaTipo(){
   if (chk) chk.hidden = !(t && t.checklist && t.checklist.length);
   const td = $('#nv-todos');
   if (td && t){ td.checked = state.novo.todos = !!t.convida_todos; }
-  const cer = state.novo.tipo === 'Cerimônia de Scrum';
-  const rec = $('#nv-rec');
-  if (rec && cer && rec.value === 'Única'){
-    rec.value = 'Semanal';
-    $('#nv-ate-wrap').hidden = false;
-  }
+  /* Nenhum tipo escolhe repetição por você. Antes, marcar "Cerimônia de
+     Scrum" trocava sozinho para Semanal — e quem só queria marcar uma
+     reunião saía com uma série. Repetir é decisão de quem agenda. */
   nvConta();
 }
 function nvGrupo(btn){
@@ -2315,6 +2734,8 @@ async function telaMes(){
         onclick="state.cal.ano=new Date().getFullYear();state.cal.mes=new Date().getMonth();telaMes()">Hoje</button>
       <button class="btn solid" style="height:36px;padding:0 14px;font-size:12.5px"
         onclick="sheetNovoEvento()">Novo compromisso</button>
+      <button class="btn ghost" style="height:36px;padding:0 14px;font-size:12.5px"
+        onclick="formMarco(null)">Novo marco</button>
       <div class="cal-legenda">${LEGENDA_MES.map(([c,l]) => `<i style="--cc:${c}">${l}</i>`).join('')}</div>
     </div>
     <div class="cal-grade">${semana.map(s=>`<div class="cal-sem">${s}</div>`).join('')}${cels}</div>
@@ -2358,7 +2779,191 @@ function verItem(id){
           onclick="responderItem('${it.ref}','${r}');fechaModal()">${{vou:'Vou',talvez:'Talvez',nao:'Não vou'}[r]}</button>`).join('') : ''}
       ${it.origem === 'evento' ? `<button class="btn ghost" onclick="abrirNoGoogle('${it.ref}')">Convidar pelo Google</button>` : ''}
       ${dono ? `<button class="btn ghost" onclick="fechaModal();modalConvidados('${it.ref}')">Convidados</button>` : ''}
+      ${podeMexerNoItem(it) ? `<button class="btn solid" onclick="modalEditarItem('${id}')">Editar</button>` : ''}
     </div>`);
+}
+
+/* ============================================================
+   EDITAR O QUE JÁ ESTÁ NA AGENDA
+   Todo item da agenda é editável por quem o criou — compromisso,
+   marco do semestre ou ausência. Antes, só os convidados de um
+   evento podiam mudar, e marco só existia no back-end: era criado
+   no SOMA · Gestão e não podia ser editado em lugar nenhum.
+   ============================================================ */
+function podeMexerNoItem(it){
+  const meu = state.perfil?.registro;
+  if (it.origem === 'evento')   return it.sou_dono || can();
+  if (it.origem === 'marco')    return can() || (it.registro != null && it.registro === meu);
+  if (it.origem === 'ausencia') return can() || it.registro === meu;
+  return false;
+}
+
+const TIPOS_MARCO = { equipe:'Marco da equipe', ufmg:'Calendário da UFMG', prazo:'Prazo',
+  feriado:'Feriado ou recesso', ferias:'Férias', processo_seletivo:'Processo seletivo',
+  evento:'Evento', outro:'Outro' };
+const TIPOS_AUSENCIA = { ferias:'Férias', afastamento:'Afastamento', no_lab:'No LABBIO',
+  remoto:'Trabalho remoto', ausente:'Temporariamente ausente', nao_perturbe:'Não perturbe' };
+
+function modalEditarItem(id){
+  const it = (state.itensMes || {})[id]; if (!it) return;
+  if (it.origem === 'evento')   return formEvento(it);
+  if (it.origem === 'marco')    return formMarco(it);
+  if (it.origem === 'ausencia') return formAusencia(it);
+}
+
+/* ---- compromisso ---- */
+function formEvento(it){
+  abreModal(`<h3>Editar compromisso</h3>
+    <p class="sub" style="margin-bottom:16px">${esc(it.titulo||'')}${it.numero?` · EVT-${pad3(it.numero)}`:''}</p>
+    <div class="form-grid">
+      <div class="fld full"><label>Título</label><input id="ed-tit" value="${esc(it.titulo||'')}"></div>
+      <div class="fld"><label>Data</label><input id="ed-data" type="date" value="${esc(it.data_inicio||'')}"></div>
+      <div class="fld"><label>Quem vê</label><select id="ed-vis">
+        ${[['equipe','Toda a equipe'],['convidados','Só os convidados'],['privado','Só eu e o Depto. de Pessoal']]
+          .map(([k,l]) => `<option value="${k}" ${k===it.visibilidade?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="fld"><label>Início</label>
+        <input id="ed-hi" type="time" value="${esc((it.hora_inicio||'').slice(0,5))}"></div>
+      <div class="fld"><label>Fim</label>
+        <input id="ed-hf" type="time" value="${esc((it.hora_fim||'').slice(0,5))}"></div>
+      <div class="fld full"><label>Onde</label><input id="ed-local" value="${esc(it.local||'')}"></div>
+      <div class="fld full"><label>Link da chamada</label>
+        <input id="ed-meet" value="${esc(it.meet_url||'')}" placeholder="https://meet.google.com/…"></div>
+      <div class="fld full"><label>Pauta</label><textarea id="ed-pauta" rows="3">${esc(it.pauta||'')}</textarea></div>
+      ${it.serie_id ? `<div class="fld full"><label>Aplicar a</label><select id="ed-aplicar">
+        <option value="este">Só este encontro</option>
+        <option value="serie">Este e os próximos da série</option></select>
+        <p class="mini">Mudar a data só vale para um encontro — a série mantém a recorrência.</p></div>` : ''}
+    </div>
+    <p class="err-msg" id="ed-erro"></p>
+    <div class="acts" style="justify-content:space-between">
+      <button class="btn perigo" onclick="fechaModal();modalCancelar('${it.ref}')">Cancelar compromisso</button>
+      <span style="display:flex;gap:10px">
+        <button class="btn ghost" onclick="fechaModal()">Fechar</button>
+        <button class="btn solid" id="ed-btn" onclick="salvarEvento('${it.ref}')">Salvar</button></span>
+    </div>`, true);
+}
+async function salvarEvento(evId){
+  const p = { id: evId,
+    titulo: $('#ed-tit').value.trim(),
+    data: $('#ed-data').value || null,
+    visibilidade: $('#ed-vis').value,
+    hora_inicio: $('#ed-hi').value || null,
+    hora_fim: $('#ed-hf').value || null,
+    local: $('#ed-local').value.trim(),
+    meet_url: $('#ed-meet').value.trim(),
+    pauta: $('#ed-pauta').value.trim(),
+    aplicar: $('#ed-aplicar')?.value || 'este' };
+  if (!p.titulo){ $('#ed-erro').textContent = 'O título é obrigatório.'; return; }
+  $('#ed-btn').disabled = true;
+  const { data, error } = await sb.rpc('agenda_editar_evento', { p });
+  $('#ed-btn').disabled = false;
+  if (error || data?.status !== 'ok'){
+    $('#ed-erro').textContent = data?.status === 'sem_permissao'
+      ? 'Só quem organiza o compromisso (ou o Depto. de Pessoal) pode editá-lo.'
+      : data?.campo === 'horario' ? 'O fim precisa vir depois do início.'
+      : 'Não foi possível salvar' + (error ? ': ' + error.message : '.');
+    return;
+  }
+  fechaModal(); toast(`Atualizado em ${data.eventos} encontro(s).`);
+  telaMes();
+}
+
+/* ---- marco do semestre ---- */
+function formMarco(it){
+  const novo = !it;
+  const meuMarco = it && it.registro != null;
+  abreModal(`<h3>${novo ? 'Novo marco' : 'Editar marco'}</h3>
+    <p class="sub" style="margin-bottom:16px">Datas que valem para a agenda: prazos, feriados,
+      calendário da UFMG, marcos do semestre.</p>
+    <div class="form-grid">
+      <div class="fld full"><label>Título</label><input id="mk-tit" value="${esc(it?.titulo||'')}"></div>
+      <div class="fld"><label>Tipo</label><select id="mk-tipo">${Object.entries(TIPOS_MARCO).map(([k,l]) =>
+        `<option value="${k}" ${k===(it?.tipo||'outro')?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="fld"><label>De quem</label><select id="mk-pessoal" ${!can()?'disabled':''}>
+        <option value="0" ${!meuMarco?'selected':''}>Da equipe</option>
+        <option value="1" ${meuMarco?'selected':''}>Só meu</option></select>
+        ${!can() ? '<p class="mini">Marco da equipe é do Depto. de Pessoal.</p>' : ''}</div>
+      <div class="fld"><label>Começa</label>
+        <input id="mk-ini" type="date" value="${esc(it?.data_inicio||hojeISO())}"></div>
+      <div class="fld"><label>Termina</label>
+        <input id="mk-fim" type="date" value="${esc(it?.data_fim||it?.data_inicio||'')}"></div>
+      <div class="fld full"><label>Observação</label>
+        <textarea id="mk-obs" rows="2">${esc(it?.pauta||'')}</textarea></div>
+    </div>
+    <p class="err-msg" id="mk-erro"></p>
+    <div class="acts" style="justify-content:space-between">
+      ${!novo ? `<button class="btn perigo" onclick="removerMarco('${it.ref}')">Remover</button>` : '<span></span>'}
+      <span style="display:flex;gap:10px">
+        <button class="btn ghost" onclick="fechaModal()">Fechar</button>
+        <button class="btn solid" id="mk-btn" onclick="salvarMarco(${novo?'null':`'${it.ref}'`})">Salvar</button></span>
+    </div>`, true);
+}
+async function salvarMarco(id){
+  const p = { id, titulo: $('#mk-tit').value.trim(), tipo: $('#mk-tipo').value,
+    data_inicio: $('#mk-ini').value, data_fim: $('#mk-fim').value || null,
+    observacao: $('#mk-obs').value.trim(), pessoal: $('#mk-pessoal').value === '1' };
+  if (!p.titulo){ $('#mk-erro').textContent = 'O título é obrigatório.'; return; }
+  if (!p.data_inicio){ $('#mk-erro').textContent = 'Diga quando começa.'; return; }
+  $('#mk-btn').disabled = true;
+  const { data, error } = await sb.rpc('agenda_marco_salvar', { p });
+  $('#mk-btn').disabled = false;
+  if (error || data?.status !== 'ok'){
+    $('#mk-erro').textContent = data?.status === 'sem_permissao'
+      ? 'Marco da equipe é do Depto. de Pessoal. Para um marco seu, escolha "Só meu".'
+      : data?.campo === 'data_fim' ? 'O fim precisa vir depois do começo.'
+      : 'Não foi possível salvar' + (error ? ': ' + error.message
+        : '. A migração v15_atividades.sql foi aplicada?');
+    return;
+  }
+  fechaModal(); toast('Marco salvo.'); telaMes();
+}
+async function removerMarco(id){
+  const { data, error } = await sb.rpc('agenda_marco_remover', { p: { id }});
+  fechaModal();
+  if (error || data?.status !== 'ok'){ toast('Não foi possível remover.', true); return; }
+  toast('Marco removido.'); telaMes();
+}
+
+/* ---- ausência ---- */
+function formAusencia(it){
+  const dia = (x) => String(x || '').slice(0,10);
+  abreModal(`<h3>Editar ausência</h3>
+    <p class="sub" style="margin-bottom:16px">Férias e afastamento são privados; os intervalos do
+      dia a dia a equipe vê.</p>
+    <div class="form-grid">
+      <div class="fld"><label>Tipo</label><select id="au-tipo">${Object.entries(TIPOS_AUSENCIA).map(([k,l]) =>
+        `<option value="${k}" ${k===it.tipo?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="fld"><label>Dia inteiro</label><select id="au-dia">
+        <option value="1" ${it.dia_inteiro?'selected':''}>Sim</option>
+        <option value="0" ${!it.dia_inteiro?'selected':''}>Não</option></select></div>
+      <div class="fld"><label>De</label><input id="au-ini" type="date" value="${dia(it.data_inicio)}"></div>
+      <div class="fld"><label>Até</label><input id="au-fim" type="date" value="${dia(it.data_fim||it.data_inicio)}"></div>
+      <div class="fld full"><label>Observação</label>
+        <textarea id="au-obs" rows="2">${esc(it.pauta||'')}</textarea></div>
+    </div>
+    <p class="err-msg" id="au-erro"></p>
+    <div class="acts" style="justify-content:flex-end">
+      <button class="btn ghost" onclick="fechaModal()">Fechar</button>
+      <button class="btn solid" id="au-btn" onclick="salvarAusencia('${it.ref}')">Salvar</button></div>`, true);
+}
+async function salvarAusencia(id){
+  const ini = $('#au-ini').value, fim = $('#au-fim').value || ini;
+  if (!ini){ $('#au-erro').textContent = 'Diga quando começa.'; return; }
+  $('#au-btn').disabled = true;
+  const { data, error } = await sb.rpc('agenda_ausencia_salvar', { p: {
+    id, tipo: $('#au-tipo').value, dia_inteiro: $('#au-dia').value === '1',
+    inicio: ini + 'T00:00:00-03:00',
+    fim: new Date(new Date(fim + 'T00:00:00-03:00').getTime() + 86400000).toISOString(),
+    observacao: $('#au-obs').value.trim() }});
+  $('#au-btn').disabled = false;
+  if (error || data?.status !== 'ok'){
+    $('#au-erro').textContent = data?.status === 'invalido'
+      ? 'O fim precisa vir depois do começo.'
+      : 'Não foi possível salvar' + (error ? ': ' + error.message
+        : '. A migração v15_atividades.sql foi aplicada?');
+    return;
+  }
+  fechaModal(); toast('Ausência atualizada.'); telaMes();
 }
 
 /* ============================================================
@@ -3479,13 +4084,39 @@ function orgRaiz(ativos){
   const nsub = r => ativos.filter(m=>m.gestor_registro===r).length;
   return (raizes.length?raizes:ativos).slice().sort((a,b)=>nsub(b.registro)-nsub(a.registro))[0];
 }
+/* Equipe é um espaço só: o organograma é de todo mundo, o quadro e as
+   fichas são de quem tem papel. Um objeto, um lugar — antes isto eram
+   duas telas, em dois apps, sobre os mesmos dados. */
+async function pageEquipe(sub){
+  if (sub === 'quadro' || /^\d+$/.test(sub || '')){
+    if (!podeQuadro()){ history.replaceState(null,'',location.pathname+'#/equipe'); return pageEquipe(null); }
+    $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
+    try { await carregarModulo('gestao'); }
+    catch(e){
+      $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1>
+        <p class="lead">Esta parte não pôde ser carregada (${esc(e.message)}). Recarregue a página.</p></div>`;
+      return;
+    }
+    return sub === 'quadro' ? pageQuadro(null) : pageQuadro(sub);
+  }
+  pageOrganizacao();
+}
+function abasEquipe(atual){
+  const abas = [['', 'Organograma']];
+  if (podeQuadro()) abas.push(['quadro', 'Quadro de pessoal']);
+  if (abas.length < 2) return '';
+  return `<nav class="abas">${abas.map(([s,l]) =>
+    `<a href="#/equipe${s?'/'+s:''}" class="${s===atual?'on':''}">${l}</a>`).join('')}</nav>`;
+}
+
 function pageOrganizacao(){
   const ativos = orgAtivos();
   $('#main').innerHTML = `
     <div class="pg-head"><span class="eyebrow">Quem é quem</span>
-      <h1>Organização</h1>
+      <h1>Equipe</h1>
       <p class="lead">Navegue pela cadeia de gestão, pelos colegas de equipe e pelos
         liderados de cada pessoa.</p></div>
+    ${abasEquipe('')}
     <div id="org-area"></div>`;
   if (!ativos.length){ $('#org-area').innerHTML = '<div class="empty">Nenhum membro ativo cadastrado.</div>'; return; }
   if (!state.orgFoco || !ativos.some(m=>m.registro===state.orgFoco)){
@@ -3536,7 +4167,7 @@ function desenhaOrg(filtro){
         </span>
         <span class="pill"><span class="dt" style="background:${foco.status==='Ativo'?'var(--ok)':'var(--warn)'}"></span>${esc(foco.status)}</span>
         ${podeQuadro() ? `<a class="btn ghost" style="height:34px;padding:0 14px;font-size:12.5px"
-          href="#/quadro/${foco.registro}">Abrir ficha</a>` : ''}
+          href="#/equipe/${foco.registro}">Abrir ficha</a>` : ''}
       </div>
     </div>
     <div class="org-bottom">

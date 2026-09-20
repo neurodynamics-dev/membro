@@ -12,7 +12,7 @@ SOMA · Gestão está sendo trazido, conforme o
 
 - **Quadro de avisos** — banner rotativo na home, com layouts pré-definidos
   (`padrão`, `destaque`, `urgente`, `evento`, `conquista`), mantido pela
-  gestão no painel `admin.html`.
+  gestão em Administração → Quadro de avisos.
 - **Resumo da agenda e do check-in** — os próximos eventos do mesmo
   calendário do SOMA (com RSVP dos convites pendentes) e quem está no
   LABBIO agora, pelas presenças do sistema de check-in.
@@ -31,7 +31,7 @@ SOMA · Gestão está sendo trazido, conforme o
   - **Minha agenda** — o Google Agenda nos dois sentidos: o portal lê o seu
     `.ics` (para saber quando você está ocupado) e você assina o feed da
     NeuroDynamics (para receber a agenda da equipe na sua agenda pessoal).
-- **Organização** — o mesmo Org Explorer do SOMA (estilo Microsoft Teams):
+- **Equipe** — o Org Explorer (estilo Microsoft Teams):
   cadeia de gestão, colegas de equipe e liderados, com busca.
 - **Informações** — biblioteca de documentos e políticas (estatuto,
   políticas, guias, formulários) publicados como links do Google Drive
@@ -51,19 +51,61 @@ SOMA · Gestão está sendo trazido, conforme o
   NeuroDynamics usa: agenda, organização, documentos, SOMA · Gestão, tour,
   site institucional, brand guidelines, processo seletivo e GitHub.
 
+## Como o sistema se organiza
+
+A navegação é por **espaços** — o que você está fazendo —, não por qual app
+a tela veio: **Início · Agenda · Atividades · Equipe · Informações · Serviços ·
+Administração**. Sete destinos, um nível. Os detalhes e o porquê estão em
+[`PADROES.md`](PADROES.md).
+
+Há uma **busca global** no cabeçalho (atalho `/` ou `Ctrl/⌘ K`) que acha telas
+e ações, pessoas, atividades por código ou título, e compromissos da agenda.
+Cada módulo registra o que sabe achar — quem adiciona um módulo novo adiciona
+uma fonte de busca junto.
+
+Endereço antigo não quebra: `#/organizacao`, `#/quadro`, `#/calendario` e
+`#/auditoria` continuam levando ao lugar certo.
+
+## Atividades
+
+O quadro de trabalho de cada grupo, em `#/atividades`:
+
+- **cinco colunas** — Backlog, A fazer, Em andamento, Em revisão, Concluída —
+  com arrastar e soltar;
+- **cada cartão tem código** (`ORT-14`): prefixo do grupo mais sequência,
+  gravado na criação. É por ele que a equipe se refere à atividade, e é por ele
+  que a busca acha;
+- responsável, prazo, prioridade, estimativa e **comentários com menção** —
+  mencionar alguém é como se escala um problema: a pessoa é notificada;
+- **sinalizar** uma atividade avisa quem a segue e o gestor de quem responde
+  por ela;
+- o quadro mostra de saída quantas estão **atrasadas**, **sinalizadas** e
+  **sem responsável**, e filtra por pessoa ou por recorte;
+- **Carga da equipe** mostra quanto cada pessoa está carregando;
+- **todo movimento vira histórico** no cartão: quem moveu, quem atribuiu, quem
+  mudou o prazo, quem sinalizou.
+
+As notificações aparecem no sino do cabeçalho. Por enquanto são só dentro do
+portal — e-mail exigiria uma Edge Function com SMTP, que fica para depois.
+
 ## O plano de gestão
 
-Para quem tem papel de gestão (`admin` ou `pessoal`), o menu ganha o grupo
-**Gestão** — as telas que até aqui só existiam no `pessoal.neurodynamics.dev`:
+Para quem tem papel de gestão (`admin` ou `pessoal`), o menu ganha
+**Administração**, e **Equipe** ganha a aba do quadro — as telas que até aqui
+só existiam no `pessoal.neurodynamics.dev`:
 
-- **Quadro de pessoal** (`#/quadro`) — quantos estão ativos, em pausa, sob
+- **Quadro de pessoal** (`#/equipe/quadro`) — quantos estão ativos, em pausa, sob
   demanda e desligados; ativos por departamento; a lista inteira com busca e
   filtros por status, departamento e grupo; e as ocorrências recentes.
-- **Ficha do membro** (`#/quadro/<registro>`) — dados institucionais (com
+- **Ficha do membro** (`#/equipe/<registro>`) — dados institucionais (com
   edição, que gera ocorrência e entra na auditoria), linha do tempo de
   ocorrências, acessos concedidos e revogados, avaliações periódicas com os
   apontamentos semanais, e dados pessoais sob a LGPD.
-- **Auditoria** (`#/auditoria`) — quem mudou o quê e quando, com busca.
+- **Auditoria** (`#/admin/auditoria`) — quem mudou o quê e quando, com busca.
+- **Administração** (`#/admin`) — avisos, documentos, triagem de solicitações,
+  ouvidoria, estado das agendas e os projetos do site institucional. Os dois
+  `admin.html` que existiam (deste repositório e do `website`) deixam de ser
+  páginas: eram duas telas de login a mais para a mesma conta.
 
 Duas coisas que a unificação trouxe de graça:
 
@@ -78,9 +120,12 @@ Duas coisas que a unificação trouxe de graça:
 
 | Arquivo        | O que é |
 |----------------|---------|
-| `index.html`   | A casca e o plano do membro (`#/`, `#/agenda`, `#/organizacao`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
-| `mod-gestao.js`| Plano de gestão: quadro de pessoal, ficha e auditoria (`#/quadro`, `#/quadro/<registro>`, `#/auditoria`) |
-| `admin.html`   | Painel do Depto. de Pessoal: avisos, documentos, triagem de solicitações, ouvidoria e estado das agendas |
+| `index.html`   | A casca e o plano do membro (`#/`, `#/agenda`, `#/equipe`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
+| `mod-atividades.js` | O quadro de trabalho de cada grupo (`#/atividades`) |
+| `mod-gestao.js`| Quadro de pessoal, ficha e auditoria (`#/equipe/quadro`, `#/equipe/<registro>`) |
+| `mod-admin.js` | Os painéis: avisos, documentos, solicitações, ouvidoria, agendas, site e auditoria (`#/admin`) |
+| `admin.html`   | Encaminhamento — o painel virou `#/admin` |
+| [`PADROES.md`](PADROES.md) | Os padrões do sistema: navegação, rotas, busca, módulos, identidade |
 | `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |
 | `supabase/functions/agenda-sync/` | Edge Function (arquivo único) que lê o `.ics` de cada um e grava os horários ocupados ([detalhes](supabase/functions/agenda-sync/README.md)) |
 | `supabase/functions/agenda-ics/`  | Edge Function (arquivo único) que serve o feed da agenda para assinar no Google ([detalhes](supabase/functions/agenda-ics/README.md)) |
@@ -199,16 +244,16 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
   grupo (ou por `admin`/`pessoal`).
 - **Ausências** são de cada um: só a própria pessoa (ou o Depto. de Pessoal)
   cria e remove as suas.
-- **`admin.html`** é liberado só para os papéis `admin` e `pessoal`.
+- **Administração** (`#/admin`) é liberada só para os papéis `admin` e `pessoal`.
 - **Ouvidoria**: a mensagem é gravada por função `security definer`
   sem nenhuma referência à conta, sem gatilho de auditoria e com a data
   truncada para o dia. Anonimato por projeto, não por promessa.
 
 ## Como operar (Depto. de Pessoal)
 
-1. **Avisos**: crie e publique em `/admin.html` → *Quadro de avisos*.
+1. **Avisos**: crie e publique em *Administração → Quadro de avisos*.
    O layout tem pré-visualização ao vivo; a ordem define o rodízio.
-2. **Solicitações**: triagem em `/admin.html` → *Solicitações*
+2. **Solicitações**: triagem em *Administração → Solicitações*
    (em análise → aprovar/recusar → concluir, com resposta ao membro).
    Ao aprovar um **acesso**, conceda-o na ficha do membro no
    SOMA · Gestão (aba Acessos) — o painel registra a decisão, a
@@ -218,7 +263,7 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
 4. **Calendário da UFMG**: datas acadêmicas entram como marcos do
    calendário no SOMA · Gestão (tipo "outro", ou o que couber) e
    aparecem automaticamente no portal.
-5. **Agendas**: em `/admin.html` → *Agendas* você vê quem já conectou o
+5. **Agendas**: em *Administração → Agendas* você vê quem já conectou o
    Google Agenda, o horário da última sincronização e o erro de quem
    falhou, e pode forçar uma sincronização geral. O link `.ics` em si
    **não** aparece ali — a RLS só o devolve ao próprio dono.
@@ -271,4 +316,4 @@ autenticado (rascunhos só para `admin`/`pessoal`); cada membro lê apenas
 as próprias solicitações; a escrita passa pelas funções
 `portal_abrir_solicitacao` / `portal_cancelar_solicitacao` (validação e
 protocolo no banco); a ouvidoria só é lida por `admin`/`pessoal`. O
-`admin.html` é só interface — a regra mora no banco.
+A tela de Administração é só interface — a regra mora no banco.
