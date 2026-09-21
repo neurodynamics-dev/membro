@@ -33,7 +33,10 @@ const gestao = {
 };
 
 /* ---------------- constantes do quadro ---------------- */
-const STATUS_LIST = ['Ativo','Em pausa / avaliação','Sob demanda','Desligado','Egresso'];
+/* STATUS_LIST e falha() moraram aqui e foram para a casca: mod-relatorios
+   e mod-admin usam os dois, e módulo não pode depender de módulo — quem
+   abrisse Relatórios sem ter passado pelo quadro achava "STATUS_LIST is
+   not defined" no lugar do formulário. */
 const STATUS_DOT  = {'Ativo':['dt-ok','p-ok'], 'Em pausa / avaliação':['dt-warn','p-warn'],
   'Sob demanda':['dt-info','p-info'], 'Desligado':['dt-bad','p-bad'], 'Egresso':['dt-gray','']};
 const TAB_LABEL = {membros:'Membros', dados_pessoais:'Dados pessoais', acessos_concedidos:'Acessos',
@@ -46,7 +49,6 @@ const fmtDT = (d) => { if(!d) return '—'; const x = new Date(d);
   return x.toLocaleDateString('pt-BR') + ' ' + x.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
 const pill = (st) => { const [dot, cor] = STATUS_DOT[st] || ['dt-gray',''];
   return `<span class="pill ${cor}"><span class="dt ${dot}"></span>${esc(st||'—')}</span>`; };
-const falha = (e, ctx) => { console.error(ctx, e); toast((ctx ? ctx+': ' : '') + (e?.message || 'erro inesperado'), true); };
 function chips(arr, max){
   if (!arr || !arr.length) return '<span class="muted">—</span>';
   const v = arr.slice(0, max||99).map(g => `<span class="chip mini">${esc(g)}</span>`).join(' ');
@@ -239,7 +241,7 @@ const CAMPOS_MEMBRO = [
   {k:'departamento', l:'Departamento', t:'datalist', list:'dl-deptos'},
   {k:'cargo', l:'Cargo atual', t:'datalist', list:'dl-cargos'},
   {k:'gestor_registro', l:'Gestor imediato', t:'gestor'},
-  {k:'grupos', l:'Grupos (separados por vírgula)', t:'grupos', full:true},
+  {k:'grupos', l:'Grupos', t:'grupos', full:true},
   {k:'email_nro', l:'E-mail NRO', t:'text'},
   {k:'email_pessoal', l:'E-mail pessoal', t:'text'},
   {k:'telefone', l:'Telefone', t:'text'},
@@ -281,8 +283,93 @@ function campoInput(c, val, regAtual){
       .map(m => `<option value="${m.registro}" ${m.registro===val?'selected':''}>${esc(m.nome)}</option>`).join('');
     return `<select id="f-${c.k}"><option value="">— sem gestor —</option>${opts}</select>`;
   }
-  const v = c.t === 'grupos' ? (val||[]).join(', ') : (val == null ? '' : val);
+  if (c.t === 'grupos') return pillsGrupos(val);
+  const v = val == null ? '' : val;
   return `<input id="f-${c.k}" value="${esc(v)}"${c.list ? ` list="${c.list}"` : ''}>`;
+}
+
+/* ============================================================
+   GRUPOS POR PILLS
+   Antes era um campo de texto e a instrução "separados por
+   vírgula". Quem escrevia "Órtese, ortese" ficava com dois grupos,
+   e quem esquecia a vírgula ficava com um grupo de nome comprido.
+
+   O <input type="hidden"> continua sendo a fonte da verdade, no
+   mesmo formato de antes: assim lerCampos() não muda e o resto da
+   ficha não sabe que a tela mudou.
+   ============================================================ */
+function gruposConhecidos(){
+  const doCatalogo = (state.grupos || []).map(g => g.nome);
+  return [...new Set([...doCatalogo, ...todosGrupos()])]
+    .filter(Boolean).sort((a,b) => a.localeCompare(b,'pt'));
+}
+const chaveGrupo = g => norm(String(g).trim());
+const grpValores = () => {
+  const el = document.getElementById('f-grupos');
+  return el ? el.value.split(',').map(x=>x.trim()).filter(Boolean) : [];
+};
+
+function pillsGrupos(val){
+  const atuais = (val || []).filter(Boolean);
+  return `<input type="hidden" id="f-grupos" value="${esc(atuais.join(', '))}">
+    <div class="pills-ed" onclick="if(event.target===this)document.getElementById('pe-in').focus()">
+      <span id="pe-lista">${pillsGruposLista(atuais)}</span>
+      <input id="pe-in" list="dl-grupos-ed" autocomplete="off"
+        placeholder="${atuais.length ? 'adicionar…' : 'digite o grupo e tecle Enter'}"
+        onkeydown="grpTecla(event)" onblur="grpAdicionar()">
+    </div>
+    <datalist id="dl-grupos-ed">${gruposConhecidos().map(g =>
+      `<option value="${esc(g)}"></option>`).join('')}</datalist>
+    <p class="small muted" style="margin-top:6px">Enter ou vírgula adiciona.
+      Clique no × para tirar. A lista sugere os grupos que já existem —
+      usar a sugestão evita "Órtese" e "ortese" virarem dois.</p>`;
+}
+
+function pillsGruposLista(gs){
+  if (!gs.length) return '';
+  return gs.map((g,i) => `<span class="pill-ed">${esc(g)}<button type="button"
+    onclick="grpRemover(${i})" aria-label="Tirar do grupo ${esc(g)}" title="Tirar">×</button></span>`).join('');
+}
+
+function grpGravar(arr){
+  const el = document.getElementById('f-grupos'); if (!el) return;
+  el.value = arr.join(', ');
+  const lista = document.getElementById('pe-lista');
+  if (lista) lista.innerHTML = pillsGruposLista(arr);
+  const inp = document.getElementById('pe-in');
+  if (inp) inp.placeholder = arr.length ? 'adicionar…' : 'digite o grupo e tecle Enter';
+}
+
+function grpRemover(i){
+  const arr = grpValores(); arr.splice(i,1); grpGravar(arr);
+  const inp = document.getElementById('pe-in'); if (inp) inp.focus();
+}
+
+/* Um nome que já existe no catálogo entra com a grafia do catálogo:
+   é isso que impede o mesmo grupo de nascer duas vezes por acento. */
+function grpCanonico(nome){
+  const achado = gruposConhecidos().find(g => chaveGrupo(g) === chaveGrupo(nome));
+  return achado || String(nome).trim();
+}
+
+function grpAdicionar(){
+  const inp = document.getElementById('pe-in'); if (!inp) return;
+  const bruto = inp.value; if (!bruto.trim()) { inp.value=''; return; }
+  const arr = grpValores();
+  bruto.split(',').map(x => x.trim()).filter(Boolean).forEach(nome => {
+    const can = grpCanonico(nome);
+    if (!arr.some(g => chaveGrupo(g) === chaveGrupo(can))) arr.push(can);
+  });
+  inp.value = '';
+  grpGravar(arr);
+}
+
+function grpTecla(ev){
+  if (ev.key === 'Enter' || ev.key === ','){ ev.preventDefault(); grpAdicionar(); return; }
+  if (ev.key === 'Backspace' && !ev.target.value){
+    const arr = grpValores();
+    if (arr.length){ ev.preventDefault(); arr.pop(); grpGravar(arr); }
+  }
 }
 function lerCampos(defs){
   const o = {};
@@ -415,7 +502,7 @@ function renderTabDados(){
       if (c.t === 'grupos')      v = (v && v.length) ? v.join(', ') : null;
       else if (c.t === 'date')   v = v ? fmtD(v) : null;
       else if (c.t === 'gestor') v = v ? nomeDe(v) : null;
-      return `<div class="it"><dt>${c.l.replace(' (separados por vírgula)','')}</dt>
+      return `<div class="it"><dt>${c.l}</dt>
         <dd>${esc(v) || '<span class="muted">—</span>'}</dd></div>`;
     }).join('')}
     <div class="it"><dt>Cadastro atualizado em</dt><dd>${fmtDT(m.atualizado_em)}</dd></div>

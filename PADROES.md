@@ -123,6 +123,25 @@ O que ele **não** faz: mexer no cabeçalho, no rodapé, no roteador ou no CSS
 da casca. Precisou de um componente novo? Ele vai para o design system
 (`brand/design-system/neuro.css`) e desce daqui para a casca.
 
+### Escopo é um só — e isso tem duas consequências
+
+Script clássico não tem módulo: casca e módulos dividem o mesmo escopo
+global. Daí duas regras que não são estilo, são o que faz a tela abrir:
+
+1. **A casca é dona dos nomes compartilhados.** Um `const` declarado nos dois
+   lugares derruba o módulo **inteiro** no carregamento, e o que aparece na
+   tela é uma rota vazia — sem erro visível. Vocabulário que mais de um
+   módulo usa (`STATUS_SOL`, `TIPOS_SOL`, `STATUS_LIST`, `CAT_LABEL`, `ic`,
+   `ibtn`, `falha`) mora na casca, mesmo quando foi um módulo que o inventou.
+2. **Módulo não depende de módulo.** `mod-relatorios` usar uma constante de
+   `mod-gestao` funciona enquanto alguém passa pelo quadro antes de abrir
+   Relatórios — e quebra para quem vai direto. Quando um módulo precisa
+   mesmo de outro (o dossiê de evento gera PDF), ele chama
+   `carregarModulo('relatorios')` **antes**, dentro da função.
+
+`node testes/colisoes.mjs` confere a primeira. A segunda é leitura de
+diff — e as duas já falharam nesta base.
+
 ---
 
 ## 5. Identidade dos objetos
@@ -138,6 +157,35 @@ Todo objeto que uma pessoa cita em voz alta precisa de um código curto:
 
 Sequência por grupo, não global: `ORT-14` diz de qual quadro a atividade é.
 O prefixo mora em `grupos.prefixo` e é gerado do nome, editável depois.
+
+### Um fato, um cartão
+
+Solicitação, apontamento e ocorrência **não** viram uma caixa de entrada
+paralela: viram cartão no quadro do Depto de Pessoal, com código próprio
+(`DEP-7`), responsável, coluna e histórico — como qualquer outro trabalho.
+
+- **"Exatamente um"** é garantia do índice único `(origem_tipo, origem_id)`,
+  não da disciplina de quem escreve o gatilho.
+- O cartão **sobrevive ao fato**: `origem_id` é texto, sem chave
+  estrangeira. Apagar a ocorrência não apaga a decisão que se tomou sobre ela.
+- Ocorrência que é só **espelho** de uma mudança já feita na ficha (mudou o
+  cargo, mudou o grupo) não vira cartão: o quadro é de trabalho a fazer, não
+  de histórico. A lista está em `ocorrencia_espelho()`, uma função — mudar
+  de ideia é uma linha.
+- O cartão de origem tem o que nenhum outro tem: um bloco que **decide**.
+  Aprovar um acesso concede o acesso na mesma transação. Dois passos em duas
+  telas eram um passo esquecível.
+
+### Quadro reservado
+
+Um grupo pode ser `reservado`: aí só quem está nele lê os cartões. Existe um
+só — o do Pessoal, porque recebe pedido de afastamento e de desligamento.
+
+Fechar isso são **duas** coisas, e esquecer a segunda não dá erro nenhum:
+
+1. a política de RLS (`posso_ver_grupo`);
+2. `security_invoker = true` na view que a tela lê. Sem isso a view roda como
+   dona, ignora RLS e devolve tudo — a view seria o furo, não a política.
 
 ---
 
@@ -170,6 +218,10 @@ podeSelecao() // comitê de seleção
 
 Numa rota: `permite: podeQuadro`. Num botão: `${can() ? ibtn(...) : ''}`.
 Nunca só esconder o botão e deixar a função aberta — a função também confere.
+
+E a busca não pode achar o que a galeria esconde: quem registra uma fonte
+filtra pelo mesmo papel que desenha os botões. `testes/relatorios-por-papel.mjs`
+confere os três caminhos — galeria, busca e chamada direta pelo console.
 
 ---
 

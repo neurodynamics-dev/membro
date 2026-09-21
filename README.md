@@ -289,11 +289,15 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
 
 1. **Avisos**: crie e publique em *Administração → Quadro de avisos*.
    O layout tem pré-visualização ao vivo; a ordem define o rodízio.
-2. **Solicitações**: triagem em *Administração → Solicitações*
-   (em análise → aprovar/recusar → concluir, com resposta ao membro).
-   Ao aprovar um **acesso**, conceda-o na ficha do membro no
-   SOMA · Gestão (aba Acessos) — o painel registra a decisão, a
-   concessão continua onde sempre foi.
+2. **Solicitações**: cada solicitação nova vira **um cartão** no quadro
+   de Atividades do Depto de Pessoal, e é lá que ela se resolve — o
+   cartão tem responsável, coluna e histórico, como qualquer outro.
+   No cartão, o bloco *De onde veio* mostra o pedido e decide: ao
+   **aprovar um acesso**, marque os itens do catálogo e a concessão
+   entra no quadro de acessos da pessoa **na mesma ação**. Não há mais
+   um segundo passo na ficha.
+   A triagem antiga em *Administração → Solicitações* continua no ar
+   para consulta.
 3. **Ouvidoria**: leia e marque como tratada. Sem como responder
    individualmente — é anônima.
 4. **Calendário da UFMG**: datas acadêmicas entram como marcos do

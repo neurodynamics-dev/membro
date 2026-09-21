@@ -20,7 +20,28 @@ As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para 
 | **2 · Operações** | **Feita.** Apontamento em Equipe; relatórios, importação, contas e catálogo viram painéis de Administração, agora em galeria |
 | **3 · Eventos** | **Feita.** O dossiê vira a profundidade de um item da agenda (`#/agenda/evento/<id>`), com checklist, presenças e ata |
 | **5 · Corte** | **Feita.** `nro-pessoal` vira encaminhamento e acervo; o app antigo fica em `soma-legado.html` como rede de segurança; `brand`, `selecao` e o tour apontam para o portal |
-| 6 · Renomeação | **preparada.** O UID do iCal já está separado do endereço (era a armadilha 1.5.2); falta o DNS, o `CNAME`, as Redirect URLs do Supabase e trocar `SITE` na Edge Function |
+| **Pessoal no quadro** | **Feita.** Solicitação, apontamento e ocorrência viram cartão no quadro do Depto de Pessoal; o cartão de origem decide e concede o acesso na mesma transação; o quadro do Pessoal fecha (`reservado`) |
+| **Notificação por e-mail** | **Feita.** Edge Function `notificar-email` com SMTP por variável de ambiente, três modos por pessoa (a cada aviso / resumo diário / só no portal), agendamento documentado |
+| 6 · Renomeação | **preparada.** O UID do iCal já está separado do endereço (era a armadilha 1.5.2); falta o DNS, o `CNAME`, as Redirect URLs do Supabase, trocar `SITE` na Edge Function do iCal e `PORTAL_URL` na do e-mail |
+
+Três defeitos que só a execução mostrou, e que valem registro porque a
+mesma armadilha volta:
+
+- **a view era o furo, não a política.** `atividades_quadro` era uma view
+  comum, e view comum roda como dona e ignora RLS. Enquanto todo cartão era
+  público não fazia diferença; no dia em que o quadro do Pessoal passou a
+  guardar pedido de afastamento, fazia toda. Fechar um quadro é fechar a
+  política **e** pôr `security_invoker = true` na view.
+- **rodar a migração de novo reabria o quadro.** O quadro reservado nasceu na
+  16.0 enquanto a política de leitura continuava sendo escrita também pela
+  15.0 — e a 15.0 diz, com razão, que pode rodar de novo. Rodar devolvia
+  "todo mundo lê", sem erro nenhum. Mudou de dona: a trava inteira está na
+  15.0, a 16.0 só diz em qual grupo ela fecha.
+- **módulo dependendo de módulo.** `mod-relatorios` usava `STATUS_LIST`, que
+  era de `mod-gestao`. Quem ia direto para Relatórios sem passar pelo quadro
+  encontrava "STATUS_LIST is not defined" no lugar do formulário. Foi para a
+  casca, junto com `falha()`; `testes/colisoes.mjs` passa a vigiar a família
+  inteira desse defeito.
 
 Duas correções que a execução trouxe ao que estava escrito aqui:
 

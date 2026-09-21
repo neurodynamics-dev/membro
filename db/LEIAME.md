@@ -58,6 +58,47 @@ db/
     └── soma_v13_agenda_unificada.sql        agenda unificada
 ```
 
+## 15.0 e 16.0 — a fase das atividades
+
+| Arquivo | O que faz |
+|---|---|
+| `v15_atividades.sql` | o quadro de trabalho por grupo, os grupos como tabela, as notificações, a edição de marcos e ausências — e a trava do **quadro reservado** |
+| `v16_pessoal.sql` | solicitação, apontamento e ocorrência viram cartão no quadro do Pessoal; a decisão concede acesso na mesma transação; notificação por e-mail |
+
+**Aplique nesta ordem**, e as duas são idempotentes: rodar de novo não
+duplica nada.
+
+Duas coisas que valem saber antes de rodar:
+
+- a 15.0 **semeia os grupos** a partir de `membros.grupos` e dá um prefixo a
+  cada um. O prefixo entra no código de toda atividade (`ORT-14`) e **não muda
+  retroativamente**. Confira antes de a equipe começar a usar:
+  `select id, nome, prefixo from public.grupos order by nome;`
+- a 16.0 escolhe **qual grupo é o do Depto de Pessoal** (procura por "pessoal"
+  ou "pessoas" no nome; não achando, cria um). Confira:
+  `select id, nome, prefixo, reservado from public.grupos where chave = 'pessoal';`
+
+O quadro reservado nasce na **15.0**, e não na 16.0, de propósito: se as duas
+definissem a política de leitura, rodar a 15.0 de novo — coisa que ela diz ser
+segura — devolvia o quadro do Pessoal para "todo mundo lê", em silêncio. Cada
+coisa tem uma dona só.
+
+Os testes das duas estão em [`testes/`](testes/), e rodam em PostgreSQL de
+verdade — não em banco de mentira:
+
+```bash
+createdb t16
+psql -d t16 -f testes/esqueleto.sql
+psql -d t16 -f v15_atividades.sql
+psql -d t16 -f v16_pessoal.sql
+psql -d t16 -f testes/v16_comportamento.sql   # 33 asserções
+psql -d t16 -U <papel não-superusuário> -f testes/v16_rls.sql
+```
+
+O `v16_rls.sql` precisa rodar como um papel **sem** superusuário (e sem ser
+dono das tabelas): RLS não vale para quem tem `BYPASSRLS`, e um teste de RLS
+rodado como `postgres` passa sempre, sem provar nada.
+
 As migrações de 1.0 a 5.0 são anteriores a estes repositórios e não estão
 versionadas em lugar nenhum. Elas criaram o núcleo que tudo usa — `perfis`,
 `membros`, `eventos`, `avaliacoes`, `auditoria`, `itens_de_acesso` — e por isso

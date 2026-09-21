@@ -3,6 +3,12 @@
 -- ATIVIDADES: o quadro de trabalho de cada grupo, com atribuição,
 -- comentários, prazo, sinalização, histórico e notificações.
 --
+-- O quadro é público para a equipe — o trabalho é transparente —,
+-- com uma exceção prevista desde já: um grupo pode ser RESERVADO, e
+-- aí só quem está nele lê os cartões. Serve ao Depto de Pessoal, que
+-- na 16.0 passa a receber pedido de afastamento e de desligamento
+-- como cartão. A trava nasce aqui para ficar num lugar só.
+--
 -- E três acertos na agenda, que vêm junto porque mexem no mesmo
 -- lugar:
 --   a) MARCOS deixam de ser "só back-end": até aqui um marco do
@@ -47,8 +53,15 @@ create table if not exists public.grupos (
   cor       text,
   ativo     boolean not null default true,
   ordem     integer not null default 0,
+  chave     text,
+  reservado boolean not null default false,
   criado_em timestamptz not null default now()
 );
+-- (em bancos que já tinham a tabela)
+alter table public.grupos add column if not exists chave     text;
+alter table public.grupos add column if not exists reservado boolean not null default false;
+create unique index if not exists grupos_chave_ix
+  on public.grupos (chave) where chave is not null;
 
 comment on table public.grupos is
   'Os grupos da equipe. Quem está em cada um continua em membros.grupos; '
@@ -56,6 +69,13 @@ comment on table public.grupos is
 comment on column public.grupos.prefixo is
   'Prefixo do código das atividades (ORT-14). Gerado do nome na primeira '
   'carga; pode ser editado, desde que continue único.';
+comment on column public.grupos.chave is
+  'Nome estável para os grupos que o sistema precisa encontrar sozinho '
+  '("pessoal"). Nulo no resto — o nome do grupo é livre.';
+comment on column public.grupos.reservado is
+  'Quadro fechado: só quem está no grupo (e admin/pessoal) lê os cartões. '
+  'Existe para o quadro do Depto de Pessoal, que recebe pedido de '
+  'afastamento e de desligamento — coisa que a equipe inteira não lê.';
 
 -- Prefixo a partir do nome: sem acento, só letras, três primeiras.
 create or replace function public.grupo_prefixo(p_nome text)
@@ -129,15 +149,29 @@ create table if not exists public.atividades (
   sinalizada_em      timestamptz,
   ordem              numeric not null default 0,
   arquivada          boolean not null default false,
+  origem_tipo        text,
+  origem_id          text,
   criado_em          timestamptz not null default now(),
   atualizado_em      timestamptz not null default now(),
   concluida_em       timestamptz,
-  unique (grupo_id, seq)
+  unique (grupo_id, seq),
+  constraint atividades_origem_tipo_check
+    check (origem_tipo is null or origem_tipo in ('solicitacao','apontamento','ocorrencia')),
+  -- as duas colunas andam juntas ou não andam
+  constraint atividades_origem_par_check
+    check ((origem_tipo is null) = (origem_id is null))
 );
+-- (em bancos que já tinham a tabela)
+alter table public.atividades add column if not exists origem_tipo text;
+alter table public.atividades add column if not exists origem_id   text;
 
 comment on table public.atividades is
   'O trabalho da equipe, um cartão por atividade. O código (ORT-14) é '
   'estável e público: é por ele que as pessoas se referem à atividade.';
+comment on column public.atividades.origem_id is
+  'Um cartão pode ter nascido sozinho ou de um fato — uma solicitação, um '
+  'apontamento, uma ocorrência. Guarda a chave da linha de origem como texto: '
+  'as três tabelas não têm o mesmo tipo de id, e o cartão sobrevive ao fato.';
 comment on column public.atividades.ordem is
   'Posição dentro da coluna. Numérico de propósito: mover um cartão entre '
   'dois outros é a média dos dois, sem reescrever a coluna inteira.';
@@ -145,6 +179,11 @@ comment on column public.atividades.ordem is
 create index if not exists atividades_quadro_ix on public.atividades (grupo_id, status, ordem);
 create index if not exists atividades_resp_ix   on public.atividades (responsavel) where not arquivada;
 create index if not exists atividades_prazo_ix  on public.atividades (prazo) where not arquivada;
+
+-- "exatamente um cartão por fato" é garantia do índice, não da
+-- disciplina de quem escreve o gatilho.
+create unique index if not exists atividades_origem_ix
+  on public.atividades (origem_tipo, origem_id) where origem_tipo is not null;
 
 -- ------------------------------------------------------------
 -- 2b. Comentários
@@ -249,6 +288,11 @@ grant  execute on function public.notificacoes_marcar_lidas(bigint[]) to authent
 --    Leitura é da equipe inteira — o trabalho é transparente, como
 --    a agenda "equipe" já era. Escrita é de quem está no grupo (ou
 --    do Depto. de Pessoal).
+--
+--    A exceção é o grupo RESERVADO: ali só lê quem está no grupo.
+--    Existe um só, o do Depto de Pessoal, e existe porque pedido de
+--    afastamento e de desligamento vira cartão — e isso a equipe
+--    inteira não lê.
 -- ------------------------------------------------------------
 create or replace function public.sou_do_grupo(p_grupo_id integer)
 returns boolean language sql stable security definer
@@ -260,6 +304,17 @@ set search_path = public as $$
   ) or public.papel_atual() in ('admin','pessoal');
 $$;
 
+create or replace function public.posso_ver_grupo(p_grupo_id integer)
+returns boolean language sql stable security definer
+set search_path = public as $$
+  select not coalesce((select reservado from grupos where id = p_grupo_id), false)
+      or public.sou_do_grupo(p_grupo_id);
+$$;
+
+comment on function public.posso_ver_grupo(integer) is
+  'Grupo comum: o trabalho é transparente, todo mundo lê. Grupo reservado: '
+  'só quem está nele (sou_do_grupo já inclui admin e pessoal).';
+
 alter table public.atividades           enable row level security;
 alter table public.atividade_comentarios enable row level security;
 alter table public.atividade_log        enable row level security;
@@ -267,7 +322,7 @@ alter table public.atividade_seguidores enable row level security;
 
 drop policy if exists atv_select on public.atividades;
 create policy atv_select on public.atividades
-  for select to authenticated using (true);
+  for select to authenticated using (public.posso_ver_grupo(grupo_id));
 drop policy if exists atv_write on public.atividades;
 create policy atv_write on public.atividades
   for all to authenticated
@@ -276,13 +331,19 @@ create policy atv_write on public.atividades
 
 drop policy if exists atvc_select on public.atividade_comentarios;
 create policy atvc_select on public.atividade_comentarios
-  for select to authenticated using (true);
+  for select to authenticated
+  using (exists (select 1 from atividades a
+                  where a.id = atividade_id and public.posso_ver_grupo(a.grupo_id)));
 drop policy if exists atvl_select on public.atividade_log;
 create policy atvl_select on public.atividade_log
-  for select to authenticated using (true);
+  for select to authenticated
+  using (exists (select 1 from atividades a
+                  where a.id = atividade_id and public.posso_ver_grupo(a.grupo_id)));
 drop policy if exists atvs_select on public.atividade_seguidores;
 create policy atvs_select on public.atividade_seguidores
-  for select to authenticated using (true);
+  for select to authenticated
+  using (exists (select 1 from atividades a
+                  where a.id = atividade_id and public.posso_ver_grupo(a.grupo_id)));
 -- Comentário, log e seguidor só entram pelas funções abaixo.
 
 -- ============================================================
@@ -560,8 +621,21 @@ end $$;
 -- ------------------------------------------------------------
 
 -- 6a. O quadro, com o que a tela precisa junto
-create or replace view public.atividades_quadro as
-select a.*,
+-- drop + create, e não "create or replace": a view lista colunas em
+-- ordem fixa, e "replace" não aceita mudança de forma. Recriar é
+-- barato (view não guarda dado) e deixa a migração rodar de novo
+-- sem susto.
+drop view if exists public.atividades_quadro;
+create view public.atividades_quadro
+  -- SEM isto a view roda como dona (postgres, que ignora RLS) e
+  -- devolve TODO cartão, política nova ou não — inclusive os do
+  -- quadro reservado. A view seria o furo, não a política.
+  with (security_invoker = true) as
+select a.id, a.codigo, a.grupo_id, a.seq, a.titulo, a.descricao, a.status,
+       a.prioridade, a.responsavel, a.criado_por, a.prazo, a.estimativa_h,
+       a.sinalizada, a.sinalizada_motivo, a.sinalizada_por, a.sinalizada_em,
+       a.ordem, a.arquivada, a.origem_tipo, a.origem_id,
+       a.criado_em, a.atualizado_em, a.concluida_em,
        g.nome    as grupo,
        g.prefixo as grupo_prefixo,
        g.cor     as grupo_cor,
@@ -578,8 +652,13 @@ comment on view public.atividades_quadro is
   'O que a tela do quadro precisa, já resolvido: nome do grupo, do responsável '
   'e de quem criou, contagem de comentários e o cálculo de atrasada.';
 
--- 6b. Carga por membro — quantas atividades abertas cada um carrega
-create or replace view public.atividades_carga as
+-- 6b. Carga por membro — quantas atividades abertas cada um carrega.
+--     Roda como dona de propósito: devolve CONTAGEM, não conteúdo.
+--     Saber que alguém do Pessoal carrega 9 atividades abertas não
+--     conta quem pediu afastamento — e tirar os cartões reservados
+--     da conta faria a carga mentir.
+drop view if exists public.atividades_carga;
+create view public.atividades_carga as
 select m.registro, m.nome, m.grupos,
        count(*) filter (where a.status <> 'concluida')                      as abertas,
        count(*) filter (where a.status = 'fazendo')                         as fazendo,

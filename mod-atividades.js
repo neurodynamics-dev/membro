@@ -11,17 +11,21 @@
      #/atividades/card/<codigo>   uma atividade (ORT-14)
 
    Precisa da migração db/v15_atividades.sql. Sem ela, a tela diz
-   isso em vez de quebrar.
+   isso em vez de quebrar. A db/v16_pessoal.sql acrescenta os
+   cartões que nascem de um fato (solicitação, apontamento,
+   ocorrência) e a decisão que concede acesso — sem ela o quadro
+   funciona igual, só não tem bloco de origem.
 
    Depende da casca para: sb, $, esc, norm, state, can, toast,
    abreModal, fechaModal, fmtD, hojeISO, pad3, avatarFoto,
-   registrarBusca, filtrarSimples, carregarNotificacoes.
+   registrarBusca, filtrarSimples, carregarNotificacoes,
+   state.itensAcesso (catálogo, para conceder na decisão).
    ============================================================ */
 
 const atividades = {
   pronto:false, grupos:[], itens:[], grupoAtual:null, erro:null,
   filtro:{ q:'', pessoa:null, so:'' },   /* so: '' | 'atrasadas' | 'sinalizadas' | 'minhas' */
-  card:null, arrastando:null
+  card:null, arrastando:null, origem:null, reabrir:false
 };
 
 const COLUNAS = [
@@ -37,6 +41,8 @@ const PRIORIDADES = [
   ['alta',   'Alta',     'var(--warn)'],
   ['urgente','Urgente',  'var(--bad)']
 ];
+/* de onde o cartão veio, para o selo do quadro */
+const ROTULO_ORIGEM = { solicitacao:'solicitação', apontamento:'apontamento', ocorrencia:'ocorrência' };
 const rotuloStatus = s => (COLUNAS.find(c => c[0] === s) || [,s])[1];
 const corPrioridade = p => (PRIORIDADES.find(x => x[0] === p) || [,,'var(--dim)'])[2];
 const rotuloPrioridade = p => (PRIORIDADES.find(x => x[0] === p) || [,p])[1];
@@ -196,7 +202,11 @@ function cartaoHTML(a){
     ondrop="event.stopPropagation();soltarEm(event,'${a.status}','${a.id}')"
     onclick="location.hash='#/atividades/card/${a.codigo}'">
     <div class="kb-top">
-      <span class="cod">${esc(a.codigo)}</span>
+      <span style="display:flex;align-items:center;min-width:0">
+        <span class="cod">${esc(a.codigo)}</span>
+        ${a.origem_tipo ? `<span class="org" title="Nasceu de uma ${esc(ROTULO_ORIGEM[a.origem_tipo] || a.origem_tipo)}"
+          >${esc(ROTULO_ORIGEM[a.origem_tipo] || a.origem_tipo)}</span>` : ''}
+      </span>
       <span class="pri" style="background:${corPrioridade(a.prioridade)}"
         title="Prioridade ${rotuloPrioridade(a.prioridade).toLowerCase()}"></span>
     </div>
@@ -314,6 +324,7 @@ async function salvarNovaAtividade(){
    O CARTÃO — #/atividades/card/<codigo>
    ============================================================ */
 async function telaCard(codigo){
+  if (norm(atividades.card?.codigo || '') !== norm(codigo)) atividades.reabrir = false;
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando ${esc(codigo)}…</div>`;
   await atvCarregar(true);
   const a = atividades.itens.find(x => norm(x.codigo) === norm(codigo));
@@ -325,15 +336,17 @@ async function telaCard(codigo){
     return;
   }
   atividades.card = a;
-  const [c, l, s] = await Promise.all([
+  const [c, l, s, o] = await Promise.all([
     sb.from('atividade_comentarios').select('*').eq('atividade_id', a.id).order('criado_em'),
     sb.from('atividade_log').select('*').eq('atividade_id', a.id).order('criado_em', { ascending:false }).limit(40),
-    sb.from('atividade_seguidores').select('registro').eq('atividade_id', a.id)
+    sb.from('atividade_seguidores').select('registro').eq('atividade_id', a.id),
+    a.origem_tipo ? sb.rpc('atividade_origem_detalhe', { p_codigo: a.codigo }) : Promise.resolve({ data:null })
   ]);
-  desenhaCard(a, c.data || [], l.data || [], (s.data || []).map(x => x.registro));
+  atividades.origem = o.data || null;
+  desenhaCard(a, c.data || [], l.data || [], (s.data || []).map(x => x.registro), o.data || null);
 }
 
-function desenhaCard(a, comentarios, log, seguidores){
+function desenhaCard(a, comentarios, log, seguidores, origem){
   const sigo = seguidores.includes(state.perfil?.registro);
   const dono = (state.membros || []).find(m => m.registro === a.responsavel);
   const pes  = pessoasDoGrupoDe(a.grupo_id, a.responsavel);
@@ -359,6 +372,7 @@ function desenhaCard(a, comentarios, log, seguidores){
 
     <div class="cd-grade">
       <div>
+        ${blocoOrigem(a, origem)}
         <div class="card" style="margin-bottom:16px">
           <h3>Descrição</h3>
           <div id="cd-desc" class="cd-desc editavel" onclick="editarDescricao()">${
@@ -431,6 +445,196 @@ function desenhaCard(a, comentarios, log, seguidores){
     </div>`;
 }
 
+/* ============================================================
+   DE ONDE VEIO O CARTÃO
+   Um cartão do quadro do Pessoal pode ter nascido de uma
+   solicitação, de um apontamento ou de uma ocorrência. Este bloco
+   mostra o fato e — quando é solicitação — decide.
+
+   Decidir aqui faz o que antes eram dois passos em duas telas:
+   responder a solicitação e conceder o acesso na ficha. Quem
+   esquecia o segundo deixava a pessoa com um "aprovado" que não
+   abria porta nenhuma.
+   ============================================================ */
+/* STATUS_SOL e TIPOS_SOL são da casca — módulo não redeclara o que a
+   casca já é dona de nomear (e, em script clássico, redeclarar um
+   const global derruba o módulo inteiro na hora de carregar). */
+/* rótulos dos campos que cada tipo de solicitação guarda em "dados" */
+const ROTULO_DADOS = {
+  item:'Item pedido', justificativa:'Justificativa', tempo_necessario:'Por quanto tempo',
+  observacoes:'Observações', data_inicio:'Início', data_fim:'Fim', motivo:'Motivo',
+  data_prevista:'Data prevista', gestor_registro:'Gestor', tema:'Tema',
+  preferencia:'Preferência', urgencia:'Urgência', descricao:'Descrição'
+};
+
+function blocoOrigem(a, o){
+  if (!a.origem_tipo) return '';
+  if (!o) return `<div class="card" style="margin-bottom:16px"><h3>De onde veio</h3>
+    <p class="sub">Este cartão nasceu de ${esc(a.origem_tipo)}, mas o registro de
+      origem não foi encontrado — pode ter sido apagado.</p></div>`;
+  if (o.status === 'sem_permissao') return `<div class="card" style="margin-bottom:16px">
+    <h3>De onde veio</h3><p class="sub">Você não tem acesso ao conteúdo da origem.</p></div>`;
+
+  if (o.tipo === 'solicitacao')  return origemSolicitacao(o);
+  if (o.tipo === 'ocorrencia')   return origemOcorrencia(o);
+  if (o.tipo === 'apontamento')  return origemApontamento(o);
+  return '';
+}
+
+const linhaDl = (dt, dd) => `<div class="it"><dt>${esc(dt)}</dt><dd>${dd}</dd></div>`;
+
+function origemSolicitacao(o){
+  const dados = o.dados || {};
+  const campos = Object.keys(dados)
+    .filter(k => k !== 'item_id' && dados[k] != null && String(dados[k]).trim() !== '')
+    .map(k => linhaDl(ROTULO_DADOS[k] || k, esc(String(dados[k])))).join('');
+  const fechada = ['aprovada','recusada','concluida','cancelada'].includes(o.status)
+                  && !atividades.reabrir;
+
+  return `<div class="card" style="margin-bottom:16px">
+    <h3>De onde veio</h3>
+    <p class="sub" style="margin-bottom:14px">Solicitação ${esc(o.protocolo || '')} —
+      ${esc(TIPOS_SOL[o.especie] || o.especie)} · <span class="pill"><span class="dt"
+        style="background:${esc(STATUS_SOL[o.status]?.c || 'var(--dim)')}"></span
+        >${esc(STATUS_SOL[o.status]?.l || o.status)}</span></p>
+    <div class="dl">
+      ${linhaDl('Quem pediu', `<a href="#/equipe/${o.registro}">${esc(o.membro || ('Registro '+o.registro))}</a>`)}
+      ${linhaDl('Aberta em', fmtD(String(o.criado_em).slice(0,10)))}
+      ${campos}
+    </div>
+    ${o.resposta ? `<div class="aviso-box" style="margin-top:14px"><b>Resposta:</b>
+      ${esc(o.resposta)}<br><span class="small muted">${esc(o.respondido_por || '')}${
+        o.respondido_em ? ' · ' + fmtD(String(o.respondido_em).slice(0,10)) : ''}</span></div>` : ''}
+    ${can() ? formDecisao(o, fechada) : (fechada ? '' :
+      `<p class="sub" style="margin-top:14px">Só o Depto de Pessoal decide esta solicitação.</p>`)}
+  </div>`;
+}
+
+function formDecisao(o, fechada){
+  const itens = (state.itensAcesso || []);
+  const jaAtivo = new Set((o.acessos || []).filter(x => x.ativo).map(x => x.item_id));
+  const pedido  = (o.dados || {}).item_id || null;
+  /* o pedido ainda não concedido vem marcado: é a resposta mais provável */
+  const marcado = id => id === pedido && !jaAtivo.has(id);
+
+  const listaAcessos = o.especie !== 'acesso' ? '' : `
+    <div class="fld full" style="margin-top:4px">
+      <label>Conceder acesso a</label>
+      ${itens.length ? `<div class="multi" style="max-height:none">${itens.map(i => `
+        <label class="check"><input type="checkbox" class="dec-item" value="${esc(i.id)}"
+          ${marcado(i.id) ? 'checked' : ''} ${jaAtivo.has(i.id) ? 'disabled' : ''}>
+          <span>${esc(i.nome)}${jaAtivo.has(i.id) ? ' — já concedido' : ''}</span>
+        </label>`).join('')}</div>`
+        : '<p class="sub">O catálogo de acessos está vazio.</p>'}
+      <p class="small muted" style="margin-top:6px">O que você marcar entra no quadro de
+        acessos da pessoa junto com a decisão — não precisa passar pela ficha depois.</p>
+    </div>`;
+
+  if (fechada) return `<div class="acts" style="margin-top:14px">
+    <button class="btn ghost" onclick="reabrirDecisao()">Rever a decisão</button></div>`;
+
+  return `<div id="dec-form" style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px">
+    <h3 style="margin-bottom:4px">Decidir</h3>
+    <div class="form-grid" style="margin-top:12px">
+      <div class="fld"><label>Decisão</label>
+        <select id="dec-status">
+          <option value="aprovada">Aprovar</option>
+          <option value="recusada">Recusar</option>
+          <option value="em_analise">Deixar em análise</option>
+        </select></div>
+      <div class="fld full"><label>Resposta para quem pediu</label>
+        <textarea id="dec-resposta" rows="3"
+          placeholder="Obrigatória para recusar — ninguém merece um &quot;não&quot; sem explicação."></textarea></div>
+      ${listaAcessos}
+    </div>
+    <div class="acts" style="margin-top:14px">
+      <button class="btn solid" id="dec-btn" onclick="decidirSolicitacao()">Registrar decisão</button>
+    </div>
+  </div>`;
+}
+
+/* Rever uma decisão já tomada. O sinalizador vive no estado do módulo
+   porque telaCard() recarrega a origem do banco: guardá-lo no objeto da
+   origem seria apagado no caminho de volta. */
+function reabrirDecisao(){
+  atividades.reabrir = true;
+  if (atividades.card) telaCard(atividades.card.codigo);
+}
+
+async function decidirSolicitacao(){
+  const o = atividades.origem, a = atividades.card;
+  if (!o || !a) return;
+  const decisao  = $('#dec-status').value;
+  const resposta = $('#dec-resposta').value.trim();
+  if (decisao === 'recusada' && !resposta)
+    return toast('Escreva o porquê antes de recusar.', true);
+
+  const conceder = [...document.querySelectorAll('.dec-item:checked')].map(c => c.value);
+  const btn = $('#dec-btn'); if (btn){ btn.disabled = true; btn.textContent = 'Registrando…'; }
+  try{
+    const { data, error } = await sb.rpc('pessoal_solicitacao_decidir', {
+      p: { solicitacao_id:o.id, decisao, resposta: resposta || null, conceder }
+    });
+    if (error) throw error;
+    if (data?.status === 'sem_permissao') return toast('Seu papel não decide solicitações.', true);
+    if (data?.status === 'nao_encontrada') return toast('A solicitação não existe mais.', true);
+    if (data?.status === 'invalido')
+      return toast(data.campo === 'resposta' ? 'Escreva o porquê antes de recusar.'
+                                             : 'Decisão inválida.', true);
+    const n = data?.concedidos || 0;
+    toast(n ? `Decisão registrada e ${n} acesso(s) concedido(s).` : 'Decisão registrada.');
+    atividades.reabrir = false;
+    if (typeof carregarNotificacoes === 'function') await carregarNotificacoes();
+    await telaCard(a.codigo);
+  }catch(e){
+    toast('Não foi possível registrar: ' + (e.message || e), true);
+  }finally{
+    const b = $('#dec-btn'); if (b){ b.disabled = false; b.textContent = 'Registrar decisão'; }
+  }
+}
+
+function origemOcorrencia(o){
+  return `<div class="card" style="margin-bottom:16px">
+    <h3>De onde veio</h3>
+    <p class="sub" style="margin-bottom:14px">Ocorrência registrada na ficha do membro</p>
+    <div class="dl">
+      ${linhaDl('Tipo', esc(o.especie || '—'))}
+      ${linhaDl('Membro', `<a href="#/equipe/${o.registro}">${esc(o.membro || ('Registro '+o.registro))}</a>`)}
+      ${linhaDl('Data', o.data ? fmtD(String(o.data).slice(0,10)) : '—')}
+      ${linhaDl('Registrada por', esc(o.responsavel || '—'))}
+      ${o.descricao ? linhaDl('Descrição', esc(o.descricao)) : ''}
+    </div>
+    <div class="acts" style="margin-top:14px">
+      <a class="btn ghost" href="#/equipe/${o.registro}">Abrir a ficha</a></div>
+  </div>`;
+}
+
+function origemApontamento(o){
+  const itens = o.itens || [];
+  const sin = itens.filter(i => i.sinalizado);
+  return `<div class="card" style="margin-bottom:16px">
+    <h3>De onde veio</h3>
+    <p class="sub" style="margin-bottom:14px">Apontamento semanal do grupo
+      ${esc(o.grupo || '—')}${o.data ? ' — ' + fmtD(String(o.data).slice(0,10)) : ''}</p>
+    <div class="dl">
+      ${linhaDl('Entregue por', esc(o.responsavel || '—'))}
+      ${linhaDl('Pessoas no apontamento', String(itens.length))}
+      ${linhaDl('Sinalizadas', sin.length ? `<b style="color:var(--warn)">${sin.length}</b>` : '0')}
+    </div>
+    ${itens.length ? `<table class="tabela trabalho" style="margin-top:14px">
+      <thead><tr><th>Membro</th><th>Assiduidade</th><th>Entregas</th><th>Sinalização</th></tr></thead>
+      <tbody>${itens.map(i => `<tr>
+        <td>${esc(i.membro || ('Registro '+i.registro))}</td>
+        <td>${esc(i.assiduidade || '—')}</td>
+        <td>${esc(i.entregas || '—')}</td>
+        <td>${i.sinalizado
+          ? `<span class="pill p-warn"><span class="dt dt-warn"></span>Sim</span>${
+              i.justificativa ? `<div class="small muted" style="margin-top:4px">${esc(i.justificativa)}</div>` : ''}`
+          : '—'}</td>
+      </tr>`).join('')}</tbody></table>` : ''}
+  </div>`;
+}
+
 /* As pessoas que podem responder por uma atividade do grupo — mais quem
    já responde por ela. Sem essa segunda parte, alguém que saiu do grupo
    sumia da lista, o seletor caía em "ninguém" e o próximo salvamento
@@ -456,6 +660,8 @@ function frasesLog(e){
     case 'sinalizou':    return e.para ? `Sinalizou: ${e.para}` : 'Sinalizou como precisando de atenção';
     case 'dessinalizou': return 'Tirou a sinalização';
     case 'comentou':     return 'Comentou';
+    case 'decidiu':      return `Decidiu a solicitação: ${e.de||'aberta'} → ${e.para}`;
+    case 'concedeu':     return `Concedeu acesso: ${e.para}`;
     case 'editou':       return 'Editou o conteúdo';
     default:             return e.tipo;
   }

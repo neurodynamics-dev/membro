@@ -1,0 +1,9 @@
+{
+  "name": "membro-testes",
+  "private": true,
+  "type": "module",
+  "description": "Testes de navegador do portal. Rode `npm install` aqui antes da primeira vez.",
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

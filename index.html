@@ -159,6 +159,10 @@ nav.hd-nav a.on::after{content:'';display:block;height:1.5px;margin:1px 2px 0;ba
 .sn-item .tt{font-size:13px;font-weight:600;margin-bottom:2px}
 .sn-item .cp{font-size:12px;color:var(--muted);line-height:1.5}
 .sn-item .qd{font-family:var(--fm);font-size:10px;color:var(--dim);margin-top:4px}
+.sn-pe{border-top:1px solid var(--line);padding:9px 14px;text-align:right}
+.sn-pe button{background:none;border:none;color:var(--dim);font-family:inherit;font-size:11.5px;
+  cursor:pointer;padding:2px 4px;border-radius:6px;transition:color .15s}
+.sn-pe button:hover{color:var(--syn)}
 .sn-vazio{padding:28px 16px;text-align:center;color:var(--dim);font-size:12.5px}
 
 .adm-grupo{font-family:var(--fm);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
@@ -188,6 +192,8 @@ nav.hd-nav a.on::after{content:'';display:block;height:1.5px;margin:1px 2px 0;ba
 .kb-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .kb-top .cod{font-family:var(--fm);font-size:10px;letter-spacing:.06em;color:var(--syn)}
 .kb-top .pri{width:7px;height:7px;border-radius:50%;flex:none}
+.kb-top .org{font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--dim);border:1px solid var(--line2);border-radius:5px;padding:1px 5px;margin-left:7px}
 .kb-tit{font-size:13.5px;line-height:1.4;color:var(--ink)}
 .kb-flag{font-size:12px;color:var(--warn);margin-top:6px;line-height:1.45}
 .kb-pe{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
@@ -1116,7 +1122,24 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
 /* lista de caixas de seleção em coluna (grupos, status, locais) */
 .multi{display:flex;flex-direction:column;gap:7px;max-height:210px;overflow-y:auto;
   border:1px solid var(--line2);border-radius:11px;padding:11px 13px;background:rgba(255,255,255,.03)}
-.multi .check{margin:0}
+.multi .check{margin:0;text-transform:none;letter-spacing:normal;font-weight:400}
+/* o caixa-alta é do RÓTULO do campo, não do que está dentro dele: nome de
+   grupo, de sistema e de pessoa são dado, e dado se lê como foi escrito */
+
+/* editor de pills (grupos na ficha): parece um campo, é uma lista */
+.pills-ed{display:flex;flex-wrap:wrap;align-items:center;gap:7px;min-height:42px;
+  background:rgba(255,255,255,.05);border:1px solid var(--line2);border-radius:11px;
+  padding:7px 9px;cursor:text;transition:border-color .15s,background .15s}
+.pills-ed:focus-within{border-color:var(--syn);background:rgba(255,255,255,.07)}
+.pills-ed input{flex:1 1 130px;min-width:130px;border:none;background:none;padding:2px 2px;
+  border-radius:0;font-size:14px;color:var(--ink)}
+.pills-ed input:focus-visible{outline:none}
+.pill-ed{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink);
+  background:rgba(206,220,0,.10);border:1px solid rgba(206,220,0,.30);
+  border-radius:8px;padding:3px 4px 3px 9px;line-height:1.4}
+.pill-ed button{border:none;background:none;color:var(--dim);cursor:pointer;font-size:15px;
+  line-height:1;padding:0 4px;border-radius:5px;transition:color .15s,background .15s}
+.pill-ed button:hover{color:var(--bad);background:rgba(241,128,111,.14)}
 
 /* área de soltar arquivo, na importação */
 .dropzone{border:1.5px dashed var(--line2);border-radius:14px;padding:30px 20px;text-align:center;
@@ -1327,6 +1350,7 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
   <div class="sn-topo"><b>Notificações</b>
     <button onclick="marcarTudoLido()" id="sn-lidas">marcar todas como lidas</button></div>
   <div id="sn-lista"></div>
+  <div class="sn-pe"><button onclick="modalPreferenciaNotif()">Preferências de e-mail</button></div>
 </div>
 
 <main id="main" hidden></main>
@@ -1382,7 +1406,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '14.0';
+const VERSAO = '16.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -1403,6 +1427,13 @@ const AG_JANELA = 8;                    // dias carregados de uma vez
 const AG_DURACOES = [15, 30, 45, 60, 90, 120];
 const EXPEDIENTE = { inicio:'08:00', fim:'18:00', dias:[1,2,3,4,5] };
 const DIAS_LB = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];   // ISO: 1 = segunda
+
+/* Vocabulário e utilidades que MAIS DE UM módulo usa. Ficam aqui, e não
+   no módulo que os inventou, porque módulo não depende de módulo: quem
+   abre Relatórios sem passar pelo quadro não tem mod-gestao carregada. */
+const STATUS_LIST = ['Ativo','Em pausa / avaliação','Sob demanda','Desligado','Egresso'];
+const falha = (e, ctx) => { console.error(ctx, e);
+  toast((ctx ? ctx + ': ' : '') + (e?.message || 'erro inesperado'), true); };
 
 const STATUS_SOL = {
   aberta:     {l:'Aberta',      c:'#2DD4BF'},
@@ -1744,6 +1775,10 @@ async function abrirPortal(){
   state.membros = m.data || [];
   sb.from('itens_de_acesso').select('*').order('ordem')
     .then(r => { state.itensAcesso = (r.data||[]).filter(i=>i.ativo!==false); });
+  /* o catálogo de grupos (v15). Sem a migração vem erro e fica lista
+     vazia — quem usa cai de volta nos grupos que o quadro já tem. */
+  sb.from('grupos').select('id,nome,prefixo,cor,ativo,reservado').order('nome')
+    .then(r => { state.grupos = (r.data||[]).filter(g=>g.ativo!==false); });
   $('#u-nome').textContent = primeiroNome(state.perfil.nome || state.perfil.email);
   $('#menu-user').textContent = state.perfil.nome || state.perfil.email;
   const lf = $('#logo-ft');
@@ -1984,6 +2019,64 @@ async function irNotificacao(id, href){
   await carregarNotificacoes();
   if (href) location.hash = href.replace(/^#/,'');
 }
+/* ============================================================
+   PREFERÊNCIA DE E-MAIL
+   O sininho só avisa quem está com o portal aberto. Quem entra uma
+   vez por semana precisa do e-mail — e quem entra toda hora precisa
+   poder desligá-lo. As três opções são o contrato inteiro.
+   ============================================================ */
+const MODOS_NOTIF = [
+  ['imediato', 'A cada aviso',
+   'Um e-mail com o que apareceu. Avisos da mesma hora chegam juntos, num e-mail só.'],
+  ['resumo',   'Um resumo por dia',
+   'No máximo um e-mail por dia, com tudo o que ficou pendente.'],
+  ['nunca',    'Só no portal',
+   'Nenhum e-mail. Os avisos continuam no sininho.']
+];
+
+async function modalPreferenciaNotif(){
+  fecharSino();
+  let atual = 'imediato';
+  try{
+    const { data } = await sb.from('notificacao_preferencias')
+      .select('email_modo').eq('registro', state.perfil?.registro).maybeSingle();
+    if (data?.email_modo) atual = data.email_modo;
+  }catch(e){ /* sem a migração, fica no padrão — a tela ainda serve */ }
+
+  abreModal(`<h3>Notificações por e-mail</h3>
+    <p class="sub" style="margin-bottom:18px">Para onde vão os avisos do portal</p>
+    <div class="multi" style="max-height:none">
+      ${MODOS_NOTIF.map(([k, t, d]) => `<label class="check">
+        <input type="radio" name="pn-modo" value="${k}" ${k===atual?'checked':''}>
+        <span><b style="color:var(--ink)">${t}</b><br>${d}</span></label>`).join('')}
+    </div>
+    <p class="small muted" style="margin-top:14px">O e-mail vai para o seu endereço NRO;
+      se não houver, para o pessoal. O Depto. de Pessoal atualiza os dois na sua ficha.</p>
+    <div class="acts" style="justify-content:flex-end">
+      <button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" id="pn-btn" onclick="salvarPreferenciaNotif()">Salvar</button></div>`);
+}
+
+async function salvarPreferenciaNotif(){
+  const el = document.querySelector('input[name="pn-modo"]:checked');
+  if (!el) return;
+  const b = $('#pn-btn'); if (b){ b.disabled = true; b.textContent = 'Salvando…'; }
+  try{
+    const { data, error } = await sb.rpc('notificacao_preferencia_salvar', { p: { email_modo: el.value } });
+    if (error) throw error;
+    if (data?.status === 'sem_registro')
+      return toast('A sua conta ainda não está ligada a um registro do quadro.', true);
+    if (data?.status !== 'ok') return toast('Não foi possível salvar.', true);
+    fechaModal();
+    toast(el.value === 'nunca' ? 'Avisos só no portal, a partir de agora.'
+                               : 'Preferência salva.');
+  }catch(e){
+    toast('Não foi possível salvar: ' + (e.message || e), true);
+  }finally{
+    const x = $('#pn-btn'); if (x){ x.disabled = false; x.textContent = 'Salvar'; }
+  }
+}
+
 async function marcarTudoLido(){
   await sb.rpc('notificacoes_marcar_lidas', { p_ids: null });
   await carregarNotificacoes(); fecharSino();

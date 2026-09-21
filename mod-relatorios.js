@@ -73,8 +73,13 @@ function pageRelatorios(){
   if (podeSelecao())
     t('flag','E-mails dos candidatos','O envio para os candidatos do processo seletivo, por status da fase.','modalEmailsCandidatos()');
   t('mailer','Full mailer','Um e-mail no padrão NeuroDynamics — tema por área, logo recolorida e HTML pronto.','modalMailer()');
-  t('key','Lista de autorizados','Quem tem acesso ativo a um sistema, local ou documento — em PDF.','modalAutorizados()');
-  t('down','Quadro completo','Exportação geral do quadro em Excel ou PDF, com filtros.','modalQuadro()');
+  /* Estes dois expõem o quadro inteiro — quem tem acesso a quê e a
+     exportação geral. Ficam com can(): a Comissão de Seleção precisa
+     dos e-mails dos candidatos, não do efetivo. */
+  if (can()){
+    t('key','Lista de autorizados','Quem tem acesso ativo a um sistema, local ou documento — em PDF.','modalAutorizados()');
+    t('down','Quadro completo','Exportação geral do quadro em Excel ou PDF, com filtros.','modalQuadro()');
+  }
 
   $('#sec-relatorios').innerHTML = `
     <p class="sub" style="margin-bottom:18px">Tudo daqui sai para imprimir ou colar em e-mail —
@@ -781,6 +786,7 @@ function relEmlCandsEnviar(via){
 }
 /* --- 4. lista de autorizados --- */
 function modalAutorizados(){
+  if (!can()) return toast('Este relatório é da administração.', true);
   abreModal(`<h3>Lista de autorizados</h3>
     <div class="form-grid">
       <div class="fld full"><label>Sistema, local ou documento</label>
@@ -817,6 +823,7 @@ async function gerarAutorizados(){
 }
 /* --- 5. quadro completo --- */
 function modalQuadro(){
+  if (!can()) return toast('Este relatório é da administração.', true);
   abreModal(`<h3>Exportar quadro completo</h3>
     <div class="form-grid">
       <div class="fld full"><label>Grupos (vazio = todos)</label>${grupoCheckboxes('g-qd')}</div>
@@ -879,13 +886,18 @@ registrarBusca({
   fonte:'relatorios', rotulo:'Relatórios',
   buscar: (t) => {
     if (!can() && !podeSelecao()) return [];
-    return filtrarSimples([
+    /* a busca não pode achar o que a galeria esconde */
+    const itens = [
+      { titulo:'Lista de e-mails', sub:'Por grupo e status', href:'#/admin/relatorios' },
+      { titulo:'Full mailer', sub:'E-mail no padrão da marca', href:'#/admin/relatorios' }
+    ];
+    if (podeSelecao())
+      itens.push({ titulo:'E-mails dos candidatos', sub:'Por status da fase', href:'#/admin/relatorios' });
+    if (can()) itens.push(
       { titulo:'Lista para a portaria', sub:'Autorização de entrada', href:'#/admin/relatorios' },
       { titulo:'Lista de assinatura em evento', sub:'Presença para imprimir', href:'#/admin/relatorios' },
-      { titulo:'Lista de e-mails', sub:'Por grupo e status', href:'#/admin/relatorios' },
-      { titulo:'Full mailer', sub:'E-mail no padrão da marca', href:'#/admin/relatorios' },
       { titulo:'Lista de autorizados', sub:'Quem tem acesso a quê', href:'#/admin/relatorios' },
-      { titulo:'Quadro completo', sub:'Exportar em Excel ou PDF', href:'#/admin/relatorios' }
-    ], t, 5);
+      { titulo:'Quadro completo', sub:'Exportar em Excel ou PDF', href:'#/admin/relatorios' });
+    return filtrarSimples(itens, t, 5);
   }
 });
