@@ -500,7 +500,11 @@ const SOCIAIS_MAILER = [
    cor de acento) são PNGs na pasta /mailer deste repositório, servidos
    pelo GitHub Pages no domínio do SOMA. Ao criar um TEMA NOVO em
    THEMES_MAILER, gere os PNGs da nova cor (ver mailer/README.md). */
-const MAILER_IMG_BASE = 'https://pessoal.neurodynamics.dev/mailer/';
+/* As imagens do e-mail moram aqui a partir da unificação. A mesma pasta
+   continua no repositório antigo, servida por pessoal.neurodynamics.dev:
+   e-mail já enviado aponta para lá e não dá para reescrever a caixa de
+   entrada de ninguém. */
+const MAILER_IMG_BASE = 'https://membro.neurodynamics.dev/mailer/';
 const _hexArq = (hex)=> String(hex).replace('#','').toLowerCase();
 const mailerLogoURL = (hex)=> `${MAILER_IMG_BASE}logo-${_hexArq(hex)}.png`;
 function _socialImg(k, cor){

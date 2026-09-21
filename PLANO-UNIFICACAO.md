@@ -19,7 +19,7 @@ As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para 
 | **Agenda (revisão)** | **Feita.** Tudo editável depois de criado; marcos e ausências saem do back-end; nenhum tipo força recorrência |
 | **2 · Operações** | **Feita.** Apontamento em Equipe; relatórios, importação, contas e catálogo viram painéis de Administração, agora em galeria |
 | **3 · Eventos** | **Feita.** O dossiê vira a profundidade de um item da agenda (`#/agenda/evento/<id>`), com checklist, presenças e ata |
-| 5 · Corte | a fazer |
+| **5 · Corte** | **Feita.** `nro-pessoal` vira encaminhamento e acervo; o app antigo fica em `soma-legado.html` como rede de segurança; `brand`, `selecao` e o tour apontam para o portal |
 | 6 · Renomeação | a fazer |
 
 Duas correções que a execução trouxe ao que estava escrito aqui:

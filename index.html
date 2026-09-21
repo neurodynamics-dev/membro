@@ -1346,7 +1346,7 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
           <li><a href="https://neurodynamics.dev" target="_blank" rel="noopener">Site institucional</a></li>
           <li><a href="https://selecao.neurodynamics.dev" target="_blank" rel="noopener">Processo seletivo</a></li>
           <li><a href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">Brand guidelines</a></li>
-          <li><a href="https://pessoal.neurodynamics.dev" target="_blank" rel="noopener">Sistema de gestão (SOMA)</a></li>
+          <li><a href="#/equipe">Equipe e quadro de pessoal</a></li>
           <li><a href="#/agenda">Agenda, presença e check-in</a></li>
         </ul>
       </div>
@@ -2054,7 +2054,8 @@ function trilhoFerramentas(){
     ${fer('pessoas','Organização','Organograma e quem faz o quê','#/organizacao')}
     ${fer('doc','Documentos','Estatuto, políticas e formulários','#/informacoes')}
     <div class="grp">Sistemas</div>
-    ${fer('pessoas','SOMA · Gestão','Cadastro, OKRs e relatórios','https://pessoal.neurodynamics.dev',1)}
+    ${podeQuadro() ? fer('pessoas','Quadro de pessoal','Fichas, ocorrências e acessos','#/equipe/quadro') : ''}
+    ${fer('agenda','Atividades','O quadro do seu grupo','#/atividades')}
     ${fer('bussola','Tour dos sistemas','Novo por aqui? Comece aqui','tour')}
     ${admin ? fer('doc','Painel do portal','Avisos, documentos e solicitações','admin') : ''}
     <div class="grp">Institucional</div>

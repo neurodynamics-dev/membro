@@ -58,8 +58,8 @@ SOMA · Gestão está sendo trazido, conforme o
 - **Meus pedidos** — acompanhamento das solicitações, com status e
   resposta do Depto. de Pessoal, e cancelamento enquanto pendente.
 - **Ferramentas da equipe** — trilho na página inicial com tudo o que a
-  NeuroDynamics usa: agenda, organização, documentos, SOMA · Gestão, tour,
-  site institucional, brand guidelines, processo seletivo e GitHub.
+  NeuroDynamics usa: agenda, atividades, equipe, documentos, tour, site
+  institucional, brand guidelines, processo seletivo e GitHub.
 
 ## Como o sistema se organiza
 
@@ -149,6 +149,9 @@ Duas coisas que a unificação trouxe de graça:
 | `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados, quadro completo e o Full mailer |
 | `mod-evento.js` | O dossiê de um compromisso: preparo, presenças e ata (`#/agenda/evento/<id>`) |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
+| `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
+| `mailer/`      | Ícones e logos recoloridas que o Full mailer embute nos e-mails |
+| `tour.html`    | O tour pelos sistemas da equipe |
 | [`PADROES.md`](PADROES.md) | Os padrões do sistema: navegação, rotas, busca, módulos, identidade |
 | `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |
 | `supabase/functions/agenda-sync/` | Edge Function (arquivo único) que lê o `.ics` de cada um e grava os horários ocupados ([detalhes](supabase/functions/agenda-sync/README.md)) |
@@ -222,9 +225,10 @@ pelo painel, sem CLI):
   publicada com a verificação de JWT desligada**, porque quem busca o arquivo
   é o Google, sem sessão.
 
-Do lado do repositório `nro-pessoal`, publique também o `quiosque.html` (o QR
-do check-in passa a levar ao portal) e o `app.html` (o SOMA App vira um
-encaminhamento, para os QRs e favoritos antigos continuarem funcionando).
+O repositório `nro-pessoal` deixa de ser um app: `pessoal.neurodynamics.dev`
+passa a só encaminhar, e continua servindo duas pastas que não podem sumir —
+`mailer/` (as imagens dos e-mails já enviados apontam para lá) e `fotos/` (as
+fotos do quadro, buscadas por `raw.githubusercontent.com`).
 
 ## Uma agenda só
 
