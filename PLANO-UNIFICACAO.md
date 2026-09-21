@@ -20,7 +20,7 @@ As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para 
 | **2 · Operações** | **Feita.** Apontamento em Equipe; relatórios, importação, contas e catálogo viram painéis de Administração, agora em galeria |
 | **3 · Eventos** | **Feita.** O dossiê vira a profundidade de um item da agenda (`#/agenda/evento/<id>`), com checklist, presenças e ata |
 | **5 · Corte** | **Feita.** `nro-pessoal` vira encaminhamento e acervo; o app antigo fica em `soma-legado.html` como rede de segurança; `brand`, `selecao` e o tour apontam para o portal |
-| 6 · Renomeação | a fazer |
+| 6 · Renomeação | **preparada.** O UID do iCal já está separado do endereço (era a armadilha 1.5.2); falta o DNS, o `CNAME`, as Redirect URLs do Supabase e trocar `SITE` na Edge Function |
 
 Duas correções que a execução trouxe ao que estava escrito aqui:
 
@@ -474,10 +474,11 @@ levar o token do QR até o check-in.
    isso, criar conta e recuperar senha param de funcionar** — os links do
    e-mail voltam para um endereço não autorizado. O código não precisa mudar:
    `URL_APP()` já se deriva de `location.origin` (`nro-pessoal/index.html:749`).
-5. **Edge Function `agenda-ics`:** separar as duas constantes —
-   `UID_DOMINIO = "membro.neurodynamics.dev"` (**congelado para sempre**,
-   armadilha 1.5.2) e `SITE = "soma.neurodynamics.dev"` para o link da
-   descrição (linha 147). Republicar.
+5. **Edge Function `agenda-ics`:** ~~separar as duas constantes~~ **já
+   separadas.** `UID_DOMINIO` está congelado em `membro.neurodynamics.dev`
+   com a explicação ao lado, e o teste do feed falha se alguém o trocar.
+   Na virada, basta mudar `SITE` para `soma.neurodynamics.dev` e
+   republicar a função.
    O endereço do feed que as pessoas assinaram aponta para
    `…supabase.co/functions/v1/agenda-ics` e **não** é afetado pela renomeação.
 6. **Edge Function `agenda-sync`:** conferir se há referência ao domínio.
