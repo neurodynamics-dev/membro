@@ -92,6 +92,10 @@ O quadro de trabalho de cada grupo, em `#/atividades`:
 - o quadro mostra de saída quantas estão **atrasadas**, **sinalizadas** e
   **sem responsável**, e filtra por pessoa ou por recorte;
 - **Carga da equipe** mostra quanto cada pessoa está carregando;
+- **cada quadro tem o seu público**: aberto, que toda a equipe lê, ou fechado,
+  que só abre para quem está no grupo mais quem receber acesso em
+  *Administração → Grupos*. Quadro fechado continua **aparecendo** para todo
+  mundo, com cadeado — quem não entra sabe que ele existe e a quem pedir;
 - **todo movimento vira histórico** no cartão: quem moveu, quem atribuiu, quem
   mudou o prazo, quem sinalizou.
 

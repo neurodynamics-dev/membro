@@ -176,16 +176,34 @@ paralela: viram cartão no quadro do Depto de Pessoal, com código próprio
   Aprovar um acesso concede o acesso na mesma transação. Dois passos em duas
   telas eram um passo esquecível.
 
+### O cartão tem relevo, o tile não
+
+Tile de galeria é estático e a marca não lhe dá sombra — elevação ali é borda
+mais vidro. O cartão do quadro é a exceção, e o motivo é funcional: **ele é para
+ser pego com a mão**, e a sombra é a única pista de que dá para arrastar. Ao
+pegar, inclina, cresce e sobe.
+
+O sinal de prioridade é um **brilho no topo**, não uma barra na lateral: barra
+lateral come a largura de uma coluna que já tem 230px, e some quando a coluna
+estreita. Sinalizado troca a cor do brilho para âmbar — "olhe para mim" é o que
+um brilho quer dizer — e o ponto de prioridade continua ali, então nada se
+perde.
+
 ### Quadro reservado
 
 Um grupo pode ser `reservado`: aí só quem está nele lê os cartões. Existe um
 só — o do Pessoal, porque recebe pedido de afastamento e de desligamento.
 
-Fechar isso são **duas** coisas, e esquecer a segunda não dá erro nenhum:
+Fechar isso são **três** coisas, e esquecer qualquer uma não dá erro nenhum:
 
 1. a política de RLS (`posso_ver_grupo`);
 2. `security_invoker = true` na view que a tela lê. Sem isso a view roda como
-   dona, ignora RLS e devolve tudo — a view seria o furo, não a política.
+   dona, ignora RLS e devolve tudo — a view seria o furo, não a política;
+3. **toda função `security definer` que escreve** precisa checar o grupo por
+   conta própria. Elas passam por cima da RLS por definição: `comentar`,
+   `sinalizar` e `seguir` nasceram sem checagem nenhuma, e quem tivesse o id de
+   um cartão escrevia nele — no caso do `seguir`, passava a receber o conteúdo
+   por notificação.
 
 ---
 
@@ -215,6 +233,29 @@ can()         // admin ou pessoal — edita
 podeQuadro()  // vê o quadro inteiro
 podeSelecao() // comitê de seleção
 ```
+
+### Quadro de atividades: nível, não papel
+
+Papel é do sistema inteiro. Quadro é por grupo, e aí o que vale é o **nível**,
+que o banco calcula em `meu_nivel_no_grupo()` e manda junto com a lista:
+
+| Nível | O que é |
+|---|---|
+| `edicao` | cria, move, comenta |
+| `leitura` | acompanha, não mexe |
+| `nenhum` | sabe que o quadro existe e nada mais |
+
+Sai de quatro coisas, nesta ordem: admin/pessoal → `edicao`; estar no grupo pela
+ficha → `edicao`; um acesso concedido em *Administração → Grupos* → o que foi
+concedido; o grupo não ser reservado → `leitura`.
+
+Duas consequências que não são detalhe:
+
+- **`nenhum` não some da navegação.** O grupo continua na lista, com cadeado, e
+  abrir mostra de quem é o quadro e como pedir acesso. Quadro que some não é
+  quadro fechado — é quadro que ninguém sabe que precisa pedir.
+- **Conceder acesso não põe ninguém no grupo.** São coisas diferentes: estar no
+  grupo é um fato da ficha; acessar o quadro é uma permissão.
 
 Numa rota: `permite: podeQuadro`. Num botão: `${can() ? ibtn(...) : ''}`.
 Nunca só esconder o botão e deixar a função aberta — a função também confere.

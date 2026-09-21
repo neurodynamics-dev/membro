@@ -168,43 +168,152 @@ nav.hd-nav a.on::after{content:'';display:block;height:1.5px;margin:1px 2px 0;ba
 .adm-grupo{font-family:var(--fm);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
   color:var(--dim);margin:26px 0 12px}
 .adm-grupo:first-of-type{margin-top:0}
+.cod-pf{font-family:var(--fm);font-size:11px;letter-spacing:.06em;color:var(--syn);
+  background:rgba(206,220,0,.10);border:1px solid rgba(206,220,0,.25);border-radius:6px;
+  padding:2px 7px;display:inline-block}
+.cod-pf.colide{color:var(--warn);background:rgba(245,195,106,.10);border-color:rgba(245,195,106,.30)}
 .tile-n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
   padding:0 5px;border-radius:9px;background:var(--syn);color:var(--deep);
   font-family:var(--fm);font-size:10px;font-weight:600;vertical-align:1px;margin-left:5px}
 
 /* ============ QUADRO DE ATIVIDADES ============
    Componentes do design system (neuro.css). Ao mexer, mexa lá primeiro. */
-.kanban{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(258px,1fr);
-  gap:12px;overflow-x:auto;padding-bottom:12px;align-items:start}
-.kb-col{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;
-  padding:12px;min-height:180px;transition:border-color .15s,background .15s}
+
+/* O topo em uma linha só: título, seletor de grupo e ações. */
+.kb-topo{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
+  flex-wrap:wrap;margin-bottom:16px}
+.kb-linha{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.kb-linha h1{margin:0}
+.kb-acoes{display:flex;align-items:center;gap:9px}
+.kb-selo{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+  border:1px solid var(--line2);border-radius:9px;padding:6px 10px}
+.kb-selo .ic{width:13px;height:13px}
+
+/* Seletor de grupo. Eram abas: com nove grupos a fileira quebrava em
+   duas linhas e empurrava o quadro para baixo — justo o espaço que
+   falta. Um botão só ocupa uma linha sempre. */
+.grp-sel{position:relative}
+.grp-btn{display:inline-flex;align-items:center;gap:9px;height:38px;padding:0 12px;
+  background:rgba(255,255,255,.05);border:1px solid var(--line2);border-radius:11px;
+  color:var(--ink);font-size:14px;transition:border-color .15s,background .15s}
+.grp-btn:hover{border-color:var(--dim);background:rgba(255,255,255,.07)}
+.grp-btn .ic{width:15px;height:15px;color:var(--dim)}
+.grp-btn .pf,.grp-item .pf{font-family:var(--fm);font-size:10px;letter-spacing:.06em;
+  color:var(--syn);background:rgba(206,220,0,.10);border:1px solid rgba(206,220,0,.25);
+  border-radius:6px;padding:2px 6px;flex:none}
+.grp-pop{position:absolute;z-index:40;top:calc(100% + 7px);left:0;min-width:280px;max-width:340px;
+  background:var(--painel);border:1px solid var(--line2);border-radius:13px;padding:7px;
+  box-shadow:0 18px 40px -12px rgba(0,0,0,.7)}
+.grp-pop>input{width:100%;margin-bottom:6px}
+.grp-lista{display:flex;flex-direction:column;gap:2px;max-height:330px;overflow-y:auto}
+.grp-item{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:9px;
+  color:var(--muted);font-size:13.5px;text-decoration:none;transition:background .13s,color .13s}
+.grp-item:hover{background:rgba(255,255,255,.05);color:var(--ink)}
+.grp-item.on{background:rgba(206,220,0,.08);color:var(--ink)}
+.grp-item .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grp-item .ic{width:13px;height:13px;color:var(--dim);flex:none}
+.grp-item .tag{font-family:var(--fm);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--dim);flex:none}
+.grp-item.travado .pf{color:var(--dim);background:none;border-color:var(--line2)}
+
+.kb-filtros{align-items:flex-end}
+.kb-filtros #atv-resumo{margin-left:auto}
+.kb-filtros .atv-resumo{margin-bottom:0}
+
+/* Cinco colunas que cabem na janela: sem rolagem horizontal e sem
+   rolagem da página. O que rola é cada coluna, por dentro. A altura
+   vem do JS (ajustarAlturaQuadro), porque só ele sabe onde o quadro
+   começou depois dos filtros. */
+.kanban{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;
+  align-items:stretch;perspective:1100px}
+.kb-col{display:flex;flex-direction:column;min-width:0;min-height:0;
+  background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;
+  padding:12px 10px 10px;transition:border-color .15s,background .15s}
 .kb-col.sobre{border-color:var(--syn);background:rgba(206,220,0,.05)}
-.kb-col header{display:flex;justify-content:space-between;align-items:center;
-  font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--dim);padding:2px 4px 12px}
+.kb-col header{display:flex;justify-content:space-between;align-items:center;flex:none;
+  font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);padding:2px 4px 11px}
 .kb-col header .n{color:var(--muted)}
-.kb-itens{display:flex;flex-direction:column;gap:8px;min-height:40px}
-.kb-card{background:var(--panel);border:1px solid var(--line2);border-radius:11px;
-  padding:11px 12px;cursor:pointer;transition:border-color .15s,transform .15s}
-.kb-card:hover{border-color:var(--dim);transform:translateY(-1px)}
-.kb-card.mov{opacity:.45}
-.kb-card.sinalizada{border-left:2px solid var(--warn)}
-.kb-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.kb-itens{flex:1;min-height:40px;overflow-y:auto;overflow-x:visible;
+  display:flex;flex-direction:column;gap:9px;padding:3px 4px 4px;margin:-3px -4px 0;
+  scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.kb-itens::-webkit-scrollbar{width:7px}
+.kb-itens::-webkit-scrollbar-track{background:transparent}
+.kb-itens::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
+.kb-itens::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+
+/* O cartão. Tem profundidade porque é para ser pego com a mão: a
+   sombra é a única pista de que dá para arrastar. Em tile estático a
+   marca não usa sombra — aqui usa, e é essa a diferença entre os
+   dois. */
+.kb-card{position:relative;flex:none;cursor:grab;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+  border:1px solid var(--line2);border-radius:12px;padding:12px 13px 11px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),
+             0 1px 1px rgba(0,0,0,.45),
+             0 5px 12px -6px rgba(0,0,0,.6);
+  transform-style:preserve-3d;
+  transition:transform .17s cubic-bezier(.2,.8,.3,1),box-shadow .17s,border-color .17s}
+/* o brilho no topo: prioridade, ou âmbar quando sinalizado */
+.kb-card::before{content:'';position:absolute;left:13px;right:13px;top:-1px;height:2px;
+  border-radius:0 0 3px 3px;background:var(--pri,transparent);
+  box-shadow:0 0 10px 1px var(--pri,transparent),0 0 3px 0 var(--pri,transparent);
+  opacity:.85;transition:opacity .17s}
+.kb-card:hover{transform:translateY(-3px);border-color:var(--dim);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),
+             0 2px 3px rgba(0,0,0,.45),
+             0 14px 26px -10px rgba(0,0,0,.75)}
+.kb-card:hover::before{opacity:1}
+.kb-card:active{cursor:grabbing;transform:translateY(-1px) scale(.995)}
+.kb-card.fixo{cursor:pointer}
+/* na mão: inclinado, maior e bem acima da mesa */
+.kb-card.mov{cursor:grabbing;opacity:.92;
+  transform:rotate(-2.2deg) scale(1.035) translateY(-4px);
+  border-color:var(--syn);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),
+             0 3px 5px rgba(0,0,0,.4),
+             0 26px 46px -14px rgba(0,0,0,.85)}
+.kb-card.sinalizada{border-color:rgba(245,195,106,.32)}
+
+.kb-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
+.kb-ids{display:flex;align-items:center;min-width:0}
 .kb-top .cod{font-family:var(--fm);font-size:10px;letter-spacing:.06em;color:var(--syn)}
 .kb-top .pri{width:7px;height:7px;border-radius:50%;flex:none}
 .kb-top .org{font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;
   color:var(--dim);border:1px solid var(--line2);border-radius:5px;padding:1px 5px;margin-left:7px}
-.kb-tit{font-size:13.5px;line-height:1.4;color:var(--ink)}
-.kb-flag{font-size:12px;color:var(--warn);margin-top:6px;line-height:1.45}
-.kb-pe{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.kb-tit{font-size:13.5px;line-height:1.42;color:var(--ink)}
+.kb-flag{font-size:12px;color:var(--warn);margin-top:7px;line-height:1.45}
+.kb-pe{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px}
 .kb-sem{font-size:11px;color:var(--dim);font-style:italic}
 .kb-meta{display:flex;gap:9px;font-family:var(--fm);font-size:10.5px;color:var(--dim)}
 .kb-meta .atrasado{color:var(--bad);font-weight:500}
 .kb-vazio{font-size:12px;color:var(--dim);text-align:center;padding:14px 0}
-.kb-add{width:100%;margin-top:8px;padding:8px;border-radius:11px;border:1px dashed var(--line2);
-  font-size:12px;color:var(--dim);transition:color .15s,border-color .15s}
+.kb-add{width:100%;margin-top:9px;flex:none;padding:8px;border-radius:11px;
+  border:1px dashed var(--line2);font-size:12px;color:var(--dim);
+  transition:color .15s,border-color .15s}
 .kb-add:hover{color:var(--ink);border-color:var(--dim)}
-@media (max-width:760px){.kanban{grid-auto-flow:row;grid-auto-columns:auto}}
+
+/* Quadro fechado: a pessoa vê que existe e a quem pedir. */
+.kb-fechado{max-width:520px;margin:38px auto;text-align:center;padding:34px 28px;
+  border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.02)}
+.kb-fechado .cad{width:46px;height:46px;border-radius:14px;margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.04);border:1px solid var(--line2);color:var(--dim)}
+.kb-fechado .cad .ic{width:20px;height:20px}
+.kb-fechado h3{font-size:17px;margin-bottom:9px}
+.kb-fechado p{color:var(--muted);font-size:13.5px;line-height:1.6}
+.kb-fechado .sub{color:var(--dim);font-size:12.5px;margin-top:10px}
+.kb-fechado .acts{justify-content:center;margin-top:18px}
+
+/* Abaixo de 900px as colunas empilham. Continua sem rolagem
+   horizontal — o que muda é que a página volta a rolar. */
+@media (max-width:900px){
+  .kanban{grid-template-columns:1fr;height:auto!important;perspective:none}
+  .kb-itens{overflow:visible}
+  .kb-topo{align-items:flex-start}
+  .grp-pop{min-width:240px}
+}
 
 .atv-resumo{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .res-pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--fm);font-size:10px;
@@ -1406,7 +1515,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '16.0';
+const VERSAO = '17.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
