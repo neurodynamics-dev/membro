@@ -31,6 +31,16 @@ SOMA · Gestão está sendo trazido, conforme o
   - **Minha agenda** — o Google Agenda nos dois sentidos: o portal lê o seu
     `.ics` (para saber quando você está ocupado) e você assina o feed da
     NeuroDynamics (para receber a agenda da equipe na sua agenda pessoal).
+
+  Todo item da agenda — compromisso, marco do semestre ou ausência — abre o
+  mesmo painel e é **editável por quem o criou**. Nenhum tipo escolhe repetição
+  por você: o padrão é não repetir.
+
+  Um compromisso que precisa de preparo abre o **dossiê**
+  (`#/agenda/evento/<id>`): checklist de preparação, presenças, pauta,
+  deliberações e a **ata em PDF**. No SOMA isso era uma tela separada, com
+  lista própria, sobre a mesma linha de `eventos` — a equipe marcava na agenda
+  e preparava em outro lugar.
 - **Equipe** — o Org Explorer (estilo Microsoft Teams):
   cadeia de gestão, colegas de equipe e liderados, com busca.
 - **Informações** — biblioteca de documentos e políticas (estatuto,
@@ -137,6 +147,7 @@ Duas coisas que a unificação trouxe de graça:
 | `mod-gestao.js`| Quadro de pessoal, ficha e auditoria (`#/equipe/quadro`, `#/equipe/<registro>`) |
 | `mod-admin.js` | Os onze painéis da gestão (`#/admin`, `#/admin/<painel>`) |
 | `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados, quadro completo e o Full mailer |
+| `mod-evento.js` | O dossiê de um compromisso: preparo, presenças e ata (`#/agenda/evento/<id>`) |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
 | [`PADROES.md`](PADROES.md) | Os padrões do sistema: navegação, rotas, busca, módulos, identidade |
 | `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |

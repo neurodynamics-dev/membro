@@ -30,7 +30,17 @@ body{font-family:var(--f);background:var(--bg);color:var(--ink);font-size:14.5px
 h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.015em}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;color:inherit;border:none;background:none;font-size:inherit}
-input,textarea,select{font-family:inherit;font-size:14.5px;color:var(--ink)}
+/* Todo controle nasce vestido. Sem isto, um <select> ou <textarea> solto —
+   fora de um .fld — cai no widget branco do sistema e some no escuro. */
+input,textarea,select{font-family:inherit;font-size:14.5px;color:var(--ink);
+  background:rgba(255,255,255,.05);border:1px solid var(--line2);border-radius:11px;
+  padding:9px 11px;outline:none;transition:border-color .15s,background .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--syn);background:rgba(206,220,0,.04)}
+input::placeholder,textarea::placeholder{color:var(--dim)}
+select option{background:var(--panel);color:var(--ink)}
+input[type=checkbox],input[type=radio]{accent-color:var(--syn);padding:0;
+  width:16px;height:16px;background:none;border:none}
+textarea{resize:vertical;line-height:1.6;width:100%}
 img{max-width:100%}
 [hidden]{display:none!important}
 ::selection{background:var(--syn);color:var(--deep)}
@@ -1076,6 +1086,18 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
 .sol .det{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;cursor:default}
 .st-btns{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 10px}
 
+
+.chk-lista{display:flex;flex-direction:column;gap:2px}
+.chk-row{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:10px;
+  font-size:13.5px;cursor:pointer;transition:background .15s}
+.chk-row:hover{background:rgba(255,255,255,.04)}
+.chk-row input{width:16px;height:16px;flex:none;accent-color:var(--syn)}
+.chk-row span{flex:1;line-height:1.5}
+.chk-row.feito span{color:var(--dim);text-decoration:line-through}
+.chk-x{width:24px;height:24px;border-radius:7px;color:var(--dim);font-size:15px;line-height:1;
+  opacity:0;transition:opacity .15s,color .15s,background .15s}
+.chk-row:hover .chk-x{opacity:1}
+.chk-x:hover{color:var(--bad);background:rgba(241,128,111,.12)}
 
 /* ============ FERRAMENTAS DA GESTÃO ============
    Apontamento, importação e o Full mailer. Vieram do SOMA claro e
@@ -2253,7 +2275,19 @@ const AGENDA_LEAD = {
   'minha':    'Traga o seu Google Agenda para cá e leve a agenda da NeuroDynamics para lá.'
 };
 
-function pageAgenda(sub){
+async function pageAgenda(sub, sub2){
+  /* O dossiê é a profundidade de um item da agenda: preparo, presença e
+     ata. Mora em módulo próprio porque puxa o gerador de PDF. */
+  if (sub === 'evento' && sub2){
+    $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
+    try { await carregarModulo('evento'); }
+    catch(e){
+      $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1>
+        <p class="lead">O dossiê do evento não pôde ser carregado (${esc(e.message)}).</p></div>`;
+      return;
+    }
+    return pageEvento(sub2);
+  }
   const atual = AGENDA_ABAS.some(([s]) => s === sub && s) ? sub : '';
   $('#main').innerHTML = `
     <div class="pg-head"><span class="eyebrow">Agenda da equipe</span>
@@ -2869,6 +2903,8 @@ function verItem(id){
           onclick="responderItem('${it.ref}','${r}');fechaModal()">${{vou:'Vou',talvez:'Talvez',nao:'Não vou'}[r]}</button>`).join('') : ''}
       ${it.origem === 'evento' ? `<button class="btn ghost" onclick="abrirNoGoogle('${it.ref}')">Convidar pelo Google</button>` : ''}
       ${dono ? `<button class="btn ghost" onclick="fechaModal();modalConvidados('${it.ref}')">Convidados</button>` : ''}
+      ${it.origem === 'evento' ? `<a class="btn ghost" href="#/agenda/evento/${it.ref}"
+        onclick="fechaModal()">Preparo e ata</a>` : ''}
       ${podeMexerNoItem(it) ? `<button class="btn solid" onclick="modalEditarItem('${id}')">Editar</button>` : ''}
     </div>`);
 }
