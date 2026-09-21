@@ -25,7 +25,19 @@
 const DIAS_ATRAS = 60;
 const DIAS_ADIANTE = 365;
 const FUSO = "America/Sao_Paulo";
-const DOMINIO = "membro.neurodynamics.dev";
+/* DUAS COISAS DIFERENTES, e confundi-las custa caro.
+
+   UID_DOMINIO é só um namespace: entra no identificador de cada evento
+   (`evento-<id>@…`) e é como o Google sabe que um compromisso que voltou
+   no feed é o MESMO de antes. Mudá-lo faz todo evento já sincronizado
+   virar um evento novo na agenda de quem assinou — duplicata em cima de
+   duplicata, sem desfazer. Por isso ele fica CONGELADO neste valor, para
+   sempre, mesmo quando o portal mudar de endereço.
+
+   SITE é o endereço de verdade, que aparece no link da descrição. Esse
+   sim acompanha a renomeação. */
+const UID_DOMINIO = "membro.neurodynamics.dev";   // NÃO MUDE. Ver acima.
+const SITE = "membro.neurodynamics.dev";          // troque na renomeação
 
 const env = (nome: string): string =>
   (globalThis as { Deno?: { env: { get(k: string): string | undefined } } })
@@ -117,7 +129,7 @@ export function dobrar(linha: string): string {
 
 export function vevento(it: Item): string[] {
   const linhas: string[] = ["BEGIN:VEVENT"];
-  const uid = `${it.origem}-${it.ref}@${DOMINIO}`;
+  const uid = `${it.origem}-${it.ref}@${UID_DOMINIO}`;
   linhas.push(`UID:${uid}`);
   linhas.push(`DTSTAMP:${carimbo(new Date())}`);
 
@@ -144,7 +156,7 @@ export function vevento(it: Item): string[] {
     desc.push(`${it.confirmados ?? 0} de ${it.convidados} confirmaram presença.`);
   }
   if (it.minha_resposta === "pendente") desc.push("Você ainda não respondeu ao convite.");
-  desc.push(`Agenda da NeuroDynamics · https://${DOMINIO}/#/agenda`);
+  desc.push(`Agenda da NeuroDynamics · https://${SITE}/#/agenda`);
   linhas.push(`DESCRIPTION:${texto(desc.join("\n"))}`);
 
   if (it.local) linhas.push(`LOCATION:${texto(it.local)}`);

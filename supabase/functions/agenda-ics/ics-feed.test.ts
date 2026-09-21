@@ -28,7 +28,12 @@ ok("1 10:00 em São Paulo = 13:00Z", paraUTC("2026-09-01", "10:00").toISOString(
 let l = linhas({});
 ok("2 DTSTART/DTEND em UTC", acha(l, "DTSTART:") === "DTSTART:20260901T130000Z" && acha(l, "DTEND:") === "DTEND:20260901T133000Z",
    acha(l, "DTSTART:") + " / " + acha(l, "DTEND:"));
-ok("3 UID estável por item", acha(l, "UID:") === `UID:evento-${base.ref as string}@membro.neurodynamics.dev`, acha(l, "UID:"));
+/* O domínio do UID é literal aqui de propósito: se alguém trocá-lo no
+   index.ts junto com o endereço do portal, este teste falha — que é
+   exatamente o aviso que se quer. Mudar o UID duplica, na agenda de quem
+   assinou, todo evento já sincronizado. */
+ok("3 UID estável por item (domínio congelado)",
+   acha(l, "UID:") === `UID:evento-${base.ref as string}@membro.neurodynamics.dev`, acha(l, "UID:"));
 ok("4 evento ocupa a agenda", l.includes("TRANSP:OPAQUE"));
 ok("5 local vira LOCATION", acha(l, "LOCATION:") === "LOCATION:Sala 2");
 

@@ -44,7 +44,7 @@ Sempre `POST`, com o `Authorization` da sessão de quem chamou:
 
 O portal chama sozinho ao salvar o link e no botão *Sincronizar agora*; o
 `admin.html` chama com `{"todos": true}`. Para rodar de hora em hora sem
-ninguém abrir o portal, veja o bloco **OPCIONAL** no fim do `soma_v12.sql`
+ninguém abrir o portal, veja o bloco **OPCIONAL** no fim do `db/aplicadas/soma_v12_portal_agenda.sql`
 (pg_cron + pg_net, com a chave no Vault).
 
 ## O que ela guarda — e o que não guarda

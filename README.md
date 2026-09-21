@@ -2,14 +2,17 @@
 
 Portal restrito aos membros da NeuroDynamics, com o **mesmo login do SOMA**
 e a linguagem visual do site institucional (paleta escura, vidro, fundo
-animado, Archivo + IBM Plex Mono). Arquivo único (`index.html`), no mesmo
-padrão dos demais apps do SOMA.
+animado, Archivo + IBM Plex Mono).
+
+Uma casca (`index.html`) e módulos carregados sob demanda — é para aqui que o
+SOMA · Gestão está sendo trazido, conforme o
+[plano de unificação](PLANO-UNIFICACAO.md).
 
 ## O que o portal faz
 
 - **Quadro de avisos** — banner rotativo na home, com layouts pré-definidos
   (`padrão`, `destaque`, `urgente`, `evento`, `conquista`), mantido pela
-  gestão no painel `admin.html`.
+  gestão em Administração → Quadro de avisos.
 - **Resumo da agenda e do check-in** — os próximos eventos do mesmo
   calendário do SOMA (com RSVP dos convites pendentes) e quem está no
   LABBIO agora, pelas presenças do sistema de check-in.
@@ -28,7 +31,17 @@ padrão dos demais apps do SOMA.
   - **Minha agenda** — o Google Agenda nos dois sentidos: o portal lê o seu
     `.ics` (para saber quando você está ocupado) e você assina o feed da
     NeuroDynamics (para receber a agenda da equipe na sua agenda pessoal).
-- **Organização** — o mesmo Org Explorer do SOMA (estilo Microsoft Teams):
+
+  Todo item da agenda — compromisso, marco do semestre ou ausência — abre o
+  mesmo painel e é **editável por quem o criou**. Nenhum tipo escolhe repetição
+  por você: o padrão é não repetir.
+
+  Um compromisso que precisa de preparo abre o **dossiê**
+  (`#/agenda/evento/<id>`): checklist de preparação, presenças, pauta,
+  deliberações e a **ata em PDF**. No SOMA isso era uma tela separada, com
+  lista própria, sobre a mesma linha de `eventos` — a equipe marcava na agenda
+  e preparava em outro lugar.
+- **Equipe** — o Org Explorer (estilo Microsoft Teams):
   cadeia de gestão, colegas de equipe e liderados, com busca.
 - **Informações** — biblioteca de documentos e políticas (estatuto,
   políticas, guias, formulários) publicados como links do Google Drive
@@ -40,34 +53,163 @@ padrão dos demais apps do SOMA.
   - pedido de desligamento;
   - reunião 1:1 com o gestor imediato;
   - **ouvidoria anônima** para a Gestão de Pessoas (sem vínculo com a
-    conta, por projeto de banco — ver `soma_v10.sql`);
+    conta, por projeto de banco — ver `db/aplicadas/soma_v10_portal.sql`);
   - outras solicitações.
 - **Meus pedidos** — acompanhamento das solicitações, com status e
   resposta do Depto. de Pessoal, e cancelamento enquanto pendente.
 - **Ferramentas da equipe** — trilho na página inicial com tudo o que a
-  NeuroDynamics usa: agenda, organização, documentos, SOMA · Gestão, tour,
-  site institucional, brand guidelines, processo seletivo e GitHub.
+  NeuroDynamics usa: agenda, atividades, equipe, documentos, tour, site
+  institucional, brand guidelines, processo seletivo e GitHub.
+
+## Como o sistema se organiza
+
+A navegação é por **espaços** — o que você está fazendo —, não por qual app
+a tela veio: **Início · Agenda · Atividades · Equipe · Informações · Serviços ·
+Administração**. Sete destinos, um nível. Os detalhes e o porquê estão em
+[`PADROES.md`](PADROES.md).
+
+Há uma **busca global** no cabeçalho (atalho `/` ou `Ctrl/⌘ K`) que acha telas
+e ações, pessoas, atividades por código ou título, e compromissos da agenda.
+Cada módulo registra o que sabe achar — quem adiciona um módulo novo adiciona
+uma fonte de busca junto.
+
+Endereço antigo não quebra: `#/organizacao`, `#/quadro`, `#/calendario` e
+`#/auditoria` continuam levando ao lugar certo.
+
+## Atividades
+
+O quadro de trabalho de cada grupo, em `#/atividades`:
+
+- **cinco colunas** — Backlog, A fazer, Em andamento, Em revisão, Concluída —
+  com arrastar e soltar;
+- **cada cartão tem código** (`ORT-14`): prefixo do grupo mais sequência,
+  gravado na criação. É por ele que a equipe se refere à atividade, e é por ele
+  que a busca acha;
+- responsável, prazo, prioridade, estimativa e **comentários com menção** —
+  mencionar alguém é como se escala um problema: a pessoa é notificada;
+- **sinalizar** uma atividade avisa quem a segue e o gestor de quem responde
+  por ela;
+- o quadro mostra de saída quantas estão **atrasadas**, **sinalizadas** e
+  **sem responsável**, e filtra por pessoa ou por recorte;
+- **Carga da equipe** mostra quanto cada pessoa está carregando;
+- **todo movimento vira histórico** no cartão: quem moveu, quem atribuiu, quem
+  mudou o prazo, quem sinalizou.
+
+As notificações aparecem no sino do cabeçalho. Por enquanto são só dentro do
+portal — e-mail exigiria uma Edge Function com SMTP, que fica para depois.
+
+## O plano de gestão
+
+Para quem tem papel de gestão (`admin` ou `pessoal`), o menu ganha
+**Administração**, e **Equipe** ganha a aba do quadro — as telas que até aqui
+só existiam no `pessoal.neurodynamics.dev`:
+
+- **Quadro de pessoal** (`#/equipe/quadro`) — quantos estão ativos, em pausa, sob
+  demanda e desligados; ativos por departamento; a lista inteira com busca e
+  filtros por status, departamento e grupo; e as ocorrências recentes.
+- **Ficha do membro** (`#/equipe/<registro>`) — dados institucionais (com
+  edição, que gera ocorrência e entra na auditoria), linha do tempo de
+  ocorrências, acessos concedidos e revogados, avaliações periódicas com os
+  apontamentos semanais, e dados pessoais sob a LGPD.
+- **Apontamento semanal** (`#/equipe/apontamento`) — a avaliação de assiduidade
+  e entregas do seu grupo, com sinalização ao Depto. de Pessoal. Não é papel de
+  gestão: é de quem lidera um grupo.
+- **Administração** (`#/admin`) — onze painéis, em galeria e não em abas, cada
+  um com endereço próprio:
+
+  | Grupo | Painéis |
+  |---|---|
+  | **Portal** | Quadro de avisos · Documentos · Solicitações · Ouvidoria · Agendas |
+  | **Pessoas** | Contas e perfis · Catálogo de acessos · Importar planilha |
+  | **Registro** | Relatórios · Auditoria |
+  | **Conteúdo** | Site institucional |
+
+  Os dois `admin.html` que existiam (deste repositório e do `website`) deixam
+  de ser páginas: eram duas telas de login a mais para a mesma conta. E o
+  Comitê de Seleção chega aos e-mails dos candidatos por Relatórios, que é o
+  único painel aberto a ele.
+
+Duas coisas que a unificação trouxe de graça:
+
+- **cada ficha tem endereço.** No SOMA a navegação era por `showView()`, sem
+  URL — não dava para mandar "olha a ficha da fulana" por mensagem;
+- **quem não tem o papel não baixa o código.** O `mod-gestao.js` só desce
+  para quem abre a rota, e a rota só abre para quem pode. A barreira de
+  verdade continua sendo a RLS do banco — isto é só não oferecer porta
+  fechada, e não pesar no celular de quem nunca vai usar.
 
 ## Conteúdo
 
 | Arquivo        | O que é |
 |----------------|---------|
-| `index.html`   | O portal (rotas por hash: `#/`, `#/calendario`, `#/calendario/agendar`, `#/calendario/minha`, `#/organizacao`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
-| `admin.html`   | Painel do Depto. de Pessoal: avisos, documentos, triagem de solicitações, ouvidoria e estado das agendas |
-| `soma_v10.sql` | Migração do banco (tabelas `portal_*`, RLS e funções) |
-| `soma_v11.sql` | Migração da biblioteca de documentos (`portal_documentos`) |
-| `soma_v12.sql` | Migração da agenda: `portal_agendas`, blocos de ocupação e o RPC que alimenta o assistente |
-| `soma_v13.sql` | Migração da **agenda unificada**: catálogo de tipos, visibilidade, recorrência de verdade, ausências, cerimônias de scrum e o feed do Google |
+| `index.html`   | A casca e o plano do membro (`#/`, `#/agenda`, `#/equipe`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
+| `mod-atividades.js` | O quadro de trabalho de cada grupo (`#/atividades`) |
+| `mod-gestao.js`| Quadro de pessoal, ficha e auditoria (`#/equipe/quadro`, `#/equipe/<registro>`) |
+| `mod-admin.js` | Os onze painéis da gestão (`#/admin`, `#/admin/<painel>`) |
+| `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados, quadro completo e o Full mailer |
+| `mod-evento.js` | O dossiê de um compromisso: preparo, presenças e ata (`#/agenda/evento/<id>`) |
+| `admin.html`   | Encaminhamento — o painel virou `#/admin` |
+| `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
+| `mailer/`      | Ícones e logos recoloridas que o Full mailer embute nos e-mails |
+| `tour.html`    | O tour pelos sistemas da equipe |
+| [`PADROES.md`](PADROES.md) | Os padrões do sistema: navegação, rotas, busca, módulos, identidade |
+| `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |
 | `supabase/functions/agenda-sync/` | Edge Function (arquivo único) que lê o `.ics` de cada um e grava os horários ocupados ([detalhes](supabase/functions/agenda-sync/README.md)) |
 | `supabase/functions/agenda-ics/`  | Edge Function (arquivo único) que serve o feed da agenda para assinar no Google ([detalhes](supabase/functions/agenda-ics/README.md)) |
 | `CNAME`        | Domínio do GitHub Pages (`membro.neurodynamics.dev`) |
+| [`PLANO-UNIFICACAO.md`](PLANO-UNIFICACAO.md) | O plano de fusão com o SOMA · Gestão |
+
+## Arquitetura
+
+O `index.html` é a **casca**: tokens da marca, cabeçalho, menu, login,
+roteador, modal e toast — mais as telas do plano do membro (início, agenda,
+organização, informações, serviços e pedidos).
+
+O resto desce sob demanda. Quando alguém abre uma rota de outro plano, o
+roteador injeta o `mod-<nome>.js` correspondente, uma vez por sessão, e só
+então desenha. O mesmo vale para as bibliotecas pesadas (planilha, PDF): quem
+as pede é o módulo que precisa delas, não todo mundo em todo login.
+
+São scripts clássicos, não módulos ES, de propósito — o código usa
+`onclick="…"` em toda parte e isso depende de escopo global.
+
+**Módulo não depende de módulo.** O que mais de um usa (`ic`, `ibtn`,
+`quemSouEu`, `CAT_LABEL`, `fmtD`) mora na casca — senão abrir uma tela
+quebraria porque outra ainda não foi carregada.
+
+As bibliotecas pesadas descem com quem precisa delas: jsPDF e autotable com
+os relatórios, xlsx com a importação e com a exportação do quadro. No SOMA as
+três vinham no `<head>`, quase 1,3 MB em todo login, para todo papel.
+
+Declarar uma rota nova é uma linha em `ROTAS`:
+
+```js
+quadro: { desenha:'pageQuadro', modulo:'gestao', permite: podeQuadro }
+```
+
+`desenha` é o nome da função que o módulo define; `modulo`, o arquivo a
+buscar antes; `permite`, a mesma barreira de papel do menu — rota sem
+permissão devolve para o início, em vez de desenhar uma tela vazia.
+
+O layout segue o design system da marca
+([brand.neurodynamics.dev](https://brand.neurodynamics.dev)). Os componentes
+de tela densa — tabela de trabalho, barra de filtros, galeria de tiles,
+métricas — são o card *Telas de trabalho* do `design-system/neuro.css`,
+copiados para o `<style>` da casca. **Ao mexer neles, mexa lá primeiro:**
+aqui é cópia, não fonte.
 
 ## Pré-requisitos
 
-Aplicar as migrações **`soma_v10.sql`**, **`soma_v11.sql`**,
-**`soma_v12.sql`** e **`soma_v13.sql`** (na raiz deste repositório, nesta
-ordem) no SQL Editor do Supabase, com a SOMA 9.0 já aplicada. Sem elas o portal entra, mas o quadro de avisos,
-as solicitações e o assistente de agendamento ficam indisponíveis (as demais
+Aplicar as migrações de [`db/`](db/LEIAME.md) no SQL Editor do Supabase, em
+ordem numérica, com a SOMA 9.0 já aplicada. Depois da 14.0, o banco responde
+sozinho o que já rodou:
+
+```sql
+select id, aplicada_em from public.migracoes order by id;
+```
+
+Sem as migrações do portal o app entra, mas o quadro de avisos, as
+solicitações e o assistente de agendamento ficam indisponíveis (as demais
 abas — agenda, check-in, calendário e organização — usam as tabelas que
 o SOMA já tem).
 
@@ -83,9 +225,10 @@ pelo painel, sem CLI):
   publicada com a verificação de JWT desligada**, porque quem busca o arquivo
   é o Google, sem sessão.
 
-Do lado do repositório `nro-pessoal`, publique também o `quiosque.html` (o QR
-do check-in passa a levar ao portal) e o `app.html` (o SOMA App vira um
-encaminhamento, para os QRs e favoritos antigos continuarem funcionando).
+O repositório `nro-pessoal` deixa de ser um app: `pessoal.neurodynamics.dev`
+passa a só encaminhar, e continua servindo duas pastas que não podem sumir —
+`mailer/` (as imagens dos e-mails já enviados apontam para lá) e `fotos/` (as
+fotos do quadro, buscadas por `raw.githubusercontent.com`).
 
 ## Uma agenda só
 
@@ -137,26 +280,30 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
   grupo (ou por `admin`/`pessoal`).
 - **Ausências** são de cada um: só a própria pessoa (ou o Depto. de Pessoal)
   cria e remove as suas.
-- **`admin.html`** é liberado só para os papéis `admin` e `pessoal`.
+- **Administração** (`#/admin`) é liberada só para os papéis `admin` e `pessoal`.
 - **Ouvidoria**: a mensagem é gravada por função `security definer`
   sem nenhuma referência à conta, sem gatilho de auditoria e com a data
   truncada para o dia. Anonimato por projeto, não por promessa.
 
 ## Como operar (Depto. de Pessoal)
 
-1. **Avisos**: crie e publique em `/admin.html` → *Quadro de avisos*.
+1. **Avisos**: crie e publique em *Administração → Quadro de avisos*.
    O layout tem pré-visualização ao vivo; a ordem define o rodízio.
-2. **Solicitações**: triagem em `/admin.html` → *Solicitações*
-   (em análise → aprovar/recusar → concluir, com resposta ao membro).
-   Ao aprovar um **acesso**, conceda-o na ficha do membro no
-   SOMA · Gestão (aba Acessos) — o painel registra a decisão, a
-   concessão continua onde sempre foi.
+2. **Solicitações**: cada solicitação nova vira **um cartão** no quadro
+   de Atividades do Depto de Pessoal, e é lá que ela se resolve — o
+   cartão tem responsável, coluna e histórico, como qualquer outro.
+   No cartão, o bloco *De onde veio* mostra o pedido e decide: ao
+   **aprovar um acesso**, marque os itens do catálogo e a concessão
+   entra no quadro de acessos da pessoa **na mesma ação**. Não há mais
+   um segundo passo na ficha.
+   A triagem antiga em *Administração → Solicitações* continua no ar
+   para consulta.
 3. **Ouvidoria**: leia e marque como tratada. Sem como responder
    individualmente — é anônima.
 4. **Calendário da UFMG**: datas acadêmicas entram como marcos do
    calendário no SOMA · Gestão (tipo "outro", ou o que couber) e
    aparecem automaticamente no portal.
-5. **Agendas**: em `/admin.html` → *Agendas* você vê quem já conectou o
+5. **Agendas**: em *Administração → Agendas* você vê quem já conectou o
    Google Agenda, o horário da última sincronização e o erro de quem
    falhou, e pode forçar uma sincronização geral. O link `.ics` em si
    **não** aparece ali — a RLS só o devolve ao próprio dono.
@@ -181,7 +328,7 @@ A visibilidade dos eventos (`equipe` / `convidados` / `privado`) é aplicada
 na leitura da agenda, em `agenda_itens`. A tabela `eventos` continua com as
 políticas de RLS que o SOMA já tinha: a migração não as toca, porque
 políticas permissivas só somam acesso e apagar as antigas às cegas quebraria
-a Gestão. O rodapé do `soma_v13.sql` traz a consulta para conferir os nomes
+a Gestão. O rodapé do `db/aplicadas/soma_v13_agenda_unificada.sql` traz a consulta para conferir os nomes
 das políticas atuais, caso a equipe queira fechar também a leitura direta da
 tabela num passo à parte.
 
@@ -209,4 +356,4 @@ autenticado (rascunhos só para `admin`/`pessoal`); cada membro lê apenas
 as próprias solicitações; a escrita passa pelas funções
 `portal_abrir_solicitacao` / `portal_cancelar_solicitacao` (validação e
 protocolo no banco); a ouvidoria só é lida por `admin`/`pessoal`. O
-`admin.html` é só interface — a regra mora no banco.
+A tela de Administração é só interface — a regra mora no banco.
