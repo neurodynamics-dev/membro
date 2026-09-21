@@ -22,6 +22,7 @@ As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para 
 | **5 · Corte** | **Feita.** `nro-pessoal` vira encaminhamento e acervo; o app antigo fica em `soma-legado.html` como rede de segurança; `brand`, `selecao` e o tour apontam para o portal |
 | **Pessoal no quadro** | **Feita.** Solicitação, apontamento e ocorrência viram cartão no quadro do Depto de Pessoal; o cartão de origem decide e concede o acesso na mesma transação; o quadro do Pessoal fecha (`reservado`) |
 | **Notificação por e-mail** | **Feita.** Edge Function `notificar-email` com SMTP por variável de ambiente, três modos por pessoa (a cada aviso / resumo diário / só no portal), agendamento documentado |
+| **Quadro e acesso** | **Feita.** Cinco colunas que cabem na janela (sem rolagem horizontal), grupos num seletor em vez de abas, cartão com relevo e brilho de prioridade, e nível de acesso por pessoa em cada quadro |
 | 6 · Renomeação | **preparada.** O UID do iCal já está separado do endereço (era a armadilha 1.5.2); falta o DNS, o `CNAME`, as Redirect URLs do Supabase, trocar `SITE` na Edge Function do iCal e `PORTAL_URL` na do e-mail |
 
 Três defeitos que só a execução mostrou, e que valem registro porque a

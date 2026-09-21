@@ -45,6 +45,7 @@ const PAINEIS = [
   ['agendas',      'Agendas',             'Portal',   'Quem conectou o Google Agenda e como está a sincronização', can],
   ['contas',       'Contas e perfis',     'Pessoas',  'Papéis de acesso, vínculo com o quadro e senha', can],
   ['acessos',      'Catálogo de acessos', 'Pessoas',  'Os sistemas, locais e documentos controlados pela NRO', can],
+  ['grupos',       'Grupos e quadros',    'Pessoas',  'Nome, prefixo do código, quem enxerga cada quadro', can],
   ['importar',     'Importar planilha',   'Pessoas',  'Atualizar o quadro em massa pelo NRO-PES-005 ou pelo Excel do SOMA', can],
   ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
                                                        () => can() || podeSelecao()],
@@ -55,6 +56,7 @@ const painelPermitido = (p) => !p[4] || p[4]();
 const GRUPOS_PAINEL = ['Portal','Pessoas','Registro','Conteúdo'];
 
 const ICONES_ADM = {
+  grupos:'<circle cx="8" cy="9" r="2.6"/><circle cx="16.5" cy="8" r="2.1"/><path d="M3.5 18.5c0-2.5 2-4.2 4.5-4.2s4.5 1.7 4.5 4.2"/><path d="M14.8 13.6c2.3.2 3.9 1.8 3.9 4"/>',
   avisos:'<path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8A3 3 0 0 1 6 15.4"/>',
   documentos:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
   solicitacoes:'<path d="M4 5.5h16v11H10L5.5 20v-3.5H4z"/>',
@@ -98,6 +100,7 @@ async function pageAdmin(sub){
     renderTabelaAud();
   });
   if (k === 'contas')     return pageContas();
+  if (k === 'grupos')     return admCarregarGrupos();
   if (k === 'acessos')    return admCarregarCatalogo();
   if (k === 'importar')   return pageImportar();
 
@@ -1170,4 +1173,279 @@ registrarBusca({
     ];
     return filtrarSimples(itens, t, 6);
   }
+});
+
+/* ============================================================
+   GRUPOS E QUADROS — #/admin/grupos
+
+   Três coisas moram aqui, e as três existiam só no banco:
+
+   - o NOME e o PREFIXO. O prefixo entra no código de toda
+     atividade (ORT-14) e não muda retroativamente, então quem
+     ajusta precisa ver quantos cartões já existem antes;
+   - renomear, que também corrige a ficha de quem está no grupo —
+     o vínculo é por nome, e mudar só de um lado esvaziaria o
+     grupo em silêncio. O banco faz as duas numa transação;
+   - quem ENXERGA o quadro. Grupo reservado só abre para quem está
+     nele; para os outros, é aqui que se concede.
+   ============================================================ */
+const admGrupos = { lista:[], acessos:[], abertoId:null };
+
+async function admCarregarGrupos(){
+  const alvo = $('#sec-grupos'); if (!alvo) return;
+  alvo.innerHTML = '<div class="carregando"><span class="spin"></span> Carregando os grupos…</div>';
+  const [g, a] = await Promise.all([
+    sb.from('grupos').select('*').order('ordem').order('nome'),
+    sb.from('grupo_acessos').select('*')
+  ]);
+  if (g.error){
+    alvo.innerHTML = `<div class="aviso-box err"><b>Não foi possível listar os grupos.</b>
+      ${esc(g.error.message)}<br><span class="small">Se o erro fala de relação inexistente,
+      falta aplicar a migração <code>db/v17_grupos_acesso.sql</code>.</span></div>`;
+    return;
+  }
+  admGrupos.lista   = g.data || [];
+  admGrupos.acessos = a.data || [];
+  renderGrupos();
+}
+
+const prefixoColide = (g) => admGrupos.lista.some(o =>
+  o.id !== g.id && o.prefixo.replace(/\d+$/,'') === g.prefixo.replace(/\d+$/,''));
+
+function renderGrupos(){
+  const alvo = $('#sec-grupos'); if (!alvo) return;
+  const cont = (nome) => (state.membros || []).filter(m =>
+    (m.grupos||[]).includes(nome) && ['Ativo','Em pausa / avaliação'].includes(m.status)).length;
+
+  alvo.innerHTML = `
+    <div class="aviso-box" style="margin-bottom:18px">
+      <b>O prefixo entra no código de toda atividade</b> (<code>ORT-14</code>) e é gravado
+      quando o cartão nasce — mudar o prefixo <b>não</b> renomeia os que já existem.
+      Ajuste antes de o grupo começar a usar o quadro.
+    </div>
+    <div class="acts" style="justify-content:flex-end;margin-bottom:14px">
+      <button class="btn ghost" onclick="modalGrupo()">Novo grupo</button></div>
+    <div class="card"><div class="wrap"><table class="tabela trabalho">
+      <thead><tr><th style="width:86px">Prefixo</th><th>Grupo</th>
+        <th style="width:92px">No grupo</th><th style="width:96px">Quadro</th>
+        <th style="width:110px">Acessos</th><th style="width:96px"></th></tr></thead>
+      <tbody>${admGrupos.lista.map(g => {
+        const nAcc = admGrupos.acessos.filter(x => x.grupo_id === g.id).length;
+        return `<tr>
+          <td><span class="cod-pf${prefixoColide(g)?' colide':''}"
+              ${prefixoColide(g)?'title="Outro grupo começa com o mesmo prefixo"':''}
+              >${esc(g.prefixo)}</span></td>
+          <td>${esc(g.nome)}${g.chave === 'pessoal'
+            ? ' <span class="pill"><span class="dt dt-info"></span>Depto de Pessoal</span>' : ''}
+            ${g.ativo === false ? ' <span class="muted small">(inativo)</span>' : ''}</td>
+          <td>${cont(g.nome)}</td>
+          <td>${g.reservado
+            ? '<span class="pill p-warn"><span class="dt dt-warn"></span>Fechado</span>'
+            : '<span class="muted small">Aberto</span>'}</td>
+          <td>${g.reservado
+            ? (nAcc ? `${nAcc} concedido${nAcc>1?'s':''}` : '<span class="muted small">—</span>')
+            : '<span class="muted small">toda a equipe lê</span>'}</td>
+          <td style="text-align:right;white-space:nowrap">
+            ${ibtn('key','Quem enxerga', `modalAcessoGrupo(${g.id})`, 'sm')}
+            ${ibtn('pencil','Editar', `modalGrupo(${g.id})`, 'sm')}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="6" class="empty">Nenhum grupo cadastrado.</td></tr>'}
+      </tbody></table></div></div>`;
+}
+
+/* --- editar / criar --- */
+function modalGrupo(id){
+  const g = admGrupos.lista.find(x => x.id === id) || { nome:'', prefixo:'', reservado:false, ativo:true };
+  const nCards = id ? null : 0;
+  abreModal(`<h3>${id ? 'Editar grupo' : 'Novo grupo'}</h3>
+    <div class="form-grid">
+      <div class="fld full"><label>Nome</label>
+        <input id="gr-nome" value="${esc(g.nome)}" placeholder="Órtese"></div>
+      <div class="fld"><label>Prefixo do código</label>
+        <input id="gr-pref" value="${esc(g.prefixo)}" maxlength="6" placeholder="ORT"
+          style="text-transform:uppercase;font-family:var(--fm)"></div>
+      <div class="fld"><label>Ordem na lista</label>
+        <input id="gr-ordem" type="number" value="${g.ordem ?? 0}"></div>
+      <div class="fld full"><label>Quem enxerga o quadro</label>
+        <div class="multi" style="max-height:none">
+          <label class="check"><input type="radio" name="gr-res" value="nao"
+            ${g.reservado?'':'checked'}><span><b style="color:var(--ink)">Aberto</b><br>
+            toda a equipe lê as atividades; quem está no grupo edita</span></label>
+          <label class="check"><input type="radio" name="gr-res" value="sim"
+            ${g.reservado?'checked':''}><span><b style="color:var(--ink)">Fechado</b><br>
+            só quem está no grupo, mais quem receber acesso na tela ao lado.
+            Todo mundo continua vendo que o quadro existe</span></label>
+        </div></div>
+      ${id ? `<div class="fld full"><label>Situação</label>
+        <select id="gr-ativo"><option value="sim" ${g.ativo!==false?'selected':''}>Ativo</option>
+          <option value="nao" ${g.ativo===false?'selected':''}>Inativo (some das listas)</option>
+        </select></div>` : ''}
+    </div>
+    ${id ? `<p class="small muted" style="margin-top:12px;line-height:1.6">
+      Renomear aqui <b>também corrige a ficha</b> de quem está no grupo, na mesma
+      operação — o vínculo é por nome, e mudar só de um lado esvaziaria o grupo.</p>` : ''}
+    <div class="acts" style="justify-content:space-between">
+      ${id ? `<button class="btn ghost" onclick="modalFundirGrupo(${id})">Fundir com outro…</button>` : '<span></span>'}
+      <span><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" id="gr-btn" onclick="salvarGrupo(${id ?? 'null'})">Salvar</button></span></div>`);
+}
+
+async function salvarGrupo(id){
+  const p = {
+    id, nome: $('#gr-nome').value.trim(),
+    prefixo: $('#gr-pref').value.trim().toUpperCase(),
+    ordem: parseInt($('#gr-ordem').value, 10) || 0,
+    reservado: document.querySelector('input[name="gr-res"]:checked')?.value === 'sim'
+  };
+  const at = $('#gr-ativo'); if (at) p.ativo = at.value === 'sim';
+  if (!p.nome)    return toast('O nome é obrigatório.', true);
+  if (!/^[A-Z][A-Z0-9]{1,5}$/.test(p.prefixo))
+    return toast('O prefixo vai de 2 a 6 caracteres, começando por letra — ORT, DP2.', true);
+
+  const b = $('#gr-btn'); if (b){ b.disabled = true; b.textContent = 'Salvando…'; }
+  try{
+    const { data, error } = await sb.rpc('grupo_salvar', { p });
+    if (error) throw error;
+    if (data?.status === 'duplicado')
+      return toast(`Já existe outro grupo com esse ${data.campo === 'nome' ? 'nome' : 'prefixo'}.`, true);
+    if (data?.status === 'invalido')  return toast('Confira o ' + data.campo + '.', true);
+    if (data?.status !== 'ok')        return toast('Não foi possível salvar.', true);
+    fechaModal();
+    const n = data.renomeados || 0;
+    toast(n ? `Salvo. A ficha de ${n} pessoa${n>1?'s':''} foi corrigida junto.` : 'Grupo salvo.');
+    await admCarregarGrupos();
+    /* o quadro e as fichas leem esta lista; recarrega o que está em memória */
+    sb.from('membros').select('registro,grupos').then(r => {
+      (r.data||[]).forEach(x => {
+        const m = (state.membros||[]).find(y => y.registro === x.registro);
+        if (m) m.grupos = x.grupos;
+      });
+    });
+  }catch(e){ falha(e, 'Erro ao salvar'); }
+  finally{ const x = $('#gr-btn'); if (x){ x.disabled = false; x.textContent = 'Salvar'; } }
+}
+
+/* --- fundir dois grupos que eram o mesmo escrito de dois jeitos --- */
+function modalFundirGrupo(id){
+  const g = admGrupos.lista.find(x => x.id === id); if (!g) return;
+  const outros = admGrupos.lista.filter(x => x.id !== id);
+  if (!outros.length) return toast('Não há outro grupo para fundir.', true);
+  abreModal(`<h3>Fundir grupo</h3>
+    <p class="sub" style="margin-bottom:16px">As atividades de <b>${esc(g.nome)}</b> passam
+      para o grupo escolhido e <b>ganham código novo</b>, com o prefixo dele. As pessoas
+      também passam. O grupo <b>${esc(g.nome)}</b> deixa de existir.</p>
+    <div class="form-grid">
+      <div class="fld full"><label>Fundir ${esc(g.nome)} em</label>
+        <select id="fu-alvo">${outros.map(x =>
+          `<option value="${x.id}">${esc(x.nome)} (${esc(x.prefixo)})</option>`).join('')}</select></div>
+    </div>
+    <div class="aviso-box err" style="margin-top:14px">O código antigo de cada cartão
+      fica no histórico, mas quem tiver anotado <code>${esc(g.prefixo)}-7</code> em algum
+      lugar não vai mais encontrar por esse nome. Isto não se desfaz.</div>
+    <div class="acts" style="justify-content:flex-end">
+      <button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn perigo" id="fu-btn" onclick="fundirGrupo(${id})">Fundir</button></div>`);
+}
+
+async function fundirGrupo(de){
+  const para = parseInt($('#fu-alvo').value, 10);
+  const b = $('#fu-btn'); if (b){ b.disabled = true; b.textContent = 'Fundindo…'; }
+  try{
+    const { data, error } = await sb.rpc('grupo_fundir', { p: { de, para } });
+    if (error) throw error;
+    if (data?.status !== 'ok') return toast('Não foi possível fundir.', true);
+    fechaModal();
+    toast(`Fundido em ${data.nome}: ${data.atividades} atividade(s) e ${data.pessoas} pessoa(s).`);
+    await admCarregarGrupos();
+  }catch(e){ falha(e, 'Erro ao fundir'); }
+  finally{ const x = $('#fu-btn'); if (x){ x.disabled = false; x.textContent = 'Fundir'; } }
+}
+
+/* --- quem enxerga --- */
+const NIVEIS_GRUPO = [
+  ['nenhum',  'Sem acesso',  'vê que o quadro existe, não vê as atividades'],
+  ['leitura', 'Leitura',     'acompanha as atividades, não mexe'],
+  ['edicao',  'Edição',      'cria, move e comenta, como quem está no grupo']
+];
+
+function modalAcessoGrupo(id){
+  const g = admGrupos.lista.find(x => x.id === id); if (!g) return;
+  admGrupos.abertoId = id;
+  const noGrupo = (state.membros || []).filter(m =>
+    (m.grupos||[]).includes(g.nome) && ['Ativo','Em pausa / avaliação'].includes(m.status));
+  const conc = admGrupos.acessos.filter(x => x.grupo_id === id);
+  const nomeDe = r => (state.membros||[]).find(m => m.registro === r)?.nome || ('Registro ' + r);
+  const fora = (state.membros || []).filter(m =>
+    ['Ativo','Em pausa / avaliação'].includes(m.status)
+    && !(m.grupos||[]).includes(g.nome)
+    && !conc.some(c => c.registro === m.registro));
+
+  abreModal(`<h3>Quem enxerga ${esc(g.nome)}</h3>
+    <p class="sub" style="margin-bottom:18px">${g.reservado
+      ? 'Quadro fechado: só quem está na lista abaixo abre as atividades. Os demais veem que ele existe.'
+      : 'Quadro aberto: <b>toda a equipe já lê</b> este quadro. Conceder acesso aqui só serve para dar <b>edição</b> a quem não está no grupo.'}</p>
+
+    <div class="adm-grupo" style="margin-top:0">No grupo pela ficha — edição</div>
+    <div class="multi" style="max-height:170px">${noGrupo.map(m =>
+      `<div class="acc-row" style="padding:6px 2px"><div class="nm">${esc(m.nome)}</div>
+        <div class="mt">${esc(m.cargo || '')}</div><span class="muted small">pela ficha</span></div>`
+      ).join('') || '<div class="muted small">Ninguém no grupo ainda.</div>'}</div>
+
+    <div class="adm-grupo">Acesso concedido</div>
+    <div id="ac-lista">${conc.length ? conc.map(c => `
+      <div class="acc-row" style="padding:6px 2px"><div class="nm">${esc(nomeDe(c.registro))}</div>
+        <div class="mt"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select onchange="mudarAcessoGrupo(${c.registro}, this.value)"
+            style="height:30px;padding:0 8px;font-size:12.5px">
+            ${NIVEIS_GRUPO.filter(([k]) => k !== 'nenhum').map(([k, r]) =>
+              `<option value="${k}" ${c.nivel===k?'selected':''}>${r}</option>`).join('')}
+          </select>
+          ${ibtn('x','Tirar o acesso', `mudarAcessoGrupo(${c.registro}, 'nenhum')`, 'perigo sm')}
+        </div></div>`).join('')
+      : '<div class="muted small">Ninguém de fora do grupo tem acesso.</div>'}</div>
+
+    <div class="adm-grupo">Conceder a</div>
+    <div class="form-grid">
+      <div class="fld"><label>Pessoa</label>
+        <select id="ac-quem"><option value="">— escolha —</option>
+          ${fora.map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</select></div>
+      <div class="fld"><label>Nível</label>
+        <select id="ac-nivel">${NIVEIS_GRUPO.filter(([k]) => k !== 'nenhum').map(([k, r, d]) =>
+          `<option value="${k}" title="${esc(d)}">${r}</option>`).join('')}</select></div>
+    </div>
+    <div class="acts" style="justify-content:space-between">
+      <button class="btn ghost" onclick="fechaModal()">Fechar</button>
+      <button class="btn solid" id="ac-btn" onclick="concederAcessoGrupo()">Conceder</button></div>`, true);
+}
+
+async function concederAcessoGrupo(){
+  const registro = parseInt($('#ac-quem').value, 10);
+  if (!registro) return toast('Escolha a pessoa.', true);
+  await mudarAcessoGrupo(registro, $('#ac-nivel').value);
+}
+
+async function mudarAcessoGrupo(registro, nivel){
+  const grupo_id = admGrupos.abertoId;
+  try{
+    const { data, error } = await sb.rpc('grupo_acesso_salvar', { p: { grupo_id, registro, nivel } });
+    if (error) throw error;
+    if (data?.status === 'sem_permissao') return toast('Seu papel não concede acesso a quadro.', true);
+    if (data?.status !== 'ok')            return toast('Não foi possível salvar.', true);
+    const { data: acc } = await sb.from('grupo_acessos').select('*');
+    admGrupos.acessos = acc || [];
+    renderGrupos();
+    modalAcessoGrupo(grupo_id);
+    toast(nivel === 'nenhum' ? 'Acesso retirado.' : 'Acesso concedido.');
+  }catch(e){ falha(e, 'Erro ao salvar o acesso'); }
+}
+
+registrarBusca({
+  fonte:'grupos', rotulo:'Grupos',
+  buscar: (t) => can()
+    ? filtrarSimples(admGrupos.lista.map(g => ({
+        codigo: g.prefixo, titulo: g.nome,
+        sub: g.reservado ? 'quadro fechado' : 'quadro aberto',
+        href: '#/admin/grupos' })), t, 5)
+    : []
 });

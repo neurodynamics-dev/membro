@@ -45,9 +45,25 @@
       { id:1, nome:'Órtese', prefixo:'ORT', ativo:true, cor:null, chave:null, reservado:false },
       { id:2, nome:'Sinais', prefixo:'SIN', ativo:true, cor:null, chave:null, reservado:false },
       { id:3, nome:'Depto de Pessoal', prefixo:'DEP', ativo:true, cor:null,
-        chave:'pessoal', reservado:true }
+        chave:'pessoal', reservado:true },
+      { id:4, nome:'Gerência', prefixo:'GER', ativo:true, cor:null, chave:null, reservado:true }
     ],
     notificacao_preferencias: [{ registro:4, email_modo:'resumo' }],
+    /* a v17 trocou a leitura de "grupos" por "grupos_visiveis", que traz o
+       meu nível em cada quadro. O stub simula um admin: edição em tudo,
+       menos na Gerência, que está como "nenhum" para exercitar a tela de
+       quadro fechado. */
+    grupos_visiveis: [
+      { id:1, nome:'Órtese', prefixo:'ORT', cor:null, ordem:0, reservado:false,
+        chave:null, meu_nivel:'edicao', pessoas:2 },
+      { id:2, nome:'Sinais', prefixo:'SIN', cor:null, ordem:0, reservado:false,
+        chave:null, meu_nivel:'leitura', pessoas:1 },
+      { id:3, nome:'Depto de Pessoal', prefixo:'DEP', cor:null, ordem:-1, reservado:true,
+        chave:'pessoal', meu_nivel:'edicao', pessoas:1 },
+      { id:4, nome:'Gerência', prefixo:'GER', cor:null, ordem:0, reservado:true,
+        chave:null, meu_nivel:'nenhum', pessoas:3 }
+    ],
+    grupo_acessos: [{ grupo_id:4, registro:11, nivel:'leitura', concedido_por:4 }],
     atividades_quadro: [
       { id:'t9', codigo:'DEP-1', grupo_id:3, grupo:'Depto de Pessoal', grupo_prefixo:'DEP', seq:1,
         titulo:'SOL26-0001 — Acesso ao LABBIO', descricao:'Carla Mendonça abriu uma solicitação de acesso.',
@@ -153,6 +169,18 @@
         from: builder,
         rpc: async (nome, args) => {
           if (nome === 'notificacoes_marcar_lidas') return { data: 1, error: null };
+          if (nome === 'grupo_salvar'){
+            window.__grupoSalvo = args?.p;
+            return { data: { status:'ok', id:args?.p?.id || 9, renomeados:2 }, error:null };
+          }
+          if (nome === 'grupo_acesso_salvar'){
+            window.__acessoSalvo = args?.p;
+            return { data: { status:'ok', nivel:args?.p?.nivel }, error:null };
+          }
+          if (nome === 'grupo_fundir'){
+            window.__fundido = args?.p;
+            return { data: { status:'ok', atividades:3, pessoas:2, nome:'Sinais' }, error:null };
+          }
           if (nome === 'atividade_origem_detalhe'){
             if (args?.p_codigo !== 'DEP-1') return { data: null, error: null };
             return { data: {

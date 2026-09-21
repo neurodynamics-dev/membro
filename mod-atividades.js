@@ -53,7 +53,11 @@ const rotuloPrioridade = p => (PRIORIDADES.find(x => x[0] === p) || [,p])[1];
 async function atvCarregar(forcar){
   if (atividades.pronto && !forcar) return;
   const [g, a] = await Promise.all([
-    sb.from('grupos').select('*').eq('ativo', true).order('nome'),
+    /* grupos_visiveis traz TODO grupo ativo — inclusive os que eu não
+       posso abrir — com o meu nível em cada um. A lista ser completa é
+       de propósito: quadro que some não é quadro fechado, é quadro que
+       ninguém sabe que precisa pedir acesso. */
+    sb.from('grupos_visiveis').select('*'),
     sb.from('atividades_quadro').select('*').eq('arquivada', false).order('ordem')
   ]);
   if (g.error || a.error){ atividades.erro = (g.error || a.error); return; }
@@ -63,10 +67,25 @@ async function atvCarregar(forcar){
   atividades.pronto = true;
 }
 
+/* Todo grupo aparece para todo mundo. O que muda é o NÍVEL, que o
+   banco calcula em meu_nivel_no_grupo() e manda junto:
+
+     edicao   cria, move, comenta
+     leitura  acompanha, não mexe
+     nenhum   sabe que o quadro existe e nada mais
+
+   A regra de verdade é a do banco; isto aqui só evita oferecer porta
+   fechada. Os meus vêm primeiro na lista, que é o que se quer abrir. */
+const nivelNoGrupo = g => g?.meu_nivel || 'nenhum';
+const posso = {
+  ver:    g => nivelNoGrupo(g) !== 'nenhum',
+  editar: g => nivelNoGrupo(g) === 'edicao'
+};
 const meusGrupos = () => {
   const meus = (state.membros.find(m => m.registro === state.perfil?.registro)?.grupos) || [];
-  const lista = atividades.grupos.filter(g => meus.includes(g.nome));
-  return (can() || !lista.length) ? atividades.grupos : lista;
+  const peso = g => (meus.includes(g.nome) ? 0 : posso.ver(g) ? 1 : 2);
+  return [...atividades.grupos].sort((a, b) =>
+    peso(a) - peso(b) || (a.ordem||0) - (b.ordem||0) || a.nome.localeCompare(b.nome, 'pt'));
 };
 
 function avisoSemMigracao(){
@@ -93,9 +112,9 @@ async function pageAtividades(sub, sub2){
   if (!gs.length){
     $('#main').innerHTML = `<div class="pg-head"><span class="eyebrow">Trabalho</span>
       <h1>Atividades</h1></div>
-      <div class="vazio"><div class="glyph">—</div><h3>Nenhum grupo ainda</h3>
-      <p>O quadro é por grupo. Assim que o Depto. de Pessoal colocar você em um,
-      ele aparece aqui.</p></div>`;
+      <div class="vazio"><div class="glyph">—</div><h3>Nenhum quadro ainda</h3>
+      <p>Os quadros são por grupo, e ainda não existe nenhum. Quem cria é a
+      Administração, em Grupos.</p></div>`;
     return;
   }
   atividades.grupoAtual = gs.find(g => g.prefixo === (sub||'').toUpperCase())
@@ -107,22 +126,29 @@ async function pageAtividades(sub, sub2){
    O QUADRO
    ============================================================ */
 function telaQuadro(){
-  const g = atividades.grupoAtual, gs = meusGrupos();
+  const g = atividades.grupoAtual;
   const f = atividades.filtro;
-  $('#main').innerHTML = `
-    <div class="topo-gestao">
-      <div class="tx"><span class="eyebrow">Trabalho</span>
-        <h1>Atividades</h1>
-        <p class="lead">O quadro do grupo, com prazo, responsável e o que precisa de atenção.
-          Cada cartão tem um código — é por ele que a equipe se refere à atividade.</p></div>
-      <div class="acoes"><button class="btn solid" onclick="modalNovaAtividade()">Nova atividade</button></div>
-    </div>
-    ${gs.length > 1 ? `<nav class="abas">${gs.map(x =>
-      `<a href="#/atividades/${x.prefixo}" class="${x.id===g.id?'on':''}">${esc(x.nome)}</a>`).join('')}
-      <a href="#/atividades/carga">Carga da equipe</a></nav>`
-      : `<nav class="abas"><a href="#/atividades/${g.prefixo}" class="on">${esc(g.nome)}</a>
-         <a href="#/atividades/carga">Carga da equipe</a></nav>`}
-    <div class="filtros">
+  const edito = posso.editar(g);
+
+  /* Quadro que eu não posso abrir: a tela diz o que é, de quem é e a
+     quem pedir. Some seria pior — ninguém pede acesso a uma tela que
+     não sabe que existe. */
+  if (!posso.ver(g)){
+    $('#main').innerHTML = topoQuadro(g, false) + `
+      <div class="kb-fechado">
+        <div class="cad">${icCadeado()}</div>
+        <h3>${esc(g.nome)} é um quadro fechado</h3>
+        <p>Você vê que ele existe, mas não as atividades dele. São
+           ${g.pessoas || 0} pessoa${(g.pessoas||0)===1?'':'s'} no grupo.</p>
+        <p class="sub">Para acompanhar, peça acesso a quem administra o portal —
+           é uma permissão por quadro, e não precisa colocar você no grupo.</p>
+        <div class="acts"><a class="btn ghost" href="#/servicos/solicitacoes">Abrir uma solicitação</a></div>
+      </div>`;
+    return;
+  }
+
+  $('#main').innerHTML = topoQuadro(g, true) + `
+    <div class="filtros kb-filtros">
       <div class="fld cresce"><label>Buscar</label>
         <input value="${esc(f.q)}" placeholder="Código, título ou responsável"
           oninput="atividades.filtro.q=this.value;desenhaColunas()"></div>
@@ -138,11 +164,97 @@ function telaQuadro(){
           <option value="atrasadas"   ${f.so==='atrasadas'?'selected':''}>Só atrasadas</option>
           <option value="sinalizadas" ${f.so==='sinalizadas'?'selected':''}>Só sinalizadas</option>
         </select></div>
+      <div id="atv-resumo"></div>
     </div>
-    <div id="atv-resumo"></div>
-    <div class="kanban" id="kanban"></div>`;
+    <div class="kanban${edito?'':' so-leitura'}" id="kanban"></div>`;
   desenhaColunas();
+  ajustarAlturaQuadro();
 }
+
+/* ============================================================
+   O TOPO — e o seletor de grupo
+   Eram abas. Com nove grupos a fileira quebrava em duas linhas e
+   empurrava o quadro para baixo, que é justamente o espaço que
+   falta. Um botão só, que abre a lista, ocupa uma linha sempre.
+   ============================================================ */
+function topoQuadro(g, comAcoes){
+  const edito = posso.editar(g);
+  return `
+    <div class="kb-topo">
+      <div class="kb-ident">
+        <span class="eyebrow">Trabalho</span>
+        <div class="kb-linha">
+          <h1>Atividades</h1>
+          ${seletorGrupo(g)}
+        </div>
+      </div>
+      <div class="kb-acoes">
+        <a class="btn ghost" href="#/atividades/carga">Carga da equipe</a>
+        ${comAcoes && edito
+          ? `<button class="btn solid" onclick="modalNovaAtividade()">Nova atividade</button>` : ''}
+        ${comAcoes && !edito
+          ? `<span class="kb-selo">${icCadeado(13)} só leitura</span>` : ''}
+      </div>
+    </div>`;
+}
+
+function seletorGrupo(g){
+  const gs = meusGrupos();
+  return `<div class="grp-sel">
+    <button class="grp-btn" onclick="abrirSeletorGrupo(event)" aria-haspopup="listbox">
+      <span class="pf">${esc(g.prefixo)}</span>
+      <span class="nm">${esc(g.nome)}</span>
+      ${gs.length > 1 ? `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.8" stroke-linecap="round"><path d="m6 9.5 6 6 6-6"/></svg>` : ''}
+    </button>
+    <div class="grp-pop" id="grp-pop" hidden>
+      ${gs.length > 7 ? `<input id="grp-filtro" placeholder="filtrar…" autocomplete="off"
+        oninput="filtrarGrupos(this.value)">` : ''}
+      <div class="grp-lista" id="grp-lista" role="listbox">
+        ${gs.map(x => `<a href="#/atividades/${x.prefixo}" data-nome="${esc(x.nome)}"
+          class="grp-item ${x.id===g.id?'on':''} ${posso.ver(x)?'':'travado'}" role="option">
+          <span class="pf">${esc(x.prefixo)}</span>
+          <span class="nm">${esc(x.nome)}</span>
+          ${posso.ver(x)
+            ? (posso.editar(x) ? '' : '<span class="tag">leitura</span>')
+            : icCadeado(13)}
+        </a>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+const icCadeado = (px) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.7" stroke-linecap="round"${px?` style="width:${px}px;height:${px}px"`:''}
+  ><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8.5 10.5V7.8a3.5 3.5 0 0 1 7 0v2.7"/></svg>`;
+
+function abrirSeletorGrupo(ev){
+  ev?.stopPropagation();
+  const p = $('#grp-pop'); if (!p) return;
+  p.hidden = !p.hidden;
+  if (!p.hidden) $('#grp-filtro')?.focus();
+}
+function filtrarGrupos(t){
+  const q = norm(t);
+  document.querySelectorAll('#grp-lista .grp-item').forEach(el => {
+    el.style.display = (!q || norm(el.dataset.nome).includes(q)) ? '' : 'none';
+  });
+}
+document.addEventListener('click', e => {
+  const p = document.getElementById('grp-pop');
+  if (p && !p.hidden && !e.target.closest('.grp-sel')) p.hidden = true;
+});
+
+/* O quadro ocupa o que sobra da janela, e cada coluna rola por
+   dentro. Assim não há rolagem horizontal nem rolagem da página:
+   as cinco colunas cabem sempre, e o que é longo é a coluna. */
+function ajustarAlturaQuadro(){
+  const k = document.getElementById('kanban'); if (!k) return;
+  if (window.innerWidth <= 900){ k.style.height = ''; return; }
+  const topo = k.getBoundingClientRect().top + window.scrollY;
+  k.style.height = Math.max(340, window.innerHeight - topo - 18) + 'px';
+}
+window.addEventListener('resize', () => { if (document.getElementById('kanban')) ajustarAlturaQuadro(); });
 
 function pessoasDoGrupo(){
   const g = atividades.grupoAtual;
@@ -178,31 +290,42 @@ function desenhaColunas(){
     ${semDono ? `<span class="res-pill">${semDono} sem responsável</span>` : ''}
   </div>` : '';
 
+  const edito = posso.editar(atividades.grupoAtual);
   $('#kanban').innerHTML = COLUNAS.map(([st, rot]) => {
     const cards = vis.filter(a => a.status === st).sort((a,b) => a.ordem - b.ordem);
-    return `<section class="kb-col" data-st="${st}"
-      ondragover="event.preventDefault();this.classList.add('sobre')"
-      ondragleave="this.classList.remove('sobre')"
-      ondrop="soltarEm(event,'${st}',null)">
+    const alvo = edito
+      ? `ondragover="event.preventDefault();this.classList.add('sobre')"
+         ondragleave="this.classList.remove('sobre')"
+         ondrop="soltarEm(event,'${st}',null)"` : '';
+    return `<section class="kb-col" data-st="${st}" ${alvo}>
       <header><span>${rot}</span><span class="n">${cards.length}</span></header>
       <div class="kb-itens">${cards.map(cartaoHTML).join('')
         || '<div class="kb-vazio">nada aqui</div>'}</div>
-      <button class="kb-add" onclick="modalNovaAtividade('${st}')">+ atividade</button>
+      ${edito ? `<button class="kb-add" onclick="modalNovaAtividade('${st}')">+ atividade</button>` : ''}
     </section>`;
   }).join('');
 }
 
 function cartaoHTML(a){
-  const atrasada = a.atrasada;
   const dono = (state.membros || []).find(m => m.registro === a.responsavel);
-  return `<article class="kb-card${a.sinalizada?' sinalizada':''}" draggable="true"
-    data-id="${a.id}" ondragstart="atividades.arrastando='${a.id}';this.classList.add('mov')"
-    ondragend="this.classList.remove('mov');document.querySelectorAll('.kb-col').forEach(c=>c.classList.remove('sobre'))"
-    ondragover="event.preventDefault();event.stopPropagation()"
-    ondrop="event.stopPropagation();soltarEm(event,'${a.status}','${a.id}')"
+  const edito = posso.editar(atividades.grupoAtual);
+  /* O brilho no topo é o sinal sempre presente: cor da prioridade, ou
+     âmbar quando o cartão está sinalizado — sinalizado é "olhe para
+     mim", que é justamente o que um brilho quer dizer. O ponto de
+     prioridade continua ali, então nada se perde na troca. */
+  const cor = a.sinalizada ? 'var(--warn)' : corPrioridade(a.prioridade);
+  const arraste = edito
+    ? `draggable="true"
+       ondragstart="atividades.arrastando='${a.id}';this.classList.add('mov');event.dataTransfer.effectAllowed='move'"
+       ondragend="this.classList.remove('mov');document.querySelectorAll('.kb-col').forEach(c=>c.classList.remove('sobre'))"
+       ondragover="event.preventDefault();event.stopPropagation()"
+       ondrop="event.stopPropagation();soltarEm(event,'${a.status}','${a.id}')"`
+    : '';
+  return `<article class="kb-card${a.sinalizada?' sinalizada':''}${edito?'':' fixo'}"
+    style="--pri:${cor}" data-id="${a.id}" ${arraste}
     onclick="location.hash='#/atividades/card/${a.codigo}'">
     <div class="kb-top">
-      <span style="display:flex;align-items:center;min-width:0">
+      <span class="kb-ids">
         <span class="cod">${esc(a.codigo)}</span>
         ${a.origem_tipo ? `<span class="org" title="Nasceu de uma ${esc(ROTULO_ORIGEM[a.origem_tipo] || a.origem_tipo)}"
           >${esc(ROTULO_ORIGEM[a.origem_tipo] || a.origem_tipo)}</span>` : ''}
@@ -215,7 +338,7 @@ function cartaoHTML(a){
     <div class="kb-pe">
       ${dono ? avatarFoto(dono, 22, 9) : '<span class="kb-sem">sem responsável</span>'}
       <span class="kb-meta">
-        ${a.prazo ? `<span class="${atrasada?'atrasado':''}">${fmtD(a.prazo)}</span>` : ''}
+        ${a.prazo ? `<span class="${a.atrasada?'atrasado':''}">${fmtD(a.prazo)}</span>` : ''}
         ${a.comentarios ? `<span title="${a.comentarios} comentário(s)">${a.comentarios}c</span>` : ''}
       </span>
     </div>

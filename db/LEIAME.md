@@ -64,6 +64,7 @@ db/
 |---|---|
 | `v15_atividades.sql` | o quadro de trabalho por grupo, os grupos como tabela, as notificações, a edição de marcos e ausências — e a trava do **quadro reservado** |
 | `v16_pessoal.sql` | solicitação, apontamento e ocorrência viram cartão no quadro do Pessoal; a decisão concede acesso na mesma transação; notificação por e-mail |
+| `v17_grupos_acesso.sql` | nível por pessoa em cada quadro (nenhum/leitura/edicao), acessos concedidos, e a tela de Grupos: renomear, fundir e conceder |
 
 **Aplique nesta ordem**, e as duas são idempotentes: rodar de novo não
 duplica nada.
@@ -77,6 +78,17 @@ Duas coisas que valem saber antes de rodar:
 - a 16.0 escolhe **qual grupo é o do Depto de Pessoal** (procura por "pessoal"
   ou "pessoas" no nome; não achando, cria um). Confira:
   `select id, nome, prefixo, reservado from public.grupos where chave = 'pessoal';`
+
+A **17.0** corrige, além do que ela traz de novo, três funções da 15.0 que
+escreviam sem checar grupo nenhum (`atividade_comentar`, `atividade_sinalizar`,
+`atividade_seguir`). Como são `security definer`, elas passavam por cima da RLS.
+Os corpos corrigidos estão nas duas migrações, idênticos: a 15.0 serve a quem
+instala do zero, a 17.0 a quem já tinha a 15.0 aplicada. Rodar qualquer uma, em
+qualquer ordem, chega no mesmo lugar.
+
+Pelo mesmo motivo, a 15.0 **deixou de redefinir `sou_do_grupo`** quando a 17.0
+já passou: essa função passou a enxergar os acessos concedidos, e a 15.0
+sobrescrevendo-a apagaria todos eles em silêncio.
 
 O quadro reservado nasce na **15.0**, e não na 16.0, de propósito: se as duas
 definissem a política de leitura, rodar a 15.0 de novo — coisa que ela diz ser

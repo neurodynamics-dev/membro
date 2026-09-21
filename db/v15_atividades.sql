@@ -294,15 +294,27 @@ grant  execute on function public.notificacoes_marcar_lidas(bigint[]) to authent
 --    afastamento e de desligamento vira cartão — e isso a equipe
 --    inteira não lê.
 -- ------------------------------------------------------------
-create or replace function public.sou_do_grupo(p_grupo_id integer)
-returns boolean language sql stable security definer
-set search_path = public as $$
-  select exists (
-    select 1 from membros m
-     where m.registro = public.portal_registro_atual()
-       and m.grupos @> array[(select nome from grupos where id = p_grupo_id)]
-  ) or public.papel_atual() in ('admin','pessoal');
-$$;
+-- ATENÇÃO ao mexer aqui: a 17.0 reescreve esta função para também
+-- enxergar os acessos concedidos por grupo. Se a 15.0 a redefinisse por
+-- cima, rodar a 15.0 de novo — coisa que ela diz ser segura — apagaria
+-- todo acesso concedido, em silêncio. Por isso a definição abaixo só
+-- vale enquanto a 17.0 ainda não passou por aqui.
+do $$
+begin
+  if to_regclass('public.grupo_acessos') is null then
+    execute $f$
+      create or replace function public.sou_do_grupo(p_grupo_id integer)
+      returns boolean language sql stable security definer
+      set search_path = public as $g$
+        select exists (
+          select 1 from membros m
+           where m.registro = public.portal_registro_atual()
+             and m.grupos @> array[(select nome from grupos where id = p_grupo_id)]
+        ) or public.papel_atual() in ('admin','pessoal');
+      $g$;
+    $f$;
+  end if;
+end $$;
 
 create or replace function public.posso_ver_grupo(p_grupo_id integer)
 returns boolean language sql stable security definer
@@ -428,6 +440,9 @@ begin
   if v_reg is null then return jsonb_build_object('status','sem_registro'); end if;
   select * into v_a from atividades where id = nullif(p->>'id','')::uuid;
   if not found then return jsonb_build_object('status','nao_encontrado'); end if;
+  -- sinalizar muda o cartão para todo mundo: é escrita.
+  if not public.sou_do_grupo(v_a.grupo_id) then
+    return jsonb_build_object('status','sem_permissao'); end if;
   if not public.sou_do_grupo(v_a.grupo_id) then return jsonb_build_object('status','sem_permissao'); end if;
 
   update atividades a set
@@ -515,6 +530,12 @@ begin
   if v_corpo is null then return jsonb_build_object('status','invalido','campo','corpo'); end if;
   select * into v_a from atividades where id = nullif(p->>'atividade_id','')::uuid;
   if not found then return jsonb_build_object('status','nao_encontrado'); end if;
+  -- comentar é escrever: vale a mesma regra de mover um cartão. Sem
+  -- esta linha quem só lê o quadro comentava nele — e, pior, a função
+  -- é security definer, então nem a RLS do quadro reservado barrava
+  -- quem tivesse o id de um cartão.
+  if not public.sou_do_grupo(v_a.grupo_id) then
+    return jsonb_build_object('status','sem_permissao'); end if;
 
   select coalesce(array_agg(distinct v::integer),'{}') into v_menc
     from jsonb_array_elements_text(
@@ -598,6 +619,11 @@ declare v_reg integer := public.portal_registro_atual();
         v_on  boolean := coalesce(nullif(p->>'seguir','')::boolean, true);
 begin
   if v_reg is null then return jsonb_build_object('status','sem_registro'); end if;
+  -- seguir é só pedir aviso, então basta poder VER o quadro. Mas tem de
+  -- ser checado: sem isto, quem soubesse o id de um cartão do quadro
+  -- reservado passava a receber notificação do conteúdo dele.
+  if not public.posso_ver_grupo((select grupo_id from atividades where id = v_id)) then
+    return jsonb_build_object('status','sem_permissao'); end if;
   if v_on then
     insert into atividade_seguidores (atividade_id, registro) values (v_id, v_reg) on conflict do nothing;
   else
