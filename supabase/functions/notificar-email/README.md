@@ -120,78 +120,113 @@ depois de ligar a verificação em duas etapas.
 
 ## Passo 5 — Publicar a função
 
-Precisa da CLI do Supabase, na raiz do repositório:
+Tudo pelo navegador, sem instalar nada.
 
-```bash
-npx supabase login
-npx supabase link --project-ref <a referência do projeto>
-npx supabase functions deploy notificar-email
+1. no painel do Supabase, menu lateral → **Edge Functions**;
+2. botão **Deploy a new function** → escolha **Via Editor**;
+3. no campo do nome, escreva exatamente `notificar-email` (com hífen, tudo
+   minúsculo — é esse nome que vira o endereço);
+4. o editor abre com um código de exemplo. **Apague tudo** o que estiver lá;
+5. em outra aba, abra o arquivo
+   [`index.ts`](https://github.com/neurodynamics-dev/membro/blob/main/supabase/functions/notificar-email/index.ts)
+   aqui do repositório, clique no botão **Copy raw file** (o ícone de duas
+   folhas, no alto à direita do código) e **cole** no editor do Supabase;
+6. botão **Deploy function**. Leva menos de um minuto.
+
+Deu certo quando `notificar-email` aparece na lista de Edge Functions com o
+status **Active**.
+
+> **Não mexa na verificação de JWT** (vem ligada, e é assim que tem de ficar).
+> Diferente do `agenda-ics`, aqui não há token na URL e ninguém de fora
+> precisa chamar: quem chama é o agendamento, autenticado.
+
+> **Quando o arquivo mudar** — porque eu corrigi alguma coisa —, é o mesmo
+> caminho: Edge Functions → `notificar-email` → **Code** → apagar, colar a
+> versão nova, **Deploy**.
+
+### Passo 5b — Ver se ela responde
+
+O jeito mais simples é **fazer o passo 6 primeiro** (agendar) e, cinco minutos
+depois, olhar os registros. Mas se quiser provocar uma execução na hora, dá,
+pelo navegador:
+
+No **SQL Editor** → **New query**, cole e clique em **Run**:
+
+```sql
+create extension if not exists pg_net;
+
+select net.http_post(
+  url     := 'https://<referencia-do-projeto>.supabase.co/functions/v1/notificar-email',
+  headers := jsonb_build_object(
+               'Content-Type',  'application/json',
+               'Authorization', 'Bearer <a-chave-service_role>')
+);
 ```
 
-A referência do projeto está em **Project Settings → General → Reference ID**,
-e também no meio da URL do painel.
+Onde achar as duas coisas entre `<>`:
 
-Deixe a **verificação de JWT ligada** (é o padrão, não mexa). Diferente do
-`agenda-ics`, aqui não há token na URL e ninguém de fora precisa chamar: quem
-chama é o agendamento, autenticado.
-
-### Testar antes de agendar
-
-Ainda na CLI:
-
-```bash
-curl -X POST 'https://<ref>.supabase.co/functions/v1/notificar-email' \
-  -H "Authorization: Bearer <SERVICE_ROLE_KEY>"
-```
-
-A chave está em **Project Settings → API → Project API keys → `service_role`**
-(clique em *Reveal*). **Ela dá acesso total ao banco** — não cole em chat, em
-issue nem no código.
-
-O que a resposta diz:
-
-| `status` | O que é |
+| O que | Onde |
 |---|---|
-| `ok` | rodou; vem `pessoas`, `enviadas`, `falhas` |
-| `smtp_nao_configurado` | falta `SMTP_HOST`, `SMTP_USER` ou `SMTP_SENHA` — e **nada foi consumido** |
-| `sem_configuracao` | falta `SUPABASE_URL`/`SERVICE_ROLE_KEY` |
-| `erro_no_lote` | o banco recusou a consulta — a migração `v16_pessoal.sql` foi aplicada? |
-| `enviou_mas_nao_deu_baixa` | os e-mails saíram mas a baixa falhou — **pode repetir na próxima rodada** |
+| **referência do projeto** | Project Settings → General → *Reference ID*. É também o pedaço do meio do endereço do painel |
+| **chave service_role** | Project Settings → API → *Project API keys* → linha `service_role` → **Reveal** |
 
-`"pessoas": 0` na primeira vez é normal: quer dizer que não havia aviso
-pendente. Para gerar um, peça a alguém que atribua uma atividade a você.
+> A chave `service_role` **dá acesso total ao banco**. Não cole em conversa, em
+> issue nem em nenhum lugar público. Se vazar, dá para gerar outra no mesmo
+> lugar.
 
----
+Esse comando responde só um número — o id da chamada. **O que a função
+respondeu de verdade** está em **Edge Functions** → `notificar-email` → aba
+**Logs**, alguns segundos depois:
+
+| Aparece nos logs | O que quer dizer |
+|---|---|
+| `"status":"ok"` | rodou. Vem junto `pessoas`, `enviadas` e `falhas` |
+| `"status":"smtp_nao_configurado"` | falta `SMTP_HOST`, `SMTP_USER` ou `SMTP_SENHA` no passo 4 — e **nada foi consumido**, dá para configurar e rodar de novo |
+| `"status":"erro_no_lote"` | o banco recusou a consulta. A migração `v16_pessoal.sql` foi aplicada? |
+| `"status":"sem_configuracao"` | problema do próprio ambiente do Supabase; me avise |
+| `"status":"enviou_mas_nao_deu_baixa"` | os e-mails saíram mas o banco não registrou. Pode chegar repetido na rodada seguinte — me avise |
+
+`"pessoas":0` na primeira vez é normal: quer dizer que não havia aviso pendente
+para ninguém. Para criar um, peça a alguém que atribua uma atividade a você e
+rode de novo.
 
 ## Passo 6 — Agendar
 
-A função não se chama sozinha.
+A função não se chama sozinha: alguém precisa acordá-la de tempos em tempos.
 
-### Pelo painel
+### Pelo painel — é o caminho curto
 
-**Integrations** → **Cron** → **Create job**:
+1. menu lateral → **Integrations** → **Cron**;
+2. se aparecer um convite para ligar as extensões `pg_cron` e `pg_net`,
+   aceite — são o relógio e o telefone do banco;
+3. **Create job**;
+4. preencha:
+   - **Name**: `notificar-email`
+   - **Schedule**: `*/5 * * * *` (a cada cinco minutos)
+   - **Type**: *Supabase Edge Function* → escolha `notificar-email` na lista;
+5. **Create**.
 
-- **Name**: `notificar-email`
-- **Schedule**: `*/5 * * * *`
-- **Type**: *Supabase Edge Function*, e escolha `notificar-email` na lista.
+O painel cuida da autenticação sozinho — por isso este caminho é melhor: não
+precisa colar chave nenhuma.
 
-O painel cuida da autenticação sozinho. É o caminho mais simples, e é o que eu
-faria.
+Cinco minutos é um bom intervalo: perto o bastante de "imediato" para quem
+espera resposta, e longe o bastante para juntar numa mensagem só a rajada de
+avisos que uma mesma ação gera.
 
-### Pelo SQL, se preferir
+### Pelo SQL, se o painel não oferecer o Cron
 
-**SQL Editor → New query**. Guarde a chave no cofre primeiro, para ela não
-ficar em texto claro dentro da tabela de agendamentos:
+No **SQL Editor**, uma vez só. A chave fica guardada no cofre do banco, em vez
+de escrita dentro da tabela de agendamentos:
 
 ```sql
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
-select vault.create_secret('<SERVICE_ROLE_KEY>', 'chave_servico');
+select vault.create_secret('<a-chave-service_role>', 'chave_servico');
 
 select cron.schedule('notificar-email', '*/5 * * * *', $$
   select net.http_post(
-    url     := 'https://<ref>.supabase.co/functions/v1/notificar-email',
+    url     := 'https://<referencia-do-projeto>.supabase.co/functions/v1/notificar-email',
     headers := jsonb_build_object(
                  'Content-Type',  'application/json',
                  'Authorization', 'Bearer ' ||
@@ -201,22 +236,27 @@ select cron.schedule('notificar-email', '*/5 * * * *', $$
 $$);
 ```
 
-Cinco minutos é um bom intervalo: perto o bastante de "imediato" para quem
-espera resposta, longe o bastante para juntar a rajada de avisos que uma mesma
-ação gera.
+### Conferir se está rodando
 
-Para ver o que rodou:
+**SQL Editor**, quando quiser:
 
 ```sql
-select jobid, runid, status, return_message, start_time
+select status, start_time, return_message
   from cron.job_run_details
  order by start_time desc
  limit 10;
 ```
 
-Para desligar: `select cron.unschedule('notificar-email');`
+`succeeded` na coluna `status` quer dizer que a chamada saiu. **Se o que você
+quer saber é se o e-mail saiu**, isso está nos Logs da função, como no passo 5b.
 
----
+Para desligar por um tempo: `select cron.unschedule('notificar-email');`
+
+> **"CLI"** é o jeito de mexer no Supabase digitando comandos numa janela preta
+> de terminal, em vez de clicando no painel. Dá no mesmo, e nada neste arquivo
+> precisa dela. Se um dia alguém da equipe preferir esse caminho, os comandos
+> equivalentes são `npx supabase functions deploy notificar-email` e
+> `npx supabase secrets set …`.
 
 ## Quem recebe o quê
 

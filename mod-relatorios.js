@@ -673,8 +673,14 @@ Qualquer dúvida, é só responder a este e-mail — estamos à disposição.</t
       <button class="btn ghost" onclick="mlBaixar()">${ic('down')} Baixar .html</button>
       <button class="btn ghost" onclick="mlCopiarCodigo()">${ic('copy')} Copiar código</button>
       <button class="btn solid" onclick="mlCopiar()">${ic('mail')} Copiar e-mail</button>
-    </div>`);
-  const m = document.querySelector('.modal'); if(m) m.classList.add('larga','mailer');
+    </div>`, 'imenso', true);
+  /* 'imenso' porque são duas colunas — formulário e pré-visualização — e em
+     520px elas viravam uma fita. Persistente porque aqui se escreve um
+     comunicado inteiro: um clique torto fora não pode apagar tudo.
+
+     Antes havia aqui um `document.querySelector('.modal')` vindo do SOMA
+     antigo, onde o modal era uma CLASSE. No portal ele é um id, então a
+     linha nunca achou nada e nunca alargou coisa nenhuma. */
   $('#ml-tema').value = AREAS_MAILER[0].tema;
   _mailerHTML=''; mlUpd(true);
 }

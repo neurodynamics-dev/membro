@@ -24,12 +24,16 @@ e rode daqui.
 | `origem-e-pills.mjs` | cartão de origem, decisão que concede acesso, pills de grupo, preferência de e-mail |
 | `relatorios-por-papel.mjs` | quais relatórios cada papel alcança — na galeria, na busca e por chamada direta |
 | `carga-por-papel.mjs` | que papel baixa qual módulo (um `leitura` não baixa o `mod-gestao`) |
+| `quadro-e-acesso.mjs` | espaço do quadro, rolagem horizontal, nível de acesso por grupo e o cartão |
+| `ajustes-de-tela.mjs` | ordem dos grupos, quadro padrão, fundo do dropdown, Full mailer e o comentário que falha |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install
 node origem-e-pills.mjs
 node relatorios-por-papel.mjs           # usa o stub padrão (admin)
 node carga-por-papel.mjs
+node quadro-e-acesso.mjs
+node ajustes-de-tela.mjs
 ```
 
 Para rodar por papel, gere um stub com o papel trocado:
