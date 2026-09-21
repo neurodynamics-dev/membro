@@ -2,7 +2,7 @@
    email.test.ts — conferência do e-mail de notificação
    Rode com Node 22+:  node --experimental-strip-types email.test.ts
    ============================================================ */
-import { assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome,
+import { assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, tlsImplicito,
          type Destinatario } from "./index.ts";
 
 let falhas = 0;
@@ -19,6 +19,16 @@ const pessoa = (itens: Partial<Destinatario["itens"][number]>[]): Destinatario =
     href: "#/atividades/card/ORT-14", criado_em: "2026-09-21T12:00:00Z", ...i,
   })),
 });
+
+/* --- TLS: a porta decide como a conversa começa criptografada, e
+       trocar as duas pendura a conexão sem dizer o motivo --- */
+ok("465 fala TLS desde o primeiro byte",      tlsImplicito(465, "") === true);
+ok("587 começa em claro e sobe com STARTTLS", tlsImplicito(587, "") === false);
+ok("25 idem",                                 tlsImplicito(25,  "") === false);
+ok("porta fora da convenção assume STARTTLS", tlsImplicito(2525, "") === false);
+ok("SMTP_TLS=implicito vence a porta",        tlsImplicito(587, "implicito") === true);
+ok("SMTP_TLS=starttls vence a porta",         tlsImplicito(465, "starttls") === false);
+ok("SMTP_TLS=nao continua sem TLS implícito", tlsImplicito(465, "nao") === false);
 
 /* --- assunto --- */
 ok("um aviso vira assunto do próprio aviso",

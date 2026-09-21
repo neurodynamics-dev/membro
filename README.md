@@ -95,8 +95,15 @@ O quadro de trabalho de cada grupo, em `#/atividades`:
 - **todo movimento vira histórico** no cartão: quem moveu, quem atribuiu, quem
   mudou o prazo, quem sinalizou.
 
-As notificações aparecem no sino do cabeçalho. Por enquanto são só dentro do
-portal — e-mail exigiria uma Edge Function com SMTP, que fica para depois.
+As notificações aparecem no sino do cabeçalho e, se você quiser, também no
+seu e-mail: um e-mail por pessoa com tudo o que está pendente — cinco avisos
+na mesma hora chegam juntos, não cinco vezes. Cada um escolhe como quer
+receber no **sininho → Preferências de e-mail**: a cada aviso, um resumo por
+dia, ou só no portal.
+
+Ligar o envio é [uma configuração do
+projeto](supabase/functions/notificar-email/README.md); enquanto ela não
+existir, os avisos continuam no sino, intactos.
 
 ## O plano de gestão
 

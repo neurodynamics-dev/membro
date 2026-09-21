@@ -39,13 +39,32 @@ const PORTAL = env("PORTAL_URL") || "https://membro.neurodynamics.dev";
    já enviado não se reescreve, então o caminho tem de seguir no ar. */
 const IMG = env("MAILER_URL") || "https://membro.neurodynamics.dev/mailer";
 
+/* A porta decide COMO a conversa começa criptografada, e trocar as duas
+   é o erro clássico: a conexão pendura até dar tempo limite, sem dizer o
+   motivo.
+
+     465  fala TLS desde o primeiro byte (SMTPS)  -> tls: true
+     587  começa em texto claro e sobe com STARTTLS -> tls: false,
+          que é o que faz o denomailer negociar a subida sozinho
+     25   idem, mas quase todo provedor bloqueia
+
+   O padrão é 465 porque é o que a Cloudflare exige — e ela não aceita
+   STARTTLS na 587. SMTP_TLS existe para o caso raro de um servidor que
+   não segue a convenção da porta. */
+export function tlsImplicito(porta: number, modo: string): boolean {
+  if (modo === "implicito") return true;
+  if (modo === "starttls" || modo === "nao") return false;
+  return porta === 465;
+}
+
+const PORTA = Number(env("SMTP_PORT") || "465");
 const SMTP = {
   host: env("SMTP_HOST"),
-  port: Number(env("SMTP_PORT") || "587"),
+  port: PORTA,
   user: env("SMTP_USER"),
   senha: env("SMTP_SENHA"),
   de: env("SMTP_DE") || env("SMTP_USER"),
-  tls: env("SMTP_TLS") !== "nao",
+  tls: tlsImplicito(PORTA, env("SMTP_TLS")),
 };
 
 const LOTE = Number(env("NOTIF_LOTE") || "200");
