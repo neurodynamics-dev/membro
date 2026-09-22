@@ -256,6 +256,25 @@ console.log('\nAberto (admin, 1440px)');
   await ctx.close();
 }
 
+/* ---------- redimensionar ---------- */
+/* A margem do conteúdo só anima no clique de recolher. Se animasse ao
+   cruzar os 900px, no meio do caminho o conteúdo ficaria estreito
+   demais e transbordaria para o lado. */
+console.log('\nRedimensionar');
+{
+  const { ctx, p } = await abrir({ hash:'#/atividades/ORT', menu:'aberto' });
+  await p.setViewportSize({ width:390, height:844 });
+  await p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const r = await p.evaluate(() => ({
+    rola: document.documentElement.scrollWidth - window.innerWidth,
+    margem: Math.round(document.getElementById('main').getBoundingClientRect().left),
+    anima: document.getAnimations().filter(a => a instanceof CSSTransition
+      && ['margin-left', 'width'].includes(a.transitionProperty)).length }));
+  confere('cruzar os 900px não anima a margem nem cria rolagem lateral',
+    r.rola <= 0 && r.margem === 0 && r.anima === 0, r);
+  await ctx.close();
+}
+
 /* ---------- 6: celular ---------- */
 console.log('\nCelular (390px)');
 {

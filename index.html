@@ -93,8 +93,14 @@ body.lt-recolhida{--lt-w:var(--lt-trilho)}
 #hd{position:fixed;z-index:60;top:0;bottom:0;left:0;width:var(--lt-w);
   display:flex;flex-direction:column;
   background:rgba(6,10,9,.84);border-right:1px solid var(--line);
-  backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);
-  transition:width .22s var(--lt-ease)}
+  backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4)}
+/* Anima só quando a pessoa recolhe ou expande (alternarLateral põe
+   .lt-animando por um instante). Sem isso, cruzar os 900px ao
+   redimensionar a janela animaria a margem do conteúdo, e no meio do
+   caminho ele fica estreito demais e transborda. */
+body.lt-animando #hd{transition:width .22s var(--lt-ease)}
+body.lt-animando main,body.lt-animando .av-slot,
+body.lt-animando footer#ft{transition:margin-left .22s var(--lt-ease)}
 .lt-topo{flex:none;display:flex;align-items:center;height:66px;padding:0 14px 0 20px;
   border-bottom:1px solid var(--line);overflow:hidden}
 .lt-marca{display:flex;align-items:center;gap:12px;min-width:0}
@@ -102,7 +108,8 @@ body.lt-recolhida{--lt-w:var(--lt-trilho)}
   box-shadow:0 0 0 1px var(--line2)}
 .lt-nome{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;
   transition:opacity .15s}
-.lt-nome img{height:14px;width:auto;display:block;filter:brightness(0) invert(1)}
+/* o nome vai em texto, não no imagotipo: o imagotipo já traz o símbolo,
+   e o ícone do app ao lado o repetiria */
 .lt-nome .logotype{font-size:14.5px;line-height:1}
 .logotype{font-family:var(--fd);font-weight:700;font-size:16.5px;letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
 .hd-tag{font-family:var(--fm);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
@@ -210,7 +217,7 @@ body.lt-recolhida{--lt-w:var(--lt-trilho)}
     margin:0;padding:0 0 0 8px;border:0;visibility:hidden;opacity:0;transform:translateX(-4px);
     transition:opacity .12s,transform .12s,visibility 0s linear .12s}
   body.lt-recolhida .lt-voo{min-width:220px;max-width:290px;padding:6px;
-    border:1px solid var(--line2);border-radius:12px;background:#0B1311;
+    border:1px solid var(--line2);border-radius:12px;background:var(--panel);
     box-shadow:0 18px 44px -10px rgba(0,0,0,.8);overflow-y:auto}
   body.lt-recolhida .lt-sec:hover>.lt-sub{visibility:visible;opacity:1;transform:none;transition-delay:0s}
   body.lt-recolhida .lt-voo-tit{display:block;padding:7px 10px 6px;font-family:var(--fd);
@@ -494,7 +501,7 @@ button.res-pill:hover{background:rgba(255,255,255,.05)}
    metade da folga — quando há folga. */
 main,.av-slot{max-width:var(--max-main);margin-right:auto;
   margin-left:max(var(--lt-w), calc(var(--lt-w) + (100% - var(--lt-w) - var(--max-main)) / 2));
-  padding-left:32px;padding-right:32px;transition:margin-left .22s var(--lt-ease)}
+  padding-left:32px;padding-right:32px}
 main{padding-top:24px;padding-bottom:90px}
 .av-slot{padding-top:18px}
 @media (max-width:900px){
@@ -1063,7 +1070,7 @@ a.srv.anon{border-style:dashed}
 
 /* ============ FOOTER ============ */
 footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px);
-  margin-left:var(--lt-w);transition:margin-left .22s var(--lt-ease)}
+  margin-left:var(--lt-w)}
 .ft-in{max-width:var(--max-main);margin:0 auto;padding:46px 32px 28px}
 @media (max-width:900px){.ft-in{padding:40px 18px 26px}}
 .ft-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:30px;padding-bottom:36px}
@@ -1502,7 +1509,7 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px);
   <div class="lt-topo">
     <a class="lt-marca" href="#/" aria-label="Portal do Membro — início">
       <img class="lt-simbolo" src="favicon.png" alt="">
-      <span class="lt-nome"><img id="logo-hd" src="" alt="NeuroDynamics"><span class="hd-tag">Portal do Membro</span></span>
+      <span class="lt-nome"><span class="logotype">NeuroDynamics</span><span class="hd-tag">Portal do Membro</span></span>
     </a>
   </div>
   <button class="lt-busca" id="busca-abre" onclick="abrirPaleta()" aria-label="Buscar" title="Buscar (/)">
@@ -1998,11 +2005,12 @@ async function salvarNovaSenha(){
 let checkinPendente = new URLSearchParams(location.search).get('t');
 
 async function boot(){
-  [['#logo-hd'],['#logo-login']].forEach(([sel])=>{
-    const img = $(sel); if(!img) return;
-    img.onerror = () => { const s=document.createElement('span'); s.className='logotype'; s.textContent='NeuroDynamics'; img.replaceWith(s); };
-    img.src = LOGO_URL;
-  });
+  /* o imagotipo só no login; o menu lateral usa o ícone e o nome em texto */
+  const logo = $('#logo-login');
+  if (logo){
+    logo.onerror = () => { const s=document.createElement('span'); s.className='logotype'; s.textContent='NeuroDynamics'; logo.replaceWith(s); };
+    logo.src = LOGO_URL;
+  }
   if (!sb){ $('#v-login').hidden=false;
     $('#l-erro').textContent='Não foi possível carregar a biblioteca do Supabase. Recarregue a página.'; return; }
 
@@ -2334,6 +2342,7 @@ let tMenuLateral = null;
 function alternarLateral(recolher){
   const escolha = typeof recolher !== 'boolean';
   const rec = escolha ? !document.body.classList.contains('lt-recolhida') : recolher;
+  if (escolha) document.body.classList.add('lt-animando');
   document.body.classList.toggle('lt-recolhida', rec);
   if (escolha) try { localStorage.setItem(CHAVE_MENU, rec ? 'recolhido' : 'aberto'); } catch(e){}
   const b = $('#lt-recolher');
@@ -2345,7 +2354,10 @@ function alternarLateral(recolher){
   /* o quadro de Atividades se mede pela janela: avisa quando a
      animação da largura terminar */
   clearTimeout(tMenuLateral);
-  tMenuLateral = setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
+  tMenuLateral = setTimeout(() => {
+    document.body.classList.remove('lt-animando');
+    window.dispatchEvent(new Event('resize'));
+  }, 260);
 }
 alternarLateral(menuComecaRecolhido());
 
