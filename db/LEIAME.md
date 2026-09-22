@@ -65,6 +65,7 @@ db/
 | `v15_atividades.sql` | o quadro de trabalho por grupo, os grupos como tabela, as notificações, a edição de marcos e ausências — e a trava do **quadro reservado** |
 | `v16_pessoal.sql` | solicitação, apontamento e ocorrência viram cartão no quadro do Pessoal; a decisão concede acesso na mesma transação; notificação por e-mail |
 | `v17_grupos_acesso.sql` | nível por pessoa em cada quadro (nenhum/leitura/edicao), acessos concedidos, e a tela de Grupos: renomear, fundir e conceder |
+| `v18_teste_email.sql` | o aviso de teste de e-mail sob demanda, e a exceção que o faz sair mesmo para quem escolheu resumo ou "só no portal" |
 
 **Aplique nesta ordem**, e as duas são idempotentes: rodar de novo não
 duplica nada.

@@ -140,7 +140,7 @@ end $$;
 do $$ declare lote jsonb; begin
   insert into notificacao_preferencias(registro,email_modo) values (17,'nunca')
     on conflict (registro) do update set email_modo='nunca';
-  perform notificar(array[17], 'teste', 'Título', 'Corpo', '#/x');
+  perform notificar(array[17], 'atividade_atribuida', 'Título', 'Corpo', '#/x');
   select notificacoes_email_lote(200) into lote;
   perform ok(not exists(select 1 from jsonb_array_elements(lote) x where (x->>'registro')::int=17),
              'quem escolheu "nunca" fica fora do lote');
