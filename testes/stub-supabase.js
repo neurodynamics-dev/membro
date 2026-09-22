@@ -41,12 +41,14 @@
         tabela:'acessos_concedidos', registro_ref:'11', operacao:'INSERT', campo:'ativo',
         valor_anterior:null, valor_novo:'true' }
     ],
+    /* a ordem é a mesma de grupos_visiveis, abaixo: o menu lateral lista
+       os quadros da pessoa por ela, não pela ordem em que chegaram */
     grupos: [
-      { id:1, nome:'Órtese', prefixo:'ORT', ativo:true, cor:null, chave:null, reservado:false },
-      { id:2, nome:'Sinais', prefixo:'SIN', ativo:true, cor:null, chave:null, reservado:false },
+      { id:1, nome:'Órtese', prefixo:'ORT', ativo:true, cor:null, chave:null, reservado:false, ordem:4 },
+      { id:2, nome:'Sinais', prefixo:'SIN', ativo:true, cor:null, chave:null, reservado:false, ordem:3 },
       { id:3, nome:'Depto de Pessoal', prefixo:'DEP', ativo:true, cor:null,
-        chave:'pessoal', reservado:true },
-      { id:4, nome:'Gerência', prefixo:'GER', ativo:true, cor:null, chave:null, reservado:true }
+        chave:'pessoal', reservado:true, ordem:2 },
+      { id:4, nome:'Gerência', prefixo:'GER', ativo:true, cor:null, chave:null, reservado:true, ordem:1 }
     ],
     notificacao_preferencias: [{ registro:4, email_modo:'resumo' }],
     /* a v17 trocou a leitura de "grupos" por "grupos_visiveis", que traz o
@@ -140,7 +142,14 @@
       { id:'ck2', evento_id:'e1', item:'Enviar convite com RSVP', feito:true, ordem:20 },
       { id:'ck3', evento_id:'e1', item:'Imprimir a lista de presença', feito:false, ordem:30 }
     ],
-    portal_avisos: [], portal_documentos: [], portal_solicitacoes: [],
+    portal_avisos: [],
+    portal_documentos: [
+      { id:'d1', titulo:'Estatuto', categoria:'institucional', url:'https://drive.google.com/e',
+        publicado:true, ordem:1 },
+      { id:'d2', titulo:'Guia do primeiro mês', categoria:'guia', url:'https://drive.google.com/g',
+        publicado:true, ordem:2 }
+    ],
+    portal_solicitacoes: [],
     portal_ouvidoria: [], portal_agendas: []
   };
 

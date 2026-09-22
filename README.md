@@ -65,10 +65,15 @@ SOMA · Gestão está sendo trazido, conforme o
 
 A navegação é por **espaços** — o que você está fazendo —, não por qual app
 a tela veio: **Início · Agenda · Atividades · Equipe · Informações · Serviços ·
-Administração**. Sete destinos, um nível. Os detalhes e o porquê estão em
-[`PADROES.md`](PADROES.md).
+Meus pedidos · Administração**. Eles ficam num **menu lateral** à esquerda,
+cada um com ícone e com os seus subitens logo abaixo — as abas da Agenda, os
+quadros dos seus grupos, as categorias de documento, cada serviço, cada
+painel da Administração. O menu **recolhe** para um trilho de ícones (o
+botão fica no pé dele; passar o mouse num ícone mostra os subitens ao lado),
+e no celular vira uma gaveta, aberta pelo botão da barra de topo. Os
+detalhes e o porquê estão em [`PADROES.md`](PADROES.md).
 
-Há uma **busca global** no cabeçalho (atalho `/` ou `Ctrl/⌘ K`) que acha telas
+Há uma **busca global** no topo do menu (atalho `/` ou `Ctrl/⌘ K`) que acha telas
 e ações, pessoas, atividades por código ou título, e compromissos da agenda.
 Cada módulo registra o que sabe achar — quem adiciona um módulo novo adiciona
 uma fonte de busca junto.
@@ -99,7 +104,7 @@ O quadro de trabalho de cada grupo, em `#/atividades`:
 - **todo movimento vira histórico** no cartão: quem moveu, quem atribuiu, quem
   mudou o prazo, quem sinalizou.
 
-As notificações aparecem no sino do cabeçalho e, se você quiser, também no
+As notificações aparecem no sino do pé do menu (no celular, no topo) e, se você quiser, também no
 seu e-mail: um e-mail por pessoa com tudo o que está pendente — cinco avisos
 na mesma hora chegam juntos, não cinco vezes. Cada um escolhe como quer
 receber no **sininho → Preferências de e-mail**: a cada aviso, um resumo por
@@ -172,7 +177,7 @@ Duas coisas que a unificação trouxe de graça:
 
 ## Arquitetura
 
-O `index.html` é a **casca**: tokens da marca, cabeçalho, menu, login,
+O `index.html` é a **casca**: tokens da marca, menu lateral, login,
 roteador, modal e toast — mais as telas do plano do membro (início, agenda,
 organização, informações, serviços e pedidos).
 

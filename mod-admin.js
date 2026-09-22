@@ -14,7 +14,8 @@
    login a mais para a mesma conta.
 
    Depende da casca para: sb, $, esc, state, toast, fmtD, abreModal,
-   fechaModal, can, registrarBusca, filtrarSimples, quemSouEu.
+   fechaModal, can, registrarBusca, filtrarSimples, quemSouEu,
+   PAINEIS, GRUPOS_PAINEL, painelPermitido.
    ============================================================ */
 
 const adminP = {
@@ -33,27 +34,8 @@ const CAT_DOC_ADM = {institucional:'Institucional', politica:'Política', guia:'
 
 /* Com onze painéis, aba não cabe mais: a Administração vira galeria —
    o componente "galeria de tiles" do design system — e cada painel tem
-   endereço próprio. */
-/* O quarto campo diz quem abre. Relatórios é o único que o Comitê de
-   Seleção também precisa: a lista de e-mails dos candidatos mora lá, e
-   antes ficava numa tela que o comitê alcançava. */
-const PAINEIS = [
-  ['avisos',       'Quadro de avisos',    'Portal',   'O banner rotativo da home, com layout e ordem', can],
-  ['documentos',   'Documentos',          'Portal',   'A biblioteca de estatuto, políticas, guias e formulários', can],
-  ['solicitacoes', 'Solicitações',        'Portal',   'Triagem dos pedidos ao Depto. de Pessoal', can],
-  ['ouvidoria',    'Ouvidoria',           'Portal',   'As mensagens anônimas, para ler e tratar', can],
-  ['agendas',      'Agendas',             'Portal',   'Quem conectou o Google Agenda e como está a sincronização', can],
-  ['contas',       'Contas e perfis',     'Pessoas',  'Papéis de acesso, vínculo com o quadro e senha', can],
-  ['acessos',      'Catálogo de acessos', 'Pessoas',  'Os sistemas, locais e documentos controlados pela NRO', can],
-  ['grupos',       'Grupos e quadros',    'Pessoas',  'Nome, prefixo do código, quem enxerga cada quadro', can],
-  ['importar',     'Importar planilha',   'Pessoas',  'Atualizar o quadro em massa pelo NRO-PES-005 ou pelo Excel do SOMA', can],
-  ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
-                                                       () => can() || podeSelecao()],
-  ['auditoria',    'Auditoria',           'Registro', 'Quem mudou o quê, quando', can],
-  ['site',         'Site institucional',  'Conteúdo', 'Os projetos que aparecem em neurodynamics.dev', can]
-];
-const painelPermitido = (p) => !p[4] || p[4]();
-const GRUPOS_PAINEL = ['Portal','Pessoas','Registro','Conteúdo'];
+   endereço próprio. A lista (PAINEIS, GRUPOS_PAINEL, painelPermitido)
+   mora na casca: o menu lateral também a lê, antes deste módulo existir. */
 
 const ICONES_ADM = {
   grupos:'<circle cx="8" cy="9" r="2.6"/><circle cx="16.5" cy="8" r="2.1"/><path d="M3.5 18.5c0-2.5 2-4.2 4.5-4.2s4.5 1.7 4.5 4.2"/><path d="M14.8 13.6c2.3.2 3.9 1.8 3.9 4"/>',

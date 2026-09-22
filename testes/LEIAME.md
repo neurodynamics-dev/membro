@@ -27,6 +27,7 @@ e rode daqui.
 | `quadro-e-acesso.mjs` | espaço do quadro, rolagem horizontal, nível de acesso por grupo e o cartão |
 | `ajustes-de-tela.mjs` | ordem dos grupos, quadro padrão, fundo do dropdown, Full mailer e o comentário que falha |
 | `teste-de-email.mjs` | o botão "Enviar um e-mail de teste": as nove coisas que podem falhar viram nove recados distintos |
+| `menu-lateral.mjs` | o menu lateral: subitens por papel, item atual, recolher e o voo do trilho, a gaveta do celular, nenhuma rolagem horizontal — com asserções (sai com código 1 se algo falhar) |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install
@@ -36,6 +37,7 @@ node carga-por-papel.mjs
 node quadro-e-acesso.mjs
 node ajustes-de-tela.mjs
 node teste-de-email.mjs
+node menu-lateral.mjs
 ```
 
 Para rodar por papel, gere um stub com o papel trocado:

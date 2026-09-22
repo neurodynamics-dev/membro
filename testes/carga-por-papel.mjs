@@ -10,11 +10,12 @@ await p.route('**/raw.githubusercontent.com/**', r => r.abort());
 await p.goto('http://localhost:8765/index.html', { waitUntil:'domcontentloaded' });
 await p.waitForSelector('#hd:not([hidden])');
 const out = { papel: await p.evaluate(() => state.perfil.papel) };
-out.grupoGestaoOculto = await p.isHidden('#grupo-gestao');
-out.itemMenuOculto    = await p.isHidden('.so-gestao');
+/* o que o menu lateral oferece a este papel — a porta que nem aparece */
+out.adminNoMenu         = await p.isVisible('#lt-nav .lt-sec[data-r="admin"]');
+out.quadroPessoalNoMenu = await p.evaluate(() => !!document.querySelector('#lt-nav .lt-filho[href="#/equipe/quadro"]'));
 out.abrirFichaNoOrg   = await p.evaluate(async () => {
   location.hash = '#/organizacao'; await new Promise(r=>setTimeout(r,400));
-  return document.querySelectorAll('.org-focus a[href^="#/quadro/"]').length;
+  return document.querySelectorAll('.org-focus a[href^="#/equipe/"]').length;
 });
 // tenta entrar na rota de gestão na marra
 out.aposTentarQuadro = await p.evaluate(async () => {
