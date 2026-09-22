@@ -24,10 +24,25 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **Equipe** | pessoas — organograma e fichas | todos (a profundidade varia) |
 | **Informações** | documentos e políticas | todos |
 | **Serviços** | pedidos ao Depto. de Pessoal | todos |
-| **Administração** | os painéis: portal, site, seleção, catálogo, importação, auditoria | `admin`, `pessoal` |
+| **Meus pedidos** | o andamento do que você pediu | todos |
+| **Administração** | os painéis: portal, site, seleção, catálogo, importação, auditoria | `admin`, `pessoal` (e `selecao`, só Relatórios) |
 
-Sete destinos, um nível. Comparado com os quinze que a união produziria numa
-lista plana, é o que cabe num cabeçalho sem virar sopa.
+Oito destinos no primeiro nível, cada um com ícone, no **menu lateral** à
+esquerda. O segundo nível são os subitens de cada espaço — as abas da
+Agenda, os quadros dos grupos da pessoa, as categorias de documento, cada
+serviço, cada painel —, pendurados numa linha-guia debaixo do espaço, como
+no painel da Cloudflare. Tudo o que tem endereço próprio vira subitem; o que
+é filtro dentro de uma tela, não.
+
+O menu **recolhe** para um trilho de ícones (a escolha fica no navegador de
+cada pessoa; sem escolha, tela abaixo de 1280px começa recolhida). No
+trilho, passar o mouse — ou chegar pelo Tab — num ícone abre os subitens ao
+lado. Abaixo de 900px o menu vira gaveta, puxada pela barra de topo.
+
+A árvore mora em `arvoreDoMenu()`, na casca. Tela nova com endereço próprio
+entra lá como subitem do espaço dela; se a tela firma o endereço sozinha
+(como Atividades, que troca `#/atividades` pelo quadro que abriu), o menu
+acompanha sem precisar de nada.
 
 **Dois princípios por trás disso:**
 
@@ -52,7 +67,7 @@ conforme quem entra é menu que ninguém aprende.
 #/atividades/card/<codigo>  uma atividade (ex.: #/atividades/card/ORT-14)
 #/equipe                    organograma
 #/equipe/<registro>         a ficha
-#/informacoes
+#/informacoes[/<categoria>]
 #/servicos[/<tipo>]
 #/pedidos
 #/admin[/aba]               painéis
@@ -71,7 +86,7 @@ conforme quem entra é menu que ninguém aprende.
 
 ## 3. A busca
 
-Uma caixa no cabeçalho, atalho `/` ou `Ctrl/⌘ K`. Acha **quatro coisas**:
+Uma caixa no topo do menu lateral, atalho `/` ou `Ctrl/⌘ K`. Acha **quatro coisas**:
 
 | Fonte | Exemplo do que casa |
 |---|---|

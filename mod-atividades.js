@@ -133,6 +133,12 @@ async function pageAtividades(sub, sub2){
   atividades.grupoAtual = gs.find(g => g.prefixo === (sub||'').toUpperCase())
     || gs.find(g => g.id === atividades.grupoAtual?.id)
     || grupoPadrao();
+  /* O endereço passa a dizer qual quadro está aberto: #/atividades vira
+     #/atividades/ORT. Assim o link copiado abre o mesmo quadro e o menu
+     lateral acende o item certo. replaceState não dispara hashchange. */
+  const aqui = '#/atividades/' + (atividades.grupoAtual.prefixo || '');
+  if (atividades.grupoAtual.prefixo && location.hash !== aqui)
+    history.replaceState(null, '', location.pathname + location.search + aqui);
   telaQuadro();
 }
 
