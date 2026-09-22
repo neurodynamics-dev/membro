@@ -69,6 +69,25 @@ const SMTP = {
 
 const LOTE = Number(env("NOTIF_LOTE") || "200");
 
+/* O botão de teste no portal chama esta função do NAVEGADOR, e aí o
+   pedido é de outra origem: antes do POST o navegador manda um OPTIONS
+   de sondagem, e só segue se a resposta autorizar.
+
+   Faltando isso acontecem DUAS coisas, e a segunda é pior que a
+   primeira: o navegador descarta a resposta (e o portal relata
+   "função não publicada", olhando para o lugar errado), e o OPTIONS,
+   por não ser tratado, executava a rotina inteira — mandava os
+   e-mails de verdade para depois ter a resposta jogada fora.
+
+   A agenda-sync já fazia isto certo; esta nasceu pensada só para o
+   agendamento, onde não há navegador no meio. */
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+const CABECALHO = { ...CORS, "Content-Type": "application/json; charset=utf-8" };
+
 export interface ItemNotificacao {
   id: number;
   tipo: string;
@@ -190,8 +209,16 @@ async function rpc(nome: string, corpo: unknown): Promise<unknown> {
   return await r.json();
 }
 
-async function servir(): Promise<Response> {
-  const cabecalho = { "Content-Type": "application/json; charset=utf-8" };
+export async function servir(req: Request): Promise<Response> {
+  /* a sondagem do navegador responde e para por aqui: ela não é o
+     pedido de verdade, e executá-la mandaria e-mail à toa */
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST" && req.method !== "GET") {
+    return new Response(JSON.stringify({ status: "metodo_nao_aceito" }),
+      { status: 405, headers: CABECALHO });
+  }
+
+  const cabecalho = CABECALHO;
 
   if (!URL_BASE || !CHAVE_SERVICO) {
     return new Response(JSON.stringify({
@@ -272,12 +299,16 @@ async function servir(): Promise<Response> {
   }), { headers: cabecalho });
 }
 
-const servidor = (globalThis as { Deno?: { serve(h: () => Promise<Response>): unknown } }).Deno;
-servidor?.serve(async () => {
+const servidor = (globalThis as {
+  Deno?: { serve(h: (r: Request) => Promise<Response>): unknown };
+}).Deno;
+servidor?.serve(async (req: Request) => {
   try {
-    return await servir();
+    return await servir(req);
   } catch (e) {
+    /* o CORS entra até no erro: sem ele o navegador esconde a mensagem
+       e quem está configurando fica sem saber o que aconteceu */
     return new Response(JSON.stringify({ status: "erro", detalhe: String(e) }),
-      { status: 500, headers: { "Content-Type": "application/json; charset=utf-8" } });
+      { status: 500, headers: CABECALHO });
   }
 });

@@ -3,7 +3,7 @@
    Rode com Node 22+:  node --experimental-strip-types email.test.ts
    ============================================================ */
 import { assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, tlsImplicito,
-         type Destinatario } from "./index.ts";
+         servir, type Destinatario } from "./index.ts";
 
 let falhas = 0;
 const ok = (n: string, c: boolean, extra = "") => {
@@ -19,6 +19,33 @@ const pessoa = (itens: Partial<Destinatario["itens"][number]>[]): Destinatario =
     href: "#/atividades/card/ORT-14", criado_em: "2026-09-21T12:00:00Z", ...i,
   })),
 });
+
+/* --- CORS e método: o botão de teste do portal chama esta função do
+       NAVEGADOR. Sem estes cabeçalhos o navegador descarta a resposta, e
+       sem tratar o OPTIONS a sondagem executava a rotina inteira e
+       mandava e-mail de verdade para nada. --- */
+{
+  const r = await servir(new Request("https://x/", { method: "OPTIONS" }));
+  ok("a sondagem do navegador é respondida", r.status === 200);
+  ok("e autoriza a origem",
+     r.headers.get("Access-Control-Allow-Origin") === "*");
+  ok("e autoriza o cabeçalho de autenticação",
+     (r.headers.get("Access-Control-Allow-Headers") || "").includes("authorization"));
+  ok("e a sondagem NÃO executa o envio", (await r.text()) === "ok");
+}
+{
+  const r = await servir(new Request("https://x/", { method: "POST" }));
+  ok("o POST responde com CORS também",
+     r.headers.get("Access-Control-Allow-Origin") === "*", String(r.status));
+  ok("e em JSON",
+     (r.headers.get("Content-Type") || "").includes("application/json"));
+}
+{
+  const r = await servir(new Request("https://x/", { method: "PUT" }));
+  ok("método que não serve é recusado", r.status === 405);
+  ok("e mesmo a recusa vem com CORS — senão o erro fica invisível",
+     r.headers.get("Access-Control-Allow-Origin") === "*");
+}
 
 /* --- TLS: a porta decide como a conversa começa criptografada, e
        trocar as duas pendura a conexão sem dizer o motivo --- */
