@@ -19,11 +19,6 @@
    aqui não há token na URL e ninguém de fora precisa chamar.
    ============================================================ */
 
-/* O cliente SMTP entra por import dinâmico, dentro do handler, e não
-   no topo do arquivo: assim este módulo continua sendo importável
-   fora do Deno — que é como os testes leem as funções puras daqui. */
-const CDN_SMTP = "https://deno.land/x/denomailer@1.6.0/mod.ts";
-
 const env = (nome: string): string =>
   (globalThis as { Deno?: { env: { get(k: string): string | undefined } } })
     .Deno?.env.get(nome) ?? "";
@@ -39,33 +34,119 @@ const PORTAL = env("PORTAL_URL") || "https://membro.neurodynamics.dev";
    já enviado não se reescreve, então o caminho tem de seguir no ar. */
 const IMG = env("MAILER_URL") || "https://membro.neurodynamics.dev/mailer";
 
-/* A porta decide COMO a conversa começa criptografada, e trocar as duas
-   é o erro clássico: a conexão pendura até dar tempo limite, sem dizer o
-   motivo.
+/* POR QUE NÃO É MAIS SMTP.
 
-     465  fala TLS desde o primeiro byte (SMTPS)  -> tls: true
-     587  começa em texto claro e sobe com STARTTLS -> tls: false,
-          que é o que faz o denomailer negociar a subida sozinho
-     25   idem, mas quase todo provedor bloqueia
+   A versão anterior carregava um cliente SMTP de deno.land por import
+   DINÂMICO, para o arquivo continuar importável fora do Deno (é assim
+   que os testes leem as funções puras daqui). Só que o Supabase resolve
+   as dependências na hora de PUBLICAR, lendo os imports estáticos — um
+   import dinâmico com a URL numa variável não entra no pacote, e em
+   produção vira "Module not found".
 
-   O padrão é 465 porque é o que a Cloudflare exige — e ela não aceita
-   STARTTLS na 587. SMTP_TLS existe para o caso raro de um servidor que
-   não segue a convenção da porta. */
-export function tlsImplicito(porta: number, modo: string): boolean {
-  if (modo === "implicito") return true;
-  if (modo === "starttls" || modo === "nao") return false;
-  return porta === 465;
+   Em vez de trocar por import estático e ficar refém de um registro de
+   módulos, o envio passou a ser por HTTP puro: `fetch`, que já existe.
+   Sem dependência nenhuma, o arquivo continua sendo um só — que é o que
+   o editor do painel do Supabase pede — e continua testável fora do
+   Deno. */
+
+const PROVEDOR = (env("EMAIL_PROVEDOR") || "cloudflare").toLowerCase();
+
+/* O token e o remetente são os MESMOS que já estavam configurados para
+   o SMTP, de propósito: quem seguiu o README antes só precisa
+   acrescentar o CF_ACCOUNT_ID. */
+const CF_CONTA = env("CF_ACCOUNT_ID");
+const CF_TOKEN = env("CF_API_TOKEN") || env("SMTP_SENHA");
+const RESEND   = env("RESEND_API_KEY") || env("SMTP_SENHA");
+const DE       = env("EMAIL_DE") || env("SMTP_DE") || env("SMTP_USER");
+const DE_NOME  = env("EMAIL_DE_NOME") || "Portal do Membro";
+
+export interface Envio {
+  url: string;
+  headers: Record<string, string>;
+  corpo: unknown;
 }
 
-const PORTA = Number(env("SMTP_PORT") || "465");
-const SMTP = {
-  host: env("SMTP_HOST"),
-  port: PORTA,
-  user: env("SMTP_USER"),
-  senha: env("SMTP_SENHA"),
-  de: env("SMTP_DE") || env("SMTP_USER"),
-  tls: tlsImplicito(PORTA, env("SMTP_TLS")),
-};
+/** O que falta para conseguir enviar, em uma frase. Vazio = está pronto. */
+export function faltaParaEnviar(
+  provedor = PROVEDOR, conta = CF_CONTA, token = CF_TOKEN,
+  resend = RESEND, de = DE,
+): string {
+  if (provedor === "cloudflare") {
+    if (!conta) return "Falta o segredo CF_ACCOUNT_ID — o id da conta na Cloudflare.";
+    if (!token) return "Falta o token da Cloudflare em CF_API_TOKEN (ou SMTP_SENHA).";
+  } else if (provedor === "resend") {
+    if (!resend) return "Falta o segredo RESEND_API_KEY.";
+  } else {
+    return `EMAIL_PROVEDOR="${provedor}" não é conhecido — use cloudflare ou resend.`;
+  }
+  if (!de) return "Falta o segredo EMAIL_DE com o endereço remetente.";
+  return "";
+}
+
+/** Monta o pedido HTTP do provedor. Pura, para dar para conferir sem rede. */
+export function montarEnvio(
+  provedor: string, de: string, deNome: string, para: string, paraNome: string,
+  assunto: string, html: string, texto: string,
+  conta = CF_CONTA, token = CF_TOKEN, chaveResend = RESEND,
+): Envio {
+  if (provedor === "resend") {
+    return {
+      url: "https://api.resend.com/emails",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${chaveResend}` },
+      corpo: { from: `${deNome} <${de}>`, to: [para], subject: assunto, html, text: texto },
+    };
+  }
+  /* Cloudflare Email Sending. O REST usa "address" onde o binding dos
+     Workers usa "email" — trocar os dois é o engano clássico aqui. */
+  return {
+    url: `https://api.cloudflare.com/client/v4/accounts/${conta}/email/sending/send`,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    corpo: {
+      from: { address: de, name: deNome },
+      to: [paraNome ? { address: para, name: paraNome } : { address: para }],
+      subject: assunto,
+      html,
+      text: texto,
+    },
+  };
+}
+
+/** Lê a resposta do provedor. "" quando saiu; senão, o motivo em texto. */
+export function lerResposta(provedor: string, status: number, corpo: string): string {
+  let j: Record<string, unknown> | null = null;
+  try { j = JSON.parse(corpo); } catch { /* nem toda resposta é JSON */ }
+
+  if (provedor === "cloudflare") {
+    /* A Cloudflare responde 200 com success:false, então o código HTTP
+       sozinho não diz se o e-mail saiu. */
+    if (j && j.success === false) {
+      const es = (j.errors as Array<{ message?: string; code?: number }> | undefined) || [];
+      return es.map((e) => `${e.code ?? ""} ${e.message ?? ""}`.trim()).filter(Boolean).join("; ")
+        || `recusado pela Cloudflare (HTTP ${status})`;
+    }
+    if (status >= 200 && status < 300) return "";
+    return `HTTP ${status}: ${corpo.slice(0, 300)}`;
+  }
+
+  if (status >= 200 && status < 300) return "";
+  const m = (j as { message?: string } | null)?.message
+    || (j as { error?: { message?: string } } | null)?.error?.message;
+  return m ? `HTTP ${status}: ${m}` : `HTTP ${status}: ${corpo.slice(0, 300)}`;
+}
+
+/** Manda um e-mail. Devolve "" quando saiu, ou o motivo da recusa. */
+async function enviarUm(para: string, paraNome: string, assunto: string,
+                        html: string, texto: string): Promise<string> {
+  const e = montarEnvio(PROVEDOR, DE, DE_NOME, para, paraNome, assunto, html, texto);
+  const r = await fetch(e.url, {
+    method: "POST",
+    headers: e.headers,
+    body: JSON.stringify(e.corpo),
+  });
+  /* o corpo é lido SEMPRE: é nele que vem o motivo da recusa, e sem ele
+     o log fica com um número e nada mais */
+  return lerResposta(PROVEDOR, r.status, await r.text());
+}
 
 const LOTE = Number(env("NOTIF_LOTE") || "200");
 
@@ -227,13 +308,15 @@ export async function servir(req: Request): Promise<Response> {
     }), { status: 500, headers: cabecalho });
   }
 
-  /* Sem SMTP a função não é um erro: ela não tem o que fazer. Dizer
-     isso em voz alta é melhor do que queimar tentativa de envio de
-     notificação que nunca teve como sair. */
-  if (!SMTP.host || !SMTP.user || !SMTP.senha) {
+  /* Sem provedor configurado a função não é um erro: ela não tem o que
+     fazer. Dizer isso em voz alta, com o nome do segredo que falta, é
+     melhor do que queimar a tentativa de um aviso que nunca teve como
+     sair. O status continua sendo "smtp_nao_configurado" porque é o que
+     o portal já sabe ler e explicar. */
+  const falta = faltaParaEnviar();
+  if (falta) {
     return new Response(JSON.stringify({
-      status: "smtp_nao_configurado",
-      detalhe: "Defina SMTP_HOST, SMTP_USER e SMTP_SENHA com `supabase secrets set`.",
+      status: "smtp_nao_configurado", detalhe: falta,
     }), { status: 200, headers: cabecalho });
   }
 
@@ -250,16 +333,6 @@ export async function servir(req: Request): Promise<Response> {
       { headers: cabecalho });
   }
 
-  const { SMTPClient } = await import(CDN_SMTP);
-  const cliente = new SMTPClient({
-    connection: {
-      hostname: SMTP.host,
-      port: SMTP.port,
-      tls: SMTP.tls,
-      auth: { username: SMTP.user, password: SMTP.senha },
-    },
-  });
-
   const enviadas: number[] = [];
   const falhas: number[] = [];
   let ultimoErro = "";
@@ -267,23 +340,17 @@ export async function servir(req: Request): Promise<Response> {
   for (const d of destinos) {
     const ids = d.itens.map((i) => i.id);
     try {
-      await cliente.send({
-        from: SMTP.de,
-        to: d.email,
-        subject: assuntoDe(d),
-        content: corpoTexto(d),
-        html: corpoHTML(d),
-      });
-      enviadas.push(...ids);
+      const motivo = await enviarUm(
+        d.email, d.nome, assuntoDe(d), corpoHTML(d), corpoTexto(d));
+      if (motivo) { falhas.push(...ids); ultimoErro = motivo; }
+      else        { enviadas.push(...ids); }
     } catch (e) {
-      /* Falha de uma pessoa não derruba o lote: o resto sai, e a
-         baixa conta a tentativa para não repetir para sempre. */
+      /* Falha de uma pessoa não derruba o lote: o resto sai, e a baixa
+         conta a tentativa para não repetir para sempre. */
       falhas.push(...ids);
       ultimoErro = String(e);
     }
   }
-
-  try { await cliente.close(); } catch { /* fechar é higiene, não resultado */ }
 
   try {
     await rpc("notificacoes_email_baixa", { p: { enviadas, falhas, erro: ultimoErro } });
@@ -296,6 +363,9 @@ export async function servir(req: Request): Promise<Response> {
   return new Response(JSON.stringify({
     status: "ok", pessoas: destinos.length,
     enviadas: enviadas.length, falhas: falhas.length,
+    /* o motivo da recusa vai junto: sem ele, "0 enviadas" não diz nada
+       a quem está configurando, e o provedor já explicou o porquê */
+    ...(ultimoErro ? { detalhe: ultimoErro, provedor: PROVEDOR } : {}),
   }), { headers: cabecalho });
 }
 

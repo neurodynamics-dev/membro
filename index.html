@@ -1528,7 +1528,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '18.1';
+const VERSAO = '18.2';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -2298,17 +2298,20 @@ async function testarEmail(){
 
     /* 3. o que ela respondeu. */
     if (r?.status === 'smtp_nao_configurado') return diz(
-      `A função está no ar, mas <b>sem SMTP configurado</b> — faltam os segredos
-       <code>SMTP_HOST</code>, <code>SMTP_USER</code> e <code>SMTP_SENHA</code>.<br>
-       <span class="small">Nada foi perdido: o aviso sai assim que forem definidos.</span>`, 'err');
+      `A função está no ar, mas <b>ainda não sabe por onde enviar</b>.<br>
+       ${r.detalhe ? esc(r.detalhe) : 'Faltam os segredos do provedor de e-mail.'}<br>
+       <span class="small">Nada foi perdido: o aviso sai assim que o segredo
+       for definido. O passo 4 do README diz onde.</span>`, 'err');
     if (r?.status === 'erro_no_lote') return diz(
       `A função não conseguiu ler a lista no banco. A migração
        <code>db/v16_pessoal.sql</code> foi aplicada?`, 'err');
     if (r?.status !== 'ok') return diz(
       `A função respondeu <code>${esc(r?.status || 'sem status')}</code>.`, 'err');
     if (!r.enviadas) return diz(
-      `A função rodou mas não enviou nada (${r.falhas || 0} falha(s)).
-       Veja os registros em Edge Functions › notificar-email › Logs.`, 'err');
+      `A função rodou mas não enviou nada (${r.falhas || 0} falha(s)).<br>
+       ${r.detalhe
+         ? `O provedor respondeu: <b>${esc(r.detalhe)}</b>`
+         : 'Veja os registros em Edge Functions › notificar-email › Logs.'}`, 'err');
 
     diz(`<b>Enviado.</b> Um e-mail acabou de sair para <b>${esc(t.email)}</b>.
       Se não aparecer em um minuto, procure no spam — e confira se o endereço
