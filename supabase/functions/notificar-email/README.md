@@ -24,7 +24,7 @@ SMTP, sem porta, sem TLS para acertar. É de graça para o volume de uma equipe 
 tamanho e é o caminho mais curto, porque o domínio já está lá.
 
 As duas coisas convivem: continuar recebendo em `alguem@neurodynamics.dev`
-pelo Routing e enviar por `portal@neurodynamics.dev` pelo Sending, ao mesmo
+pelo Routing e enviar por `soma@neurodynamics.dev` pelo Sending, ao mesmo
 tempo, sem conflito.
 
 ---
@@ -68,7 +68,12 @@ O envio pela Cloudflare não usa a senha de ninguém: usa um token de API.
 ### Passo 3 — Criar o endereço remetente
 
 Ainda em **Email Service → Email Sending**, cadastre o endereço que vai
-assinar os e-mails. Sugiro `portal@neurodynamics.dev`.
+assinar os e-mails. O nosso é **`soma@neurodynamics.dev`**.
+
+Seja qual for, ele tem de estar no domínio que você acabou de habilitar no
+passo 1 — e tem de ser **exatamente** o mesmo valor que você vai pôr em
+`EMAIL_DE` no passo 4. Divergir aí é o que produz o erro `10202
+email.sending.error.email.invalid`, que não diz qual endereço recusou.
 
 Vale a pena que esse endereço **também** exista no Email Routing, encaminhando
 para quem cuida do portal: assim, se alguém responder ao aviso, a resposta
@@ -90,18 +95,24 @@ Functions** → seção **Secrets** → **Add new secret**, um de cada vez:
 |---|---|---|
 | `CF_ACCOUNT_ID` | o id da sua conta na Cloudflare | painel da Cloudflare → menu lateral → **Manage Account** → *Account ID*. É também o trecho depois de `dash.cloudflare.com/` no endereço |
 | `CF_API_TOKEN` | o token do passo 2 | você copiou no passo 2 |
-| `EMAIL_DE` | `portal@neurodynamics.dev` | o endereço do passo 3 |
+| `EMAIL_DE` | `soma@neurodynamics.dev` | o endereço do passo 3, escrito igual |
 
-Opcional: `EMAIL_DE_NOME` muda o nome que aparece antes do endereço na caixa de
-entrada (o padrão é *Portal do Membro*).
+Opcional: `EMAIL_DE_NOME` é o nome que aparece antes do endereço na caixa de
+entrada — *Portal do Membro* se você não definir. Como o endereço é
+`soma@`, vale pôr **SOMA** ali, que é como a equipe chama o sistema.
 
 `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já existem nesse ambiente — não
 crie.
 
-> **Se você já tinha configurado o SMTP antes**, o `SMTP_SENHA` e o `SMTP_DE`
-> continuam servindo como reserva de `CF_API_TOKEN` e `EMAIL_DE` — então basta
-> acrescentar o `CF_ACCOUNT_ID`. Os demais (`SMTP_HOST`, `SMTP_PORT`,
-> `SMTP_USER`, `SMTP_TLS`) não fazem mais nada e podem ser apagados.
+> **Se você já tinha configurado o SMTP antes**, o `SMTP_SENHA` serve de
+> reserva para `CF_API_TOKEN`, e o `SMTP_DE` para `EMAIL_DE` — **desde que o
+> `SMTP_DE` seja mesmo um endereço**. Na dúvida, defina o `EMAIL_DE`
+> explicitamente: é uma linha, e tira a dúvida.
+>
+> O `SMTP_USER` **não** serve de remetente. No SMTP ele era o usuário da
+> autenticação — na Cloudflare, a string `api_token` —, e não um endereço.
+> Ele, `SMTP_HOST`, `SMTP_PORT` e `SMTP_TLS` não fazem mais nada e podem ser
+> apagados.
 
 ### Outro provedor, se um dia sair da Cloudflare
 
@@ -169,7 +180,8 @@ existe — "não chegou nada" sozinho não ajuda ninguém:
 | A função recusou a autenticação (401) | saia e entre no portal de novo |
 | A função respondeu `erro` | o detalhe vem junto; os Logs têm o resto |
 | ainda não sabe por onde enviar | volte ao passo 4 — a mensagem diz **qual** segredo falta. Nada se perde |
-| rodou mas não enviou nada | vem junto a resposta literal do provedor, que costuma nomear o problema (remetente não verificado, token sem permissão…) |
+| rodou mas não enviou nada | vem junto a resposta literal do provedor **e o remetente que ele tentou usar**. Quando *todas* falham, o suspeito é o remetente: é o único dado comum a todas as tentativas |
+| `10202 email.sending.error.email.invalid` | algum endereço não é um e-mail válido. Se falharam todas, é o `EMAIL_DE`; se falhou uma, é a ficha daquela pessoa |
 | A função não conseguiu ler a lista no banco | falta aplicar `db/v16_pessoal.sql` |
 | Não consegui criar o aviso de teste (função inexistente) | falta aplicar `db/v18_teste_email.sql` |
 

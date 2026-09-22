@@ -1528,7 +1528,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '18.2';
+const VERSAO = '18.3';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -2311,7 +2311,10 @@ async function testarEmail(){
       `A função rodou mas não enviou nada (${r.falhas || 0} falha(s)).<br>
        ${r.detalhe
          ? `O provedor respondeu: <b>${esc(r.detalhe)}</b>`
-         : 'Veja os registros em Edge Functions › notificar-email › Logs.'}`, 'err');
+         : 'Veja os registros em Edge Functions › notificar-email › Logs.'}
+       ${r.de ? `<br><span class="small">Tentando enviar de <b>${esc(r.de)}</b> —
+         quando TODAS falham, o remetente é o suspeito, porque é o único
+         dado comum a todas as tentativas.</span>` : ''}`, 'err');
 
     diz(`<b>Enviado.</b> Um e-mail acabou de sair para <b>${esc(t.email)}</b>.
       Se não aparecer em um minuto, procure no spam — e confira se o endereço

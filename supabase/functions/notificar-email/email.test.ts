@@ -3,7 +3,7 @@
    Rode com Node 22+:  node --experimental-strip-types email.test.ts
    ============================================================ */
 import { assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, servir,
-         montarEnvio, lerResposta, faltaParaEnviar,
+         montarEnvio, lerResposta, faltaParaEnviar, pareceEndereco,
          type Destinatario } from "./index.ts";
 
 let falhas = 0;
@@ -92,17 +92,35 @@ ok("Resend: 4xx traz a mensagem do provedor",
    lerResposta("resend", 422, '{"message":"Invalid to field"}').includes("Invalid to field"));
 ok("Resend: 200 é sucesso", lerResposta("resend", 200, '{"id":"x"}') === "");
 
+/* --- o remetente. Este caso custou uma rodada inteira: o SMTP_USER
+       era a string literal "api_token" (o usuário da autenticação, não
+       um endereço), e eu o tinha posto como último recurso do
+       remetente. A Cloudflare recusava TUDO com "email.invalid", e as
+       12 falhas de uma vez não diziam de onde vinha. --- */
+ok('"api_token" não é endereço', pareceEndereco("api_token") === false);
+ok("endereço de verdade passa", pareceEndereco("portal@neurodynamics.dev") === true);
+ok("vazio não passa", pareceEndereco("") === false);
+ok('"Nome <a@b.dev>" não passa — o campo é só o endereço',
+   pareceEndereco("Portal <portal@nd.dev>") === false);
+ok("sem arroba não passa", pareceEndereco("sem-arroba.dev") === false);
+ok("domínio de uma letra só não passa", pareceEndereco("a@b.c") === false);
+
+ok("remetente que não é endereço é barrado ANTES de gastar tentativa",
+   faltaParaEnviar("cloudflare", "conta", "tok", "", "api_token").includes("api_token"));
+ok("e a mensagem diz o que fazer",
+   faltaParaEnviar("cloudflare", "conta", "tok", "", "api_token").includes("EMAIL_DE"));
+
 /* --- o que falta configurar, em uma frase --- */
 ok("sem o id da conta, diz qual segredo falta",
-   faltaParaEnviar("cloudflare", "", "tok", "", "de@x").includes("CF_ACCOUNT_ID"));
+   faltaParaEnviar("cloudflare", "", "tok", "", "portal@nd.dev").includes("CF_ACCOUNT_ID"));
 ok("sem o token, idem",
-   faltaParaEnviar("cloudflare", "conta", "", "", "de@x").includes("CF_API_TOKEN"));
+   faltaParaEnviar("cloudflare", "conta", "", "", "portal@nd.dev").includes("CF_API_TOKEN"));
 ok("sem remetente, idem",
    faltaParaEnviar("cloudflare", "conta", "tok", "", "").includes("EMAIL_DE"));
 ok("provedor desconhecido é recusado com o nome dele",
-   faltaParaEnviar("correio", "", "", "", "de@x").includes("correio"));
+   faltaParaEnviar("correio", "", "", "", "portal@nd.dev").includes("correio"));
 ok("configurado direito não reclama de nada",
-   faltaParaEnviar("cloudflare", "conta", "tok", "", "de@x") === "");
+   faltaParaEnviar("cloudflare", "conta", "tok", "", "portal@nd.dev") === "");
 
 /* --- assunto --- */
 ok("um aviso vira assunto do próprio aviso",
