@@ -24,7 +24,7 @@ SMTP, sem porta, sem TLS para acertar. É de graça para o volume de uma equipe 
 tamanho e é o caminho mais curto, porque o domínio já está lá.
 
 As duas coisas convivem: continuar recebendo em `alguem@neurodynamics.dev`
-pelo Routing e enviar por `portal@neurodynamics.dev` pelo Sending, ao mesmo
+pelo Routing e enviar por `soma@neurodynamics.dev` pelo Sending, ao mesmo
 tempo, sem conflito.
 
 ---
@@ -68,7 +68,12 @@ O envio pela Cloudflare não usa a senha de ninguém: usa um token de API.
 ### Passo 3 — Criar o endereço remetente
 
 Ainda em **Email Service → Email Sending**, cadastre o endereço que vai
-assinar os e-mails. Sugiro `portal@neurodynamics.dev`.
+assinar os e-mails. O nosso é **`soma@neurodynamics.dev`**.
+
+Seja qual for, ele tem de estar no domínio que você acabou de habilitar no
+passo 1 — e tem de ser **exatamente** o mesmo valor que você vai pôr em
+`EMAIL_DE` no passo 4. Divergir aí é o que produz o erro `10202
+email.sending.error.email.invalid`, que não diz qual endereço recusou.
 
 Vale a pena que esse endereço **também** exista no Email Routing, encaminhando
 para quem cuida do portal: assim, se alguém responder ao aviso, a resposta
@@ -90,10 +95,11 @@ Functions** → seção **Secrets** → **Add new secret**, um de cada vez:
 |---|---|---|
 | `CF_ACCOUNT_ID` | o id da sua conta na Cloudflare | painel da Cloudflare → menu lateral → **Manage Account** → *Account ID*. É também o trecho depois de `dash.cloudflare.com/` no endereço |
 | `CF_API_TOKEN` | o token do passo 2 | você copiou no passo 2 |
-| `EMAIL_DE` | `portal@neurodynamics.dev` | o endereço do passo 3 |
+| `EMAIL_DE` | `soma@neurodynamics.dev` | o endereço do passo 3, escrito igual |
 
-Opcional: `EMAIL_DE_NOME` muda o nome que aparece antes do endereço na caixa de
-entrada (o padrão é *Portal do Membro*).
+Opcional: `EMAIL_DE_NOME` é o nome que aparece antes do endereço na caixa de
+entrada — *Portal do Membro* se você não definir. Como o endereço é
+`soma@`, vale pôr **SOMA** ali, que é como a equipe chama o sistema.
 
 `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já existem nesse ambiente — não
 crie.

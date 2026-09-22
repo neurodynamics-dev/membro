@@ -93,8 +93,8 @@ export function faltaParaEnviar(
   if (!de) return "Falta o segredo EMAIL_DE com o endereço remetente.";
   if (!pareceEndereco(de)) {
     return `O remetente configurado não é um endereço de e-mail: "${de}". `
-      + `Defina EMAIL_DE como portal@neurodynamics.dev (ou o endereço que `
-      + `você cadastrou no Email Sending).`;
+      + `Defina o segredo EMAIL_DE com o endereço que você cadastrou no `
+      + `Email Sending da Cloudflare — escrito igual, por extenso.`;
   }
   return "";
 }
