@@ -298,10 +298,15 @@ function campoInput(c, val, regAtual){
    mesmo formato de antes: assim lerCampos() não muda e o resto da
    ficha não sabe que a tela mudou.
    ============================================================ */
+/* Na ordem configurada em Administração -> Grupos, e não em ordem
+   alfabética: é a mesma hierarquia que o seletor do quadro usa, e duas
+   listas dos mesmos grupos em ordens diferentes confundem. No fim ficam
+   os nomes que só existem em fichas antigas e não estão no catálogo. */
 function gruposConhecidos(){
   const doCatalogo = (state.grupos || []).map(g => g.nome);
-  return [...new Set([...doCatalogo, ...todosGrupos()])]
-    .filter(Boolean).sort((a,b) => a.localeCompare(b,'pt'));
+  const soltos = todosGrupos().filter(n => !doCatalogo.includes(n))
+    .sort((a,b) => a.localeCompare(b,'pt'));
+  return [...doCatalogo, ...soltos].filter(Boolean);
 }
 const chaveGrupo = g => norm(String(g).trim());
 const grpValores = () => {

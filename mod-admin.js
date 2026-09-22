@@ -260,11 +260,16 @@ async function salvarAviso(id){
   if (!v.titulo){ toast('O título é obrigatório.', true); return; }
   if (v.data_inicio && v.data_fim && v.data_fim < v.data_inicio){ toast('O fim da exibição vem antes do início.', true); return; }
   $('#a-salvar').disabled = true;
-  const { error } = await sb.from('portal_avisos').update(v).eq('id', id);
-  $('#a-salvar').disabled = false;
-  if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
-  toast('Aviso salvo' + (v.publicado ? ', já está girando no portal.' : ' (oculto).'));
-  await admCarregarAvisos();
+  try{
+    const { error } = await sb.from('portal_avisos').update(v).eq('id', id);
+    if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
+    toast('Aviso salvo' + (v.publicado ? ', já está girando no portal.' : ' (oculto).'));
+    await admCarregarAvisos();
+  }catch(e){
+    falha(e, 'Não foi possível salvar');
+  }finally{
+    const b = $('#a-salvar'); if (b) b.disabled = false;
+  }
 }
 async function novoAviso(){
   const titulo = prompt('Título do novo aviso:');
@@ -364,11 +369,16 @@ async function salvarDoc(id){
   if (!v.titulo){ toast('O título é obrigatório.', true); return; }
   if (!/^https?:\/\//i.test(v.url)){ toast('O link precisa começar com http(s)://', true); return; }
   $('#d-salvar').disabled = true;
-  const { error } = await sb.from('portal_documentos').update(v).eq('id', id);
-  $('#d-salvar').disabled = false;
-  if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
-  toast('Documento salvo.');
-  await admCarregarDocs();
+  try{
+    const { error } = await sb.from('portal_documentos').update(v).eq('id', id);
+    if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
+    toast('Documento salvo.');
+    await admCarregarDocs();
+  }catch(e){
+    falha(e, 'Não foi possível salvar');
+  }finally{
+    const b = $('#d-salvar'); if (b) b.disabled = false;
+  }
 }
 async function novoDoc(){
   const titulo = prompt('Título do novo documento:');
@@ -891,8 +901,14 @@ async function executarImport(){
     diz('');
     diz('Importação concluída. Confira o quadro na aba Membros.');
     toast('Importação concluída.');
-  }catch(e){ diz('✖ ERRO: '+(e?.message||e)); falha(e,'A importação foi interrompida'); }
-  $('#imp-go').disabled = false;
+  }catch(e){
+    diz('✖ ERRO: ' + (e?.message || e));
+    falha(e, 'A importação foi interrompida');
+  }finally{
+    /* o botão volta ao normal aconteça o que acontecer — sem isto, um erro
+       aqui deixava "Importar" desabilitado até recarregar a página */
+    const b = $('#imp-go'); if (b) b.disabled = false;
+  }
 }
 
 /* ---------------- operações ---------------- */
@@ -970,8 +986,11 @@ function renderContas(perfis){
     ${semConta.length?`<div class="aviso-box info" style="margin-top:14px"><b>${semConta.length} membro(s) ativo(s) ainda sem conta.</b>
       Peçam que criem a conta na própria tela de login do SOMA, com o e-mail do quadro — o vínculo é automático.<br>
       <button class="btn ghost" style="margin-top:8px" onclick="ctConvite()">${ic('copy')} Copiar instruções de acesso</button></div>`:''}
-    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`);
-  const m = document.querySelector('.modal'); if(m) m.classList.add('larga');
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`,
+    /* uma tabela de contas não cabe em 520px. O `querySelector('.modal')`
+       que estava aqui vinha do SOMA antigo, onde o modal era uma classe;
+       no portal é um id, então a linha nunca alargou nada. */
+    'largo');
 }
 async function ctPapel(id, papel){
   try{
@@ -1122,11 +1141,16 @@ async function admSalvarProjeto(id){
   const v = admLerProjeto();
   if (!v.nome || !v.slug){ toast('Nome e slug são obrigatórios.', true); return; }
   $('#sp-salvar').disabled = true;
-  const { error } = await sb.from('site_projetos').update(v).eq('id', id);
-  $('#sp-salvar').disabled = false;
-  if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
-  toast('Projeto salvo — já está no ar.');
-  await admCarregarProjetos();
+  try{
+    const { error } = await sb.from('site_projetos').update(v).eq('id', id);
+    if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
+    toast('Projeto salvo — já está no ar.');
+    await admCarregarProjetos();
+  }catch(e){
+    falha(e, 'Não foi possível salvar');
+  }finally{
+    const b = $('#sp-salvar'); if (b) b.disabled = false;
+  }
 }
 async function admNovoProjeto(){
   const nome = prompt('Nome do novo projeto:');

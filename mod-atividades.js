@@ -57,7 +57,7 @@ async function atvCarregar(forcar){
        posso abrir — com o meu nível em cada um. A lista ser completa é
        de propósito: quadro que some não é quadro fechado, é quadro que
        ninguém sabe que precisa pedir acesso. */
-    sb.from('grupos_visiveis').select('*'),
+    sb.from('grupos_visiveis').select('*').order('ordem').order('nome'),
     sb.from('atividades_quadro').select('*').eq('arquivada', false).order('ordem')
   ]);
   if (g.error || a.error){ atividades.erro = (g.error || a.error); return; }
@@ -81,12 +81,25 @@ const posso = {
   ver:    g => nivelNoGrupo(g) !== 'nenhum',
   editar: g => nivelNoGrupo(g) === 'edicao'
 };
-const meusGrupos = () => {
-  const meus = (state.membros.find(m => m.registro === state.perfil?.registro)?.grupos) || [];
-  const peso = g => (meus.includes(g.nome) ? 0 : posso.ver(g) ? 1 : 2);
-  return [...atividades.grupos].sort((a, b) =>
-    peso(a) - peso(b) || (a.ordem||0) - (b.ordem||0) || a.nome.localeCompare(b.nome, 'pt'));
-};
+/* A ordem é SEMPRE a configurada em Administração -> Grupos. Ela é uma
+   hierarquia que a equipe decidiu — escritório, gerência, PMO, supervisão,
+   e por aí — e uma lista que se reordena sozinha conforme quem está
+   olhando obriga a procurar o item toda vez. */
+const meusGrupos = () => [...atividades.grupos].sort((a, b) =>
+  (a.ordem || 0) - (b.ordem || 0) || a.nome.localeCompare(b.nome, 'pt'));
+
+/* Mas o quadro que ABRE por padrão é outra pergunta: o mais importante
+   entre os que são meus. Primeiro os que eu edito (estou no grupo, ou
+   recebi edição), depois os que eu leio, e só então o primeiro da lista —
+   que aí mostra a tela de quadro fechado, com a quem pedir.
+
+   Numa equipe onde quase todo quadro é aberto, ordenar por "tenho acesso"
+   abriria sempre o primeiro da lista para todo mundo; é o "tenho edição"
+   que separa o meu trabalho do trabalho que eu apenas acompanho. */
+function grupoPadrao(){
+  const gs = meusGrupos();
+  return gs.find(g => posso.editar(g)) || gs.find(g => posso.ver(g)) || gs[0];
+}
 
 function avisoSemMigracao(){
   return `<div class="aviso-box err"><b>Atividades ainda não está disponível.</b>
@@ -118,7 +131,8 @@ async function pageAtividades(sub, sub2){
     return;
   }
   atividades.grupoAtual = gs.find(g => g.prefixo === (sub||'').toUpperCase())
-    || gs.find(g => g.id === atividades.grupoAtual?.id) || gs[0];
+    || gs.find(g => g.id === atividades.grupoAtual?.id)
+    || grupoPadrao();
   telaQuadro();
 }
 
@@ -421,26 +435,31 @@ async function salvarNovaAtividade(){
   const tit = $('#na-tit').value.trim();
   if (!tit){ $('#na-erro').textContent = 'Diga o que precisa ser feito.'; return; }
   $('#na-btn').disabled = true;
-  const { data, error } = await sb.rpc('atividade_criar', { p: {
-    grupo_id: atividades.grupoAtual.id,
-    titulo: tit,
-    descricao: $('#na-desc').value.trim() || null,
-    responsavel: $('#na-resp').value || null,
-    prazo: $('#na-prazo').value || null,
-    prioridade: $('#na-pri').value,
-    status: $('#na-status').value
-  }});
-  $('#na-btn').disabled = false;
-  if (error || data?.status !== 'ok'){
-    $('#na-erro').textContent = data?.status === 'sem_permissao'
-      ? 'Só quem está no grupo cria atividades nele.'
-      : 'Não foi possível criar' + (error ? ': ' + error.message : '.');
-    return;
+  try{
+    const { data, error } = await sb.rpc('atividade_criar', { p: {
+      grupo_id: atividades.grupoAtual.id,
+      titulo: tit,
+      descricao: $('#na-desc').value.trim() || null,
+      responsavel: $('#na-resp').value || null,
+      prazo: $('#na-prazo').value || null,
+      prioridade: $('#na-pri').value,
+      status: $('#na-status').value
+    }});
+    if (error || data?.status !== 'ok'){
+      $('#na-erro').textContent = data?.status === 'sem_permissao'
+        ? 'Só quem está no grupo cria atividades nele.'
+        : 'Não foi possível criar' + (error ? ': ' + error.message : '.');
+      return;
+    }
+    fechaModal();
+    toast(`${data.codigo} criada.`);
+    await atvCarregar(true);
+    if (location.hash.startsWith('#/atividades/card')) telaCard(data.codigo); else desenhaColunas();
+  }catch(e){
+    falha(e, 'Não foi possível salvar');
+  }finally{
+    const b = $('#na-btn'); if (b) b.disabled = false;
   }
-  fechaModal();
-  toast(`${data.codigo} criada.`);
-  await atvCarregar(true);
-  if (location.hash.startsWith('#/atividades/card')) telaCard(data.codigo); else desenhaColunas();
 }
 
 /* ============================================================
@@ -699,11 +718,11 @@ async function decidirSolicitacao(){
       p: { solicitacao_id:o.id, decisao, resposta: resposta || null, conceder }
     });
     if (error) throw error;
-    if (data?.status === 'sem_permissao') return toast('Seu papel não decide solicitações.', true);
-    if (data?.status === 'nao_encontrada') return toast('A solicitação não existe mais.', true);
     if (data?.status === 'invalido')
       return toast(data.campo === 'resposta' ? 'Escreva o porquê antes de recusar.'
                                              : 'Decisão inválida.', true);
+    if (data?.status !== 'ok')
+      return toast(motivoRPC(data, null, 'Não foi possível registrar a decisão'), true);
     const n = data?.concedidos || 0;
     toast(n ? `Decisão registrada e ${n} acesso(s) concedido(s).` : 'Decisão registrada.');
     atividades.reabrir = false;
@@ -832,17 +851,33 @@ async function mudarCampo(campo, valor){
 
 async function enviarComentario(){
   const a = atividades.card;
-  const corpo = $('#cd-coment').value.trim();
-  if (!corpo) return;
-  const mencionados = [...document.querySelectorAll('.cd-menc .chip.on')].map(b => +b.dataset.reg);
-  $('#cd-btn').disabled = true;
-  const { data, error } = await sb.rpc('atividade_comentar', { p: { atividade_id: a.id, corpo, mencionados }});
-  $('#cd-btn').disabled = false;
-  if (error || data?.status !== 'ok'){
-    toast('Não foi possível comentar' + (error ? ': ' + error.message : '.'), true); return;
+  const cx = $('#cd-coment'), b = $('#cd-btn');
+  const corpo = (cx?.value || '').trim();
+  if (!corpo || !a) return;
+  const mencionados = [...document.querySelectorAll('.cd-menc .chip.on')].map(x => +x.dataset.reg);
+
+  /* O try/finally é o que evita o comentário "pendurado": sem ele, um erro
+     em qualquer linha daqui deixava o botão desabilitado para sempre e o
+     texto parado na caixa, sem toast nenhum — parecia que o portal tinha
+     engolido o comentário. E o texto só sai da caixa depois de o banco
+     confirmar, para nunca se perder no caminho. */
+  if (b){ b.disabled = true; b.textContent = 'Enviando…'; }
+  try{
+    const { data, error } = await sb.rpc('atividade_comentar',
+      { p: { atividade_id: a.id, corpo, mencionados } });
+    if (error || data?.status !== 'ok'){
+      toast(motivoRPC(data, error, 'Não foi possível comentar'), true);
+      return;
+    }
+    if (cx) cx.value = '';
+    carregarNotificacoes();
+    await telaCard(a.codigo);
+  }catch(e){
+    toast('Não foi possível comentar: ' + (e?.message || e), true);
+  }finally{
+    const btn = $('#cd-btn');
+    if (btn){ btn.disabled = false; btn.textContent = 'Comentar'; }
   }
-  carregarNotificacoes();
-  telaCard(a.codigo);
 }
 
 function modalSinalizar(){

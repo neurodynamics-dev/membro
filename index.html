@@ -203,7 +203,7 @@ nav.hd-nav a.on::after{content:'';display:block;height:1.5px;margin:1px 2px 0;ba
   color:var(--syn);background:rgba(206,220,0,.10);border:1px solid rgba(206,220,0,.25);
   border-radius:6px;padding:2px 6px;flex:none}
 .grp-pop{position:absolute;z-index:40;top:calc(100% + 7px);left:0;min-width:280px;max-width:340px;
-  background:var(--painel);border:1px solid var(--line2);border-radius:13px;padding:7px;
+  background:var(--panel);border:1px solid var(--line2);border-radius:13px;padding:7px;
   box-shadow:0 18px 40px -12px rgba(0,0,0,.7)}
 .grp-pop>input{width:100%;margin-bottom:6px}
 .grp-lista{display:flex;flex-direction:column;gap:2px;max-height:330px;overflow-y:auto}
@@ -783,6 +783,9 @@ a.fer:hover .go{color:var(--syn)}
 
 /* ============ CRIAÇÃO RÁPIDA ============ */
 #modal.largo{width:min(700px,calc(100vw - 32px))}
+/* para formulário com pré-visualização ao lado (o Full mailer): precisa
+   de largura de verdade, senão as duas colunas viram uma fita */
+#modal.imenso{width:min(1180px,calc(100vw - 40px));max-height:92vh;padding:24px 26px}
 .dupla{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:560px){.dupla{grid-template-columns:1fr}}
 .tipo-chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;margin-bottom:16px}
@@ -1292,6 +1295,14 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
   box-shadow:0 30px 90px rgba(0,0,0,.6)}
 #modal.open{display:block}
 #modal h3{font-size:17px;margin-bottom:12px}
+.aviso-vinculo{position:relative;margin:0 auto;max-width:1180px;
+  background:rgba(245,195,106,.09);border:1px solid rgba(245,195,106,.30);
+  border-radius:12px;padding:12px 44px 12px 16px;color:var(--muted);
+  font-size:13px;line-height:1.55}
+.aviso-vinculo b{color:var(--ink)}
+.aviso-vinculo button{position:absolute;right:8px;top:8px;width:26px;height:26px;
+  border-radius:7px;color:var(--dim);font-size:16px;line-height:1}
+.aviso-vinculo button:hover{color:var(--ink);background:rgba(255,255,255,.06)}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;display:flex;
   flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:92vw}
 .toast{background:#151B19;border:1px solid var(--line2);color:var(--ink);border-radius:12px;
@@ -1500,7 +1511,7 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
   </div>
 </footer>
 
-<div id="veil" onclick="fechaModal()"></div>
+<div id="veil" onclick="fecharPeloVeu()"></div>
 <div id="modal" role="dialog" aria-modal="true"></div>
 <div id="toast"></div>
 
@@ -1515,7 +1526,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '17.0';
+const VERSAO = '17.1';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -1544,6 +1555,24 @@ const STATUS_LIST = ['Ativo','Em pausa / avaliação','Sob demanda','Desligado',
 const falha = (e, ctx) => { console.error(ctx, e);
   toast((ctx ? ctx + ': ' : '') + (e?.message || 'erro inesperado'), true); };
 
+/* O que as funções do banco devolvem em "status", em português. Um
+   "Não foi possível" genérico esconde justamente a causa que a pessoa
+   poderia resolver sozinha — e a mais comum delas, conta sem vínculo com
+   o quadro, não tem como ser adivinhada olhando a tela. */
+const MOTIVO_RPC = {
+  sem_registro:   'A sua conta ainda não está ligada a um registro do quadro. '
+                + 'O Depto. de Pessoal faz esse vínculo em Administração › Contas.',
+  sem_permissao:  'Você não tem permissão para isso neste quadro.',
+  nao_encontrado: 'Este item não existe mais.',
+  nao_encontrada: 'Este item não existe mais.',
+  invalido:       'Confira os campos.',
+  duplicado:      'Já existe outro com esse valor.'
+};
+const motivoRPC = (data, error, padrao) =>
+  error          ? `${padrao}: ${error.message}`
+  : data?.status ? (MOTIVO_RPC[data.status] || `${padrao} (${data.status}).`)
+                 : `${padrao}.`;
+
 const STATUS_SOL = {
   aberta:     {l:'Aberta',      c:'#2DD4BF'},
   em_analise: {l:'Em análise',  c:'#F5C36A'},
@@ -1568,6 +1597,19 @@ const $ = s => document.querySelector(s);
 const esc = v => v == null ? '' : String(v).replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function mostrarAvisoSemVinculo(){
+  if (document.getElementById('av-vinculo')) return;
+  const d = document.createElement('div');
+  d.id = 'av-vinculo';
+  d.className = 'aviso-vinculo';
+  d.innerHTML = `<b>A sua conta ainda não está ligada a um registro do quadro.</b>
+    Você consegue navegar, mas não comentar, abrir solicitação nem receber
+    atividade. Peça ao Depto. de Pessoal para fazer o vínculo em
+    <b>Administração › Contas</b>.
+    <button onclick="this.parentElement.remove()" aria-label="Dispensar">×</button>`;
+  document.getElementById('hd')?.insertAdjacentElement('afterend', d);
+}
+
 function toast(msg, err){ const t=document.createElement('div'); t.className='toast'+(err?' err':'');
   t.textContent=msg; $('#toast').appendChild(t); setTimeout(()=>t.remove(), 5200); }
 
@@ -1886,8 +1928,12 @@ async function abrirPortal(){
     .then(r => { state.itensAcesso = (r.data||[]).filter(i=>i.ativo!==false); });
   /* o catálogo de grupos (v15). Sem a migração vem erro e fica lista
      vazia — quem usa cai de volta nos grupos que o quadro já tem. */
-  sb.from('grupos').select('id,nome,prefixo,cor,ativo,reservado').order('nome')
+  sb.from('grupos').select('id,nome,prefixo,cor,ativo,reservado,ordem').order('ordem').order('nome')
     .then(r => { state.grupos = (r.data||[]).filter(g=>g.ativo!==false); });
+  /* Conta sem registro não comenta, não abre solicitação, não é atribuída
+     a nada — e nenhuma dessas telas explica por quê. Dizer uma vez, no
+     alto, evita a caça ao defeito que não existe. */
+  if (!state.perfil.registro) mostrarAvisoSemVinculo();
   $('#u-nome').textContent = primeiroNome(state.perfil.nome || state.perfil.email);
   $('#menu-user').textContent = state.perfil.nome || state.perfil.email;
   const lf = $('#logo-ft');
@@ -2200,12 +2246,34 @@ function fmtQuando(iso){
 }
 
 /* ---------------- modal ---------------- */
-function abreModal(html, largo){
+/* tamanho: true (largo) ou 'imenso'. persistente: não fecha ao clicar fora —
+   para formulário longo, onde um clique torto apagaria o trabalho todo. */
+function abreModal(html, tamanho, persistente){
   const m = $('#modal');
-  m.innerHTML = html; m.classList.toggle('largo', !!largo);
+  m.innerHTML = html;
+  m.classList.toggle('largo',  tamanho === true || tamanho === 'largo');
+  m.classList.toggle('imenso', tamanho === 'imenso');
+  m.dataset.persistente = persistente ? '1' : '';
   m.classList.add('open'); $('#veil').classList.add('open'); m.scrollTop = 0;
 }
-function fechaModal(){ $('#modal').classList.remove('open'); $('#veil').classList.remove('open'); }
+function fechaModal(){
+  const m = $('#modal');
+  m.classList.remove('open'); m.dataset.persistente = '';
+  $('#veil').classList.remove('open');
+}
+/* Clicar fora fecha — menos quando o modal guarda trabalho digitado. Aí
+   avisa, em vez de ignorar em silêncio: ignorar sem dizer nada parece
+   defeito. */
+function fecharPeloVeu(){
+  if ($('#modal')?.dataset.persistente){
+    toast('Use Cancelar para fechar — assim um clique torto não apaga o que você escreveu.');
+    return;
+  }
+  fechaModal();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('#modal')?.classList.contains('open')) fecharPeloVeu();
+});
 
 /* ============================================================
    HOME — quadro de avisos + resumos de agenda e check-in

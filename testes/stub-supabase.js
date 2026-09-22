@@ -53,15 +53,18 @@
        meu nível em cada quadro. O stub simula um admin: edição em tudo,
        menos na Gerência, que está como "nenhum" para exercitar a tela de
        quadro fechado. */
+    /* ordem = a hierarquia configurada em Administração -> Grupos.
+       Propositalmente NÃO alfabética, para o teste pegar se alguém
+       reordenar a lista por conta própria. */
     grupos_visiveis: [
-      { id:1, nome:'Órtese', prefixo:'ORT', cor:null, ordem:0, reservado:false,
-        chave:null, meu_nivel:'edicao', pessoas:2 },
-      { id:2, nome:'Sinais', prefixo:'SIN', cor:null, ordem:0, reservado:false,
-        chave:null, meu_nivel:'leitura', pessoas:1 },
-      { id:3, nome:'Depto de Pessoal', prefixo:'DEP', cor:null, ordem:-1, reservado:true,
+      { id:4, nome:'Gerência',        prefixo:'GER', cor:null, ordem:1, reservado:true,
+        chave:null, meu_nivel:'nenhum',  pessoas:3 },
+      { id:3, nome:'Depto de Pessoal', prefixo:'DEP', cor:null, ordem:2, reservado:true,
         chave:'pessoal', meu_nivel:'edicao', pessoas:1 },
-      { id:4, nome:'Gerência', prefixo:'GER', cor:null, ordem:0, reservado:true,
-        chave:null, meu_nivel:'nenhum', pessoas:3 }
+      { id:2, nome:'Sinais',           prefixo:'SIN', cor:null, ordem:3, reservado:false,
+        chave:null, meu_nivel:'leitura', pessoas:1 },
+      { id:1, nome:'Órtese',           prefixo:'ORT', cor:null, ordem:4, reservado:false,
+        chave:null, meu_nivel:'edicao',  pessoas:2 }
     ],
     grupo_acessos: [{ grupo_id:4, registro:11, nivel:'leitura', concedido_por:4 }],
     atividades_quadro: [
@@ -169,6 +172,13 @@
         from: builder,
         rpc: async (nome, args) => {
           if (nome === 'notificacoes_marcar_lidas') return { data: 1, error: null };
+          if (nome === 'atividade_comentar'){
+            if (window.__comentarFalha === 'sem_registro')
+              return { data: { status:'sem_registro' }, error: null };
+            if (window.__comentarFalha === 'lanca') throw new Error('rede caiu');
+            window.__comentario = args?.p;
+            return { data: { status:'ok', id:'c9' }, error: null };
+          }
           if (nome === 'grupo_salvar'){
             window.__grupoSalvo = args?.p;
             return { data: { status:'ok', id:args?.p?.id || 9, renomeados:2 }, error:null };
