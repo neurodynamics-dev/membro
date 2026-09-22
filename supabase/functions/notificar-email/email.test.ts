@@ -2,8 +2,9 @@
    email.test.ts — conferência do e-mail de notificação
    Rode com Node 22+:  node --experimental-strip-types email.test.ts
    ============================================================ */
-import { assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, tlsImplicito,
-         servir, type Destinatario } from "./index.ts";
+import { assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, servir,
+         montarEnvio, lerResposta, faltaParaEnviar,
+         type Destinatario } from "./index.ts";
 
 let falhas = 0;
 const ok = (n: string, c: boolean, extra = "") => {
@@ -47,15 +48,61 @@ const pessoa = (itens: Partial<Destinatario["itens"][number]>[]): Destinatario =
      r.headers.get("Access-Control-Allow-Origin") === "*");
 }
 
-/* --- TLS: a porta decide como a conversa começa criptografada, e
-       trocar as duas pendura a conexão sem dizer o motivo --- */
-ok("465 fala TLS desde o primeiro byte",      tlsImplicito(465, "") === true);
-ok("587 começa em claro e sobe com STARTTLS", tlsImplicito(587, "") === false);
-ok("25 idem",                                 tlsImplicito(25,  "") === false);
-ok("porta fora da convenção assume STARTTLS", tlsImplicito(2525, "") === false);
-ok("SMTP_TLS=implicito vence a porta",        tlsImplicito(587, "implicito") === true);
-ok("SMTP_TLS=starttls vence a porta",         tlsImplicito(465, "starttls") === false);
-ok("SMTP_TLS=nao continua sem TLS implícito", tlsImplicito(465, "nao") === false);
+/* --- o pedido HTTP de cada provedor. O envio deixou de ser SMTP: o
+       import dinâmico do cliente não entrava no pacote publicado e em
+       produção virava "Module not found". Agora é fetch, sem
+       dependência — e por isso o formato do pedido tem teste. --- */
+{
+  const e = montarEnvio("cloudflare", "portal@nd.dev", "Portal", "ana@nd.dev", "Ana Figueiredo",
+                        "Assunto", "<b>oi</b>", "oi", "conta123", "tok123");
+  ok("Cloudflare: endereço monta com o id da conta",
+     e.url === "https://api.cloudflare.com/client/v4/accounts/conta123/email/sending/send", e.url);
+  ok("Cloudflare: autentica com o token", e.headers.Authorization === "Bearer tok123");
+  const c = e.corpo as Record<string, never>;
+  ok("Cloudflare: o remetente usa 'address', não 'email'",
+     (c.from as unknown as { address: string }).address === "portal@nd.dev",
+     JSON.stringify(c.from));
+  ok("Cloudflare: o destinatário é uma lista de objetos com 'address'",
+     Array.isArray(c.to) && (c.to as unknown as Array<{ address: string }>)[0].address === "ana@nd.dev",
+     JSON.stringify(c.to));
+  ok("Cloudflare: manda html E texto — cliente que só lê texto existe",
+     !!(c.html && c.text));
+}
+{
+  const e = montarEnvio("resend", "portal@nd.dev", "Portal", "ana@nd.dev", "Ana",
+                        "Assunto", "<b>oi</b>", "oi", "", "", "re_123");
+  ok("Resend: outro endereço", e.url === "https://api.resend.com/emails");
+  ok("Resend: o remetente vai em uma linha só",
+     (e.corpo as unknown as { from: string }).from === "Portal <portal@nd.dev>");
+  ok("Resend: o destinatário é uma lista de textos",
+     JSON.stringify((e.corpo as unknown as { to: string[] }).to) === '["ana@nd.dev"]');
+}
+
+/* --- ler a resposta. A armadilha da Cloudflare é responder 200 com
+       success:false — quem olha só o código HTTP dá o envio por certo. --- */
+ok("Cloudflare: 200 com success:false é RECUSA, não sucesso",
+   lerResposta("cloudflare", 200,
+     '{"success":false,"errors":[{"code":1004,"message":"from address not verified"}]}')
+     .includes("from address not verified"));
+ok("Cloudflare: 200 com success:true é sucesso",
+   lerResposta("cloudflare", 200, '{"success":true,"errors":[],"result":{}}') === "");
+ok("Cloudflare: erro sem corpo legível ainda diz o código",
+   lerResposta("cloudflare", 403, "forbidden").includes("403"));
+ok("Resend: 4xx traz a mensagem do provedor",
+   lerResposta("resend", 422, '{"message":"Invalid to field"}').includes("Invalid to field"));
+ok("Resend: 200 é sucesso", lerResposta("resend", 200, '{"id":"x"}') === "");
+
+/* --- o que falta configurar, em uma frase --- */
+ok("sem o id da conta, diz qual segredo falta",
+   faltaParaEnviar("cloudflare", "", "tok", "", "de@x").includes("CF_ACCOUNT_ID"));
+ok("sem o token, idem",
+   faltaParaEnviar("cloudflare", "conta", "", "", "de@x").includes("CF_API_TOKEN"));
+ok("sem remetente, idem",
+   faltaParaEnviar("cloudflare", "conta", "tok", "", "").includes("EMAIL_DE"));
+ok("provedor desconhecido é recusado com o nome dele",
+   faltaParaEnviar("correio", "", "", "", "de@x").includes("correio"));
+ok("configurado direito não reclama de nada",
+   faltaParaEnviar("cloudflare", "conta", "tok", "", "de@x") === "");
 
 /* --- assunto --- */
 ok("um aviso vira assunto do próprio aviso",

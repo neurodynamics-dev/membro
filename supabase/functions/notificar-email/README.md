@@ -19,7 +19,8 @@ isso que ele se propõe a ser. Configurar o portal apontando para ele não vai
 dar erro claro — vai dar tempo limite de conexão.
 
 Quem envia é outro produto, o **Email Service → Email Sending**, da mesma
-Cloudflare, no mesmo painel. É de graça para o volume de uma equipe do nosso
+Cloudflare, no mesmo painel. O portal fala com ele pela **API HTTP** — sem
+SMTP, sem porta, sem TLS para acertar. É de graça para o volume de uma equipe do nosso
 tamanho e é o caminho mais curto, porque o domínio já está lá.
 
 As duas coisas convivem: continuar recebendo em `alguem@neurodynamics.dev`
@@ -52,9 +53,9 @@ No painel da Cloudflare, **com a conta que administra `neurodynamics.dev`**:
 > desligado). Proxy em registro de e-mail quebra a verificação. TXT e MX não
 > têm proxy, então não há o que fazer neles.
 
-### Passo 2 — Criar o token que serve de senha
+### Passo 2 — Criar o token que autoriza o envio
 
-O SMTP da Cloudflare não usa a senha de ninguém: usa um token de API.
+O envio pela Cloudflare não usa a senha de ninguém: usa um token de API.
 
 1. canto superior direito → **My Profile** → **API Tokens** → **Create Token**;
 2. **Create Custom Token**;
@@ -77,46 +78,42 @@ chega em algum lugar em vez de sumir.
 
 ## Passo 4 — Guardar os segredos no Supabase
 
+O envio é por **HTTP**, com a API da Cloudflare — não por SMTP. Então não há
+host, porta nem TLS para acertar: são três valores.
+
 No painel do Supabase, no projeto do portal:
 
 **Project Settings** (engrenagem, no rodapé do menu lateral) → **Edge
 Functions** → seção **Secrets** → **Add new secret**, um de cada vez:
 
-| Nome | Valor |
-|---|---|
-| `SMTP_HOST` | `smtp.mx.cloudflare.net` |
-| `SMTP_PORT` | `465` |
-| `SMTP_USER` | `api_token` — mas confira: use exatamente o *username* que a tela de SMTP da Cloudflare mostrar |
-| `SMTP_SENHA` | o token do passo 2 |
-| `SMTP_DE` | `portal@neurodynamics.dev` |
+| Nome | Valor | Onde achar |
+|---|---|---|
+| `CF_ACCOUNT_ID` | o id da sua conta na Cloudflare | painel da Cloudflare → menu lateral → **Manage Account** → *Account ID*. É também o trecho depois de `dash.cloudflare.com/` no endereço |
+| `CF_API_TOKEN` | o token do passo 2 | você copiou no passo 2 |
+| `EMAIL_DE` | `portal@neurodynamics.dev` | o endereço do passo 3 |
 
-Não defina `SMTP_TLS`. Ela existe só para servidor que foge da convenção da
-porta, e a Cloudflare segue a convenção.
+Opcional: `EMAIL_DE_NOME` muda o nome que aparece antes do endereço na caixa de
+entrada (o padrão é *Portal do Membro*).
 
 `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já existem nesse ambiente — não
 crie.
 
-> **Por que a porta 465 e não a 587.** Na 465 a conversa é criptografada desde
-> o primeiro byte; na 587 ela começa em texto claro e sobe com STARTTLS. A
-> Cloudflare só aceita a primeira forma. Trocar as duas não dá erro legível:
-> a conexão simplesmente pendura até dar tempo limite.
+> **Se você já tinha configurado o SMTP antes**, o `SMTP_SENHA` e o `SMTP_DE`
+> continuam servindo como reserva de `CF_API_TOKEN` e `EMAIL_DE` — então basta
+> acrescentar o `CF_ACCOUNT_ID`. Os demais (`SMTP_HOST`, `SMTP_PORT`,
+> `SMTP_USER`, `SMTP_TLS`) não fazem mais nada e podem ser apagados.
 
-### Outros provedores
+### Outro provedor, se um dia sair da Cloudflare
 
-A função não é casada com a Cloudflare. Qualquer SMTP serve — só mude os
-segredos:
+A função não é casada com ela. Para usar o [Resend](https://resend.com), dois
+segredos a mais e nada de código:
 
-| Provedor | `SMTP_HOST` | `SMTP_PORT` | `SMTP_USER` |
-|---|---|---|---|
-| Cloudflare Email Sending | `smtp.mx.cloudflare.net` | `465` | `api_token` |
-| Resend | `smtp.resend.com` | `465` | `resend` |
-| Brevo | `smtp-relay.brevo.com` | `587` | o e-mail da conta |
-| Gmail / Workspace | `smtp.gmail.com` | `465` | o endereço completo |
+| Nome | Valor |
+|---|---|
+| `EMAIL_PROVEDOR` | `resend` |
+| `RESEND_API_KEY` | a chave da conta |
 
-No Gmail a senha **não** é a da conta: é uma *senha de app*, e ela só aparece
-depois de ligar a verificação em duas etapas.
-
----
+`EMAIL_DE` continua valendo, e o domínio precisa estar verificado lá também.
 
 ## Passo 5 — Publicar a função
 
@@ -171,7 +168,8 @@ existe — "não chegou nada" sozinho não ajuda ninguém:
 | O navegador não conseguiu falar com a função | ou ela não está publicada, ou está numa versão antiga, sem a liberação de origem. Veja o quadro abaixo |
 | A função recusou a autenticação (401) | saia e entre no portal de novo |
 | A função respondeu `erro` | o detalhe vem junto; os Logs têm o resto |
-| sem SMTP configurado | volte ao passo 4. Nada se perde: sai assim que os segredos existirem |
+| ainda não sabe por onde enviar | volte ao passo 4 — a mensagem diz **qual** segredo falta. Nada se perde |
+| rodou mas não enviou nada | vem junto a resposta literal do provedor, que costuma nomear o problema (remetente não verificado, token sem permissão…) |
 | A função não conseguiu ler a lista no banco | falta aplicar `db/v16_pessoal.sql` |
 | Não consegui criar o aviso de teste (função inexistente) | falta aplicar `db/v18_teste_email.sql` |
 
@@ -188,7 +186,7 @@ existe — "não chegou nada" sozinho não ajuda ninguém:
 
 > **O teste fura a sua preferência de propósito.** Mesmo quem escolheu *um
 > resumo por dia* ou *só no portal* recebe o e-mail de teste — senão não dá
-> para saber se o silêncio foi a preferência ou o SMTP. Só o teste faz isso;
+> para saber se o silêncio foi a preferência ou o envio. Só o teste faz isso;
 > os avisos do dia a dia respeitam a escolha de cada um.
 
 Se quiser ver os detalhes da execução, eles ficam em **Edge Functions** →
@@ -328,13 +326,18 @@ reescreve.
 
 ## Testes
 
-Só as funções puras — enviar de verdade exige servidor.
+Só as funções puras — enviar de verdade exige a conta do provedor.
 
 ```bash
 node --experimental-strip-types email.test.ts
 ```
 
-Entre elas estão os dois casos que mais custam caro: **título e corpo escritos
-por gente** (o nome de uma atividade, um comentário) são escapados antes de
-entrar no HTML; e a **porta certa com o TLS certo**, que é a diferença entre
-enviar e pendurar sem mensagem de erro.
+Entre elas estão os casos que mais custam caro:
+
+- **título e corpo escritos por gente** (o nome de uma atividade, um
+  comentário) são escapados antes de entrar no HTML;
+- o **formato do pedido** de cada provedor — o REST da Cloudflare usa
+  `address` onde o binding dos Workers usa `email`, e trocar os dois é o
+  engano clássico;
+- a **resposta 200 com `success:false`** da Cloudflare, que é recusa: quem
+  olha só o código HTTP dá o envio por certo e não manda nada.
