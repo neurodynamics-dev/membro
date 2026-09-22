@@ -24,8 +24,8 @@ SMTP, sem porta, sem TLS para acertar. É de graça para o volume de uma equipe 
 tamanho e é o caminho mais curto, porque o domínio já está lá.
 
 As duas coisas convivem: continuar recebendo em `alguem@neurodynamics.dev`
-pelo Routing e enviar por `soma@neurodynamics.dev` pelo Sending, ao mesmo
-tempo, sem conflito.
+pelo Routing e enviar por `portal@soma.neurodynamics.dev` pelo Sending, ao
+mesmo tempo, sem conflito — são domínios diferentes, cada um com o seu papel.
 
 ---
 
@@ -68,12 +68,32 @@ O envio pela Cloudflare não usa a senha de ninguém: usa um token de API.
 ### Passo 3 — Criar o endereço remetente
 
 Ainda em **Email Service → Email Sending**, cadastre o endereço que vai
-assinar os e-mails. O nosso é **`soma@neurodynamics.dev`**.
+assinar os e-mails.
 
-Seja qual for, ele tem de estar no domínio que você acabou de habilitar no
-passo 1 — e tem de ser **exatamente** o mesmo valor que você vai pôr em
-`EMAIL_DE` no passo 4. Divergir aí é o que produz o erro `10202
-email.sending.error.email.invalid`, que não diz qual endereço recusou.
+### Descubra de qual domínio você pode enviar — isto é a parte traiçoeira
+
+A Cloudflare habilita o envio **por subdomínio**, e nem sempre é o que você
+imagina. O jeito de saber qual é: no painel do Email Sending, olhe os registros
+de DNS que ela criou e ache o que começa com **`cf-bounce.`**
+
+```
+cf-bounce.soma.neurodynamics.dev     <- o que vem depois do ponto
+          ^^^^^^^^^^^^^^^^^^^^^^        é o seu domínio de envio
+```
+
+No nosso caso é **`soma.neurodynamics.dev`**. Então o remetente tem de ser
+algo como **`portal@soma.neurodynamics.dev`** — e **não** `soma@neurodynamics.dev`,
+que parece certo e não é.
+
+Enviar de um domínio que não está habilitado produz o erro `10202
+email.sending.error.email.invalid`, que não diz qual endereço recusou nem por
+quê. É a causa quase certa desse código.
+
+> **Para onde vão as respostas.** O subdomínio de envio normalmente não
+> *recebe* nada, então responder um aviso cairia no vazio. Defina o segredo
+> `EMAIL_RESPONDER_PARA` com um endereço de verdade — um que exista no Email
+> Routing, como `soma@neurodynamics.dev`. Quem apertar "Responder" escreve
+> para lá.
 
 Vale a pena que esse endereço **também** exista no Email Routing, encaminhando
 para quem cuida do portal: assim, se alguém responder ao aviso, a resposta
@@ -95,7 +115,8 @@ Functions** → seção **Secrets** → **Add new secret**, um de cada vez:
 |---|---|---|
 | `CF_ACCOUNT_ID` | o id da sua conta na Cloudflare | painel da Cloudflare → menu lateral → **Manage Account** → *Account ID*. É também o trecho depois de `dash.cloudflare.com/` no endereço |
 | `CF_API_TOKEN` | o token do passo 2 | você copiou no passo 2 |
-| `EMAIL_DE` | `soma@neurodynamics.dev` | o endereço do passo 3, escrito igual |
+| `EMAIL_DE` | `portal@soma.neurodynamics.dev` | o endereço do passo 3 — **no domínio do `cf-bounce.`**, escrito igual |
+| `EMAIL_RESPONDER_PARA` | `soma@neurodynamics.dev` | para onde vai a resposta de quem apertar "Responder" (opcional, mas sem ele a resposta some) |
 
 Opcional: `EMAIL_DE_NOME` é o nome que aparece antes do endereço na caixa de
 entrada — *Portal do Membro* se você não definir. Como o endereço é
@@ -181,7 +202,7 @@ existe — "não chegou nada" sozinho não ajuda ninguém:
 | A função respondeu `erro` | o detalhe vem junto; os Logs têm o resto |
 | ainda não sabe por onde enviar | volte ao passo 4 — a mensagem diz **qual** segredo falta. Nada se perde |
 | rodou mas não enviou nada | vem junto a resposta literal do provedor **e o remetente que ele tentou usar**. Quando *todas* falham, o suspeito é o remetente: é o único dado comum a todas as tentativas |
-| `10202 email.sending.error.email.invalid` | algum endereço não é um e-mail válido. Se falharam todas, é o `EMAIL_DE`; se falhou uma, é a ficha daquela pessoa |
+| `10202 email.sending.error.email.invalid` | o remetente quase certamente não está no domínio de envio. Confira o `cf-bounce.` no DNS (passo 3) e ajuste o `EMAIL_DE`. Falhando só uma, aí sim é a ficha daquela pessoa |
 | A função não conseguiu ler a lista no banco | falta aplicar `db/v16_pessoal.sql` |
 | Não consegui criar o aviso de teste (função inexistente) | falta aplicar `db/v18_teste_email.sql` |
 
