@@ -57,7 +57,12 @@ const PROVEDOR = (env("EMAIL_PROVEDOR") || "cloudflare").toLowerCase();
 const CF_CONTA = env("CF_ACCOUNT_ID");
 const CF_TOKEN = env("CF_API_TOKEN") || env("SMTP_SENHA");
 const RESEND   = env("RESEND_API_KEY") || env("SMTP_SENHA");
-const DE       = env("EMAIL_DE") || env("SMTP_DE") || env("SMTP_USER");
+/* SEM cair no SMTP_USER: no mundo do SMTP ele era o usuário da
+   autenticação — na Cloudflare, a string literal "api_token" — e não um
+   endereço. Usá-lo de último recurso fazia a função tentar enviar DE
+   "api_token", e o provedor recusava tudo com "email.invalid": todas as
+   mensagens falhavam de uma vez, porque o remetente é comum a todas. */
+const DE       = env("EMAIL_DE") || env("SMTP_DE");
 const DE_NOME  = env("EMAIL_DE_NOME") || "Portal do Membro";
 
 export interface Envio {
@@ -65,6 +70,12 @@ export interface Envio {
   headers: Record<string, string>;
   corpo: unknown;
 }
+
+/* Não é validação de e-mail de verdade — é só para pegar o que
+   claramente não é um endereço antes de gastar uma tentativa e receber
+   de volta um código que não explica nada. */
+export const pareceEndereco = (v: string): boolean =>
+  /^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]{2,}$/.test((v || "").trim());
 
 /** O que falta para conseguir enviar, em uma frase. Vazio = está pronto. */
 export function faltaParaEnviar(
@@ -80,6 +91,11 @@ export function faltaParaEnviar(
     return `EMAIL_PROVEDOR="${provedor}" não é conhecido — use cloudflare ou resend.`;
   }
   if (!de) return "Falta o segredo EMAIL_DE com o endereço remetente.";
+  if (!pareceEndereco(de)) {
+    return `O remetente configurado não é um endereço de e-mail: "${de}". `
+      + `Defina EMAIL_DE como portal@neurodynamics.dev (ou o endereço que `
+      + `você cadastrou no Email Sending).`;
+  }
   return "";
 }
 
@@ -137,6 +153,10 @@ export function lerResposta(provedor: string, status: number, corpo: string): st
 /** Manda um e-mail. Devolve "" quando saiu, ou o motivo da recusa. */
 async function enviarUm(para: string, paraNome: string, assunto: string,
                         html: string, texto: string): Promise<string> {
+  if (!pareceEndereco(para)) {
+    return `o endereço do destinatário não parece um e-mail: "${para}" `
+      + `(confira a ficha dele no quadro)`;
+  }
   const e = montarEnvio(PROVEDOR, DE, DE_NOME, para, paraNome, assunto, html, texto);
   const r = await fetch(e.url, {
     method: "POST",
@@ -365,7 +385,9 @@ export async function servir(req: Request): Promise<Response> {
     enviadas: enviadas.length, falhas: falhas.length,
     /* o motivo da recusa vai junto: sem ele, "0 enviadas" não diz nada
        a quem está configurando, e o provedor já explicou o porquê */
-    ...(ultimoErro ? { detalhe: ultimoErro, provedor: PROVEDOR } : {}),
+    /* o remetente vai junto porque, quando TODAS falham, ele é o
+       suspeito — é o único dado comum a todas as tentativas */
+    ...(ultimoErro ? { detalhe: ultimoErro, provedor: PROVEDOR, de: DE } : {}),
   }), { headers: cabecalho });
 }
 
