@@ -63,6 +63,10 @@ const RESEND   = env("RESEND_API_KEY") || env("SMTP_SENHA");
    "api_token", e o provedor recusava tudo com "email.invalid": todas as
    mensagens falhavam de uma vez, porque o remetente é comum a todas. */
 const DE       = env("EMAIL_DE") || env("SMTP_DE");
+/* Para onde vai a resposta de quem apertar "Responder". O remetente
+   mora no subdomínio de ENVIO, que normalmente não recebe nada — sem
+   isto, responder um aviso do portal cai no vazio. */
+const RESPONDER = env("EMAIL_RESPONDER_PARA");
 const DE_NOME  = env("EMAIL_DE_NOME") || "Portal do Membro";
 
 export interface Envio {
@@ -103,13 +107,16 @@ export function faltaParaEnviar(
 export function montarEnvio(
   provedor: string, de: string, deNome: string, para: string, paraNome: string,
   assunto: string, html: string, texto: string,
-  conta = CF_CONTA, token = CF_TOKEN, chaveResend = RESEND,
+  conta = CF_CONTA, token = CF_TOKEN, chaveResend = RESEND, responder = RESPONDER,
 ): Envio {
   if (provedor === "resend") {
     return {
       url: "https://api.resend.com/emails",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${chaveResend}` },
-      corpo: { from: `${deNome} <${de}>`, to: [para], subject: assunto, html, text: texto },
+      corpo: {
+        from: `${deNome} <${de}>`, to: [para], subject: assunto, html, text: texto,
+        ...(responder ? { reply_to: responder } : {}),
+      },
     };
   }
   /* Cloudflare Email Sending. O REST usa "address" onde o binding dos
@@ -123,11 +130,24 @@ export function montarEnvio(
       subject: assunto,
       html,
       text: texto,
+      ...(responder ? { reply_to: { address: responder } } : {}),
     },
   };
 }
 
 /** Lê a resposta do provedor. "" quando saiu; senão, o motivo em texto. */
+/* O 10202 da Cloudflare diz "email.invalid" e nada mais — não diz QUAL
+   endereço nem POR QUÊ. A causa quase sempre é uma só: o remetente não
+   está num domínio habilitado para envio. E o domínio habilitado nem
+   sempre é o que se imagina: a Cloudflare habilita por SUBDOMÍNIO, e o
+   jeito de descobrir qual é olhar o registro `cf-bounce.<domínio>` que
+   ela criou no DNS. Custou uma rodada descobrir isso; fica escrito. */
+const DICA_10202 =
+  " — quase sempre quer dizer que o remetente não está num domínio"
+  + " habilitado no Email Sending. A Cloudflare habilita por SUBDOMÍNIO:"
+  + " veja no DNS qual é o registro cf-bounce.<algo>, porque esse <algo>"
+  + " é o único domínio de onde dá para enviar";
+
 export function lerResposta(provedor: string, status: number, corpo: string): string {
   let j: Record<string, unknown> | null = null;
   try { j = JSON.parse(corpo); } catch { /* nem toda resposta é JSON */ }
@@ -137,8 +157,9 @@ export function lerResposta(provedor: string, status: number, corpo: string): st
        sozinho não diz se o e-mail saiu. */
     if (j && j.success === false) {
       const es = (j.errors as Array<{ message?: string; code?: number }> | undefined) || [];
-      return es.map((e) => `${e.code ?? ""} ${e.message ?? ""}`.trim()).filter(Boolean).join("; ")
-        || `recusado pela Cloudflare (HTTP ${status})`;
+      const texto = es.map((e) => `${e.code ?? ""} ${e.message ?? ""}`.trim())
+        .filter(Boolean).join("; ") || `recusado pela Cloudflare (HTTP ${status})`;
+      return texto + (/10202|email\.invalid/i.test(texto) ? DICA_10202 : "");
     }
     if (status >= 200 && status < 300) return "";
     return `HTTP ${status}: ${corpo.slice(0, 300)}`;

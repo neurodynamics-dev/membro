@@ -92,6 +92,45 @@ ok("Resend: 4xx traz a mensagem do provedor",
    lerResposta("resend", 422, '{"message":"Invalid to field"}').includes("Invalid to field"));
 ok("Resend: 200 é sucesso", lerResposta("resend", 200, '{"id":"x"}') === "");
 
+/* --- responder-para. O remetente mora no subdomínio de ENVIO, que não
+       recebe nada; sem reply_to, responder um aviso cai no vazio. --- */
+{
+  const e = montarEnvio("cloudflare", "portal@soma.nd.dev", "SOMA", "ana@nd.dev", "Ana",
+                        "S", "<b>h</b>", "t", "conta", "tok", "", "soma@nd.dev");
+  ok("Cloudflare: reply_to vai como objeto com 'address'",
+     JSON.stringify((e.corpo as unknown as { reply_to: unknown }).reply_to)
+       === '{"address":"soma@nd.dev"}');
+}
+{
+  const e = montarEnvio("resend", "portal@soma.nd.dev", "SOMA", "ana@nd.dev", "Ana",
+                        "S", "<b>h</b>", "t", "", "", "re_1", "soma@nd.dev");
+  ok("Resend: reply_to vai como texto",
+     (e.corpo as unknown as { reply_to: string }).reply_to === "soma@nd.dev");
+}
+{
+  const e = montarEnvio("cloudflare", "portal@soma.nd.dev", "SOMA", "ana@nd.dev", "Ana",
+                        "S", "<b>h</b>", "t", "conta", "tok", "", "");
+  ok("sem responder-para configurado, o campo nem é enviado",
+     !("reply_to" in (e.corpo as Record<string, unknown>)));
+}
+
+/* --- o 10202 da Cloudflare diz "email.invalid" e nada mais: não diz
+       qual endereço nem por quê. A causa quase sempre é o remetente
+       estar fora do subdomínio habilitado — e descobrir isso custou uma
+       rodada inteira, então a dica viaja junto com o erro. --- */
+{
+  const m = lerResposta("cloudflare", 200,
+    '{"success":false,"errors":[{"code":10202,"message":"email.sending.error.email.invalid"}]}');
+  ok("o 10202 preserva a mensagem original", m.includes("email.sending.error.email.invalid"));
+  ok("e explica que o domínio de envio é por subdomínio", m.includes("SUBDOMÍNIO"));
+  ok("e diz onde olhar", m.includes("cf-bounce"));
+}
+{
+  const m = lerResposta("cloudflare", 200,
+    '{"success":false,"errors":[{"code":10001,"message":"token invalido"}]}');
+  ok("outro erro NÃO recebe a dica do remetente", !m.includes("cf-bounce"), m);
+}
+
 /* --- o remetente. Este caso custou uma rodada inteira: o SMTP_USER
        era a string literal "api_token" (o usuário da autenticação, não
        um endereço), e eu o tinha posto como último recurso do
