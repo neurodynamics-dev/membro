@@ -1528,7 +1528,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '18.0';
+const VERSAO = '18.1';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -2228,6 +2228,50 @@ async function modalPreferenciaNotif(){
    falhou: vínculo, endereço, função, segredo, SMTP ou caixa de
    spam. Cada uma delas tem um recado próprio aqui.
    ============================================================ */
+/* Por que não basta olhar a mensagem do erro: o supabase-js devolve
+   "Failed to send a request to the Edge Function" tanto para função que
+   não existe quanto para função que existe mas não autorizou a origem
+   (CORS) — e "Edge Function returned a non-2xx status code" para
+   qualquer resposta de erro, escondendo o motivo real.
+
+   Quem sabe a diferença é a RESPOSTA, que vem em error.context. Ler
+   dali é o que separa "falta publicar" de "publicada, mas com outro
+   problema" — e foi exatamente essa confusão que mandou procurar
+   defeito no lugar errado. */
+async function motivoDaFuncao(e){
+  const ctx  = e?.context;
+  const http = typeof ctx?.status === 'number' ? ctx.status : null;
+
+  if (http === 404) return `A função <code>notificar-email</code> não foi
+    encontrada. Publique pelo passo 5 do README — e confira o nome, que tem de
+    ser exatamente esse, com hífen e minúsculo.<br>
+    <span class="small">O aviso ficou guardado e sai sozinho quando ela existir.</span>`;
+
+  if (http === 401 || http === 403) return `A função recusou a autenticação
+    (${http}). Saia e entre no portal de novo; persistindo, é a verificação de
+    JWT da função que está diferente do padrão.`;
+
+  if (http){
+    let corpo = null;
+    try { corpo = await ctx.clone().json(); } catch(_) { /* nem toda resposta é JSON */ }
+    if (corpo?.status) return `A função respondeu <code>${esc(corpo.status)}</code>`
+      + (corpo.detalhe ? `: ${esc(corpo.detalhe)}` : '.')
+      + `<br><span class="small">Os detalhes ficam em Edge Functions ›
+         notificar-email › Logs.</span>`;
+    return `A função respondeu com erro ${http}. Veja Edge Functions ›
+      notificar-email › Logs.`;
+  }
+
+  /* sem resposta nenhuma: o pedido não chegou a ser aceito */
+  return `O navegador não conseguiu falar com a função. As duas causas são:
+    ela não está publicada, <b>ou</b> está publicada numa versão sem a
+    liberação de origem (CORS) — o portal chama do navegador, e sem isso a
+    resposta é descartada.<br>
+    <span class="small">Confira em Edge Functions se <code>notificar-email</code>
+    aparece como <b>Active</b>. Aparecendo, republique com a versão atual do
+    arquivo, que já traz a liberação.</span>`;
+}
+
 async function testarEmail(){
   const b = $('#pn-tbtn'), cx = $('#pn-teste');
   const diz = (txt, classe) => { if (cx) cx.innerHTML =
@@ -2250,14 +2294,7 @@ async function testarEmail(){
 
     /* 2. a função de envio, agora — sem esperar o agendamento. */
     const { data: r, error: e2 } = await sb.functions.invoke('notificar-email');
-    if (e2){
-      const m = String(e2.message || e2);
-      return diz(/not found|404|Failed to send|Failed to fetch/i.test(m)
-        ? `A função <code>notificar-email</code> ainda não foi publicada no Supabase.
-           O passo a passo está no README dela.<br>
-           <span class="small">O aviso ficou guardado e sai sozinho quando ela existir.</span>`
-        : `A função respondeu com erro: ${esc(m)}`, 'err');
-    }
+    if (e2) return diz(await motivoDaFuncao(e2), 'err');
 
     /* 3. o que ela respondeu. */
     if (r?.status === 'smtp_nao_configurado') return diz(

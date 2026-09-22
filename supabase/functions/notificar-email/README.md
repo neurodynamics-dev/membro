@@ -136,6 +136,10 @@ Tudo pelo navegador, sem instalar nada.
 Deu certo quando `notificar-email` aparece na lista de Edge Functions com o
 status **Active**.
 
+> **O arquivo precisa ser o atual.** A liberação de origem (CORS) entrou depois
+> das primeiras versões; sem ela o botão de teste do portal não consegue ler a
+> resposta, mesmo com a função no ar.
+
 > **Não mexa na verificação de JWT** (vem ligada, e é assim que tem de ficar).
 > Diferente do `agenda-ics`, aqui não há token na URL e ninguém de fora
 > precisa chamar: quem chama é o agendamento, autenticado.
@@ -163,10 +167,24 @@ existe — "não chegou nada" sozinho não ajuda ninguém:
 | **Enviado.** com o seu endereço | deu certo. Não chegando em um minuto, procure no spam — e confira se o endereço mostrado é mesmo o seu |
 | A sua conta ainda não está ligada a um registro do quadro | Administração › Contas, vincule a conta ao registro |
 | A sua ficha não tem e-mail | Equipe › a sua ficha › preencha *E-mail NRO* ou *E-mail pessoal* |
-| A função `notificar-email` ainda não foi publicada | volte ao passo 5. O aviso fica guardado e sai sozinho depois |
+| A função não foi encontrada | volte ao passo 5 — e confira o nome, que tem de ser exatamente `notificar-email` |
+| O navegador não conseguiu falar com a função | ou ela não está publicada, ou está numa versão antiga, sem a liberação de origem. Veja o quadro abaixo |
+| A função recusou a autenticação (401) | saia e entre no portal de novo |
+| A função respondeu `erro` | o detalhe vem junto; os Logs têm o resto |
 | sem SMTP configurado | volte ao passo 4. Nada se perde: sai assim que os segredos existirem |
 | A função não conseguiu ler a lista no banco | falta aplicar `db/v16_pessoal.sql` |
 | Não consegui criar o aviso de teste (função inexistente) | falta aplicar `db/v18_teste_email.sql` |
+
+> **Se aparecer "o navegador não conseguiu falar com a função" e ela estiver
+> como Active:** é a versão publicada que está velha. As primeiras versões
+> deste arquivo não traziam a liberação de origem (CORS), e sem ela o navegador
+> descarta a resposta mesmo com tudo funcionando do outro lado. Republique
+> pelo passo 5 com o arquivo atual e teste de novo.
+>
+> Um detalhe dessa versão antiga: a sondagem que o navegador manda antes do
+> pedido de verdade **executava a rotina inteira**. Então é possível que o
+> e-mail de teste tenha saído, e só a resposta é que se perdeu — vale olhar a
+> caixa de entrada antes de concluir que nada funciona.
 
 > **O teste fura a sua preferência de propósito.** Mesmo quem escolheu *um
 > resumo por dia* ou *só no portal* recebe o e-mail de teste — senão não dá

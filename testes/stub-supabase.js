@@ -229,8 +229,20 @@
         functions: {
           invoke: async () => {
             const f = window.__teste || {};
-            if (f.fn === 'naoPublicada')
+            /* as formas de erro que o supabase-js v2 devolve de verdade:
+               FunctionsFetchError não tem context; FunctionsHttpError tem
+               context, que é a Response — é dali que sai o motivo real */
+            if (f.fn === 'semResposta')
               return { data:null, error:{ message:'Failed to send a request to the Edge Function' } };
+            if (f.fn === 'naoPublicada')
+              return { data:null, error:{ message:'Edge Function returned a non-2xx status code',
+                context: new Response('{"error":"not found"}', { status:404 }) } };
+            if (f.fn === 'semSessao')
+              return { data:null, error:{ message:'Edge Function returned a non-2xx status code',
+                context: new Response('{"msg":"Invalid JWT"}', { status:401 }) } };
+            if (f.fn === 'estourou')
+              return { data:null, error:{ message:'Edge Function returned a non-2xx status code',
+                context: new Response('{"status":"erro","detalhe":"connection refused"}', { status:500 }) } };
             if (f.fn === 'semSmtp')  return { data:{ status:'smtp_nao_configurado' }, error:null };
             if (f.fn === 'semLote')  return { data:{ status:'erro_no_lote' }, error:null };
             if (f.fn === 'zero')     return { data:{ status:'ok', pessoas:0, enviadas:0, falhas:0 }, error:null };

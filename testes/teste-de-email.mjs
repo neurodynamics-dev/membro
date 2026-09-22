@@ -33,7 +33,10 @@ const casos = {
   'conta sem vínculo':          { rpc:'sem_registro' },
   'ficha sem e-mail':           { rpc:'sem_email' },
   'migração v18 não aplicada':  { rpc:'faltaMigracao' },
-  'função não publicada':       { fn:'naoPublicada' },
+  'função não publicada (404)': { fn:'naoPublicada' },
+  'CORS ou fora do ar':         { fn:'semResposta' },
+  'sessão recusada (401)':      { fn:'semSessao' },
+  'função estourou (500)':      { fn:'estourou' },
   'SMTP não configurado':       { fn:'semSmtp' },
   'migração v16 faltando':      { fn:'semLote' },
   'rodou mas não enviou nada':  { fn:'zero' }
