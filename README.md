@@ -64,8 +64,9 @@ SOMA · Gestão está sendo trazido, conforme o
 ## Como o sistema se organiza
 
 A navegação é por **espaços** — o que você está fazendo —, não por qual app
-a tela veio: **Início · Agenda · Atividades · Equipe · Informações · Serviços ·
-Meus pedidos · Administração**. Eles ficam num **menu lateral** à esquerda,
+a tela veio: **Início · Agenda · Atividades · OKRs · Equipe · Informações ·
+Serviços · Meus pedidos**, e, para quem tem o papel, **Seleção** e
+**Administração**. Eles ficam num **menu lateral** à esquerda,
 cada um com ícone e com os seus subitens logo abaixo — as abas da Agenda, os
 quadros dos seus grupos, as categorias de documento, cada serviço, cada
 painel da Administração. O menu **recolhe** para um trilho de ícones (o
@@ -130,13 +131,13 @@ só existiam no `pessoal.neurodynamics.dev`:
 - **Apontamento semanal** (`#/equipe/apontamento`) — a avaliação de assiduidade
   e entregas do seu grupo, com sinalização ao Depto. de Pessoal. Não é papel de
   gestão: é de quem lidera um grupo.
-- **Administração** (`#/admin`) — onze painéis, em galeria e não em abas, cada
+- **Administração** (`#/admin`) — doze painéis, em galeria e não em abas, cada
   um com endereço próprio:
 
   | Grupo | Painéis |
   |---|---|
   | **Portal** | Quadro de avisos · Documentos · Solicitações · Ouvidoria · Agendas |
-  | **Pessoas** | Contas e perfis · Catálogo de acessos · Importar planilha |
+  | **Pessoas** | Contas e perfis · Catálogo de acessos · Grupos e quadros · Importar planilha |
   | **Registro** | Relatórios · Auditoria |
   | **Conteúdo** | Site institucional |
 
@@ -144,6 +145,43 @@ só existiam no `pessoal.neurodynamics.dev`:
   de ser páginas: eram duas telas de login a mais para a mesma conta. E o
   Comitê de Seleção chega aos e-mails dos candidatos por Relatórios, que é o
   único painel aberto a ele.
+
+## OKRs
+
+O planejamento estratégico da equipe, em `#/okrs` — veio do SOMA · Gestão
+(`mod-okrs.js`). É uma árvore de objetivos, do **estratégico** ao **tático**
+e ao **operacional**, desenhada como o organograma: quem está acima, o
+objetivo em foco, os desdobramentos dele e os que estão no mesmo nível.
+
+- cada objetivo tem **código** (`OE1`, `OT1.2`, `OP1.2.1`), responsáveis,
+  eixo, prazo com o trimestre, status e **comentários** — mudar status ou
+  prazo deixa um registro automático;
+- o **progresso** de um objetivo é a fração dos objetivos-ponta do
+  desdobramento que já foram concluídos (os cancelados ficam de fora);
+- cada objetivo tem endereço (`#/okrs/OT1.2`), e os estratégicos são os
+  subitens de OKRs no menu lateral;
+- todos veem; **criar e excluir** é de `admin` e `pessoal`; **editar e mover
+  o status** é deles e dos responsáveis do objetivo.
+
+## Processo seletivo
+
+Os bastidores do processo seletivo, para o Comitê de Seleção (`admin`,
+`pessoal` e `selecao`), em `#/selecao` — também veio do SOMA · Gestão
+(`mod-selecao.js`). O site público, `selecao.neurodynamics.dev`, é o outro
+lado: inscrição, acompanhamento, agendamento e as páginas da dinâmica leem
+daqui o que foi publicado. Cada aba tem endereço e é subitem de Seleção no
+menu:
+
+| Aba | O que tem |
+|---|---|
+| **Visão geral** | métricas, funil, pendências e os próximos horários |
+| **Candidatos** | a lista com busca e filtro, movimentação em lote, exportação CSV e a ficha (`#/selecao/candidatos/<id>`): dados, competências, avaliações, e-mail de confirmação e a integração ao quadro |
+| **Avaliação** | por fase, cada membro do comitê dá nota por critério; a nota do candidato é a média |
+| **Agenda** | as janelas de dinâmica e entrevista que o candidato escolhe no site, com presença |
+| **Dinâmica** | painel, roteiro, desafio, critérios e janelas — tudo o que as três páginas da dinâmica mostram no dia |
+| **Publicações** | edital, avisos e resultados: o site só mostra o que estiver publicado |
+| **FAQ** | as perguntas frequentes do site |
+| **Configurações** | a edição, o cronograma público e quem está no comitê |
 
 Duas coisas que a unificação trouxe de graça:
 
@@ -161,9 +199,11 @@ Duas coisas que a unificação trouxe de graça:
 | `index.html`   | A casca e o plano do membro (`#/`, `#/agenda`, `#/equipe`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
 | `mod-atividades.js` | O quadro de trabalho de cada grupo (`#/atividades`) |
 | `mod-gestao.js`| Quadro de pessoal, ficha e auditoria (`#/equipe/quadro`, `#/equipe/<registro>`) |
-| `mod-admin.js` | Os onze painéis da gestão (`#/admin`, `#/admin/<painel>`) |
+| `mod-admin.js` | Os doze painéis da gestão (`#/admin`, `#/admin/<painel>`) |
 | `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados, quadro completo e o Full mailer |
 | `mod-evento.js` | O dossiê de um compromisso: preparo, presenças e ata (`#/agenda/evento/<id>`) |
+| `mod-okrs.js`  | O planejamento estratégico: a árvore de objetivos (`#/okrs`, `#/okrs/<codigo>`) |
+| `mod-selecao.js` | O processo seletivo, por dentro: as oito abas do Comitê de Seleção (`#/selecao`, `#/selecao/<aba>`) |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
 | `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
 | `mailer/`      | Ícones e logos recoloridas que o Full mailer embute nos e-mails |
@@ -190,8 +230,8 @@ São scripts clássicos, não módulos ES, de propósito — o código usa
 `onclick="…"` em toda parte e isso depende de escopo global.
 
 **Módulo não depende de módulo.** O que mais de um usa (`ic`, `ibtn`,
-`quemSouEu`, `CAT_LABEL`, `fmtD`) mora na casca — senão abrir uma tela
-quebraria porque outra ainda não foi carregada.
+`quemSouEu`, `CAT_LABEL`, `fmtD`, `fmtDT`, `confirma`, `copiar`) mora na
+casca — senão abrir uma tela quebraria porque outra ainda não foi carregada.
 
 As bibliotecas pesadas descem com quem precisa delas: jsPDF e autotable com
 os relatórios, xlsx com a importação e com a exportação do quadro. No SOMA as
@@ -296,7 +336,11 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
   grupo (ou por `admin`/`pessoal`).
 - **Ausências** são de cada um: só a própria pessoa (ou o Depto. de Pessoal)
   cria e remove as suas.
-- **Administração** (`#/admin`) é liberada só para os papéis `admin` e `pessoal`.
+- **Administração** (`#/admin`) é liberada só para os papéis `admin` e `pessoal`
+  (o Comitê de Seleção entra só em Relatórios).
+- **Seleção** (`#/selecao`) é de `admin`, `pessoal` e `selecao`.
+- **OKRs** (`#/okrs`) todos veem; criar e excluir é de `admin`/`pessoal`, e
+  editar é deles e dos responsáveis de cada objetivo.
 - **Ouvidoria**: a mensagem é gravada por função `security definer`
   sem nenhuma referência à conta, sem gatilho de auditoria e com a data
   truncada para o dia. Anonimato por projeto, não por promessa.

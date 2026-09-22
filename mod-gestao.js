@@ -19,8 +19,8 @@
      casca, state.tipos já é o catálogo de tipos de evento da agenda.
 
    Depende da casca para: sb, $, esc, norm, state, can, podeQuadro, ic, ibtn,
-   toast, abreModal, fechaModal, fmtD, hojeISO, pad3, nomeDe,
-   quemSouEu, avatarFoto, carregarLib.
+   toast, abreModal, fechaModal, fmtD, fmtDT, hojeISO, pad3, nomeDe,
+   quemSouEu, avatarFoto, carregarLib, confirma.
    ============================================================ */
 
 /* ---------------- estado do módulo ---------------- */
@@ -45,23 +45,12 @@ const TAB_LABEL = {membros:'Membros', dados_pessoais:'Dados pessoais', acessos_c
   evento_participantes:'Eventos · presenças', evento_checklist:'Eventos · checklist'};
 
 /* ---------------- utilidades ---------------- */
-const fmtDT = (d) => { if(!d) return '—'; const x = new Date(d);
-  return x.toLocaleDateString('pt-BR') + ' ' + x.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
 const pill = (st) => { const [dot, cor] = STATUS_DOT[st] || ['dt-gray',''];
   return `<span class="pill ${cor}"><span class="dt ${dot}"></span>${esc(st||'—')}</span>`; };
 function chips(arr, max){
   if (!arr || !arr.length) return '<span class="muted">—</span>';
   const v = arr.slice(0, max||99).map(g => `<span class="chip mini">${esc(g)}</span>`).join(' ');
   return v + (arr.length > (max||99) ? ` <span class="chip mini">+${arr.length-max}</span>` : '');
-}
-function confirma(msg, rotulo){
-  return new Promise(res => {
-    abreModal(`<h3>Confirmar</h3><p style="line-height:1.6;color:var(--muted);font-size:13.5px">${msg}</p>
-      <div class="acts" style="justify-content:flex-end">
-        <button class="btn ghost" onclick="window.__cf(false)">Cancelar</button>
-        <button class="btn solid" onclick="window.__cf(true)">${rotulo||'Confirmar'}</button></div>`);
-    window.__cf = (v) => { fechaModal(); res(v); };
-  });
 }
 /* Cabeçalho de página no padrão da marca, com as ações à direita. */
 function topoGestao({ olho, titulo, lead, acoes, voltar }){

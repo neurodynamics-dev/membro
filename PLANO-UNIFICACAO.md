@@ -15,7 +15,7 @@ As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para 
 | **1 · Quadro** | **Feita.** Login com os cinco modos; `#/quadro`, `#/quadro/<registro>` e `#/auditoria` em `mod-gestao.js`; organograma com "abrir ficha" |
 | **Reorganização** | **Feita.** Navegação por espaços, busca global (`/` ou `Ctrl/⌘ K`), notificações no sino |
 | **Atividades** | **Feita.** Quadro por grupo, cartões com código, comentários com menção, sinalização, carga da equipe — pedido fora do plano original |
-| **4 · Painéis** | **Feita.** Os dois `admin.html` (portal e site) viraram `#/admin` — hoje uma galeria de onze painéis |
+| **4 · Painéis** | **Feita pela metade.** Os dois `admin.html` (portal e site) viraram `#/admin` — hoje uma galeria de doze painéis. Seleção e OKRs, que também eram desta fase, ficaram de fora (ver abaixo) |
 | **Agenda (revisão)** | **Feita.** Tudo editável depois de criado; marcos e ausências saem do back-end; nenhum tipo força recorrência |
 | **2 · Operações** | **Feita.** Apontamento em Equipe; relatórios, importação, contas e catálogo viram painéis de Administração, agora em galeria |
 | **3 · Eventos** | **Feita.** O dossiê vira a profundidade de um item da agenda (`#/agenda/evento/<id>`), com checklist, presenças e ata |
@@ -23,9 +23,10 @@ As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para 
 | **Pessoal no quadro** | **Feita.** Solicitação, apontamento e ocorrência viram cartão no quadro do Depto de Pessoal; o cartão de origem decide e concede o acesso na mesma transação; o quadro do Pessoal fecha (`reservado`) |
 | **Notificação por e-mail** | **Feita.** Edge Function `notificar-email` com SMTP por variável de ambiente, três modos por pessoa (a cada aviso / resumo diário / só no portal), agendamento documentado |
 | **Quadro e acesso** | **Feita.** Cinco colunas que cabem na janela (sem rolagem horizontal), grupos num seletor em vez de abas, cartão com relevo e brilho de prioridade, e nível de acesso por pessoa em cada quadro |
+| **Seleção e OKRs** | **Feita, depois do corte.** `#/okrs` em `mod-okrs.js`, com os objetivos estratégicos como subitens no menu; `#/selecao` em `mod-selecao.js`, para `admin`, `pessoal` e `selecao`, com as oito abas como subitens e a ficha do candidato em `#/selecao/candidatos/<id>`. Até aqui, as duas telas só existiam no `soma-legado.html` |
 | 6 · Renomeação | **preparada.** O UID do iCal já está separado do endereço (era a armadilha 1.5.2); falta o DNS, o `CNAME`, as Redirect URLs do Supabase, trocar `SITE` na Edge Function do iCal e `PORTAL_URL` na do e-mail |
 
-Três defeitos que só a execução mostrou, e que valem registro porque a
+Quatro defeitos que só a execução mostrou, e que valem registro porque a
 mesma armadilha volta:
 
 - **a view era o furo, não a política.** `atividades_quadro` era uma view
@@ -43,8 +44,15 @@ mesma armadilha volta:
   encontrava "STATUS_LIST is not defined" no lugar do formulário. Foi para a
   casca, junto com `falha()`; `testes/colisoes.mjs` passa a vigiar a família
   inteira desse defeito.
+- **o corte veio antes de a Fase 4 terminar.** A 4 prometia "Seleção e OKRs
+  migrados" e foi marcada como feita só com os painéis; a 5 desligou o
+  endereço antigo em seguida, e a página de encaminhamento dizia que nada se
+  tinha perdido. Os dados estavam inteiros e as duas telas seguiam no
+  `soma-legado.html`, mas o portal não tinha entrada para nenhuma delas. O
+  que faltou é barato: antes de um corte, cruzar o inventário da seção 4,
+  linha a linha, com as rotas que o portal já tem.
 
-Duas correções que a execução trouxe ao que estava escrito aqui:
+Três correções que a execução trouxe ao que estava escrito aqui:
 
 - **os componentes não faltavam no design system — faltavam na folha.**
   Abas, métricas, barras, carregamento, estado vazio e diálogo já eram da
@@ -54,7 +62,11 @@ Duas correções que a execução trouxe ao que estava escrito aqui:
   virou o card 15, *Telas de trabalho*;
 - **o `gerarRelatorioMembro()` da ficha ficou para a Fase 2**, junto com o
   resto dos relatórios — ele depende do jsPDF, que é carregado sob demanda
-  pelo `mod-relatorios.js`.
+  pelo `mod-relatorios.js`;
+- **os OKRs viraram módulo (`mod-okrs.js`), não parte da casca**, como a
+  linha 16 do inventário previa. A casca só precisa da lista dos objetivos
+  estratégicos, que são subitens do menu; a árvore, o detalhe e a edição
+  descem só para quem abre a tela.
 
 ---
 

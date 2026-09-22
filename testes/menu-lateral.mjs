@@ -70,13 +70,15 @@ console.log('\nAberto (admin, 1440px)');
   const arvore = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec')].map(s => ({
     r: s.dataset.r, rot: s.querySelector('.lt-rot').textContent,
     icone: s.querySelector('.lt-item svg.ic')?.innerHTML.length || 0 })));
-  confere('os oito espaços, na ordem',
+  confere('os espaços, na ordem (admin vê também Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Início|Agenda|Atividades|Equipe|Informações|Serviços|Meus pedidos|Administração',
+      'Início|Agenda|Atividades|OKRs|Equipe|Informações|Serviços|Meus pedidos|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
-  confere('Administração vem depois do divisor "Gestão"',
-    await p.evaluate(() => document.querySelector('.lt-divisor')?.nextElementSibling?.dataset.r === 'admin'));
+  confere('Seleção e Administração vêm depois do divisor "Gestão"',
+    await p.evaluate(() => { const d = document.querySelector('.lt-divisor');
+      return d?.nextElementSibling?.dataset.r === 'selecao'
+        && d.nextElementSibling.nextElementSibling?.dataset.r === 'admin'; }));
 
   let ag = await secao(p, 'agenda');
   confere('Agenda: ativa e aberta', ag.ativa && ag.aberta && ag.seta === 'true', ag);
@@ -322,12 +324,14 @@ console.log('\nCelular (390px)');
 /* ---------- 2: por papel ---------- */
 console.log('\nPor papel');
 for (const [papel, esperado] of [
-  ['leitura', { admin:null, quadroPessoal:false }],
-  ['selecao', { admin:'Todos os painéis|Relatórios', quadroPessoal:false }],
-  ['pessoal', { admin:13, quadroPessoal:true }]
+  ['leitura', { admin:null, quadroPessoal:false, selecao:false }],
+  ['selecao', { admin:'Todos os painéis|Relatórios', quadroPessoal:false, selecao:true }],
+  ['pessoal', { admin:13, quadroPessoal:true, selecao:true }]
 ]){
   const { ctx, p } = await abrir({ stub: stubDe(papel) });
-  const adm = await secao(p, 'admin'), eq = await secao(p, 'equipe');
+  const adm = await secao(p, 'admin'), eq = await secao(p, 'equipe'), sel = await secao(p, 'selecao');
+  confere(`${papel}: Seleção ${esperado.selecao ? 'aparece, com as oito abas' : 'não aparece'}`,
+    esperado.selecao ? sel?.filhos.length === 8 : sel === null, sel?.filhos ?? null);
   const okAdm = esperado.admin === null ? adm === null
     : typeof esperado.admin === 'number' ? adm?.filhos.length === esperado.admin
     : adm?.filhos.join('|') === esperado.admin;

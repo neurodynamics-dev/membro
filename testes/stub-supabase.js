@@ -150,6 +150,96 @@
         publicado:true, ordem:2 }
     ],
     portal_solicitacoes: [],
+    /* OKRs: dois estratégicos, o OE1 desdobrado em dois táticos e um
+       operacional — o bastante para a cadeia, os irmãos e o progresso */
+    okr_objetivos: [
+      { id:'k1', codigo:'OE1', titulo:'Consolidar a equipe de pesquisa', nivel:'estrategico', pai_id:null,
+        eixo:'Gestão', ano:2026, prazo:'2026-12-31', status:'Em andamento', responsaveis:[4], ordem:10,
+        descricao:'Critério: 20 membros ativos até dezembro.', atualizado_em:'2026-09-10T12:00:00Z' },
+      { id:'k2', codigo:'OE2', titulo:'Publicar dois artigos em periódico', nivel:'estrategico', pai_id:null,
+        eixo:'Científico', ano:2026, prazo:'2026-11-30', status:'Não iniciado', responsaveis:[11], ordem:20,
+        atualizado_em:'2026-09-01T12:00:00Z' },
+      { id:'k3', codigo:'OT1.1', titulo:'Fechar o processo seletivo 2026', nivel:'tatico', pai_id:'k1',
+        eixo:'Gestão', ano:2026, prazo:'2026-10-15', status:'Concluído', responsaveis:[4,17], ordem:10,
+        atualizado_em:'2026-09-12T12:00:00Z' },
+      { id:'k4', codigo:'OT1.2', titulo:'Treinar os trainees na bancada', nivel:'tatico', pai_id:'k1',
+        eixo:'Formação', ano:2026, prazo:'2026-12-10', status:'Em risco', responsaveis:[11], ordem:20,
+        atualizado_em:'2026-09-14T12:00:00Z' },
+      { id:'k5', codigo:'OP1.2.1', titulo:'Montar o roteiro de treinamento', nivel:'operacional', pai_id:'k4',
+        eixo:'Formação', ano:2026, prazo:null, status:'Em andamento', responsaveis:[], ordem:10,
+        atualizado_em:'2026-09-15T12:00:00Z' }
+    ],
+    okr_comentarios: [
+      { id:'kc1', objetivo_id:'k1', autor:'Ana Figueiredo', registro:4, texto:'Faltam 3 vagas.', tipo:'comentario',
+        criado_em:'2026-09-10T12:00:00Z' },
+      { id:'kc2', objetivo_id:'k1', autor:'Ana Figueiredo', registro:4, texto:'Status alterado de "Não iniciado" para "Em andamento".',
+        tipo:'sistema', criado_em:'2026-09-01T12:00:00Z' }
+    ],
+    /* Processo seletivo: uma edição com quatro candidatos em fases
+       diferentes, horários de dinâmica e entrevista, uma avaliação */
+    ps_edicoes: [
+      { id:'ed1', nome:'Processo Seletivo 2026', slug:'ps-2026', descricao:'Edição do segundo semestre.',
+        inscricoes_inicio:'2026-08-01', inscricoes_fim:'2026-08-31', status:'publicada', edital_url:null,
+        areas:['Hardware','Software'], criado_em:'2026-07-20T12:00:00Z' }
+    ],
+    ps_candidatos: [
+      { id:'c1', edicao_id:'ed1', numero:1, protocolo:'PS26-001', nome:'Joana Ribeiro', email:'joana@ufmg.br',
+        telefone:'31 90000-0001', curso:'Eng. Elétrica', periodo:'5º', status:'inscrito',
+        areas_interesse:['Hardware'], competencias:['Arduino'], competencias_desejadas:['PCB'],
+        criado_em:'2026-08-03T10:00:00Z' },
+      { id:'c2', edicao_id:'ed1', numero:2, protocolo:'PS26-002', nome:'Marcos Lima', email:'marcos@ufmg.br',
+        curso:'Eng. de Controle', periodo:'3º', status:'deferido', areas_interesse:['Software'],
+        criado_em:'2026-08-04T10:00:00Z' },
+      { id:'c3', edicao_id:'ed1', numero:3, protocolo:'PS26-003', nome:'Paula Souza', email:'paula@ufmg.br',
+        curso:'Eng. Biomédica', periodo:'7º', status:'aprovado_dinamica', criado_em:'2026-08-05T10:00:00Z' },
+      { id:'c4', edicao_id:'ed1', numero:4, protocolo:'PS26-004', nome:'Rafael Dias', email:'rafael@ufmg.br',
+        curso:'Física', periodo:'2º', status:'trainee', criado_em:'2026-08-06T10:00:00Z' }
+    ],
+    ps_etapas: [
+      { id:'et1', edicao_id:'ed1', titulo:'Inscrições', data_inicio:'2026-08-01', data_fim:'2026-08-31', fase:'inscricao', ordem:10 },
+      { id:'et2', edicao_id:'ed1', titulo:'Dinâmicas em grupo', data_inicio:'2026-10-05', data_fim:'2026-10-09', fase:'dinamica', ordem:20 }
+    ],
+    ps_slots: [
+      { id:'s1', edicao_id:'ed1', fase:'dinamica', data:'2026-10-05', hora_inicio:'18:00:00', hora_fim:'19:30:00',
+        capacidade:8, local:'LABBIO', ativo:true, codigo:'KXQT' },
+      { id:'s2', edicao_id:'ed1', fase:'entrevista', data:'2026-10-20', hora_inicio:'14:00:00', hora_fim:'14:30:00',
+        capacidade:1, local:'Sala 2', ativo:true, codigo:null }
+    ],
+    ps_agendamentos: [
+      { id:'ag1', slot_id:'s1', candidato_id:'c2', fase:'dinamica', compareceu:null,
+        slot:{ id:'s1', edicao_id:'ed1', data:'2026-10-05', hora_inicio:'18:00:00', hora_fim:'19:30:00', local:'LABBIO' } }
+    ],
+    ps_publicacoes: [
+      { id:'pb1', edicao_id:'ed1', tipo:'edital', titulo:'Edital nº 01/2026', corpo:null, url_anexo:null,
+        publicado:true, publicado_em:'2026-07-25T12:00:00Z', criado_em:'2026-07-24T12:00:00Z' },
+      { id:'pb2', edicao_id:'ed1', tipo:'resultado_dinamica', titulo:'Resultado da 1ª fase', corpo:null,
+        url_anexo:null, publicado:false, publicado_em:null, criado_em:'2026-09-20T12:00:00Z' }
+    ],
+    ps_avaliacoes: [
+      { id:'av1', candidato_id:'c3', fase:'dinamica', criterios:{'Comunicação':4,'Proatividade':5}, nota:4.5,
+        parecer:'Puxou o grupo.', recomendacao:'aprovar', avaliador_id:'u9', avaliador:'Bruno Tavares',
+        ps_candidatos:{ edicao_id:'ed1' } }
+    ],
+    ps_faq: [
+      { id:'fq1', pergunta:'Preciso ser aluno da UFMG?', resposta:'Não.', ordem:10, edicao_id:null, publicada:true }
+    ],
+    ps_competencias: [
+      { id:'cp1', grupo:'Hardware', nome:'Arduino', ativa:true, ordem:10 },
+      { id:'cp2', grupo:'Hardware', nome:'PCB', ativa:true, ordem:20 },
+      { id:'cp3', grupo:'Software', nome:"Python d'água", ativa:true, ordem:30 }
+    ],
+    ps_din_config: [
+      { edicao_id:'ed1', titulo:'Dinâmica em grupo', desafio_titulo:'Sprint da bancada', minutos_total:75,
+        tam_grupo:5, tolerancia_antes:30, tolerancia_depois:30 }
+    ],
+    ps_din_itens: [
+      { id:'di1', tipo:'bloco', ordem:10, edicao_id:'ed1', slot_id:null, ativo:true,
+        dados:{ nome:'Abertura', minutos:10, fala:['Apresente a equipe'] } },
+      { id:'di2', tipo:'bloco', ordem:20, edicao_id:'ed1', slot_id:null, ativo:true,
+        dados:{ nome:'Desafio', minutos:50, fala:['Distribua os casos'] } },
+      { id:'di3', tipo:'avaliador', ordem:10, edicao_id:'ed1', slot_id:'s1', ativo:true,
+        dados:{ registro:11, nome:'Bruno Tavares', cargo:'Pesquisador', curso:'', foto_url:'', fala:'' } }
+    ],
     portal_ouvidoria: [], portal_agendas: []
   };
 
@@ -158,13 +248,17 @@
     const filtros = [];
     const b = {
       select(){ return b; },
-      eq(c, v){ filtros.push(r => r[c] === v); return b; },
+      /* "slot.edicao_id": o supabase-js filtra por coluna da tabela embutida */
+      eq(c, v){ filtros.push(r => c.split('.').reduce((o, k) => o?.[k], r) === v); return b; },
       neq(c, v){ filtros.push(r => r[c] !== v); return b; },
       in(c, vs){ filtros.push(r => vs.includes(r[c])); return b; },
       gte(){ return b; }, lte(){ return b; },
       order(){ return b; }, limit(){ return b; },
-      insert(){ return b; }, update(){ return b; },
-      upsert(){ return b; }, delete(){ return b; },
+      /* as escritas ficam em window.__escritas, para o teste conferir */
+      insert(d){ (window.__escritas ||= []).push({ tabela, op:'insert', dados:d }); return b; },
+      update(d){ (window.__escritas ||= []).push({ tabela, op:'update', dados:d }); return b; },
+      upsert(d){ (window.__escritas ||= []).push({ tabela, op:'upsert', dados:d }); return b; },
+      delete(){ (window.__escritas ||= []).push({ tabela, op:'delete' }); return b; },
       maybeSingle(){ b._um = true; return b; },
       single(){ b._um = true; return b; },
       then(ok){
