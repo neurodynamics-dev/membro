@@ -21,13 +21,15 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **Início** | o seu dia: avisos, próximos compromissos, suas atividades, seus pedidos | todos |
 | **Agenda** | tempo — compromissos, presença, ausências, marcos | todos |
 | **Atividades** | trabalho — o quadro do seu grupo | todos |
+| **OKRs** | planejamento — os objetivos e o desdobramento de cada um | todos (edição: `admin`, `pessoal` e os responsáveis) |
 | **Equipe** | pessoas — organograma e fichas | todos (a profundidade varia) |
 | **Informações** | documentos e políticas | todos |
 | **Serviços** | pedidos ao Depto. de Pessoal | todos |
 | **Meus pedidos** | o andamento do que você pediu | todos |
-| **Administração** | os painéis: portal, site, seleção, catálogo, importação, auditoria | `admin`, `pessoal` (e `selecao`, só Relatórios) |
+| **Seleção** | os bastidores do processo seletivo | `admin`, `pessoal`, `selecao` |
+| **Administração** | os painéis: portal, site, catálogo, importação, auditoria | `admin`, `pessoal` (e `selecao`, só Relatórios) |
 
-Oito destinos no primeiro nível, cada um com ícone, no **menu lateral** à
+Até dez destinos no primeiro nível, cada um com ícone, no **menu lateral** à
 esquerda. O segundo nível são os subitens de cada espaço — as abas da
 Agenda, os quadros dos grupos da pessoa, as categorias de documento, cada
 serviço, cada painel —, pendurados numa linha-guia debaixo do espaço, como
@@ -67,9 +69,14 @@ conforme quem entra é menu que ninguém aprende.
 #/atividades/card/<codigo>  uma atividade (ex.: #/atividades/card/ORT-14)
 #/equipe                    organograma
 #/equipe/<registro>         a ficha
+#/okrs[/<codigo>]           a árvore de objetivos, com um em foco (OE1, OT1.2…)
 #/informacoes[/<categoria>]
 #/servicos[/<tipo>]
 #/pedidos
+#/selecao[/<aba>]           processo seletivo (candidatos, avaliacao, agenda,
+                            dinamica, publicacoes, faq, config)
+#/selecao/candidatos/<id>   a ficha de um candidato
+#/selecao/dinamica/<sub>    painel, roteiro, desafio, criterios, janelas
 #/admin[/aba]               painéis
 ```
 

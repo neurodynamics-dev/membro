@@ -15,8 +15,9 @@
    Blackout e Cortex — escurecer seria errado, não "consistente".
 
    Depende da casca para: sb, $, esc, norm, state, can, podeSelecao,
-   toast, abreModal, fechaModal, fmtD, fmtDT, hojeISO, pad3, nomeDe,
-   quemSouEu, carregarLib, registrarBusca, filtrarSimples.
+   toast, abreModal, fechaModal, fmtD, hojeISO, pad3, nomeDe,
+   quemSouEu, carregarLib, registrarBusca, filtrarSimples, copiar,
+   abrirEmail, gmailCompose, marcados.
    ============================================================ */
 
 const CDN_JSPDF     = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -101,11 +102,6 @@ const ICONES_REL = {
 const icRel = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
   stroke-linecap="round" stroke-linejoin="round">${ICONES_REL[n]||''}</svg>`;
 
-async function copiar(texto){
-  try{ await navigator.clipboard.writeText(texto); toast('Copiado para a área de transferência.'); }
-  catch(e){ const ta=document.createElement('textarea'); ta.value=texto; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); ta.remove(); toast('Copiado para a área de transferência.'); }
-}
 /* copia HTML como conteúdo formatado (rich text) — ao colar no editor de
    e-mail o resultado sai renderizado, não como código. */
 async function copiarHTML(html){
@@ -137,33 +133,12 @@ async function copiarHTML(html){
     }catch(e2){ copiar(html); }
   }
 }
-/* invoca o cliente de e-mail por uma âncora real (navegação nativa, a mais
-   compatível entre navegadores). Use via onclick="return abrirEmail(this.href)".
-   Se o computador não tem um app de e-mail configurado, o navegador ignora o
-   mailto em silêncio — por isso todo botão de e-mail tem ao lado a opção
-   "Abrir no Gmail", que funciona sempre (as contas da equipe são Google). */
-function abrirEmail(url){
-  try{
-    const a = document.createElement('a');
-    a.href = url; a.style.display = 'none';
-    document.body.appendChild(a); a.click();
-    setTimeout(()=>a.remove(), 800);
-  }catch(e){ try{ window.location.href = url; }catch(_){ } }
-  return false;
-}
-/* monta a URL do compositor do Gmail no navegador; valores SEM encode prévio */
-function gmailCompose(o){
-  const p = new URLSearchParams({view:'cm', fs:'1'});
-  ['to','cc','bcc','su','body'].forEach(k=>{ if(o[k]) p.set(k, o[k]); });
-  return 'https://mail.google.com/mail/?' + p.toString();
-}
 function grupoCheckboxes(idPrefix, selecionados){
   const gs = [...new Set(state.membros.flatMap(m=>m.grupos||[]))].sort();
   if(!gs.length) return '<div class="muted small">Nenhum grupo cadastrado no quadro.</div>';
   return `<div class="multi">${gs.map((g,i)=>`<label class="check">
     <input type="checkbox" class="${idPrefix}" value="${esc(g)}" ${selecionados&&selecionados.includes(g)?'checked':''}> ${esc(g)}</label>`).join('')}</div>`;
 }
-const marcados = (cls)=> [...document.querySelectorAll('input.'+cls+':checked')].map(x=>x.value);
 /* ---------------- PDF: modelo de documento NRO ---------------- */
 function pdfNovo(orient){ const {jsPDF}=window.jspdf; return new jsPDF({orientation:orient||'portrait',unit:'mm',format:'a4'}); }
 function desenhaLogo(doc,x,y,s,cor){

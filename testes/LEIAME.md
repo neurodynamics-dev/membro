@@ -3,6 +3,11 @@
 Nenhum depende de rede, de conta ou do banco de produção: o Supabase é falso
 (`stub-supabase.js`) e o Chromium já vem instalado no ambiente.
 
+O stub não grava nada, mas anota: cada `insert`, `update`, `upsert` e
+`delete` entra em `window.__escritas` como `{ tabela, op, dados }`. É por
+ali que um teste confere o que uma ação mandaria ao banco — o
+`okrs-e-selecao.mjs` usa isso em quase todas as asserções.
+
 Da primeira vez, instale o Playwright (só o pacote — o Chromium já está no
 ambiente, e é para ele que os testes apontam com `executablePath`):
 
@@ -27,6 +32,7 @@ e rode daqui.
 | `quadro-e-acesso.mjs` | espaço do quadro, rolagem horizontal, nível de acesso por grupo e o cartão |
 | `ajustes-de-tela.mjs` | ordem dos grupos, quadro padrão, fundo do dropdown, Full mailer e o comentário que falha |
 | `teste-de-email.mjs` | o botão "Enviar um e-mail de teste": as nove coisas que podem falhar viram nove recados distintos |
+| `okrs-e-selecao.mjs` | OKRs e Processo Seletivo, vindos do SOMA · Gestão: endereços, menu, permissões por papel, o que cada ação grava — com asserções |
 | `menu-lateral.mjs` | o menu lateral: subitens por papel, item atual, recolher e o voo do trilho, a gaveta do celular, nenhuma rolagem horizontal — com asserções (sai com código 1 se algo falhar) |
 
 ```bash
@@ -38,6 +44,7 @@ node quadro-e-acesso.mjs
 node ajustes-de-tela.mjs
 node teste-de-email.mjs
 node menu-lateral.mjs
+node okrs-e-selecao.mjs
 ```
 
 Para rodar por papel, gere um stub com o papel trocado:

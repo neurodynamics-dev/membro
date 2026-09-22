@@ -534,6 +534,9 @@ main{padding-top:24px;padding-bottom:90px}
 .btn.perigo{border:1px solid rgba(241,128,111,.4);color:var(--bad)}
 .btn.perigo:hover{background:rgba(241,128,111,.08)}
 .btn[disabled]{opacity:.5;pointer-events:none}
+/* o ícone dentro do botão: sem tamanho, o <svg> de ic() encolhia a zero
+   dentro do flex e o botão ficava com um vão no lugar do ícone */
+.btn .ic{width:16px;height:16px;flex:none}
 .aviso-box{border-radius:12px;padding:12px 15px;font-size:13px;border:1px solid;margin-bottom:16px;line-height:1.55}
 .aviso-box.warn{background:rgba(245,195,106,.07);border-color:rgba(245,195,106,.3);color:#EFD9A8}
 .aviso-box.err{background:rgba(241,128,111,.09);border-color:rgba(241,128,111,.35);color:#F5B0A5}
@@ -1241,6 +1244,124 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px);
 .lt-off{background:transparent;border:1px solid var(--line2)}
 
 
+/* ============ OKRs ============
+   Do SOMA · Gestão (soma-legado.html). A árvore de objetivos usa a
+   mesma cadeia do organograma (.org-*): quem está acima, o objetivo em
+   foco, os desdobramentos e os do mesmo nível. Lá as peças eram claras
+   sobre branco; aqui, borda e vidro, com o código em Synapse. */
+.okr-oes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:22px}
+.okr-oe{border:1px solid var(--line);background:var(--card);border-radius:13px;padding:11px 13px;
+  text-align:left;transition:border-color .15s,background .15s}
+.okr-oe:hover{border-color:var(--line2)}
+.okr-oe.on{border-color:var(--syn);background:rgba(206,220,0,.05)}
+.okr-oe .cd{font-family:var(--fm);font-size:10px;letter-spacing:.06em;color:var(--syn)}
+.okr-oe .tt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  font-size:12.5px;font-weight:600;line-height:1.35;margin:4px 0 9px;min-height:34px;color:var(--ink)}
+.okr-cod{font-family:var(--fm);font-size:10px;letter-spacing:.06em;color:var(--syn);flex:none;
+  background:rgba(206,220,0,.10);border:1px solid rgba(206,220,0,.25);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.okr-card{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);
+  border-radius:13px;padding:12px 14px;transition:border-color .15s,transform .15s}
+button.okr-card:hover{border-color:var(--dim);transform:translateY(-1px)}
+.okr-card .ln1{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+.okr-card .nm{display:block;font-family:var(--fd);font-weight:600;font-size:13.5px;line-height:1.4;color:var(--ink)}
+.okr-card .mt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:11.5px;color:var(--muted)}
+.okr-focus{border-color:rgba(206,220,0,.4);background:rgba(206,220,0,.04);padding:16px 18px}
+.okr-eixo{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);
+  border:1px solid var(--line2);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.okr-eixo .dt{width:7px;height:7px;border-radius:50%;flex:none}
+.okr-prazo{font-family:var(--fm);font-size:11px;white-space:nowrap}
+.okr-prazo.ok{color:var(--ok)} .okr-prazo.warn{color:var(--warn)}
+.okr-prazo.bad{color:var(--bad)} .okr-prazo.off{color:var(--dim)}
+.okr-prog{display:flex;align-items:center;gap:9px;margin-top:10px}
+.okr-prog .trilho{flex:1;display:block;height:6px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden}
+.okr-prog .fill{display:block;height:100%;border-radius:4px;background:var(--syn)}
+.okr-prog .pc{font-family:var(--fm);font-size:10.5px;color:var(--muted);white-space:nowrap}
+.okr-resps{display:inline-flex;align-items:center}
+.okr-resps .avx{margin-left:-7px;box-shadow:0 0 0 2px var(--bg)}
+.okr-resps .avx:first-child{margin-left:0}
+.org-sec .okr-card{margin-bottom:8px}
+.okr-com{border-top:1px solid var(--line);padding:10px 2px}
+.okr-com:first-child{border-top:none}
+.okr-com .hd{font-size:11.5px;color:var(--dim);margin-bottom:3px}
+.okr-com .hd b{color:var(--ink);font-weight:600}
+.okr-com .tx{font-size:13px;line-height:1.55;white-space:pre-wrap;color:var(--muted)}
+.okr-com.sistema .tx{font-style:italic;color:var(--dim);font-size:12.5px}
+
+/* ============ PROCESSO SELETIVO ============
+   Também do SOMA · Gestão, e também re-vestidas: o que lá era verde
+   fechado sobre branco (a fase escolhida, a nota marcada) aqui é
+   Synapse; o que era cinza de fundo é borda. */
+.btn.mini{height:32px;padding:0 12px;font-size:12px;border-radius:9px;gap:7px}
+.btn.mini .ic{width:14px;height:14px}
+.aviso-box.lima{background:rgba(206,220,0,.06);border-color:rgba(206,220,0,.3);color:#E4EB9C}
+.ps-ed{height:38px;padding:0 12px;font-size:13px;max-width:280px}
+.ps-metricas{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px}
+.ps-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px;margin-bottom:16px}
+.ps-linha{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13px}
+.ps-linha:first-of-type{border-top:none}
+.ps-rot{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin:18px 0 7px}
+.sel-bar{position:sticky;bottom:14px;z-index:6;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:10px 14px;
+  box-shadow:0 14px 36px rgba(0,0,0,.55);margin-top:14px}
+.sel-bar .qt{font-family:var(--fd);font-weight:600;font-size:13px;margin-right:4px}
+.sel-bar select{height:34px;padding:0 10px;font-size:12.5px}
+.sel-bar .limpa{font-size:12px;color:var(--dim);text-decoration:underline}
+.sel-bar .limpa:hover{color:var(--ink)}
+.aval-cand{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:13px;padding:13px 16px;margin-bottom:10px;background:var(--card)}
+.aval-cand .nm{font-family:var(--fd);font-weight:600;font-size:13.5px}
+.aval-cand .mt{font-size:12px;color:var(--muted);margin-top:3px}
+.nota-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:11.5px;
+  color:var(--syn);border:1px solid rgba(206,220,0,.3);background:rgba(206,220,0,.07);
+  border-radius:8px;padding:3px 9px;white-space:nowrap}
+.crit-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:9px 0;border-bottom:1px solid var(--line)}
+.crit-row .lb{font-size:13.5px}
+.seg button.on,.seg button.on:hover{background:var(--syn);color:var(--deep)}
+.seg.notas button{width:40px;justify-content:center;font-size:13px;padding:7px 0}
+.rec-seg{display:flex;gap:8px;flex-wrap:wrap}
+.rec-seg button{flex:1;min-width:110px;border:1px solid var(--line2);background:rgba(255,255,255,.03);
+  border-radius:10px;padding:9px 8px;font-size:12.5px;font-weight:600;color:var(--muted);transition:all .15s}
+.rec-seg button:hover{color:var(--ink);border-color:var(--dim)}
+.rec-seg button.on-ap,.rec-seg button.on-ap:hover{background:rgba(74,222,151,.14);border-color:rgba(74,222,151,.5);color:var(--ok)}
+.rec-seg button.on-du,.rec-seg button.on-du:hover{background:rgba(245,195,106,.14);border-color:rgba(245,195,106,.5);color:var(--warn)}
+.rec-seg button.on-re,.rec-seg button.on-re:hover{background:rgba(241,128,111,.14);border-color:rgba(241,128,111,.5);color:var(--bad)}
+.slot-dia{margin-bottom:18px}
+.slot-dia h4{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:9px}
+.slot-chips{display:flex;gap:9px;flex-wrap:wrap}
+.slot-chip{border:1px solid var(--line2);background:rgba(255,255,255,.03);border-radius:11px;
+  padding:9px 13px;text-align:left;min-width:132px;transition:border-color .15s}
+.slot-chip:hover{border-color:var(--dim)}
+.slot-chip .h{font-family:var(--fm);font-size:13px;color:var(--ink)}
+.slot-chip .o{font-size:11.5px;color:var(--muted);margin-top:2px}
+.slot-chip.cheio{border-color:rgba(206,220,0,.4);background:rgba(206,220,0,.05)}
+.slot-chip.inativo{opacity:.45}
+.pub-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:13px;padding:12px 16px;margin-bottom:10px;background:var(--card)}
+.pub-row .tt{font-family:var(--fd);font-weight:600;font-size:13.5px}
+.pub-row .mt{font-size:12px;color:var(--muted);margin-top:2px}
+button.pub-row{width:100%;text-align:left;transition:border-color .15s,background .15s}
+button.pub-row:hover{border-color:var(--dim)}
+button.pub-row.on{border-color:var(--syn);background:rgba(206,220,0,.05)}
+.badge-pub{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  border-radius:999px;padding:3px 10px;border:1px solid var(--line2);color:var(--dim);white-space:nowrap}
+.badge-pub.sim{color:var(--ok);border-color:rgba(74,222,151,.4)}
+.comp-bloco{margin-bottom:14px}
+.comp-bloco>h5{font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.comp-sel{display:flex;flex-wrap:wrap;gap:7px}
+.cch{border:1px solid var(--line2);border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:600;
+  color:var(--muted);background:rgba(255,255,255,.03);transition:all .12s}
+.cch:hover{border-color:var(--dim);color:var(--ink)}
+.cch.tem{background:var(--syn);border-color:var(--syn);color:var(--deep)}
+.cch.quer{border-color:rgba(127,167,242,.5);color:var(--info);background:rgba(127,167,242,.08)}
+.cch.quer::before{content:'+ '}
+.chip.tem{background:rgba(206,220,0,.12);border-color:rgba(206,220,0,.35);color:var(--syn)}
+.chip.quer{background:rgba(127,167,242,.08);border-color:rgba(127,167,242,.35);color:var(--info)}
+.ps-codigo{font-family:var(--fm);font-size:34px;font-weight:500;letter-spacing:.16em;color:var(--syn);line-height:1.1}
+
 /* ============ PAINÉIS DE ADMINISTRAÇÃO ============
    Vindas do admin.html deste repositório e do repositório website,
    que deixam de existir. Só as classes que a casca ainda não tinha. */
@@ -1653,7 +1774,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '19.0';
+const VERSAO = '20.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -1681,6 +1802,44 @@ const DIAS_LB = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];   // ISO: 1 = segu
 const STATUS_LIST = ['Ativo','Em pausa / avaliação','Sob demanda','Desligado','Egresso'];
 const falha = (e, ctx) => { console.error(ctx, e);
   toast((ctx ? ctx + ': ' : '') + (e?.message || 'erro inesperado'), true); };
+const fmtDT = (d) => { if(!d) return '—'; const x = new Date(d);
+  return x.toLocaleDateString('pt-BR') + ' ' + x.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
+/* Pergunta antes de algo sem volta. Resolve true/false. */
+function confirma(msg, rotulo){
+  return new Promise(res => {
+    abreModal(`<h3>Confirmar</h3><p style="line-height:1.6;color:var(--muted);font-size:13.5px">${msg}</p>
+      <div class="acts" style="justify-content:flex-end">
+        <button class="btn ghost" onclick="window.__cf(false)">Cancelar</button>
+        <button class="btn solid" onclick="window.__cf(true)">${rotulo||'Confirmar'}</button></div>`);
+    window.__cf = (v) => { fechaModal(); res(v); };
+  });
+}
+async function copiar(texto){
+  try{ await navigator.clipboard.writeText(texto); toast('Copiado para a área de transferência.'); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=texto; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); ta.remove(); toast('Copiado para a área de transferência.'); }
+}
+/* invoca o cliente de e-mail por uma âncora real (navegação nativa, a mais
+   compatível entre navegadores). Use via onclick="return abrirEmail(this.href)".
+   Se o computador não tem um app de e-mail configurado, o navegador ignora o
+   mailto em silêncio — por isso todo botão de e-mail tem ao lado a opção
+   "Abrir no Gmail", que funciona sempre (as contas da equipe são Google). */
+function abrirEmail(url){
+  try{
+    const a = document.createElement('a');
+    a.href = url; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>a.remove(), 800);
+  }catch(e){ try{ window.location.href = url; }catch(_){ } }
+  return false;
+}
+/* monta a URL do compositor do Gmail no navegador; valores SEM encode prévio */
+function gmailCompose(o){
+  const p = new URLSearchParams({view:'cm', fs:'1'});
+  ['to','cc','bcc','su','body'].forEach(k=>{ if(o[k]) p.set(k, o[k]); });
+  return 'https://mail.google.com/mail/?' + p.toString();
+}
+const marcados = (cls)=> [...document.querySelectorAll('input.'+cls+':checked')].map(x=>x.value);
 
 /* O que as funções do banco devolvem em "status", em português. Um
    "Não foi possível" genérico esconde justamente a causa que a pessoa
@@ -1810,7 +1969,18 @@ const ICONS = {
   servicos:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 10h6M9 13.5h6M9 17h3.5"/>',
   pedidos:'<path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/><path d="M6 5h12l2.5 8.5v5A1.5 1.5 0 0 1 19 20H5a1.5 1.5 0 0 1-1.5-1.5v-5z"/>',
   engrenagem:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
-  chevron:'<path d="m9.5 6 6 6-6 6"/>'
+  chevron:'<path d="m9.5 6 6 6-6 6"/>',
+  alvo:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+  bandeira:'<path d="M6 21V4.5"/><path d="M6 5c4-2.2 7 2 11 .2V13c-4 1.8-7-2.4-11-.2"/>',
+  /* os de ação que os módulos usam — sem eles o botão ficava com o
+     espaço do ícone vazio (o "Copiar" dos Relatórios, por exemplo) */
+  mail:'<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="m4.5 7.5 7.5 5.8 7.5-5.8"/>',
+  copy:'<rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5"/>',
+  down:'<path d="M12 4v11M6.5 10.5 12 16l5.5-5.5M5 20h14"/>',
+  trash:'<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/><path d="M10.5 11v5.5M13.5 11v5.5"/>',
+  eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  chat:'<path d="M4 5.5h16v11H10L5.5 20v-3.5H4z"/>',
+  cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/>'
 };
 const ic = (n, cls) => `<svg class="ic${cls?' '+cls:''}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;
@@ -1853,6 +2023,12 @@ const PAINEIS = [
 ];
 const painelPermitido = (p) => !p[4] || p[4]();
 const GRUPOS_PAINEL = ['Portal','Pessoas','Registro','Conteúdo'];
+
+/* As abas do Processo Seletivo — também listadas pelo menu antes de o
+   módulo de seleção descer. A primeira é a visão geral, em #/selecao. */
+const ABAS_SELECAO = [['','Visão geral'],['candidatos','Candidatos'],['avaliacao','Avaliação'],
+  ['agenda','Agenda'],['dinamica','Dinâmica'],['publicacoes','Publicações'],['faq','FAQ'],
+  ['config','Configurações']];
 
 /* ---------------- módulos sob demanda ---------------- */
 /* O plano do membro mora neste arquivo. O resto — quadro, operações,
@@ -1913,8 +2089,15 @@ function acoesDaCasca(){
     ['Solicitar acesso', 'Documento, sistema ou local', '#/servicos/acesso'],
     ['Pedir afastamento', 'Afastamento temporário', '#/servicos/afastamento'],
     ['Ouvidoria anônima', 'Mensagem sem vínculo com a sua conta', '#/servicos/ouvidoria'],
-    ['Meus pedidos', 'Acompanhar as suas solicitações', '#/pedidos']
+    ['Meus pedidos', 'Acompanhar as suas solicitações', '#/pedidos'],
+    ['OKRs', 'Os objetivos da equipe e o desdobramento de cada um', '#/okrs']
   ];
+  if (podeSelecao()) a.push(
+    ['Processo seletivo', 'Funil, pendências e próximos horários', '#/selecao'],
+    ['Candidatos', 'Inscritos, status e movimentação em lote', '#/selecao/candidatos'],
+    ['Avaliação de candidatos', 'Notas por critério e o consolidado da fase', '#/selecao/avaliacao'],
+    ['Dinâmica em grupo', 'Painel, roteiro, desafio, critérios e janelas', '#/selecao/dinamica'],
+    ['Publicações do processo seletivo', 'Edital, avisos e resultados no site', '#/selecao/publicacoes']);
   if (can() || podeSelecao()) a.push(['Administração', 'Os painéis da gestão', '#/admin']);
   if (can()) a.push(
     ['Quadro de pessoal', 'A lista inteira, com filtros', '#/equipe/quadro'],
@@ -2093,6 +2276,7 @@ async function abrirPortal(){
   sb.from('grupos').select('id,nome,prefixo,cor,ativo,reservado,ordem').order('ordem').order('nome')
     .then(r => { state.grupos = (r.data||[]).filter(g=>g.ativo!==false);
                  desenharMenu(); });   /* os quadros de Atividades são os grupos da pessoa */
+  carregarOKRsDoMenu();
   /* Conta sem registro não comenta, não abre solicitação, não é atribuída
      a nada — e nenhuma dessas telas explica por quê. Dizer uma vez, no
      alto, evita a caça ao defeito que não existe. */
@@ -2139,6 +2323,8 @@ const ROTAS = {
   informacoes: { desenha:'pageInformacoes' },
   servicos:    { desenha:'pageServicos' },
   pedidos:     { desenha:'pagePedidos' },
+  okrs:        { desenha:'pageOkrs', modulo:'okrs' },
+  selecao:     { desenha:'pageSelecao', modulo:'selecao', permite: () => podeSelecao() },
   /* O Comitê de Seleção entra em Administração só pelos Relatórios —
      a galeria mostra apenas os painéis que o papel permite. */
   admin:       { desenha:'pageAdmin', modulo:'admin', permite: () => can() || podeSelecao() }
@@ -2232,6 +2418,10 @@ function arvoreDoMenu(){
       ...quadros.map(g => ({ sub:g.prefixo, rot:g.nome, pf:g.prefixo })),
       ...(quadros.length ? [{ sep:true }] : []),
       { sub:'carga', rot:'Carga da equipe' }] },
+    /* os objetivos estratégicos; o que é desdobramento de um deles acende
+       o dele (OT1.2 e OP1.2.3 pertencem ao OE1) */
+    { r:'okrs', rot:'OKRs', ic:'alvo', filhos: (state.okrRaizes || []).map(o => ({
+      sub:o.codigo, rot:o.titulo, pf:o.codigo, tambem: familiaDoOKR(o.codigo) })) },
     { r:'equipe', rot:'Equipe', ic:'users', filhos: [
       { sub:'', rot:'Organograma' },
       /* a ficha (#/equipe/<registro>) se abre a partir do quadro */
@@ -2245,14 +2435,38 @@ function arvoreDoMenu(){
       ...SERVICOS_MENU.map(([sub, rot]) => ({ sub, rot }))] },
     { r:'pedidos', rot:'Meus pedidos', ic:'pedidos' }
   ];
-  if (ROTAS.admin.permite()) arv.push({ r:'admin', rot:'Administração', ic:'engrenagem',
-    divisor:'Gestão', filhos: [
+  const gestao = [];
+  if (ROTAS.selecao.permite()) gestao.push({ r:'selecao', rot:'Seleção', ic:'bandeira',
+    filhos: ABAS_SELECAO.map(([sub, rot]) => ({ sub, rot })) });
+  if (ROTAS.admin.permite()) gestao.push({ r:'admin', rot:'Administração', ic:'engrenagem',
+    filhos: [
       { sub:'', rot:'Todos os painéis' },
       ...GRUPOS_PAINEL.flatMap(g => {
         const ps = PAINEIS.filter(p => p[2] === g && painelPermitido(p));
         return ps.length ? [{ rotulo:g }, ...ps.map(([sub, rot]) => ({ sub, rot }))] : [];
       })] });
-  return arv;
+  if (gestao.length) gestao[0].divisor = 'Gestão';
+  return arv.concat(gestao);
+}
+
+/* OE1 → acende também em OT1.2 e OP1.2.3, que é como o código sugerido
+   para um desdobramento se forma. Código fora desse padrão só acende
+   quando é o próprio. */
+function familiaDoOKR(cod){
+  const base = String(cod || '').replace(/^[A-Za-z]+/, '');
+  if (!/^\d/.test(base)) return undefined;
+  return '^[a-z]+' + base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(\\.|$)';
+}
+/* Os objetivos estratégicos, para o menu. Sem a tabela (migração v8 não
+   aplicada), OKRs fica sem subitens e a tela explica o resto. */
+function carregarOKRsDoMenu(){
+  return sb.from('okr_objetivos').select('id,codigo,titulo,ordem,nivel,pai_id').eq('nivel', 'estrategico')
+    .order('ordem').order('codigo')
+    .then(r => {
+      state.okrRaizes = r.error ? [] : (r.data || []).filter(o => !o.pai_id).sort((a, b) =>
+        (a.ordem || 0) - (b.ordem || 0) || String(a.codigo).localeCompare(String(b.codigo), 'pt-BR', { numeric:true }));
+      desenharMenu();
+    }, () => {});
 }
 
 function desenharMenu(){
