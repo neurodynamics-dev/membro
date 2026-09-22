@@ -172,6 +172,15 @@
         from: builder,
         rpc: async (nome, args) => {
           if (nome === 'notificacoes_marcar_lidas') return { data: 1, error: null };
+          if (nome === 'notificacao_teste'){
+            const f = window.__teste || {};
+            if (f.rpc === 'sem_registro') return { data:{ status:'sem_registro' }, error:null };
+            if (f.rpc === 'sem_email')    return { data:{ status:'sem_email' }, error:null };
+            if (f.rpc === 'faltaMigracao')
+              return { data:null, error:{ message:'function public.notificacao_teste() does not exist' } };
+            return { data:{ status:'ok', id:1, email:'ana@neurodynamics.dev',
+                            modo: f.modo || 'imediato' }, error:null };
+          }
           if (nome === 'atividade_comentar'){
             if (window.__comentarFalha === 'sem_registro')
               return { data: { status:'sem_registro' }, error: null };
@@ -216,6 +225,17 @@
           if (nome === 'agenda_itens' || nome === 'agenda_manter_series') return { data: [], error: null };
           if (nome === 'portal_agenda_ocupacao') return { data: [], error: null };
           return { data: { status:'ok', codigo:'ORT-9', id:'novo' }, error: null };
+        },
+        functions: {
+          invoke: async () => {
+            const f = window.__teste || {};
+            if (f.fn === 'naoPublicada')
+              return { data:null, error:{ message:'Failed to send a request to the Edge Function' } };
+            if (f.fn === 'semSmtp')  return { data:{ status:'smtp_nao_configurado' }, error:null };
+            if (f.fn === 'semLote')  return { data:{ status:'erro_no_lote' }, error:null };
+            if (f.fn === 'zero')     return { data:{ status:'ok', pessoas:0, enviadas:0, falhas:0 }, error:null };
+            return { data:{ status:'ok', pessoas:1, enviadas:1, falhas:0 }, error:null };
+          }
         },
         auth: {
           getSession: async () => ({ data:{ session:{ user:{ id:'u1' } } } }),

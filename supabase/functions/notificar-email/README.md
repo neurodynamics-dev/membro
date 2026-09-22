@@ -144,17 +144,48 @@ status **Active**.
 > caminho: Edge Functions → `notificar-email` → **Code** → apagar, colar a
 > versão nova, **Deploy**.
 
-### Passo 5b — Ver se ela responde
+### Passo 5b — Ver se chegou, de verdade
 
-O jeito mais simples é **fazer o passo 6 primeiro** (agendar) e, cinco minutos
-depois, olhar os registros. Mas se quiser provocar uma execução na hora, dá,
-pelo navegador:
+Depois de publicar, o teste é **um clique dentro do próprio portal**:
 
-No **SQL Editor** → **New query**, cole e clique em **Run**:
+> sininho (no alto, à direita) → **Preferências de e-mail** → **Enviar um
+> e-mail de teste**
+
+Ele faz o ciclo inteiro na hora: cria um aviso para você, manda a função rodar
+sem esperar o agendamento, e conta o que aconteceu em cada etapa. Não depende
+de ninguém atribuir nada a você, e não depende do relógio.
+
+O recado que aparece ali diz **qual** das coisas falhou, e é por isso que ele
+existe — "não chegou nada" sozinho não ajuda ninguém:
+
+| O que aparece | O que fazer |
+|---|---|
+| **Enviado.** com o seu endereço | deu certo. Não chegando em um minuto, procure no spam — e confira se o endereço mostrado é mesmo o seu |
+| A sua conta ainda não está ligada a um registro do quadro | Administração › Contas, vincule a conta ao registro |
+| A sua ficha não tem e-mail | Equipe › a sua ficha › preencha *E-mail NRO* ou *E-mail pessoal* |
+| A função `notificar-email` ainda não foi publicada | volte ao passo 5. O aviso fica guardado e sai sozinho depois |
+| sem SMTP configurado | volte ao passo 4. Nada se perde: sai assim que os segredos existirem |
+| A função não conseguiu ler a lista no banco | falta aplicar `db/v16_pessoal.sql` |
+| Não consegui criar o aviso de teste (função inexistente) | falta aplicar `db/v18_teste_email.sql` |
+
+> **O teste fura a sua preferência de propósito.** Mesmo quem escolheu *um
+> resumo por dia* ou *só no portal* recebe o e-mail de teste — senão não dá
+> para saber se o silêncio foi a preferência ou o SMTP. Só o teste faz isso;
+> os avisos do dia a dia respeitam a escolha de cada um.
+
+Se quiser ver os detalhes da execução, eles ficam em **Edge Functions** →
+`notificar-email` → aba **Logs**.
+
+### Testar pelo SQL, se preferir
+
+Mesma coisa, sem sair do SQL Editor:
 
 ```sql
-create extension if not exists pg_net;
+-- 1. cria o aviso de teste para VOCÊ (usa a sua sessão)
+select notificacao_teste();
 
+-- 2. manda a função rodar agora
+create extension if not exists pg_net;
 select net.http_post(
   url     := 'https://<referencia-do-projeto>.supabase.co/functions/v1/notificar-email',
   headers := jsonb_build_object(
@@ -163,32 +194,16 @@ select net.http_post(
 );
 ```
 
-Onde achar as duas coisas entre `<>`:
-
 | O que | Onde |
 |---|---|
-| **referência do projeto** | Project Settings → General → *Reference ID*. É também o pedaço do meio do endereço do painel |
-| **chave service_role** | Project Settings → API → *Project API keys* → linha `service_role` → **Reveal** |
+| **referência do projeto** | Project Settings → General → *Reference ID* |
+| **chave service_role** | Project Settings → API → *Project API keys* → `service_role` → **Reveal** |
 
 > A chave `service_role` **dá acesso total ao banco**. Não cole em conversa, em
-> issue nem em nenhum lugar público. Se vazar, dá para gerar outra no mesmo
-> lugar.
+> issue nem em lugar público. Se vazar, gere outra no mesmo lugar.
 
-Esse comando responde só um número — o id da chamada. **O que a função
-respondeu de verdade** está em **Edge Functions** → `notificar-email` → aba
-**Logs**, alguns segundos depois:
-
-| Aparece nos logs | O que quer dizer |
-|---|---|
-| `"status":"ok"` | rodou. Vem junto `pessoas`, `enviadas` e `falhas` |
-| `"status":"smtp_nao_configurado"` | falta `SMTP_HOST`, `SMTP_USER` ou `SMTP_SENHA` no passo 4 — e **nada foi consumido**, dá para configurar e rodar de novo |
-| `"status":"erro_no_lote"` | o banco recusou a consulta. A migração `v16_pessoal.sql` foi aplicada? |
-| `"status":"sem_configuracao"` | problema do próprio ambiente do Supabase; me avise |
-| `"status":"enviou_mas_nao_deu_baixa"` | os e-mails saíram mas o banco não registrou. Pode chegar repetido na rodada seguinte — me avise |
-
-`"pessoas":0` na primeira vez é normal: quer dizer que não havia aviso pendente
-para ninguém. Para criar um, peça a alguém que atribua uma atividade a você e
-rode de novo.
+O `net.http_post` devolve só um número (o id da chamada) — o resultado de
+verdade está nos **Logs** da função.
 
 ## Passo 6 — Agendar
 

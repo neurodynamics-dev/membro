@@ -1295,6 +1295,8 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px)}
   box-shadow:0 30px 90px rgba(0,0,0,.6)}
 #modal.open{display:block}
 #modal h3{font-size:17px;margin-bottom:12px}
+.pn-teste:empty{display:none}
+.pn-teste .aviso-box{font-size:12.5px;line-height:1.6}
 .aviso-vinculo{position:relative;margin:0 auto;max-width:1180px;
   background:rgba(245,195,106,.09);border:1px solid rgba(245,195,106,.30);
   border-radius:12px;padding:12px 44px 12px 16px;color:var(--muted);
@@ -1526,7 +1528,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '17.1';
+const VERSAO = '18.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -2207,9 +2209,81 @@ async function modalPreferenciaNotif(){
     </div>
     <p class="small muted" style="margin-top:14px">O e-mail vai para o seu endereço NRO;
       se não houver, para o pessoal. O Depto. de Pessoal atualiza os dois na sua ficha.</p>
-    <div class="acts" style="justify-content:flex-end">
-      <button class="btn ghost" onclick="fechaModal()">Cancelar</button>
-      <button class="btn solid" id="pn-btn" onclick="salvarPreferenciaNotif()">Salvar</button></div>`);
+    <div id="pn-teste" class="pn-teste"></div>
+    <div class="acts" style="justify-content:space-between">
+      <button class="btn ghost" id="pn-tbtn" onclick="testarEmail()">Enviar um e-mail de teste</button>
+      <span><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" id="pn-btn" onclick="salvarPreferenciaNotif()">Salvar</button></span></div>`,
+    null, true);
+}
+
+/* ============================================================
+   O TESTE DE ENVIO
+   Fecha o ciclo inteiro num clique: cria um aviso para mim, manda
+   a função rodar agora e conta o que aconteceu em cada etapa.
+
+   Sem isto, conferir se o e-mail funciona dependia de alguém
+   atribuir uma atividade a você e do agendamento acordar — e, se
+   não chegasse nada, não dava para saber qual das seis coisas
+   falhou: vínculo, endereço, função, segredo, SMTP ou caixa de
+   spam. Cada uma delas tem um recado próprio aqui.
+   ============================================================ */
+async function testarEmail(){
+  const b = $('#pn-tbtn'), cx = $('#pn-teste');
+  const diz = (txt, classe) => { if (cx) cx.innerHTML =
+    `<div class="aviso-box ${classe||''}" style="margin-top:14px">${txt}</div>`; };
+
+  if (b){ b.disabled = true; b.textContent = 'Enviando…'; }
+  try{
+    /* 1. o aviso. Aqui já se descobre vínculo e endereço. */
+    const { data: t, error: e1 } = await sb.rpc('notificacao_teste');
+    if (e1) return diz(`Não consegui criar o aviso de teste: ${esc(e1.message)}<br>
+      <span class="small">Se fala em função inexistente, falta aplicar a migração
+      <code>db/v18_teste_email.sql</code>.</span>`, 'err');
+    if (t?.status === 'sem_registro') return diz(MOTIVO_RPC.sem_registro, 'err');
+    if (t?.status === 'sem_email')    return diz(
+      `A sua ficha não tem e-mail. O Depto. de Pessoal preenche
+       <b>E-mail NRO</b> ou <b>E-mail pessoal</b> em Equipe › a sua ficha.`, 'err');
+    if (t?.status !== 'ok')           return diz('Não consegui criar o aviso de teste.', 'err');
+
+    diz(`Aviso criado. Mandando sair para <b>${esc(t.email)}</b>…`);
+
+    /* 2. a função de envio, agora — sem esperar o agendamento. */
+    const { data: r, error: e2 } = await sb.functions.invoke('notificar-email');
+    if (e2){
+      const m = String(e2.message || e2);
+      return diz(/not found|404|Failed to send|Failed to fetch/i.test(m)
+        ? `A função <code>notificar-email</code> ainda não foi publicada no Supabase.
+           O passo a passo está no README dela.<br>
+           <span class="small">O aviso ficou guardado e sai sozinho quando ela existir.</span>`
+        : `A função respondeu com erro: ${esc(m)}`, 'err');
+    }
+
+    /* 3. o que ela respondeu. */
+    if (r?.status === 'smtp_nao_configurado') return diz(
+      `A função está no ar, mas <b>sem SMTP configurado</b> — faltam os segredos
+       <code>SMTP_HOST</code>, <code>SMTP_USER</code> e <code>SMTP_SENHA</code>.<br>
+       <span class="small">Nada foi perdido: o aviso sai assim que forem definidos.</span>`, 'err');
+    if (r?.status === 'erro_no_lote') return diz(
+      `A função não conseguiu ler a lista no banco. A migração
+       <code>db/v16_pessoal.sql</code> foi aplicada?`, 'err');
+    if (r?.status !== 'ok') return diz(
+      `A função respondeu <code>${esc(r?.status || 'sem status')}</code>.`, 'err');
+    if (!r.enviadas) return diz(
+      `A função rodou mas não enviou nada (${r.falhas || 0} falha(s)).
+       Veja os registros em Edge Functions › notificar-email › Logs.`, 'err');
+
+    diz(`<b>Enviado.</b> Um e-mail acabou de sair para <b>${esc(t.email)}</b>.
+      Se não aparecer em um minuto, procure no spam — e confira se o endereço
+      acima é mesmo o seu.${t.modo !== 'imediato'
+        ? `<br><span class="small">A sua preferência é
+           <b>${t.modo === 'resumo' ? 'um resumo por dia' : 'só no portal'}</b>.
+           O teste fura essa regra de propósito; os avisos do dia a dia seguem ela.</span>` : ''}`);
+  }catch(e){
+    diz('Não foi possível testar: ' + esc(e?.message || e), 'err');
+  }finally{
+    const x = $('#pn-tbtn'); if (x){ x.disabled = false; x.textContent = 'Enviar um e-mail de teste'; }
+  }
 }
 
 async function salvarPreferenciaNotif(){
