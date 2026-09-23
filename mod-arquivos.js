@@ -6,12 +6,15 @@
    versão nova passando por revisão antes de valer.
 
    Rotas:
-     #/arquivos                       visão geral: o que aguarda você, os emissores
-     #/arquivos/<PES>                 o rol de um emissor (uma aba da planilha)
+     #/arquivos                       o rol: todos os arquivos, com filtro por emissor
+     #/arquivos/<PES>                 o mesmo rol, já filtrado por um emissor (uma aba da planilha)
      #/arquivos/NRO-PES-007[-2]       a tela de um arquivo
      #/arquivos/revisoes              tudo o que aguarda revisão
      #/arquivos/templates             os templates e onde cada um é usado
+     #/arquivos/visao                 visão geral: o que aguarda você, os mexidos, os emissores
      #/arquivos/config[/<aba>]        séries, emissores, padrão de projeto (gestor)
+   O rol é a tela; o resto é secundário, na linha de links logo abaixo do
+   título (arqNavHTML) e no fim da seção, no menu.
 
    O rol de um projeto (#/projetos/<código>/arquivos) é desenhado daqui
    também: mod-projetos carrega este módulo antes e chama arqRolDoProjeto.
@@ -131,16 +134,35 @@ async function pageArquivos(sub, sub2){
   $('#main').innerHTML = '<div class="carregando"><span class="spin"></span> Carregando o rol…</div>';
   await arqCarregar();
   if (arq.erro) return arqSemMigracao();
-  if (!sub) return arqVisao();
+  if (!sub) return arqLista('');
+  if (sub === 'visao')     return arqVisao();
   if (sub === 'revisoes')  return arqRevisoes();
   if (sub === 'templates') return arqTemplates();
   if (sub === 'config'){
-    if (!docGestor()){ history.replaceState(null, '', location.pathname + '#/arquivos'); return arqVisao(); }
+    if (!docGestor()){ history.replaceState(null, '', location.pathname + '#/arquivos'); return arqLista(''); }
     return arqConfig(sub2);
   }
-  if (/^[A-Za-z]{3}$/.test(sub) && arqEmissor(sub.toUpperCase())) return arqRolEmissor(sub.toUpperCase());
+  if (/^[A-Za-z]{3}$/.test(sub) && arqEmissor(sub.toUpperCase())) return arqLista(sub.toUpperCase());
   history.replaceState(null, '', location.pathname + '#/arquivos');
-  arqVisao();
+  arqLista('');
+}
+
+/* A navegação de dentro de Arquivos. O rol é a tela; o que aguarda
+   revisão, os templates, a visão geral e (para o gestor) as
+   configurações são secundários: uma linha de links, logo abaixo do
+   título, em toda tela do módulo. */
+function arqNavHTML(atual){
+  const paraMim = arq.rol.filter(arqPossoRevisar).length;
+  const it = (sub, rot, extra = '') => `<a href="#/arquivos${sub ? '/' + sub : ''}"${atual === sub
+      ? ' class="on" aria-current="page"' : ''}>${rot}${extra}</a>`;
+  return `<nav class="arq-nav" aria-label="Arquivos">
+    ${it('', 'Todos os arquivos')}
+    ${it('revisoes', 'Para revisar', arq.pendentes.length
+      ? ` <span class="n${paraMim ? ' sua' : ''}" title="${paraMim ? paraMim + ' com você' : 'nenhuma com você'}">${arq.pendentes.length}</span>` : '')}
+    ${it('templates', 'Templates')}
+    ${it('visao', 'Visão geral')}
+    ${docGestor() ? it('config', 'Configurações') : ''}
+  </nav>`;
 }
 
 function arqTopo(eyebrow, titulo, lead, acoes){
@@ -163,13 +185,14 @@ function arqVisao(){
   const recentes = [...rol].sort((a, b) => String(b.alterado_em).localeCompare(String(a.alterado_em))).slice(0, 8);
   const fila = (r, extra) => `<a class="arq-fila" href="#/arquivos/${esc(r.codigo)}">
       <span class="arq-ic ${r.natureza}">${ic(ARQ_ICONE[r.natureza])}</span>
-      <span class="tx"><span class="tt"><span class="arq-rev" style="color:var(--syn)">${esc(r.codigo)}</span> · ${esc(r.titulo)}</span>
+      <span class="tx"><span class="tt"><span class="arq-rev" style="color:var(--syn-tx)">${esc(r.codigo)}</span> · ${esc(r.titulo)}</span>
         <span class="mt">${extra}</span></span></a>`;
 
-  $('#main').innerHTML = arqTopo('Arquivos', 'Controle de documentos e registros',
-    'O rol da NRO-PUB-001, agora vivo: cada arquivo com código, revisão, status e quem mexeu por último — e toda versão nova passa por revisão antes de valer.',
+  $('#main').innerHTML = arqTopo('Arquivos', 'Visão geral',
+    'O que aguarda você, o que se mexeu por último e como o rol se organiza, por emissor e por estrutura.',
     `<button class="btn ghost mini" onclick="arqExportar()">${ic('down')} Exportar planilha</button>
      ${arqPossoAdicionar() ? `<button class="btn solid mini" onclick="arqModalAdicionar()">${ic('plus')} Adicionar</button>` : ''}`)
+  + arqNavHTML('visao')
   + `<div class="metricas" style="margin-bottom:18px">
       <div class="metrica"><span class="rot">Ativos</span><span class="val">${n('ativo')}</span><span class="var neutro">em vigor</span></div>
       <div class="metrica"><span class="rot">Em revisão</span><span class="val">${arq.pendentes.length}</span><span class="var neutro">versões aguardando</span></div>
@@ -270,16 +293,22 @@ function arqFiltra(r){
 }
 const arqFiltroAtivo = () => { const f = arq.filtro; return !!(f.q || f.status || f.natureza || f.estrutura || f.subtipo || f.classe || f.pend); };
 
-/* O rol de um emissor: as cabeças, e os PNs de cada série a um clique.
-   Com filtro, a lista vira plana — o que casa, cabeça ou PN. */
-function arqRolEmissor(pref){
-  const e = arqEmissor(pref);
-  arq.rolAtual = pref;
-  $('#main').innerHTML = arqTopo(`Arquivos · NRO-${esc(pref)}`, esc(e.nome),
-    `A aba ${esc(pref)} da NRO-PUB-001. ${e.grupo_id ? `Quem responde por ela é o grupo <b>${esc(arqGrupoNome(e.grupo_id) || '—')}</b>.` : ''}`,
-    `<button class="btn ghost mini" onclick="arqExportar('${pref}')">${ic('down')} Exportar</button>
-     ${arqPossoAdicionar(pref) ? `<button class="btn solid mini" onclick="arqModalAdicionar('${pref}')">${ic('plus')} Adicionar</button>` : ''}`)
-  + arqLegendaHTML(arq.rol.filter(r => r.prefixo === pref && r.pn == null), true)
+/* O ROL — a primeira tela de Arquivos: todos os arquivos, como a lista
+   do Drive, e o filtro por emissor (#/arquivos/PES é o mesmo rol, já
+   filtrado — cada aba da planilha). As cabeças de série, e os PNs de
+   cada uma a um clique. Com filtro, a lista vira plana: o que casa,
+   cabeça ou PN. */
+function arqLista(pref){
+  const e = pref ? arqEmissor(pref) : null;
+  arq.rolAtual = pref || '';
+  const arg = pref ? `'${pref}'` : '';
+  $('#main').innerHTML = arqTopo(pref ? `Arquivos · NRO-${esc(pref)}` : 'Arquivos', pref ? esc(e.nome) : 'Todos os arquivos',
+    pref ? `A aba ${esc(pref)} da NRO-PUB-001.${e.grupo_id ? ` Quem responde por ela é o grupo <b>${esc(arqGrupoNome(e.grupo_id) || '—')}</b>.` : ''}`
+         : 'O rol da NRO-PUB-001, vivo: cada arquivo com código, revisão, status e quem mexeu por último — e toda versão nova passa por revisão antes de valer.',
+    `<button class="btn ghost mini" onclick="arqExportar(${arg})">${ic('down')} Exportar</button>
+     ${arqPossoAdicionar(pref) ? `<button class="btn solid mini" onclick="arqModalAdicionar(${arg})">${ic('plus')} Adicionar</button>` : ''}`)
+  + arqNavHTML('')
+  + arqLegendaHTML(arq.rol.filter(r => r.pn == null && (!pref || r.prefixo === pref)), true)
   + arqFiltrosHTML() + '<div id="arq-rol"></div>';
   arqRedesenharRol();
 }
@@ -292,7 +321,7 @@ function arqLegendaHTML(cabecas, filtra){
     const on = !!filtra && arq.filtro.estrutura === k;
     const tag = filtra ? 'button' : 'div';
     return `<${tag} class="arq-leg${on ? ' on' : ''}" data-est="${k}" ${filtra ? `aria-pressed="${on}"
-        onclick="arq.filtro.estrutura=arq.filtro.estrutura==='${k}'?'':'${k}';arqRolEmissor(arq.rolAtual)"` : ''}>
+        onclick="arq.filtro.estrutura=arq.filtro.estrutura==='${k}'?'':'${k}';arqLista(arq.rolAtual)"` : ''}>
       <span class="arq-ic ${k === 'registros' ? 'registro' : k === 'unico' ? 'documento' : 'template'}">${ic(k === 'registros' ? 'registro' : k === 'unico' ? 'doc' : 'molde')}</span>
       <span class="tx"><b>${e.rot}</b> <span class="n">${n(k)}</span><span class="fr">${k === 'avulso' ? 'sem frase na coluna: o modelo de base dos outros' : '“' + e.frase + '”'}</span></span></${tag}>`;
   }).join('')}</div>`;
@@ -302,8 +331,12 @@ function arqFiltrosHTML(){
   const sel = (k, rot, ops) => `<div class="fld"><label>${rot}</label><select onchange="arq.filtro.${k}=this.value;arqRedesenharRol()">
       <option value="">Todos</option>${ops.map(([v, l]) => `<option value="${v}" ${f[k] === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
   return `<div class="filtros arq-filtros">
-    <div class="fld cresce"><label>Buscar</label><input id="arq-q" value="${esc(f.q)}" placeholder="Código ou título"
+    <div class="fld cresce"><label for="arq-q">Buscar</label><input id="arq-q" value="${esc(f.q)}" placeholder="Código ou título"
       oninput="arq.filtro.q=this.value;arqRedesenharRol(true)"></div>
+    <div class="fld"><label for="arq-emissor">Emissor</label><select id="arq-emissor"
+        onchange="location.hash = this.value ? '#/arquivos/' + this.value : '#/arquivos'">
+      <option value="">Todos</option>${arq.emissores.map(e => `<option value="${e.prefixo}" ${arq.rolAtual === e.prefixo ? 'selected' : ''}>NRO-${esc(e.prefixo)} — ${
+        esc(e.nome.replace(/^Departamento\s+(de|d[oa]s?)\s+/i, ''))}</option>`).join('')}</select></div>
     ${sel('status', 'Status', Object.entries(ARQ_STATUS).map(([k, v]) => [k, v[0]]))}
     ${sel('estrutura', 'Estrutura da série', Object.entries(ARQ_ESTRUTURAS).map(([k, v]) => [k, v.rot]))}
     ${sel('natureza', 'Natureza', [['template', 'Template'], ['documento', 'Documento'], ['registro', 'Registro']])}
@@ -317,7 +350,7 @@ let _arqQ = null;
 function arqRedesenharRol(digitando){
   if (digitando){ clearTimeout(_arqQ); _arqQ = setTimeout(() => arqRedesenharRol(), 120); return; }
   const box = $('#arq-rol'); if (!box) return;
-  const doEmissor = arq.rol.filter(r => r.prefixo === arq.rolAtual);
+  const doEmissor = arq.rol.filter(r => !arq.rolAtual || r.prefixo === arq.rolAtual);
   let corpo;
   if (arqFiltroAtivo()){
     corpo = doEmissor.filter(arqFiltra).sort(arqCompara).map(r => arqLinha(r)).join('');
@@ -329,7 +362,7 @@ function arqRedesenharRol(digitando){
           : '')).join('');
   }
   box.innerHTML = arqTabela(corpo, { ordenar:true, vazio: arqFiltroAtivo()
-    ? 'Nenhum arquivo com esse filtro.' : 'Nenhuma série neste emissor ainda.' });
+    ? 'Nenhum arquivo com esse filtro.' : arq.rolAtual ? 'Nenhuma série neste emissor ainda.' : 'Nenhum arquivo no rol ainda.' });
 }
 
 /* ============================================================
@@ -342,6 +375,7 @@ function arqRevisoes(){
   const linha = ({ p, r }) => arqLinha(r, { sub: `${p.rev ? 'Rev. ' + esc(p.rev) + ' · enviada' : 'Registro · enviado'} por ${esc(p.enviado_nome || '—')} em ${fmtD(p.enviado_em)} · revisa ${esc(arqRevisores(r))}` });
   $('#main').innerHTML = arqTopo('Arquivos', 'Para revisar',
     'Toda versão nova — a primeira de um arquivo ou uma revisão — fica pendente até alguém do grupo revisor da série, que não seja quem enviou, aprovar. Até lá, ela não está disponível.')
+  + arqNavHTML('revisoes')
   + `<div class="adm-grupo" style="margin-top:0">Com você · ${minhas.length}</div>`
   + arqTabela(minhas.map(linha).join(''), { vazio:'Nada aguardando a sua revisão.' })
   + `<div class="adm-grupo">Todas as pendentes · ${itens.length}</div>`
@@ -352,6 +386,7 @@ function arqTemplates(){
   const tpls = arq.rol.filter(r => r.natureza === 'template').sort((a, b) => a.codigo.localeCompare(b.codigo));
   $('#main').innerHTML = arqTopo('Arquivos', 'Templates',
     'Os moldes: a cabeça de cada série com PN — cada PN nasce do template da sua série — e o NRO-PUB-002, o modelo de base. Quando um template ganha revisão, a tela dele mostra quem ainda usa a anterior.')
+  + arqNavHTML('templates')
   + arqTabela(tpls.map(t => {
       const usos = arq.rol.filter(r => r.template_id === t.id);
       const velhos = usos.filter(r => r.template_rev && t.rev_vigente && r.template_rev !== t.rev_vigente).length;
@@ -1106,6 +1141,7 @@ async function arqConfig(aba){
   arq.series = s.data || [];
   $('#main').innerHTML = arqTopo('Arquivos', 'Configurações',
     'Quem revisa e quem lê cada série, os emissores e o padrão de projeto. Mudar aqui vale para todos os arquivos da série — e o padrão, para o rol de todos os projetos.')
+    + arqNavHTML('config')
     + `<nav class="abas">${ABAS_CFG.map(([k, l]) => `<a href="#/arquivos/config/${k}" class="${k === aba ? 'on' : ''}">${l}</a>`).join('')}</nav>
     <div id="cfg-corpo" style="margin-top:18px"></div>`;
   ({ series: arqCfgSeries, emissores: arqCfgEmissores, padrao: arqCfgPadrao, chaves: arqCfgChaves })[aba]();
@@ -1243,7 +1279,7 @@ function arqCfgPadrao(){
       PN: cada projeto ganha o seu.</p>
     <div class="card arq-cfg-lista">${pad.map((p, i) => { const c = cab(p.serie_id); return `<div class="acc-row">
         <span class="muted small" style="font-family:var(--fm);width:22px">${i + 1}</span>
-        <span class="nm"><span style="font-family:var(--fm);color:var(--syn)">${esc(c?.codigo || '?')}</span> ${esc(c?.titulo || '')}</span>
+        <span class="nm"><span style="font-family:var(--fm);color:var(--syn-tx)">${esc(c?.codigo || '?')}</span> ${esc(c?.titulo || '')}</span>
         <select aria-label="Quantos por projeto" onchange="arqPadraoQtd('${p.serie_id}', this.value)" style="height:32px">
           <option value="um" ${p.quantidade === 'um' ? 'selected' : ''}>um por projeto</option>
           <option value="varios" ${p.quantidade === 'varios' ? 'selected' : ''}>vários por projeto</option></select>

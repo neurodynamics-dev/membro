@@ -34,6 +34,10 @@ async function abrir({ vp = { width:1440, height:960 }, hash = '#/', stub = stub
   await p.route('**/fonts.googleapis.com/**', r => r.abort());
   await p.route('**/raw.githubusercontent.com/**', r => r.abort());
   if (menu) await p.addInitScript(v => { try { localStorage.setItem('nd.menu', v); } catch(e){} }, menu);
+  /* o tema no instante em que o <body> nasce: se já está lá, a página não pisca */
+  await p.addInitScript(() => new MutationObserver((m, o) => { if (document.body){
+    window.__temaAoAbrirBody = document.documentElement.dataset.tema || 'escuro'; o.disconnect(); } })
+    .observe(document, { childList:true, subtree:true }));
   await p.goto('http://localhost:8765/index.html' + hash, { waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])');
   await p.waitForTimeout(700);
@@ -72,7 +76,7 @@ console.log('\nAberto (admin, 1440px)');
     icone: s.querySelector('.lt-item svg.ic')?.innerHTML.length || 0 })));
   confere('os espaços, na ordem (admin vê também Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Início|Agenda|Atividades|OKRs|Projetos|Arquivos|Equipe|Informações|Serviços|Meus pedidos|Seleção|Administração',
+      'Agenda|Atividades|OKRs|Projetos|Arquivos|Equipe|Informações|Serviços|Meus pedidos|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
   confere('Seleção e Administração vêm depois do divisor "Gestão"',
@@ -131,8 +135,13 @@ console.log('\nAberto (admin, 1440px)');
     }));
 
   await ir(p, '#/', 700);
-  confere('Início sem subitens: o próprio item fica marcado',
-    JSON.stringify(await atual(p)) === '["Início"]', await atual(p));
+  confere('sem "Início" no menu: no início, quem fica marcada é a casinha ao lado da logo',
+    JSON.stringify(await atual(p)) === '[]'
+    && await p.getAttribute('#lt-casa', 'aria-current') === 'page', await atual(p));
+  await ir(p, '#/agenda/mes', 600);
+  confere('e sai dela quando se sai do início', await p.getAttribute('#lt-casa', 'aria-current') === null);
+  await p.click('#lt-casa'); await p.waitForTimeout(500);
+  confere('a casinha leva ao início', await p.evaluate(() => location.hash) === '#/');
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-seta');
   await p.waitForTimeout(200);
   let srv = await secao(p, 'servicos');
@@ -178,6 +187,15 @@ console.log('\nAberto (admin, 1440px)');
   confere('no trilho, todo item cabe nos 48px e o ícone fica no eixo (x=34)',
     itens.every(t => t.l === 10 && t.w <= 48 && t.ic === 34), itens);
   confere('sem rolagem horizontal (trilho)', await semRolagemLateral(p));
+  const bus = await p.evaluate(() => { const b = document.getElementById('busca-abre'), cs = getComputedStyle(b),
+      r = b.getBoundingClientRect(), i = b.querySelector('svg').getBoundingClientRect();
+    return { borda: cs.borderTopColor, fundo: cs.backgroundColor, legenda: getComputedStyle(b.querySelector('span')).opacity,
+      atalho: getComputedStyle(b.querySelector('kbd')).opacity, w: Math.round(r.width), ic: Math.round(i.left + i.width / 2),
+      casa: getComputedStyle(document.getElementById('lt-casa')).display }; });
+  confere('no trilho, a busca é só o ícone — sem caixa nem legenda —, no eixo dos outros ícones',
+    bus.borda === 'rgba(0, 0, 0, 0)' && bus.fundo === 'rgba(0, 0, 0, 0)' && bus.legenda === '0' && bus.atalho === '0'
+    && bus.w <= 48 && bus.ic === 34, bus);
+  confere('e a casinha sai do trilho: a logo já é o início', bus.casa === 'none', bus);
 
   await p.reload({ waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])'); await p.waitForTimeout(700);
@@ -223,9 +241,9 @@ console.log('\nAberto (admin, 1440px)');
   await p.mouse.move(900, 300);
   await p.setViewportSize({ width:1440, height:960 }); await quieto(p);
 
-  /* pelo teclado: Tab a partir da busca chega ao Início e depois à Agenda */
+  /* pelo teclado: Tab a partir da busca chega à Agenda, o primeiro espaço */
   await p.focus('#busca-abre');
-  await p.keyboard.press('Tab'); await p.keyboard.press('Tab');
+  await p.keyboard.press('Tab');
   const foco = await p.evaluate(() => document.activeElement.closest('.lt-sec')?.dataset.r);
   v = await vooVisivel('agenda');
   confere('Tab no trilho abre o voo da seção focada', foco === 'agenda' && v.visivel, { foco, v });
@@ -317,6 +335,84 @@ console.log('\nCelular (390px)');
   const sn = await p.evaluate(() => { const r = document.getElementById('sino-painel').getBoundingClientRect();
     return { visivel: !document.getElementById('sino-painel').hidden, dentro: r.left >= 0 && r.right <= innerWidth }; });
   confere('o sino do topo abre as notificações dentro da tela', sn.visivel && sn.dentro, sn);
+  confere('sem erro de página', erros.length === 0, erros);
+  await ctx.close();
+}
+
+/* ---------- tema: claro ou escuro ---------- */
+console.log('\nTema');
+{
+  const { ctx, p, erros } = await abrir({ hash:'#/arquivos' });
+  await p.waitForSelector('.arq-tab');
+  const t0 = await p.evaluate(() => ({ tema: document.documentElement.dataset.tema || 'escuro',
+    fundo: getComputedStyle(document.body).backgroundColor, rot: document.getElementById('lt-tema').getAttribute('aria-label') }));
+  confere('começa no escuro, o da marca, e o seletor oferece o claro',
+    t0.tema === 'escuro' && t0.fundo === 'rgb(5, 8, 7)' && t0.rot === 'Usar o tema claro', t0);
+  await p.click('#lt-tema'); await p.waitForTimeout(250);
+  const t1 = await p.evaluate(() => ({ tema: document.documentElement.dataset.tema, salvo: localStorage.getItem('nd.tema'),
+    fundo: getComputedStyle(document.body).backgroundColor, rot: document.getElementById('lt-tema').getAttribute('aria-label'),
+    meta: document.querySelector('meta[name="theme-color"]').content }));
+  confere('o seletor troca para o claro e guarda a escolha',
+    t1.tema === 'claro' && t1.salvo === 'claro' && t1.fundo === 'rgb(242, 245, 241)' && t1.rot === 'Usar o tema escuro'
+    && t1.meta === '#F2F5F1', t1);
+  /* legível: o texto de cada token, sobre o fundo que ele tem de fato */
+  const cont = await p.evaluate(() => {
+    const rgb = s => (s.match(/[\d.]+/g) || []).map(Number);
+    const lum = c => { const f = v => (v /= 255) <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
+      return .2126 * f(c[0]) + .7152 * f(c[1]) + .0722 * f(c[2]); };
+    const sobre = (c, base) => { const a = c.length === 4 ? c[3] : 1; return base.map((v, i) => v * (1 - a) + c[i] * a); };
+    const fundo = el => { const camadas = [];
+      for (let e = el; e; e = e.parentElement){ const c = rgb(getComputedStyle(e).backgroundColor);
+        if (c.length === 3 || c[3] > 0){ camadas.push(c); if (c.length === 3 || c[3] >= 1) break; } }
+      return camadas.reverse().reduce((b, c) => sobre(c, b), rgb(getComputedStyle(document.body).backgroundColor).slice(0, 3)); };
+    const amostras = { 'título': 'main h1', 'texto de apoio': '.topo-gestao .lead', 'rótulo (dim)': '.topo-gestao .eyebrow',
+      'item do menu': '#lt-nav .lt-item .lt-rot', 'código': '.arq-tab .cod', 'subtítulo da linha': '.arq-tab .sub',
+      'quem mexeu': '.arq-tab .arq-quem', 'classe controlado': '.arq-cls.controlado', 'status ativo': '.pill.p-ok',
+      'link secundário': '.arq-nav a:not(.on)', 'selo Synapse': '.hd-tag', 'frase da estrutura': '.arq-leg .fr',
+      'rótulo de campo': '.fld label' };
+    return Object.entries(amostras).map(([nome, sel]) => { const el = document.querySelector(sel); if (!el) return { nome, falta: true };
+      const f = fundo(el), t = sobre(rgb(getComputedStyle(el).color), f), [a, b] = [lum(t), lum(f)].sort((x, y) => y - x);
+      return { nome, r: Math.round((a + .05) / (b + .05) * 100) / 100 }; });
+  });
+  confere('no claro, o texto de cada token lê — 4,5:1 ou mais sobre o fundo real',
+    cont.every(c => !c.falta && c.r >= 4.5), cont);
+  /* a banda de destaque continua escura: dentro dela, cada token que o
+     bloco claro troca tem de voltar ao valor exato do escuro */
+  const ilha = await p.evaluate(() => {
+    const nomes = [...document.styleSheets].flatMap(f => { try { return [...f.cssRules]; } catch(e){ return []; } })
+      .filter(r => r.selectorText === ':root[data-tema="claro"]')
+      .flatMap(r => [...r.style].filter(k => k.startsWith('--'))).concat('--line', '--line2');
+    const el = document.createElement('div'); el.className = 'sl-destaque'; document.body.append(el);
+    const cs = getComputedStyle(el), naIlha = Object.fromEntries(nomes.map(k => [k, cs.getPropertyValue(k).trim()]));
+    const cor = cs.color; el.remove();
+    delete document.documentElement.dataset.tema;
+    const cr = getComputedStyle(document.documentElement);
+    const dif = nomes.filter(k => naIlha[k] !== cr.getPropertyValue(k).trim()).map(k => [k, naIlha[k], cr.getPropertyValue(k).trim()]);
+    document.documentElement.dataset.tema = 'claro';
+    return { n: nomes.length, cor, dif };
+  });
+  confere(`no claro, a banda de destaque volta os ${ilha.n} tokens de tema aos do escuro`,
+    ilha.n > 40 && !ilha.dif.length && ilha.cor === 'rgb(245, 245, 247)', ilha);
+  /* logo em <img> é pintada de branco no escuro — no papel, some; no claro vira tinta */
+  const logos = await p.evaluate(() => {
+    const d = document.createElement('div');
+    d.innerHTML = '<div class="login"><div class="lg"><img alt=""></div></div><div class="ft-grid"><img alt=""></div>';
+    document.body.append(d);
+    const f = [...d.querySelectorAll('img')].map(i => getComputedStyle(i).filter); d.remove(); return f;
+  });
+  confere('as logos do login e do rodapé ficam de tinta no claro',
+    logos.every(f => /^brightness\(0\) invert\(0\.0\d\)$/.test(f)), logos);
+  await p.reload({ waitUntil:'domcontentloaded' });
+  await p.waitForSelector('#hd:not([hidden])'); await p.waitForTimeout(500);
+  confere('recarregar mantém o claro — e o <head> o aplica antes de a página aparecer',
+    await p.evaluate(() => window.__temaAoAbrirBody) === 'claro', await p.evaluate(() => window.__temaAoAbrirBody));
+  await p.click('#lt-recolher'); await quieto(p);
+  await p.hover('#hd .lt-conta .lt-item'); await p.waitForTimeout(250);
+  confere('com o menu recolhido, o tema está no voo da conta', (await p.textContent('#lt-tema-voo')).trim() === 'Tema escuro');
+  await p.click('#lt-tema-voo'); await p.waitForTimeout(250);
+  confere('e volta ao escuro por ali', await p.evaluate(() => !document.documentElement.dataset.tema
+    && localStorage.getItem('nd.tema') === 'escuro' && getComputedStyle(document.body).backgroundColor === 'rgb(5, 8, 7)'));
+  await p.click('#lt-recolher'); await quieto(p);
   confere('sem erro de página', erros.length === 0, erros);
   await ctx.close();
 }

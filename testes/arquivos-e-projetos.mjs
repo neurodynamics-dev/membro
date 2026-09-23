@@ -63,10 +63,33 @@ const atual = p => p.evaluate(() => [...document.querySelectorAll('#lt-nav [aria
   .map(a => (a.querySelector('.nm, .lt-rot') || a).textContent.trim()));
 
 /* ================= ARQUIVOS ================= */
-console.log('\nArquivos — visão geral e rol');
+console.log('\nArquivos — o rol primeiro, a visão geral depois');
 {
   const { ctx, p, erros } = await abrir({ hash:'#/arquivos' });
+  await p.waitForSelector('.arq-tab');
+  confere('a primeira tela é o rol inteiro: todas as séries, de todos os emissores, em ordem de código',
+    (await p.textContent('main h1')) === 'Todos os arquivos'
+    && (await linhas(p)).map(l => l.cod).join() === 'NRO-PES-004,NRO-PES-005,NRO-PES-007,NRO-PES-014,NRO-PRO-001,NRO-PRO-003,NRO-PRO-004,NRO-PUB-002,NRO-PUB-003',
+    (await linhas(p)).map(l => l.cod));
+  const nav = await p.evaluate(() => [...document.querySelectorAll('.arq-nav a')].map(a => ({
+    t: a.textContent.replace(/\s+/g, ' ').trim(), on: a.classList.contains('on') })));
+  confere('revisar, templates, visão geral e configurações ficam como secundários, numa linha abaixo do título',
+    nav.map(x => x.t).join('|') === 'Todos os arquivos|Para revisar 1|Templates|Visão geral|Configurações'
+    && nav[0].on && await p.locator('.arq-nav .n.sua').count() === 1, nav);
+  confere('e o menu acende "Todos os arquivos"', JSON.stringify(await atual(p)) === '["Todos os arquivos"]', await atual(p));
+  await p.selectOption('#arq-emissor', 'PES'); await p.waitForTimeout(900);
+  confere('filtrar por emissor é o mesmo rol, com o endereço do emissor',
+    await p.evaluate(() => location.hash) === '#/arquivos/PES'
+    && (await linhas(p)).map(l => l.cod).join() === 'NRO-PES-004,NRO-PES-005,NRO-PES-007,NRO-PES-014'
+    && (await atual(p)).includes('Pessoal'), await atual(p));
+  await p.selectOption('#arq-emissor', ''); await p.waitForTimeout(900);
+  confere('e "Todos" volta para o rol inteiro', await p.evaluate(() => location.hash) === '#/arquivos'
+    && (await linhas(p)).length === 9);
+
+  await ir(p, '#/arquivos/visao');
   await p.waitForSelector('.metricas');
+  confere('a visão geral mora em #/arquivos/visao, com a navegação marcada nela',
+    (await p.textContent('main h1')) === 'Visão geral' && (await p.textContent('.arq-nav a.on')).trim() === 'Visão geral');
   const met = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('.metrica')]
     .map(m => [m.querySelector('.rot').textContent.trim(), m.querySelector('.val').textContent.trim()])));
   confere('métricas: 10 ativos, 1 em revisão, 2 em rascunho, 1 para você', met['Ativos'] === '10' && met['Em revisão'] === '1'
@@ -77,8 +100,8 @@ console.log('\nArquivos — visão geral e rol');
   confere('os três emissores aparecem, com o que está em revisão', await p.locator('.arq-emi').count() === 3
     && (await p.textContent('.arq-emi:has-text("NRO-PES")')).includes('1 em revisão'));
   const menu = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec[data-r="arquivos"] .lt-filho .nm')].map(x => x.textContent.trim()));
-  confere('no menu: visão geral, para revisar, cada emissor (sem "Departamento de"), templates, configurações',
-    menu.join('|') === 'Visão geral|Para revisar|Geral|Pessoal|Pesquisa e Desenvolvimento|Templates|Configurações', menu);
+  confere('no menu: o rol, cada emissor (sem "Departamento de"), e depois revisar, templates, visão geral, configurações',
+    menu.join('|') === 'Todos os arquivos|Geral|Pessoal|Pesquisa e Desenvolvimento|Para revisar|Templates|Visão geral|Configurações', menu);
 
   await ir(p, '#/arquivos/PES');
   let ls = await linhas(p);
@@ -256,7 +279,7 @@ console.log('\nConfigurações e exportação');
     esc.length === 1 && esc[0].op === 'insert' && esc[0].dados.serie_id === 's-pub3', esc);
 
   await ir(p, '#/arquivos');
-  await p.click('button:has-text("Exportar planilha")'); await p.waitForTimeout(900);
+  await p.click('.topo-gestao button:has-text("Exportar")'); await p.waitForTimeout(900);
   const pl = await p.evaluate(() => window.__planilha);
   confere('a exportação sai no nome e nas abas da NRO-PUB-001',
     /^NRO-PUB-001 CONTROLE DE DOCUMENTOS E REGISTROS/.test(pl?.nome) && pl.abas.map(a => a.n).join() === 'NRO-PUB,NRO-PES,NRO-PRO', pl && { nome: pl.nome, abas: pl.abas.map(a => a.n) });
@@ -389,7 +412,8 @@ console.log('\nQuem não é gestor');
   await ir(p, '#/arquivos/PUB');
   confere('nem o rol oferece "Adicionar"', await p.locator('.topo-gestao button:has-text("Adicionar")').count() === 0);
   await ir(p, '#/arquivos/config');
-  confere('#/arquivos/config devolve para a visão geral', await p.evaluate(() => location.hash) === '#/arquivos');
+  confere('#/arquivos/config devolve para o rol', await p.evaluate(() => location.hash) === '#/arquivos'
+    && (await p.textContent('main h1')) === 'Todos os arquivos');
   confere('nenhum erro de página', erros.length === 0, erros);
   await ctx.close();
 }

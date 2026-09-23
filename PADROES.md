@@ -18,7 +18,6 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 
 | Espaço | O que é | Quem vê |
 |---|---|---|
-| **Início** | o seu dia: avisos, próximos compromissos, suas atividades, seus pedidos | todos |
 | **Agenda** | tempo — compromissos, presença, ausências, marcos | todos |
 | **Atividades** | trabalho — o quadro do seu grupo | todos |
 | **OKRs** | planejamento — os objetivos e o desdobramento de cada um | todos (edição: `admin`, `pessoal` e os responsáveis) |
@@ -31,9 +30,15 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **Seleção** | os bastidores do processo seletivo | `admin`, `pessoal`, `selecao` |
 | **Administração** | os painéis: portal, site, catálogo, importação, auditoria | `admin`, `pessoal` (e `selecao`, só Relatórios) |
 
+O **início** — o seu dia: avisos, próximos compromissos, suas atividades,
+seus pedidos — não é item da lista: a logo no alto do menu leva a ele, e uma
+casinha menor, ao lado dela, diz que leva. No trilho a casinha sai; a logo
+basta. Um item "Início" repetiria o caminho da logo e empurraria os espaços
+para baixo.
+
 Até dez destinos no primeiro nível para toda a equipe (mais Seleção e
 Administração, para quem tem o papel), cada um com ícone, no **menu lateral**
-à esquerda. Com Projetos e Arquivos a conta fechou em dez: o próximo espaço
+à esquerda. Com Projetos e Arquivos são nove: cabe mais um, e o seguinte
 precisa caber dentro de um que já existe, ou tomar o lugar dele. O segundo nível são os subitens de cada espaço — as abas da
 Agenda, os quadros dos grupos da pessoa, as categorias de documento, cada
 serviço, cada painel —, pendurados numa linha-guia debaixo do espaço, como
@@ -77,8 +82,10 @@ conforme quem entra é menu que ninguém aprende.
 #/projetos[/novo]           os projetos
 #/projetos/<CÓDIGO>         um projeto (ex.: #/projetos/NEBULA)
 #/projetos/<CÓDIGO>/arquivos  o rol de arquivos do projeto
-#/arquivos[/revisoes|templates|config]
-#/arquivos/<EMISSOR>        o rol de um emissor (ex.: #/arquivos/PES)
+#/arquivos                  todos os arquivos — a primeira tela, que filtra por emissor
+#/arquivos/<EMISSOR>        a lista de um emissor (ex.: #/arquivos/PES)
+#/arquivos/visao            a visão geral: os números de cada emissor
+#/arquivos/revisoes|templates|config
 #/arquivos/<código>         um arquivo (ex.: #/arquivos/NRO-PES-007-2)
 #/informacoes[/<categoria>]
 #/servicos[/<tipo>]
@@ -104,7 +111,8 @@ conforme quem entra é menu que ninguém aprende.
 
 ## 3. A busca
 
-Uma caixa no topo do menu lateral, atalho `/` ou `Ctrl/⌘ K`. Acha **quatro coisas**:
+Uma caixa no topo do menu lateral, atalho `/` ou `Ctrl/⌘ K` — no trilho,
+só a lupa, sem caixa nem legenda, no eixo dos outros ícones. Acha **quatro coisas**:
 
 | Fonte | Exemplo do que casa |
 |---|---|
@@ -360,3 +368,38 @@ Os três erros que mais aparecem ao trazer tela clara para o escuro:
   são Synapse;
 - **sombra** — não existe no escuro. Elevação é borda mais vidro;
 - **zebra em tabela** — compete com o hover. Separação é a borda a 8%.
+
+### Dois temas, os mesmos nomes
+
+O escuro é o da marca e o padrão; o claro (`<html data-tema="claro">`) é
+escolha de cada pessoa — o botão ao lado do *sair*, na linha da conta. Os
+tokens são os mesmos nos dois: o bloco `:root[data-tema="claro"]`, no alto da
+casca, só troca os valores. Por isso:
+
+- **nenhuma cor literal num componente.** Transparência se escreve com trio:
+  `rgba(var(--tom),.05)`, não `rgba(255,255,255,.05)` — `--tom` clareia no
+  escuro e escurece no claro; `--ink-rgb`, `--fundo-rgb`, `--painel-rgb` e os
+  de status (`--ok-rgb`, `--bad-rgb`…) seguem a mesma ideia. Sombra:
+  `rgba(var(--sombra-rgb),calc(.45 * var(--sombra-k)))`; véu, o mesmo com
+  `--veu-rgb` e `--veu-k`;
+- **o Synapse tem três usos.** Como fundo (botão, chip ligado, bolha) é
+  `--syn`, nos dois temas, com texto `--deep`. Como texto, `--syn-tx`. Como
+  borda, linha de estado (aba ativa, subitem atual, ponto do carrossel, barra
+  de progresso) ou controle marcado, `--syn-borda`. No escuro os três são o
+  mesmo lima; no claro, texto e linha viram oliva — lima de 2px no papel não
+  se vê;
+- **texto sobre caixa tingida** usa os `*-tx` (`--bad-tx`, `--warn-tx`,
+  `--info-tx`…), não a cor de status pura;
+- **campo** tem fundo `--campo`: branco no claro — cinza parece desativado;
+- **ilha escura.** A faixa de destaque (`.sl-destaque`) continua escura no
+  claro, e dentro dela todo token que o claro troca volta ao do escuro. Token
+  de tema novo entra em três lugares — o `:root`, o bloco claro e a ilha —, e
+  `testes/menu-lateral.mjs` confere a ilha;
+- **logo em `<img>`** pintada de branco por filtro precisa da exceção do
+  claro, que a pinta de tinta.
+
+O tema vale antes de a página pintar: uma linha de script no `<head>` lê o
+`localStorage` (`nd.tema`) e põe o atributo, e a página nunca pisca escura.
+Todo texto do claro lê a 4,5:1 ou mais sobre o fundo real — o teste do menu
+mede. O card *Tema claro* do design system traz os valores e o contraste de
+cada token.
