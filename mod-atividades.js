@@ -820,7 +820,7 @@ function frasesLog(e){
 function editarTitulo(){
   const a = atividades.card, el = $('#cd-titulo');
   el.innerHTML = `<input id="cd-tit-in" value="${esc(a.titulo)}"
-    style="width:100%;font:inherit;background:rgba(255,255,255,.05);border:1px solid var(--line2);
+    style="width:100%;font:inherit;background:var(--campo);border:1px solid var(--line2);
     border-radius:10px;padding:4px 10px;color:inherit">`;
   const i = $('#cd-tit-in'); i.focus(); i.select();
   const fim = () => mudarCampo('titulo', i.value.trim() || a.titulo);
@@ -831,7 +831,7 @@ function editarTitulo(){
 function editarDescricao(){
   const a = atividades.card, el = $('#cd-desc');
   el.innerHTML = `<textarea id="cd-desc-in" rows="5"
-    style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line2);
+    style="width:100%;background:var(--campo);border:1px solid var(--line2);
     border-radius:10px;padding:10px 12px;color:inherit;font:inherit">${esc(a.descricao||'')}</textarea>
     <div class="acts" style="margin-top:10px">
       <button class="btn solid" onclick="salvarDescricao()">Salvar</button>

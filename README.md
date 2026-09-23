@@ -70,20 +70,26 @@ SOMA · Gestão está sendo trazido, conforme o
 ## Como o sistema se organiza
 
 A navegação é por **espaços** — o que você está fazendo —, não por qual app
-a tela veio: **Início · Agenda · Atividades · OKRs · Projetos · Arquivos ·
-Equipe · Informações · Serviços · Meus pedidos**, e, para quem tem o papel,
+a tela veio: **Agenda · Atividades · OKRs · Projetos · Arquivos · Equipe ·
+Informações · Serviços · Meus pedidos**, e, para quem tem o papel,
 **Seleção** e **Administração**. Eles ficam num **menu lateral** à esquerda,
 cada um com ícone e com os seus subitens logo abaixo — as abas da Agenda, os
 quadros dos seus grupos, as categorias de documento, cada serviço, cada
-painel da Administração. O menu **recolhe** para um trilho de ícones (o
-botão fica no pé dele; passar o mouse num ícone mostra os subitens ao lado),
-e no celular vira uma gaveta, aberta pelo botão da barra de topo. Os
-detalhes e o porquê estão em [`PADROES.md`](PADROES.md).
+painel da Administração. O **início** não é item da lista: a logo no alto do
+menu leva a ele, e a casinha ao lado dela diz que leva. O menu **recolhe**
+para um trilho de ícones (o botão fica no pé dele; passar o mouse num ícone
+mostra os subitens ao lado), e no celular vira uma gaveta, aberta pelo botão
+da barra de topo. Os detalhes e o porquê estão em [`PADROES.md`](PADROES.md).
 
-Há uma **busca global** no topo do menu (atalho `/` ou `Ctrl/⌘ K`) que acha telas
-e ações, pessoas, atividades por código ou título, e compromissos da agenda.
-Cada módulo registra o que sabe achar — quem adiciona um módulo novo adiciona
-uma fonte de busca junto.
+Há uma **busca global** no topo do menu (atalho `/` ou `Ctrl/⌘ K`; no
+trilho, é só a lupa) que acha telas e ações, pessoas, atividades por código
+ou título, e compromissos da agenda. Cada módulo registra o que sabe achar —
+quem adiciona um módulo novo adiciona uma fonte de busca junto.
+
+**Tema claro ou escuro.** O escuro é o da marca e o padrão; o claro é
+escolha de cada pessoa, no botão ao lado do *sair*, na linha da sua conta
+(com o menu recolhido, pelo voo da conta). A escolha fica no navegador e vale
+desde o primeiro quadro da página — sem piscar escuro antes.
 
 Endereço antigo não quebra: `#/organizacao`, `#/quadro`, `#/calendario` e
 `#/auditoria` continuam levando ao lugar certo.
@@ -247,12 +253,19 @@ alto, em *O que é este arquivo*:
 O `NRO-PUB-002` é o caso à parte: documento sem PN com subtipo template — o
 modelo de base dos outros —, e a coluna de estrutura dele veio vazia.
 
-**O rol** de cada emissor (`#/arquivos/PES`) é a aba da planilha, como uma
-lista do Drive: código, título, revisão, última alteração e quem a fez,
-status. No alto, quantas séries há de cada estrutura — clicar numa filtra.
-Filtra também por status, natureza, subtipo e classe; ordena por coluna; as
-séries com PN abrem os PNs logo abaixo. *Exportar* devolve a planilha no
-mesmo formato da NRO-PUB-001, com a coluna de estrutura.
+**A primeira tela** (`#/arquivos`) já é a lista de todos os arquivos, como
+uma lista do Drive: código, título, revisão, última alteração e quem a fez,
+status. Filtra por **emissor** — escolher um leva ao rol dele
+(`#/arquivos/PES`), que é a aba daquela planilha —, por status, natureza,
+subtipo e classe; ordena por coluna; as séries com PN abrem os PNs logo
+abaixo. No alto, quantas séries há de cada estrutura — clicar numa filtra.
+*Exportar* devolve a planilha no mesmo formato da NRO-PUB-001, com a coluna
+de estrutura.
+
+O resto do módulo fica numa barra secundária, logo abaixo do título:
+*Para revisar* (com a contagem, acesa quando há revisão esperando por você),
+*Templates*, *Visão geral* (`#/arquivos/visao`, os números de cada emissor)
+e, para o PMO e `admin`, *Configurações*.
 
 **Adicionar** pergunta o que é antes de criar: um arquivo real numa série que
 já existe — um PN, que nasce do template, e a tela diz antes se vai ser
@@ -377,7 +390,7 @@ Duas coisas que a unificação trouxe de graça:
 | `mod-okrs.js`  | O planejamento estratégico: a árvore de objetivos (`#/okrs`, `#/okrs/<codigo>`) |
 | `mod-selecao.js` | O processo seletivo, por dentro: as oito abas do Comitê de Seleção (`#/selecao`, `#/selecao/<aba>`) |
 | `mod-projetos.js` | Os projetos: equipe, supervisor, logo e rol (`#/projetos`, `#/projetos/<código>`) |
-| `mod-arquivos.js` | O controle de arquivos: rol por emissor, tela do arquivo, revisões, templates e configurações (`#/arquivos`, `#/arquivos/<código>`) |
+| `mod-arquivos.js` | O controle de arquivos: a lista de todos os arquivos (filtra por emissor), tela do arquivo, revisões, templates, visão geral e configurações (`#/arquivos`, `#/arquivos/<código>`) |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
 | `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
 | `mailer/`      | Ícones e logos recoloridas que o Full mailer embute nos e-mails |
