@@ -13,8 +13,9 @@
    website. Os dois arquivos deixam de existir: eram duas telas de
    login a mais para a mesma conta.
 
-   Depende da casca para: sb, $, esc, state, toast, fmtD, abreModal,
-   fechaModal, can, registrarBusca, filtrarSimples, quemSouEu,
+   Depende da casca para: sb, $, esc, norm, state, toast, fmtD, abreModal,
+   fechaModal, can, registrarBusca, filtrarSimples, quemSouEu, ic, ibtn,
+   avatarFoto, confirma, falha, motivoRPC, carregarGrupos, desenharMenu,
    PAINEIS, GRUPOS_PAINEL, painelPermitido.
    ============================================================ */
 
@@ -57,7 +58,7 @@ const icAdm = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 /* ============================================================
    ROTA
    ============================================================ */
-async function pageAdmin(sub){
+async function pageAdmin(sub, sub2){
   const p = PAINEIS.find(([k]) => k === sub);
   if (!p || !painelPermitido(p)) return galeriaAdmin();
 
@@ -82,7 +83,7 @@ async function pageAdmin(sub){
     renderTabelaAud();
   });
   if (k === 'contas')     return pageContas();
-  if (k === 'grupos')     return admCarregarGrupos();
+  if (k === 'grupos')     return admCarregarGrupos(sub2);
   if (k === 'acessos')    return admCarregarCatalogo();
   if (k === 'importar')   return pageImportar();
 
@@ -1182,109 +1183,446 @@ registrarBusca({
 });
 
 /* ============================================================
-   GRUPOS E QUADROS — #/admin/grupos
+   GRUPOS E QUADROS — #/admin/grupos[/<prefixo>]
 
-   Três coisas moram aqui, e as três existiam só no banco:
+   Os grupos formam uma árvore (v19): um grupo pode ter pai, e quem
+   está num grupo está também nos de cima — pôr alguém em
+   NRO_PROJECT_NEBULA põe essa pessoa em NRO_PROJECTS. A tela existe
+   para isso ficar à vista: à esquerda a árvore; à direita o grupo
+   escolhido, de onde ele vem, o que tem embaixo, quem está nele pela
+   ficha e quem chegou por um subgrupo — e uma lista para pôr várias
+   pessoas de uma vez.
 
-   - o NOME e o PREFIXO. O prefixo entra no código de toda
-     atividade (ORT-14) e não muda retroativamente, então quem
-     ajusta precisa ver quantos cartões já existem antes;
-   - renomear, que também corrige a ficha de quem está no grupo —
-     o vínculo é por nome, e mudar só de um lado esvaziaria o
-     grupo em silêncio. O banco faz as duas numa transação;
+   O que já morava aqui continua:
+   - o NOME e o PREFIXO. O prefixo entra no código de toda atividade
+     (ORT-14) e não muda retroativamente;
+   - renomear, que também corrige a ficha de quem está no grupo — o
+     vínculo é por nome, e o banco faz as duas coisas numa transação;
    - quem ENXERGA o quadro. Grupo reservado só abre para quem está
      nele; para os outros, é aqui que se concede.
-   ============================================================ */
-const admGrupos = { lista:[], acessos:[], abertoId:null };
 
-async function admCarregarGrupos(){
+   Sem a v19 a tela continua funcionando como lista plana: não há pai,
+   quadro opcional nem responsáveis para editar, e a tela diz por quê.
+   ============================================================ */
+const admGrupos = { lista:[], acessos:[], abertoId:null, pronto:false, carregadoEm:0,
+                    sel:null, fechados:new Set(), filtro:'', ver:'todas',
+                    busca:'', marcados:new Set() };
+const ATIVOS_E_PAUSA = ['Ativo','Em pausa / avaliação'];
+
+async function admCarregarGrupos(prefixo, forcar){
   const alvo = $('#sec-grupos'); if (!alvo) return;
-  alvo.innerHTML = '<div class="carregando"><span class="spin"></span> Carregando os grupos…</div>';
-  const [g, a] = await Promise.all([
-    sb.from('grupos').select('*').order('ordem').order('nome'),
-    sb.from('grupo_acessos').select('*')
-  ]);
-  if (g.error){
-    alvo.innerHTML = `<div class="aviso-box err"><b>Não foi possível listar os grupos.</b>
-      ${esc(g.error.message)}<br><span class="small">Se o erro fala de relação inexistente,
-      falta aplicar a migração <code>db/v17_grupos_acesso.sql</code>.</span></div>`;
-    return;
+  const velho = Date.now() - admGrupos.carregadoEm > 30000;
+  if (forcar || !admGrupos.pronto || velho){
+    if (!admGrupos.pronto)
+      alvo.innerHTML = '<div class="carregando"><span class="spin"></span> Carregando os grupos…</div>';
+    const [g, a] = await Promise.all([
+      sb.from('grupos').select('*').order('ordem').order('nome'),
+      sb.from('grupo_acessos').select('*')
+    ]);
+    if (g.error){
+      alvo.innerHTML = `<div class="aviso-box err"><b>Não foi possível listar os grupos.</b>
+        ${esc(g.error.message)}<br><span class="small">Se o erro fala de relação inexistente,
+        falta aplicar a migração <code>db/v17_grupos_acesso.sql</code>.</span></div>`;
+      return;
+    }
+    admGrupos.lista   = g.data || [];
+    admGrupos.acessos = a.data || [];
+    admGrupos.pronto  = true;
+    admGrupos.carregadoEm = Date.now();
   }
-  admGrupos.lista   = g.data || [];
-  admGrupos.acessos = a.data || [];
+  const achado = prefixo && admGrupos.lista.find(x => x.prefixo === String(prefixo).toUpperCase());
+  if (achado && achado.id !== admGrupos.sel){ admGrupos.sel = achado.id; admGrupos.marcados.clear(); admGrupos.busca = ''; }
+  if (!admGrupos.lista.some(x => x.id === admGrupos.sel)) admGrupos.sel = admRaizes()[0]?.id ?? null;
+  if (!$('#sec-grupos')) return;   /* a pessoa saiu da tela enquanto carregava */
   renderGrupos();
+}
+
+/* ---------------- a árvore ---------------- */
+/* A v19 trouxe pai, quadro e responsáveis; sem ela, lista plana. */
+const admTemArvore = () => admGrupos.lista.some(g => 'quadro' in g);
+const admGrupo = id => admGrupos.lista.find(g => g.id === id) || null;
+const admOrdem = (a, b) => (a.ordem || 0) - (b.ordem || 0) || a.nome.localeCompare(b.nome, 'pt-BR');
+const admFilhos = id => admGrupos.lista.filter(g => g.pai_id === id).sort(admOrdem);
+const admRaizes = () => admGrupos.lista.filter(g => !g.pai_id || !admGrupo(g.pai_id)).sort(admOrdem);
+function admCaminho(g){
+  const out = [], vistos = new Set();
+  for (let x = g; x && !vistos.has(x.id); x = admGrupo(x.pai_id)){ vistos.add(x.id); out.unshift(x); }
+  return out;
+}
+/* O grupo e todos os de baixo, contando os inativos — para não
+   oferecer como pai um grupo que fecharia um círculo. */
+function admAbaixoTodos(id){
+  const out = new Set([id]);
+  for (let novo = true; novo; ){
+    novo = false;
+    admGrupos.lista.forEach(g => { if (g.pai_id && out.has(g.pai_id) && !out.has(g.id)){ out.add(g.id); novo = true; } });
+  }
+  return out;
+}
+/* Quem está no grupo, com a regra do banco (esta_no_grupo): o próprio
+   grupo, e os de baixo só por grupo ativo. Devolve [{m, via}], em que
+   via é o grupo da ficha pelo qual a pessoa chegou. */
+function admPessoasDo(g){
+  const nomes = new Map([[g.nome, g]]);
+  for (let novo = true; novo; ){
+    novo = false;
+    admGrupos.lista.forEach(x => {
+      if (x.ativo !== false && x.pai_id && [...nomes.values()].some(y => y.id === x.pai_id) && !nomes.has(x.nome)){
+        nomes.set(x.nome, x); novo = true;
+      }
+    });
+  }
+  return (state.membros || []).filter(m => ATIVOS_E_PAUSA.includes(m.status))
+    .map(m => {
+      const gs = m.grupos || [];
+      const via = gs.includes(g.nome) ? g.nome : gs.find(n => nomes.has(n));
+      return via ? { m, via } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.m.nome.localeCompare(b.m.nome, 'pt-BR'));
 }
 
 const prefixoColide = (g) => admGrupos.lista.some(o =>
   o.id !== g.id && o.prefixo.replace(/\d+$/,'') === g.prefixo.replace(/\d+$/,''));
 
-function renderGrupos(){
-  const alvo = $('#sec-grupos'); if (!alvo) return;
-  const cont = (nome) => (state.membros || []).filter(m =>
-    (m.grupos||[]).includes(nome) && ['Ativo','Em pausa / avaliação'].includes(m.status)).length;
-
-  alvo.innerHTML = `
-    <div class="aviso-box" style="margin-bottom:18px">
-      <b>O prefixo entra no código de toda atividade</b> (<code>ORT-14</code>) e é gravado
-      quando o cartão nasce — mudar o prefixo <b>não</b> renomeia os que já existem.
-      Ajuste antes de o grupo começar a usar o quadro.
+function admNoArvore(g, nivel){
+  const filhos = admFilhos(g.id);
+  const fechado = admGrupos.fechados.has(g.id);
+  const q = norm(admGrupos.filtro);
+  /* com filtro, a árvore se abre inteira e mostra só o que casa, com o
+     caminho até lá — um galho sem nada que case some */
+  const casa = x => !q || norm(x.nome).includes(q) || norm(x.prefixo).includes(q);
+  const algumAbaixo = x => casa(x) || admFilhos(x.id).some(algumAbaixo);
+  if (q && !algumAbaixo(g)) return '';
+  const n = admPessoasDo(g).length;
+  const aberto = q ? true : !fechado;
+  return `<div class="gr-ramo">
+    <div class="gr-no">
+      ${filhos.length
+        ? `<button class="gr-caret" aria-expanded="${aberto}" aria-label="${aberto ? 'Recolher' : 'Abrir'} ${esc(g.nome)}"
+             onclick="admAlternarRamo(${g.id})">${ic('chevron')}</button>`
+        : '<span class="gr-caret sem" aria-hidden="true"></span>'}
+      <a class="gr-link${g.id === admGrupos.sel ? ' on' : ''}${g.ativo === false ? ' off' : ''}"
+         href="#/admin/grupos/${encodeURIComponent(g.prefixo)}" ${g.id === admGrupos.sel ? 'aria-current="page"' : ''}>
+        <span class="gr-dot" style="${g.cor ? `background:${esc(g.cor)}` : ''}"></span>
+        <span class="nm" title="${esc(g.nome)}">${esc(g.nome)}</span>
+        ${g.reservado ? `<span title="Quadro fechado">${ic('cadeado')}</span>` : ''}
+        ${g.quadro === false ? `<span class="gr-semq" title="Sem quadro em Atividades">sem quadro</span>` : ''}
+        <span class="n" title="${n} pessoa${n === 1 ? '' : 's'}, contando os subgrupos">${n}</span>
+      </a>
     </div>
-    <div class="acts" style="justify-content:flex-end;margin-bottom:14px">
-      <button class="btn ghost" onclick="modalGrupo()">Novo grupo</button></div>
-    <div class="card"><div class="wrap"><table class="tabela trabalho">
-      <thead><tr><th style="width:86px">Prefixo</th><th>Grupo</th>
-        <th style="width:92px">No grupo</th><th style="width:96px">Quadro</th>
-        <th style="width:110px">Acessos</th><th style="width:96px"></th></tr></thead>
-      <tbody>${admGrupos.lista.map(g => {
-        const nAcc = admGrupos.acessos.filter(x => x.grupo_id === g.id).length;
-        return `<tr>
-          <td><span class="cod-pf${prefixoColide(g)?' colide':''}"
-              ${prefixoColide(g)?'title="Outro grupo começa com o mesmo prefixo"':''}
-              >${esc(g.prefixo)}</span></td>
-          <td>${esc(g.nome)}${g.chave === 'pessoal'
-            ? ' <span class="pill"><span class="dt dt-info"></span>Depto de Pessoal</span>' : ''}
-            ${g.ativo === false ? ' <span class="muted small">(inativo)</span>' : ''}</td>
-          <td>${cont(g.nome)}</td>
-          <td>${g.reservado
-            ? '<span class="pill p-warn"><span class="dt dt-warn"></span>Fechado</span>'
-            : '<span class="muted small">Aberto</span>'}</td>
-          <td>${g.reservado
-            ? (nAcc ? `${nAcc} concedido${nAcc>1?'s':''}` : '<span class="muted small">—</span>')
-            : '<span class="muted small">toda a equipe lê</span>'}</td>
-          <td style="text-align:right;white-space:nowrap">
-            ${ibtn('key','Quem enxerga', `modalAcessoGrupo(${g.id})`, 'sm')}
-            ${ibtn('pencil','Editar', `modalGrupo(${g.id})`, 'sm')}</td>
-        </tr>`;
-      }).join('') || '<tr><td colspan="6" class="empty">Nenhum grupo cadastrado.</td></tr>'}
-      </tbody></table></div></div>`;
+    ${filhos.length && aberto ? `<div class="gr-filhos">${filhos.map(f => admNoArvore(f, nivel + 1)).join('')}</div>` : ''}
+  </div>`;
+}
+function admAlternarRamo(id){
+  admGrupos.fechados.has(id) ? admGrupos.fechados.delete(id) : admGrupos.fechados.add(id);
+  const arv = $('#gr-arvore'); if (arv) arv.innerHTML = admArvoreHTML();
+}
+function admArvoreHTML(){
+  const html = admRaizes().map(g => admNoArvore(g, 0)).join('');
+  return html || `<div class="muted small" style="padding:8px 6px">${admGrupos.filtro
+    ? 'Nenhum grupo com esse nome.' : 'Nenhum grupo cadastrado.'}</div>`;
+}
+function admFiltrarArvore(v){
+  admGrupos.filtro = v;
+  const arv = $('#gr-arvore'); if (arv) arv.innerHTML = admArvoreHTML();
 }
 
-/* --- editar / criar --- */
-function modalGrupo(id){
-  const g = admGrupos.lista.find(x => x.id === id) || { nome:'', prefixo:'', reservado:false, ativo:true };
-  const nCards = id ? null : 0;
-  abreModal(`<h3>${id ? 'Editar grupo' : 'Novo grupo'}</h3>
+/* ---------------- a tela ---------------- */
+function renderGrupos(){
+  const alvo = $('#sec-grupos'); if (!alvo) return;
+  const temArvore = admTemArvore();
+  alvo.innerHTML = `
+    ${temArvore ? '' : `<div class="aviso-box warn" style="margin-bottom:16px">
+      <b>A árvore de grupos ainda não está no banco.</b> Sem a migração
+      <code>db/v19_grupos_hierarquia.sql</code> os grupos continuam numa lista plana:
+      dá para editar e pôr pessoas, mas não para pôr um grupo dentro de outro.</div>`}
+    <div class="gr-lay">
+      <div class="card gr-arv">
+        <div class="gr-arv-topo">
+          <input id="gr-filtro" type="search" placeholder="Filtrar grupos…" aria-label="Filtrar grupos"
+            value="${esc(admGrupos.filtro)}" oninput="admFiltrarArvore(this.value)">
+          ${ibtn('plus', 'Novo grupo', 'modalGrupo()', 'sm')}
+        </div>
+        <nav id="gr-arvore" aria-label="Árvore de grupos">${admArvoreHTML()}</nav>
+      </div>
+      <div id="gr-detalhe">${admDetalheHTML()}</div>
+    </div>`;
+}
+
+function admDetalheHTML(){
+  const g = admGrupo(admGrupos.sel);
+  if (!g) return `<div class="vazio"><div class="glyph">∅</div><h3>Nenhum grupo ainda</h3>
+    <p>Crie o primeiro grupo — depois dá para pôr outros dentro dele.</p>
+    <button class="btn solid" onclick="modalGrupo()">Novo grupo</button></div>`;
+  const temArvore = admTemArvore();
+  const caminho = admCaminho(g);
+  const filhos = admFilhos(g.id);
+  const pessoas = admPessoasDo(g);
+  const diretos = pessoas.filter(p => p.via === g.nome);
+  const herdados = pessoas.filter(p => p.via !== g.nome);
+  const resp = (g.responsaveis || []).map(r => state.membros.find(m => m.registro === r)).filter(Boolean);
+  const lista = admGrupos.ver === 'ficha' ? diretos : admGrupos.ver === 'sub' ? herdados : pessoas;
+  const chave = { pessoal:'Depto de Pessoal', projetos:'Pai dos projetos', pmo:'PMO' }[g.chave];
+
+  return `<div class="card gr-det">
+    ${caminho.length > 1 ? `<nav class="gr-caminho" aria-label="Caminho">${caminho.map((x, i) =>
+      i < caminho.length - 1
+        ? `<a href="#/admin/grupos/${encodeURIComponent(x.prefixo)}">${esc(x.nome)}</a><span aria-hidden="true">›</span>`
+        : `<b>${esc(x.nome)}</b>`).join('')}</nav>` : ''}
+    <div class="gr-cab">
+      <h2>${esc(g.nome)}</h2>
+      <span class="cod-pf${prefixoColide(g) ? ' colide' : ''}"
+        ${prefixoColide(g) ? 'title="Outro grupo começa com o mesmo prefixo"' : 'title="Prefixo do código das atividades"'}>${esc(g.prefixo)}</span>
+      ${chave ? `<span class="pill"><span class="dt dt-info"></span>${chave}</span>` : ''}
+      ${g.quadro === false
+        ? '<span class="pill"><span class="dt dt-gray"></span>Sem quadro</span>'
+        : g.reservado
+          ? '<span class="pill p-warn"><span class="dt dt-warn"></span>Quadro fechado</span>'
+          : '<span class="pill"><span class="dt dt-ok"></span>Quadro aberto</span>'}
+      ${g.ativo === false ? '<span class="pill p-bad"><span class="dt dt-bad"></span>Inativo</span>' : ''}
+    </div>
+    ${g.descricao ? `<p class="gr-desc">${esc(g.descricao)}</p>` : ''}
+    <div class="acts" style="margin-top:14px">
+      <button class="btn ghost mini" onclick="modalGrupo(${g.id})">${ic('pencil')} Editar</button>
+      ${temArvore ? `<button class="btn ghost mini" onclick="modalGrupo(null, ${g.id})">${ic('plus')} Subgrupo</button>` : ''}
+      ${g.quadro !== false ? `<button class="btn ghost mini" onclick="modalAcessoGrupo(${g.id})">${ic('key')} Quem enxerga o quadro</button>` : ''}
+    </div>
+
+    <div class="metricas gr-met">
+      <div class="metrica"><span class="rot">Pessoas</span><span class="val">${pessoas.length}</span>
+        <span class="var neutro">ativas ou em pausa</span></div>
+      <div class="metrica"><span class="rot">Pela ficha</span><span class="val">${diretos.length}</span>
+        <span class="var neutro">postas neste grupo</span></div>
+      <div class="metrica"><span class="rot">Por subgrupo</span><span class="val">${herdados.length}</span>
+        <span class="var neutro">vieram de baixo</span></div>
+      <div class="metrica"><span class="rot">Subgrupos</span><span class="val">${filhos.length}</span>
+        <span class="var neutro">logo abaixo</span></div>
+    </div>
+
+    ${temArvore ? `
+    <div class="adm-grupo">Subgrupos</div>
+    ${filhos.length ? `<div class="gr-sub">${filhos.map(f => `<a class="chip" href="#/admin/grupos/${encodeURIComponent(f.prefixo)}">
+        ${esc(f.nome)} <span class="muted small">· ${admPessoasDo(f).length}</span></a>`).join('')}</div>`
+      : `<p class="muted small">Nenhum. Quem entrar num subgrupo de ${esc(g.nome)} passa a estar também aqui.</p>`}
+
+    <div class="adm-grupo">Responsáveis</div>
+    ${resp.length ? `<div class="gr-sub">${resp.map(m => `<span class="chip mini" style="padding:4px 10px">${esc(m.nome)}</span>`).join('')}</div>
+      <p class="muted small" style="margin-top:8px">Põem e tiram gente deste grupo e dos que estão abaixo dele.</p>`
+      : `<p class="muted small">Só admin e Depto de Pessoal mexem em quem está aqui. Responsáveis se escolhem em Editar.</p>`}` : ''}
+
+    <div class="adm-grupo">Pessoas</div>
+    ${temArvore && herdados.length ? `<div class="seg" role="group" aria-label="Quais pessoas" style="margin-bottom:10px">
+      ${[['todas', 'Todas', pessoas.length], ['ficha', 'Pela ficha', diretos.length], ['sub', 'Por subgrupo', herdados.length]]
+        .map(([k, r, n]) => `<button class="${admGrupos.ver === k ? 'on' : ''}" aria-pressed="${admGrupos.ver === k}"
+          onclick="admVerPessoas('${k}')">${r} · ${n}</button>`).join('')}</div>` : ''}
+    <div class="gr-pessoas">${lista.map(({ m, via }) => `<div class="gr-pessoa">
+        ${avatarFoto(m, 30, 11)}
+        <div class="tx"><div class="nm">${esc(m.nome)}</div><div class="cg">${esc(m.cargo || '—')}${m.status !== 'Ativo' ? ' · em pausa' : ''}</div></div>
+        ${via === g.nome
+          ? `<span class="gr-via dir">pela ficha</span>${ibtn('x', 'Tirar de ' + esc(g.nome), `admTirarDoGrupo(${m.registro})`, 'perigo sm')}`
+          : `<a class="gr-via" href="#/admin/grupos/${encodeURIComponent(grupoPrefixoDe(via))}"
+               title="Está aqui por estar em ${esc(via)}">por ${esc(via)}</a>`}
+      </div>`).join('') || `<p class="muted small">${admGrupos.ver === 'sub'
+        ? 'Ninguém chegou por um subgrupo.' : 'Ninguém neste grupo ainda.'}</p>`}</div>
+
+    <div class="adm-grupo">Pôr pessoas neste grupo</div>
+    <div id="gr-add">${admAddHTML(g, pessoas)}</div>
+  </div>`;
+}
+const grupoPrefixoDe = nome => admGrupos.lista.find(x => x.nome === nome)?.prefixo || '';
+function admVerPessoas(k){ admGrupos.ver = k; const d = $('#gr-detalhe'); if (d) d.innerHTML = admDetalheHTML(); }
+
+/* A lista de quem pode entrar: ativos e em pausa que ainda não estão no
+   grupo pela ficha. Quem já está por um subgrupo aparece, com o aviso —
+   pôr direto não muda nada hoje, mas segura a pessoa aqui se ela sair
+   do subgrupo. */
+function admCandidatos(g){
+  const q = norm(admGrupos.busca);
+  return (state.membros || [])
+    .filter(m => ATIVOS_E_PAUSA.includes(m.status) && !(m.grupos || []).includes(g.nome))
+    .filter(m => !q || [m.nome, m.cargo, m.departamento, ...(m.grupos || [])].some(x => norm(x).includes(q)))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+function admAddHTML(g, pessoas){
+  const ja = new Map((pessoas || admPessoasDo(g)).filter(p => p.via !== g.nome).map(p => [p.m.registro, p.via]));
+  const cands = admCandidatos(g);
+  const n = admGrupos.marcados.size;
+  const outros = admGrupos.lista.filter(x => x.id !== g.id && x.ativo !== false).sort(admOrdem);
+  return `<div class="gr-add-topo">
+      <input id="gr-busca" type="search" placeholder="Buscar por nome, cargo, departamento ou grupo…"
+        aria-label="Buscar pessoas" value="${esc(admGrupos.busca)}" oninput="admBuscarCandidatos(this.value)">
+      <select aria-label="Marcar quem está em outro grupo" onchange="admMarcarDoGrupo(this.value); this.value=''">
+        <option value="">Marcar todos de um grupo…</option>
+        ${outros.map(x => `<option value="${x.id}">${esc(x.nome)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="gr-cands" id="gr-cands" role="group" aria-label="Pessoas para pôr no grupo">
+      ${cands.map(m => `<label class="gr-cand">
+        <input type="checkbox" ${admGrupos.marcados.has(m.registro) ? 'checked' : ''}
+          onchange="admMarcar(${m.registro}, this.checked)">
+        ${avatarFoto(m, 26, 10)}
+        <span class="tx"><span class="nm">${esc(m.nome)}</span>
+          <span class="cg">${esc(m.cargo || '—')}${ja.has(m.registro) ? ` · <span class="ja">já está por ${esc(ja.get(m.registro))}</span>` : ''}</span></span>
+      </label>`).join('') || `<p class="muted small" style="padding:10px 0">${admGrupos.busca
+        ? 'Ninguém com essa busca.' : 'Todo mundo que está ativo já está neste grupo.'}</p>`}
+    </div>
+    <div class="gr-add-barra">
+      <span class="small muted">${n ? `${n} marcada${n > 1 ? 's' : ''}` : 'Marque quem entra.'}
+        ${n ? ` · <button class="gr-limpa" onclick="admGrupos.marcados.clear(); admRedesenharAdd()">limpar</button>` : ''}</span>
+      <button class="btn solid mini" id="gr-add-btn" ${n ? '' : 'disabled'} onclick="admPorNoGrupo()">
+        ${ic('plus')} ${n ? `Pôr ${n} pessoa${n > 1 ? 's' : ''}` : 'Pôr no grupo'}</button>
+    </div>`;
+}
+function admRedesenharAdd(){
+  const g = admGrupo(admGrupos.sel), box = $('#gr-add'); if (!g || !box) return;
+  const foco = document.activeElement?.id === 'gr-busca';
+  const pos = foco ? document.activeElement.selectionStart : null;
+  box.innerHTML = admAddHTML(g);
+  if (foco){ const i = $('#gr-busca'); i.focus(); i.setSelectionRange(pos, pos); }
+}
+let _admBuscaT = null;
+function admBuscarCandidatos(v){
+  admGrupos.busca = v;
+  clearTimeout(_admBuscaT); _admBuscaT = setTimeout(admRedesenharAdd, 120);
+}
+function admMarcar(reg, sim){
+  sim ? admGrupos.marcados.add(reg) : admGrupos.marcados.delete(reg);
+  const g = admGrupo(admGrupos.sel), barra = document.querySelector('#gr-add .gr-add-barra');
+  if (!g || !barra) return;
+  /* só a barra muda: redesenhar a lista tiraria a rolagem do lugar */
+  const tmp = document.createElement('div'); tmp.innerHTML = admAddHTML(g);
+  barra.replaceWith(tmp.querySelector('.gr-add-barra'));
+}
+function admMarcarDoGrupo(id){
+  const g = admGrupo(admGrupos.sel), outro = admGrupo(Number(id)); if (!g || !outro) return;
+  const vem = admPessoasDo(outro).map(p => p.m).filter(m => !(m.grupos || []).includes(g.nome));
+  vem.forEach(m => admGrupos.marcados.add(m.registro));
+  admGrupos.busca = '';
+  admRedesenharAdd();
+  toast(vem.length ? `${vem.length} pessoa${vem.length > 1 ? 's' : ''} de ${outro.nome} marcada${vem.length > 1 ? 's' : ''}.`
+                   : `Todo mundo de ${outro.nome} já está em ${g.nome}.`);
+}
+
+async function admPorNoGrupo(){
+  const g = admGrupo(admGrupos.sel); if (!g || !admGrupos.marcados.size) return;
+  const regs = [...admGrupos.marcados];
+  const b = $('#gr-add-btn'); if (b){ b.disabled = true; b.textContent = 'Pondo…'; }
+  try{
+    const { data, error } = await sb.rpc('grupo_membros_salvar', { p: { grupo_id: g.id, adicionar: regs } });
+    if (error) throw error;
+    if (data?.status === 'sem_permissao') return toast('Seu papel não põe gente neste grupo.', true);
+    if (data?.status !== 'ok') return toast(motivoRPC(data, null, 'Não foi possível pôr no grupo.'), true);
+    admGrupos.marcados.clear(); admGrupos.busca = '';
+    await admRecarregarFichas();
+    const acima = admCaminho(g).slice(0, -1).map(x => x.nome).reverse();
+    const n = data.adicionados ?? regs.length;
+    toast(`${n} pessoa${n === 1 ? '' : 's'} em ${g.nome}` + (acima.length ? ` — e, por ele, em ${acima.join(' e ')}.` : '.'));
+    renderGrupos();
+  }catch(e){ admFalhaGrupo(e, 'Erro ao pôr no grupo'); }
+  finally{ const x = $('#gr-add-btn'); if (x && admGrupos.marcados.size){ x.disabled = false; } }
+}
+
+async function admTirarDoGrupo(reg){
+  const g = admGrupo(admGrupos.sel), m = state.membros.find(x => x.registro === reg); if (!g || !m) return;
+  const acima = admCaminho(g).slice(0, -1).map(x => x.nome);
+  if (!await confirma(`Tirar <b>${esc(m.nome)}</b> de <b>${esc(g.nome)}</b>?` + (acima.length
+      ? `<br><span class="small muted">Sai também de ${acima.map(esc).join(', ')}, a menos que esteja lá por outro grupo.</span>` : ''), 'Tirar')) return;
+  try{
+    const { data, error } = await sb.rpc('grupo_membros_salvar', { p: { grupo_id: g.id, remover: [reg] } });
+    if (error) throw error;
+    if (data?.status === 'sem_permissao') return toast('Seu papel não tira gente deste grupo.', true);
+    if (data?.status !== 'ok') return toast('Não foi possível tirar do grupo.', true);
+    await admRecarregarFichas();
+    toast(`${m.nome} saiu de ${g.nome}.`);
+    renderGrupos();
+  }catch(e){ admFalhaGrupo(e, 'Erro ao tirar do grupo'); }
+}
+
+/* Sem a v19, grupo_membros_salvar não existe: a tela diz qual migração
+   falta, em vez de "function does not exist". */
+function admFalhaGrupo(e, ctx){
+  if (/grupo_membros_salvar|grupo_estrutura_salvar|does not exist|schema cache/i.test(e?.message || ''))
+    return toast('Falta aplicar a migração db/v19_grupos_hierarquia.sql no banco.', true);
+  falha(e, ctx);
+}
+/* O quadro, as fichas e o menu leem state.membros: depois de mexer em
+   quem está onde, a memória precisa acompanhar o banco. */
+async function admRecarregarFichas(){
+  const r = await sb.from('membros').select('registro,grupos');
+  (r.data || []).forEach(x => {
+    const m = (state.membros || []).find(y => y.registro === x.registro);
+    if (m) m.grupos = x.grupos;
+  });
+  desenharMenu();
+}
+
+/* ---------------- criar / editar ---------------- */
+/* O prefixo sugerido sai do fim do nome, sem o NRO: NRO_PROJECT_NEBULA
+   vira NEB, "Depto de Pessoal" vira PES. Só enquanto ninguém digitou. */
+function admSugerirPrefixo(nome, id){
+  const partes = String(nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .split(/[\s_\-.]+/).filter(p => p && p.toUpperCase() !== 'NRO');
+  const base = (partes.pop() || '').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
+  if (base.length < 2) return '';
+  let tenta = base, n = 1;
+  while (admGrupos.lista.some(o => o.id !== id && o.prefixo === tenta)) tenta = base + (++n);
+  return tenta;
+}
+function admPrefixoAuto(id){
+  const pf = $('#gr-pref'); if (!pf || pf.dataset.mexido) return;
+  pf.value = admSugerirPrefixo($('#gr-nome').value, id);
+}
+
+function modalGrupo(id, paiSugerido){
+  const g = admGrupos.lista.find(x => x.id === id) ||
+    { nome:'', prefixo:'', reservado:false, ativo:true, quadro:true, pai_id: paiSugerido ?? null, responsaveis:[] };
+  const temArvore = admTemArvore();
+  const proibidos = id ? admAbaixoTodos(id) : new Set();
+  const pais = admGrupos.lista.filter(x => !proibidos.has(x.id)).sort(admOrdem);
+  const rotuloPai = x => admCaminho(x).map(y => y.nome).join(' › ');
+  admGrupos.respEd = [...(g.responsaveis || [])];
+
+  abreModal(`<h3>${id ? 'Editar grupo' : paiSugerido ? 'Novo subgrupo' : 'Novo grupo'}</h3>
     <div class="form-grid">
-      <div class="fld full"><label>Nome</label>
-        <input id="gr-nome" value="${esc(g.nome)}" placeholder="Órtese"></div>
-      <div class="fld"><label>Prefixo do código</label>
-        <input id="gr-pref" value="${esc(g.prefixo)}" maxlength="6" placeholder="ORT"
-          style="text-transform:uppercase;font-family:var(--fm)"></div>
-      <div class="fld"><label>Ordem na lista</label>
+      <div class="fld full"><label for="gr-nome">Nome</label>
+        <input id="gr-nome" value="${esc(g.nome)}" placeholder="NRO_PROJECT_NEBULA"
+          ${id ? '' : `oninput="admPrefixoAuto(null)"`}></div>
+      <div class="fld"><label for="gr-pref">Prefixo do código</label>
+        <input id="gr-pref" value="${esc(g.prefixo)}" maxlength="6" placeholder="NEB"
+          oninput="this.dataset.mexido='1'" style="text-transform:uppercase;font-family:var(--fm)"></div>
+      <div class="fld"><label for="gr-ordem">Ordem na lista</label>
         <input id="gr-ordem" type="number" value="${g.ordem ?? 0}"></div>
-      <div class="fld full"><label>Quem enxerga o quadro</label>
+      ${temArvore ? `
+      <div class="fld full"><label for="gr-pai">Dentro de</label>
+        <select id="gr-pai"><option value="">— nenhum: fica na raiz —</option>
+          ${pais.map(x => `<option value="${x.id}" ${x.id === g.pai_id ? 'selected' : ''}>${esc(rotuloPai(x))}</option>`).join('')}
+        </select>
+        <span class="mailer-sub tight">Quem estiver neste grupo passa a estar também no grupo de cima.</span></div>
+      <div class="fld full"><div class="multi" style="max-height:none"><label class="check">
+        <input type="checkbox" id="gr-quadro" ${g.quadro !== false ? 'checked' : ''}
+          onchange="document.getElementById('gr-vis').hidden = !this.checked">
+        <span><b style="color:var(--ink)">Tem quadro em Atividades</b><br>desmarque para grupo guarda-chuva,
+          que existe só para dar acesso (NRO_PROJECTS, NRO_LEADERSHIP)</span></label></div></div>` : ''}
+      <div class="fld full" id="gr-vis" ${g.quadro === false ? 'hidden' : ''}><label>Quem enxerga o quadro</label>
         <div class="multi" style="max-height:none">
           <label class="check"><input type="radio" name="gr-res" value="nao"
-            ${g.reservado?'':'checked'}><span><b style="color:var(--ink)">Aberto</b><br>
+            ${g.reservado ? '' : 'checked'}><span><b style="color:var(--ink)">Aberto</b><br>
             toda a equipe lê as atividades; quem está no grupo edita</span></label>
           <label class="check"><input type="radio" name="gr-res" value="sim"
-            ${g.reservado?'checked':''}><span><b style="color:var(--ink)">Fechado</b><br>
-            só quem está no grupo, mais quem receber acesso na tela ao lado.
-            Todo mundo continua vendo que o quadro existe</span></label>
+            ${g.reservado ? 'checked' : ''}><span><b style="color:var(--ink)">Fechado</b><br>
+            só quem está no grupo, mais quem receber acesso. Todo mundo continua
+            vendo que o quadro existe</span></label>
         </div></div>
-      ${id ? `<div class="fld full"><label>Situação</label>
-        <select id="gr-ativo"><option value="sim" ${g.ativo!==false?'selected':''}>Ativo</option>
-          <option value="nao" ${g.ativo===false?'selected':''}>Inativo (some das listas)</option>
+      ${temArvore ? `
+      <div class="fld full"><label for="gr-desc">Descrição</label>
+        <textarea id="gr-desc" rows="2" placeholder="Para que serve o grupo">${esc(g.descricao || '')}</textarea></div>
+      <div class="fld full"><label>Responsáveis</label>
+        <div id="gr-resp">${admRespHTML()}</div>
+        <span class="mailer-sub tight">Além de admin e Depto de Pessoal, põem e tiram gente deste grupo e dos de baixo.</span></div>` : ''}
+      ${id ? `<div class="fld full"><label for="gr-ativo">Situação</label>
+        <select id="gr-ativo"><option value="sim" ${g.ativo !== false ? 'selected' : ''}>Ativo</option>
+          <option value="nao" ${g.ativo === false ? 'selected' : ''}>Inativo (some das listas e deixa de passar gente para cima)</option>
         </select></div>` : ''}
     </div>
     ${id ? `<p class="small muted" style="margin-top:12px;line-height:1.6">
@@ -1293,8 +1631,23 @@ function modalGrupo(id){
     <div class="acts" style="justify-content:space-between">
       ${id ? `<button class="btn ghost" onclick="modalFundirGrupo(${id})">Fundir com outro…</button>` : '<span></span>'}
       <span><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
-      <button class="btn solid" id="gr-btn" onclick="salvarGrupo(${id ?? 'null'})">Salvar</button></span></div>`);
+      <button class="btn solid" id="gr-btn" onclick="salvarGrupo(${id ?? 'null'})">Salvar</button></span></div>`, 'largo');
+  if (!id){ const n = $('#gr-nome'); if (n) n.focus(); }
 }
+function admRespHTML(){
+  const nomes = admGrupos.respEd.map(r => state.membros.find(m => m.registro === r)).filter(Boolean);
+  const fora = (state.membros || []).filter(m => ATIVOS_E_PAUSA.includes(m.status) && !admGrupos.respEd.includes(m.registro))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  return `<div class="pills-ed" style="cursor:default">
+    ${nomes.map(m => `<span class="pill-ed">${esc(m.nome)}<button type="button" aria-label="Tirar ${esc(m.nome)}"
+      onclick="admRespTirar(${m.registro})">×</button></span>`).join('')}
+    <select aria-label="Adicionar responsável" onchange="admRespPor(this.value)"
+      style="flex:1 1 160px;min-width:150px;border:none;background:none;height:28px;padding:0 4px;color:var(--muted)">
+      <option value="">${nomes.length ? 'adicionar…' : 'escolha quem…'}</option>
+      ${fora.map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</select></div>`;
+}
+function admRespPor(v){ const r = Number(v); if (r && !admGrupos.respEd.includes(r)) admGrupos.respEd.push(r); $('#gr-resp').innerHTML = admRespHTML(); }
+function admRespTirar(r){ admGrupos.respEd = admGrupos.respEd.filter(x => x !== r); $('#gr-resp').innerHTML = admRespHTML(); }
 
 async function salvarGrupo(id){
   const p = {
@@ -1307,6 +1660,12 @@ async function salvarGrupo(id){
   if (!p.nome)    return toast('O nome é obrigatório.', true);
   if (!/^[A-Z][A-Z0-9]{1,5}$/.test(p.prefixo))
     return toast('O prefixo vai de 2 a 6 caracteres, começando por letra — ORT, DP2.', true);
+  const estrutura = admTemArvore() ? {
+    pai_id: $('#gr-pai').value ? Number($('#gr-pai').value) : null,
+    quadro: $('#gr-quadro').checked,
+    descricao: $('#gr-desc').value,
+    responsaveis: admGrupos.respEd
+  } : null;
 
   const b = $('#gr-btn'); if (b){ b.disabled = true; b.textContent = 'Salvando…'; }
   try{
@@ -1316,18 +1675,23 @@ async function salvarGrupo(id){
       return toast(`Já existe outro grupo com esse ${data.campo === 'nome' ? 'nome' : 'prefixo'}.`, true);
     if (data?.status === 'invalido')  return toast('Confira o ' + data.campo + '.', true);
     if (data?.status !== 'ok')        return toast('Não foi possível salvar.', true);
+    if (estrutura){
+      const r = await sb.rpc('grupo_estrutura_salvar', { p: { id: data.id, ...estrutura } });
+      if (r.error) throw r.error;
+      if (r.data?.status === 'ciclo')
+        return toast('Esse grupo já está abaixo deste — pô-lo como pai fecharia um círculo.', true);
+      if (r.data?.status !== 'ok') return toast('O grupo foi salvo, mas a posição na árvore não.', true);
+    }
     fechaModal();
     const n = data.renomeados || 0;
     toast(n ? `Salvo. A ficha de ${n} pessoa${n>1?'s':''} foi corrigida junto.` : 'Grupo salvo.');
-    await admCarregarGrupos();
-    /* o quadro e as fichas leem esta lista; recarrega o que está em memória */
-    sb.from('membros').select('registro,grupos').then(r => {
-      (r.data||[]).forEach(x => {
-        const m = (state.membros||[]).find(y => y.registro === x.registro);
-        if (m) m.grupos = x.grupos;
-      });
-    });
-  }catch(e){ falha(e, 'Erro ao salvar'); }
+    admGrupos.pronto = false;
+    await admRecarregarFichas();
+    carregarGrupos();   /* o menu lê o catálogo da casca */
+    const pref = p.prefixo;
+    if (location.hash !== '#/admin/grupos/' + pref) location.hash = '#/admin/grupos/' + pref;
+    else await admCarregarGrupos(pref, true);
+  }catch(e){ admFalhaGrupo(e, 'Erro ao salvar'); }
   finally{ const x = $('#gr-btn'); if (x){ x.disabled = false; x.textContent = 'Salvar'; } }
 }
 
@@ -1336,6 +1700,7 @@ function modalFundirGrupo(id){
   const g = admGrupos.lista.find(x => x.id === id); if (!g) return;
   const outros = admGrupos.lista.filter(x => x.id !== id);
   if (!outros.length) return toast('Não há outro grupo para fundir.', true);
+  const filhos = admFilhos(id), pai = admGrupo(g.pai_id);
   abreModal(`<h3>Fundir grupo</h3>
     <p class="sub" style="margin-bottom:16px">As atividades de <b>${esc(g.nome)}</b> passam
       para o grupo escolhido e <b>ganham código novo</b>, com o prefixo dele. As pessoas
@@ -1345,6 +1710,9 @@ function modalFundirGrupo(id){
         <select id="fu-alvo">${outros.map(x =>
           `<option value="${x.id}">${esc(x.nome)} (${esc(x.prefixo)})</option>`).join('')}</select></div>
     </div>
+    ${filhos.length ? `<div class="aviso-box warn" style="margin-top:14px">Os subgrupos de ${esc(g.nome)}
+      (${filhos.map(f => esc(f.nome)).join(', ')}) sobem um nível e ficam
+      ${pai ? `debaixo de <b>${esc(pai.nome)}</b>` : 'na raiz'}. Depois, mova-os se precisar.</div>` : ''}
     <div class="aviso-box err" style="margin-top:14px">O código antigo de cada cartão
       fica no histórico, mas quem tiver anotado <code>${esc(g.prefixo)}-7</code> em algum
       lugar não vai mais encontrar por esse nome. Isto não se desfaz.</div>
@@ -1362,7 +1730,10 @@ async function fundirGrupo(de){
     if (data?.status !== 'ok') return toast('Não foi possível fundir.', true);
     fechaModal();
     toast(`Fundido em ${data.nome}: ${data.atividades} atividade(s) e ${data.pessoas} pessoa(s).`);
-    await admCarregarGrupos();
+    admGrupos.sel = para;
+    await admRecarregarFichas();
+    carregarGrupos();
+    await admCarregarGrupos(null, true);
   }catch(e){ falha(e, 'Erro ao fundir'); }
   finally{ const x = $('#fu-btn'); if (x){ x.disabled = false; x.textContent = 'Fundir'; } }
 }
@@ -1377,13 +1748,12 @@ const NIVEIS_GRUPO = [
 function modalAcessoGrupo(id){
   const g = admGrupos.lista.find(x => x.id === id); if (!g) return;
   admGrupos.abertoId = id;
-  const noGrupo = (state.membros || []).filter(m =>
-    (m.grupos||[]).includes(g.nome) && ['Ativo','Em pausa / avaliação'].includes(m.status));
+  const noGrupo = admPessoasDo(g);
+  const dentro = new Set(noGrupo.map(p => p.m.registro));
   const conc = admGrupos.acessos.filter(x => x.grupo_id === id);
   const nomeDe = r => (state.membros||[]).find(m => m.registro === r)?.nome || ('Registro ' + r);
   const fora = (state.membros || []).filter(m =>
-    ['Ativo','Em pausa / avaliação'].includes(m.status)
-    && !(m.grupos||[]).includes(g.nome)
+    ATIVOS_E_PAUSA.includes(m.status) && !dentro.has(m.registro)
     && !conc.some(c => c.registro === m.registro));
 
   abreModal(`<h3>Quem enxerga ${esc(g.nome)}</h3>
@@ -1391,10 +1761,10 @@ function modalAcessoGrupo(id){
       ? 'Quadro fechado: só quem está na lista abaixo abre as atividades. Os demais veem que ele existe.'
       : 'Quadro aberto: <b>toda a equipe já lê</b> este quadro. Conceder acesso aqui só serve para dar <b>edição</b> a quem não está no grupo.'}</p>
 
-    <div class="adm-grupo" style="margin-top:0">No grupo pela ficha — edição</div>
-    <div class="multi" style="max-height:170px">${noGrupo.map(m =>
+    <div class="adm-grupo" style="margin-top:0">No grupo — edição</div>
+    <div class="multi" style="max-height:170px">${noGrupo.map(({ m, via }) =>
       `<div class="acc-row" style="padding:6px 2px"><div class="nm">${esc(m.nome)}</div>
-        <div class="mt">${esc(m.cargo || '')}</div><span class="muted small">pela ficha</span></div>`
+        <div class="mt">${esc(m.cargo || '')}</div><span class="muted small">${via === g.nome ? 'pela ficha' : 'por ' + esc(via)}</span></div>`
       ).join('') || '<div class="muted small">Ninguém no grupo ainda.</div>'}</div>
 
     <div class="adm-grupo">Acesso concedido</div>
@@ -1451,7 +1821,9 @@ registrarBusca({
   buscar: (t) => can()
     ? filtrarSimples(admGrupos.lista.map(g => ({
         codigo: g.prefixo, titulo: g.nome,
-        sub: g.reservado ? 'quadro fechado' : 'quadro aberto',
-        href: '#/admin/grupos' })), t, 5)
+        sub: [admCaminho(g).slice(0, -1).map(x => x.nome).join(' › '),
+              g.quadro === false ? 'sem quadro' : g.reservado ? 'quadro fechado' : 'quadro aberto']
+             .filter(Boolean).join(' · '),
+        href: '#/admin/grupos/' + encodeURIComponent(g.prefixo) })), t, 5)
     : []
 });

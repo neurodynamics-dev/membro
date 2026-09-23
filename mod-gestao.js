@@ -20,7 +20,7 @@
 
    Depende da casca para: sb, $, esc, norm, state, can, podeQuadro, ic, ibtn,
    toast, abreModal, fechaModal, fmtD, fmtDT, hojeISO, pad3, nomeDe,
-   quemSouEu, avatarFoto, carregarLib, confirma.
+   quemSouEu, avatarFoto, carregarLib, confirma, gruposEfetivos.
    ============================================================ */
 
 /* ---------------- estado do módulo ---------------- */
@@ -136,13 +136,17 @@ function renderQuadro(){
 }
 
 function opcoesDe(campo){ return [...new Set(state.membros.map(m=>m[campo]).filter(Boolean))].sort(); }
-function todosGrupos(){ return [...new Set(state.membros.flatMap(m=>m.grupos||[]))].sort(); }
+/* o catálogo mais o que só existe escrito em alguma ficha: grupo
+   guarda-chuva (NRO_PROJECTS) não tem ninguém direto e sumiria */
+function todosGrupos(){
+  return [...new Set([...(state.grupos||[]).map(g=>g.nome), ...state.membros.flatMap(m=>m.grupos||[])])].sort();
+}
 function membrosFiltrados(){
   const f = gestao.filtros, q = norm(f.q);
   return state.membros.filter(m =>
     (!f.status || m.status === f.status) &&
     (!f.dep || m.departamento === f.dep) &&
-    (!f.grupo || (m.grupos||[]).includes(f.grupo)) &&
+    (!f.grupo || gruposEfetivos(m).has(f.grupo)) &&
     (!q || norm(m.nome).includes(q) || norm(m.email_nro).includes(q)
         || norm(m.email_pessoal).includes(q) || String(m.registro).includes(q))
   ).sort((a,b) => a.registro - b.registro);
@@ -891,7 +895,7 @@ function pageApontamento(){
 function iniciarApontamento(){
   const g = $('#ap-grupo').value;
   const itens = state.membros
-    .filter(m=>['Ativo','Em pausa / avaliação'].includes(m.status) && (m.grupos||[]).includes(g))
+    .filter(m=>['Ativo','Em pausa / avaliação'].includes(m.status) && gruposEfetivos(m).has(g))
     .filter(m=>m.registro !== state.perfil?.registro)
     .sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'))
     .map(m=>({registro:m.registro, nome:m.nome, cargo:m.cargo, status:m.status,

@@ -8,9 +8,9 @@
         data_ingresso:'2024-03-01', forma_ingresso:'Processo seletivo', bolsa:'FAPEMIG',
         atualizado_em:'2026-09-01T12:00:00Z' },
       { registro:11, nome:'Bruno Tavares', cargo:'Pesquisador', departamento:'Pesquisa',
-        status:'Ativo', grupos:['Sinais'], gestor_registro:4, email_nro:'bruno@neurodynamics.dev' },
+        status:'Ativo', grupos:['Sinais','NRO_PROJECT_NEBULA'], gestor_registro:4, email_nro:'bruno@neurodynamics.dev' },
       { registro:17, nome:'Carla Mendonça', cargo:'Desenvolvedora', departamento:'Engenharia',
-        status:'Em pausa / avaliação', grupos:['Firmware'], gestor_registro:4 },
+        status:'Em pausa / avaliação', grupos:['Firmware','NRO_MANAGERS'], gestor_registro:4 },
       { registro:23, nome:'Diego Prado', cargo:'Designer', departamento:'Comunicação',
         status:'Desligado', grupos:['Marca'], gestor_registro:4, data_desligamento:'2026-06-30' }
     ],
@@ -43,12 +43,27 @@
     ],
     /* a ordem é a mesma de grupos_visiveis, abaixo: o menu lateral lista
        os quadros da pessoa por ela, não pela ordem em que chegaram */
+    /* v19: a árvore do pedido — NRO_LEADERSHIP contém MANAGERS (e a
+       Gerência); NRO_PROJECTS contém NEBULA. Os dois guarda-chuvas não
+       têm quadro. A Ana (a pessoa logada) não está em nenhum deles, de
+       propósito: os quadros do menu dela não mudam. */
     grupos: [
-      { id:1, nome:'Órtese', prefixo:'ORT', ativo:true, cor:null, chave:null, reservado:false, ordem:4 },
-      { id:2, nome:'Sinais', prefixo:'SIN', ativo:true, cor:null, chave:null, reservado:false, ordem:3 },
+      { id:1, nome:'Órtese', prefixo:'ORT', ativo:true, cor:null, chave:null, reservado:false, ordem:4,
+        pai_id:null, quadro:true, responsaveis:[], descricao:null },
+      { id:2, nome:'Sinais', prefixo:'SIN', ativo:true, cor:null, chave:null, reservado:false, ordem:3,
+        pai_id:null, quadro:true, responsaveis:[], descricao:null },
       { id:3, nome:'Depto de Pessoal', prefixo:'DEP', ativo:true, cor:null,
-        chave:'pessoal', reservado:true, ordem:2 },
-      { id:4, nome:'Gerência', prefixo:'GER', ativo:true, cor:null, chave:null, reservado:true, ordem:1 }
+        chave:'pessoal', reservado:true, ordem:2, pai_id:null, quadro:true, responsaveis:[], descricao:null },
+      { id:4, nome:'Gerência', prefixo:'GER', ativo:true, cor:null, chave:null, reservado:true, ordem:1,
+        pai_id:5, quadro:true, responsaveis:[], descricao:null },
+      { id:5, nome:'NRO_LEADERSHIP', prefixo:'LEA', ativo:true, cor:null, chave:null, reservado:true, ordem:5,
+        pai_id:null, quadro:false, responsaveis:[], descricao:'A liderança da equipe: gerência e supervisão.' },
+      { id:6, nome:'NRO_MANAGERS', prefixo:'MAN', ativo:true, cor:null, chave:null, reservado:false, ordem:6,
+        pai_id:5, quadro:true, responsaveis:[], descricao:null },
+      { id:7, nome:'NRO_PROJECTS', prefixo:'PRJ', ativo:true, cor:null, chave:'projetos', reservado:false, ordem:7,
+        pai_id:null, quadro:false, responsaveis:[], descricao:'Um subgrupo por projeto.' },
+      { id:8, nome:'NRO_PROJECT_NEBULA', prefixo:'NEB', ativo:true, cor:null, chave:null, reservado:false, ordem:8,
+        pai_id:7, quadro:true, responsaveis:[11], descricao:null }
     ],
     notificacao_preferencias: [{ registro:4, email_modo:'resumo' }],
     /* a v17 trocou a leitura de "grupos" por "grupos_visiveis", que traz o
@@ -240,8 +255,134 @@
       { id:'di3', tipo:'avaliador', ordem:10, edicao_id:'ed1', slot_id:'s1', ativo:true,
         dados:{ registro:11, nome:'Bruno Tavares', cargo:'Pesquisador', curso:'', foto_url:'', fala:'' } }
     ],
-    portal_ouvidoria: [], portal_agendas: []
+    portal_ouvidoria: [], portal_agendas: [],
+
+    /* v20: projetos e controle de arquivos. O NEBULA é a equipe do grupo
+       NRO_PROJECT_NEBULA (Bruno, supervisor). O rol tem o que a tela
+       precisa mostrar: templates (PUB-002, PUB-003, PRO-001, PRO-003),
+       um procedimento com a Rev. C pendente e um checklist filho dele,
+       um registro que usa uma revisão antiga do template, e um PN do
+       projeto ainda em rascunho. */
+    projetos: [
+      { id:'pj1', codigo:'NEBULA', nome:'Nebula', descricao:'Órtese para membro superior, com estimulação elétrica.',
+        grupo_id:8, supervisor:11, logo_semente:'nebula', status:'ativo', criado_em:'2026-08-01T12:00:00Z' }
+    ],
+    doc_emissores: [
+      { prefixo:'PUB', nome:'Geral', grupo_id:null, ordem:0 },
+      { prefixo:'PES', nome:'Departamento de Pessoal', grupo_id:3, ordem:1 },
+      { prefixo:'PRO', nome:'Departamento de Pesquisa e Desenvolvimento', grupo_id:null, ordem:2 }
+    ],
+    doc_series: [
+      { id:'s-pub2', prefixo:'PUB', sn:2, titulo:'TEMPLATE DE DOCUMENTOS E REGISTROS', tipo:'documento', subtipo:'template', classe:'publico', multiplo:false, grupo_revisor:null, grupos_leitura:[] },
+      { id:'s-pub3', prefixo:'PUB', sn:3, titulo:'ATA DE REUNIÃO', tipo:'registro', subtipo:'ata', classe:'publico', multiplo:true, grupo_revisor:null, grupos_leitura:[] },
+      { id:'s-pes4', prefixo:'PES', sn:4, titulo:'MANUAL DO MEMBRO', tipo:'documento', subtipo:'manual', classe:'publico', multiplo:false, grupo_revisor:null, grupos_leitura:[],
+        descricao:'Na NRO-PUB-001 estava como INEXISTENTE: previsto, ainda sem arquivo.' },
+      { id:'s-pes5', prefixo:'PES', sn:5, titulo:'QUADRO DE PESSOAL', tipo:'registro', subtipo:'planilha', classe:'confidencial', multiplo:true, grupo_revisor:6, grupos_leitura:[3] },
+      { id:'s-pes7', prefixo:'PES', sn:7, titulo:'PROCEDIMENTO DE DESLIGAMENTO', tipo:'documento', subtipo:'procedimento', classe:'publico', multiplo:false, grupo_revisor:null, grupos_leitura:[] },
+      { id:'s-pes14', prefixo:'PES', sn:14, titulo:'CHECKLIST DE OFFBOARDING', tipo:'documento', subtipo:'checklist', classe:'publico', multiplo:false, grupo_revisor:null, grupos_leitura:[] },
+      { id:'s-pro1', prefixo:'PRO', sn:1, titulo:'TERMO DE ABERTURA DE PROJETO', tipo:'documento', subtipo:'relatorio', classe:'controlado', multiplo:true, grupo_revisor:null, grupos_leitura:[] },
+      { id:'s-pro3', prefixo:'PRO', sn:3, titulo:'RELATÓRIO DE EXECUÇÃO DE TESTES', tipo:'registro', subtipo:'relatorio', classe:'controlado', multiplo:true, grupo_revisor:null, grupos_leitura:[] },
+      { id:'s-pro4', prefixo:'PRO', sn:4, titulo:'(USRS) USER AND SYSTEM REQUIREMENTS SPECIFICATION', tipo:'registro', subtipo:'planilha', classe:'controlado', multiplo:true, grupo_revisor:null, grupos_leitura:[] }
+    ],
+    doc_rol: [
+      { id:'a-pub2', codigo:'NRO-PUB-002', pn:null, serie_id:'s-pub2', prefixo:'PUB', sn:2, titulo:'TEMPLATE DE DOCUMENTOS E REGISTROS', serie_titulo:'TEMPLATE DE DOCUMENTOS E REGISTROS', complemento:null,
+        tipo:'documento', subtipo:'template', classe:'publico', multiplo:false, natureza:'template', status:'ativo', rev_vigente:'A', rev_pendente:null,
+        template_id:null, template_codigo:null, template_rev:null, template_rev_atual:null, projeto_id:null, projeto_codigo:null, projeto_nome:null,
+        autor:null, autor_nome:'MMARCONDES', criado_em:'2026-04-07T00:00:00Z', alterado_em:'2026-04-07T00:00:00Z', alterado_nome:'MMARCONDES',
+        grupo_revisor:null, grupos_leitura:[], n_pns:0 },
+      { id:'a-pub3', codigo:'NRO-PUB-003', pn:null, serie_id:'s-pub3', prefixo:'PUB', sn:3, titulo:'ATA DE REUNIÃO', serie_titulo:'ATA DE REUNIÃO', complemento:null,
+        tipo:'registro', subtipo:'ata', classe:'publico', multiplo:true, natureza:'template', status:'ativo', rev_vigente:'A', rev_pendente:null,
+        template_id:'a-pub2', template_codigo:'NRO-PUB-002', template_rev:'A', template_rev_atual:'A', projeto_id:null,
+        autor:null, autor_nome:'MMARCONDES', criado_em:'2026-04-13T00:00:00Z', alterado_em:'2026-04-13T00:00:00Z', alterado_nome:'MMARCONDES',
+        grupo_revisor:null, grupos_leitura:[], n_pns:1 },
+      { id:'a-pub3-1', codigo:'NRO-PUB-003-1', pn:1, serie_id:'s-pub3', prefixo:'PUB', sn:3, titulo:'ATA DE REUNIÃO — reunião geral de setembro', serie_titulo:'ATA DE REUNIÃO', complemento:'reunião geral de setembro',
+        tipo:'registro', subtipo:'ata', classe:'publico', multiplo:true, natureza:'registro', status:'ativo', rev_vigente:null, rev_pendente:null,
+        template_id:'a-pub3', template_codigo:'NRO-PUB-003', template_rev:'A', template_rev_atual:'A', projeto_id:null,
+        autor:17, autor_nome:'Carla Mendonça', criado_em:'2026-09-08T12:00:00Z', alterado_em:'2026-09-09T12:00:00Z', alterado_nome:'Ana Figueiredo',
+        grupo_revisor:null, grupos_leitura:[], n_pns:0 },
+      { id:'a-pes4', codigo:'NRO-PES-004', pn:null, serie_id:'s-pes4', prefixo:'PES', sn:4, titulo:'MANUAL DO MEMBRO', serie_titulo:'MANUAL DO MEMBRO', complemento:null,
+        tipo:'documento', subtipo:'manual', classe:'publico', multiplo:false, natureza:'documento', status:'rascunho', rev_vigente:null, rev_pendente:null,
+        template_id:null, template_rev:null, projeto_id:null, autor:null, autor_nome:null, criado_em:'2026-03-01T00:00:00Z',
+        alterado_em:'2026-03-01T00:00:00Z', alterado_nome:'NRO-PUB-001', grupo_revisor:null, grupos_leitura:[], n_pns:0 },
+      { id:'a-pes5', codigo:'NRO-PES-005', pn:null, serie_id:'s-pes5', prefixo:'PES', sn:5, titulo:'QUADRO DE PESSOAL', serie_titulo:'QUADRO DE PESSOAL', complemento:null,
+        tipo:'registro', subtipo:'planilha', classe:'confidencial', multiplo:true, natureza:'template', status:'ativo', rev_vigente:'A', rev_pendente:null,
+        template_id:null, template_rev:null, projeto_id:null, autor:null, autor_nome:'MMARCONDES', criado_em:'2026-03-07T00:00:00Z',
+        alterado_em:'2026-03-28T00:00:00Z', alterado_nome:'ANA ALICE GOMES', grupo_revisor:6, grupos_leitura:[3], n_pns:0 },
+      { id:'a-pes7', codigo:'NRO-PES-007', pn:null, serie_id:'s-pes7', prefixo:'PES', sn:7, titulo:'PROCEDIMENTO DE DESLIGAMENTO', serie_titulo:'PROCEDIMENTO DE DESLIGAMENTO', complemento:null,
+        tipo:'documento', subtipo:'procedimento', classe:'publico', multiplo:false, natureza:'documento', status:'ativo', rev_vigente:'B', rev_pendente:'C',
+        template_id:'a-pub2', template_codigo:'NRO-PUB-002', template_rev:'A', template_rev_atual:'A', projeto_id:null,
+        autor:4, autor_nome:'Ana Figueiredo', criado_em:'2026-03-08T00:00:00Z', alterado_em:'2026-09-20T10:00:00Z', alterado_nome:'Bruno Tavares',
+        grupo_revisor:null, grupos_leitura:[], n_pns:0 },
+      { id:'a-pes14', codigo:'NRO-PES-014', pn:null, serie_id:'s-pes14', prefixo:'PES', sn:14, titulo:'CHECKLIST DE OFFBOARDING', serie_titulo:'CHECKLIST DE OFFBOARDING', complemento:null,
+        tipo:'documento', subtipo:'checklist', classe:'publico', multiplo:false, natureza:'documento', status:'ativo', rev_vigente:'A', rev_pendente:null,
+        template_id:null, template_rev:null, projeto_id:null, autor:4, autor_nome:'Ana Figueiredo', criado_em:'2026-04-06T00:00:00Z',
+        alterado_em:'2026-04-06T00:00:00Z', alterado_nome:'Ana Figueiredo', grupo_revisor:null, grupos_leitura:[], n_pns:0 },
+      { id:'a-pro1', codigo:'NRO-PRO-001', pn:null, serie_id:'s-pro1', prefixo:'PRO', sn:1, titulo:'TERMO DE ABERTURA DE PROJETO', serie_titulo:'TERMO DE ABERTURA DE PROJETO', complemento:null,
+        tipo:'documento', subtipo:'relatorio', classe:'controlado', multiplo:true, natureza:'template', status:'ativo', rev_vigente:'A', rev_pendente:null,
+        template_id:null, template_rev:null, projeto_id:null, autor:null, autor_nome:'MMARCONDES', criado_em:'2026-04-01T00:00:00Z',
+        alterado_em:'2026-04-01T00:00:00Z', alterado_nome:'MMARCONDES', grupo_revisor:null, grupos_leitura:[], n_pns:1 },
+      { id:'a-pro1-1', codigo:'NRO-PRO-001-1', pn:1, serie_id:'s-pro1', prefixo:'PRO', sn:1, titulo:'TERMO DE ABERTURA DE PROJETO', serie_titulo:'TERMO DE ABERTURA DE PROJETO', complemento:null,
+        tipo:'documento', subtipo:'relatorio', classe:'controlado', multiplo:true, natureza:'documento', status:'rascunho', rev_vigente:null, rev_pendente:null,
+        template_id:'a-pro1', template_codigo:'NRO-PRO-001', template_rev:'A', template_rev_atual:'A', projeto_id:'pj1', projeto_codigo:'NEBULA', projeto_nome:'Nebula',
+        autor:11, autor_nome:'Bruno Tavares', criado_em:'2026-09-02T12:00:00Z', alterado_em:'2026-09-02T12:00:00Z', alterado_nome:'Bruno Tavares',
+        grupo_revisor:null, grupos_leitura:[], n_pns:0 },
+      { id:'a-pro3', codigo:'NRO-PRO-003', pn:null, serie_id:'s-pro3', prefixo:'PRO', sn:3, titulo:'RELATÓRIO DE EXECUÇÃO DE TESTES', serie_titulo:'RELATÓRIO DE EXECUÇÃO DE TESTES', complemento:null,
+        tipo:'registro', subtipo:'relatorio', classe:'controlado', multiplo:true, natureza:'template', status:'ativo', rev_vigente:'B', rev_pendente:null,
+        template_id:null, template_rev:null, projeto_id:null, autor:null, autor_nome:'MMARCONDES', criado_em:'2026-04-13T00:00:00Z',
+        alterado_em:'2026-09-01T00:00:00Z', alterado_nome:'Ana Figueiredo', grupo_revisor:null, grupos_leitura:[], n_pns:1 },
+      { id:'a-pro3-1', codigo:'NRO-PRO-003-1', pn:1, serie_id:'s-pro3', prefixo:'PRO', sn:3, titulo:'RELATÓRIO DE EXECUÇÃO DE TESTES — bancada 2', serie_titulo:'RELATÓRIO DE EXECUÇÃO DE TESTES', complemento:'bancada 2',
+        tipo:'registro', subtipo:'relatorio', classe:'controlado', multiplo:true, natureza:'registro', status:'ativo', rev_vigente:null, rev_pendente:null,
+        template_id:'a-pro3', template_codigo:'NRO-PRO-003', template_rev:'A', template_rev_atual:'B', projeto_id:'pj1', projeto_codigo:'NEBULA', projeto_nome:'Nebula',
+        autor:11, autor_nome:'Bruno Tavares', criado_em:'2026-08-20T12:00:00Z', alterado_em:'2026-08-22T12:00:00Z', alterado_nome:'Ana Figueiredo',
+        grupo_revisor:null, grupos_leitura:[], n_pns:0 },
+      { id:'a-pro4', codigo:'NRO-PRO-004', pn:null, serie_id:'s-pro4', prefixo:'PRO', sn:4, titulo:'(USRS) USER AND SYSTEM REQUIREMENTS SPECIFICATION', serie_titulo:'(USRS) USER AND SYSTEM REQUIREMENTS SPECIFICATION', complemento:null,
+        tipo:'registro', subtipo:'planilha', classe:'controlado', multiplo:true, natureza:'template', status:'ativo', rev_vigente:'A', rev_pendente:null,
+        template_id:null, template_rev:null, projeto_id:null, autor:null, autor_nome:'MMARCONDES', criado_em:'2026-06-04T00:00:00Z',
+        alterado_em:'2026-06-04T00:00:00Z', alterado_nome:'MMARCONDES', grupo_revisor:null, grupos_leitura:[], n_pns:0 }
+    ],
+    doc_padrao_projeto: [
+      { serie_id:'s-pro1', ordem:1, quantidade:'um' },
+      { serie_id:'s-pro4', ordem:2, quantidade:'um' },
+      { serie_id:'s-pro3', ordem:3, quantidade:'varios' }
+    ],
+    doc_revisoes: [
+      { id:'r-pub2-a', arquivo_id:'a-pub2', rev:'A', estado:'aprovada', caminho:null, enviado_nome:'MMARCONDES', enviado_em:'2026-04-07T00:00:00Z',
+        revisor_nome:null, revisado_em:'2026-04-07T00:00:00Z', mudancas:'Versão inicial, registrada na NRO-PUB-001.', relacionados:[], importada:true },
+      { id:'r-pub3-a', arquivo_id:'a-pub3', rev:'A', estado:'aprovada', caminho:'a-pub3/u1/ata.docx', nome_original:'ata.docx', enviado_nome:'MMARCONDES',
+        enviado_em:'2026-04-13T00:00:00Z', revisor_nome:'Ana Figueiredo', revisado_em:'2026-04-14T00:00:00Z', relacionados:[], importada:false },
+      { id:'r-pub31', arquivo_id:'a-pub3-1', rev:null, estado:'aprovada', caminho:'a-pub3-1/u2/ata-setembro.pdf', nome_original:'ata-setembro.pdf',
+        enviado_por:17, enviado_nome:'Carla Mendonça', enviado_em:'2026-09-08T13:00:00Z', revisor_nome:'Ana Figueiredo', revisado_em:'2026-09-09T12:00:00Z',
+        template_rev:'A', relacionados:[] },
+      { id:'r-pes7-a', arquivo_id:'a-pes7', rev:'A', estado:'substituida', caminho:'a-pes7/u3/desligamento.docx', nome_original:'desligamento.docx',
+        enviado_por:4, enviado_nome:'Ana Figueiredo', enviado_em:'2026-03-08T00:00:00Z', revisor_nome:'ANA ALICE GOMES', revisado_em:'2026-03-28T00:00:00Z',
+        mudancas:'Versão inicial.', relacionados:[], template_rev:'A' },
+      { id:'r-pes7-b', arquivo_id:'a-pes7', rev:'B', estado:'aprovada', caminho:'a-pes7/u4/desligamento-b.docx', nome_original:'desligamento-b.docx',
+        enviado_por:4, enviado_nome:'Ana Figueiredo', enviado_em:'2026-06-10T00:00:00Z', revisor_nome:'Carla Mendonça', revisado_em:'2026-06-12T00:00:00Z',
+        mudancas:'Inclui a devolução de crachá.', relacionados:[{ arquivo_id:'a-pes14', codigo:'NRO-PES-014', decisao:'revisado' }], template_rev:'A' },
+      { id:'r-pes7-c', arquivo_id:'a-pes7', rev:'C', estado:'pendente', caminho:'a-pes7/u5/desligamento-c.docx', nome_original:'desligamento-c.docx',
+        enviado_por:11, enviado_nome:'Bruno Tavares', enviado_em:'2026-09-20T10:00:00Z', mudancas:'Prazos da etapa 3 em dias úteis.',
+        relacionados:[{ arquivo_id:'a-pes14', codigo:'NRO-PES-014', decisao:'sem_mudanca' }], template_rev:'A' },
+      { id:'r-pes14-a', arquivo_id:'a-pes14', rev:'A', estado:'aprovada', caminho:'a-pes14/u6/checklist.xlsx', nome_original:'checklist.xlsx',
+        enviado_por:4, enviado_nome:'Ana Figueiredo', enviado_em:'2026-04-06T00:00:00Z', revisor_nome:'Carla Mendonça', revisado_em:'2026-04-06T00:00:00Z', relacionados:[] },
+      { id:'r-pro1-a', arquivo_id:'a-pro1', rev:'A', estado:'aprovada', caminho:'a-pro1/u7/tap.docx', nome_original:'tap.docx', enviado_nome:'MMARCONDES',
+        enviado_em:'2026-04-01T00:00:00Z', revisor_nome:'Ana Figueiredo', revisado_em:'2026-04-02T00:00:00Z', relacionados:[] },
+      { id:'r-pro3-a', arquivo_id:'a-pro3', rev:'A', estado:'substituida', caminho:'a-pro3/u8/rel.docx', nome_original:'rel.docx', enviado_nome:'MMARCONDES',
+        enviado_em:'2026-04-13T00:00:00Z', revisor_nome:'Ana Figueiredo', revisado_em:'2026-04-14T00:00:00Z', relacionados:[] },
+      { id:'r-pro3-b', arquivo_id:'a-pro3', rev:'B', estado:'aprovada', caminho:'a-pro3/u9/rel-b.docx', nome_original:'rel-b.docx', enviado_nome:'Ana Figueiredo',
+        enviado_em:'2026-08-30T00:00:00Z', revisor_nome:'Carla Mendonça', revisado_em:'2026-09-01T00:00:00Z', mudancas:'Campo de umidade da sala.', relacionados:[] },
+      { id:'r-pro31', arquivo_id:'a-pro3-1', rev:null, estado:'aprovada', caminho:'a-pro3-1/u10/bancada2.pdf', nome_original:'bancada2.pdf',
+        enviado_por:11, enviado_nome:'Bruno Tavares', enviado_em:'2026-08-20T13:00:00Z', revisor_nome:'Ana Figueiredo', revisado_em:'2026-08-22T12:00:00Z',
+        template_rev:'A', relacionados:[] }
+    ],
+    doc_eventos: [
+      { id:1, arquivo_id:'a-pub2', tipo:'importou', detalhe:'NRO-PUB-001', nome:'NRO-PUB-001', criado_em:'2026-04-07T00:00:00Z' },
+      { id:2, arquivo_id:'a-pes7', tipo:'relacionou', detalhe:'filho NRO-PES-014', nome:'Ana Figueiredo', criado_em:'2026-06-09T00:00:00Z' }
+    ],
+    doc_relacoes: [{ pai_id:'a-pes7', filho_id:'a-pes14' }]
   };
+  /* doc_arquivos é o que a lista de projetos lê para o progresso: sai do rol */
+  DADOS.doc_arquivos = DADOS.doc_rol.map(r => ({ id:r.id, projeto_id:r.projeto_id || null, serie_id:r.serie_id,
+    status:r.status, rev_pendente:r.rev_pendente }));
 
   function builder(tabela){
     let linhas = (DADOS[tabela] || []).map(r => ({ ...r }));
@@ -292,8 +433,43 @@
             return { data: { status:'ok', id:'c9' }, error: null };
           }
           if (nome === 'grupo_salvar'){
-            window.__grupoSalvo = args?.p;
-            return { data: { status:'ok', id:args?.p?.id || 9, renomeados:2 }, error:null };
+            const p = args?.p || {};
+            window.__grupoSalvo = p;
+            /* grava de verdade, para a tela recarregada mostrar o grupo */
+            if (!p.id){
+              const id = Math.max(...DADOS.grupos.map(g => g.id)) + 1;
+              DADOS.grupos.push({ id, nome:p.nome, prefixo:p.prefixo, ativo:true, cor:null, chave:null,
+                reservado:!!p.reservado, ordem:p.ordem || 0, pai_id:null, quadro:true, responsaveis:[], descricao:null });
+              return { data: { status:'ok', id, renomeados:0 }, error:null };
+            }
+            const g = DADOS.grupos.find(x => x.id === p.id);
+            if (g) Object.assign(g, { nome:p.nome, prefixo:p.prefixo, reservado:!!p.reservado, ordem:p.ordem,
+                                      ...(p.ativo != null ? { ativo:p.ativo } : {}) });
+            return { data: { status:'ok', id:p.id, renomeados:2 }, error:null };
+          }
+          if (nome === 'grupo_estrutura_salvar'){
+            const p = args?.p || {};
+            (window.__estruturas ||= []).push(p);
+            const g = DADOS.grupos.find(x => x.id === p.id);
+            if (!g) return { data:{ status:'nao_encontrado' }, error:null };
+            /* o mesmo teste de ciclo do banco: o pai não pode estar abaixo */
+            const abaixo = new Set([g.id]);
+            for (let novo = true; novo; ){ novo = false;
+              DADOS.grupos.forEach(x => { if (abaixo.has(x.pai_id) && !abaixo.has(x.id)){ abaixo.add(x.id); novo = true; } }); }
+            if ('pai_id' in p && p.pai_id != null && abaixo.has(p.pai_id)) return { data:{ status:'ciclo' }, error:null };
+            ['pai_id','quadro','descricao','responsaveis'].forEach(k => { if (k in p) g[k] = p[k]; });
+            return { data:{ status:'ok', id:g.id }, error:null };
+          }
+          if (nome === 'grupo_membros_salvar'){
+            const p = args?.p || {};
+            (window.__membrosSalvos ||= []).push(p);
+            const g = DADOS.grupos.find(x => x.id === p.grupo_id);
+            let adicionados = 0, removidos = 0;
+            (p.adicionar || []).forEach(r => { const m = DADOS.membros.find(x => x.registro === r);
+              if (m && !(m.grupos || []).includes(g.nome)){ m.grupos = [...(m.grupos || []), g.nome]; adicionados++; } });
+            (p.remover || []).forEach(r => { const m = DADOS.membros.find(x => x.registro === r);
+              if (m && (m.grupos || []).includes(g.nome)){ m.grupos = m.grupos.filter(n => n !== g.nome); removidos++; } });
+            return { data:{ status:'ok', adicionados, removidos }, error:null };
           }
           if (nome === 'grupo_acesso_salvar'){
             window.__acessoSalvo = args?.p;
@@ -325,9 +501,93 @@
             window.__preferencia = args?.p;
             return { data: { status:'ok', email_modo:args?.p?.email_modo }, error:null };
           }
+          /* ---- v20: arquivos e projetos ---- */
+          const rol = id => DADOS.doc_rol.find(r => r.id === id);
+          const eAdmin = () => DADOS.perfis[0].papel === 'admin';
+          if (nome === 'doc_pode_ler'){ const r = rol(args?.p_arquivo); return { data: eAdmin() || r?.classe === 'publico', error:null }; }
+          if (nome === 'doc_pode_editar') return { data: eAdmin(), error:null };
+          if (nome === 'doc_pode_revisar'){
+            const v = DADOS.doc_revisoes.find(x => x.id === args?.p_revisao);
+            return { data: eAdmin() && v?.estado === 'pendente' && v?.enviado_por !== 4, error:null };
+          }
+          const grava = (k, p) => { (window.__rpcs ||= []).push({ nome:k, p }); };
+          if (nome === 'doc_revisao_enviar'){
+            const p = args?.p || {}; grava(nome, p);
+            if (window.__teste?.envio) return { data:{ status: window.__teste.envio, faltam:['NRO-PES-014'] }, error:null };
+            const r = rol(p.arquivo_id);
+            const rev = r.natureza === 'registro' ? null : (r.rev_vigente ? String.fromCharCode(r.rev_vigente.charCodeAt(0) + 1) : 'A');
+            DADOS.doc_revisoes.push({ id:'r-novo-' + DADOS.doc_revisoes.length, arquivo_id:r.id, rev, estado:'pendente', caminho:p.caminho,
+              nome_original:p.nome_original, enviado_por:4, enviado_nome:'Ana Figueiredo', enviado_em:new Date().toISOString(),
+              mudancas:p.mudancas, relacionados:(p.relacionados || []).map(x => ({ ...x, codigo: rol(x.arquivo_id)?.codigo })) });
+            r.rev_pendente = rev || '—'; if (r.status === 'rascunho') r.status = 'em_revisao';
+            return { data:{ status:'ok', id:'r-novo', rev }, error:null };
+          }
+          if (nome === 'doc_revisao_decidir'){
+            const p = args?.p || {}; grava(nome, p);
+            const v = DADOS.doc_revisoes.find(x => x.id === p.revisao_id), r = rol(v.arquivo_id);
+            if (p.decisao === 'aprovar'){
+              DADOS.doc_revisoes.filter(x => x.arquivo_id === r.id && x.estado === 'aprovada').forEach(x => x.estado = 'substituida');
+              Object.assign(v, { estado:'aprovada', revisor_nome:'Ana Figueiredo', revisado_em:new Date().toISOString(), parecer:p.parecer });
+              Object.assign(r, { status:'ativo', rev_vigente: v.rev || r.rev_vigente, rev_pendente:null });
+            } else {
+              Object.assign(v, { estado:'devolvida', revisor_nome:'Ana Figueiredo', revisado_em:new Date().toISOString(), parecer:p.parecer });
+              Object.assign(r, { rev_pendente:null, status: r.rev_vigente ? 'ativo' : 'rascunho' });
+            }
+            return { data:{ status:'ok', decisao:p.decisao }, error:null };
+          }
+          if (nome === 'doc_arquivo_criar'){
+            const p = args?.p || {}; grava(nome, p);
+            const cab = DADOS.doc_rol.find(r => r.serie_id === p.serie_id && r.pn == null);
+            const pn = Math.max(0, ...DADOS.doc_rol.filter(r => r.serie_id === p.serie_id && r.pn).map(r => r.pn)) + 1;
+            const pj = DADOS.projetos.find(x => x.id === p.projeto_id);
+            const codigo = cab.codigo + '-' + pn;
+            DADOS.doc_rol.push({ ...cab, id:'a-novo-' + pn, codigo, pn, natureza: cab.tipo, status:'rascunho', rev_vigente:null, rev_pendente:null,
+              template_id:cab.id, template_codigo:cab.codigo, template_rev:cab.rev_vigente, template_rev_atual:cab.rev_vigente,
+              projeto_id:p.projeto_id || null, projeto_codigo:pj?.codigo || null, projeto_nome:pj?.nome || null,
+              autor:4, autor_nome:'Ana Figueiredo', criado_em:new Date().toISOString(), alterado_em:new Date().toISOString(),
+              alterado_nome:'Ana Figueiredo', n_pns:0, titulo: cab.titulo + (p.titulo ? ' — ' + p.titulo : ''), complemento:p.titulo || null });
+            cab.n_pns = (cab.n_pns || 0) + 1;
+            return { data:{ status:'ok', id:'a-novo-' + pn, codigo }, error:null };
+          }
+          if (['doc_revisao_cancelar','doc_arquivo_obsoletar','doc_relacao_salvar','doc_arquivo_editar',
+               'doc_revisao_anexar','grupo_chave_definir'].includes(nome)){
+            grava(nome, args?.p); return { data:{ status:'ok' }, error:null };
+          }
+          if (nome === 'doc_serie_salvar'){
+            const p = args?.p || {}; grava(nome, p);
+            return { data:{ status:'ok', id:p.id || 's-nova', codigo: p.id ? 'NRO-PES-007' : `NRO-${p.prefixo}-${String(p.sn || 20).padStart(3,'0')}` }, error:null };
+          }
+          if (nome === 'projeto_salvar'){
+            const p = args?.p || {}; grava(nome, p);
+            if (!p.id){
+              const gid = Math.max(...DADOS.grupos.map(g => g.id)) + 1;
+              DADOS.grupos.push({ id:gid, nome:'NRO_PROJECT_' + p.codigo, prefixo:p.codigo.slice(0,3), ativo:true, cor:null, chave:null,
+                reservado:false, ordem:0, pai_id:7, quadro:true, responsaveis: p.supervisor ? [p.supervisor] : [], descricao:null });
+              [...new Set([...(p.equipe || []), p.supervisor].filter(Boolean))].forEach(r => {
+                const m = DADOS.membros.find(x => x.registro === r); if (m) m.grupos = [...(m.grupos || []), 'NRO_PROJECT_' + p.codigo]; });
+              DADOS.projetos.push({ id:'pj-' + p.codigo, codigo:p.codigo, nome:p.nome, descricao:p.descricao, grupo_id:gid,
+                supervisor:p.supervisor, logo_semente:p.logo_semente || p.codigo.toLowerCase(), status:'ativo', criado_em:new Date().toISOString() });
+              return { data:{ status:'ok', id:'pj-' + p.codigo, codigo:p.codigo, grupo_id:gid }, error:null };
+            }
+            const pj = DADOS.projetos.find(x => x.id === p.id);
+            ['nome','descricao','status','logo_semente','supervisor'].forEach(k => { if (k in p) pj[k] = p[k]; });
+            return { data:{ status:'ok', id:pj.id, codigo:pj.codigo, grupo_id:pj.grupo_id }, error:null };
+          }
           if (nome === 'agenda_itens' || nome === 'agenda_manter_series') return { data: [], error: null };
           if (nome === 'portal_agenda_ocupacao') return { data: [], error: null };
           return { data: { status:'ok', codigo:'ORT-9', id:'novo' }, error: null };
+        },
+        /* o Storage: sobe, assina link, apaga — e anota tudo */
+        storage: {
+          from(bucket){
+            return {
+              upload: async (caminho, arquivo, op) => { (window.__uploads ||= []).push({ bucket, caminho, nome: arquivo?.name, op });
+                return { data:{ path: caminho }, error:null }; },
+              createSignedUrl: async (caminho, exp, op) => { (window.__baixados ||= []).push({ bucket, caminho, op });
+                return { data:{ signedUrl:'javascript:void(0)' }, error:null }; },
+              remove: async (caminhos) => { (window.__removidos ||= []).push(...caminhos); return { data:[], error:null }; }
+            };
+          }
         },
         functions: {
           invoke: async () => {

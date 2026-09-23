@@ -3,10 +3,18 @@
 Nenhum depende de rede, de conta ou do banco de produção: o Supabase é falso
 (`stub-supabase.js`) e o Chromium já vem instalado no ambiente.
 
-O stub não grava nada, mas anota: cada `insert`, `update`, `upsert` e
+O stub não grava as tabelas, mas anota: cada `insert`, `update`, `upsert` e
 `delete` entra em `window.__escritas` como `{ tabela, op, dados }`. É por
 ali que um teste confere o que uma ação mandaria ao banco — o
 `okrs-e-selecao.mjs` usa isso em quase todas as asserções.
+
+As funções do banco que a tela usa para grupos, projetos e arquivos
+(`grupo_membros_salvar`, `projeto_salvar`, `doc_revisao_enviar`,
+`doc_revisao_decidir`…) fazem mais: mudam os dados do stub como o banco
+mudaria, para a tela voltar com o resultado. Cada chamada entra em
+`window.__rpcs` como `{ nome, p }`, e o Storage anota em `window.__uploads`,
+`window.__baixados` e `window.__removidos`. `window.__teste.envio` faz o
+`doc_revisao_enviar` recusar com o status que se quiser.
 
 Da primeira vez, instale o Playwright (só o pacote — o Chromium já está no
 ambiente, e é para ele que os testes apontam com `executablePath`):
@@ -33,7 +41,9 @@ e rode daqui.
 | `ajustes-de-tela.mjs` | ordem dos grupos, quadro padrão, fundo do dropdown, Full mailer e o comentário que falha |
 | `teste-de-email.mjs` | o botão "Enviar um e-mail de teste": as nove coisas que podem falhar viram nove recados distintos |
 | `okrs-e-selecao.mjs` | OKRs e Processo Seletivo, vindos do SOMA · Gestão: endereços, menu, permissões por papel, o que cada ação grava — com asserções |
+| `grupos-arvore.mjs` | grupos dentro de grupos: a árvore em Administração, quem está pela ficha e por subgrupo, pôr várias pessoas de uma vez, tirar, o pai que não fecha círculo, e a herança no menu, na Agenda e no quadro de pessoal — com asserções |
 | `menu-lateral.mjs` | o menu lateral: subitens por papel, item atual, recolher e o voo do trilho, a gaveta do celular, nenhuma rolagem horizontal — com asserções (sai com código 1 se algo falhar) |
+| `arquivos-e-projetos.mjs` | o controle de arquivos e os projetos: o rol por emissor, a tela do arquivo (etapas, registro de alterações, relações), enviar, aprovar e devolver revisão, template e registro, configurações, a exportação no formato da NRO-PUB-001, quem não é gestor, a logo gerada, a equipe e o rol de um projeto, e o celular — com asserções |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install
@@ -45,6 +55,8 @@ node ajustes-de-tela.mjs
 node teste-de-email.mjs
 node menu-lateral.mjs
 node okrs-e-selecao.mjs
+node grupos-arvore.mjs
+node arquivos-e-projetos.mjs
 ```
 
 Para rodar por papel, gere um stub com o papel trocado:
@@ -66,7 +78,11 @@ o módulo **inteiro** no carregamento, e o que aparece na tela é só uma rota
 vazia.
 
 Aconteceu duas vezes durante esta fase — `STATUS_SOL` declarado nos dois
-lugares, e `STATUS_LIST` declarado num módulo e usado por outro. As duas
+lugares, e `STATUS_LIST` declarado num módulo e usado por outro.
+
+O teste lê todo `mod-*.js` da raiz, sem lista fixa: módulo novo entra na
+conferência no dia em que nasce. (Com lista fixa, os módulos de OKRs e de
+Seleção passaram uma versão inteira sem ser conferidos.) As duas
 regras que saíram daí:
 
 - a **casca** é dona dos nomes compartilhados;

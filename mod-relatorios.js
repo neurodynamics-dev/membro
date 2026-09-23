@@ -17,7 +17,7 @@
    Depende da casca para: sb, $, esc, norm, state, can, podeSelecao,
    toast, abreModal, fechaModal, fmtD, hojeISO, pad3, nomeDe,
    quemSouEu, carregarLib, registrarBusca, filtrarSimples, copiar,
-   abrirEmail, gmailCompose, marcados.
+   abrirEmail, gmailCompose, marcados, gruposEfetivos, gruposDaEquipe.
    ============================================================ */
 
 const CDN_JSPDF     = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -134,7 +134,7 @@ async function copiarHTML(html){
   }
 }
 function grupoCheckboxes(idPrefix, selecionados){
-  const gs = [...new Set(state.membros.flatMap(m=>m.grupos||[]))].sort();
+  const gs = gruposDaEquipe();
   if(!gs.length) return '<div class="muted small">Nenhum grupo cadastrado no quadro.</div>';
   return `<div class="multi">${gs.map((g,i)=>`<label class="check">
     <input type="checkbox" class="${idPrefix}" value="${esc(g)}" ${selecionados&&selecionados.includes(g)?'checked':''}> ${esc(g)}</label>`).join('')}</div>`;
@@ -223,7 +223,7 @@ function statusCheckboxes(cls, iniciaisSel){
 function filtraPorSelecao(sts, grupos){
   return state.membros.filter(m=>
     (!sts.length || sts.includes(m.status)) &&
-    (!grupos.length || (m.grupos||[]).some(g=>grupos.includes(g)))
+    (!grupos.length || grupos.some(g => gruposEfetivos(m).has(g)))
   ).sort((a,b)=>a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
