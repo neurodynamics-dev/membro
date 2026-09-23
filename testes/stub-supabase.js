@@ -277,12 +277,12 @@
       { id:'s-pub3', prefixo:'PUB', sn:3, titulo:'ATA DE REUNIÃO', tipo:'registro', subtipo:'ata', classe:'publico', multiplo:true, grupo_revisor:null, grupos_leitura:[] },
       { id:'s-pes4', prefixo:'PES', sn:4, titulo:'MANUAL DO MEMBRO', tipo:'documento', subtipo:'manual', classe:'publico', multiplo:false, grupo_revisor:null, grupos_leitura:[],
         descricao:'Na NRO-PUB-001 estava como INEXISTENTE: previsto, ainda sem arquivo.' },
-      { id:'s-pes5', prefixo:'PES', sn:5, titulo:'QUADRO DE PESSOAL', tipo:'registro', subtipo:'planilha', classe:'confidencial', multiplo:true, grupo_revisor:6, grupos_leitura:[3] },
+      { id:'s-pes5', prefixo:'PES', sn:5, titulo:'QUADRO DE PESSOAL', tipo:'documento', subtipo:'planilha', classe:'confidencial', multiplo:false, grupo_revisor:6, grupos_leitura:[3] },
       { id:'s-pes7', prefixo:'PES', sn:7, titulo:'PROCEDIMENTO DE DESLIGAMENTO', tipo:'documento', subtipo:'procedimento', classe:'publico', multiplo:false, grupo_revisor:null, grupos_leitura:[] },
       { id:'s-pes14', prefixo:'PES', sn:14, titulo:'CHECKLIST DE OFFBOARDING', tipo:'documento', subtipo:'checklist', classe:'publico', multiplo:false, grupo_revisor:null, grupos_leitura:[] },
       { id:'s-pro1', prefixo:'PRO', sn:1, titulo:'TERMO DE ABERTURA DE PROJETO', tipo:'documento', subtipo:'relatorio', classe:'controlado', multiplo:true, grupo_revisor:null, grupos_leitura:[] },
       { id:'s-pro3', prefixo:'PRO', sn:3, titulo:'RELATÓRIO DE EXECUÇÃO DE TESTES', tipo:'registro', subtipo:'relatorio', classe:'controlado', multiplo:true, grupo_revisor:null, grupos_leitura:[] },
-      { id:'s-pro4', prefixo:'PRO', sn:4, titulo:'(USRS) USER AND SYSTEM REQUIREMENTS SPECIFICATION', tipo:'registro', subtipo:'planilha', classe:'controlado', multiplo:true, grupo_revisor:null, grupos_leitura:[] }
+      { id:'s-pro4', prefixo:'PRO', sn:4, titulo:'(USRS) USER AND SYSTEM REQUIREMENTS SPECIFICATION', tipo:'documento', subtipo:'planilha', classe:'controlado', multiplo:true, grupo_revisor:null, grupos_leitura:[] }
     ],
     doc_rol: [
       { id:'a-pub2', codigo:'NRO-PUB-002', pn:null, serie_id:'s-pub2', prefixo:'PUB', sn:2, titulo:'TEMPLATE DE DOCUMENTOS E REGISTROS', serie_titulo:'TEMPLATE DE DOCUMENTOS E REGISTROS', complemento:null,
@@ -305,7 +305,7 @@
         template_id:null, template_rev:null, projeto_id:null, autor:null, autor_nome:null, criado_em:'2026-03-01T00:00:00Z',
         alterado_em:'2026-03-01T00:00:00Z', alterado_nome:'NRO-PUB-001', grupo_revisor:null, grupos_leitura:[], n_pns:0 },
       { id:'a-pes5', codigo:'NRO-PES-005', pn:null, serie_id:'s-pes5', prefixo:'PES', sn:5, titulo:'QUADRO DE PESSOAL', serie_titulo:'QUADRO DE PESSOAL', complemento:null,
-        tipo:'registro', subtipo:'planilha', classe:'confidencial', multiplo:true, natureza:'template', status:'ativo', rev_vigente:'A', rev_pendente:null,
+        tipo:'documento', subtipo:'planilha', classe:'confidencial', multiplo:false, natureza:'documento', status:'ativo', rev_vigente:'A', rev_pendente:null,
         template_id:null, template_rev:null, projeto_id:null, autor:null, autor_nome:'MMARCONDES', criado_em:'2026-03-07T00:00:00Z',
         alterado_em:'2026-03-28T00:00:00Z', alterado_nome:'ANA ALICE GOMES', grupo_revisor:6, grupos_leitura:[3], n_pns:0 },
       { id:'a-pes7', codigo:'NRO-PES-007', pn:null, serie_id:'s-pes7', prefixo:'PES', sn:7, titulo:'PROCEDIMENTO DE DESLIGAMENTO', serie_titulo:'PROCEDIMENTO DE DESLIGAMENTO', complemento:null,
@@ -336,7 +336,7 @@
         autor:11, autor_nome:'Bruno Tavares', criado_em:'2026-08-20T12:00:00Z', alterado_em:'2026-08-22T12:00:00Z', alterado_nome:'Ana Figueiredo',
         grupo_revisor:null, grupos_leitura:[], n_pns:0 },
       { id:'a-pro4', codigo:'NRO-PRO-004', pn:null, serie_id:'s-pro4', prefixo:'PRO', sn:4, titulo:'(USRS) USER AND SYSTEM REQUIREMENTS SPECIFICATION', serie_titulo:'(USRS) USER AND SYSTEM REQUIREMENTS SPECIFICATION', complemento:null,
-        tipo:'registro', subtipo:'planilha', classe:'controlado', multiplo:true, natureza:'template', status:'ativo', rev_vigente:'A', rev_pendente:null,
+        tipo:'documento', subtipo:'planilha', classe:'controlado', multiplo:true, natureza:'template', status:'ativo', rev_vigente:'A', rev_pendente:null,
         template_id:null, template_rev:null, projeto_id:null, autor:null, autor_nome:'MMARCONDES', criado_em:'2026-06-04T00:00:00Z',
         alterado_em:'2026-06-04T00:00:00Z', alterado_nome:'MMARCONDES', grupo_revisor:null, grupos_leitura:[], n_pns:0 }
     ],
