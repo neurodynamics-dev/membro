@@ -468,6 +468,13 @@ pelo painel, sem CLI):
   publicada com a verificação de JWT desligada**, porque quem busca o arquivo
   é o Google, sem sessão.
 
+Os e-mails que o próprio Supabase manda — a confirmação de cadastro, a
+redefinição de senha, o convite e os outros três — têm modelos em português,
+no mesmo padrão dos avisos do portal, em
+[`supabase/templates/`](supabase/templates/LEIAME.md). Lá está o passo a
+passo para colá-los no painel e para enviá-los pelo mesmo remetente da
+Cloudflare.
+
 O repositório `nro-pessoal` deixa de ser um app: `pessoal.neurodynamics.dev`
 passa a só encaminhar, e continua servindo duas pastas que não podem sumir —
 `mailer/` (as imagens dos e-mails já enviados apontam para lá) e `fotos/` (as
