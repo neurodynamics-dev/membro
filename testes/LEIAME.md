@@ -43,7 +43,7 @@ e rode daqui.
 | `okrs-e-selecao.mjs` | OKRs e Processo Seletivo, vindos do SOMA · Gestão: endereços, menu, permissões por papel, o que cada ação grava — com asserções |
 | `grupos-arvore.mjs` | grupos dentro de grupos: a árvore em Administração, quem está pela ficha e por subgrupo, pôr várias pessoas de uma vez, tirar, o pai que não fecha círculo, e a herança no menu, na Agenda e no quadro de pessoal — com asserções |
 | `menu-lateral.mjs` | o menu lateral: subitens por papel, item atual, recolher e o voo do trilho, a gaveta do celular, nenhuma rolagem horizontal — com asserções (sai com código 1 se algo falhar) |
-| `arquivos-e-projetos.mjs` | o controle de arquivos e os projetos: o rol por emissor, a tela do arquivo (etapas, registro de alterações, relações), enviar, aprovar e devolver revisão, template e registro, configurações, a exportação no formato da NRO-PUB-001, quem não é gestor, a logo gerada, a equipe e o rol de um projeto, e o celular — com asserções |
+| `arquivos-e-projetos.mjs` | o controle de arquivos e os projetos: o rol por emissor, a tela do arquivo (etapas, registro de alterações, relações), enviar, aprovar e devolver revisão, template e registro, a estrutura de cada série (a coluna da NRO-PUB-001: a conta que filtra, "O que é este arquivo", o "Adicionar" que pergunta antes de criar), configurações, a exportação no formato da NRO-PUB-001, quem não é gestor, a logo gerada, a equipe e o rol de um projeto, e o celular — com asserções |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install

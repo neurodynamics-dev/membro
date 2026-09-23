@@ -225,23 +225,40 @@ O código é `NRO-XXX-YYY-Z`:
 | `YYY` | o **número de série** (SN): um por espécie de arquivo |
 | `Z`   | o **part number** (PN): um por exemplar, quando existe mais de um — um relatório de teste por teste, um termo de abertura por projeto. Política não tem PN: existe uma só |
 
-Toda série tem uma **cabeça**, o arquivo sem PN. Na série de exemplar único a
-cabeça é o próprio documento; na série com PN, a cabeça é o **template**, e
-cada PN nasce dele. Daí as cinco naturezas:
+Toda série tem uma **cabeça**, o arquivo sem PN. O que a cabeça é — e o que
+cada PN é — sai da **estrutura** da série: a coluna ao lado do título na
+NRO-PUB-001. São três:
 
-| Natureza | Exemplo | Revisa? |
-|---|---|---|
-| Template de documento | `NRO-PRO-001` (termo de abertura de projeto), um modelo de apresentação | sim — Rev. A, B, C… |
-| Documento sem PN | `NRO-PES-015` (política de acesso ao LABBIO) | sim |
-| Documento com PN | `NRO-PRO-001-3` (o termo de abertura de um projeto) | sim |
-| Template de registro | `NRO-PUB-003` (ata de reunião) | sim |
-| Registro | `NRO-PUB-003-12` (uma ata) | **não** — registra o que aconteceu; a "Rev." dele é a do template usado |
+| Estrutura — a frase da coluna | A cabeça, sem PN | Cada PN | Exemplo |
+|---|---|---|---|
+| **Documento único** — "um documento para toda a equipe, sem template e sem filhos" | o próprio documento; revisa | — | `NRO-PES-015`, política de acesso ao LABBIO |
+| **Template → documentos** — "um template, cada pn é um documento filho da série" | o template; revisa | um documento; revisa, por conta própria | `NRO-PRO-001` e o `NRO-PRO-001-3`, o termo de abertura de um projeto |
+| **Template → registros** — "um template, cada pn é um registro filho da série" | o template; revisa | um registro; **não** muda depois de aprovado — a "Rev." dele é a do template usado | `NRO-PUB-003` e a `NRO-PUB-003-12`, uma ata |
+
+Daí as três perguntas que todo arquivo responde — e que a tela dele mostra no
+alto, em *O que é este arquivo*:
+
+- **template ou arquivo real?** A cabeça de uma série com PN é template; todo
+  o resto é arquivo real;
+- **integrante de uma série (tem PN) ou arquivo único (não tem)?**
+- **pode ser alterado?** Documento, sim (Rev. A, B, C…); registro, não; o
+  template, sim — inclusive o de registros.
+
+O `NRO-PUB-002` é o caso à parte: documento sem PN com subtipo template — o
+modelo de base dos outros —, e a coluna de estrutura dele veio vazia.
 
 **O rol** de cada emissor (`#/arquivos/PES`) é a aba da planilha, como uma
 lista do Drive: código, título, revisão, última alteração e quem a fez,
-status. Filtra por status, natureza, subtipo e classe; ordena por coluna; as
+status. No alto, quantas séries há de cada estrutura — clicar numa filtra.
+Filtra também por status, natureza, subtipo e classe; ordena por coluna; as
 séries com PN abrem os PNs logo abaixo. *Exportar* devolve a planilha no
-mesmo formato da NRO-PUB-001.
+mesmo formato da NRO-PUB-001, com a coluna de estrutura.
+
+**Adicionar** pergunta o que é antes de criar: um arquivo real numa série que
+já existe — um PN, que nasce do template, e a tela diz antes se vai ser
+documento ou registro — ou uma série nova, do PMO, já com a estrutura
+escolhida. Revisão nova de um arquivo que já existe não é adicionar: é
+*Enviar revisão*, na tela dele — mesmo código, letra seguinte.
 
 **A tela de um arquivo** (`#/arquivos/NRO-PES-007`):
 
@@ -258,7 +275,8 @@ mesmo formato da NRO-PUB-001.
   template), o grupo revisor, *Baixar* e *Enviar revisão*.
 
 A tela de um **template** tem outro fundo — papel de planta — e mostra **onde
-ele é usado**, com a revisão do template que cada arquivo usou.
+ele é usado**: numa série com PN, os PNs dela, com a revisão do template que
+cada um usou.
 
 **Revisar.** *Enviar revisão* sobe o arquivo novo, que fica no mesmo código
 com a letra seguinte e **pendente**: o grupo revisor da série é avisado no
@@ -286,8 +304,9 @@ título, natureza, subtipo, classe, grupo revisor, grupos de leitura —, os
 emissores e o grupo de cada um, o padrão de projeto e qual grupo é o PMO e
 qual é o pai dos projetos.
 
-**Para começar**, depois de aplicar as migrações 19.0 a 21.0 (a 21.0 traz a
-planilha como rol inicial):
+**Para começar**, depois de aplicar as migrações 19.0 a 22.0 (a 21.0 traz a
+planilha como rol inicial; a 22.0, a estrutura de cada série pela coluna nova
+dela):
 
 1. em *Arquivos → Configurações → PMO e projetos*, escolha o grupo do PMO —
    sem ele, só `admin` administra a documentação;

@@ -69,6 +69,7 @@ db/
 | `v19_grupos_hierarquia.sql` | grupos dentro de grupos: pai único, pertença que sobe pela árvore (`esta_no_grupo`), grupo sem quadro, responsáveis por grupo, pôr e tirar várias pessoas de uma vez |
 | `v20_projetos_arquivos.sql` | projetos (grupo dentro de `NRO_PROJECTS`, supervisor, logo) e o controle de arquivos: séries `NRO-XXX-YYY`, PNs, revisões que só valem depois de aprovadas pelo grupo revisor, templates, relações pai/filho, padrão de projeto e o bucket privado `arquivos` |
 | `v21_rol_nro_pub_001.sql` | o rol inicial: as 46 linhas da planilha NRO-PUB-001 viram séries, com os sete emissores (um por aba; CLI e REL ainda sem linhas) e um padrão de projeto proposto |
+| `v22_estrutura_das_series.sql` | a estrutura de cada série pela coluna nova da NRO-PUB-001 — documento único, template → documentos ou template → registros —, 18 séries ajustadas, e a mudança de estrutura no registro de alterações |
 
 **Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
 duplica nada.
@@ -123,6 +124,37 @@ como registro) fica escrito na descrição de cada série, e o cabeçalho do
 arquivo explica cada decisão. Rodar de novo não muda nada: ela só semeia a
 série que ainda não existe.
 
+A **22.0** é a coluna que a planilha ganhou ao lado do título. Ela diz, em
+três frases, o que cada série é — e é isso que o banco guarda em `tipo` e
+`multiplo`:
+
+| Na coluna | No banco | A cabeça (sem PN) | Cada PN |
+|---|---|---|---|
+| "um documento para toda a equipe, sem template e sem filhos" | documento, sem PN | o próprio documento, que revisa | — |
+| "um template, cada pn é um documento filho da série" | documento, com PN | o template, que revisa | um documento, que revisa |
+| "um template, cada pn é um registro filho da série" | registro, com PN | o template, que revisa | um registro, que não muda depois de aprovado |
+
+A 21.0 tinha tirado o tipo da coluna TIPO; a coluna nova discorda dela em
+18 séries, e vale a coluna. O cabeçalho da 22.0 lista quais. O que já
+existe não se perde: série que viraria documento único mas já tem PN (ou
+está no padrão de projeto) fica como estava, série cujos PNs já são
+documentos não vira de registros, e o PN que era registro e vira documento
+tem a versão que já tinha chamada de Rev. A. Cada mudança entra no registro
+de alterações do arquivo — daqui em diante, também quando o PMO muda a
+estrutura de uma série pela tela (um gatilho em `doc_series`). O NRO-PUB-002
+veio com a coluna vazia e fica como está: template avulso.
+
+**O que o SQL Editor responde.** O editor do Supabase mostra só o último
+resultado que tem linhas. As migrações até a 20.0 terminam em *Success. No
+rows returned*. A 21.0 termina com a tabela **"o que a 21.0 deixou"**: sete
+linhas (migração registrada, 7 emissores, 46 séries, a conta por emissor, 29
+ativas, 17 em rascunho, 12 no padrão de projeto), todas `ok` numa primeira
+execução. A 22.0 termina com uma linha por série que a coluna mudou (ou que
+ficou como estava, e por quê), uma linha "27 séries · já estavam como a
+coluna diz" e o NRO-PUB-002 — rodada de novo, as 45 já estão como a coluna
+diz. Se aparecer um erro em vermelho, nada foi gravado: o editor roda o
+arquivo inteiro numa transação só.
+
 Os testes estão em [`testes/`](testes/), e rodam em PostgreSQL de
 verdade — não em banco de mentira:
 
@@ -154,6 +186,15 @@ psql -d t21 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
             -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f v20_projetos_arquivos.sql \
             -f v21_rol_nro_pub_001.sql
 psql -d t21 -f testes/v21_rol.sql            # 16 asserções
+
+# 22.0, sobre um banco com a 21.0 e ainda sem a 22.0: o teste prepara PNs que
+# ela precisa respeitar e roda a 22.0 no meio (e de novo, no fim)
+createdb t22
+psql -d t22 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
+psql -d t22 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
+            -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f v20_projetos_arquivos.sql \
+            -f v21_rol_nro_pub_001.sql
+psql -d t22 -f testes/v22_estrutura.sql      # 39 asserções
 ```
 
 O `esqueleto_storage.sql` é o mínimo do Supabase que o PostgreSQL puro não

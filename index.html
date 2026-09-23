@@ -1501,7 +1501,7 @@ a.arq-fila:hover .tt{color:var(--syn)}
 .arq-etapa.agora.bad::before{background:var(--bad);box-shadow:none}
 .arq-etapa .sub{display:block;font-family:var(--f);font-weight:400;color:var(--muted);font-size:11.5px;margin-top:3px;line-height:1.45}
 .arq-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);gap:18px;align-items:start;margin-top:18px}
-@media (max-width:1000px){.arq-cols{grid-template-columns:1fr}.arq-lado{order:-1}}
+@media (max-width:1000px){.arq-cols{grid-template-columns:minmax(0,1fr)}.arq-lado{order:-1}}
 .arq-lado{position:sticky;top:18px;display:flex;flex-direction:column;gap:14px}
 @media (max-width:1000px){.arq-lado{position:static}}
 .arq-lado .card{padding:18px}
@@ -1526,6 +1526,36 @@ a.arq-fila:hover .tt{color:var(--syn)}
 .arq-nasce > .ic{width:16px;height:16px;flex:none;color:var(--dim)}
 .arq-nasce .cd{font-family:var(--fm);color:var(--info)}
 .arq-velho{color:var(--warn)}
+
+/* a estrutura da série — a coluna ao lado do título na NRO-PUB-001:
+   a legenda que conta (e, no rol de um emissor, filtra), os três eixos
+   de um arquivo, e o "Adicionar" que pergunta o que é antes de criar */
+.arq-legenda{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 16px}
+.arq-leg{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:14px;background:var(--card);
+  padding:10px 14px;color:var(--ink);text-align:left;flex:1 1 230px;min-width:0;font:inherit}
+button.arq-leg{cursor:pointer;transition:border-color .15s,background .15s}
+button.arq-leg:hover{border-color:var(--line2)}
+.arq-leg.on{border-color:rgba(206,220,0,.55);background:rgba(206,220,0,.06)}
+.arq-leg .tx{min-width:0;font-size:13px;line-height:1.45}
+.arq-leg .n{font-family:var(--fm);font-size:12px;color:var(--syn);margin-left:4px}
+.arq-leg .fr{display:block;font-size:11.5px;color:var(--dim)}
+.arq-oque{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:700px){.arq-oque{grid-template-columns:1fr}}
+.arq-oque .eixo{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:12px 14px;min-width:0}
+.arq-oque .rot{display:block;font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.arq-oque b{display:block;font-size:14px;font-weight:600;color:var(--ink)}
+.arq-oque .dt{display:block;font-size:12px;color:var(--muted);line-height:1.5;margin-top:3px}
+.arq-frase{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.55}
+.arq-frase .q{color:var(--ink)}
+.arq-add{display:flex;flex-direction:column;gap:12px;margin-bottom:6px}
+.arq-add-op{border:1px solid var(--line2);border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.02)}
+.arq-add-op .cab{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}
+.arq-add-op .cab b{display:block;color:var(--ink);font-size:14px}
+.arq-add-op .cab b + span{display:block;font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:2px}
+.arq-nasce-pn{display:flex;gap:12px;align-items:flex-start;border:1px dashed rgba(127,167,242,.4);border-radius:14px;
+  padding:12px 14px;background:rgba(127,167,242,.05);font-size:13px;line-height:1.55;margin-bottom:14px;color:var(--ink)}
+.arq-nasce-pn b{font-family:var(--fm);color:var(--syn);font-weight:500}
+.arq-nasce-pn .dt{display:block;color:var(--muted);font-size:12.5px;margin-top:3px}
 
 /* as relações: pais em cima, o arquivo no meio, filhos embaixo, irmãos ao lado */
 .arq-rel{display:flex;flex-direction:column;align-items:center}
@@ -2053,7 +2083,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '21.0';
+const VERSAO = '22.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
