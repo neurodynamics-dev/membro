@@ -15,7 +15,7 @@
    Regra: a casca é dona dos nomes compartilhados; módulo não
    redeclara o que ela nomeia, e módulo não depende de módulo.
    ============================================================ */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 /* os arquivos do portal moram na raiz, um nível acima deste diretório */
 const raiz = (nome) => new URL('../' + nome, import.meta.url);
@@ -42,8 +42,11 @@ function scriptDaCasca(caminho){
     .map(m => m[1]).join('\n;\n');
 }
 
-const MODULOS = ['mod-gestao.js','mod-atividades.js','mod-admin.js',
-                 'mod-relatorios.js','mod-evento.js'];
+/* Todo mod-*.js da raiz. Era uma lista escrita à mão, e módulo novo
+   ficava de fora sem ninguém perceber: os OKRs e a Seleção passaram
+   por aqui sem serem conferidos. */
+const MODULOS = readdirSync(new URL('../', import.meta.url))
+  .filter(n => /^mod-[\w-]+\.js$/.test(n)).sort();
 
 const tabela = { 'casca (index.html)': globais(scriptDaCasca('index.html')) };
 for (const m of MODULOS) tabela[m] = globais(readFileSync(raiz(m), 'utf8'));

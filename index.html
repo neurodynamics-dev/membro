@@ -1362,6 +1362,221 @@ button.pub-row.on{border-color:var(--syn);background:rgba(206,220,0,.05)}
 .chip.quer{background:rgba(127,167,242,.08);border-color:rgba(127,167,242,.35);color:var(--info)}
 .ps-codigo{font-family:var(--fm);font-size:34px;font-weight:500;letter-spacing:.16em;color:var(--syn);line-height:1.1}
 
+/* ============ PROJETOS ============
+   Cada projeto é uma equipe (um grupo dentro de NRO_PROJECTS) e um
+   rol de arquivos. A logo vem de logoProjeto(), na casca. */
+.logo-pj{display:block;flex:none}
+.pj-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.pj-card{display:flex;flex-direction:column;gap:14px;text-align:left;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--card);padding:20px;color:var(--ink);
+  transition:border-color .15s,background .15s,transform .15s}
+.pj-card:hover{border-color:var(--line2);background:rgba(255,255,255,.05);transform:translateY(-2px)}
+.pj-card .topo{display:flex;align-items:center;gap:14px;min-width:0}
+.pj-card .topo .tx{min-width:0}
+.pj-card .nm{display:block;font-family:var(--fd);font-weight:600;font-size:16.5px;line-height:1.2;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pj-card .cd{display:block;font-family:var(--fm);font-size:10.5px;letter-spacing:.12em;color:var(--dim);margin-top:5px}
+.pj-card .desc{font-size:12.5px;color:var(--muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden;min-height:38px}
+.pj-card .rodape{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;
+  font-size:12px;color:var(--dim)}
+.pj-rostos{display:inline-flex;align-items:center}
+.pj-rostos .avx{margin-left:-7px;box-shadow:0 0 0 2px var(--bg)}
+.pj-rostos .avx:first-child{margin-left:0}
+.pj-rostos .mais{font-family:var(--fm);font-size:10.5px;color:var(--muted);margin-left:7px}
+.pj-prog{display:flex;align-items:center;gap:9px}
+.pj-prog .trilho{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;display:flex}
+.pj-prog .trilho span{display:block;height:100%}
+.pj-prog .n{font-family:var(--fm);font-size:10.5px;color:var(--muted);white-space:nowrap}
+.pj-topo{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:26px 0 20px}
+.pj-topo .tx{flex:1;min-width:240px}
+.pj-topo h1{font-size:clamp(26px,3.6vw,36px);font-weight:600;line-height:1.1;margin:8px 0 6px;word-break:break-word}
+.pj-topo .lead{color:var(--muted);font-size:14px;max-width:640px;line-height:1.6}
+.pj-topo .acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pj-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,360px);gap:18px;align-items:start}
+@media (max-width:980px){.pj-cols{grid-template-columns:1fr}}
+.pj-membro{display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid var(--line)}
+.pj-membro:first-child{border-top:none}
+.pj-membro .tx{flex:1;min-width:0}
+.pj-membro .nm{display:block;font-size:13.5px;font-weight:500}
+.pj-membro .cg{display:block;font-size:11.5px;color:var(--dim)}
+.pj-sup{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--syn);
+  border:1px solid rgba(206,220,0,.35);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.pj-logo-ed{display:flex;align-items:center;gap:14px;padding:10px;border:1px solid var(--line2);
+  border-radius:14px;background:rgba(255,255,255,.02)}
+.pj-logo-ed .tx{flex:1;font-size:12.5px;color:var(--muted);line-height:1.5}
+.pj-resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.pj-resumo div{border:1px solid var(--line);border-radius:11px;padding:9px 10px}
+.pj-resumo b{display:block;font-family:var(--fd);font-size:20px;font-weight:600}
+.pj-resumo span{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+
+/* ============ ARQUIVOS ============
+   O controle de documentos e registros — a planilha NRO-PUB-001 como
+   tela. O rol é uma lista como a do Drive; a tela de um arquivo tem a
+   barra de status, as relações, o registro de alterações e, à
+   direita, os metadados e as ações. Template tem fundo de planta
+   (grade azul): é molde, não documento. */
+.arq-tab td{vertical-align:middle}
+.arq-tab .cel-cod{display:flex;align-items:center;gap:9px;min-width:0}
+.arq-tab .cod{font-family:var(--fm);font-size:12px;color:var(--ink);white-space:nowrap}
+.arq-tab .tit{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
+.arq-tab .sub{display:block;font-family:var(--f);font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arq-ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none;
+  background:rgba(255,255,255,.04);color:var(--muted)}
+.arq-ic .ic{width:15px;height:15px}
+.arq-ic.template{color:var(--info);background:rgba(127,167,242,.12)}
+.arq-ic.registro{color:var(--teal);background:rgba(45,212,191,.09)}
+.arq-tab tr.pn td:first-child{padding-left:34px}
+.arq-tab tr.pn .cel-cod{position:relative}
+.arq-tab tr.pn .cel-cod::before{content:'';position:absolute;left:-18px;top:-10px;width:12px;height:22px;
+  border-left:1px solid var(--line2);border-bottom:1px solid var(--line2);border-bottom-left-radius:6px}
+.arq-tab tr.previsto td{color:var(--dim)}
+.arq-tab tr.previsto .cod{color:var(--dim)}
+.arq-tab tr.previsto td:first-child{box-shadow:inset 2px 0 0 var(--line2)}
+.arq-caret{width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:6px;color:var(--dim)}
+.arq-caret:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.arq-caret .ic{width:12px;height:12px;transition:transform .15s}
+.arq-caret[aria-expanded="true"] .ic{transform:rotate(90deg)}
+.arq-caret.sem{visibility:hidden}
+.arq-rev{font-family:var(--fm);font-size:11.5px;white-space:nowrap}
+.arq-rev .tpl{color:var(--dim)}
+.arq-pend{display:inline-block;font-family:var(--fm);font-size:10px;color:var(--warn);white-space:nowrap;
+  border:1px solid rgba(245,195,106,.35);border-radius:999px;padding:1px 7px;margin-left:6px}
+.arq-quem{display:block;color:var(--dim);font-size:11px}
+.arq-npn{font-family:var(--fm);font-size:10px;color:var(--muted);border:1px solid var(--line2);
+  border-radius:999px;padding:1px 7px;margin-left:6px;white-space:nowrap}
+.arq-cls{display:inline-flex;align-items:center;gap:4px;font-family:var(--fm);font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.arq-cls .ic{width:11px;height:11px}
+.arq-cls.confidencial{color:var(--bad)} .arq-cls.controlado{color:var(--warn)}
+th.ord{cursor:pointer;user-select:none}
+th.ord:hover{color:var(--ink)}
+th.ord[aria-sort="ascending"]::after{content:' ↑'} th.ord[aria-sort="descending"]::after{content:' ↓'}
+.arq-filtros .fld{min-width:150px}
+
+.arq-emis{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.arq-emi{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px 16px;color:var(--ink);
+  transition:border-color .15s,background .15s}
+.arq-emi:hover{border-color:var(--line2);background:rgba(255,255,255,.05)}
+.arq-emi .pf{font-family:var(--fm);font-size:11px;letter-spacing:.1em;color:var(--syn)}
+.arq-emi .nm{display:block;font-family:var(--fd);font-weight:600;font-size:14px;margin:5px 0 10px;line-height:1.3}
+.arq-emi .ns{display:flex;gap:10px;font-size:11.5px;color:var(--dim);flex-wrap:wrap}
+.arq-emi .ns b{color:var(--ink);font-weight:600}
+.arq-fila{display:flex;align-items:center;gap:12px;padding:10px 2px;border-top:1px solid var(--line);color:var(--ink)}
+.arq-fila:first-child{border-top:none}
+.arq-fila .tx{flex:1;min-width:0}
+.arq-fila .tt{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arq-fila .mt{display:block;font-size:11.5px;color:var(--dim)}
+a.arq-fila:hover .tt{color:var(--syn)}
+
+/* a tela de um arquivo */
+.arq-folha{position:relative}
+.arq-folha.tpl{margin:0 -12px;padding:6px 12px 22px;border-radius:22px;border:1px solid rgba(127,167,242,.22);
+  background:
+    linear-gradient(180deg,rgba(127,167,242,.06),rgba(127,167,242,.015) 320px),
+    repeating-linear-gradient(0deg,rgba(127,167,242,.07) 0 1px,transparent 1px 26px),
+    repeating-linear-gradient(90deg,rgba(127,167,242,.07) 0 1px,transparent 1px 26px)}
+.arq-fita{display:inline-flex;align-items:center;gap:8px;font-family:var(--fm);font-size:10px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--info);border:1px solid rgba(127,167,242,.4);border-radius:999px;
+  padding:4px 11px;margin:18px 0 0;background:rgba(127,167,242,.08)}
+.arq-fita .ic{width:13px;height:13px}
+.arq-migalha{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--dim);margin:24px 0 10px}
+.arq-migalha a:hover{color:var(--ink);text-decoration:underline}
+.arq-cab{display:flex;gap:16px;align-items:flex-start}
+.arq-cab .arq-ic{width:48px;height:48px;border-radius:14px}
+.arq-cab .arq-ic .ic{width:22px;height:22px}
+.arq-cab .tx{flex:1;min-width:0}
+.arq-cab .cod{font-family:var(--fm);font-size:13px;letter-spacing:.06em;color:var(--syn)}
+.arq-cab h1{font-size:clamp(20px,2.8vw,28px);font-weight:600;line-height:1.2;margin:5px 0 10px;word-break:break-word}
+.arq-selos{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.arq-etapas{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:22px 0 4px}
+.arq-etapa{position:relative;padding-top:15px;font-size:12px;color:var(--dim)}
+.arq-etapa::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;border-radius:4px;
+  background:rgba(255,255,255,.07)}
+.arq-etapa.feita::before{background:rgba(206,220,0,.45)}
+.arq-etapa.agora{color:var(--ink);font-weight:600}
+.arq-etapa.agora::before{background:var(--syn);box-shadow:0 0 12px rgba(206,220,0,.35)}
+.arq-etapa.agora.warn::before{background:var(--warn);box-shadow:0 0 12px rgba(245,195,106,.35)}
+.arq-etapa.agora.ok::before{background:var(--ok);box-shadow:0 0 12px rgba(74,222,151,.3)}
+.arq-etapa.agora.bad::before{background:var(--bad);box-shadow:none}
+.arq-etapa .sub{display:block;font-family:var(--f);font-weight:400;color:var(--muted);font-size:11.5px;margin-top:3px;line-height:1.45}
+.arq-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);gap:18px;align-items:start;margin-top:18px}
+@media (max-width:1000px){.arq-cols{grid-template-columns:1fr}.arq-lado{order:-1}}
+.arq-lado{position:sticky;top:18px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:1000px){.arq-lado{position:static}}
+.arq-lado .card{padding:18px}
+.arq-meta{display:flex;flex-direction:column;gap:11px;font-size:13px}
+.arq-meta dt{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:2px}
+.arq-meta dd{color:var(--ink);line-height:1.45;word-break:break-word}
+.arq-meta dd .dim{font-size:11.5px}
+.arq-acoes{display:flex;flex-direction:column;gap:8px}
+.arq-acoes .btn{width:100%;justify-content:center}
+.arq-pendente{border:1px solid rgba(245,195,106,.35);background:rgba(245,195,106,.06);border-radius:14px;padding:14px 16px}
+.arq-pendente h4{font-size:13.5px;margin-bottom:4px;color:var(--warn)}
+.arq-pendente p{font-size:12.5px;color:var(--muted);line-height:1.55}
+.arq-sec h3{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--dim);margin:0 0 12px;display:flex;align-items:center;gap:10px}
+.arq-sec h3 .acts{margin:0 0 0 auto;gap:6px}
+.arq-sec h3 > .ic{width:14px;height:14px;flex:none}
+.arq-sec{margin-bottom:16px}
+.arq-nasce{display:flex;align-items:center;gap:12px;border:1px dashed rgba(127,167,242,.4);border-radius:14px;
+  padding:12px 14px;background:rgba(127,167,242,.05);color:var(--ink)}
+.arq-nasce:hover{border-color:var(--info)}
+.arq-nasce .tx{flex:1;min-width:0;font-size:13px;line-height:1.5}
+.arq-nasce > .ic{width:16px;height:16px;flex:none;color:var(--dim)}
+.arq-nasce .cd{font-family:var(--fm);color:var(--info)}
+.arq-velho{color:var(--warn)}
+
+/* as relações: pais em cima, o arquivo no meio, filhos embaixo, irmãos ao lado */
+.arq-rel{display:flex;flex-direction:column;align-items:center}
+.arq-rel .fila{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.arq-rel .liga{width:1.5px;height:18px;background:var(--line2)}
+.arq-rel .rot{font-family:var(--fm);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:0 0 7px}
+.arq-no{position:relative;display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);padding:8px 12px;max-width:280px;text-align:left;color:var(--ink);
+  transition:border-color .15s}
+a.arq-no:hover{border-color:var(--dim)}
+.arq-no .tx{min-width:0}
+.arq-no .cd{display:block;font-family:var(--fm);font-size:11px;color:var(--syn)}
+.arq-no .tt{display:block;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.arq-no.foco{border-color:rgba(206,220,0,.5);background:rgba(206,220,0,.06)}
+.arq-no.obs .cd,.arq-no.obs .tt{text-decoration:line-through;opacity:.6}
+.arq-no .x{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;display:none;
+  place-items:center;background:var(--panel);border:1px solid var(--line2);color:var(--dim);font-size:13px;line-height:1}
+.arq-no:hover .x,.arq-no:focus-within .x{display:grid}
+.arq-no .x:hover{color:var(--bad);border-color:var(--bad)}
+.arq-irmaos{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line2);width:100%;text-align:center}
+
+/* o registro de alterações: uma linha do tempo, na ordem em que aconteceu */
+.arq-log{position:relative;padding-left:22px;margin-top:4px}
+.arq-log::before{content:'';position:absolute;left:7px;top:6px;bottom:10px;width:1.5px;background:var(--line2)}
+.arq-ev{position:relative;padding:0 0 15px}
+.arq-ev:last-child{padding-bottom:0}
+.arq-ev::before{content:'';position:absolute;left:-19px;top:5px;width:10px;height:10px;border-radius:50%;
+  background:var(--bg);border:2px solid var(--dim)}
+.arq-ev.ok::before{border-color:var(--ok)} .arq-ev.warn::before{border-color:var(--warn)}
+.arq-ev.bad::before{border-color:var(--bad)} .arq-ev.tpl::before{border-color:var(--info)}
+.arq-ev .qd{font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.arq-ev .tx{font-size:13px;color:var(--ink);line-height:1.5}
+.arq-ev .ob{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:3px;white-space:pre-wrap}
+.arq-ev .confere{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+
+/* a conferência dos relacionados, no envio de uma revisão */
+.arq-conf{display:flex;flex-direction:column;gap:8px}
+.arq-conf-l{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1px solid var(--line2);border-radius:12px;
+  padding:10px 12px;background:rgba(255,255,255,.02)}
+.arq-conf-l.falta{border-color:rgba(241,128,111,.5)}
+.arq-conf-l .tx{flex:1;min-width:200px}
+.arq-conf-l .cd{font-family:var(--fm);font-size:11.5px;color:var(--syn)}
+.arq-conf-l .tt{display:block;font-size:12.5px;color:var(--muted)}
+.arq-conf-l .seg button.on{background:var(--syn);color:var(--deep)}
+.arq-arrasta{border:1.5px dashed var(--line2);border-radius:14px;padding:22px 18px;text-align:center;color:var(--muted);
+  font-size:13px;line-height:1.6;cursor:pointer;transition:border-color .15s,background .15s}
+.arq-arrasta:hover,.arq-arrasta.sobre{border-color:var(--syn);background:rgba(206,220,0,.04)}
+.arq-arrasta b{color:var(--ink)}
+.arq-arrasta.tem{border-style:solid;border-color:rgba(206,220,0,.4);color:var(--ink)}
+.arq-cfg-lista .acc-row .nm{min-width:180px}
+
 /* ============ PAINÉIS DE ADMINISTRAÇÃO ============
    Vindas do admin.html deste repositório e do repositório website,
    que deixam de existir. Só as classes que a casca ainda não tinha. */
@@ -1422,6 +1637,9 @@ a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
   cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;margin:0}
 .gr-cand:first-child{border-top:none}
 .gr-cand input{width:16px;height:16px;flex:none;accent-color:var(--syn)}
+/* dentro de um formulário (.fld), o rótulo do campo não pode vestir a linha */
+.fld label.gr-cand{display:flex;font-family:inherit;font-size:13px;letter-spacing:0;text-transform:none;color:var(--ink);margin:0}
+.pj-resumo{grid-template-columns:repeat(2,1fr)}
 .gr-cand .ja{color:var(--info)}
 .gr-add-barra{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
 .gr-limpa{font-size:12px;color:var(--dim);text-decoration:underline}
@@ -2032,6 +2250,15 @@ const ICONS = {
   engrenagem:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
   chevron:'<path d="m9.5 6 6 6-6 6"/>',
   cadeado:'<rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  /* projetos e arquivos (v20) */
+  projeto:'<path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12 4 7.5"/>',
+  pasta:'<path d="M3.5 7a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+  molde:'<path d="M9 13.5V9.2a3 3 0 1 1 6 0v4.3"/><path d="M4.5 13.5h15v3.2h-15zM7 20h10"/>',
+  registro:'<rect x="5.5" y="4.5" width="13" height="16" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 13.5h6M9 17h3.5"/>',
+  subir:'<path d="M12 16V5M6.5 9.5 12 4l5.5 5.5M5 20h14"/>',
+  relogio:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  ramo:'<rect x="9" y="3.5" width="6" height="5" rx="1.2"/><rect x="3.5" y="15.5" width="6" height="5" rx="1.2"/><rect x="14.5" y="15.5" width="6" height="5" rx="1.2"/><path d="M12 8.5v3.5M6.5 15.5V12h11v3.5"/>',
+  refazer:'<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v4h-4"/>',
   alvo:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
   bandeira:'<path d="M6 21V4.5"/><path d="M6 5c4-2.2 7 2 11 .2V13c-4 1.8-7-2.4-11-.2"/>',
   /* os de ação que os módulos usam — sem eles o botão ficava com o
@@ -2192,8 +2419,15 @@ function acoesDaCasca(){
     ['Pedir afastamento', 'Afastamento temporário', '#/servicos/afastamento'],
     ['Ouvidoria anônima', 'Mensagem sem vínculo com a sua conta', '#/servicos/ouvidoria'],
     ['Meus pedidos', 'Acompanhar as suas solicitações', '#/pedidos'],
-    ['OKRs', 'Os objetivos da equipe e o desdobramento de cada um', '#/okrs']
+    ['OKRs', 'Os objetivos da equipe e o desdobramento de cada um', '#/okrs'],
+    ['Projetos', 'As equipes e o rol de arquivos de cada projeto', '#/projetos'],
+    ['Arquivos', 'O controle de documentos e registros (NRO-PUB-001)', '#/arquivos'],
+    ['Para revisar', 'As versões de arquivo que aguardam revisão', '#/arquivos/revisoes'],
+    ['Templates', 'Os modelos de documento e de registro, e onde cada um é usado', '#/arquivos/templates']
   ];
+  if (docGestor()) a.push(
+    ['Novo projeto', 'Criar um projeto e a equipe dele', '#/projetos/novo'],
+    ['Configurações de arquivos', 'Grupo revisor de cada série, emissores, padrão de projeto', '#/arquivos/config']);
   if (podeSelecao()) a.push(
     ['Processo seletivo', 'Funil, pendências e próximos horários', '#/selecao'],
     ['Candidatos', 'Inscritos, status e movimentação em lote', '#/selecao/candidatos'],
@@ -2375,6 +2609,7 @@ async function abrirPortal(){
     .then(r => { state.itensAcesso = (r.data||[]).filter(i=>i.ativo!==false); });
   carregarGrupos();   /* os quadros de Atividades são os grupos da pessoa */
   carregarOKRsDoMenu();
+  carregarProjetosEArquivos();
   /* Conta sem registro não comenta, não abre solicitação, não é atribuída
      a nada — e nenhuma dessas telas explica por quê. Dizer uma vez, no
      alto, evita a caça ao defeito que não existe. */
@@ -2422,6 +2657,8 @@ const ROTAS = {
   servicos:    { desenha:'pageServicos' },
   pedidos:     { desenha:'pagePedidos' },
   okrs:        { desenha:'pageOkrs', modulo:'okrs' },
+  projetos:    { desenha:'pageProjetos', modulo:'projetos' },
+  arquivos:    { desenha:'pageArquivos', modulo:'arquivos' },
   selecao:     { desenha:'pageSelecao', modulo:'selecao', permite: () => podeSelecao() },
   /* O Comitê de Seleção entra em Administração só pelos Relatórios —
      a galeria mostra apenas os painéis que o papel permite. */
@@ -2520,6 +2757,23 @@ function arvoreDoMenu(){
        o dele (OT1.2 e OP1.2.3 pertencem ao OE1) */
     { r:'okrs', rot:'OKRs', ic:'alvo', filhos: (state.okrRaizes || []).map(o => ({
       sub:o.codigo, rot:o.titulo, pf:o.codigo, tambem: familiaDoOKR(o.codigo) })) },
+    /* os projetos de que a pessoa faz parte; os outros, em "Todos" */
+    { r:'projetos', rot:'Projetos', ic:'projeto', filhos: [
+      { sub:'', rot:'Todos os projetos' },
+      ...meusProjetos().map(p => ({ sub:p.codigo, rot:p.nome, pf:p.codigo }))] },
+    /* o rol de cada emissor é um subitem; a tela de um arquivo
+       (#/arquivos/NRO-PES-007) acende o emissor dele */
+    { r:'arquivos', rot:'Arquivos', ic:'pasta', filhos: [
+      { sub:'', rot:'Visão geral' },
+      { sub:'revisoes', rot:'Para revisar' },
+      ...((state.emissores || []).length ? [{ rotulo:'Emissores' }] : []),
+      /* no menu, sem o "Departamento de": o prefixo ao lado já diz */
+      ...(state.emissores || []).map(e => ({ sub:e.prefixo, pf:e.prefixo,
+        rot: e.nome.replace(/^Departamento\s+(de|d[oa]s?)\s+/i, ''),
+        tambem:'^nro-' + e.prefixo.toLowerCase() + '-' })),
+      { sep:true },
+      { sub:'templates', rot:'Templates' },
+      ...(docGestor() ? [{ sub:'config', rot:'Configurações' }] : [])] },
     { r:'equipe', rot:'Equipe', ic:'users', filhos: [
       { sub:'', rot:'Organograma' },
       /* a ficha (#/equipe/<registro>) se abre a partir do quadro */
@@ -2565,6 +2819,93 @@ function carregarOKRsDoMenu(){
         (a.ordem || 0) - (b.ordem || 0) || String(a.codigo).localeCompare(String(b.codigo), 'pt-BR', { numeric:true }));
       desenharMenu();
     }, () => {});
+}
+
+/* Projetos e emissores de arquivo, para o menu (v20). Sem a migração,
+   os dois espaços ficam sem subitens e as telas explicam o que falta. */
+function carregarProjetosEArquivos(){
+  return Promise.all([
+    sb.from('projetos').select('id,codigo,nome,grupo_id,supervisor,status,logo_semente').order('nome'),
+    sb.from('doc_emissores').select('prefixo,nome,grupo_id,ordem').order('ordem').order('prefixo')
+  ]).then(([pj, em]) => {
+    state.projetos  = pj.error ? [] : (pj.data || []);
+    state.emissores = em.error ? [] : (em.data || []);
+    desenharMenu();
+  }, () => {});
+}
+/* Os projetos em andamento de que a pessoa faz parte — pela equipe,
+   que é o grupo do projeto (contando subgrupos, como sempre). */
+function meusProjetos(){
+  const eu = state.membros.find(m => m.registro === state.perfil?.registro);
+  const meus = gruposEfetivos(eu);
+  return (state.projetos || []).filter(p => p.status !== 'encerrado' && meus.has(grupoPorId(p.grupo_id)?.nome));
+}
+/* Quem administra a documentação: admin e quem está no grupo do PMO
+   (grupos.chave = 'pmo'). É a mesma regra de doc_gestor() no banco —
+   aqui só decide que botão aparece. */
+function docGestor(){
+  if (state.perfil?.papel === 'admin') return true;
+  const pmo = (state.grupos || []).find(g => g.chave === 'pmo');
+  const eu = state.membros.find(m => m.registro === state.perfil?.registro);
+  return !!pmo && gruposEfetivos(eu).has(pmo.nome);
+}
+
+/* ---------------- a logo de um projeto ----------------
+   Como os avatares do GitHub: uma grade 5×5 espelhada, sorteada de uma
+   semente — a mesma semente dá a mesma logo em qualquer tela, e trocar
+   a semente troca a logo. No lugar dos quadradinhos, a marca: o
+   quadrado de cantos redondos do símbolo, um degradê da paleta e um
+   traço grosso e contínuo ligando os pontos vizinhos, como sinapses.
+   Ponto solto fica maior (um neurônio); junção fica menor. */
+const LOGO_PALETAS = [
+  ['#CEDC00', '#7FA81F', '#050807'],   /* Synapse, como o ícone da marca */
+  ['#2DD4BF', '#0B7D6E', '#050807'],   /* Ion → Soma */
+  ['#4ADE97', '#0B7D6E', '#050807'],   /* Vital → Soma */
+  ['#7FA7F2', '#4B6FD6', '#050807'],   /* Plasma */
+  ['#A78BFA', '#6E56CF', '#050807'],   /* Dendrito */
+  ['#00594F', '#00352F', '#CEDC00'],   /* Axon → Cortex, traço Synapse */
+  ['#0B7D6E', '#00352F', '#2DD4BF']    /* Soma → Cortex, traço Ion */
+];
+let _logoN = 0;
+function logoProjeto(semente, px, rotulo){
+  let h = 2166136261;                                    /* FNV-1a */
+  for (const c of String(semente || '?')){ h ^= c.codePointAt(0); h = Math.imul(h, 16777619); }
+  let s = h >>> 0;
+  const sorte = () => {                                  /* mulberry32 */
+    s = (s + 0x6D2B79F5) >>> 0; let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const [c1, c2, traco] = LOGO_PALETAS[Math.floor(sorte() * LOGO_PALETAS.length)];
+  let g;
+  do {   /* três colunas sorteadas, duas espelhadas; no mínimo seis pontos */
+    g = Array.from({ length:5 }, () => { const a = [0, 1, 2].map(() => sorte() < .52); return [a[0], a[1], a[2], a[1], a[0]]; });
+  } while (g.flat().filter(Boolean).length < 6);
+  const P = i => 20 + i * 15;
+  const on = (x, y) => x >= 0 && x < 5 && y >= 0 && y < 5 && g[y][x];
+  /* um quadrado de quatro pontos vira caixa, e a marca é traço, não
+     caixa: abre-se o lado de fora — o esquerdo na metade esquerda, o
+     direito na direita —, e a simetria continua */
+  const quadrado = (x, y) => on(x, y) && on(x + 1, y) && on(x, y + 1) && on(x + 1, y + 1);
+  const vertical = (x, y) => on(x, y) && on(x, y + 1)
+    && !(x <= 1 && quadrado(x, y)) && !(x >= 3 && quadrado(x - 1, y));
+  let linhas = '', pontos = '';
+  for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++){
+    if (!g[y][x]) continue;
+    const dir = on(x + 1, y), baixo = vertical(x, y);
+    const viz = dir + baixo + on(x - 1, y) + vertical(x, y - 1);
+    if (dir)   linhas += `M${P(x)} ${P(y)}H${P(x + 1)}`;
+    if (baixo) linhas += `M${P(x)} ${P(y)}V${P(y + 1)}`;
+    pontos += `<circle cx="${P(x)}" cy="${P(y)}" r="${viz === 0 ? 5.4 : viz === 1 ? 5.8 : 3.9}"/>`;
+  }
+  const id = 'lgp' + (++_logoN);
+  return `<svg class="logo-pj" viewBox="0 0 100 100" width="${px}" height="${px}" role="img"
+    aria-label="${esc(rotulo || 'Logo do projeto')}"><defs><linearGradient id="${id}" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
+    <rect width="100" height="100" rx="22" fill="url(#${id})"/>
+    <path d="${linhas}" fill="none" stroke="${traco}" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g fill="${traco}">${pontos}</g></svg>`;
 }
 
 function desenharMenu(){
@@ -2845,7 +3186,7 @@ function abrirSino(e){
       <span class="tt">${esc(n.titulo)}</span>
       ${n.corpo ? `<span class="cp">${esc(n.corpo)}</span>` : ''}
       <span class="qd">${fmtQuando(n.criado_em)}</span></button>`).join('')
-    : '<div class="sn-vazio">Nada por aqui. Você é avisado quando uma atividade sua anda, vence ou é sinalizada.</div>';
+    : '<div class="sn-vazio">Nada por aqui. Você é avisado quando uma atividade sua anda, vence ou é sinalizada, e quando um arquivo espera a sua revisão.</div>';
   p.hidden = false;
 }
 function fecharSino(){ const p = $('#sino-painel'); if (p) p.hidden = true; }

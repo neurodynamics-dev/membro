@@ -57,6 +57,12 @@ SOMA · Gestão está sendo trazido, conforme o
   - outras solicitações.
 - **Meus pedidos** — acompanhamento das solicitações, com status e
   resposta do Depto. de Pessoal, e cancelamento enquanto pendente.
+- **Projetos** — cada projeto com código, logo gerada, supervisor, equipe
+  (um grupo dentro de `NRO_PROJECTS`) e o rol de arquivos que todo projeto
+  deve ter.
+- **Arquivos** — o controle de documentos e registros que era a planilha
+  NRO-PUB-001: código `NRO-XXX-YYY-Z`, revisão, status, template, relações
+  entre arquivos, e nenhuma versão valendo antes de alguém revisar.
 - **Ferramentas da equipe** — trilho na página inicial com tudo o que a
   NeuroDynamics usa: agenda, atividades, equipe, documentos, tour, site
   institucional, brand guidelines, processo seletivo e GitHub.
@@ -64,9 +70,9 @@ SOMA · Gestão está sendo trazido, conforme o
 ## Como o sistema se organiza
 
 A navegação é por **espaços** — o que você está fazendo —, não por qual app
-a tela veio: **Início · Agenda · Atividades · OKRs · Equipe · Informações ·
-Serviços · Meus pedidos**, e, para quem tem o papel, **Seleção** e
-**Administração**. Eles ficam num **menu lateral** à esquerda,
+a tela veio: **Início · Agenda · Atividades · OKRs · Projetos · Arquivos ·
+Equipe · Informações · Serviços · Meus pedidos**, e, para quem tem o papel,
+**Seleção** e **Administração**. Eles ficam num **menu lateral** à esquerda,
 cada um com ícone e com os seus subitens logo abaixo — as abas da Agenda, os
 quadros dos seus grupos, as categorias de documento, cada serviço, cada
 painel da Administração. O menu **recolhe** para um trilho de ícones (o
@@ -181,6 +187,118 @@ Um pai só por grupo, de propósito: é o modelo das equipes aninhadas do
 GitHub. O dia em que isto controlar acesso a repositório, cada grupo vira uma
 equipe, o pai continua sendo o pai e os responsáveis viram os *maintainers*.
 
+## Projetos
+
+Em `#/projetos` (`mod-projetos.js`). Um projeto é **uma equipe e um rol de
+arquivos**:
+
+- a equipe é um grupo, `NRO_PROJECT_<CÓDIGO>`, criado junto com o projeto
+  dentro de `NRO_PROJECTS` — por isso quem entra na equipe entra também em
+  `NRO_PROJECTS`. Dá para criar o projeto sobre um grupo que já existe;
+- um membro da equipe é o **supervisor**, e ele vira responsável pelo grupo:
+  ele mesmo põe e tira gente da equipe e edita o projeto;
+- o projeto tem código (`NEBULA`), nome, descrição, status (ativo, pausado,
+  encerrado) e uma **logo gerada** de uma semente, como os avatares do
+  GitHub, mas com a paleta e o traço da marca: uma grade 5×5 espelhada, com
+  os quadrados ligados como trilhas de circuito. A mesma semente dá sempre a
+  mesma logo; "Outra" sorteia outra antes de criar;
+- o **rol** do projeto (`#/projetos/<código>/arquivos`) é o **padrão de
+  projeto** aplicado a ele: as séries que todo projeto tem (termo de
+  abertura, USRS, relatórios de teste…). O PMO põe uma série no padrão e
+  **todo projeto passa a tê-la**, com um botão *Criar* onde o PN do projeto
+  ainda não existe;
+- criar projeto é do PMO (e de `admin`); quem está na equipe quando o
+  projeto nasce é avisado.
+
+## Arquivos
+
+O controle de documentos e registros, em `#/arquivos` (`mod-arquivos.js`) — o
+que a planilha NRO-PUB-001 fazia, com as regras do NRO-PUB-002, agora vivo. É
+um PLM pequeno: cada arquivo tem código, revisão, status e quem mexeu por
+último, e **nenhuma versão vale antes de alguém revisar**.
+
+O código é `NRO-XXX-YYY-Z`:
+
+| Parte | O que é |
+|---|---|
+| `XXX` | o **emissor** — departamento ou grupo que emitiu (`PES`, `PRO`, `PUB`…) |
+| `YYY` | o **número de série** (SN): um por espécie de arquivo |
+| `Z`   | o **part number** (PN): um por exemplar, quando existe mais de um — um relatório de teste por teste, um termo de abertura por projeto. Política não tem PN: existe uma só |
+
+Toda série tem uma **cabeça**, o arquivo sem PN. Na série de exemplar único a
+cabeça é o próprio documento; na série com PN, a cabeça é o **template**, e
+cada PN nasce dele. Daí as cinco naturezas:
+
+| Natureza | Exemplo | Revisa? |
+|---|---|---|
+| Template de documento | `NRO-PRO-001` (termo de abertura de projeto), um modelo de apresentação | sim — Rev. A, B, C… |
+| Documento sem PN | `NRO-PES-015` (política de acesso ao LABBIO) | sim |
+| Documento com PN | `NRO-PRO-001-3` (o termo de abertura de um projeto) | sim |
+| Template de registro | `NRO-PUB-003` (ata de reunião) | sim |
+| Registro | `NRO-PUB-003-12` (uma ata) | **não** — registra o que aconteceu; a "Rev." dele é a do template usado |
+
+**O rol** de cada emissor (`#/arquivos/PES`) é a aba da planilha, como uma
+lista do Drive: código, título, revisão, última alteração e quem a fez,
+status. Filtra por status, natureza, subtipo e classe; ordena por coluna; as
+séries com PN abrem os PNs logo abaixo. *Exportar* devolve a planilha no
+mesmo formato da NRO-PUB-001.
+
+**A tela de um arquivo** (`#/arquivos/NRO-PES-007`):
+
+- a **barra de status** — rascunho, em revisão, ativo, obsoleto;
+- **nasce de**: o template e a revisão dele que foi usada, com aviso quando
+  o template já mudou;
+- as **relações** num desenho: pais em cima, irmãos ao lado, filhos embaixo.
+  O checklist de offboarding é filho do procedimento de desligamento: quem
+  revisa o procedimento vê que o checklist precisa de conferência;
+- o **registro de alterações**: quem criou o template (na revisão usada),
+  quem criou o arquivo, quem enviou e quem revisou cada revisão, com o
+  parecer;
+- à direita, os **metadados** (o autor é quem criou *este* exemplar, não o
+  template), o grupo revisor, *Baixar* e *Enviar revisão*.
+
+A tela de um **template** tem outro fundo — papel de planta — e mostra **onde
+ele é usado**, com a revisão do template que cada arquivo usou.
+
+**Revisar.** *Enviar revisão* sobe o arquivo novo, que fica no mesmo código
+com a letra seguinte e **pendente**: o grupo revisor da série é avisado no
+sino e por e-mail (conforme a preferência de cada um), e até alguém dele —
+que não seja quem enviou — aprovar, a versão em vigor continua sendo a
+anterior. Quem envia diz o que mudou e **confere os pais e os filhos** do
+arquivo: sem essa conferência o envio não sai. Revisão devolvida não gasta
+letra. Registro aprovado não recebe revisão — erro num registro se corrige
+com outro registro.
+
+**Acesso.** O rol — código, título, revisão, status — é da equipe toda, como
+a planilha era. O conteúdo segue a **classe** da série:
+
+- **público** — toda a equipe lê;
+- **controlado** — lê quem está no grupo do emissor, na equipe do projeto,
+  no grupo revisor ou num dos grupos de leitura da série;
+- **confidencial** — só os grupos de leitura e o grupo revisor.
+
+Tudo pela pertença efetiva dos grupos. Os arquivos ficam no bucket privado
+`arquivos` do Supabase Storage (até 50 MB cada), e a mesma regra vale lá: a
+versão pendente só desce para quem enviou e para quem revisa.
+
+**Configurações** (`#/arquivos/config`, do PMO e de `admin`): as séries —
+título, natureza, subtipo, classe, grupo revisor, grupos de leitura —, os
+emissores e o grupo de cada um, o padrão de projeto e qual grupo é o PMO e
+qual é o pai dos projetos.
+
+**Para começar**, depois de aplicar as migrações 19.0 a 21.0 (a 21.0 traz a
+planilha como rol inicial):
+
+1. em *Arquivos → Configurações → PMO e projetos*, escolha o grupo do PMO —
+   sem ele, só `admin` administra a documentação;
+2. escolha o grupo revisor de cada série (sem grupo revisor, quem revisa é o
+   PMO);
+3. ligue cada emissor ao grupo dele — é o que abre os arquivos controlados
+   para o departamento;
+4. anexe o arquivo das revisões A que vieram da planilha: elas entram
+   aprovadas, mas sem arquivo (*Anexar o arquivo desta revisão*, na tela de
+   cada um).
+
 ## OKRs
 
 O planejamento estratégico da equipe, em `#/okrs` — veio do SOMA · Gestão
@@ -239,6 +357,8 @@ Duas coisas que a unificação trouxe de graça:
 | `mod-evento.js` | O dossiê de um compromisso: preparo, presenças e ata (`#/agenda/evento/<id>`) |
 | `mod-okrs.js`  | O planejamento estratégico: a árvore de objetivos (`#/okrs`, `#/okrs/<codigo>`) |
 | `mod-selecao.js` | O processo seletivo, por dentro: as oito abas do Comitê de Seleção (`#/selecao`, `#/selecao/<aba>`) |
+| `mod-projetos.js` | Os projetos: equipe, supervisor, logo e rol (`#/projetos`, `#/projetos/<código>`) |
+| `mod-arquivos.js` | O controle de arquivos: rol por emissor, tela do arquivo, revisões, templates e configurações (`#/arquivos`, `#/arquivos/<código>`) |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
 | `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
 | `mailer/`      | Ícones e logos recoloridas que o Full mailer embute nos e-mails |
@@ -376,6 +496,11 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
 - **Seleção** (`#/selecao`) é de `admin`, `pessoal` e `selecao`.
 - **OKRs** (`#/okrs`) todos veem; criar e excluir é de `admin`/`pessoal`, e
   editar é deles e dos responsáveis de cada objetivo.
+- **Projetos** (`#/projetos`) todos veem; criar é do PMO e de `admin`, e
+  editar e cuidar da equipe é deles e do supervisor do projeto.
+- **Arquivos** (`#/arquivos`): o rol é de todos; o conteúdo segue a classe
+  da série; revisar é do grupo revisor da série (sem ele, do PMO), nunca de
+  quem enviou; configurar é do PMO e de `admin`.
 - **Ouvidoria**: a mensagem é gravada por função `security definer`
   sem nenhuma referência à conta, sem gatilho de auditoria e com a data
   truncada para o dia. Anonimato por projeto, não por promessa.

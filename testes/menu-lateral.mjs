@@ -72,7 +72,7 @@ console.log('\nAberto (admin, 1440px)');
     icone: s.querySelector('.lt-item svg.ic')?.innerHTML.length || 0 })));
   confere('os espaços, na ordem (admin vê também Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Início|Agenda|Atividades|OKRs|Equipe|Informações|Serviços|Meus pedidos|Seleção|Administração',
+      'Início|Agenda|Atividades|OKRs|Projetos|Arquivos|Equipe|Informações|Serviços|Meus pedidos|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
   confere('Seleção e Administração vêm depois do divisor "Gestão"',

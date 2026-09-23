@@ -22,6 +22,8 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **Agenda** | tempo — compromissos, presença, ausências, marcos | todos |
 | **Atividades** | trabalho — o quadro do seu grupo | todos |
 | **OKRs** | planejamento — os objetivos e o desdobramento de cada um | todos (edição: `admin`, `pessoal` e os responsáveis) |
+| **Projetos** | cada projeto: equipe, supervisor e o rol de arquivos | todos (criar: PMO e `admin`; editar: eles e o supervisor) |
+| **Arquivos** | documentos e registros controlados — código, revisão, status | todos no rol; o conteúdo segue a classe de cada série |
 | **Equipe** | pessoas — organograma e fichas | todos (a profundidade varia) |
 | **Informações** | documentos e políticas | todos |
 | **Serviços** | pedidos ao Depto. de Pessoal | todos |
@@ -29,8 +31,10 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **Seleção** | os bastidores do processo seletivo | `admin`, `pessoal`, `selecao` |
 | **Administração** | os painéis: portal, site, catálogo, importação, auditoria | `admin`, `pessoal` (e `selecao`, só Relatórios) |
 
-Até dez destinos no primeiro nível, cada um com ícone, no **menu lateral** à
-esquerda. O segundo nível são os subitens de cada espaço — as abas da
+Até dez destinos no primeiro nível para toda a equipe (mais Seleção e
+Administração, para quem tem o papel), cada um com ícone, no **menu lateral**
+à esquerda. Com Projetos e Arquivos a conta fechou em dez: o próximo espaço
+precisa caber dentro de um que já existe, ou tomar o lugar dele. O segundo nível são os subitens de cada espaço — as abas da
 Agenda, os quadros dos grupos da pessoa, as categorias de documento, cada
 serviço, cada painel —, pendurados numa linha-guia debaixo do espaço, como
 no painel da Cloudflare. Tudo o que tem endereço próprio vira subitem; o que
@@ -70,6 +74,12 @@ conforme quem entra é menu que ninguém aprende.
 #/equipe                    organograma
 #/equipe/<registro>         a ficha
 #/okrs[/<codigo>]           a árvore de objetivos, com um em foco (OE1, OT1.2…)
+#/projetos[/novo]           os projetos
+#/projetos/<CÓDIGO>         um projeto (ex.: #/projetos/NEBULA)
+#/projetos/<CÓDIGO>/arquivos  o rol de arquivos do projeto
+#/arquivos[/revisoes|templates|config]
+#/arquivos/<EMISSOR>        o rol de um emissor (ex.: #/arquivos/PES)
+#/arquivos/<código>         um arquivo (ex.: #/arquivos/NRO-PES-007-2)
 #/informacoes[/<categoria>]
 #/servicos[/<tipo>]
 #/pedidos
@@ -78,6 +88,7 @@ conforme quem entra é menu que ninguém aprende.
 #/selecao/candidatos/<id>   a ficha de um candidato
 #/selecao/dinamica/<sub>    painel, roteiro, desafio, criterios, janelas
 #/admin[/aba]               painéis
+#/admin/grupos/<prefixo>    a árvore de grupos, com um em foco
 ```
 
 **Regras:**
@@ -176,9 +187,21 @@ Todo objeto que uma pessoa cita em voz alta precisa de um código curto:
 | Evento | `EVT-012` | `eventos.numero` |
 | Atividade | `ORT-14` | `atividades.codigo` — prefixo do grupo + sequência |
 | Solicitação | protocolo | `portal_solicitacoes` |
+| Projeto | `NEBULA` | `projetos.codigo` — o grupo da equipe é `NRO_PROJECT_NEBULA` |
+| Arquivo | `NRO-PES-007-2` | `doc_arquivos.codigo` — emissor, série (SN) e part number (PN); a revisão (`Rev. B`) fica fora do código |
 
 Sequência por grupo, não global: `ORT-14` diz de qual quadro a atividade é.
 O prefixo mora em `grupos.prefixo` e é gerado do nome, editável depois.
+
+O código de arquivo segue a mesma ideia, com um nível a mais: o emissor diz
+de onde o arquivo veio, o SN diz que espécie de arquivo ele é e o PN, qual
+exemplar. A revisão não entra no código de propósito — `NRO-PES-007` continua
+sendo o mesmo procedimento na Rev. A e na Rev. F, e é esse endereço que as
+relações, os templates e os links apontam.
+
+A logo de um projeto também é identidade: sai de uma semente
+(`projetos.logo_semente`) por `logoProjeto()`, na casca, e a mesma semente dá
+a mesma logo em toda tela — no cartão, no menu e na página do projeto.
 
 ### Um fato, um cartão
 
@@ -256,6 +279,13 @@ podeQuadro()  // vê o quadro inteiro
 podeSelecao() // comitê de seleção
 ```
 
+Numa rota: `permite: podeQuadro`. Num botão: `${can() ? ibtn(...) : ''}`.
+Nunca só esconder o botão e deixar a função aberta — a função também confere.
+
+E a busca não pode achar o que a galeria esconde: quem registra uma fonte
+filtra pelo mesmo papel que desenha os botões. `testes/relatorios-por-papel.mjs`
+confere os três caminhos — galeria, busca e chamada direta pelo console.
+
 ### Quadro de atividades: nível, não papel
 
 Papel é do sistema inteiro. Quadro é por grupo, e aí o que vale é o **nível**,
@@ -272,6 +302,14 @@ pela ficha ou por um grupo abaixo dele — → `edicao`; um acesso concedido em
 *Administração → Grupos* → o que foi concedido; o grupo não ser reservado →
 `leitura`.
 
+Duas consequências que não são detalhe:
+
+- **`nenhum` não some da navegação.** O grupo continua na lista, com cadeado, e
+  abrir mostra de quem é o quadro e como pedir acesso. Quadro que some não é
+  quadro fechado — é quadro que ninguém sabe que precisa pedir.
+- **Conceder acesso não põe ninguém no grupo.** São coisas diferentes: estar no
+  grupo é um fato da ficha; acessar o quadro é uma permissão.
+
 ### Grupos dentro de grupos
 
 Desde a v19 os grupos formam uma árvore, e **quem está num grupo está em todos
@@ -282,20 +320,31 @@ defeito que esta seção existe para evitar — acha só quem foi posto à mão 
 esquece quem chegou por um subgrupo. Para listar pessoas de um grupo, use
 `membrosDoGrupo(nome)`; para os grupos de uma pessoa, `gruposEfetivos(m)`.
 
-Duas consequências que não são detalhe:
+### Arquivos: o rol é de todos, o conteúdo é da classe
 
-- **`nenhum` não some da navegação.** O grupo continua na lista, com cadeado, e
-  abrir mostra de quem é o quadro e como pedir acesso. Quadro que some não é
-  quadro fechado — é quadro que ninguém sabe que precisa pedir.
-- **Conceder acesso não põe ninguém no grupo.** São coisas diferentes: estar no
-  grupo é um fato da ficha; acessar o quadro é uma permissão.
+Os metadados de um arquivo — código, título, revisão, status, quem mexeu por
+último — a equipe inteira lê, como lia a planilha. É o cadeado do quadro de
+novo: rol que some não é rol fechado, é rol que ninguém sabe que precisa
+pedir. O conteúdo — as revisões, o registro de alterações, o arquivo no
+Storage — segue a **classe** da série, e a regra tem um dono só,
+`doc_pode_ler()`:
 
-Numa rota: `permite: podeQuadro`. Num botão: `${can() ? ibtn(...) : ''}`.
-Nunca só esconder o botão e deixar a função aberta — a função também confere.
+| Classe | Quem lê o conteúdo |
+|---|---|
+| `publico` | toda a equipe |
+| `controlado` | o grupo do emissor, a equipe do projeto, o grupo revisor, os grupos de leitura |
+| `confidencial` | o grupo revisor e os grupos de leitura |
 
-E a busca não pode achar o que a galeria esconde: quem registra uma fonte
-filtra pelo mesmo papel que desenha os botões. `testes/relatorios-por-papel.mjs`
-confere os três caminhos — galeria, busca e chamada direta pelo console.
+Em todas, o autor do exemplar lê o que é dele, e o PMO e `admin` leem tudo.
+"Estar no grupo" é a pertença efetiva: quem está num subgrupo do emissor lê o
+que o emissor controla.
+
+**Revisar não é papel, é grupo.** Quem aprova uma versão é alguém do grupo
+revisor da série (sem grupo revisor, o PMO) que **não** a enviou — a
+`doc_revisao_decidir()` confere as duas coisas, e a tela só não oferece o
+botão. O arquivo no Storage segue a mesma regra por política própria, em
+`storage.objects`: a versão pendente só desce para quem a enviou e para quem
+revisa, e um objeto que já é revisão não se apaga.
 
 ---
 

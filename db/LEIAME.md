@@ -67,8 +67,10 @@ db/
 | `v17_grupos_acesso.sql` | nível por pessoa em cada quadro (nenhum/leitura/edicao), acessos concedidos, e a tela de Grupos: renomear, fundir e conceder |
 | `v18_teste_email.sql` | o aviso de teste de e-mail sob demanda, e a exceção que o faz sair mesmo para quem escolheu resumo ou "só no portal" |
 | `v19_grupos_hierarquia.sql` | grupos dentro de grupos: pai único, pertença que sobe pela árvore (`esta_no_grupo`), grupo sem quadro, responsáveis por grupo, pôr e tirar várias pessoas de uma vez |
+| `v20_projetos_arquivos.sql` | projetos (grupo dentro de `NRO_PROJECTS`, supervisor, logo) e o controle de arquivos: séries `NRO-XXX-YYY`, PNs, revisões que só valem depois de aprovadas pelo grupo revisor, templates, relações pai/filho, padrão de projeto e o bucket privado `arquivos` |
+| `v21_rol_nro_pub_001.sql` | o rol inicial: as 46 linhas da planilha NRO-PUB-001 viram séries, com os sete emissores (um por aba; CLI e REL ainda sem linhas) e um padrão de projeto proposto |
 
-**Aplique nesta ordem**, e as duas são idempotentes: rodar de novo não
+**Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
 duplica nada.
 
 Duas coisas que valem saber antes de rodar:
@@ -104,6 +106,23 @@ as duas definições dela agora só valem enquanto a 19.0 não passou (o mesmo
 cuidado da 15.0 com `sou_do_grupo`). O teste da 19.0 roda a 17.0 de novo no
 meio e confere que a herança continua lá.
 
+A **20.0** acha sozinha o pai dos projetos: adota o grupo que já se chame
+`NRO_PROJECTS` (ou "Projetos") e, não achando, cria um, sem quadro. O **PMO**
+ela não cria nem adivinha — é escolhido em *Arquivos → Configurações → PMO e
+projetos*; enquanto não houver, só `admin` administra a documentação. Confira:
+`select id, nome, chave from public.grupos where chave in ('projetos', 'pmo');`
+A parte do Storage — o bucket privado `arquivos`, até 50 MB por arquivo, e as
+políticas em `storage.objects` — só roda onde o schema `storage` existe: no
+Supabase, sempre.
+
+A **21.0** é a planilha. O que estava EM VIGÊNCIA entra ativo, com a Rev. A
+aprovada e marcada como importada — sem o arquivo, que continua no Drive até
+alguém anexá-lo pela tela; o resto entra em rascunho. O que a planilha tinha
+de estranho (INEXISTENTE, o EDITAL sem classificação, o termo de abertura
+como registro) fica escrito na descrição de cada série, e o cabeçalho do
+arquivo explica cada decisão. Rodar de novo não muda nada: ela só semeia a
+série que ainda não existe.
+
 Os testes estão em [`testes/`](testes/), e rodam em PostgreSQL de
 verdade — não em banco de mentira:
 
@@ -120,7 +139,29 @@ psql -d t16 -f v17_grupos_acesso.sql -f v18_teste_email.sql -f v19_grupos_hierar
 psql -d t16 -f testes/v17_acesso.sql          # 29 asserções
 psql -d t16 -f testes/v18_teste_email.sql     # 12 asserções
 psql -d t16 -f testes/v19_grupos.sql         # 48 asserções (roda a 17.0 e a 19.0 de novo no meio)
+
+# 20.0, num banco novo: o teste da 19.0 deixa um NRO_PROJECT_NEBULA que o da 20.0 quer criar
+createdb t20
+psql -d t20 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
+psql -d t20 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
+            -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f v20_projetos_arquivos.sql
+psql -d t20 -f testes/v20_arquivos.sql       # 114 asserções (RLS e Storage inclusos; roda a 20.0 de novo no meio)
+
+# 21.0, também num banco novo: o teste confere a planilha linha a linha
+createdb t21
+psql -d t21 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
+psql -d t21 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
+            -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f v20_projetos_arquivos.sql \
+            -f v21_rol_nro_pub_001.sql
+psql -d t21 -f testes/v21_rol.sql            # 16 asserções
 ```
+
+O `esqueleto_storage.sql` é o mínimo do Supabase que o PostgreSQL puro não
+tem — `auth.uid()` e o schema `storage`, com RLS ligada em `storage.objects` —,
+e precisa vir **antes** da 20.0, senão a parte do bucket é pulada e o teste
+de Storage não prova nada. O `v20_arquivos.sql` testa a RLS por conta
+própria: troca para o papel `authenticated` e dá a ele só o que o Supabase
+daria.
 
 O `v16_rls.sql` precisa rodar como um papel **sem** superusuário (e sem ser
 dono das tabelas): RLS não vale para quem tem `BYPASSRLS`, e um teste de RLS
