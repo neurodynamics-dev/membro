@@ -123,6 +123,14 @@ como registro) fica escrito na descrição de cada série, e o cabeçalho do
 arquivo explica cada decisão. Rodar de novo não muda nada: ela só semeia a
 série que ainda não existe.
 
+**O que o SQL Editor responde.** O editor do Supabase mostra só o último
+resultado que tem linhas. As migrações até a 20.0 terminam em *Success. No
+rows returned*. A 21.0 termina com a tabela **"o que a 21.0 deixou"**: sete
+linhas (migração registrada, 7 emissores, 46 séries, a conta por emissor, 29
+ativas, 17 em rascunho, 12 no padrão de projeto), todas `ok` numa primeira
+execução. Se aparecer um erro em vermelho, nada foi gravado: o editor roda o
+arquivo inteiro numa transação só.
+
 Os testes estão em [`testes/`](testes/), e rodam em PostgreSQL de
 verdade — não em banco de mentira:
 

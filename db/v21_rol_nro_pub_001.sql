@@ -42,7 +42,9 @@
 --
 -- Gerada a partir da planilha em 23/09/2026. Pré-requisito: 20.0.
 -- Segura para rodar mais de uma vez: série que já existe fica como está.
--- COMO USAR: cole o arquivo INTEIRO no SQL Editor e Run.
+-- COMO USAR: cole o arquivo INTEIRO no SQL Editor e Run. Ao terminar,
+-- o editor mostra a tabela "o que a 21.0 deixou", com a situação de
+-- cada linha: numa primeira execução, tudo "ok".
 -- ============================================================
 
 do $$
@@ -178,6 +180,32 @@ on conflict (serie_id) do nothing;
 insert into public.migracoes (id, descricao) values
   ('v21_rol_nro_pub_001', 'O rol inicial: as 46 linhas da planilha NRO-PUB-001 viram séries do controle de arquivos, com os sete emissores e um padrão de projeto proposto')
 on conflict (id) do nothing;
+
+-- ------------------------------------------------------------
+-- 5. O QUE O SQL EDITOR MOSTRA NO FIM
+--    O editor do Supabase exibe só o último resultado que tem linhas.
+--    Sem esta consulta, seria o da última chamada a semear() — uma
+--    coluna "semear" com uma célula vazia, que parece erro e não é.
+--    "esperado" vale para a primeira vez, logo depois da 20.0; rodar
+--    de novo depois de a equipe usar o sistema muda "no banco", e
+--    está tudo bem: a 21.0 não mexe no que já existe.
+-- ------------------------------------------------------------
+select x.item as "o que a 21.0 deixou", x.esperado, x.no_banco as "no banco",
+       case when x.no_banco = x.esperado then 'ok' else 'confira' end as situacao
+  from (values
+    (1, 'migração registrada', 'sim',
+        case when exists (select 1 from public.migracoes where id = 'v21_rol_nro_pub_001') then 'sim' else 'não' end),
+    (2, 'emissores', '7', (select count(*)::text from public.doc_emissores)),
+    (3, 'séries', '46', (select count(*)::text from public.doc_series)),
+    (4, 'séries por emissor', 'DIR 5 · MKT 5 · PES 19 · PRO 14 · PUB 3',
+        (select string_agg(prefixo || ' ' || n, ' · ' order by prefixo)
+           from (select prefixo, count(*) as n from public.doc_series group by prefixo) s)),
+    (5, 'ativas, com a Rev. A importada (sem arquivo)', '29',
+        (select count(*)::text from public.doc_arquivos where status = 'ativo')),
+    (6, 'em rascunho', '17', (select count(*)::text from public.doc_arquivos where status = 'rascunho')),
+    (7, 'séries no padrão de projeto', '12', (select count(*)::text from public.doc_padrao_projeto))
+  ) as x(ordem, item, esperado, no_banco)
+ order by x.ordem;
 
 -- ============================================================
 -- FIM — SOMA 21.0
