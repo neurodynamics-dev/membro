@@ -66,6 +66,7 @@ db/
 | `v16_pessoal.sql` | solicitação, apontamento e ocorrência viram cartão no quadro do Pessoal; a decisão concede acesso na mesma transação; notificação por e-mail |
 | `v17_grupos_acesso.sql` | nível por pessoa em cada quadro (nenhum/leitura/edicao), acessos concedidos, e a tela de Grupos: renomear, fundir e conceder |
 | `v18_teste_email.sql` | o aviso de teste de e-mail sob demanda, e a exceção que o faz sair mesmo para quem escolheu resumo ou "só no portal" |
+| `v19_grupos_hierarquia.sql` | grupos dentro de grupos: pai único, pertença que sobe pela árvore (`esta_no_grupo`), grupo sem quadro, responsáveis por grupo, pôr e tirar várias pessoas de uma vez |
 
 **Aplique nesta ordem**, e as duas são idempotentes: rodar de novo não
 duplica nada.
@@ -96,7 +97,14 @@ definissem a política de leitura, rodar a 15.0 de novo — coisa que ela diz se
 segura — devolvia o quadro do Pessoal para "todo mundo lê", em silêncio. Cada
 coisa tem uma dona só.
 
-Os testes das duas estão em [`testes/`](testes/), e rodam em PostgreSQL de
+A **19.0** passa a ser a dona de `meu_nivel_no_grupo` e da view
+`grupos_visiveis`: estar num grupo abaixo conta como estar no grupo, e grupo
+sem quadro sai da lista de Atividades. A 17.0 continua podendo rodar de novo —
+as duas definições dela agora só valem enquanto a 19.0 não passou (o mesmo
+cuidado da 15.0 com `sou_do_grupo`). O teste da 19.0 roda a 17.0 de novo no
+meio e confere que a herança continua lá.
+
+Os testes estão em [`testes/`](testes/), e rodam em PostgreSQL de
 verdade — não em banco de mentira:
 
 ```bash
@@ -106,6 +114,12 @@ psql -d t16 -f v15_atividades.sql
 psql -d t16 -f v16_pessoal.sql
 psql -d t16 -f testes/v16_comportamento.sql   # 33 asserções
 psql -d t16 -U <papel não-superusuário> -f testes/v16_rls.sql
+
+# 17.0 a 19.0, no mesmo banco
+psql -d t16 -f v17_grupos_acesso.sql -f v18_teste_email.sql -f v19_grupos_hierarquia.sql
+psql -d t16 -f testes/v17_acesso.sql          # 29 asserções
+psql -d t16 -f testes/v18_teste_email.sql     # 12 asserções
+psql -d t16 -f testes/v19_grupos.sql         # 48 asserções (roda a 17.0 e a 19.0 de novo no meio)
 ```
 
 O `v16_rls.sql` precisa rodar como um papel **sem** superusuário (e sem ser

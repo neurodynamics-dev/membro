@@ -18,7 +18,7 @@
 
    Depende da casca para: sb, $, esc, norm, state, can, toast,
    abreModal, fechaModal, fmtD, hojeISO, pad3, avatarFoto,
-   registrarBusca, filtrarSimples, carregarNotificacoes,
+   registrarBusca, filtrarSimples, carregarNotificacoes, gruposEfetivos,
    state.itensAcesso (catálogo, para conceder na decisão).
    ============================================================ */
 
@@ -276,9 +276,10 @@ function ajustarAlturaQuadro(){
 }
 window.addEventListener('resize', () => { if (document.getElementById('kanban')) ajustarAlturaQuadro(); });
 
+/* quem está no grupo do quadro — contando quem chegou por um subgrupo */
 function pessoasDoGrupo(){
   const g = atividades.grupoAtual;
-  return (state.membros || []).filter(m => (m.grupos||[]).includes(g?.nome)
+  return (state.membros || []).filter(m => gruposEfetivos(m).has(g?.nome)
     && ['Ativo','Em pausa / avaliação'].includes(m.status));
 }
 
@@ -789,7 +790,7 @@ function origemApontamento(o){
    apagava o responsável sem ninguém pedir. */
 function pessoasDoGrupoDe(grupoId, incluirRegistro){
   const g = atividades.grupos.find(x => x.id === grupoId);
-  const lista = (state.membros || []).filter(m => (m.grupos||[]).includes(g?.nome)
+  const lista = (state.membros || []).filter(m => gruposEfetivos(m).has(g?.nome)
     && ['Ativo','Em pausa / avaliação'].includes(m.status));
   if (incluirRegistro != null && !lista.some(m => m.registro === incluirRegistro)){
     const fora = (state.membros || []).find(m => m.registro === incluirRegistro);

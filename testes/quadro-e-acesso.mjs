@@ -96,14 +96,15 @@ out.leitura = {
 };
 
 /* ---------- 6. painel de grupos ---------- */
-await p.evaluate(() => location.hash = '#/admin/grupos');
-await p.waitForSelector('#sec-grupos table', { timeout:9000 });
+/* desde a v19 o painel é uma árvore, com o grupo escolhido ao lado */
+await p.evaluate(() => location.hash = '#/admin/grupos/ORT');
+await p.waitForSelector('#gr-arvore .gr-link', { timeout:9000 });
 out.painel = {
-  linhas: await p.locator('#sec-grupos tbody tr').count(),
-  prefixos: await p.locator('#sec-grupos .cod-pf').allTextContents(),
-  fechados: await p.locator('#sec-grupos .pill.p-warn').count()
+  grupos: await p.locator('#gr-arvore .gr-link').count(),
+  escolhido: (await p.locator('.gr-cab .cod-pf').textContent()).trim(),
+  fechados: await p.locator('#gr-arvore [title="Quadro fechado"]').count()
 };
-await p.click('#sec-grupos tbody tr:nth-child(4) button[title="Quem enxerga"]');
+await p.click('#gr-detalhe button:has-text("Quem enxerga o quadro")');
 await p.waitForSelector('#ac-quem', { timeout:5000 });
 out.concessao = { pessoasDisponiveis: await p.locator('#ac-quem option').count() };
 await p.selectOption('#ac-quem', { index: 1 });

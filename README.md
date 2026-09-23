@@ -99,8 +99,8 @@ O quadro de trabalho de cada grupo, em `#/atividades`:
   **sem responsável**, e filtra por pessoa ou por recorte;
 - **Carga da equipe** mostra quanto cada pessoa está carregando;
 - **cada quadro tem o seu público**: aberto, que toda a equipe lê, ou fechado,
-  que só abre para quem está no grupo mais quem receber acesso em
-  *Administração → Grupos*. Quadro fechado continua **aparecendo** para todo
+  que só abre para quem está no grupo (contando quem está num subgrupo dele)
+  mais quem receber acesso em *Administração → Grupos*. Quadro fechado continua **aparecendo** para todo
   mundo, com cadeado — quem não entra sabe que ele existe e a quem pedir;
 - **todo movimento vira histórico** no cartão: quem moveu, quem atribuiu, quem
   mudou o prazo, quem sinalizou.
@@ -145,6 +145,41 @@ só existiam no `pessoal.neurodynamics.dev`:
   de ser páginas: eram duas telas de login a mais para a mesma conta. E o
   Comitê de Seleção chega aos e-mails dos candidatos por Relatórios, que é o
   único painel aberto a ele.
+
+## Grupos
+
+Os grupos formam uma **árvore**: um grupo pode estar dentro de outro, e quem
+está num grupo está também em todos os de cima. `NRO_LEADERSHIP` contém
+`NRO_MANAGERS` e `NRO_SUPERVISORS`; `NRO_PROJECTS` contém um grupo por
+projeto. Pôr alguém em `NRO_PROJECT_NEBULA` põe essa pessoa em
+`NRO_PROJECTS`, sem ninguém escrever `NRO_PROJECTS` na ficha dela — e tirar
+de um tira do outro.
+
+A pertença herdada é **calculada, não copiada**: a ficha guarda só o que
+alguém decidiu, e a regra mora num lugar só, `esta_no_grupo()` no banco
+(`gruposEfetivos()` na casca, para a tela). O quadro de atividades, o convite
+de grupo na Agenda, os filtros do quadro de pessoal e dos relatórios e o
+acesso aos arquivos perguntam todos para ela.
+
+Em *Administração → Grupos e quadros* (`#/admin/grupos/<prefixo>`):
+
+- a árvore à esquerda, com filtro; à direita o grupo escolhido, com o caminho
+  até a raiz, os subgrupos e quem está nele — **pela ficha** ou **por um
+  subgrupo**, e por qual;
+- **pôr várias pessoas de uma vez**: marque na lista (ou marque todos de outro
+  grupo) e um clique põe todas, com a mesma ocorrência na ficha que a edição
+  da ficha deixaria;
+- um grupo pode **não ter quadro** em Atividades — grupo guarda-chuva, que
+  existe para dar acesso, não para ter trabalho;
+- um grupo pode ter **responsáveis**: além de admin e Depto de Pessoal, põem e
+  tiram gente dele e dos grupos abaixo dele (o supervisor de um projeto é
+  responsável pelo grupo do projeto);
+- um grupo desativado para de passar gente para cima — quando um projeto
+  termina, a equipe dele deixa de contar como gente de `NRO_PROJECTS`.
+
+Um pai só por grupo, de propósito: é o modelo das equipes aninhadas do
+GitHub. O dia em que isto controlar acesso a repositório, cada grupo vira uma
+equipe, o pai continua sendo o pai e os responsáveis viram os *maintainers*.
 
 ## OKRs
 

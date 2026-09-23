@@ -8,9 +8,9 @@
         data_ingresso:'2024-03-01', forma_ingresso:'Processo seletivo', bolsa:'FAPEMIG',
         atualizado_em:'2026-09-01T12:00:00Z' },
       { registro:11, nome:'Bruno Tavares', cargo:'Pesquisador', departamento:'Pesquisa',
-        status:'Ativo', grupos:['Sinais'], gestor_registro:4, email_nro:'bruno@neurodynamics.dev' },
+        status:'Ativo', grupos:['Sinais','NRO_PROJECT_NEBULA'], gestor_registro:4, email_nro:'bruno@neurodynamics.dev' },
       { registro:17, nome:'Carla Mendonça', cargo:'Desenvolvedora', departamento:'Engenharia',
-        status:'Em pausa / avaliação', grupos:['Firmware'], gestor_registro:4 },
+        status:'Em pausa / avaliação', grupos:['Firmware','NRO_MANAGERS'], gestor_registro:4 },
       { registro:23, nome:'Diego Prado', cargo:'Designer', departamento:'Comunicação',
         status:'Desligado', grupos:['Marca'], gestor_registro:4, data_desligamento:'2026-06-30' }
     ],
@@ -43,12 +43,27 @@
     ],
     /* a ordem é a mesma de grupos_visiveis, abaixo: o menu lateral lista
        os quadros da pessoa por ela, não pela ordem em que chegaram */
+    /* v19: a árvore do pedido — NRO_LEADERSHIP contém MANAGERS (e a
+       Gerência); NRO_PROJECTS contém NEBULA. Os dois guarda-chuvas não
+       têm quadro. A Ana (a pessoa logada) não está em nenhum deles, de
+       propósito: os quadros do menu dela não mudam. */
     grupos: [
-      { id:1, nome:'Órtese', prefixo:'ORT', ativo:true, cor:null, chave:null, reservado:false, ordem:4 },
-      { id:2, nome:'Sinais', prefixo:'SIN', ativo:true, cor:null, chave:null, reservado:false, ordem:3 },
+      { id:1, nome:'Órtese', prefixo:'ORT', ativo:true, cor:null, chave:null, reservado:false, ordem:4,
+        pai_id:null, quadro:true, responsaveis:[], descricao:null },
+      { id:2, nome:'Sinais', prefixo:'SIN', ativo:true, cor:null, chave:null, reservado:false, ordem:3,
+        pai_id:null, quadro:true, responsaveis:[], descricao:null },
       { id:3, nome:'Depto de Pessoal', prefixo:'DEP', ativo:true, cor:null,
-        chave:'pessoal', reservado:true, ordem:2 },
-      { id:4, nome:'Gerência', prefixo:'GER', ativo:true, cor:null, chave:null, reservado:true, ordem:1 }
+        chave:'pessoal', reservado:true, ordem:2, pai_id:null, quadro:true, responsaveis:[], descricao:null },
+      { id:4, nome:'Gerência', prefixo:'GER', ativo:true, cor:null, chave:null, reservado:true, ordem:1,
+        pai_id:5, quadro:true, responsaveis:[], descricao:null },
+      { id:5, nome:'NRO_LEADERSHIP', prefixo:'LEA', ativo:true, cor:null, chave:null, reservado:true, ordem:5,
+        pai_id:null, quadro:false, responsaveis:[], descricao:'A liderança da equipe: gerência e supervisão.' },
+      { id:6, nome:'NRO_MANAGERS', prefixo:'MAN', ativo:true, cor:null, chave:null, reservado:false, ordem:6,
+        pai_id:5, quadro:true, responsaveis:[], descricao:null },
+      { id:7, nome:'NRO_PROJECTS', prefixo:'PRJ', ativo:true, cor:null, chave:'projetos', reservado:false, ordem:7,
+        pai_id:null, quadro:false, responsaveis:[], descricao:'Um subgrupo por projeto.' },
+      { id:8, nome:'NRO_PROJECT_NEBULA', prefixo:'NEB', ativo:true, cor:null, chave:null, reservado:false, ordem:8,
+        pai_id:7, quadro:true, responsaveis:[11], descricao:null }
     ],
     notificacao_preferencias: [{ registro:4, email_modo:'resumo' }],
     /* a v17 trocou a leitura de "grupos" por "grupos_visiveis", que traz o
@@ -292,8 +307,43 @@
             return { data: { status:'ok', id:'c9' }, error: null };
           }
           if (nome === 'grupo_salvar'){
-            window.__grupoSalvo = args?.p;
-            return { data: { status:'ok', id:args?.p?.id || 9, renomeados:2 }, error:null };
+            const p = args?.p || {};
+            window.__grupoSalvo = p;
+            /* grava de verdade, para a tela recarregada mostrar o grupo */
+            if (!p.id){
+              const id = Math.max(...DADOS.grupos.map(g => g.id)) + 1;
+              DADOS.grupos.push({ id, nome:p.nome, prefixo:p.prefixo, ativo:true, cor:null, chave:null,
+                reservado:!!p.reservado, ordem:p.ordem || 0, pai_id:null, quadro:true, responsaveis:[], descricao:null });
+              return { data: { status:'ok', id, renomeados:0 }, error:null };
+            }
+            const g = DADOS.grupos.find(x => x.id === p.id);
+            if (g) Object.assign(g, { nome:p.nome, prefixo:p.prefixo, reservado:!!p.reservado, ordem:p.ordem,
+                                      ...(p.ativo != null ? { ativo:p.ativo } : {}) });
+            return { data: { status:'ok', id:p.id, renomeados:2 }, error:null };
+          }
+          if (nome === 'grupo_estrutura_salvar'){
+            const p = args?.p || {};
+            (window.__estruturas ||= []).push(p);
+            const g = DADOS.grupos.find(x => x.id === p.id);
+            if (!g) return { data:{ status:'nao_encontrado' }, error:null };
+            /* o mesmo teste de ciclo do banco: o pai não pode estar abaixo */
+            const abaixo = new Set([g.id]);
+            for (let novo = true; novo; ){ novo = false;
+              DADOS.grupos.forEach(x => { if (abaixo.has(x.pai_id) && !abaixo.has(x.id)){ abaixo.add(x.id); novo = true; } }); }
+            if ('pai_id' in p && p.pai_id != null && abaixo.has(p.pai_id)) return { data:{ status:'ciclo' }, error:null };
+            ['pai_id','quadro','descricao','responsaveis'].forEach(k => { if (k in p) g[k] = p[k]; });
+            return { data:{ status:'ok', id:g.id }, error:null };
+          }
+          if (nome === 'grupo_membros_salvar'){
+            const p = args?.p || {};
+            (window.__membrosSalvos ||= []).push(p);
+            const g = DADOS.grupos.find(x => x.id === p.grupo_id);
+            let adicionados = 0, removidos = 0;
+            (p.adicionar || []).forEach(r => { const m = DADOS.membros.find(x => x.registro === r);
+              if (m && !(m.grupos || []).includes(g.nome)){ m.grupos = [...(m.grupos || []), g.nome]; adicionados++; } });
+            (p.remover || []).forEach(r => { const m = DADOS.membros.find(x => x.registro === r);
+              if (m && (m.grupos || []).includes(g.nome)){ m.grupos = m.grupos.filter(n => n !== g.nome); removidos++; } });
+            return { data:{ status:'ok', adicionados, removidos }, error:null };
           }
           if (nome === 'grupo_acesso_salvar'){
             window.__acessoSalvo = args?.p;

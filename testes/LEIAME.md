@@ -33,6 +33,7 @@ e rode daqui.
 | `ajustes-de-tela.mjs` | ordem dos grupos, quadro padrão, fundo do dropdown, Full mailer e o comentário que falha |
 | `teste-de-email.mjs` | o botão "Enviar um e-mail de teste": as nove coisas que podem falhar viram nove recados distintos |
 | `okrs-e-selecao.mjs` | OKRs e Processo Seletivo, vindos do SOMA · Gestão: endereços, menu, permissões por papel, o que cada ação grava — com asserções |
+| `grupos-arvore.mjs` | grupos dentro de grupos: a árvore em Administração, quem está pela ficha e por subgrupo, pôr várias pessoas de uma vez, tirar, o pai que não fecha círculo, e a herança no menu, na Agenda e no quadro de pessoal — com asserções |
 | `menu-lateral.mjs` | o menu lateral: subitens por papel, item atual, recolher e o voo do trilho, a gaveta do celular, nenhuma rolagem horizontal — com asserções (sai com código 1 se algo falhar) |
 
 ```bash
@@ -45,6 +46,7 @@ node ajustes-de-tela.mjs
 node teste-de-email.mjs
 node menu-lateral.mjs
 node okrs-e-selecao.mjs
+node grupos-arvore.mjs
 ```
 
 Para rodar por papel, gere um stub com o papel trocado:

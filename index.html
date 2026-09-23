@@ -1365,6 +1365,67 @@ button.pub-row.on{border-color:var(--syn);background:rgba(206,220,0,.05)}
 /* ============ PAINÉIS DE ADMINISTRAÇÃO ============
    Vindas do admin.html deste repositório e do repositório website,
    que deixam de existir. Só as classes que a casca ainda não tinha. */
+
+/* Grupos: a árvore à esquerda, o grupo escolhido à direita. Os galhos
+   são a mesma linha-guia do menu lateral — borda à esquerda do nível. */
+.gr-lay{display:grid;grid-template-columns:minmax(250px,330px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:980px){.gr-lay{grid-template-columns:1fr}}
+.gr-arv{position:sticky;top:18px;max-height:calc(100vh - 110px);overflow:auto;padding:12px 10px}
+@media (max-width:980px){.gr-arv{position:static;max-height:340px}}
+.gr-arv-topo{display:flex;gap:8px;align-items:center;margin:0 2px 10px}
+.gr-arv-topo input{flex:1;min-width:0;height:34px;font-size:13px;padding:0 11px}
+.gr-no{display:flex;align-items:center;gap:1px}
+.gr-caret{width:22px;height:28px;flex:none;display:grid;place-items:center;color:var(--dim);border-radius:6px}
+.gr-caret:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.gr-caret .ic{width:12px;height:12px;transition:transform .15s}
+.gr-caret[aria-expanded="true"] .ic{transform:rotate(90deg)}
+.gr-caret.sem{visibility:hidden}
+.gr-link{flex:1;min-width:0;display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:9px;
+  font-size:13px;color:var(--muted);transition:background .15s,color .15s}
+.gr-link:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+.gr-link.on{background:rgba(206,220,0,.08);color:var(--ink);box-shadow:inset 2px 0 0 var(--syn)}
+.gr-link.off .nm{opacity:.5;text-decoration:line-through}
+.gr-link .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gr-link .n{font-family:var(--fm);font-size:10.5px;color:var(--dim);min-width:14px;text-align:right}
+.gr-link .ic{width:13px;height:13px;color:var(--warn);flex:none;vertical-align:-2px}
+.gr-semq{font-family:var(--fm);font-size:9px;letter-spacing:.06em;color:var(--dim);white-space:nowrap}
+.gr-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--line2)}
+.gr-filhos{margin-left:11px;padding-left:8px;border-left:1px solid var(--line2)}
+.gr-det{padding:22px 24px}
+.gr-caminho{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--dim);margin-bottom:8px}
+.gr-caminho a:hover{color:var(--ink);text-decoration:underline}
+.gr-caminho b{color:var(--muted);font-weight:500}
+.gr-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.gr-cab h2{font-family:var(--fd);font-size:22px;font-weight:600;letter-spacing:-.01em;word-break:break-word}
+.gr-desc{color:var(--muted);font-size:13.5px;line-height:1.6;margin-top:8px;max-width:640px}
+.gr-met{margin:20px 0 4px}
+.gr-met .metrica{padding:13px 16px}
+.gr-met .metrica .val{font-size:24px}
+.gr-sub{display:flex;flex-wrap:wrap;gap:8px}
+.gr-sub .chip{padding:6px 12px;font-size:12.5px}
+.gr-pessoas{max-height:360px;overflow-y:auto}
+.gr-pessoa{display:flex;align-items:center;gap:11px;padding:8px 2px;border-top:1px solid var(--line)}
+.gr-pessoa:first-child{border-top:none}
+.gr-pessoa .tx,.gr-cand .tx{flex:1;min-width:0}
+.gr-pessoa .nm,.gr-cand .nm{display:block;font-size:13.5px;font-weight:500;color:var(--ink)}
+.gr-pessoa .cg,.gr-cand .cg{display:block;font-size:11.5px;color:var(--dim)}
+.gr-via{font-family:var(--fm);font-size:10.5px;color:var(--muted);border:1px solid var(--line2);
+  border-radius:999px;padding:2px 9px;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
+.gr-via.dir{color:var(--syn);border-color:rgba(206,220,0,.3)}
+.gr-add-topo{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.gr-add-topo input{flex:1 1 240px;min-width:0;height:38px;font-size:13px;padding:0 12px}
+.gr-add-topo select{flex:0 1 240px;height:38px;font-size:13px;padding:0 10px}
+.gr-cands{max-height:300px;overflow-y:auto;border:1px solid var(--line2);border-radius:12px;
+  padding:2px 12px;background:rgba(255,255,255,.02)}
+.gr-cand{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line);
+  cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400;margin:0}
+.gr-cand:first-child{border-top:none}
+.gr-cand input{width:16px;height:16px;flex:none;accent-color:var(--syn)}
+.gr-cand .ja{color:var(--info)}
+.gr-add-barra{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
+.gr-limpa{font-size:12px;color:var(--dim);text-decoration:underline}
+.gr-limpa:hover{color:var(--ink)}
 .adm-grade{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
 @media (max-width:900px){.adm-grade{grid-template-columns:1fr}}
 .adm-item{display:flex;align-items:center;gap:12px;text-align:left;width:100%;
@@ -1774,7 +1835,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '20.0';
+const VERSAO = '21.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -1970,6 +2031,7 @@ const ICONS = {
   pedidos:'<path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/><path d="M6 5h12l2.5 8.5v5A1.5 1.5 0 0 1 19 20H5a1.5 1.5 0 0 1-1.5-1.5v-5z"/>',
   engrenagem:'<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
   chevron:'<path d="m9.5 6 6 6-6 6"/>',
+  cadeado:'<rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
   alvo:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
   bandeira:'<path d="M6 21V4.5"/><path d="M6 5c4-2.2 7 2 11 .2V13c-4 1.8-7-2.4-11-.2"/>',
   /* os de ação que os módulos usam — sem eles o botão ficava com o
@@ -2001,6 +2063,46 @@ const podeSelecao = () => ['admin','pessoal','selecao'].includes(state.perfil?.p
 const PAPEIS = {admin:'Administração', pessoal:'Depto. de Pessoal',
                 selecao:'Comitê de Seleção', leitura:'Consulta'};
 
+/* ---------------- grupos: a árvore (v19) ----------------
+   Um grupo pode ter pai, e quem está num grupo está também nos de
+   cima: pôr alguém em NRO_PROJECT_NEBULA é pôr em NRO_PROJECTS. A
+   ficha (membros.grupos) guarda só o que alguém decidiu; o resto se
+   calcula aqui, com a mesma regra de esta_no_grupo() no banco. Todo
+   lugar do portal que pergunta "quem está neste grupo?" pergunta a
+   gruposEfetivos ou a membrosDoGrupo — nunca direto à ficha. */
+const COLUNAS_GRUPO = 'id,nome,prefixo,cor,ativo,reservado,ordem,chave';
+/* O catálogo (v15), com a árvore quando a v19 já passou. Sem a v19,
+   pedir pai_id é erro, e a lista volta plana, como era; sem a v15, vem
+   vazia e quem usa cai de volta nos grupos que as fichas já têm. */
+function carregarGrupos(){
+  const pedir = cols => sb.from('grupos').select(cols).order('ordem').order('nome');
+  return pedir(COLUNAS_GRUPO + ',pai_id,quadro,responsaveis')
+    .then(r => r.error ? pedir(COLUNAS_GRUPO) : r)
+    .then(r => { state.grupos = (r.data || []).filter(g => g.ativo !== false); desenharMenu(); },
+          () => {});
+}
+const grupoPorNome = n  => (state.grupos || []).find(g => g.nome === n) || null;
+const grupoPorId   = id => (state.grupos || []).find(g => g.id === id) || null;
+/* O grupo e os de cima, até a raiz. state.grupos só tem os ativos, então
+   um grupo desativado no caminho interrompe a subida — como no banco. */
+function gruposAcima(g){
+  const out = [], vistos = new Set();
+  for (let x = g; x && !vistos.has(x.id); x = grupoPorId(x.pai_id)){ vistos.add(x.id); out.push(x); }
+  return out;
+}
+/* Os nomes dos grupos de uma pessoa, contando os herdados. */
+function gruposEfetivos(m){
+  const s = new Set();
+  (m?.grupos || []).forEach(n => { s.add(n); gruposAcima(grupoPorNome(n)).forEach(g => s.add(g.nome)); });
+  return s;
+}
+/* Por onde a pessoa chegou ao grupo: o próprio nome, se está nele pela
+   ficha; senão, o grupo da ficha que fica abaixo dele. */
+function viaDoGrupo(m, nome){
+  if ((m?.grupos || []).includes(nome)) return nome;
+  return (m?.grupos || []).find(n => gruposAcima(grupoPorNome(n)).some(g => g.nome === nome)) || null;
+}
+
 /* Os painéis de Administração. Moravam em mod-admin, mas o menu lateral
    lista cada um como subitem — e o menu existe antes de o módulo ser
    baixado. O quinto campo diz quem abre: Relatórios é o único que o
@@ -2014,7 +2116,7 @@ const PAINEIS = [
   ['agendas',      'Agendas',             'Portal',   'Quem conectou o Google Agenda e como está a sincronização', can],
   ['contas',       'Contas e perfis',     'Pessoas',  'Papéis de acesso, vínculo com o quadro e senha', can],
   ['acessos',      'Catálogo de acessos', 'Pessoas',  'Os sistemas, locais e documentos controlados pela NRO', can],
-  ['grupos',       'Grupos e quadros',    'Pessoas',  'Nome, prefixo do código, quem enxerga cada quadro', can],
+  ['grupos',       'Grupos e quadros',    'Pessoas',  'A árvore de grupos, quem está em cada um e quem enxerga cada quadro', can],
   ['importar',     'Importar planilha',   'Pessoas',  'Atualizar o quadro em massa pelo NRO-PES-005 ou pelo Excel do SOMA', can],
   ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
                                                        () => can() || podeSelecao()],
@@ -2271,11 +2373,7 @@ async function abrirPortal(){
   state.membros = m.data || [];
   sb.from('itens_de_acesso').select('*').order('ordem')
     .then(r => { state.itensAcesso = (r.data||[]).filter(i=>i.ativo!==false); });
-  /* o catálogo de grupos (v15). Sem a migração vem erro e fica lista
-     vazia — quem usa cai de volta nos grupos que o quadro já tem. */
-  sb.from('grupos').select('id,nome,prefixo,cor,ativo,reservado,ordem').order('ordem').order('nome')
-    .then(r => { state.grupos = (r.data||[]).filter(g=>g.ativo!==false);
-                 desenharMenu(); });   /* os quadros de Atividades são os grupos da pessoa */
+  carregarGrupos();   /* os quadros de Atividades são os grupos da pessoa */
   carregarOKRsDoMenu();
   /* Conta sem registro não comenta, não abre solicitação, não é atribuída
      a nada — e nenhuma dessas telas explica por quê. Dizer uma vez, no
@@ -2402,8 +2500,8 @@ const SERVICOS_MENU = [
    clique, no seletor da própria tela de Atividades. */
 function quadrosDoMenu(){
   const eu = state.membros.find(m => m.registro === state.perfil?.registro);
-  const meus = new Set(eu?.grupos || []);
-  return (state.grupos || []).filter(g => meus.has(g.nome) && g.prefixo)
+  const meus = gruposEfetivos(eu);
+  return (state.grupos || []).filter(g => meus.has(g.nome) && g.prefixo && g.quadro !== false)
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0) || a.nome.localeCompare(b.nome, 'pt'));
 }
 
@@ -4076,7 +4174,7 @@ const CERIMONIAS = [
   ['retro','Retrospectiva', 45]
 ];
 async function modalScrum(){
-  const meus = (state.membros.find(m => m.registro === state.perfil.registro)?.grupos) || [];
+  const meus = [...gruposEfetivos(state.membros.find(m => m.registro === state.perfil.registro))];
   const gestor = ['admin','pessoal'].includes(state.perfil.papel);
   const opcoes = gestor ? gruposDaEquipe() : meus;
   if (!opcoes.length){
@@ -4552,12 +4650,19 @@ function agRemover(reg){
   ag.obrig.delete(reg); ag.opc.delete(reg); ag.manual.delete(reg);
   recarregaAg();
 }
+/* Quem está no grupo, contando os subgrupos: convidar NRO_LEADERSHIP
+   convida quem está em MANAGERS e SUPERVISORS. */
 function membrosDoGrupo(g){
   return state.membros.filter(m => ['Ativo','Em pausa / avaliação'].includes(m.status)
-    && (m.grupos||[]).includes(g));
+    && gruposEfetivos(m).has(g));
 }
+/* Os grupos do catálogo e os que só existem escritos em alguma ficha.
+   Grupo guarda-chuva não tem ninguém direto — sem o catálogo, ele
+   nunca apareceria. */
 function gruposDaEquipe(){
-  return [...new Set(state.membros.flatMap(m => m.grupos||[]))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  return [...new Set([...(state.grupos || []).map(g => g.nome),
+                      ...state.membros.flatMap(m => m.grupos||[])])]
+    .sort((a,b)=>a.localeCompare(b,'pt-BR'));
 }
 function agGrupo(ix){
   const ag = state.ag;

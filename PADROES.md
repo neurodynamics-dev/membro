@@ -267,9 +267,20 @@ que o banco calcula em `meu_nivel_no_grupo()` e manda junto com a lista:
 | `leitura` | acompanha, não mexe |
 | `nenhum` | sabe que o quadro existe e nada mais |
 
-Sai de quatro coisas, nesta ordem: admin/pessoal → `edicao`; estar no grupo pela
-ficha → `edicao`; um acesso concedido em *Administração → Grupos* → o que foi
-concedido; o grupo não ser reservado → `leitura`.
+Sai de quatro coisas, nesta ordem: admin/pessoal → `edicao`; estar no grupo —
+pela ficha ou por um grupo abaixo dele — → `edicao`; um acesso concedido em
+*Administração → Grupos* → o que foi concedido; o grupo não ser reservado →
+`leitura`.
+
+### Grupos dentro de grupos
+
+Desde a v19 os grupos formam uma árvore, e **quem está num grupo está em todos
+os de cima**. A pertença herdada é calculada, nunca gravada na ficha, e a regra
+tem um dono em cada lado: `esta_no_grupo()` no banco e `gruposEfetivos()` na
+casca. Perguntar "quem está no grupo X?" olhando direto `membros.grupos` é o
+defeito que esta seção existe para evitar — acha só quem foi posto à mão e
+esquece quem chegou por um subgrupo. Para listar pessoas de um grupo, use
+`membrosDoGrupo(nome)`; para os grupos de uma pessoa, `gruposEfetivos(m)`.
 
 Duas consequências que não são detalhe:
 

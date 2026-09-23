@@ -71,37 +71,53 @@ create policy gacc_select on public.grupo_acessos
 
 -- ------------------------------------------------------------
 -- 2. O NÍVEL — uma fonte só para as três perguntas
+--
+--    ATENÇÃO ao mexer aqui: a 19.0 reescreve esta função (e a view
+--    da seção 3) para que estar num grupo ABAIXO conte como estar no
+--    grupo. Se a 17.0 as redefinisse por cima, rodar a 17.0 de novo —
+--    coisa que ela diz ser segura — apagaria a herança em silêncio.
+--    Por isso as duas definições abaixo só valem enquanto a 19.0
+--    ainda não passou por aqui (o mesmo cuidado que a 15.0 tem com
+--    sou_do_grupo, por causa desta 17.0).
 -- ------------------------------------------------------------
-create or replace function public.meu_nivel_no_grupo(p_grupo_id integer)
-returns text language plpgsql stable security definer
-set search_path = public as $$
-declare
-  v_reg   integer := public.portal_registro_atual();
-  v_nome  text;
-  v_res   boolean;
-  v_niv   text;
+do $$
 begin
-  if public.papel_atual() in ('admin','pessoal') then return 'edicao'; end if;
-  if p_grupo_id is null then return 'nenhum'; end if;
+  if to_regprocedure('public.esta_no_grupo(integer,integer)') is null then
+    execute $f$
+      create or replace function public.meu_nivel_no_grupo(p_grupo_id integer)
+      returns text language plpgsql stable security definer
+      set search_path = public as $g$
+      declare
+        v_reg   integer := public.portal_registro_atual();
+        v_nome  text;
+        v_res   boolean;
+        v_niv   text;
+      begin
+        if public.papel_atual() in ('admin','pessoal') then return 'edicao'; end if;
+        if p_grupo_id is null then return 'nenhum'; end if;
 
-  select nome, reservado into v_nome, v_res from grupos where id = p_grupo_id;
-  if v_nome is null then return 'nenhum'; end if;
-  if v_reg is null then return case when v_res then 'nenhum' else 'leitura' end; end if;
+        select nome, reservado into v_nome, v_res from grupos where id = p_grupo_id;
+        if v_nome is null then return 'nenhum'; end if;
+        if v_reg is null then return case when v_res then 'nenhum' else 'leitura' end; end if;
 
-  if exists (select 1 from membros m
-              where m.registro = v_reg and m.grupos @> array[v_nome])
-    then return 'edicao'; end if;
+        if exists (select 1 from membros m
+                    where m.registro = v_reg and m.grupos @> array[v_nome])
+          then return 'edicao'; end if;
 
-  select nivel into v_niv from grupo_acessos
-   where grupo_id = p_grupo_id and registro = v_reg;
-  if v_niv is not null then return v_niv; end if;
+        select nivel into v_niv from grupo_acessos
+         where grupo_id = p_grupo_id and registro = v_reg;
+        if v_niv is not null then return v_niv; end if;
 
-  return case when v_res then 'nenhum' else 'leitura' end;
+        return case when v_res then 'nenhum' else 'leitura' end;
+      end $g$;
+    $f$;
+    execute $f$
+      comment on function public.meu_nivel_no_grupo(integer) is
+        'nenhum | leitura | edicao. É a única regra de acesso a quadro no sistema — '
+        'as outras funções perguntam para esta.'
+    $f$;
+  end if;
 end $$;
-
-comment on function public.meu_nivel_no_grupo(integer) is
-  'nenhum | leitura | edicao. É a única regra de acesso a quadro no sistema — '
-  'as outras funções perguntam para esta.';
 
 create or replace function public.posso_ver_grupo(p_grupo_id integer)
 returns boolean language sql stable security definer
@@ -133,22 +149,31 @@ comment on function public.sou_do_grupo(integer) is
 --    Todo grupo ativo aparece, inclusive os que a pessoa não pode
 --    abrir — é assim que ela descobre que existe um quadro para
 --    pedir acesso. O que não vem é o conteúdo.
+--    (Dona desde a 19.0 é ela — veja o aviso da seção 2.)
 -- ------------------------------------------------------------
-drop view if exists public.grupos_visiveis;
-create view public.grupos_visiveis with (security_invoker = true) as
-select g.id, g.nome, g.prefixo, g.cor, g.ordem, g.reservado, g.chave,
-       public.meu_nivel_no_grupo(g.id) as meu_nivel,
-       (select count(*) from membros m
-         where m.grupos @> array[g.nome]
-           and m.status in ('Ativo','Em pausa / avaliação')) as pessoas
-  from grupos g
- where g.ativo
- order by g.ordem, g.nome;
-
-comment on view public.grupos_visiveis is
-  'Todo grupo ativo, com o meu nível em cada um. A lista é pública de '
-  'propósito: quadro que some não é quadro fechado, é quadro que ninguém '
-  'sabe que precisa pedir acesso.';
+do $$
+begin
+  if to_regprocedure('public.esta_no_grupo(integer,integer)') is null then
+    execute 'drop view if exists public.grupos_visiveis';
+    execute $f$
+      create view public.grupos_visiveis with (security_invoker = true) as
+      select g.id, g.nome, g.prefixo, g.cor, g.ordem, g.reservado, g.chave,
+             public.meu_nivel_no_grupo(g.id) as meu_nivel,
+             (select count(*) from membros m
+               where m.grupos @> array[g.nome]
+                 and m.status in ('Ativo','Em pausa / avaliação')) as pessoas
+        from grupos g
+       where g.ativo
+       order by g.ordem, g.nome
+    $f$;
+    execute $f$
+      comment on view public.grupos_visiveis is
+        'Todo grupo ativo, com o meu nível em cada um. A lista é pública de '
+        'propósito: quadro que some não é quadro fechado, é quadro que ninguém '
+        'sabe que precisa pedir acesso.'
+    $f$;
+  end if;
+end $$;
 
 -- ------------------------------------------------------------
 -- 4. A TELA DE GRUPOS (Administração)
