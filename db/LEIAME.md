@@ -71,6 +71,7 @@ db/
 | `v21_rol_nro_pub_001.sql` | o rol inicial: as 46 linhas da planilha NRO-PUB-001 viram séries, com os sete emissores (um por aba; CLI e REL ainda sem linhas) e um padrão de projeto proposto |
 | `v22_estrutura_das_series.sql` | a estrutura de cada série pela coluna nova da NRO-PUB-001 — documento único, template → documentos ou template → registros —, 18 séries ajustadas, e a mudança de estrutura no registro de alterações |
 | `v23_studio.sql` | o Studio: publicações `POST-N` (ideia → produção → aprovação → pronta → publicada), aprovação pelo grupo aprovador com versão, histórico, o lembrete da véspera por e-mail (pg_cron), os recursos de imagem, a imprensa do site (`site_imprensa_publico`) e o bucket privado `studio` |
+| `v24_treinamentos.sql` | os treinamentos: `NRO-TRE-XXX` com revisão (Rev. A, B…), módulos em Markdown com verificação de conhecimento (uma correta, várias, V ou F) corrigida no banco — o gabarito não desce —, atribuição a grupos (obrigatório ou opcional), progresso que aproveita o que não mudou entre revisões, conclusão com certificado `CERT-XXXX-XXXX`, validade, o aviso a quem deve, o README de conteúdo e o prefixo `TRE` reservado em Arquivos |
 
 **Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
 duplica nada.
@@ -169,6 +170,27 @@ Três coisas que valem saber:
   três matérias), só com a tabela vazia. Daí em diante, o site institucional e
   o do processo seletivo leem do banco, e a edição é pelo Studio.
 
+A **24.0** são os treinamentos. Ela não escolhe ninguém para gerir: além de
+`admin` e do papel `pessoal`, geram os grupos escolhidos em *Treinamentos ›
+Configurações* — e quem entra nessa lista, só `admin` e o Depto. de Pessoal
+decidem (um gatilho confere). Confira:
+`select grupos_gestores, nota_minima, readme is null as readme_padrao from public.treinamento_config;`
+
+Três coisas que valem saber:
+
+- **o gabarito não desce.** `treinamento_revisoes` (o conteúdo, com as
+  respostas) só quem gere lê. Quem faz o treinamento lê por
+  `treinamento_conteudo()`, sem as respostas, e quem corrige é
+  `treinamento_responder()`. Progresso, conclusão e certificado nascem de
+  funções: as tabelas não têm política de escrita;
+- **o README de conteúdo** começa vazio de propósito: vazio, vale o padrão que
+  mora no portal (`mod-treinamentos.js`), ao lado do leitor do formato. Só a
+  versão que a equipe escrever mora aqui;
+- **o prefixo `TRE`** fica reservado em `doc_emissores` (uma restrição
+  `not valid`, que não confere o que já existe): um emissor TRE em Arquivos
+  daria à equipe dois `NRO-TRE-003` diferentes. Se já houver um, a migração
+  avisa e não cria a restrição. Sem a 20.0, a parte é pulada.
+
 **O que o SQL Editor responde.** O editor do Supabase mostra só o último
 resultado que tem linhas. As migrações até a 20.0 terminam em *Success. No
 rows returned*. A 21.0 termina com a tabela **"o que a 21.0 deixou"**: sete
@@ -227,6 +249,17 @@ psql -d t23 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
 psql -d t23 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
             -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f v23_studio.sql
 psql -d t23 -f testes/v23_studio.sql         # 90 asserções (RLS e Storage inclusos; roda a 23.0, a 18.0 e a 16.0 de novo no fim)
+```
+
+```bash
+# 24.0, num banco novo: os treinamentos não dependem do Studio; a 20.0 entra
+# para o teste conferir que o emissor TRE fica reservado
+createdb t24
+psql -d t24 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
+psql -d t24 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
+            -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f v20_projetos_arquivos.sql \
+            -f v24_treinamentos.sql
+psql -d t24 -f testes/v24_treinamentos.sql   # 117 asserções (RLS inclusa; roda a 24.0 de novo no fim)
 ```
 
 O `esqueleto_storage.sql` é o mínimo do Supabase que o PostgreSQL puro não

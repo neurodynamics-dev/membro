@@ -25,9 +25,9 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **Arquivos** | documentos e registros controlados — código, revisão, status | todos no rol; o conteúdo segue a classe de cada série |
 | **Studio** | comunicação — criar as peças, planejar e aprovar as publicações | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
 | **Equipe** | pessoas — organograma e fichas | todos (a profundidade varia) |
+| **Treinamentos** | formação — o que os seus grupos pedem, fazer, os certificados | todos (gerir: `admin`, `pessoal` e os grupos gestores) |
 | **Informações** | documentos e políticas | todos |
-| **Serviços** | pedidos ao Depto. de Pessoal | todos |
-| **Meus pedidos** | o andamento do que você pediu | todos |
+| **Serviços** | pedidos ao Depto. de Pessoal — e, em *Meus pedidos*, o andamento deles | todos |
 | **Seleção** | os bastidores do processo seletivo | `admin`, `pessoal`, `selecao` |
 | **Administração** | os painéis: portal, site, catálogo, importação, auditoria | `admin`, `pessoal` (e `selecao`, só Relatórios) |
 
@@ -39,8 +39,10 @@ para baixo.
 
 Até dez destinos no primeiro nível para toda a equipe (mais Seleção e
 Administração, para quem tem o papel), cada um com ícone, no **menu lateral**
-à esquerda. Com o Studio são dez: **o próximo precisa caber dentro de um que
-já existe, ou tomar o lugar dele**. O Studio é o único espaço do primeiro nível
+à esquerda. Com o Studio eram dez: **o próximo precisa caber dentro de um que
+já existe, ou tomar o lugar dele**. Os Treinamentos foram o próximo, e tomaram
+o lugar de Meus pedidos, que coube dentro de Serviços — o andamento do que se
+pediu é parte de pedir, e `#/pedidos` continua abrindo pelo `ALIAS`. O Studio é o único espaço do primeiro nível
 que some para quem não é dos grupos dele — é uma ferramenta de trabalho de uma
 equipe, como Seleção, e não um lugar da equipe inteira. O segundo nível são os subitens de cada espaço — as abas da
 Agenda, os quadros dos grupos da pessoa, as categorias de documento, cada
@@ -92,7 +94,15 @@ conforme quem entra é menu que ninguém aprende.
 #/arquivos/<código>         um arquivo (ex.: #/arquivos/NRO-PES-007-2)
 #/informacoes[/<categoria>]
 #/servicos[/<tipo>]
-#/pedidos
+#/servicos/pedidos          meus pedidos (o antigo #/pedidos, que ainda abre)
+#/treinamentos              para você: o que os seus grupos pedem
+#/treinamentos/todos|certificados
+#/treinamentos/NRO-TRE-003  um treinamento: o programa e onde você está
+#/treinamentos/NRO-TRE-003/2  o módulo 2, com a verificação
+#/treinamentos/NRO-TRE-003/editar|acompanhamento
+#/treinamentos/gestao|novo
+#/treinamentos/config[/readme]  quem gere, a nota, o certificado, o README
+#/treinamentos/certificado/CERT-3F9A-C21B  conferir um certificado
 #/studio                    o quadro das publicações
 #/studio/calendario|ideias|modelos
 #/studio/criar[/<modelo>]   o criador (ex.: #/studio/criar/aniversario)
@@ -112,7 +122,8 @@ conforme quem entra é menu que ninguém aprende.
 - toda tela tem endereço. Se não dá para mandar por mensagem, não está pronto;
 - o primeiro segmento é o espaço, o segundo é o recorte ou o objeto;
 - endereço antigo nunca quebra: entra uma linha em `ALIAS` no roteador
-  (`calendario` → `agenda`, `quadro` → `equipe`, `organizacao` → `equipe`);
+  (`calendario` → `agenda`, `quadro` → `equipe`, `organizacao` → `equipe`,
+  `pedidos` → `servicos/pedidos`);
 - rota sem permissão devolve para o início — nunca uma tela vazia dizendo
   "sem acesso" para quem nunca deveria ter visto o link.
 
@@ -129,6 +140,7 @@ só a lupa, sem caixa nem legenda, no eixo dos outros ícones. Acha **quatro coi
 | **Pessoas** | nome, registro, cargo, grupo, e-mail |
 | **Atividades** | código (`ORT-14`), título, responsável |
 | **Agenda e documentos** | título do compromisso, nome do documento |
+| **Treinamentos** | código (`NRO-TRE-003`), título |
 
 **O contrato.** Cada módulo registra as próprias fontes ao carregar:
 
@@ -150,6 +162,12 @@ oito itens. A busca é para **navegar**, não para consultar o banco: quem
 precisa de relatório usa os filtros da tela, que têm recorte de verdade.
 
 Ações sempre vêm primeiro — quem digita "novo" quer criar, não ler.
+
+A exceção ao "cada módulo registra" é de quem já tem os dados: os
+treinamentos a casca lê no login (o início mostra os obrigatórios por fazer),
+então a fonte deles mora na casca, sobre `state.treMeus`, e acha o
+treinamento antes de alguém abrir o espaço. `mod-treinamentos` só mantém a
+lista em dia.
 
 ---
 
@@ -207,6 +225,8 @@ Todo objeto que uma pessoa cita em voz alta precisa de um código curto:
 | Projeto | `NEBULA` | `projetos.codigo` — o grupo da equipe é `NRO_PROJECT_NEBULA` |
 | Arquivo | `NRO-PES-007-2` | `doc_arquivos.codigo` — emissor, série (SN) e part number (PN); a revisão (`Rev. B`) fica fora do código |
 | Publicação | `POST-14` | `studio_publicacoes.codigo` — sequência única; a versão da arte fica fora do código, como a revisão de um arquivo |
+| Treinamento | `NRO-TRE-003` | `treinamentos.codigo` — do número; a revisão (`Rev. B`) fica fora do código, como num arquivo. O prefixo `TRE` não pode virar emissor em Arquivos |
+| Certificado | `CERT-3F9A-C21B` | `treinamento_conclusoes.certificado` — um por conclusão; confere-se em `#/treinamentos/certificado/<código>` |
 
 Sequência por grupo, não global: `ORT-14` diz de qual quadro a atividade é.
 O prefixo mora em `grupos.prefixo` e é gerado do nome, editável depois.
@@ -382,6 +402,27 @@ A escrita das publicações é só pelas funções (`studio_publicacao_salvar`,
 `studio_mover`, `studio_decidir`, `studio_excluir`): a tabela não tem política
 de escrita. É nelas que moram os avisos — quem aprova é avisado quando algo
 chega, quem responde é avisado da decisão.
+
+### Treinamentos: o gabarito não desce
+
+Quem faz um treinamento nunca recebe as respostas certas. O conteúdo —
+`treinamento_revisoes`, onde mora o gabarito — só quem gere lê direto; quem
+faz lê por `treinamento_conteudo()`, que tira `correta` e a explicação de cada
+questão. Quem corrige é o banco (`treinamento_responder`), e a explicação só
+volta para quem passou. Progresso, conclusão e certificado nascem de funções
+(`treinamento_concluir_modulo`, `treinamento_responder`, que fecham o
+treinamento sozinhas no último módulo): as tabelas não têm política de
+escrita, e nem um `insert` direto forja um certificado.
+
+A conclusão é uma **fotografia**: nome, título, revisão, carga horária, nota e
+os módulos da época. Revisar ou arquivar o treinamento depois não muda o
+certificado de ninguém — o que muda é se a pessoa continua **em dia**, e isso
+se calcula (`treinamento_situacao`), nunca se grava.
+
+O formato do texto de um treinamento tem **um dono só**: o README padrão, o
+leitor (`treLerTexto`) e o escritor (`treEscreverTexto`) moram juntos em
+`mod-treinamentos.js`. Mudar o formato é mudar os três no mesmo diff — senão o
+README ensina os agentes de IA a escrever o que o portal não lê.
 
 ## 8. Layout
 

@@ -75,10 +75,11 @@ console.log('\nAberto (admin, 1440px)');
     r: s.dataset.r, rot: s.querySelector('.lt-rot').textContent,
     icone: s.querySelector('.lt-item svg.ic')?.innerHTML.length || 0 })));
   /* o Studio (v23) é o décimo espaço: aparece para admin e para quem
-     está nos grupos dele (Studio › Configurações) */
+     está nos grupos dele (Studio › Configurações). Os Treinamentos (v24)
+     tomaram o lugar de Meus pedidos, que virou subitem de Serviços */
   confere('os espaços, na ordem (admin vê também Studio, Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Informações|Serviços|Meus pedidos|Seleção|Administração',
+      'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Treinamentos|Informações|Serviços|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
   confere('Seleção e Administração vêm depois do divisor "Gestão"',
@@ -147,8 +148,10 @@ console.log('\nAberto (admin, 1440px)');
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-seta');
   await p.waitForTimeout(200);
   let srv = await secao(p, 'servicos');
+  /* oito: todos os serviços, Meus pedidos (desde a v24) e os seis serviços */
   confere('a seta abre Serviços sem navegar',
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 7 && await p.evaluate(() => location.hash) === '#/', srv);
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 8 && srv.filhos[1] === 'Meus pedidos'
+      && await p.evaluate(() => location.hash) === '#/', srv);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-filho[data-sub="ouvidoria"]');
   await p.waitForTimeout(700);
   confere('o subitem leva à tela', await p.evaluate(() => location.hash) === '#/servicos/ouvidoria');

@@ -423,6 +423,56 @@
     { id:'r1', titulo:'Fotos do Cybathlon 2024', tipo:'album', url:'https://photos.app.goo.gl/abc', descricao:'Zurique, a equipe e a bicicleta.', ordem:100, criado_por:4 },
     { id:'r2', titulo:'Drive · Fotos dos projetos', tipo:'pasta', url:'https://drive.google.com/drive/folders/xyz', descricao:null, ordem:100, criado_por:11 }];
 
+  /* ---- v24: os treinamentos ----
+     Três: NRO-TRE-001 (Rev. B publicada, obrigatório para Órtese — o
+     grupo da Ana —, com vídeo, links e uma verificação de cada tipo),
+     NRO-TRE-002 (opcional para a equipe inteira, que a Ana já concluiu)
+     e NRO-TRE-003 (rascunho, com problemas). Quem gere, além de admin e
+     pessoal, é NRO_MANAGERS (id 6). */
+  const trDia = d => { const x = new Date(); x.setDate(x.getDate() + d); return x.toISOString(); };
+  const TR_C1 = { modulos:[
+    { id:'m-agenda', titulo:'O que é a agenda', corpo:
+      'Ao fim deste módulo, você sabe onde mora a agenda da equipe.\n\n## Uma agenda só\n\nA agenda junta **compromissos**, marcos e ausências.\n\n'
+      + '1. Abra a [Agenda](#/agenda).\n2. Escolha **Novo compromisso**.\n   - o tipo sugere a visibilidade\n\n> **Dica:** a busca abre com a tecla `/`.\n\n'
+      + '```video\nhttps://youtu.be/AdOeBTOeMu0\nComo marcar um compromisso\n```\n\n'
+      + 'Quem vai ao laboratório segue a [política de acesso ao LABBIO](arquivo:NRO-PES-015).\n\n| Aba | Para quê |\n|---|---|\n| Mês | a grade |\n| Agendar | o livre e o ocupado |',
+      links:[{ titulo:'Política de acesso ao LABBIO', url:'arquivo:NRO-PES-015', descricao:'as regras completas' },
+             { titulo:'Agenda do mês', url:'#/agenda/mes', descricao:'' }] },
+    { id:'m-abas', titulo:'As cinco abas', corpo:'Próximos, Mês, Agendar, Presença e Minha agenda.', verificacao:{ questoes:[
+      { id:'q1', tipo:'unica', enunciado:'Qual aba mostra a grade do mês?', explicacao:'É a aba Mês.',
+        opcoes:[{ id:'a', texto:'Próximos', correta:false }, { id:'b', texto:'Mês', correta:true }, { id:'c', texto:'Agendar', correta:false }] },
+      { id:'q2', tipo:'multipla', enunciado:'O que aparece na agenda?', explicacao:'Compromissos e marcos; e-mail não entra.',
+        opcoes:[{ id:'a', texto:'Compromissos', correta:true }, { id:'b', texto:'Marcos do semestre', correta:true }, { id:'c', texto:'E-mails', correta:false }] },
+      { id:'q3', tipo:'vf', enunciado:'Verdadeiro ou falso:', explicacao:'O padrão é não repetir.',
+        opcoes:[{ id:'a', texto:'O portal lê o seu Google Agenda.', correta:true }, { id:'b', texto:'Todo compromisso se repete.', correta:false }] }] } },
+    { id:'m-presenca', titulo:'Presença', corpo:'O check-in é pelo QR da entrada do LABBIO.' }] };
+  const TR_C2 = { modulos:[{ id:'m-lab', titulo:'O LABBIO', corpo:'O Laboratório de Bioengenharia da Escola de Engenharia.' }] };
+  const TR_C3 = { modulos:[{ id:'m-x', titulo:'', corpo:'Óculos, sempre.', verificacao:{ questoes:[
+    { id:'q1', tipo:'unica', enunciado:'O que se usa?', opcoes:[{ id:'a', texto:'Óculos', correta:true }, { id:'b', texto:'Luvas', correta:true }] }] } }] };
+  DADOS.treinamento_config = [{ id:true, grupos_gestores:[6], nota_minima:70, readme:null, readme_atualizado_em:null, readme_atualizado_por:null,
+    assinatura_nome:'Elis Ramalho', assinatura_cargo:'Depto. de Pessoal' }];
+  DADOS.treinamentos = [
+    { id:'tr1', numero:1, codigo:'NRO-TRE-001', titulo:'Agenda no SOMA', resumo:'Marcar, responder e acompanhar os compromissos da equipe.',
+      categoria:'Sistemas', carga_horaria_min:30, nota_minima:null, validade_meses:null, status:'publicado', revisao_atual:'B', revisao_minima:'A',
+      responsavel:4, criado_por:4, criado_em:trDia(-40), atualizado_em:trDia(-3) },
+    { id:'tr2', numero:2, codigo:'NRO-TRE-002', titulo:'Apresentação do LABBIO', resumo:'Onde fica, quem é quem e como se chega.',
+      categoria:'Integração', carga_horaria_min:15, nota_minima:null, validade_meses:null, status:'publicado', revisao_atual:'A', revisao_minima:'A',
+      responsavel:4, criado_por:4, criado_em:trDia(-30), atualizado_em:trDia(-30) },
+    { id:'tr3', numero:3, codigo:'NRO-TRE-003', titulo:'Segurança na bancada', resumo:null, categoria:'Segurança', carga_horaria_min:null,
+      nota_minima:null, validade_meses:12, status:'rascunho', revisao_atual:null, revisao_minima:null, responsavel:4, criado_por:4, criado_em:trDia(-2), atualizado_em:trDia(-2) }];
+  DADOS.treinamento_revisoes = [
+    { id:'rv1a', treinamento_id:'tr1', revisao:'A', status:'substituida', conteudo:TR_C1, notas:'Versão inicial.', exige_refazer:true,
+      publicado_nome:'Ana Figueiredo', publicado_em:trDia(-40), criado_em:trDia(-41), atualizado_em:trDia(-40) },
+    { id:'rv1b', treinamento_id:'tr1', revisao:'B', status:'publicada', conteudo:TR_C1, notas:'O vídeo novo do módulo 1.', exige_refazer:false,
+      publicado_nome:'Ana Figueiredo', publicado_em:trDia(-3), criado_em:trDia(-4), atualizado_em:trDia(-3) },
+    { id:'rv2a', treinamento_id:'tr2', revisao:'A', status:'publicada', conteudo:TR_C2, notas:'Versão inicial.', exige_refazer:true,
+      publicado_nome:'Ana Figueiredo', publicado_em:trDia(-30), criado_em:trDia(-30), atualizado_em:trDia(-30) },
+    { id:'rv3', treinamento_id:'tr3', revisao:null, status:'rascunho', conteudo:TR_C3, notas:null, exige_refazer:false,
+      criado_em:trDia(-2), atualizado_em:trDia(-2) }];
+  DADOS.treinamento_atribuicoes = [{ id:1, treinamento_id:'tr1', grupo_id:1, obrigatorio:true }, { id:2, treinamento_id:'tr2', grupo_id:null, obrigatorio:false }];
+  DADOS.treinamento_conclusoes = [{ id:'c2', certificado:'CERT-2A4B-9C1D', registro:4, treinamento_id:'tr2', nome:'Ana Figueiredo', codigo:'NRO-TRE-002',
+    titulo:'Apresentação do LABBIO', revisao:'A', carga_horaria_min:15, nota:null, modulos:['O LABBIO'], concluido_em:trDia(-20) }];
+
   /* doc_arquivos é o que a lista de projetos lê para o progresso: sai do rol */
   DADOS.doc_arquivos = DADOS.doc_rol.map(r => ({ id:r.id, projeto_id:r.projeto_id || null, serie_id:r.serie_id,
     status:r.status, rev_pendente:r.rev_pendente }));
@@ -440,7 +490,9 @@
       order(){ return b; }, limit(){ return b; },
       /* as escritas ficam em window.__escritas, para o teste conferir */
       insert(d){ (window.__escritas ||= []).push({ tabela, op:'insert', dados:d }); return b; },
-      update(d){ (window.__escritas ||= []).push({ tabela, op:'update', dados:d }); return b; },
+      update(d){ (window.__escritas ||= []).push({ tabela, op:'update', dados:d });
+        if (tabela === 'treinamento_config') Object.assign(DADOS.treinamento_config[0], d, d.readme !== undefined ? { readme_atualizado_em:new Date().toISOString(), readme_atualizado_por:'Ana Figueiredo' } : {});
+        return b; },
       upsert(d){ (window.__escritas ||= []).push({ tabela, op:'upsert', dados:d }); return b; },
       delete(){ (window.__escritas ||= []).push({ tabela, op:'delete' }); return b; },
       maybeSingle(){ b._um = true; return b; },
@@ -661,6 +713,136 @@
             const i = DADOS.studio_publicacoes.findIndex(y => y.id === args.p_id);
             const [x] = DADOS.studio_publicacoes.splice(i, 1);
             return { data:{ status:'ok', codigo:x.codigo, imagens:x.imagens }, error:null };
+          }
+          /* ---- v24: os treinamentos ---- */
+          if (nome.startsWith('treinamento')) (window.__rpcs ||= []).push({ nome, p: args?.p ?? args });
+          if (nome.startsWith('treinamento')){
+            const T = DADOS.treinamentos, R = DADOS.treinamento_revisoes, C = DADOS.treinamento_conclusoes;
+            const ok = d => ({ data:{ status:'ok', ...d }, error:null });
+            const pub = t => R.find(r => r.treinamento_id === t.id && r.revisao === t.revisao_atual);
+            const ord = r => !r ? 0 : [...r].reduce((s, c) => s * 26 + c.charCodeAt(0) - 64, 0);
+            const letra = n => { let s = ''; while (n > 0){ n--; s = String.fromCharCode(65 + n % 26) + s; n = Math.floor(n / 26); } return s; };
+            const P = (window.__treProg ||= {});                         /* o progresso da Ana, por treinamento */
+            const prog = t => (P[t.id + '@' + t.revisao_atual] ||= { feitos:[], respostas:{} });
+            const meusGrupos = () => { const eu = DADOS.membros.find(m => m.registro === 4); const ids = new Set();
+              (eu?.grupos || []).forEach(n => { let g = DADOS.grupos.find(x => x.nome === n); while (g && !ids.has(g.id)){ ids.add(g.id); g = DADOS.grupos.find(x => x.id === g.pai_id); } });
+              return ids; };
+            const obrig = t => { const as = DADOS.treinamento_atribuicoes.filter(a => a.treinamento_id === t.id && (a.grupo_id == null || meusGrupos().has(a.grupo_id)));
+              return as.length ? as.some(a => a.obrigatorio) : null; };
+            const concl = t => C.filter(c => c.treinamento_id === t.id && c.registro === 4).sort((a, b) => b.concluido_em.localeCompare(a.concluido_em))[0];
+            const situ = t => { const c = concl(t), f = prog(t).feitos.length;
+              if (c && ord(c.revisao) >= ord(t.revisao_minima)) return 'concluido';
+              if (f) return 'andamento'; return c ? 'nova_revisao' : 'pendente'; };
+            const linha = t => { const c = concl(t); return { id:t.id, codigo:t.codigo, titulo:t.titulo, resumo:t.resumo, categoria:t.categoria,
+              carga_horaria_min:t.carga_horaria_min, revisao:t.revisao_atual, n_modulos:(pub(t)?.conteudo.modulos || []).length, obrigatorio:obrig(t),
+              situacao:situ(t), feitos:prog(t).feitos.length, concluido_em:c?.concluido_em || null, certificado:c?.certificado || null,
+              vence_em:null, publicado_em:pub(t)?.publicado_em }; };
+            const fechar = t => { const mods = pub(t).conteudo.modulos, pr = prog(t);
+              if (!mods.every(m => pr.feitos.includes(m.id))) return null;
+              const c = concl(t); if (c && c.revisao === t.revisao_atual && pr.fechou) return c.certificado;
+              const notas = mods.filter(m => m.verificacao).map(m => pr.respostas[m.id]?.melhor_nota || 0);
+              const cert = 'CERT-' + Math.random().toString(16).slice(2, 6).toUpperCase() + '-' + Math.random().toString(16).slice(2, 6).toUpperCase();
+              C.push({ id:'c' + (C.length + 9), certificado:cert, registro:4, treinamento_id:t.id, nome:'Ana Figueiredo', codigo:t.codigo, titulo:t.titulo,
+                revisao:t.revisao_atual, carga_horaria_min:t.carga_horaria_min, nota: notas.length ? Math.round(notas.reduce((a, b) => a + b, 0) / notas.length) : null,
+                modulos:mods.map(m => m.titulo), concluido_em:new Date().toISOString() });
+              pr.fechou = true; return cert; };
+            const porId = id => T.find(t => t.id === id);
+            if (nome === 'treinamentos_meus' || nome === 'treinamentos_de') return { data: T.filter(t => t.status === 'publicado').map(linha), error:null };
+            if (nome === 'treinamento_conteudo'){
+              const t = T.find(x => x.codigo === String(args.p_codigo).toUpperCase());
+              if (!t || !t.revisao_atual || t.status === 'arquivado') return { data:{ status:'nao_encontrado' }, error:null };
+              const rv = pub(t), c = concl(t), pr = prog(t);
+              const sem = JSON.parse(JSON.stringify(rv.conteudo.modulos)).map(m => { if (m.verificacao) m.verificacao.questoes.forEach(q => { delete q.explicacao; q.opcoes.forEach(o => delete o.correta); }); return m; });
+              return ok({ treinamento:{ id:t.id, codigo:t.codigo, titulo:t.titulo, resumo:t.resumo, categoria:t.categoria, carga_horaria_min:t.carga_horaria_min,
+                  nota_minima:t.nota_minima ?? 70, validade_meses:t.validade_meses, revisao:t.revisao_atual, revisao_minima:t.revisao_minima, situacao_treinamento:t.status,
+                  responsavel:t.responsavel, responsavel_nome:'Ana Figueiredo', publicado_em:rv.publicado_em, notas_revisao:rv.notas },
+                modulos:sem, feitos:[...pr.feitos], respostas:JSON.parse(JSON.stringify(pr.respostas)), situacao:situ(t), obrigatorio:obrig(t),
+                conclusao: c ? { certificado:c.certificado, revisao:c.revisao, nota:c.nota, concluido_em:c.concluido_em, vence_em:null } : null });
+            }
+            if (nome === 'treinamento_concluir_modulo'){
+              const t = porId(args.p_id), m = pub(t).conteudo.modulos.find(x => x.id === args.p_modulo);
+              if (m.verificacao) return { data:{ status:'tem_verificacao' }, error:null };
+              const pr = prog(t); if (!pr.feitos.includes(m.id)) pr.feitos.push(m.id);
+              const cert = fechar(t);
+              return ok({ feitos:[...pr.feitos], total:pub(t).conteudo.modulos.length, certificado:cert, situacao:situ(t) });
+            }
+            if (nome === 'treinamento_responder'){
+              const t = porId(args.p_id), m = pub(t).conteudo.modulos.find(x => x.id === args.p_modulo), R2 = args.p_respostas || {};
+              const erradas = [], gab = {};
+              m.verificacao.questoes.forEach(q => {
+                let certa;
+                if (q.tipo === 'vf'){ const s = R2[q.id] || {}; certa = q.opcoes.every(o => s[o.id] === !!o.correta);
+                  gab[q.id] = { vf:Object.fromEntries(q.opcoes.map(o => [o.id, !!o.correta])), explicacao:q.explicacao }; }
+                else { const c = q.opcoes.filter(o => o.correta).map(o => o.id).sort(), s = [...new Set(R2[q.id] || [])].sort();
+                  certa = c.length > 0 && c.join() === s.join(); gab[q.id] = { corretas:c, explicacao:q.explicacao }; }
+                if (!certa) erradas.push(q.id);
+              });
+              const total = m.verificacao.questoes.length, acertos = total - erradas.length, nota = Math.round(100 * acertos / total), aprovado = nota >= 70;
+              const pr = prog(t), ant = pr.respostas[m.id] || {};
+              pr.respostas[m.id] = { tentativas:(ant.tentativas || 0) + 1, ultima_nota:nota, melhor_nota:Math.max(ant.melhor_nota || 0, nota), aprovado:ant.aprovado || aprovado };
+              if (aprovado && !pr.feitos.includes(m.id)) pr.feitos.push(m.id);
+              const cert = aprovado ? fechar(t) : null;
+              return ok({ nota, acertos, total, nota_minima:70, aprovado, erradas, gabarito: aprovado ? gab : null, feitos:[...pr.feitos],
+                total_modulos:pub(t).conteudo.modulos.length, certificado:cert, situacao:situ(t) });
+            }
+            if (nome === 'treinamento_recomecar'){ const t = porId(args.p_id); P[t.id + '@' + t.revisao_atual] = { feitos:[], respostas:{} }; return ok({ situacao:situ(t) }); }
+            if (nome === 'treinamento_salvar'){
+              const p = args.p || {};
+              if (!p.id){
+                if (!String(p.titulo || '').trim()) return { data:{ status:'invalido', campo:'titulo' }, error:null };
+                const numero = p.numero ? +p.numero : Math.max(0, ...T.map(t => t.numero)) + 1;
+                if (T.some(t => t.numero === numero)) return { data:{ status:'duplicado', campo:'numero' }, error:null };
+                const t = { id:'tr' + numero, numero, codigo:'NRO-TRE-' + String(numero).padStart(3, '0'), titulo:p.titulo, resumo:p.resumo || null,
+                  categoria:p.categoria || null, carga_horaria_min:p.carga_horaria_min ? +p.carga_horaria_min : null, nota_minima:null, validade_meses:null,
+                  status:'rascunho', revisao_atual:null, revisao_minima:null, responsavel:4, criado_por:4, criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString() };
+                T.push(t);
+                R.push({ id:'rv-' + t.id, treinamento_id:t.id, revisao:null, status:'rascunho', conteudo:p.conteudo || { modulos:[] }, notas:null, criado_em:t.criado_em, atualizado_em:t.criado_em });
+                return ok({ id:t.id, codigo:t.codigo });
+              }
+              const t = porId(p.id);
+              ['titulo','resumo','categoria','carga_horaria_min','nota_minima','validade_meses','responsavel'].forEach(k => { if (k in p) t[k] = p[k] === '' ? null : p[k]; });
+              return ok({ id:t.id, codigo:t.codigo });
+            }
+            if (nome === 'treinamento_rascunho_salvar'){
+              const t = porId(args.p_id); let r = R.find(x => x.treinamento_id === t.id && x.status === 'rascunho');
+              if (!r){ r = { id:'rv-' + t.id + '-' + R.length, treinamento_id:t.id, revisao:null, status:'rascunho', conteudo:JSON.parse(JSON.stringify(pub(t)?.conteudo || { modulos:[] })),
+                notas:null, criado_em:new Date().toISOString() }; R.push(r); }
+              if (args.p_conteudo) r.conteudo = JSON.parse(JSON.stringify(args.p_conteudo));
+              if (args.p_notas != null) r.notas = args.p_notas || null;
+              r.atualizado_em = new Date().toISOString();
+              return ok({ revisao_id:r.id, problemas:[] });
+            }
+            if (nome === 'treinamento_rascunho_descartar'){ const t = porId(args.p_id); const i = R.findIndex(x => x.treinamento_id === t.id && x.status === 'rascunho'); if (i >= 0) R.splice(i, 1); return ok({}); }
+            if (nome === 'treinamento_publicar'){
+              const t = porId(args.p_id), r = R.find(x => x.treinamento_id === t.id && x.status === 'rascunho');
+              if (!r) return { data:{ status:'sem_rascunho' }, error:null };
+              const l = letra(Math.max(ord(t.revisao_atual), ...R.filter(x => x.treinamento_id === t.id).map(x => ord(x.revisao))) + 1);
+              const exige = !t.revisao_atual || !!args.p_exige_refazer;
+              R.filter(x => x.treinamento_id === t.id && x.status === 'publicada').forEach(x => { x.status = 'substituida'; });
+              Object.assign(r, { status:'publicada', revisao:l, exige_refazer:exige, notas:args.p_notas || r.notas, publicado_nome:'Ana Figueiredo', publicado_em:new Date().toISOString() });
+              t.revisao_atual = l; t.status = 'publicado'; if (exige) t.revisao_minima = l;
+              return ok({ revisao:l, exige_refazer:exige, avisados: exige ? 2 : 0 });
+            }
+            if (nome === 'treinamento_atribuir'){
+              DADOS.treinamento_atribuicoes = DADOS.treinamento_atribuicoes.filter(a => a.treinamento_id !== args.p_id)
+                .concat((args.p_lista || []).map((a, i) => ({ id:100 + i, treinamento_id:args.p_id, grupo_id:a.grupo_id, obrigatorio:a.obrigatorio })));
+              return ok({ avisados:1, atribuicoes:(args.p_lista || []).length });
+            }
+            if (nome === 'treinamento_arquivar'){ const t = porId(args.p_id); t.status = args.p_arquivar ? 'arquivado' : 'publicado'; return ok({ situacao:t.status }); }
+            if (nome === 'treinamento_excluir'){ const i = T.findIndex(t => t.id === args.p_id); const [t] = T.splice(i, 1); return ok({ codigo:t.codigo }); }
+            if (nome === 'treinamento_acompanhamento'){
+              const t = porId(args.p_id), a = linha(t), c = concl(t);
+              return { data:[
+                { registro:4, nome:'Ana Figueiredo', obrigatorio:a.obrigatorio, situacao:a.situacao, feitos:a.feitos, total:a.n_modulos,
+                  concluido_em:c?.concluido_em || null, revisao:c?.revisao || null, nota:c?.nota ?? null, certificado:c?.certificado || null },
+                { registro:11, nome:'Bruno Tavares', obrigatorio:false, situacao:'pendente', feitos:0, total:a.n_modulos, concluido_em:null, revisao:null, nota:null, certificado:null },
+                { registro:17, nome:'Carla Mendonça', obrigatorio:true, situacao:'andamento', feitos:1, total:a.n_modulos, concluido_em:null, revisao:null, nota:null, certificado:null }], error:null };
+            }
+            if (nome === 'treinamento_certificado'){
+              const c = C.find(x => x.certificado === String(args.p_codigo).toUpperCase());
+              return c ? ok({ ...c, modulos:c.modulos, em_dia:true, vence_em:null, revisao_atual:porId(c.treinamento_id)?.revisao_atual }) : { data:{ status:'nao_encontrado' }, error:null };
+            }
+            return ok({});
           }
           if (nome === 'agenda_itens' || nome === 'agenda_manter_series') return { data: [], error: null };
           if (nome === 'portal_agenda_ocupacao') return { data: [], error: null };
