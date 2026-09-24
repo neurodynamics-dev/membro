@@ -357,7 +357,11 @@ console.log('\nTema');
   confere('o seletor troca para o claro e guarda a escolha',
     t1.tema === 'claro' && t1.salvo === 'claro' && t1.fundo === 'rgb(242, 245, 241)' && t1.rot === 'Usar o tema escuro'
     && t1.meta === '#F2F5F1', t1);
-  /* legível: o texto de cada token, sobre o fundo que ele tem de fato */
+  /* legível: o texto de cada token, sobre o fundo que ele tem de fato.
+     Trocar o tema dispara as transições de cor (o item do menu tem
+     color .15s): medir no meio delas leria o texto do escuro, #9AA5A1,
+     sobre o papel — 2,4:1 —, e o número mudaria a cada rodada. */
+  await quieto(p);
   const cont = await p.evaluate(() => {
     const rgb = s => (s.match(/[\d.]+/g) || []).map(Number);
     const lum = c => { const f = v => (v /= 255) <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4;
