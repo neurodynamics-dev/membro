@@ -533,6 +533,18 @@ formato que ele descreve. **Exportar**, no editor, devolve o treinamento no
 mesmo formato — é assim que se pede a um agente a Rev. B de um treinamento que
 já existe.
 
+### Os primeiros treinamentos
+
+Em [`treinamentos/`](treinamentos/LEIAME.md) moram os seis primeiros, já no
+formato do README: **NRO-TRE-001** Introdução ao SOMA, **002** Gestão de tempo
+e agenda, **003** ISO 9001: documentação e o sistema de Arquivos, **004**
+Gestão de redes sociais, **005** Confidencialidade da informação (com base no
+PNPC, da ABIN; vence em 12 meses) e **006** Gestão de projetos. A migração
+`db/v25_treinamentos_iniciais.sql` os põe no portal como rascunho; ela é
+gerada dos `.md` por `node treinamentos/gerar-semente.mjs`. Os vídeos ainda
+não gravados estão marcados no texto, e o roteiro de cada um — cena, tela e
+narração — está em [`treinamentos/roteiros/`](treinamentos/roteiros/LEIAME.md).
+
 ### O editor
 
 Em `#/treinamentos/NRO-TRE-003/editar`: os módulos (título, corpo com barra de
