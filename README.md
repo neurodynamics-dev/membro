@@ -63,6 +63,9 @@ SOMA · Gestão está sendo trazido, conforme o
 - **Arquivos** — o controle de documentos e registros que era a planilha
   NRO-PUB-001: código `NRO-XXX-YYY-Z`, revisão, status, template, relações
   entre arquivos, e nenhuma versão valendo antes de alguém revisar.
+- **Studio** — a comunicação: um criador de peças para as redes, no tamanho
+  exato de cada uma, e o planejamento das publicações — quadro, calendário,
+  ideias, aprovação e o lembrete da véspera por e-mail. Ver [Studio](#studio).
 - **Ferramentas da equipe** — trilho na página inicial com tudo o que a
   NeuroDynamics usa: agenda, atividades, equipe, documentos, tour, site
   institucional, brand guidelines, processo seletivo e GitHub.
@@ -70,9 +73,9 @@ SOMA · Gestão está sendo trazido, conforme o
 ## Como o sistema se organiza
 
 A navegação é por **espaços** — o que você está fazendo —, não por qual app
-a tela veio: **Agenda · Atividades · OKRs · Projetos · Arquivos · Equipe ·
-Informações · Serviços · Meus pedidos**, e, para quem tem o papel,
-**Seleção** e **Administração**. Eles ficam num **menu lateral** à esquerda,
+a tela veio: **Agenda · Atividades · OKRs · Projetos · Arquivos · Studio ·
+Equipe · Informações · Serviços · Meus pedidos** (o Studio, para quem está
+nos grupos dele), e, para quem tem o papel, **Seleção** e **Administração**. Eles ficam num **menu lateral** à esquerda,
 cada um com ícone e com os seus subitens logo abaixo — as abas da Agenda, os
 quadros dos seus grupos, as categorias de documento, cada serviço, cada
 painel da Administração. O **início** não é item da lista: a logo no alto do
@@ -331,6 +334,110 @@ dela):
    aprovadas, mas sem arquivo (*Anexar o arquivo desta revisão*, na tela de
    cada um).
 
+## Studio
+
+O espaço da comunicação, em `#/studio` (`mod-studio.js`, o planejamento, e
+`mod-criador.js`, a arte). Entra quem está num dos **grupos de acesso** ou num
+dos **grupos aprovadores** escolhidos em *Studio › Configurações* (contando
+subgrupos, como sempre), e `admin`.
+
+### O criador
+
+Em `#/studio/criar` — o mesmo caminho do gerador de assets do brand e do
+gerador de publicações do processo seletivo, com mais liberdade. Tudo é
+desenhado no navegador, em canvas, no **tamanho exato de cada rede**: feed
+4:5, quadrado, stories, capa de reels, documento do LinkedIn (sai em PDF),
+paisagem, thumbnail do YouTube e vídeo 16:9 e 9:16.
+
+- **23 modelos**, em `#/studio/modelos`, cada um com prévia: *na mídia*,
+  *projeto em foco* (carrossel de seis lâminas), *aniversário*, *parabéns a
+  parceiros* (a logo do parceiro ao lado da nossa), *boas-vindas*,
+  *conquista*, *evento*, *aviso*, *frase*, *dado*, *bastidores*, *carrossel
+  educativo*, *vaga e processo seletivo*, *artigo publicado*, *agradecimento*,
+  *data comemorativa*, *depoimento*, *enquete*, e os de vídeo — *thumbnail*
+  (e capa de reels), *tela de encerramento* (com os espaços dos elementos do
+  YouTube), *barra de nome* (PNG transparente, para ir sobre o vídeo) e
+  *cartela de título* —, mais uma peça em branco;
+- a peça é uma ou mais **lâminas** (o carrossel), cada uma com um de 17
+  **leiautes** (capa, texto, lista numerada, número, citação, pessoa, evento,
+  na mídia, parceiro, chamada final, foto, artigo, enquete, thumbnail,
+  encerramento, barra de nome, cartela). Acrescentar, duplicar, reordenar e
+  trocar o leiaute de uma lâmina não perde o texto;
+- o **estilo** é da peça: dez temas da paleta oficial e da auxiliar (Void,
+  Cortex, Soma, Íon, Plasma, Dendrito, Synapse, Aura, Papel, Mielina), nove
+  acentos (e uma cor livre), decoração (rede neural, ondas, formas, confete),
+  grade técnica, marcas de corte, destaque (`*palavra*` pinta, marca ou
+  sublinha), alinhamento, tamanho do título, caixa alta, a posição e o
+  tamanho da logo, **a logo do LABBIO ao lado da nossa**, rodapé e contador
+  do carrossel. Nos temas claros, o acento de texto escurece para ler;
+- **fotos**: enviar, do **Unsplash** (com a chave em *Configurações*, a busca
+  acontece ali mesmo e o crédito entra sozinho), **da equipe** (o nome, o
+  cargo e a foto da ficha, para aniversário e boas-vindas) ou por link. Cada
+  uma com enquadramento, zoom e filtro (natural, preto e branco, duotone da
+  marca, véu verde);
+- **baixar** em três resoluções (a Alta é a de 1440 px, o máximo que o
+  Instagram guarda), uma lâmina, todas num ZIP ou em PDF;
+- **salvar no quadro** pede o plano — quando, onde, formato, pilar, quem
+  responde, a legenda (o modelo sugere uma), o primeiro comentário, o texto
+  alternativo, as contas para convidar como collab e as **notas para quem for
+  publicar** — e sobe as artes na resolução Alta para o bucket privado
+  `studio`. A peça inteira vai junto: a arte reabre para editar
+  (`#/studio/POST-14/arte`). Uma peça que ainda não foi salva fica guardada
+  no navegador, para continuar depois.
+
+### O planejamento
+
+Cada publicação tem código (`POST-14`) e anda por cinco colunas no **quadro**
+(`#/studio`):
+
+| Coluna | O que é |
+|---|---|
+| **Ideias** | esboços sem data — às vezes só uma frase e o tipo de publicação (`#/studio/ideias`, com pontos de partida por pilar) |
+| **Em produção** | a arte e a legenda sendo feitas |
+| **Em aprovação** | esperando o grupo aprovador |
+| **Pronta para publicar** | aprovada: é só publicar na data |
+| **Publicada** | no ar, com o link |
+
+- **"Pronta" só se alcança pela aprovação.** Quem aprova é alguém de um grupo
+  aprovador que **não** mandou a publicação para aprovação — a mesma regra das
+  revisões de arquivo. Dá para exigir duas ou três aprovações. Devolver pede o
+  porquê, e quem responde é avisado;
+- **mexer na arte ou na legenda de uma publicação aprovada devolve para
+  aprovação**: o que foi aprovado era a versão anterior. Notas, data e o resto
+  do plano não contam;
+- o **calendário** (`#/studio/calendario`) mostra o mês, com a cor do status;
+  arrastar muda a data, e o que não tem data fica ao lado, para ser arrastado;
+- na **véspera** da data, quem responde pela publicação (e quem aprova, se ela
+  ainda não foi aprovada) recebe um lembrete no sino e **por e-mail** — o
+  único aviso do Studio que sai por e-mail mesmo para quem escolheu resumo ou
+  "só no portal": é compromisso com dia marcado. O `pg_cron` roda o lembrete
+  de hora em hora, das 8h às 20h; sem ele, quem abre o Studio dispara;
+- a página da publicação (`#/studio/POST-14`) tem a arte para baixar (uma a
+  uma ou num ZIP), o plano, a aprovação, o histórico e, para quem publica, o
+  passo a passo de cada rede (como convidar um colaborador no Instagram, onde
+  vai o link no LinkedIn…).
+
+A classificação vem dos blogs de conteúdo: o **pilar** diz por que publicar
+(educar, inspirar, conectar, entreter, institucional, convidar), o **tipo** diz
+o que é (aniversário, na mídia…), o **formato** diz o que ela é na rede
+(imagem única, carrossel, stories, reels, documento, vídeo, só texto) e as
+**redes** dizem onde.
+
+### Configurações
+
+Em `#/studio/config`: os **grupos de acesso** e os **grupos aprovadores**,
+quantas aprovações bastam e o lembrete; as **contas** da equipe em cada rede
+(entram no rodapé das artes e na tela de encerramento) e a chave do Unsplash;
+a **imprensa do site** — os vídeos e as matérias da seção *Quem somos* do site
+institucional e da página *A NeuroDynamics* do site do processo seletivo, que
+os dois leem na hora por `site_imprensa_publico()`; e os **recursos de
+imagem** — pastas do Drive, álbuns compartilhados, repositórios com fotos da
+equipe.
+
+Acesso e contas são da gestão do Studio (admin e quem aprova); a imprensa,
+dela e de `admin`/`pessoal`, como o painel do site; os recursos, de quem
+entra no Studio.
+
 ## OKRs
 
 O planejamento estratégico da equipe, em `#/okrs` — veio do SOMA · Gestão
@@ -391,6 +498,9 @@ Duas coisas que a unificação trouxe de graça:
 | `mod-selecao.js` | O processo seletivo, por dentro: as oito abas do Comitê de Seleção (`#/selecao`, `#/selecao/<aba>`) |
 | `mod-projetos.js` | Os projetos: equipe, supervisor, logo e rol (`#/projetos`, `#/projetos/<código>`) |
 | `mod-arquivos.js` | O controle de arquivos: a lista de todos os arquivos (filtra por emissor), tela do arquivo, revisões, templates, visão geral e configurações (`#/arquivos`, `#/arquivos/<código>`) |
+| `mod-studio.js` | O planejamento do Studio: quadro, calendário, ideias, a publicação e as configurações (`#/studio`, `#/studio/POST-14`) |
+| `mod-criador.js` | O criador do Studio: o motor de desenho, os 23 modelos, o editor, a galeria, baixar e salvar no quadro (`#/studio/criar`, `#/studio/modelos`) |
+| `studio/` | As marcas que o criador desenha: o imagotipo da NRO, o símbolo e a logo do LABBIO (do repositório do site), servidas daqui para o canvas poder exportar |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
 | `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
 | `mailer/`      | Ícones e logos recoloridas que o Full mailer embute nos e-mails |
@@ -540,6 +650,11 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
 - **Arquivos** (`#/arquivos`): o rol é de todos; o conteúdo segue a classe
   da série; revisar é do grupo revisor da série (sem ele, do PMO), nunca de
   quem enviou; configurar é do PMO e de `admin`.
+- **Studio** (`#/studio`): entra quem está num grupo de acesso ou num grupo
+  aprovador, e `admin`; aprovar é do grupo aprovador (sem ele, de `admin`),
+  nunca de quem mandou para aprovação; configurar é de quem aprova e de
+  `admin`. A escrita das publicações passa por funções do banco — é nelas, e
+  num gatilho, que mora a regra de "pronta só com aprovação".
 - **Ouvidoria**: a mensagem é gravada por função `security definer`
   sem nenhuma referência à conta, sem gatilho de auditoria e com a data
   truncada para o dia. Anonimato por projeto, não por promessa.

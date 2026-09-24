@@ -380,6 +380,49 @@
     ],
     doc_relacoes: [{ pai_id:'a-pes7', filho_id:'a-pes14' }]
   };
+  /* ---- v23: o Studio ----
+     As datas andam com o relógio do teste: amanhã, daqui a 3 dias, ontem.
+     A Ana (admin) aprova; o grupo de acesso é Sinais (id 2), onde está o
+     Bruno; o aprovador é NRO_MANAGERS (id 6), da Carla. */
+  const stDia = (d, h) => { const x = new Date(); x.setDate(x.getDate() + d); x.setHours(h || 18, 0, 0, 0); return x.toISOString(); };
+  DADOS.studio_config = [{ id:true, grupos_acesso:[2], grupos_aprovadores:[6], aprovacoes_minimas:1, lembrete_email:true,
+    contas:{ instagram:'@neurodynamics.dev', linkedin:'NeuroDynamics' }, unsplash_chave:null }];
+  DADOS.studio_publicacoes = [
+    { id:'p1', numero:1, codigo:'POST-1', titulo:'Mostrar a bancada de testes da órtese num reels', status:'ideia', categoria:'bastidores', modelo:'bastidores',
+      pilar:'conectar', redes:['instagram'], formato:'reels', data_publicacao:null, responsavel:11, criado_por:11, imagens:[], versao:1,
+      criado_em:stDia(-6), atualizado_em:stDia(-6) },
+    { id:'p2', numero:2, codigo:'POST-2', titulo:'Aniversário da Carla', status:'producao', categoria:'aniversario', modelo:'aniversario',
+      pilar:'conectar', redes:['instagram'], formato:'imagem', data_publicacao:stDia(1, 10), responsavel:4, criado_por:4, versao:2,
+      imagens:[{ caminho:'p2/arte-a-01.jpg', largura:1440, altura:1800, tipo:'image/jpeg' }],
+      legenda:'Hoje é dia de celebrar a Carla! 🎉', colaboradores:'@labbio.ufmg', notas:'Marcar a Carla na foto.',
+      peca:null, criado_em:stDia(-3), atualizado_em:stDia(-1) },
+    { id:'p3', numero:3, codigo:'POST-3', titulo:'Na mídia: Jornal Nacional', status:'aprovacao', categoria:'na_midia', modelo:'na_midia',
+      pilar:'institucional', redes:['instagram','linkedin'], formato:'carrossel', data_publicacao:stDia(3, 12), responsavel:11, criado_por:11,
+      enviado_por:11, enviado_em:stDia(-1), versao:1, imagens:[{ caminho:'p3/arte-b-01.jpg', largura:1440, altura:1800, tipo:'image/jpeg' },
+      { caminho:'p3/arte-b-02.png', largura:1440, altura:1800, tipo:'image/png' }], legenda:'Saímos no Jornal Nacional!', criado_em:stDia(-2), atualizado_em:stDia(-1) },
+    { id:'p4', numero:4, codigo:'POST-4', titulo:'Demo Day NeuroDynamics', status:'pronta', categoria:'evento', modelo:'evento',
+      pilar:'convidar', redes:['instagram'], formato:'stories', data_publicacao:stDia(5, 9), responsavel:4, criado_por:17, versao:1,
+      imagens:[{ caminho:'p4/arte-c-01.png', largura:1440, altura:2560, tipo:'image/png' }], aprovado_em:stDia(-1), criado_em:stDia(-8), atualizado_em:stDia(-1) },
+    { id:'p5', numero:5, codigo:'POST-5', titulo:'Artigo publicado na JNER', status:'publicada', categoria:'artigo', modelo:'artigo',
+      pilar:'institucional', redes:['linkedin'], formato:'imagem', data_publicacao:stDia(-2, 11), responsavel:17, criado_por:17, versao:1,
+      imagens:[], link:'https://www.linkedin.com/posts/x', publicado_em:stDia(-2, 11), criado_em:stDia(-10), atualizado_em:stDia(-2) },
+    { id:'p6', numero:6, codigo:'POST-6', titulo:'Parabéns à equipe Bem-te-vi', status:'producao', categoria:'parabens', modelo:'parabens',
+      pilar:'conectar', redes:['instagram'], formato:'imagem', data_publicacao:stDia(-1, 17), responsavel:4, criado_por:4, versao:1,
+      imagens:[], criado_em:stDia(-4), atualizado_em:stDia(-4) }
+  ];
+  DADOS.studio_aprovacoes = [{ publicacao_id:'p4', versao:1, registro:6, nome:'Ana Figueiredo', decisao:'aprovada', parecer:'Pode sair.', criado_em:stDia(-1) }];
+  DADOS.studio_historico = [
+    { id:1, publicacao_id:'p3', registro:11, nome:'Bruno Tavares', acao:'criou', detalhe:'Em produção', criado_em:stDia(-2) },
+    { id:2, publicacao_id:'p3', registro:11, nome:'Bruno Tavares', acao:'moveu', detalhe:'Em produção → Em aprovação', criado_em:stDia(-1) }];
+  DADOS.site_imprensa = [
+    { id:'i1', tipo:'video', titulo:null, veiculo:'Jornal Nacional', ano:'2026', youtube:'AdOeBTOeMu0', url:null, ordem:10, publicado:true, criado_em:stDia(-30) },
+    { id:'i2', tipo:'video', titulo:'Cybathlon highlights', veiculo:'Cybathlon', ano:'2024', youtube:'WbhvEbVW1-I', url:null, ordem:20, publicado:true, criado_em:stDia(-30) },
+    { id:'i3', tipo:'materia', titulo:'Triciclo feito por alunos da UFMG faz jovem tetraplégico pedalar', veiculo:'Record', ano:'2024',
+      youtube:null, url:'https://noticias.r7.com/x', ordem:10, publicado:true, criado_em:stDia(-30) }];
+  DADOS.studio_recursos = [
+    { id:'r1', titulo:'Fotos do Cybathlon 2024', tipo:'album', url:'https://photos.app.goo.gl/abc', descricao:'Zurique, a equipe e a bicicleta.', ordem:100, criado_por:4 },
+    { id:'r2', titulo:'Drive · Fotos dos projetos', tipo:'pasta', url:'https://drive.google.com/drive/folders/xyz', descricao:null, ordem:100, criado_por:11 }];
+
   /* doc_arquivos é o que a lista de projetos lê para o progresso: sai do rol */
   DADOS.doc_arquivos = DADOS.doc_rol.map(r => ({ id:r.id, projeto_id:r.projeto_id || null, serie_id:r.serie_id,
     status:r.status, rev_pendente:r.rev_pendente }));
@@ -573,6 +616,52 @@
             ['nome','descricao','status','logo_semente','supervisor'].forEach(k => { if (k in p) pj[k] = p[k]; });
             return { data:{ status:'ok', id:pj.id, codigo:pj.codigo, grupo_id:pj.grupo_id }, error:null };
           }
+          /* ---- v23: o Studio ---- */
+          if (nome.startsWith('studio_')) (window.__rpcs ||= []).push({ nome, p: args?.p ?? args });
+          if (nome === 'studio_lembretes') return { data:0, error:null };
+          if (nome === 'studio_publicacao_salvar'){
+            const p = args?.p || {};
+            if (!p.id){
+              if (!String(p.titulo || '').trim()) return { data:{ status:'invalido', campo:'titulo' }, error:null };
+              const numero = Math.max(0, ...DADOS.studio_publicacoes.map(x => x.numero)) + 1;
+              const nova = { id:'pn' + numero, numero, codigo:'POST-' + numero, status: p.status === 'producao' ? 'producao' : 'ideia', versao:1,
+                imagens:[], redes:[], criado_por:4, responsavel: p.responsavel ?? 4, criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString() };
+              Object.entries(p).forEach(([k, v]) => { if (!['status','id'].includes(k)) nova[k] = v === '' ? null : v; });
+              DADOS.studio_publicacoes.push(nova);
+              return { data:{ status:'ok', id:nova.id, codigo:nova.codigo, versao:1, situacao:nova.status }, error:null };
+            }
+            const x = DADOS.studio_publicacoes.find(y => y.id === p.id);
+            if (!x) return { data:{ status:'nao_encontrada' }, error:null };
+            const conteudo = ['peca','imagens','legenda'].some(k => k in p && JSON.stringify(p[k]) !== JSON.stringify(x[k]));
+            Object.entries(p).forEach(([k, v]) => { if (k !== 'id') x[k] = v === '' ? null : v; });
+            if (conteudo){ x.versao++; if (x.status === 'pronta'){ x.status = 'aprovacao'; x.enviado_por = 4; } }
+            if (x.status === 'ideia' && p.peca) x.status = 'producao';
+            return { data:{ status:'ok', id:x.id, codigo:x.codigo, versao:x.versao, situacao:x.status }, error:null };
+          }
+          if (nome === 'studio_mover'){
+            const x = DADOS.studio_publicacoes.find(y => y.id === args.p_id);
+            if (!x) return { data:{ status:'nao_encontrada' }, error:null };
+            const ok = DADOS.studio_aprovacoes.filter(a => a.publicacao_id === x.id && a.versao === x.versao && a.decisao === 'aprovada').length >= 1;
+            if (args.p_status === 'pronta' && !ok) return { data:{ status:'precisa_aprovacao' }, error:null };
+            if (args.p_status === 'publicada' && !['pronta','publicada'].includes(x.status)) return { data:{ status:'precisa_aprovacao' }, error:null };
+            x.status = args.p_status;
+            if (x.status === 'aprovacao'){ x.enviado_por = 4; x.enviado_em = new Date().toISOString(); }
+            if (x.status === 'publicada'){ x.publicado_em = new Date().toISOString(); if (args.p_link) x.link = args.p_link; }
+            return { data:{ status:'ok', situacao:x.status }, error:null };
+          }
+          if (nome === 'studio_decidir'){
+            const p = args?.p || {}, x = DADOS.studio_publicacoes.find(y => y.id === p.id);
+            if (x.enviado_por === 4) return { data:{ status:'propria' }, error:null };
+            DADOS.studio_aprovacoes.push({ publicacao_id:x.id, versao:x.versao, registro:4, nome:'Ana Figueiredo',
+              decisao: p.decisao === 'aprovar' ? 'aprovada' : 'devolvida', parecer:p.parecer, criado_em:new Date().toISOString() });
+            x.status = p.decisao === 'aprovar' ? 'pronta' : 'producao';
+            return { data:{ status:'ok', situacao:x.status, aprovacoes:1 }, error:null };
+          }
+          if (nome === 'studio_excluir'){
+            const i = DADOS.studio_publicacoes.findIndex(y => y.id === args.p_id);
+            const [x] = DADOS.studio_publicacoes.splice(i, 1);
+            return { data:{ status:'ok', codigo:x.codigo, imagens:x.imagens }, error:null };
+          }
           if (nome === 'agenda_itens' || nome === 'agenda_manter_series') return { data: [], error: null };
           if (nome === 'portal_agenda_ocupacao') return { data: [], error: null };
           return { data: { status:'ok', codigo:'ORT-9', id:'novo' }, error: null };
@@ -585,7 +674,11 @@
                 return { data:{ path: caminho }, error:null }; },
               createSignedUrl: async (caminho, exp, op) => { (window.__baixados ||= []).push({ bucket, caminho, op });
                 return { data:{ signedUrl:'javascript:void(0)' }, error:null }; },
-              remove: async (caminhos) => { (window.__removidos ||= []).push(...caminhos); return { data:[], error:null }; }
+              remove: async (caminhos) => { (window.__removidos ||= []).push(...caminhos); return { data:[], error:null }; },
+              /* a prévia de uma arte: um retângulo da cor da marca */
+              createSignedUrls: async (caminhos) => ({ data: caminhos.map(c => ({ path:c, signedUrl:
+                'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="100"><rect width="80" height="100" fill="#00594F"/><circle cx="60" cy="20" r="12" fill="#CEDC00"/></svg>') })), error:null }),
+              list: async () => ({ data:[], error:null })
             };
           }
         },

@@ -12,7 +12,7 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
 <link rel="apple-touch-icon" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ============ TEMAS ============
    Toda cor é um token. O escuro é o da marca e o padrão; o claro troca
@@ -1918,6 +1918,292 @@ a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
 .s-emlc{display:flex;flex-direction:column;gap:6px;max-height:210px;overflow-y:auto;
   border:1px solid var(--line2);border-radius:11px;padding:11px 13px;background:rgba(var(--tom),.03)}
 
+/* ============ STUDIO (v23) ============
+   O planejamento (mod-studio) e o criador (mod-criador). O quadro usa
+   o kanban de Atividades; o resto é daqui. Componentes do design
+   system (neuro.css › Studio). Ao mexer, mexa lá primeiro. */
+.chip-b{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line2);border-radius:999px;
+  font-size:12px;color:var(--muted);background:rgba(var(--tom),.03);transition:border-color .15s,color .15s,background .15s;
+  text-decoration:none;white-space:nowrap}
+.chip-b:hover{color:var(--ink);border-color:var(--dim)}
+.chip-b.on{background:var(--syn);border-color:var(--syn);color:var(--deep);font-weight:600}
+.chip-b .pt{width:8px;height:8px;border-radius:50%;background:var(--c,var(--dim))}
+.st-nav{margin-top:-8px}
+.st-cfg-2 h3 .ic,.st-pub h3 .ic,#modal h3 .ic{width:17px;height:17px;flex:none;vertical-align:-3px;margin-right:3px}
+.st-col .kb-add{display:flex;align-items:center;justify-content:center;gap:7px;text-decoration:none}
+.st-col .kb-add .ic{width:14px;height:14px;flex:none}
+.st-resumo{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.st-num{font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:6px 11px;background:var(--card)}
+.st-num b{font-family:var(--fd);color:var(--ink);font-size:14px;margin-right:3px}
+.st-num.vez{border-color:rgba(var(--syn-rgb),.45);color:var(--ink)} .st-num.vez b{color:var(--syn-tx)}
+.st-num.atras{border-color:rgba(var(--bad-rgb),.45)} .st-num.atras b{color:var(--bad)}
+.st-pt{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:1px}
+.st-card{padding:0 0 11px;overflow:hidden;cursor:pointer}
+.st-card>*:not(.st-thumb){margin-left:13px;margin-right:13px}
+.st-card>.kb-top{margin-top:11px}
+.st-card.vez{border-color:rgba(var(--syn-rgb),.5)}
+.st-card.vez::before{opacity:1;background:var(--syn)}
+.st-thumb{height:112px;background:rgba(var(--tom),.05);overflow:hidden;border-bottom:1px solid var(--line)}
+.st-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.st-redes{display:flex;gap:3px}
+.st-rede{font-family:var(--fm);font-size:9px;font-weight:500;letter-spacing:.04em;color:var(--ink);
+  border:1px solid color-mix(in srgb,var(--c) 55%,transparent);background:color-mix(in srgb,var(--c) 14%,transparent);
+  border-radius:5px;padding:1px 5px}
+.st-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.st-tags span{font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.st-tags .pil,.cr-card .pil{border-color:color-mix(in srgb,var(--c) 50%,transparent);color:var(--ink);
+  background:color-mix(in srgb,var(--c) 12%,transparent)}
+.st-aviso{font-size:11.5px;color:var(--syn-tx);margin-top:8px;font-weight:600}
+/* ideias */
+.st-ideia-nova{margin-bottom:18px;padding:18px 20px}
+.st-ideia-campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0 12px}
+.st-chips-redes{display:flex;flex-wrap:wrap;gap:6px}
+.st-rchip{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line2);color:var(--muted);
+  transition:border-color .15s,background .15s,color .15s}
+.st-rchip:hover{color:var(--ink)}
+.st-rchip.on{color:var(--ink);border-color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent);font-weight:600}
+.st-partidas{margin-top:12px;font-size:13px}
+.st-partidas summary{cursor:pointer;color:var(--muted)} .st-partidas summary:hover{color:var(--ink)}
+.st-partidas-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:12px}
+.st-partidas-g>div{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.st-partidas-g b{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);
+  border-left:3px solid var(--c);padding-left:7px}
+.st-partidas-g .chip-b{white-space:normal;text-align:left;border-radius:10px;line-height:1.4}
+.st-pilares-f{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.st-ideias{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.st-ideia{display:flex;flex-direction:column;border:1px solid var(--line2);border-top:3px solid var(--c);border-radius:12px;
+  background:var(--card);padding:14px 15px 11px;min-height:150px}
+.st-ideia-tx{font-family:var(--fd);font-size:15.5px;font-weight:600;line-height:1.35;flex:1}
+.st-ideia-pe{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;flex-wrap:wrap}
+.st-ideia-pe .bts,.st-imp .bts,.st-rec .bts,.cr-lams .bts{display:flex;gap:4px;align-items:center}
+.st-ideia-pe .icon-btn,.st-imp .icon-btn,.st-rec .icon-btn,.cr-lams .icon-btn{width:30px;height:30px;border-radius:8px}
+.icon-btn.cima .ic{transform:rotate(90deg)} .icon-btn.baixo .ic{transform:rotate(90deg)}
+/* calendário */
+.st-cal-topo{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.st-cal-mes{display:flex;align-items:center;gap:8px}
+.st-cal-mes h2{font-size:22px;font-weight:600;min-width:190px;text-align:center}
+.st-cal-mes h2 span{color:var(--dim);font-weight:500}
+.st-legenda{display:flex;flex-wrap:wrap;gap:10px;margin-left:auto;font-size:11.5px;color:var(--muted)}
+.st-legenda i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+.st-cal-grade{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:14px;align-items:start}
+.st-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card)}
+.st-dsem{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:9px 10px;
+  border-bottom:1px solid var(--line)}
+.st-dia{min-height:118px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;
+  flex-direction:column;gap:4px;min-width:0;transition:background .15s}
+.st-dia:nth-child(7n+7){border-right:none}
+.st-dia.fds{background:rgba(var(--tom),.015)} .st-dia.fora{background:rgba(var(--tom),.03)}
+.st-dia.sobre,.st-semdata.sobre{background:rgba(var(--syn-rgb),.07);outline:1px solid var(--syn-borda);outline-offset:-1px}
+.st-dia .d{font-family:var(--fm);font-size:11px;color:var(--dim);padding:0 3px}
+.st-dia.hoje .d{color:var(--deep);background:var(--syn);border-radius:6px;align-self:flex-start;padding:1px 6px;font-weight:600}
+.st-chip{display:flex;align-items:center;gap:5px;font-size:11.5px;line-height:1.3;color:var(--ink);text-decoration:none;
+  background:rgba(var(--tom),.05);border:1px solid var(--line);border-left:3px solid var(--st);border-radius:7px;padding:4px 6px;
+  min-width:0;cursor:grab}
+.st-chip:hover{border-color:var(--dim);border-left-color:var(--st)}
+.st-chip.atras{background:rgba(var(--bad-rgb),.08)}
+.st-chip b{font-family:var(--fm);font-weight:500;font-size:10.5px;color:var(--muted);flex:none}
+.st-chip{align-items:flex-start}
+.st-chip .tt{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;flex:1;min-width:0;word-break:break-word}
+.st-chip-redes{padding-top:4px}
+.st-chip-redes{display:flex;gap:2px;flex:none} .st-chip-redes i{width:6px;height:6px;border-radius:50%}
+.st-chip .stt{font-family:var(--fm);font-size:9.5px;color:var(--dim);flex:none}
+.st-semdata{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--card);display:flex;flex-direction:column;gap:6px;
+  position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto}
+.st-semdata h3{font-size:14px}
+@media (max-width:1100px){.st-cal-grade{grid-template-columns:1fr}.st-semdata{position:static;max-height:none}}
+@media (max-width:700px){.st-dia{min-height:74px;padding:3px}.st-chip .tt,.st-chip b{display:none}.st-chip{padding:3px;justify-content:center}
+  .st-dsem{padding:7px 4px;font-size:9px;letter-spacing:.06em}.st-legenda{margin-left:0}}
+/* a publicação */
+.st-passos{display:flex;list-style:none;margin:-4px 0 18px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.st-passos li{flex:1;padding:9px 12px;font-size:12px;color:var(--dim);position:relative;text-align:center;min-width:0}
+.st-passos li+li{border-left:1px solid var(--line)}
+.st-passos li.feito{color:var(--muted)} .st-passos li.feito span::before{content:'✓ ';color:var(--ok)}
+.st-passos li.agora{color:var(--ink);font-weight:600;background:rgba(var(--syn-rgb),.08);box-shadow:inset 0 -2px 0 var(--syn-borda)}
+@media (max-width:700px){.st-passos li{font-size:10.5px;padding:8px 4px}}
+.st-pub{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start}
+.st-pub-esq,.st-pub-dir{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (max-width:1100px){.st-pub{grid-template-columns:1fr}}
+.st-carrossel{position:relative;margin-top:12px;border-radius:12px;overflow:hidden;background:rgba(var(--tom),.04)}
+.st-carrossel figure{display:none;margin:0} .st-carrossel figure.on{display:block}
+.st-carrossel img{display:block;width:100%;max-height:70vh;object-fit:contain}
+.st-car-pts{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.st-car-pts button{width:20px;height:4px;border-radius:3px;background:var(--line2)} .st-car-pts button.on{background:var(--syn-borda)}
+.st-baixar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px}
+.st-aprov-barra{height:6px;border-radius:4px;background:var(--line2);overflow:hidden}
+.st-aprov-barra span{display:block;height:100%;background:var(--syn-borda)}
+.st-como h4{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:14px 0 6px}
+.st-como ul{margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:var(--muted)}
+.st-nota{background:rgba(var(--warn-rgb),.08);border:1px solid rgba(var(--warn-rgb),.3);color:var(--ink);border-radius:10px;
+  padding:10px 12px;font-size:13.5px;line-height:1.55;margin-top:10px;white-space:pre-wrap}
+.st-colab{font-size:13px;margin-top:10px;display:flex;align-items:center;gap:7px}
+.st-colab .ic{width:15px;height:15px;color:var(--dim)}
+.st-hist ol{list-style:none;margin:10px 0 0;display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto}
+.st-hist li{display:flex;gap:10px;font-size:12.5px;line-height:1.5}
+.st-hist .q{font-family:var(--fm);font-size:10.5px;color:var(--dim);flex:none;width:112px;padding-top:2px}
+.st-hist .d{color:var(--muted)}
+/* o plano */
+.st-plano{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;margin-top:12px}
+.st-plano-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+@media (max-width:760px){.st-plano{grid-template-columns:1fr}}
+.st-conta{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--fm);font-size:10.5px;color:var(--dim);margin-top:5px}
+.st-conta .passou{color:var(--bad)}
+/* configurações */
+.st-cfg-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+@media (max-width:900px){.st-cfg-2{grid-template-columns:1fr}}
+.st-gp{display:flex;flex-direction:column;gap:3px;max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:11px;padding:6px}
+.st-gp-i{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;font-size:13.5px;cursor:pointer}
+.st-gp-i:hover{background:rgba(var(--tom),.04)} .st-gp-i.on{background:rgba(var(--syn-rgb),.07)}
+.st-gp-i .nm{flex:1;min-width:0} .st-gp-i .pai{font-size:11px;color:var(--dim)}
+.st-cfg-res{margin-top:16px;display:flex;flex-direction:column;gap:8px;font-size:13.5px;padding:16px 18px}
+.st-cfg-res>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.st-passos-txt{padding-left:18px;font-size:13px;line-height:1.65;color:var(--muted)}
+.st-passos-txt a{text-decoration:underline}
+.st-imps,.st-recs{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.st-imp{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:11px;padding:8px 10px;background:rgba(var(--tom),.02)}
+.st-imp.off{opacity:.55}
+.st-imp-th{width:84px;height:47px;border-radius:7px;overflow:hidden;flex:none;background:rgba(var(--tom),.06);
+  display:flex;align-items:center;justify-content:center;color:var(--dim)}
+.st-imp-th img{width:100%;height:100%;object-fit:cover}
+.st-imp-th.txt{width:47px} .st-imp-th .ic{width:18px;height:18px}
+.st-imp .tx,.st-rec .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.st-imp .nm,.st-rec .nm{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-imp .sub{font-size:11.5px;color:var(--dim)}
+.st-imp-prev{display:flex;align-items:center;gap:10px;margin:-4px 0 12px}
+.st-imp-prev img{width:160px;border-radius:8px}
+.st-recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.st-rec{display:flex;align-items:flex-start;gap:6px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px}
+.st-rec-a{display:flex;gap:11px;flex:1;min-width:0;color:inherit}
+.st-rec-a:hover .nm{color:var(--syn-tx)}
+.st-rec .ico{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;
+  background:rgba(var(--syn-rgb),.1);color:var(--syn-tx)} .st-rec .ico .ic{width:17px;height:17px}
+.st-rec .nm{white-space:normal;font-weight:600}
+.st-rec .ds{font-size:12px;color:var(--muted);line-height:1.45;margin-top:2px}
+.st-rec .hs{font-family:var(--fm);font-size:10.5px;color:var(--dim);margin-top:4px}
+
+/* ---- o criador ---- */
+.cr-topo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:22px 0 14px}
+.cr-nome{flex:1;min-width:220px;font-family:var(--fd);font-size:18px;font-weight:600;background:transparent;border-color:transparent}
+.cr-nome:hover{border-color:var(--line2)}
+.cr-meta{font-family:var(--fm);font-size:11px;color:var(--dim)}
+.cr-acoes{display:flex;gap:8px;margin-left:auto}
+.cr-grade{display:grid;grid-template-columns:318px minmax(0,1fr) 288px;gap:16px;align-items:start}
+.cr-esq,.cr-dir{position:sticky;top:14px;max-height:calc(100vh - 28px);overflow-y:auto;display:flex;flex-direction:column;gap:12px;
+  scrollbar-width:thin;scrollbar-color:var(--line2) transparent;padding-right:2px}
+@media (max-width:1280px){.cr-grade{grid-template-columns:300px minmax(0,1fr)}.cr-dir{grid-column:1 / -1;position:static;max-height:none;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}}
+@media (max-width:900px){.cr-grade{grid-template-columns:1fr}.cr-esq{position:static;max-height:none;order:2}.cr-palco{order:1}.cr-dir{order:3}}
+.cr-sec{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:13px 14px}
+.cr-sec h4,.cr-rot{display:block;font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:9px}
+.cr-rot{margin:12px 0 7px}
+.cr-sec .fld{margin-bottom:10px}
+.cr-sec input:not([type=range]):not([type=checkbox]):not([type=color]),.cr-sec select,.cr-sec textarea{font-size:13.5px;padding:7px 10px}
+.cr-sec .fld label{font-size:10px;margin-bottom:4px}
+.cr-sec .mini,.cr-sec .cr-dica{font-size:11.5px;color:var(--dim);line-height:1.5;margin-top:6px}
+.cr-sec .cr-dica b{color:var(--muted)}
+.cr-sec>select,.cr-outros{width:100%;margin-top:8px}
+.cr-chips{display:flex;flex-wrap:wrap;gap:5px}
+.cr-modelo{display:flex;align-items:center;gap:10px}
+.cr-modelo .nm{flex:1;font-family:var(--fd);font-weight:600;font-size:15px}
+.cr-lams{list-style:none;display:flex;flex-direction:column;gap:3px;margin:0 0 10px;counter-reset:x}
+.cr-lams li{display:flex;align-items:center;gap:4px;border-radius:9px;border:1px solid transparent}
+.cr-lams li.on{background:rgba(var(--syn-rgb),.07);border-color:rgba(var(--syn-rgb),.3)}
+.cr-lam{flex:1;display:flex;align-items:baseline;gap:8px;padding:6px 7px;text-align:left;min-width:0}
+.cr-lam .n{font-family:var(--fm);font-size:10.5px;color:var(--syn-tx)}
+.cr-lam .nm{font-size:12.5px;font-weight:600;flex:none}
+.cr-lam .tt{font-size:11.5px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cr-lams .bts{opacity:0;transition:opacity .15s} .cr-lams li:hover .bts,.cr-lams li.on .bts,.cr-lams li:focus-within .bts{opacity:1}
+.cr-add{display:flex;gap:6px} .cr-add select{flex:1;min-width:0;padding:6px 8px;font-size:13px}
+.cr-foto{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;background:rgba(var(--tom),.02)}
+.cr-foto-topo{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cr-foto-topo .rot{flex:1;font-size:12px;font-weight:600}
+.cr-foto-topo select{padding:4px 8px;font-size:12.5px}
+.cr-foto-corpo{display:flex;gap:10px;align-items:flex-start}
+.cr-foto-prev{width:64px;height:64px;border-radius:9px;flex:none;overflow:hidden;background:rgba(var(--tom),.06);
+  display:flex;align-items:center;justify-content:center;color:var(--dim)}
+.cr-foto-prev img{width:100%;height:100%;object-fit:cover} .cr-foto-prev .ic{width:22px;height:22px}
+.cr-foto-bts{display:flex;flex-wrap:wrap;gap:5px}
+.cr-foto-bts .btn.mini,.cr-sec .btn.mini{height:30px;padding:0 10px;font-size:11.5px;gap:6px}
+.cr-foto-bts .btn .ic{width:13px;height:13px}
+.cr-enq{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.cr-enq label,.cr-faixa{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--dim)}
+.cr-faixa{margin-top:12px} .cr-faixa b{color:var(--muted);font-weight:500}
+.cr-sec input[type=range],.cr-enq input[type=range]{width:100%;accent-color:var(--syn-borda);padding:0;border:none;background:none}
+.cr-chave{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px;cursor:pointer}
+.cr-temas{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.cr-tema{height:42px;border-radius:10px;border:1px solid var(--line2);display:flex;align-items:flex-end;padding:5px 8px;
+  font-family:var(--fm);font-size:10px;letter-spacing:.06em;transition:transform .15s,box-shadow .15s}
+.cr-tema:hover{transform:translateY(-1px)}
+.cr-tema.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--syn-borda)}
+.cr-acentos{display:flex;flex-wrap:wrap;gap:8px}
+.cr-ac{width:28px;height:28px;border-radius:50%;background:var(--c);border:2px solid rgba(var(--tom),.2);position:relative;cursor:pointer}
+.cr-ac.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--syn-borda)}
+.cr-ac.livre{background:conic-gradient(#F1806F,#F5C36A,#CEDC00,#4ADE97,#2DD4BF,#7FA7F2,#A78BFA,#F1806F)}
+.cr-ac.livre.on{background:var(--c)}
+.cr-ac input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.cr-palco{min-width:0}
+.cr-palco-topo{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.cr-onde{font-family:var(--fm);font-size:11px;color:var(--dim);flex:1}
+.cr-palco-topo .cr-chave{margin:0}
+.cr-tela{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;padding:18px 0;
+  border:1px solid var(--line);border-radius:18px;background:
+  radial-gradient(90% 70% at 50% 30%,rgba(var(--tom),.05),transparent),rgba(var(--tom),.015)}
+#cr-cv{display:block;border-radius:8px;box-shadow:0 20px 50px -18px rgba(var(--sombra-rgb),calc(.8 * var(--sombra-k)))}
+.cr-nav{width:38px;height:38px;border-radius:50%;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;
+  background:var(--panel);color:var(--muted);flex:none;transition:color .15s,border-color .15s}
+.cr-nav:hover{color:var(--ink);border-color:var(--dim)} .cr-nav .ic{width:17px;height:17px}
+.st-carrossel .cr-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2}
+.st-carrossel .cr-nav.ant{left:10px} .st-carrossel .cr-nav.prox{right:10px}
+.cr-fita{display:flex;gap:10px;overflow-x:auto;padding:12px 2px 6px;scrollbar-width:thin}
+.cr-mini{position:relative;flex:none;border-radius:8px;border:2px solid transparent;padding:0;transition:border-color .15s,transform .15s}
+.cr-mini:hover{transform:translateY(-2px)} .cr-mini.on{border-color:var(--syn-borda)}
+.cr-mini canvas{display:block;border-radius:6px}
+.cr-mini span{position:absolute;left:5px;bottom:4px;font-family:var(--fm);font-size:9.5px;color:#F5F5F7;background:rgba(0,0,0,.55);
+  border-radius:4px;padding:0 4px}
+.cr-mais{width:64px;height:96px;border:1.5px dashed var(--line2);display:flex;align-items:center;justify-content:center;color:var(--dim)}
+.cr-mais:hover{color:var(--ink);border-color:var(--dim)} .cr-mais .ic{width:18px;height:18px}
+.cr-escalas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cr-esc{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line2);border-radius:11px;padding:10px 12px;cursor:pointer;font-size:13px}
+.cr-esc:has(input:checked){border-color:var(--syn-borda);background:rgba(var(--syn-rgb),.06)}
+.cr-esc input{display:none} .cr-esc span{font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.cr-prog{font-size:13px;color:var(--muted);min-height:20px;margin:10px 0;display:flex;align-items:center;gap:10px}
+.cr-prog:empty{display:none}
+.cr-rasc{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cr-troca{display:flex;flex-wrap:wrap;gap:6px}
+.cr-us-busca{display:flex;gap:8px;margin-bottom:10px} .cr-us-busca input{flex:1;min-width:0}
+.cr-us-sug{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.cr-us-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;max-height:52vh;overflow-y:auto}
+.cr-us-f{position:relative;border-radius:9px;overflow:hidden;aspect-ratio:4/5;padding:0;background:rgba(var(--tom),.05)}
+.cr-us-f img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .2s}
+.cr-us-f:hover img{transform:scale(1.04)}
+.cr-us-f span{position:absolute;left:0;right:0;bottom:0;font-size:10.5px;color:#F5F5F7;padding:14px 7px 5px;text-align:left;
+  background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.cr-us-pag{display:flex;justify-content:center;gap:8px;margin-top:10px}
+.cr-eq{display:flex;flex-direction:column;gap:3px;max-height:48vh;overflow-y:auto}
+.cr-eq-p{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:9px;text-align:left}
+.cr-eq-p:hover{background:rgba(var(--tom),.05)}
+.cr-eq-p .tx{display:flex;flex-direction:column} .cr-eq-p .nm{font-size:13.5px} .cr-eq-p .cg{font-size:11.5px;color:var(--dim)}
+/* a galeria dos modelos */
+.cr-pilares{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-bottom:8px}
+.cr-pilar{border:1px solid var(--line);border-left:3px solid var(--c);border-radius:10px;padding:9px 11px;background:var(--card);
+  display:flex;flex-direction:column;gap:2px}
+.cr-pilar b{font-family:var(--fd);font-size:13.5px} .cr-pilar span{font-size:11.5px;color:var(--muted);line-height:1.45}
+.cr-gtit{font-size:18px;font-weight:600;margin:30px 0 12px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.cr-gtit span{font-family:var(--f);font-size:13px;font-weight:400;color:var(--muted)}
+.cr-galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(222px,1fr));gap:16px}
+.cr-card{display:flex;flex-direction:column;gap:10px;color:inherit;border:1px solid var(--line);border-radius:16px;padding:12px;
+  background:var(--card);transition:transform .17s,border-color .17s,box-shadow .17s}
+.cr-card:hover{transform:translateY(-3px);border-color:var(--dim);
+  box-shadow:0 14px 30px -14px rgba(var(--sombra-rgb),calc(.7 * var(--sombra-k)))}
+.cr-card-prev{position:relative;display:flex;justify-content:center;align-items:center;min-height:120px}
+.cr-card-prev canvas{border-radius:8px;display:block;max-width:100%;height:auto!important;position:relative;z-index:1}
+.cr-card.cr-varias .cr-card-prev::after{content:'';position:absolute;inset:6px -5px -5px 6px;border-radius:9px;
+  border:1px solid var(--line2);background:rgba(var(--tom),.04);z-index:0}
+.cr-card-tx{display:flex;flex-direction:column;gap:3px}
+.cr-card-tx .nm{font-family:var(--fd);font-weight:600;font-size:14.5px}
+.cr-card-tx .sub{font-size:11.5px;color:var(--dim)}
+.cr-card-tx .pil{align-self:flex-start;font-size:10.5px;border:1px solid;border-radius:6px;padding:1px 7px;margin-top:4px}
+
 /* ============ MODAL / TOAST ============ */
 #veil{position:fixed;inset:0;z-index:80;background:rgba(var(--veu-rgb),calc(.66 * var(--veu-k)));
   backdrop-filter:blur(8px);display:none}
@@ -2190,7 +2476,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '22.1';
+const VERSAO = '23.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -2406,7 +2692,18 @@ const ICONS = {
   trash:'<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/><path d="M10.5 11v5.5M13.5 11v5.5"/>',
   eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
   chat:'<path d="M4 5.5h16v11H10L5.5 20v-3.5H4z"/>',
-  cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/>'
+  cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/>',
+  /* o Studio (v23): o espaço, e o que o planejamento e o criador usam */
+  studio:'<rect x="3.5" y="6.5" width="13.5" height="13.5" rx="2.5"/><path d="m6.5 17 3.2-3.6 2.4 2.4 1.6-1.6 2.3 2.8"/><circle cx="8.8" cy="10.3" r="1.3"/><path d="M19.5 2.5v5M17 5h5"/>',
+  lampada:'<path d="M9.2 17.5h5.6M10.2 21h3.6"/><path d="M12 3a6 6 0 0 0-3.7 10.7c.6.5.9 1.1.9 1.8v.5h5.6v-.5c0-.7.3-1.3.9-1.8A6 6 0 0 0 12 3z"/>',
+  imagem:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="m4 17 5-5 4 4 2.5-2.5L20 18"/>',
+  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  play:'<path d="M7.5 4.8v14.4L19 12z"/>',
+  camadas:'<path d="m12 3.5 9 4.8-9 4.8-9-4.8z"/><path d="m3 12.3 9 4.8 9-4.8"/><path d="m3 16.3 9 4.8 9-4.8"/>',
+  galeria:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  megafone:'<path d="M4 10v4h3.2l7.3 4.6V5.4L7.2 10z"/><path d="M17.8 9.2a4 4 0 0 1 0 5.6"/>',
+  lupa:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/>',
+  enviar:'<path d="M20.5 3.5 10 14"/><path d="m20.5 3.5-6.5 17-4-6.5-6.5-4z"/>'
 };
 const ic = (n, cls) => `<svg class="ic${cls?' '+cls:''}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;
@@ -2496,6 +2793,73 @@ const ABAS_SELECAO = [['','Visão geral'],['candidatos','Candidatos'],['avaliaca
   ['agenda','Agenda'],['dinamica','Dinâmica'],['publicacoes','Publicações'],['faq','FAQ'],
   ['config','Configurações']];
 
+/* ---------------- Studio: o vocabulário (v23) ----------------
+   O planejamento (mod-studio) e o criador (mod-criador) falam os dois
+   destas listas — e módulo não depende de módulo. Por isso moram aqui.
+   As colunas são as mesmas do banco (studio_publicacoes.status): "pronta"
+   só se alcança pela aprovação. */
+const STUDIO_STATUS = [
+  ['ideia',     'Ideias',               'Esboços sem data: às vezes só uma frase e o tipo de publicação'],
+  ['producao',  'Em produção',          'A arte e a legenda sendo feitas'],
+  ['aprovacao', 'Em aprovação',         'Esperando o grupo aprovador'],
+  ['pronta',    'Pronta para publicar', 'Aprovada: é só publicar na data marcada'],
+  ['publicada', 'Publicada',            'No ar, com o link']
+];
+const STUDIO_REDES = {
+  instagram:{ l:'Instagram', s:'IG',  c:'#E1306C', legenda:2200 },
+  linkedin: { l:'LinkedIn',  s:'IN',  c:'#3B8FE0', legenda:3000 },
+  youtube:  { l:'YouTube',   s:'YT',  c:'#FF4E45', legenda:5000 },
+  tiktok:   { l:'TikTok',    s:'TT',  c:'#25F4EE', legenda:2200 },
+  x:        { l:'X',         s:'X',   c:'#B8C2BE', legenda:280 },
+  facebook: { l:'Facebook',  s:'FB',  c:'#4C8DF6', legenda:63206 },
+  whatsapp: { l:'WhatsApp',  s:'WA',  c:'#25D366', legenda:0 },
+  site:     { l:'Site',      s:'WEB', c:'#CEDC00', legenda:0 }
+};
+/* o formato da publicação — o que ela é na rede, não o tamanho da arte */
+const STUDIO_FORMATOS = {
+  imagem:'Imagem única', carrossel:'Carrossel', stories:'Stories', reels:'Reels / vídeo curto',
+  documento:'Documento (PDF)', video:'Vídeo', texto:'Só texto, sem imagem', peca_video:'Peça para vídeo'
+};
+/* os pilares: por que publicar. Classificação dos blogs de conteúdo
+   (educar, entreter, inspirar, conectar, convencer), com "convencer"
+   dito do jeito da equipe — convidar — e o institucional, que para um
+   laboratório é metade do que se publica */
+const STUDIO_PILARES = {
+  educar:        ['Educar',        'Ensina algo: como funciona, dicas, o que a pesquisa descobriu', '#7FA7F2'],
+  inspirar:      ['Inspirar',      'Frases, histórias, datas que movem, depoimentos',               '#A78BFA'],
+  conectar:      ['Conectar',      'Gente: aniversários, boas-vindas, bastidores, parceiros',       '#2DD4BF'],
+  entreter:      ['Entreter',      'Enquetes, perguntas, desafios, o lado leve da equipe',          '#F5C36A'],
+  institucional: ['Institucional', 'Na mídia, conquistas, projetos, artigos, avisos',               '#CEDC00'],
+  convidar:      ['Convidar',      'Eventos, vagas, inscrições: pede uma ação',                     '#4ADE97']
+};
+/* o que é a publicação. O id é também o modelo que o criador abre. */
+const STUDIO_TIPOS = [
+  ['na_midia',     'Na mídia',                'institucional', 'imagem'],
+  ['projeto',      'Projeto em foco',         'educar',        'carrossel'],
+  ['aniversario',  'Aniversário',             'conectar',      'imagem'],
+  ['parabens',     'Parabéns a parceiros',    'conectar',      'imagem'],
+  ['boas_vindas',  'Boas-vindas',             'conectar',      'imagem'],
+  ['conquista',    'Conquista',               'institucional', 'imagem'],
+  ['evento',       'Evento',                  'convidar',      'imagem'],
+  ['aviso',        'Aviso',                   'institucional', 'imagem'],
+  ['frase',        'Frase',                   'inspirar',      'imagem'],
+  ['dado',         'Dado / número',           'educar',        'imagem'],
+  ['bastidores',   'Bastidores',              'conectar',      'imagem'],
+  ['dicas',        'Carrossel educativo',     'educar',        'carrossel'],
+  ['vaga',         'Vaga e processo seletivo','convidar',      'carrossel'],
+  ['artigo',       'Artigo publicado',        'institucional', 'imagem'],
+  ['agradecimento','Agradecimento',           'conectar',      'imagem'],
+  ['data',         'Data comemorativa',       'inspirar',      'imagem'],
+  ['depoimento',   'Depoimento',              'inspirar',      'imagem'],
+  ['enquete',      'Enquete e perguntas',     'entreter',      'stories'],
+  ['thumbnail',    'Thumbnail de vídeo',      'institucional', 'peca_video'],
+  ['encerramento', 'Tela de encerramento',    'convidar',      'peca_video'],
+  ['barra_nome',   'Barra de nome',           'institucional', 'peca_video'],
+  ['cartela',      'Cartela de título',       'institucional', 'peca_video'],
+  ['livre',        'Livre',                   '',              'imagem']
+];
+const studioTipo = id => STUDIO_TIPOS.find(t => t[0] === id) || null;
+
 /* ---------------- módulos sob demanda ---------------- */
 /* O plano do membro mora neste arquivo. O resto — quadro, operações,
    painel do Depto. de Pessoal, relatórios, seleção — desce em <script>
@@ -2566,6 +2930,14 @@ function acoesDaCasca(){
   if (docGestor()) a.push(
     ['Novo projeto', 'Criar um projeto e a equipe dele', '#/projetos/novo'],
     ['Configurações de arquivos', 'Grupo revisor de cada série, emissores, padrão de projeto', '#/arquivos/config']);
+  if (podeStudio()) a.push(
+    ['Studio', 'O quadro das publicações: ideias, produção, aprovação', '#/studio'],
+    ['Criar publicação', 'Post, carrossel, stories, thumbnail, barra de nome…', '#/studio/criar'],
+    ['Calendário de publicações', 'O que sai em cada dia, em cada rede', '#/studio/calendario'],
+    ['Nova ideia de publicação', 'Guardar uma ideia, nem que seja uma frase', '#/studio/ideias'],
+    ['Modelos de publicação', 'Na mídia, aniversário, projeto, parabéns, encerramento de vídeo…', '#/studio/modelos'],
+    ['Imprensa do site', 'Os vídeos e as matérias da seção Quem somos', '#/studio/config/imprensa'],
+    ['Recursos de imagem', 'Pastas, álbuns e repositórios com fotos da equipe', '#/studio/config/recursos']);
   if (podeSelecao()) a.push(
     ['Processo seletivo', 'Funil, pendências e próximos horários', '#/selecao'],
     ['Candidatos', 'Inscritos, status e movimentação em lote', '#/selecao/candidatos'],
@@ -2745,9 +3117,10 @@ async function abrirPortal(){
   state.membros = m.data || [];
   sb.from('itens_de_acesso').select('*').order('ordem')
     .then(r => { state.itensAcesso = (r.data||[]).filter(i=>i.ativo!==false); });
-  carregarGrupos();   /* os quadros de Atividades são os grupos da pessoa */
+  const grupos = carregarGrupos();   /* os quadros de Atividades são os grupos da pessoa */
   carregarOKRsDoMenu();
   carregarProjetosEArquivos();
+  state.studioPronto = Promise.all([grupos, carregarStudioConfig()]);
   /* Conta sem registro não comenta, não abre solicitação, não é atribuída
      a nada — e nenhuma dessas telas explica por quê. Dizer uma vez, no
      alto, evita a caça ao defeito que não existe. */
@@ -2797,6 +3170,12 @@ const ROTAS = {
   okrs:        { desenha:'pageOkrs', modulo:'okrs' },
   projetos:    { desenha:'pageProjetos', modulo:'projetos' },
   arquivos:    { desenha:'pageArquivos', modulo:'arquivos' },
+  /* quem entra no Studio sai dos grupos escolhidos nas configurações
+     dele — e isso só se sabe depois que os grupos e a configuração
+     chegam. "espera" segura a decisão até lá, em vez de mandar para o
+     início quem abriu um link #/studio/POST-14 direto. */
+  studio:      { desenha:'pageStudio', modulo:'studio', permite: () => podeStudio(),
+                 espera: () => state.studioPronto },
   selecao:     { desenha:'pageSelecao', modulo:'selecao', permite: () => podeSelecao() },
   /* O Comitê de Seleção entra em Administração só pelos Relatórios —
      a galeria mostra apenas os painéis que o papel permite. */
@@ -2823,6 +3202,7 @@ window.addEventListener('hashchange', ()=>{ if(state.perfil){ render(route()); w
 async function render(rt){
   pararBoard();
   let def = ROTAS[rt.r];
+  if (def.espera) await def.espera();
   if (def.permite && !def.permite()){
     history.replaceState(null, '', location.pathname + '#/');
     rt = { r:'home', sub:null }; def = ROTAS.home;
@@ -2915,6 +3295,17 @@ function arvoreDoMenu(){
       { sub:'templates', rot:'Templates' },
       { sub:'visao', rot:'Visão geral' },
       ...(docGestor() ? [{ sub:'config', rot:'Configurações' }] : [])] },
+    /* o Studio: o quadro é a primeira tela, e a página de uma
+       publicação (#/studio/POST-14) acende o quadro */
+    ...(podeStudio() ? [{ r:'studio', rot:'Studio', ic:'studio', filhos: [
+      { sub:'', rot:'Quadro', tambem:'^post-\\d+$' },
+      { sub:'calendario', rot:'Calendário' },
+      { sub:'ideias', rot:'Ideias' },
+      { sep:true },
+      { sub:'criar', rot:'Criar publicação' },
+      { sub:'modelos', rot:'Modelos' },
+      { sep:true },
+      { sub:'config', rot:'Configurações' }] }] : []),
     { r:'equipe', rot:'Equipe', ic:'users', filhos: [
       { sub:'', rot:'Organograma' },
       /* a ficha (#/equipe/<registro>) se abre a partir do quadro */
@@ -2990,6 +3381,26 @@ function docGestor(){
   const eu = state.membros.find(m => m.registro === state.perfil?.registro);
   return !!pmo && gruposEfetivos(eu).has(pmo.nome);
 }
+
+/* O Studio (v23). Entra quem está num grupo de acesso ou num grupo
+   aprovador (contando subgrupos, como sempre), e admin. É a mesma regra
+   de studio_pode_acessar() no banco — aqui só decide o que o menu
+   mostra. Sem a migração, a configuração não vem, e só admin vê o
+   espaço (a tela explica o que falta). */
+function carregarStudioConfig(){
+  return sb.from('studio_config')
+    .select('grupos_acesso,grupos_aprovadores,aprovacoes_minimas,lembrete_email,contas,unsplash_chave')
+    .maybeSingle()
+    .then(r => { state.studioCfg = r.error ? null : (r.data || null); desenharMenu(); },
+          () => { state.studioCfg = null; });
+}
+function studioEmAlgum(ids){
+  const eu = state.membros.find(m => m.registro === state.perfil?.registro);
+  const meus = gruposEfetivos(eu);
+  return (ids || []).some(id => meus.has(grupoPorId(id)?.nome));
+}
+const podeAprovarStudio = () => state.perfil?.papel === 'admin' || studioEmAlgum(state.studioCfg?.grupos_aprovadores);
+const podeStudio = () => podeAprovarStudio() || studioEmAlgum(state.studioCfg?.grupos_acesso);
 
 /* ---------------- a logo de um projeto ----------------
    Como os avatares do GitHub: uma grade 5×5 espelhada, sorteada de uma
@@ -3633,6 +4044,7 @@ function trilhoFerramentas(){
     <div class="grp">Sistemas</div>
     ${podeQuadro() ? fer('pessoas','Quadro de pessoal','Fichas, ocorrências e acessos','#/equipe/quadro') : ''}
     ${fer('agenda','Atividades','O quadro do seu grupo','#/atividades')}
+    ${podeStudio() ? fer('brand','Studio','Criar e planejar as publicações','#/studio') : ''}
     ${fer('bussola','Tour dos sistemas','Novo por aqui? Comece aqui','tour')}
     ${admin ? fer('doc','Painel do portal','Avisos, documentos e solicitações','admin') : ''}
     <div class="grp">Institucional</div>

@@ -44,6 +44,7 @@ e rode daqui.
 | `grupos-arvore.mjs` | grupos dentro de grupos: a árvore em Administração, quem está pela ficha e por subgrupo, pôr várias pessoas de uma vez, tirar, o pai que não fecha círculo, e a herança no menu, na Agenda e no quadro de pessoal — com asserções |
 | `menu-lateral.mjs` | o menu lateral: subitens por papel, item atual, a logo e a casinha que levam ao início, recolher e o voo do trilho (a busca vira só a lupa), a gaveta do celular, nenhuma rolagem horizontal; e o tema — o seletor, a escolha guardada e aplicada antes de a página aparecer, o contraste de cada texto no claro, a faixa de destaque que continua escura e as logos — com asserções (sai com código 1 se algo falhar) |
 | `arquivos-e-projetos.mjs` | o controle de arquivos e os projetos: a lista de todos os arquivos como primeira tela, o filtro por emissor e a barra secundária (para revisar, templates, visão geral, configurações), o rol por emissor, a tela do arquivo (etapas, registro de alterações, relações), enviar, aprovar e devolver revisão, template e registro, a estrutura de cada série (a coluna da NRO-PUB-001: a conta que filtra, "O que é este arquivo", o "Adicionar" que pergunta antes de criar), configurações, a exportação no formato da NRO-PUB-001, quem não é gestor, a logo gerada, a equipe e o rol de um projeto, e o celular — com asserções |
+| `studio.mjs` | o Studio: o quadro (colunas, o cartão que espera a sua aprovação, "pronta" só pela aprovação), o calendário (arrastar muda a data), as ideias, a galeria dos modelos, o criador (desenha, o texto muda a arte, a logo do LABBIO, o tema, lâmina nova, baixar), salvar no quadro (as artes sobem para o bucket, a peça vai junto), aprovar, o plano, as configurações (grupos, imprensa com o id do YouTube, recursos), quem não tem acesso, quem tem mas não aprova, e o celular — com asserções |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install
@@ -57,6 +58,7 @@ node menu-lateral.mjs
 node okrs-e-selecao.mjs
 node grupos-arvore.mjs
 node arquivos-e-projetos.mjs
+node studio.mjs
 ```
 
 Para rodar por papel, gere um stub com o papel trocado:

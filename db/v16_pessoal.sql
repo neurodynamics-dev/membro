@@ -570,36 +570,46 @@ grant  execute on function public.notificacao_preferencia_salvar(jsonb) to authe
 -- 6b. O lote a enviar, já agrupado por pessoa.
 --     "imediato" leva o que estiver pendente. "resumo" só entra se
 --     faz mais de 20h desde o último e-mail — é digest, não fila.
-create or replace function public.notificacoes_email_lote(p_limite integer default 200)
-returns jsonb language sql stable security definer
-set search_path = public as $$
-  with alvo as (
-    select n.*, m.nome, coalesce(nullif(m.email_nro,''), nullif(m.email_pessoal,'')) as email,
-           coalesce(pr.email_modo, 'imediato') as modo, pr.ultimo_email
-      from notificacoes n
-      join membros m on m.registro = n.registro
-      left join notificacao_preferencias pr on pr.registro = n.registro
-     where n.email_em is null
-       and n.email_tentativas < 5
-       and m.status in ('Ativo','Em pausa / avaliação')
-       and coalesce(nullif(m.email_nro,''), nullif(m.email_pessoal,'')) is not null
-       and coalesce(pr.email_modo,'imediato') <> 'nunca'
-       and (coalesce(pr.email_modo,'imediato') = 'imediato'
-            or pr.ultimo_email is null
-            or pr.ultimo_email < now() - interval '20 hours')
-     order by n.criado_em
-     limit greatest(coalesce(p_limite,200), 1)
-  )
-  select coalesce(jsonb_agg(p order by p->>'nome'), '[]'::jsonb) from (
-    select jsonb_build_object(
-             'registro', registro, 'nome', nome, 'email', email, 'modo', modo,
-             'itens', jsonb_agg(jsonb_build_object(
-               'id', id, 'tipo', tipo, 'titulo', titulo,
-               'corpo', corpo, 'href', href, 'criado_em', criado_em)
-               order by criado_em)) as p
-      from alvo group by registro, nome, email, modo
-  ) q;
-$$;
+--     Desde a 18.0 a dona é ela (e, depois, a 23.0): a definição
+--     abaixo só vale enquanto a 18.0 não passou. Rodar a 16.0 de novo
+--     apagava a exceção do e-mail de teste sem erro nenhum.
+do $$
+begin
+  if to_regprocedure('public.notificacao_teste()') is null then
+    execute $f$
+    create or replace function public.notificacoes_email_lote(p_limite integer default 200)
+    returns jsonb language sql stable security definer
+    set search_path = public as $g$
+      with alvo as (
+        select n.*, m.nome, coalesce(nullif(m.email_nro,''), nullif(m.email_pessoal,'')) as email,
+               coalesce(pr.email_modo, 'imediato') as modo, pr.ultimo_email
+          from notificacoes n
+          join membros m on m.registro = n.registro
+          left join notificacao_preferencias pr on pr.registro = n.registro
+         where n.email_em is null
+           and n.email_tentativas < 5
+           and m.status in ('Ativo','Em pausa / avaliação')
+           and coalesce(nullif(m.email_nro,''), nullif(m.email_pessoal,'')) is not null
+           and coalesce(pr.email_modo,'imediato') <> 'nunca'
+           and (coalesce(pr.email_modo,'imediato') = 'imediato'
+                or pr.ultimo_email is null
+                or pr.ultimo_email < now() - interval '20 hours')
+         order by n.criado_em
+         limit greatest(coalesce(p_limite,200), 1)
+      )
+      select coalesce(jsonb_agg(p order by p->>'nome'), '[]'::jsonb) from (
+        select jsonb_build_object(
+                 'registro', registro, 'nome', nome, 'email', email, 'modo', modo,
+                 'itens', jsonb_agg(jsonb_build_object(
+                   'id', id, 'tipo', tipo, 'titulo', titulo,
+                   'corpo', corpo, 'href', href, 'criado_em', criado_em)
+                   order by criado_em)) as p
+          from alvo group by registro, nome, email, modo
+      ) q;
+    $g$
+    $f$;
+  end if;
+end $$;
 
 -- 6c. A baixa. Marca o que saiu e o que falhou, e move o relógio
 --     do resumo só de quem realmente recebeu.

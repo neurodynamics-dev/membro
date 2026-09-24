@@ -1033,6 +1033,9 @@ async function admCarregarProjetos(){
 
 function admDesenhaSite(){
   $('#sec-site').innerHTML = `
+    <div class="aviso-box info">Os vídeos e as matérias da seção <b>Quem somos</b> são editados no Studio${podeStudio()
+      ? `: <a href="#/studio/config/imprensa" style="text-decoration:underline">Studio › Configurações › Imprensa</a>.`
+      : ', pela gestão do Studio (admin e o grupo aprovador).'}</div>
     <div class="adm-grade">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px">
