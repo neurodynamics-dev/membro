@@ -196,7 +196,7 @@ body.lt-animando footer#ft{transition:margin-left .22s var(--lt-ease)}
 /* o espaço em que se está: nome aceso e o ícone na cor da marca */
 .lt-sec.ativa>.lt-linha .lt-item{color:var(--ink)}
 .lt-sec.ativa>.lt-linha .lt-item .ic{color:var(--syn-tx)}
-/* e, quando a página é o próprio item (Início, Meus pedidos), o fundo */
+/* e, quando a página é o próprio item (um espaço sem subitens), o fundo */
 .lt-item[aria-current="page"]{background:rgba(var(--tom),.07)}
 
 /* a seta abre e fecha os subitens sem sair da página */
@@ -1296,7 +1296,7 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px);
 .topo-gestao .tx{flex:1;min-width:240px}
 .topo-gestao h1{font-size:clamp(24px,3.4vw,34px);font-weight:600;line-height:1.1;margin:10px 0 6px}
 .topo-gestao .lead{color:var(--muted);font-size:14px;max-width:640px}
-.topo-gestao .acoes{display:flex;gap:8px;align-items:center;padding-top:34px}
+.topo-gestao .acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:34px}
 @media (max-width:700px){.topo-gestao .acoes{padding-top:0}}
 
 /* linha do tempo das ocorrências */
@@ -1977,7 +1977,7 @@ a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
 .st-ideia-pe{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;flex-wrap:wrap}
 .st-ideia-pe .bts,.st-imp .bts,.st-rec .bts,.cr-lams .bts{display:flex;gap:4px;align-items:center}
 .st-ideia-pe .icon-btn,.st-imp .icon-btn,.st-rec .icon-btn,.cr-lams .icon-btn{width:30px;height:30px;border-radius:8px}
-.icon-btn.cima .ic{transform:rotate(90deg)} .icon-btn.baixo .ic{transform:rotate(90deg)}
+.icon-btn.cima .ic{transform:rotate(90deg)} .icon-btn.baixo .ic{transform:rotate(-90deg)}
 /* calendário */
 .st-cal-topo{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
 .st-cal-mes{display:flex;align-items:center;gap:8px}
@@ -2203,6 +2203,329 @@ a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
 .cr-card-tx .nm{font-family:var(--fd);font-weight:600;font-size:14.5px}
 .cr-card-tx .sub{font-size:11.5px;color:var(--dim)}
 .cr-card-tx .pil{align-self:flex-start;font-size:10.5px;border:1px solid;border-radius:6px;padding:1px 7px;margin-top:4px}
+
+/* ============ TREINAMENTOS (v24) ============
+   A formação da equipe (mod-treinamentos). O player de vídeo é o do
+   site institucional (a seção "Quem somos"): o palco 16:9, o botão de
+   vidro, a barra Synapse de 2px e a linha de legenda com o número, o
+   título e a fonte. O palco é escuro nos dois temas — é vídeo —, e o
+   papel do certificado é branco nos dois — é papel. Componentes do
+   design system (neuro.css › Treinamentos). Ao mexer, mexa lá primeiro. */
+.tre-nav{margin-top:-8px}
+.tre-sec{margin-bottom:28px}
+.tre-sec h2{font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px}
+.tre-sec h2 .n,.tre-inicio h3 .n{font-family:var(--fm);font-size:11px;font-weight:500;color:var(--muted);border:1px solid var(--line2);
+  border-radius:6px;padding:0 6px;line-height:18px}
+.tre-sec>.small{margin-top:3px}
+.tre-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-top:12px}
+.tre-card{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  padding:18px 18px 15px;min-height:206px;transition:border-color .15s,background .15s,transform .15s}
+.tre-card:hover{border-color:var(--line2);background:rgba(var(--tom),.05);transform:translateY(-2px)}
+.tre-card-top{display:flex;align-items:center;justify-content:space-between;gap:6px 8px;flex-wrap:wrap}
+.tre-card .cod{font-family:var(--fm);font-size:10.5px;letter-spacing:.08em;color:var(--dim);white-space:nowrap}
+.tre-card .tt{font-family:var(--fd);font-size:16.5px;font-weight:600;line-height:1.3}
+.tre-card .rs{font-size:12.5px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tre-card .meta{font-size:11.5px;color:var(--dim);margin-top:auto}
+.tre-card .pe{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tre-card .go,.tre-inicio-i .go{font-family:var(--fd);font-size:12.5px;font-weight:600;color:var(--syn-tx);white-space:nowrap}
+.tre-prog{display:block;height:4px;border-radius:3px;background:rgba(var(--tom),.08);overflow:hidden}
+.tre-prog i{display:block;height:100%;width:0;background:var(--syn-borda);border-radius:3px;transition:width .3s}
+.tre-prog.grande{height:6px;margin:10px 0 14px}
+.tre-prog.mini{display:inline-block;width:56px;vertical-align:middle;margin-right:6px}
+.tag-mini.tre-obr{border-color:rgba(var(--warn-rgb),.45);color:var(--warn-tx)}
+/* o início: os obrigatórios por fazer */
+.tre-inicio{margin-top:18px}
+.tre-inicio h3{display:flex;align-items:center;gap:8px}
+.tre-inicio h3 .ic{width:18px;height:18px;color:var(--syn-tx)}
+.tre-inicio-l{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.tre-inicio-i{display:flex;flex-direction:column;gap:5px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;
+  transition:border-color .15s,background .15s}
+.tre-inicio-i:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
+.tre-inicio-i .cod{font-family:var(--fm);font-size:10.5px;color:var(--dim);letter-spacing:.08em}
+.tre-inicio-i .tt{font-family:var(--fd);font-weight:600;font-size:14.5px;line-height:1.3}
+.tre-inicio-i .st{font-size:12px;color:var(--muted)}
+.tre-inicio-mais{display:inline-block;margin-top:10px;color:var(--muted)}
+/* a página do treinamento */
+.tre-hero{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:26px;align-items:start;margin:22px 0 20px}
+@media (max-width:900px){.tre-hero{grid-template-columns:1fr;gap:16px}}
+.tre-hero-tx{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.tre-voltar{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-bottom:12px}
+.tre-voltar .ic{width:14px;height:14px}
+.tre-voltar:hover{color:var(--ink)}
+.tre-hero h1{font-size:clamp(26px,4vw,40px);font-weight:600;line-height:1.08;margin:12px 0 10px}
+.tre-hero .lead{color:var(--muted);font-size:15px;max-width:640px}
+.tre-hero-tags{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.tre-ficha{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:14px 18px;display:flex;flex-direction:column}
+.tre-ficha div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--line)}
+.tre-ficha div:last-child{border:0}
+.tre-ficha dt{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.tre-ficha dd{text-align:right}
+.tre-faixa{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid;border-radius:14px;padding:12px 16px;margin-bottom:16px;
+  font-size:13px;line-height:1.55}
+.tre-faixa .tx{flex:1;min-width:220px}
+.tre-faixa>.ic svg{width:20px;height:20px;display:block}
+.tre-faixa.ok{background:rgba(var(--ok-rgb),.07);border-color:rgba(var(--ok-rgb),.35)}
+.tre-faixa.ok>.ic{color:var(--ok)}
+.tre-faixa.bad{background:rgba(var(--bad-rgb),.07);border-color:rgba(var(--bad-rgb),.35);color:var(--bad-tx)}
+.tre-faixa.warn{background:rgba(var(--warn-rgb),.07);border-color:rgba(var(--warn-rgb),.35);color:var(--warn-tx)}
+.tre-gere{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tre-programa-hd{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.tre-programa h2{font-size:18px;font-weight:600}
+.tre-mods{list-style:none;display:flex;flex-direction:column;gap:2px}
+.tre-mods a{display:flex;align-items:center;gap:12px;padding:10px;border-radius:11px;transition:background .15s}
+.tre-mods a:hover{background:rgba(var(--tom),.05)}
+.tre-mods .n{width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);display:grid;place-items:center;
+  font-family:var(--fm);font-size:11px;color:var(--muted);flex:none}
+.tre-mods .n .ic{width:15px;height:15px}
+.tre-mods li.feito .n{background:rgba(var(--ok-rgb),.12);border-color:rgba(var(--ok-rgb),.4);color:var(--ok)}
+.tre-mods li.prox .n{border-color:var(--syn-borda);color:var(--syn-tx)}
+.tre-mods .tt{flex:1;min-width:0;font-size:14px;font-weight:500}
+.tre-mods .tags{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.tre-mods.mini a{padding:6px 8px;gap:9px}
+.tre-mods.mini .n{width:24px;height:24px;border-radius:7px;font-size:10px}
+.tre-mods.mini .n .ic{width:13px;height:13px}
+.tre-mods.mini .tt{font-size:12.5px;font-weight:400;color:var(--muted);line-height:1.35}
+.tre-mods.mini li.atual a{background:rgba(var(--tom),.07)}
+.tre-mods.mini li.atual .tt{color:var(--ink);font-weight:600}
+.tre-notas-rev{margin-top:12px}
+/* o módulo: a coluna do programa e o texto */
+.tre-player{display:grid;grid-template-columns:260px minmax(0,1fr);gap:34px;align-items:start;margin-top:22px}
+@media (max-width:980px){.tre-player{grid-template-columns:minmax(0,1fr);gap:18px}}
+.tre-lado{position:sticky;top:20px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--card);padding:16px 10px 10px}
+@media (max-width:980px){.tre-lado{position:static}.tre-lado .tre-mods.mini{display:none}}
+.tre-lado .tre-voltar{margin:0 8px 2px}
+.tre-lado-tt{font-family:var(--fd);font-weight:600;font-size:14.5px;line-height:1.3;margin:0 8px}
+.tre-lado .tre-prog{margin:4px 8px 0}
+.tre-lado>.small{margin:0 8px 6px}
+.tre-conteudo{min-width:0;max-width:780px}
+.tre-conteudo h1{font-size:clamp(24px,3.4vw,34px);font-weight:600;line-height:1.12;margin:12px 0 18px}
+/* o Markdown */
+.tre-md{font-size:15px;line-height:1.72;overflow-wrap:anywhere}
+.tre-md>*+*{margin-top:14px}
+.tre-md h2{font-size:21px;font-weight:600;line-height:1.25;margin-top:30px}
+.tre-md h3{font-size:17px;font-weight:600;margin-top:24px}
+.tre-md h4{font-family:var(--fm);font-size:11.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:20px}
+.tre-md ul,.tre-md ol{padding-left:22px;display:flex;flex-direction:column;gap:6px}
+.tre-md li>ul,.tre-md li>ol,.tre-md li>p+p{margin-top:6px}
+.tre-md li::marker{color:var(--muted)}
+.tre-md ol>li::marker{font-family:var(--fm);font-size:12.5px;color:var(--syn-tx)}
+.tre-md li.tarefa{list-style:none;margin-left:-20px}
+.tre-md li.tarefa::before{content:'';display:inline-block;width:12px;height:12px;border:1.5px solid var(--line2);border-radius:3px;margin-right:9px;vertical-align:-1px}
+.tre-md li.tarefa.feita::before{background:var(--syn);border-color:var(--syn-borda)}
+.tre-md strong{font-weight:650}
+.tre-md code{font-family:var(--fm);font-size:.86em;background:rgba(var(--tom),.07);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.tre-code{font-family:var(--fm);font-size:12.5px;line-height:1.6;background:rgba(var(--tom),.04);border:1px solid var(--line);
+  border-radius:12px;padding:14px 16px;overflow-x:auto;white-space:pre;max-width:100%}
+.tre-code code{background:none;border:0;padding:0;font-size:inherit}
+.tre-md blockquote{border-left:2px solid var(--line2);padding:2px 0 2px 16px;color:var(--muted)}
+.tre-md hr{border:0;border-top:1px solid var(--line2);margin:26px 0}
+.tre-a{color:var(--syn-tx);text-decoration:underline;text-decoration-color:rgba(var(--syn-rgb),.5);text-underline-offset:3px}
+.tre-a:hover{text-decoration-color:currentColor}
+.tre-link-ruim{text-decoration:underline wavy rgba(var(--bad-rgb),.7);text-underline-offset:3px}
+.tre-img{border-radius:12px;border:1px solid var(--line);display:block;max-width:100%}
+.tre-tabela{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.tre-tabela table{width:100%;border-collapse:collapse;font-size:13.5px;line-height:1.55}
+.tre-tabela th{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);
+  text-align:left;padding:10px 12px;border-bottom:1px solid var(--line2)}
+.tre-tabela td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tre-tabela tr:last-child td{border-bottom:0}
+.tre-caixa{border:1px solid;border-radius:14px;padding:12px 16px;font-size:14px;line-height:1.6}
+.tre-caixa>*+*{margin-top:8px}
+.tre-caixa-t{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:3px}
+.tre-caixa.dica{background:rgba(var(--syn-rgb),.06);border-color:rgba(var(--syn-rgb),.32)}
+.tre-caixa.dica .tre-caixa-t{color:var(--lima-tx)}
+.tre-caixa.atencao{background:rgba(var(--warn-rgb),.07);border-color:rgba(var(--warn-rgb),.34)}
+.tre-caixa.atencao .tre-caixa-t{color:var(--warn-tx)}
+.tre-caixa.importante{background:rgba(var(--bad-rgb),.07);border-color:rgba(var(--bad-rgb),.34)}
+.tre-caixa.importante .tre-caixa-t{color:var(--bad-tx)}
+.tre-caixa.nota,.tre-caixa.exemplo{background:rgba(var(--info-rgb),.06);border-color:rgba(var(--info-rgb),.32)}
+.tre-caixa.nota .tre-caixa-t,.tre-caixa.exemplo .tre-caixa-t{color:var(--info-tx)}
+/* o vídeo, no player do site */
+.tre-video{border:1px solid var(--line);border-radius:var(--r);background:var(--card);overflow:hidden;margin:22px 0}
+.tre-vstage{position:relative;aspect-ratio:16/9;background:#000}
+.tre-vcapa{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.84}
+.tre-vframe{position:absolute;inset:0}
+.tre-vframe iframe,.tre-vframe>div{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.tre-vgate{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;width:100%;
+  background:rgba(4,7,6,.36);color:#F5F5F7;cursor:pointer}
+.tre-vgate i{width:72px;height:72px;border-radius:50%;border:1px solid rgba(245,245,247,.2);background:rgba(7,12,10,.62);
+  backdrop-filter:blur(2px);display:grid;place-items:center;transition:transform .2s,border-color .2s}
+.tre-vgate:hover i,.tre-vgate:focus-visible i{transform:scale(1.06);border-color:#CEDC00}
+.tre-vgate .ic{width:22px;height:22px;margin-left:4px}
+.tre-video.tocando .tre-vgate,.tre-video.tocando .tre-vcapa{display:none}
+.tre-vbar{height:2px;background:rgba(var(--ink-rgb),.07)}
+.tre-vbar i{display:block;height:100%;width:0;background:var(--syn-borda);transition:width .25s linear}
+.tre-vinfo{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;padding:13px 18px}
+.tre-vinfo .no{font-family:var(--fm);font-size:11px;letter-spacing:.12em;color:var(--syn-tx);flex-shrink:0}
+.tre-vinfo .ttl{font-family:var(--fd);font-size:15px;font-weight:600;line-height:1.3}
+.tre-vinfo .src{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.tre-vinfo .vacts{margin-left:auto;display:flex;gap:8px}
+.tre-vbtn{height:34px;border:1px solid var(--line2);border-radius:10px;display:inline-flex;align-items:center;padding:0 13px;
+  font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  transition:color .15s,border-color .15s,background .15s}
+.tre-vbtn:hover{color:var(--ink);border-color:var(--dim);background:rgba(var(--tom),.05)}
+.tre-links{margin-top:30px}
+.tre-links a.doc .go{display:block}
+.tre-links h2{font-family:var(--fm);font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:12px}
+/* a verificação */
+.tre-verif{margin-top:30px;padding:22px 22px 18px}
+.tre-verif-hd h2{font-size:20px;font-weight:600;margin:8px 0 4px}
+.tre-verif-hd p{line-height:1.6;max-width:620px}
+.tre-qs{list-style:none;display:flex;flex-direction:column;gap:14px;margin-top:18px}
+.tre-q{border:1px solid var(--line);border-radius:14px;padding:14px 16px;transition:border-color .2s,background .2s}
+.tre-q.errada{border-color:rgba(var(--bad-rgb),.55);background:rgba(var(--bad-rgb),.05)}
+.tre-q.certa{border-color:rgba(var(--ok-rgb),.45)}
+.tre-q-en{display:flex;gap:12px;font-size:14.5px;font-weight:500;line-height:1.55}
+.tre-q-en .n{font-family:var(--fm);font-size:11px;color:var(--syn-tx);padding-top:3px;flex:none}
+.tre-q-dica{display:block;font-size:11.5px;color:var(--dim);font-weight:400;margin-top:3px}
+.tre-ops{display:flex;flex-direction:column;gap:6px;margin:12px 0 0 29px}
+@media (max-width:560px){.tre-ops,.tre-q-exp{margin-left:0!important}}
+.tre-op{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:11px;cursor:pointer;
+  font-size:14px;line-height:1.5;transition:border-color .15s,background .15s}
+.tre-op:hover{border-color:var(--line2);background:rgba(var(--tom),.03)}
+.tre-op input{margin-top:3px;flex:none}
+.tre-op:has(input:checked){border-color:var(--syn-borda);background:rgba(var(--syn-rgb),.06)}
+.tre-op.e-certa,.tre-vf.e-certa{border-color:rgba(var(--ok-rgb),.55);background:rgba(var(--ok-rgb),.08)}
+.tre-op.e-errada,.tre-vf.e-errada{border-color:rgba(var(--bad-rgb),.55);background:rgba(var(--bad-rgb),.07)}
+.tre-vf{display:flex;align-items:center;gap:12px;padding:7px 8px 7px 12px;border:1px solid var(--line);border-radius:11px;font-size:14px;line-height:1.5}
+.tre-vf .tx{flex:1;min-width:0}
+.tre-vf .seg button{min-width:38px;justify-content:center}
+.tre-vf .seg[data-certa]::after{content:'era ' attr(data-certa);font-family:var(--fm);font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);align-self:center;padding:0 8px}
+.tre-vf-g{font-family:var(--fm);font-weight:600;color:var(--ok);padding:0 8px}
+.tre-q-exp{margin:10px 0 0 29px;font-size:13px;color:var(--muted);line-height:1.6;border-left:2px solid var(--ok);padding-left:12px}
+.tre-res{font-size:13.5px;line-height:1.5}
+.tre-res.ok{color:var(--ok)}
+.tre-res.bad{color:var(--bad-tx)}
+.tre-concluir{display:flex;align-items:center;gap:14px;margin-top:30px;flex-wrap:wrap}
+.tre-ok{display:inline-flex;align-items:center;gap:8px;color:var(--ok);font-weight:600;font-size:14px}
+.tre-ok .ic{width:18px;height:18px}
+.tre-passos{display:flex;justify-content:space-between;gap:12px;margin-top:34px;padding-top:18px;border-top:1px solid var(--line)}
+.tre-passos .btn{min-width:0;max-width:48%;overflow:hidden}
+.tre-passos .btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tre-parabens{text-align:center;padding:10px 6px 4px}
+.tre-selo{width:74px;height:74px;border-radius:50%;margin:4px auto 14px;display:grid;place-items:center;
+  background:var(--syn);color:var(--deep);box-shadow:0 0 0 8px rgba(var(--syn-rgb),.14)}
+.tre-selo .ic{width:34px;height:34px}
+.tre-parabens h3{font-size:22px;margin:10px 0 6px}
+/* os certificados */
+.tre-certs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.tre-cert-tile{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);background:var(--card);overflow:hidden}
+.tre-cert-fita{height:6px;background:linear-gradient(90deg,var(--green),var(--deep) 62%,var(--syn))}
+.tre-cert-tx{padding:16px 18px 10px;display:flex;flex-direction:column;gap:6px;flex:1}
+.tre-cert-tx .cod{font-family:var(--fm);font-size:10.5px;letter-spacing:.08em;color:var(--dim)}
+.tre-cert-tx .tt{font-family:var(--fd);font-weight:600;font-size:16px;line-height:1.3}
+.tre-cert-tx .meta{font-size:12.5px;color:var(--muted)}
+.tre-cert-tx .pe{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.tre-cert-acs{display:flex;gap:8px;padding:0 18px 16px;flex-wrap:wrap}
+.tre-conferir{margin-top:22px;max-width:560px}
+.tre-verif-cert{max-width:680px}
+.tre-verif-cert.ok{border-color:rgba(var(--ok-rgb),.4)}
+.tre-verif-cert h2{font-size:28px;font-weight:600;margin:10px 0 6px}
+.tre-verif-cert p{color:var(--muted);line-height:1.6}
+/* gestão, novo e o editor */
+.tre-novo{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media (max-width:980px){.tre-novo{grid-template-columns:1fr}}
+.tre-imp-passos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tre-imp-passos label.btn{cursor:pointer}
+.tre-imp-txt{font-size:12.5px;line-height:1.6;min-height:180px}
+.tre-imp-res{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.tre-imp-cab{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+.tre-imp-mods{padding-left:20px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.tre-imp-res .aviso-box{margin:0}
+.tre-imp-res .aviso-box ul{padding-left:18px;margin-top:6px}
+.tre-ed-status{font-family:var(--fm);font-size:11.5px;color:var(--dim);margin:-12px 0 14px}
+.tre-ed-status.sujo{color:var(--warn-tx)}
+.tre-ed{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+@media (max-width:1100px){.tre-ed{grid-template-columns:minmax(0,1fr)}}
+.tre-ed-lado{display:flex;flex-direction:column;gap:14px;min-width:0}
+.tre-ed-lado .card{padding:18px}
+.tre-ed-mod{padding:0;margin-bottom:12px;overflow:hidden}
+.tre-ed-mod-hd{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.tre-ed-abre{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted);flex:none}
+.tre-ed-abre:hover{background:rgba(var(--tom),.06);color:var(--ink)}
+.tre-ed-abre .ic{width:15px;height:15px;transition:transform .15s}
+.tre-ed-mod.aberto .tre-ed-abre .ic{transform:rotate(90deg)}
+.tre-ed-mod-hd .n{font-family:var(--fm);font-size:11px;color:var(--syn-tx);flex:none}
+.tre-ed-tit{flex:1;min-width:120px;font-family:var(--fd);font-weight:600;font-size:15px;background:transparent;border-color:transparent}
+.tre-ed-tit:hover{border-color:var(--line2)}
+.tre-ed-mod-hd .tags,.tre-ed-mod-hd .bts,.tre-ed-q-hd .bts{display:flex;gap:4px;align-items:center}
+@media (max-width:640px){.tre-ed-mod-hd{flex-wrap:wrap}.tre-ed-mod-hd .tags{display:none}}
+.tre-ed-mod-bd{padding:4px 16px 16px;border-top:1px solid var(--line)}
+.tre-ed-barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 8px}
+.tre-ed-ferr{display:flex;gap:2px;border:1px solid var(--line2);border-radius:10px;padding:2px}
+.tre-ed-ferr button{min-width:30px;height:28px;border-radius:7px;display:grid;place-items:center;font-size:12.5px;color:var(--muted);padding:0 6px}
+.tre-ed-ferr button:hover{background:rgba(var(--tom),.07);color:var(--ink)}
+.tre-ed-ferr .ic{width:15px;height:15px}
+.tre-ed-ajuda{margin-left:auto;color:var(--dim)}
+.tre-ed-ajuda:hover{color:var(--syn-tx)}
+.tre-ed-corpo{min-height:260px;font-size:13px;line-height:1.65}
+.tre-ed-previa{border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-height:120px}
+.tre-ed-sub{margin-top:18px}
+.tre-ed-sub h4{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:8px}
+.tre-ed-sub h4 .small{text-transform:none;letter-spacing:0;font-family:var(--f)}
+.tre-ed-link{display:grid;grid-template-columns:1fr 1.2fr 1.3fr auto;gap:6px;margin-bottom:6px;align-items:center}
+@media (max-width:760px){.tre-ed-link{grid-template-columns:minmax(0,1fr) auto}.tre-ed-link input:not(:first-of-type){grid-column:1}}
+.tre-ed-link input,.tre-ed-op input{padding:7px 10px;font-size:13px;min-width:0}
+.tre-ed-q{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;
+  background:rgba(var(--tom),.015)}
+.tre-ed-q-hd{display:flex;align-items:center;gap:8px}
+.tre-ed-q-hd .n{font-family:var(--fm);font-size:11px;color:var(--syn-tx)}
+.tre-ed-q-hd select{padding:5px 8px;font-size:12.5px}
+.tre-ed-q-hd .bts{margin-left:auto}
+.tre-ed-q textarea{font-size:13px;padding:8px 10px}
+.tre-ed-ops{display:flex;flex-direction:column;gap:6px}
+.tre-ed-op{display:flex;align-items:center;gap:6px}
+.tre-ed-op input{flex:1}
+.tre-ed-marca,.tre-ed-vf{width:30px;height:30px;border-radius:8px;border:1px solid var(--line2);display:grid;place-items:center;color:var(--dim);flex:none}
+.tre-ed-marca .ic{width:15px;height:15px}
+.tre-ed-marca.on{background:var(--ok);border-color:var(--ok);color:var(--bg)}
+.tre-ed-vf{font-family:var(--fm);font-weight:600;font-size:12px}
+.tre-ed-vf.v{color:var(--ok);border-color:rgba(var(--ok-rgb),.5);background:rgba(var(--ok-rgb),.1)}
+.tre-ed-vf.f{color:var(--bad);border-color:rgba(var(--bad-rgb),.5);background:rgba(var(--bad-rgb),.08)}
+.tre-ed-addq{display:flex;gap:6px;flex-wrap:wrap}
+.tre-ed-addq .kb-add,.tre-ed-sub>.kb-add,.tre-ed-ops .kb-add{width:auto;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin-top:4px}
+.tre-ed-addmod{display:flex;align-items:center;justify-content:center;gap:7px}
+.tre-ed .kb-add .ic,.tre-ed-addmod .ic{width:14px;height:14px}
+.tre-probs{padding-left:18px;font-size:12.5px;color:var(--warn-tx);line-height:1.55;display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.aviso-box .tre-probs{color:inherit}
+.tre-nprob{font-family:var(--fm);font-size:11px;font-weight:500;background:rgba(var(--warn-rgb),.15);color:var(--warn-tx);border-radius:6px;padding:0 6px;margin-left:6px}
+.tre-pronto{color:var(--ok);display:flex;align-items:center;gap:6px;margin-top:8px}
+.tre-pronto .ic{width:15px;height:15px}
+.tre-atr{display:flex;flex-direction:column;max-height:340px;overflow:auto;margin:0 -6px;padding:0 6px}
+.tre-atr-l{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0 4px calc(var(--prof) * 14px);min-height:34px;flex-wrap:wrap}
+.tre-atr-l .check{font-size:13px;color:var(--ink);border:0;padding:0;background:none;align-items:center}
+.tre-atr-l.on .check{font-weight:600}
+.tre-atr-l .seg button{font-size:11px;padding:4px 8px}
+.tre-ed-zona{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.tre-refazer{align-items:flex-start;line-height:1.55;margin-top:6px}
+.tre-refazer input{margin-top:3px;flex:none}
+.tre-arq-lista{display:flex;flex-direction:column;gap:2px;max-height:50vh;overflow:auto}
+.tre-arq{display:flex;gap:12px;text-align:left;padding:8px 10px;border-radius:9px;font-size:13px}
+.tre-arq:hover{background:rgba(var(--tom),.06)}
+.tre-arq .mono{color:var(--syn-tx);font-size:12px;flex:none;min-width:112px}
+.tre-previa-abas{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.tre-previa-abas button{font-size:12px;padding:5px 10px;border-radius:8px;color:var(--muted);border:1px solid var(--line)}
+.tre-previa-abas button.on{background:var(--syn);color:var(--deep);border-color:var(--syn-borda);font-weight:600}
+.tre-previa-tt{font-size:26px;font-weight:600;margin:10px 0 16px}
+.tre-previa .tre-md{max-width:760px}
+/* configurações e o README */
+.tre-cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.tre-cfg-cert{grid-column:1/-1}
+.tre-cfg .chip-b[disabled]{opacity:.6;cursor:default}
+.tre-cert-previa{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#FFFFFF;max-width:760px;aspect-ratio:297/210}
+.tre-cert-previa canvas{display:block;width:100%;height:auto}
+.tre-cert-previa .carregando{padding:40px 0}
+.tre-readme-topo{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px;padding:16px 18px}
+.tre-readme-topo .tx{display:flex;flex-direction:column;gap:2px}
+.tre-readme{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+@media (max-width:1100px){.tre-readme{grid-template-columns:minmax(0,1fr)}}
+.tre-readme-txt{min-height:560px;font-size:12.5px;line-height:1.65}
+.tre-readme-ver{border:1px solid var(--line);border-radius:12px;padding:18px 22px;max-height:75vh;overflow:auto}
+.tre-readme-lado{display:flex;flex-direction:column;gap:14px;min-width:0}
+.tre-passos-lista{padding-left:18px;font-size:13px;line-height:1.6;display:flex;flex-direction:column;gap:8px;margin-top:10px;color:var(--muted)}
+.tre-pedido{white-space:pre-wrap;font-size:11.5px;margin-top:10px}
 
 /* ============ MODAL / TOAST ============ */
 #veil{position:fixed;inset:0;z-index:80;background:rgba(var(--veu-rgb),calc(.66 * var(--veu-k)));
@@ -2476,7 +2799,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '23.0';
+const VERSAO = '24.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -2703,7 +3026,10 @@ const ICONS = {
   galeria:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
   megafone:'<path d="M4 10v4h3.2l7.3 4.6V5.4L7.2 10z"/><path d="M17.8 9.2a4 4 0 0 1 0 5.6"/>',
   lupa:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/>',
-  enviar:'<path d="M20.5 3.5 10 14"/><path d="m20.5 3.5-6.5 17-4-6.5-6.5-4z"/>'
+  enviar:'<path d="M20.5 3.5 10 14"/><path d="m20.5 3.5-6.5 17-4-6.5-6.5-4z"/>',
+  /* os treinamentos (v24): o espaço e o certificado */
+  capelo:'<path d="M2.5 9.2 12 4.8l9.5 4.4L12 13.6z"/><path d="M6.5 11.3v4.4c0 1.6 2.5 3.1 5.5 3.1s5.5-1.5 5.5-3.1v-4.4"/><path d="M21.5 9.2v5.3"/>',
+  selo:'<circle cx="12" cy="9.2" r="5.7"/><path d="m8.6 13.8-1.3 6.7 4.7-2.5 4.7 2.5-1.3-6.7"/><path d="m9.8 9.3 1.6 1.6 3-3.1"/>'
 };
 const ic = (n, cls) => `<svg class="ic${cls?' '+cls:''}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;
@@ -2919,7 +3245,10 @@ function acoesDaCasca(){
     ['Solicitar acesso', 'Documento, sistema ou local', '#/servicos/acesso'],
     ['Pedir afastamento', 'Afastamento temporário', '#/servicos/afastamento'],
     ['Ouvidoria anônima', 'Mensagem sem vínculo com a sua conta', '#/servicos/ouvidoria'],
-    ['Meus pedidos', 'Acompanhar as suas solicitações', '#/pedidos'],
+    ['Meus pedidos', 'Acompanhar as suas solicitações', '#/servicos/pedidos'],
+    ['Treinamentos', 'O que os seus grupos pedem, e o que você já concluiu', '#/treinamentos'],
+    ['Todos os treinamentos', 'O catálogo de formação da equipe', '#/treinamentos/todos'],
+    ['Meus certificados', 'Os treinamentos concluídos, com o certificado em PDF', '#/treinamentos/certificados'],
     ['OKRs', 'Os objetivos da equipe e o desdobramento de cada um', '#/okrs'],
     ['Projetos', 'As equipes e o rol de arquivos de cada projeto', '#/projetos'],
     ['Arquivos', 'Todos os arquivos: o rol de documentos e registros (NRO-PUB-001)', '#/arquivos'],
@@ -2930,6 +3259,10 @@ function acoesDaCasca(){
   if (docGestor()) a.push(
     ['Novo projeto', 'Criar um projeto e a equipe dele', '#/projetos/novo'],
     ['Configurações de arquivos', 'Grupo revisor de cada série, emissores, padrão de projeto', '#/arquivos/config']);
+  if (gereTreinamentos()) a.push(
+    ['Novo treinamento', 'Do zero, ou a partir do texto de um agente de IA', '#/treinamentos/novo'],
+    ['Gestão de treinamentos', 'Rascunhos, publicados, atribuição e acompanhamento', '#/treinamentos/gestao'],
+    ['README dos treinamentos', 'O guia de conteúdo que vai junto do pedido aos agentes de IA', '#/treinamentos/config/readme']);
   if (podeStudio()) a.push(
     ['Studio', 'O quadro das publicações: ideias, produção, aprovação', '#/studio'],
     ['Criar publicação', 'Post, carrossel, stories, thumbnail, barra de nome…', '#/studio/criar'],
@@ -3121,6 +3454,8 @@ async function abrirPortal(){
   carregarOKRsDoMenu();
   carregarProjetosEArquivos();
   state.studioPronto = Promise.all([grupos, carregarStudioConfig()]);
+  carregarTreinamentoConfig();
+  state.treMeusPronto = carregarTreinamentosMeus();
   /* Conta sem registro não comenta, não abre solicitação, não é atribuída
      a nada — e nenhuma dessas telas explica por quê. Dizer uma vez, no
      alto, evita a caça ao defeito que não existe. */
@@ -3166,10 +3501,12 @@ const ROTAS = {
   equipe:      { desenha:'pageEquipe' },   /* carrega mod-gestao por dentro, conforme a aba */
   informacoes: { desenha:'pageInformacoes' },
   servicos:    { desenha:'pageServicos' },
-  pedidos:     { desenha:'pagePedidos' },
   okrs:        { desenha:'pageOkrs', modulo:'okrs' },
   projetos:    { desenha:'pageProjetos', modulo:'projetos' },
   arquivos:    { desenha:'pageArquivos', modulo:'arquivos' },
+  /* todos veem; quem gere (gereTreinamentos) edita, publica e atribui —
+     a própria tela devolve para "Para você" quem abre uma rota de gestão */
+  treinamentos:{ desenha:'pageTreinamentos', modulo:'treinamentos' },
   /* quem entra no Studio sai dos grupos escolhidos nas configurações
      dele — e isso só se sabe depois que os grupos e a configuração
      chegam. "espera" segura a decisão até lá, em vez de mandar para o
@@ -3188,7 +3525,10 @@ const ALIAS = {
   calendario:  (sub) => ['agenda', sub],
   organizacao: ()    => ['equipe', null],
   quadro:      (sub) => ['equipe', sub || 'quadro'],
-  auditoria:   ()    => ['admin', 'auditoria']
+  auditoria:   ()    => ['admin', 'auditoria'],
+  /* Meus pedidos virou subitem de Serviços (v24): o acompanhamento do
+     que se pediu mora ao lado de onde se pede */
+  pedidos:     ()    => ['servicos', 'pedidos']
 };
 
 function route(){
@@ -3311,13 +3651,24 @@ function arvoreDoMenu(){
       /* a ficha (#/equipe/<registro>) se abre a partir do quadro */
       ...(podeQuadro() ? [{ sub:'quadro', rot:'Quadro de pessoal', tambem:'^\\d+$' }] : []),
       { sub:'apontamento', rot:'Apontamento semanal' }] },
+    /* os treinamentos: o que os seus grupos pedem é a primeira tela, e a
+       página de um treinamento (#/treinamentos/NRO-TRE-003) acende ela */
+    { r:'treinamentos', rot:'Treinamentos', ic:'capelo', filhos: [
+      { sub:'', rot:'Para você', tambem:'^nro-tre-\\d+$' },
+      { sub:'todos', rot:'Todos os treinamentos' },
+      { sub:'certificados', rot:'Meus certificados', tambem:'^certificado$' },
+      ...(gereTreinamentos() ? [{ sep:true }, { sub:'gestao', rot:'Gestão', tambem:'^novo$' },
+        { sub:'config', rot:'Configurações' }] : [])] },
     { r:'informacoes', rot:'Informações', ic:'livro', filhos: [
       { sub:'', rot:'Todos os documentos' },
       ...Object.entries(CAT_DOC).map(([sub, c]) => ({ sub, rot:c.l }))] },
+    /* Meus pedidos mora aqui desde a v24: o décimo primeiro espaço não
+       cabia, e o acompanhamento do que se pediu é parte de pedir */
     { r:'servicos', rot:'Serviços', ic:'servicos', filhos: [
       { sub:'', rot:'Todos os serviços' },
-      ...SERVICOS_MENU.map(([sub, rot]) => ({ sub, rot }))] },
-    { r:'pedidos', rot:'Meus pedidos', ic:'pedidos' }
+      { sub:'pedidos', rot:'Meus pedidos' },
+      { sep:true },
+      ...SERVICOS_MENU.map(([sub, rot]) => ({ sub, rot }))] }
   ];
   const gestao = [];
   if (ROTAS.selecao.permite()) gestao.push({ r:'selecao', rot:'Seleção', ic:'bandeira',
@@ -3394,13 +3745,26 @@ function carregarStudioConfig(){
     .then(r => { state.studioCfg = r.error ? null : (r.data || null); desenharMenu(); },
           () => { state.studioCfg = null; });
 }
-function studioEmAlgum(ids){
+/* a pessoa logada está (contando subgrupos) em algum destes grupos?
+   O Studio e os treinamentos perguntam por aqui */
+function estouEmAlgum(ids){
   const eu = state.membros.find(m => m.registro === state.perfil?.registro);
   const meus = gruposEfetivos(eu);
   return (ids || []).some(id => meus.has(grupoPorId(id)?.nome));
 }
-const podeAprovarStudio = () => state.perfil?.papel === 'admin' || studioEmAlgum(state.studioCfg?.grupos_aprovadores);
-const podeStudio = () => podeAprovarStudio() || studioEmAlgum(state.studioCfg?.grupos_acesso);
+const podeAprovarStudio = () => state.perfil?.papel === 'admin' || estouEmAlgum(state.studioCfg?.grupos_aprovadores);
+const podeStudio = () => podeAprovarStudio() || estouEmAlgum(state.studioCfg?.grupos_acesso);
+
+/* Os treinamentos (v24). Todo mundo faz; gere quem é admin, do Depto.
+   de Pessoal ou de um dos grupos gestores (contando subgrupos). É a
+   mesma regra de treinamento_gestor() no banco — aqui só decide o que
+   o menu e os botões mostram. */
+function carregarTreinamentoConfig(){
+  return sb.from('treinamento_config').select('grupos_gestores,nota_minima').maybeSingle()
+    .then(r => { state.treCfg = r.error ? null : (r.data || null); desenharMenu(); },
+          () => { state.treCfg = null; });
+}
+const gereTreinamentos = () => can() || estouEmAlgum(state.treCfg?.grupos_gestores);
 
 /* ---------------- a logo de um projeto ----------------
    Como os avatares do GitHub: uma grade 5×5 espelhada, sorteada de uma
@@ -3730,6 +4094,17 @@ registrarBusca({
     href: podeQuadro() ? '#/equipe/' + m.registro : '#/equipe'
   })), t, 6)
 });
+/* os treinamentos publicados, do ponto de vista de quem busca — a casca
+   os lê no login (o início precisa deles), e mod-treinamentos mantém a
+   lista em dia quando a pessoa passa por lá */
+registrarBusca({
+  fonte:'treinamentos', rotulo:'Treinamentos',
+  buscar: (t) => filtrarSimples((state.treMeus || []).map(x => ({
+    titulo: x.titulo, codigo: x.codigo,
+    sub: [x.revisao ? 'Rev. ' + x.revisao : null, x.obrigatorio ? 'obrigatório' : x.obrigatorio === false ? 'opcional' : null,
+      x.situacao === 'concluido' ? 'concluído' : x.situacao === 'andamento' ? 'em andamento' : null].filter(Boolean).join(' · '),
+    href: '#/treinamentos/' + x.codigo })), t, 6)
+});
 registrarBusca({
   fonte:'agenda', rotulo:'Na agenda',
   buscar: (t) => filtrarSimples(Object.values(state.itensMes || {}).map(it => ({
@@ -3764,7 +4139,7 @@ function abrirSino(e){
       <span class="tt">${esc(n.titulo)}</span>
       ${n.corpo ? `<span class="cp">${esc(n.corpo)}</span>` : ''}
       <span class="qd">${fmtQuando(n.criado_em)}</span></button>`).join('')
-    : '<div class="sn-vazio">Nada por aqui. Você é avisado quando uma atividade sua anda, vence ou é sinalizada, e quando um arquivo espera a sua revisão.</div>';
+    : '<div class="sn-vazio">Nada por aqui. Você é avisado quando uma atividade sua anda, vence ou é sinalizada, quando um arquivo espera a sua revisão e quando um treinamento obrigatório chega para você.</div>';
   p.hidden = false;
 }
 function fecharSino(){ const p = $('#sino-painel'); if (p) p.hidden = true; }
@@ -3999,6 +4374,7 @@ document.addEventListener('keydown', e => {
 async function pageHome(){
   $('#main').innerHTML = `
     <section id="sec-board"><div class="carregando"><span class="spin"></span> Carregando avisos…</div></section>
+    <section id="sec-treinos"></section>
     <div class="home-grid tres">
       <div class="card" id="card-agenda">
         <div class="head"><h3>Próximos eventos</h3><a href="#/agenda">agenda completa →</a></div>
@@ -4011,8 +4387,39 @@ async function pageHome(){
       <aside class="rail">${trilhoFerramentas()}</aside>
     </div>`;
   carregarBoard();
+  carregarTreinamentosResumo();
   carregarAgendaResumo();
   carregarCheckinResumo();
+}
+
+/* ---------- os treinamentos que esperam por você ----------
+   Só aparece quando há obrigatório por fazer: o início é o seu dia, e
+   treinamento em dia não é pendência. Sem a v24, não aparece nada. */
+function carregarTreinamentosMeus(){
+  if (!state.perfil?.registro) return Promise.resolve();
+  return sb.rpc('treinamentos_meus')
+    .then(r => { if (!r.error && Array.isArray(r.data)) state.treMeus = r.data; }, () => {});
+}
+async function carregarTreinamentosResumo(){
+  /* a do login, na primeira vez; depois, lida de novo a cada início —
+     quem acabou de concluir não pode ver o treinamento como pendente */
+  const doLogin = state.treMeusPronto; state.treMeusPronto = null;
+  await (doLogin || carregarTreinamentosMeus());
+  const el = $('#sec-treinos'); if (!el) return;
+  const pend = (state.treMeus || []).filter(t => t.obrigatorio && t.situacao !== 'concluido');
+  if (!pend.length){ el.innerHTML = ''; return; }
+  const st = { andamento:'Em andamento', vencido:'Venceu — refazer', nova_revisao:'Revisão nova — refazer' };
+  el.innerHTML = `<div class="card tre-inicio">
+    <div class="head"><h3>${ic('capelo')} Treinamentos obrigatórios <span class="n">${pend.length}</span></h3>
+      <a href="#/treinamentos">todos os seus →</a></div>
+    <div class="tre-inicio-l">${pend.slice(0, 3).map(t => {
+      const pct = t.n_modulos ? Math.round(100 * (t.feitos || 0) / t.n_modulos) : 0;
+      return `<a class="tre-inicio-i" href="#/treinamentos/${esc(t.codigo)}">
+        <span class="cod">${esc(t.codigo)}</span><span class="tt">${esc(t.titulo)}</span>
+        <span class="st">${st[t.situacao] || 'Não começado'} · ${t.feitos || 0} de ${t.n_modulos} módulos</span>
+        <span class="tre-prog"><i style="width:${pct}%"></i></span>
+        <span class="go">${t.situacao === 'andamento' ? 'Continuar' : t.situacao === 'pendente' ? 'Começar' : 'Refazer'} →</span></a>`; }).join('')}</div>
+    ${pend.length > 3 ? `<a class="small tre-inicio-mais" href="#/treinamentos">e mais ${pend.length - 3}…</a>` : ''}</div>`;
 }
 
 /* ---------- trilho de ferramentas ----------
@@ -4025,7 +4432,8 @@ const ICO = {
   brand:   'M12 3l2.6 5.6 6.1.8-4.5 4.2 1.2 6.1L12 16.8 6.6 19.7l1.2-6.1L3.3 9.4l6.1-.8z',
   doc:     'M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7zM14 3v4h4M9 12h6M9 16h4',
   git:     'M9 19c-4 1.3-4-2.3-6-3m12 5v-3.6a3 3 0 0 0-.9-2.4c3-.3 6-1.5 6-6.6a5 5 0 0 0-1.4-3.5 4.7 4.7 0 0 0-.1-3.5s-1.1-.3-3.6 1.4a12.4 12.4 0 0 0-6.6 0C6.4 1.5 5.3 1.8 5.3 1.8a4.7 4.7 0 0 0-.1 3.5A5 5 0 0 0 3.8 8.8c0 5 3 6.3 6 6.6a3 3 0 0 0-.9 2.3V21',
-  bussola: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M15.5 8.5l-2 5-5 2 2-5z'
+  bussola: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M15.5 8.5l-2 5-5 2 2-5z',
+  capelo:  'M2.5 9.2 12 4.8l9.5 4.4L12 13.6zM6.5 11.3v4.4c0 1.6 2.5 3.1 5.5 3.1s5.5-1.5 5.5-3.1v-4.4M21.5 9.2v5.3'
 };
 function fer(icone, nome, desc, href, externo){
   return `<a class="fer" href="${href}"${externo?' target="_blank" rel="noopener"':''}>
@@ -4041,6 +4449,7 @@ function trilhoFerramentas(){
     ${fer('agenda','Agenda','Marcar, responder e acompanhar','#/agenda')}
     ${fer('pessoas','Organização','Organograma e quem faz o quê','#/organizacao')}
     ${fer('doc','Documentos','Estatuto, políticas e formulários','#/informacoes')}
+    ${fer('capelo','Treinamentos','Formação da equipe e certificados','#/treinamentos')}
     <div class="grp">Sistemas</div>
     ${podeQuadro() ? fer('pessoas','Quadro de pessoal','Fichas, ocorrências e acessos','#/equipe/quadro') : ''}
     ${fer('agenda','Atividades','O quadro do seu grupo','#/atividades')}
@@ -6372,13 +6781,14 @@ async function pageInformacoes(sub){
    SERVIÇOS — solicitações ao Depto de Pessoal
    ============================================================ */
 function pageServicos(sub){
+  if (sub === 'pedidos') return pagePedidos();
   if (sub) return formServico(sub);
   const semReg = !state.perfil.registro;
   $('#main').innerHTML = `
     <div class="pg-head"><span class="eyebrow">Depto. de Pessoal</span>
       <h1>Serviços</h1>
       <p class="lead">Abra solicitações direto para o Departamento de Pessoal e acompanhe tudo
-        em <a href="#/pedidos" style="border-bottom:1px solid var(--line2)">Meus pedidos</a>.</p></div>
+        em <a href="#/servicos/pedidos" style="border-bottom:1px solid var(--line2)">Meus pedidos</a>.</p></div>
     ${semReg ? `<div class="aviso-box warn">Sua conta ainda não está vinculada a um registro de membro,
       então as solicitações ficam bloqueadas. A ouvidoria continua aberta. Fale com o Depto. de Pessoal.</div>` : ''}
     <div class="srv-grid">
@@ -6656,7 +7066,7 @@ async function enviarServico(tipo){
     <p>O Depto. de Pessoal recebeu o seu pedido. Acompanhe o andamento e a resposta em
       <b>Meus pedidos</b>.</p>
     <div class="acts" style="justify-content:center">
-      <a class="btn solid" href="#/pedidos">Ver meus pedidos</a>
+      <a class="btn solid" href="#/servicos/pedidos">Ver meus pedidos</a>
       <a class="btn ghost" href="#/servicos">Novo pedido</a></div></div>`;
 }
 

@@ -55,8 +55,14 @@ SOMA · Gestão está sendo trazido, conforme o
   - **ouvidoria anônima** para a Gestão de Pessoas (sem vínculo com a
     conta, por projeto de banco — ver `db/aplicadas/soma_v10_portal.sql`);
   - outras solicitações.
-- **Meus pedidos** — acompanhamento das solicitações, com status e
-  resposta do Depto. de Pessoal, e cancelamento enquanto pendente.
+- **Meus pedidos** (em Serviços) — acompanhamento das solicitações, com
+  status e resposta do Depto. de Pessoal, e cancelamento enquanto pendente.
+- **Treinamentos** — a formação da equipe: treinamentos com código e revisão
+  (`NRO-TRE-003 Rev. B`), módulos em Markdown com vídeos do YouTube no player
+  do site institucional, verificação de conhecimento corrigida no banco,
+  atribuição a grupos (obrigatório ou opcional), a conclusão no perfil e o
+  certificado em PDF. O texto vem, quase sempre, de um agente de IA que segue
+  o README de conteúdo. Ver [Treinamentos](#treinamentos).
 - **Projetos** — cada projeto com código, logo gerada, supervisor, equipe
   (um grupo dentro de `NRO_PROJECTS`) e o rol de arquivos que todo projeto
   deve ter.
@@ -74,7 +80,7 @@ SOMA · Gestão está sendo trazido, conforme o
 
 A navegação é por **espaços** — o que você está fazendo —, não por qual app
 a tela veio: **Agenda · Atividades · OKRs · Projetos · Arquivos · Studio ·
-Equipe · Informações · Serviços · Meus pedidos** (o Studio, para quem está
+Equipe · Treinamentos · Informações · Serviços** (o Studio, para quem está
 nos grupos dele), e, para quem tem o papel, **Seleção** e **Administração**. Eles ficam num **menu lateral** à esquerda,
 cada um com ícone e com os seus subitens logo abaixo — as abas da Agenda, os
 quadros dos seus grupos, as categorias de documento, cada serviço, cada
@@ -94,8 +100,9 @@ escolha de cada pessoa, no botão ao lado do *sair*, na linha da sua conta
 (com o menu recolhido, pelo voo da conta). A escolha fica no navegador e vale
 desde o primeiro quadro da página — sem piscar escuro antes.
 
-Endereço antigo não quebra: `#/organizacao`, `#/quadro`, `#/calendario` e
-`#/auditoria` continuam levando ao lugar certo.
+Endereço antigo não quebra: `#/organizacao`, `#/quadro`, `#/calendario`,
+`#/auditoria` e `#/pedidos` (que desde a v24 é `#/servicos/pedidos`) continuam
+levando ao lugar certo.
 
 ## Atividades
 
@@ -438,6 +445,105 @@ Acesso e contas são da gestão do Studio (admin e quem aprova); a imprensa,
 dela e de `admin`/`pessoal`, como o painel do site; os recursos, de quem
 entra no Studio.
 
+## Treinamentos
+
+A formação da equipe, em `#/treinamentos` (`mod-treinamentos.js`). Todo mundo
+faz; **gere** — cria, edita, publica, atribui e acompanha — quem é `admin`, do
+Depto. de Pessoal ou de um dos **grupos gestores** escolhidos em *Treinamentos ›
+Configurações* (contando subgrupos, como sempre).
+
+### O que é um treinamento
+
+| Parte | O que é |
+|---|---|
+| **Código** | `NRO-TRE-003`, dado pelo portal (o seguinte ao último, ou um número escolhido ao criar). O prefixo `TRE` fica reservado: Arquivos não aceita um emissor com ele |
+| **Revisão** | `Rev. A`, `B`, `C`… fora do código, como nos arquivos. Uma revisão por vez é rascunho; publicar dá a letra seguinte |
+| **Módulos** | o corpo de cada um em Markdown — texto, vídeos do YouTube, links para os arquivos (`arquivo:NRO-PES-015`), outros treinamentos e as telas do portal — mais os links relacionados |
+| **Verificação de conhecimento** | opcional por módulo: questões de uma correta, de várias corretas ou de verdadeiro e falso, cada uma com a explicação |
+| **Atribuição** | a grupos (ou à equipe inteira), obrigatório ou opcional. Atribuir a `NRO_PROJECTS` atribui a quem está em cada projeto |
+| **Dados** | resumo, categoria, carga horária, nota mínima (a padrão é 70%), validade em meses (segurança, por exemplo) e o responsável |
+
+### Fazer
+
+- **Para você** (`#/treinamentos`) é o que os grupos da pessoa pedem: os
+  obrigatórios primeiro, depois os que estão em andamento e os recomendados.
+  **Todos** é o catálogo — qualquer um faz qualquer treinamento publicado; a
+  atribuição só diz o que é obrigatório para quem. O **início** mostra os
+  obrigatórios por fazer, e a busca acha os treinamentos pelo código e pelo nome;
+- a página do treinamento (`#/treinamentos/NRO-TRE-003`) tem o programa e onde a
+  pessoa está; cada módulo tem endereço (`#/treinamentos/NRO-TRE-003/2`);
+- os **vídeos** aparecem no mesmo player da seção *Quem somos* do site
+  institucional — o palco 16:9, o botão de vidro, a barra Synapse e a linha com
+  o número, o título e a fonte —, e o player do YouTube (youtube-nocookie) só
+  desce quando a pessoa aperta o play;
+- módulo sem verificação se conclui lendo; com verificação, passando nela. A
+  correção é **no banco** (`treinamento_responder`): o gabarito nunca desce para
+  quem faz o treinamento. Cada questão vale um ponto, tudo ou nada; reprovado, a
+  pessoa sabe quais errou, não qual era a certa; aprovado, recebe as explicações.
+  Dá para tentar de novo quantas vezes precisar, e vale a melhor nota;
+- o último módulo **fecha o treinamento**: a conclusão fica no perfil da pessoa
+  com um código de certificado (`CERT-XXXX-XXXX`) e uma fotografia do que foi
+  concluído — nome, título, revisão, carga horária, nota e os módulos. O
+  **certificado** sai em PDF (A4 deitado, com a faixa Cortex, a rede neural
+  sorteada do código, as marcas da NRO e do LABBIO e quem assina), com uma
+  camada de texto por baixo, para o PDF se buscar e se copiar;
+- **Meus certificados** junta os de cada um, e qualquer membro confere um
+  certificado pelo código (`#/treinamentos/certificado/CERT-…`);
+- a **ficha** do membro, em Equipe, ganha a aba **Treinamentos**: o que é
+  obrigatório para a pessoa, onde ela está e os certificados.
+
+### Revisar sem perder quem já fez
+
+Publicar uma revisão pergunta se ela **pede que todos refaçam**. Sem isso (uma
+correção de texto, um vídeo trocado), quem concluiu a anterior continua em dia,
+e quem estava no meio leva para a revisão nova os módulos que **não mudaram
+nada**. Com isso, quem concluiu volta a dever o treinamento e é avisado — o
+certificado da revisão anterior continua no perfil. Um treinamento com
+**validade** vence depois dos meses dela, e refazer é recomeçar do zero.
+
+Quem deve um treinamento obrigatório (na primeira publicação, quando uma
+revisão pede que refaçam e quando passa a ser de um grupo seu) recebe o aviso no
+sino e por e-mail, conforme a preferência de cada um.
+
+### Escrever com um agente de IA
+
+O texto de um treinamento é **um arquivo Markdown**: um cabeçalho (título,
+resumo, categoria, carga horária) e os módulos, cada um começando por `# `, com
+as seções `## Links relacionados` e `## Verificação de conhecimento` no fim. O
+**README de conteúdo** explica o formato inteiro, o tom da equipe, como pôr
+vídeos e links, como escrever boas questões e como transformar um link ou um
+documento num treinamento nosso — é o arquivo que vai junto do pedido ao agente.
+
+1. Em *Treinamentos › Configurações › README de conteúdo*, baixe o README
+   **com as referências**: ele desce com a lista dos arquivos e dos treinamentos
+   que existem, para o agente não inventar código nenhum;
+2. copie o **pedido-modelo** e complete o tema, o público, as fontes e os
+   vídeos;
+3. o que o agente devolver, cole em *Novo treinamento › De um texto* (ou, num
+   treinamento que já existe, em *Importar texto*, no editor). O portal lê o
+   texto, mostra o que precisa de conserto — link que o portal não abre, questão
+   sem a certa marcada, vídeo sem link do YouTube, marca `[VÍDEO A GRAVAR]` — e
+   cria o rascunho;
+4. revise no editor, veja a **pré-visualização** (com o gabarito marcado) e
+   publique.
+
+O README é da equipe: dá para editá-lo ali mesmo e baixá-lo; sem edição, vale
+o padrão do portal, que mora em `mod-treinamentos.js` ao lado do leitor do
+formato que ele descreve. **Exportar**, no editor, devolve o treinamento no
+mesmo formato — é assim que se pede a um agente a Rev. B de um treinamento que
+já existe.
+
+### O editor
+
+Em `#/treinamentos/NRO-TRE-003/editar`: os módulos (título, corpo com barra de
+atalhos para negrito, subtítulo, passo a passo, link, arquivo, vídeo e caixa de
+dica, e a alternância escrever/ver), os links relacionados e as questões, um
+painel com **o que impede publicar**, a atribuição, o "o que mudou" da revisão,
+as revisões anteriores e arquivar ou excluir (excluir só o que nunca foi
+publicado). Os dados valem na hora; o conteúdo mora no rascunho, grava sozinho
+e só vale ao publicar. *Acompanhamento* mostra quem deve, quem está em dia e
+quem começou, e baixa a planilha.
+
 ## OKRs
 
 O planejamento estratégico da equipe, em `#/okrs` — veio do SOMA · Gestão
@@ -488,7 +594,7 @@ Duas coisas que a unificação trouxe de graça:
 
 | Arquivo        | O que é |
 |----------------|---------|
-| `index.html`   | A casca e o plano do membro (`#/`, `#/agenda`, `#/equipe`, `#/informacoes`, `#/servicos`, `#/pedidos`) |
+| `index.html`   | A casca e o plano do membro (`#/`, `#/agenda`, `#/equipe`, `#/informacoes`, `#/servicos`, `#/servicos/pedidos`) |
 | `mod-atividades.js` | O quadro de trabalho de cada grupo (`#/atividades`) |
 | `mod-gestao.js`| Quadro de pessoal, ficha e auditoria (`#/equipe/quadro`, `#/equipe/<registro>`) |
 | `mod-admin.js` | Os doze painéis da gestão (`#/admin`, `#/admin/<painel>`) |
@@ -499,6 +605,7 @@ Duas coisas que a unificação trouxe de graça:
 | `mod-projetos.js` | Os projetos: equipe, supervisor, logo e rol (`#/projetos`, `#/projetos/<código>`) |
 | `mod-arquivos.js` | O controle de arquivos: a lista de todos os arquivos (filtra por emissor), tela do arquivo, revisões, templates, visão geral e configurações (`#/arquivos`, `#/arquivos/<código>`) |
 | `mod-studio.js` | O planejamento do Studio: quadro, calendário, ideias, a publicação e as configurações (`#/studio`, `#/studio/POST-14`) |
+| `mod-treinamentos.js` | A formação da equipe: para você, o catálogo, o módulo com a verificação, os certificados em PDF, o editor com a importação do texto dos agentes de IA, o acompanhamento e o README de conteúdo (`#/treinamentos`, `#/treinamentos/NRO-TRE-003`) |
 | `mod-criador.js` | O criador do Studio: o motor de desenho, os 23 modelos, o editor, a galeria, baixar e salvar no quadro (`#/studio/criar`, `#/studio/modelos`) |
 | `studio/` | As marcas que o criador desenha: o imagotipo da NRO, o símbolo e a logo do LABBIO (do repositório do site), servidas daqui para o canvas poder exportar |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
@@ -655,6 +762,11 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
   nunca de quem mandou para aprovação; configurar é de quem aprova e de
   `admin`. A escrita das publicações passa por funções do banco — é nelas, e
   num gatilho, que mora a regra de "pronta só com aprovação".
+- **Treinamentos** (`#/treinamentos`): todos fazem; gerir é de `admin`, do
+  Depto. de Pessoal e dos grupos gestores; quem entra na gestão, só `admin` e o
+  Depto. de Pessoal escolhem. O conteúdo com o gabarito só quem gere lê; quem faz
+  o treinamento recebe o conteúdo sem as respostas, e a correção, a conclusão e o
+  certificado saem de funções do banco — nenhuma escrita direta nas tabelas.
 - **Ouvidoria**: a mensagem é gravada por função `security definer`
   sem nenhuma referência à conta, sem gatilho de auditoria e com a data
   truncada para o dia. Anonimato por projeto, não por promessa.

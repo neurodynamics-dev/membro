@@ -20,7 +20,9 @@
 
    Depende da casca para: sb, $, esc, norm, state, can, podeQuadro, ic, ibtn,
    toast, abreModal, fechaModal, fmtD, fmtDT, hojeISO, pad3, nomeDe,
-   quemSouEu, avatarFoto, carregarLib, confirma, gruposEfetivos.
+   quemSouEu, avatarFoto, carregarLib, carregarModulo, confirma, falha,
+   gruposEfetivos. A aba Treinamentos chama mod-treinamentos
+   (treBaixarCertificado) depois de carregá-lo.
    ============================================================ */
 
 /* ---------------- estado do módulo ---------------- */
@@ -415,6 +417,13 @@ async function carregarFicha(){
   gestao.ficha.avals   = out.avals.data || [];
   gestao.ficha.aponts  = await juntarCabecalhos(out.aponts.data || []);
   gestao.ficha.pess    = out.pess ? (out.pess.data || null) : null;
+  /* os treinamentos (v24) vêm à parte: sem a migração, a ficha abre do
+     mesmo jeito, só sem a aba */
+  const [tr, co] = await Promise.all([
+    sb.rpc('treinamentos_de', { p_reg: reg }),
+    sb.from('treinamento_conclusoes').select('*').eq('registro', reg).order('concluido_em', { ascending:false })]);
+  gestao.ficha.treinos = tr.error || !Array.isArray(tr.data) ? null : tr.data;
+  gestao.ficha.concl   = co.error ? [] : (co.data || []);
 }
 /* Anexa {apont:{grupo,responsavel}} aos itens buscando os cabeçalhos por
    id. A junção é feita no cliente porque a consulta aninhada do PostgREST
@@ -441,6 +450,7 @@ function renderFicha(){
   const abas = [['dados','Dados']];
   if (podeQuadro()) abas.push(['ocorr', `Ocorrências (${f.ocorr.length})`]);
   abas.push(['acessos','Acessos'], ['avals', `Avaliações (${f.avals.length})`]);
+  if (f.treinos) abas.push(['treinos', `Treinamentos (${f.concl.length})`]);
   if (can()) abas.push(['pess','Dados pessoais']);
 
   $('#main').innerHTML = topoGestao({
@@ -468,7 +478,43 @@ function renderFicha(){
     <div id="ficha-body"></div>${datalistsHTML()}`;
 
   ({dados:renderTabDados, ocorr:renderTabOcorr, acessos:renderTabAcessos,
-    avals:renderTabAvals, pess:renderTabPess}[f.tab])();
+    avals:renderTabAvals, pess:renderTabPess, treinos:renderTabTreinos}[f.tab])();
+}
+
+/* Os treinamentos da pessoa: o que é obrigatório para ela, onde ela
+   está e os certificados. O PDF quem desenha é mod-treinamentos —
+   carregado aqui, antes de chamar, porque módulo não depende de módulo. */
+function renderTabTreinos(){
+  const f = gestao.ficha, ts = (f.treinos || []).filter(t => t.obrigatorio != null || t.situacao !== 'pendente');
+  const obrig = ts.filter(t => t.obrigatorio), emDia = obrig.filter(t => t.situacao === 'concluido').length;
+  const sit = { pendente:['Não começado','dt-gray',''], andamento:['Em andamento','dt-info','p-info'], concluido:['Concluído','dt-ok','p-ok'],
+    nova_revisao:['Nova revisão','dt-warn','p-warn'], vencido:['Vencido','dt-bad','p-bad'] };
+  const pl = s => { const [l, dt, c] = sit[s] || [s || '—', 'dt-gray', '']; return `<span class="pill ${c}"><span class="dt ${dt}"></span>${l}</span>`; };
+  $('#ficha-body').innerHTML = `<div class="card">
+      <div class="head"><h3>Treinamentos</h3><span class="small muted">${obrig.length
+        ? `${emDia} de ${obrig.length} obrigatório${obrig.length === 1 ? '' : 's'} em dia` : 'Nenhum treinamento obrigatório para esta pessoa'}</span></div>
+      ${ts.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th>Código</th><th>Treinamento</th><th>Atribuição</th>
+        <th>Situação</th><th>Progresso</th><th>Concluído em</th></tr></thead><tbody>${ts.map(t => `<tr>
+          <td class="reg">${esc(t.codigo)}</td><td class="nome">${esc(t.titulo)}</td>
+          <td>${t.obrigatorio ? 'Obrigatório' : t.obrigatorio === false ? 'Opcional' : '<span class="muted">não atribuído</span>'}</td>
+          <td>${pl(t.situacao)}</td><td class="mono small">${t.situacao === 'concluido' ? t.n_modulos : t.feitos}/${t.n_modulos}</td>
+          <td>${t.concluido_em ? fmtD(t.concluido_em) : '—'}</td></tr>`).join('')}</tbody></table></div>`
+        : '<div class="empty">Nenhum treinamento atribuído aos grupos desta pessoa, e nenhum feito por conta própria.</div>'}
+    </div>
+    <div class="card" style="margin-top:14px"><h3>Certificados</h3>
+      <p class="sub" style="margin-bottom:10px">Cada conclusão, com o que foi concluído na época: o certificado não muda quando o treinamento é revisado</p>
+      ${f.concl.length ? f.concl.map(c => `<div class="acc-row">
+          <span class="nm">${esc(c.titulo)} <span class="mt">${esc(c.codigo)} · Rev. ${esc(c.revisao)}</span></span>
+          <span class="mt">${fmtD(c.concluido_em)}${c.nota != null ? ' · ' + c.nota + '%' : ''}</span>
+          <span class="mt">${esc(c.certificado)}</span>
+          ${ibtn('down', 'Baixar o certificado', `fichaCertificado('${esc(c.certificado)}', this)`, 'sm')}</div>`).join('')
+        : '<div class="empty">Nenhum certificado ainda.</div>'}
+    </div>`;
+}
+async function fichaCertificado(cod, bt){
+  try { await carregarModulo('treinamentos'); }
+  catch(e){ return falha(e, 'Os treinamentos não carregaram'); }
+  treBaixarCertificado(cod, bt);
 }
 
 function alternarCampoFoto(){

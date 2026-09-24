@@ -2,8 +2,9 @@
   "name": "membro-testes",
   "private": true,
   "type": "module",
-  "description": "Testes de navegador do portal. Rode `npm install` aqui antes da primeira vez.",
+  "description": "Testes de navegador do portal. Rode `npm install` aqui antes da primeira vez. O jspdf é o mesmo 2.5.1 que o portal busca no cdnjs: o teste do certificado o serve daqui.",
   "devDependencies": {
-    "playwright": "^1.63.0"
+    "playwright": "^1.63.0",
+    "jspdf": "2.5.1"
   }
 }
