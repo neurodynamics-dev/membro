@@ -1053,7 +1053,7 @@ function arqModalAdicionar(pref){
           `<button class="btn ghost mini" onclick="arqModalSerie(null, '${pref || ''}', '${k}')" title="${esc(ARQ_ESTRUTURAS[k].frase)}">${ARQ_ESTRUTURAS[k].rot}</button>`).join('')}</div>`)
         : '<p class="small muted" style="margin:0">Série nova — documento único ou template — quem cria é o PMO.</p>'}
       <p class="small muted" style="margin:0;line-height:1.6">Uma revisão nova de um arquivo que já existe não se adiciona aqui:
-        abra o arquivo e use <b style="color:var(--ink)">Enviar revisão</b>. Ele continua com o mesmo código, e ganha a letra seguinte.</p>
+        abra o arquivo e use <b style="color:var(--ink)">Submeter nova revisão</b>. Ele continua com o mesmo código, e ganha a letra seguinte.</p>
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button></div>`, 'largo');
 }
