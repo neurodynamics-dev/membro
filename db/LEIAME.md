@@ -70,6 +70,7 @@ db/
 | `v20_projetos_arquivos.sql` | projetos (grupo dentro de `NRO_PROJECTS`, supervisor, logo) e o controle de arquivos: séries `NRO-XXX-YYY`, PNs, revisões que só valem depois de aprovadas pelo grupo revisor, templates, relações pai/filho, padrão de projeto e o bucket privado `arquivos` |
 | `v21_rol_nro_pub_001.sql` | o rol inicial: as 46 linhas da planilha NRO-PUB-001 viram séries, com os sete emissores (um por aba; CLI e REL ainda sem linhas) e um padrão de projeto proposto |
 | `v22_estrutura_das_series.sql` | a estrutura de cada série pela coluna nova da NRO-PUB-001 — documento único, template → documentos ou template → registros —, 18 séries ajustadas, e a mudança de estrutura no registro de alterações |
+| `v23_studio.sql` | o Studio: publicações `POST-N` (ideia → produção → aprovação → pronta → publicada), aprovação pelo grupo aprovador com versão, histórico, o lembrete da véspera por e-mail (pg_cron), os recursos de imagem, a imprensa do site (`site_imprensa_publico`) e o bucket privado `studio` |
 
 **Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
 duplica nada.
@@ -144,6 +145,30 @@ de alterações do arquivo — daqui em diante, também quando o PMO muda a
 estrutura de uma série pela tela (um gatilho em `doc_series`). O NRO-PUB-002
 veio com a coluna vazia e fica como está: template avulso.
 
+A **23.0** é o Studio. Ela procura um grupo de comunicação ("Marketing",
+"Comunicação", "MKT") e, achando, o põe como **grupo de acesso**; os
+**aprovadores** ela não escolhe — é em *Studio › Configurações*. Enquanto não
+houver grupo aprovador, quem aprova é `admin`. Confira:
+`select grupos_acesso, grupos_aprovadores from public.studio_config;`
+
+Três coisas que valem saber:
+
+- **o lembrete da véspera** é agendado no `pg_cron` pela própria migração,
+  de hora em hora das 8h às 20h de Brasília — **se o Cron já estiver
+  ligado** (Integrations → Cron, o mesmo do `notificar-email`). Sem ele, a
+  migração avisa e o lembrete sai quando alguém abre o Studio. Ligou depois?
+  Rode a 23.0 de novo. Confira:
+  `select jobname, schedule from cron.job where jobname = 'studio-lembretes';`
+- **a dona de `notificacoes_email_lote()` passa a ser a 23.0**: o lembrete
+  entra na mesma exceção do e-mail de teste (sai mesmo para quem escolheu
+  resumo ou "só no portal"). Por isso a 16.0 e a 18.0 só definem essa função
+  enquanto a migração seguinte não passou — rodar qualquer uma de novo não
+  apaga a exceção. (Antes, rodar a 16.0 de novo apagava a do e-mail de teste,
+  em silêncio.)
+- **a imprensa** vem com o que o site tinha escrito no código (seis vídeos e
+  três matérias), só com a tabela vazia. Daí em diante, o site institucional e
+  o do processo seletivo leem do banco, e a edição é pelo Studio.
+
 **O que o SQL Editor responde.** O editor do Supabase mostra só o último
 resultado que tem linhas. As migrações até a 20.0 terminam em *Success. No
 rows returned*. A 21.0 termina com a tabela **"o que a 21.0 deixou"**: sete
@@ -195,6 +220,13 @@ psql -d t22 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
             -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f v20_projetos_arquivos.sql \
             -f v21_rol_nro_pub_001.sql
 psql -d t22 -f testes/v22_estrutura.sql      # 39 asserções
+
+# 23.0, num banco novo: o Studio não depende da 20.0 à 22.0
+createdb t23
+psql -d t23 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
+psql -d t23 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
+            -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f v23_studio.sql
+psql -d t23 -f testes/v23_studio.sql         # 90 asserções (RLS e Storage inclusos; roda a 23.0, a 18.0 e a 16.0 de novo no fim)
 ```
 
 O `esqueleto_storage.sql` é o mínimo do Supabase que o PostgreSQL puro não

@@ -74,9 +74,11 @@ console.log('\nAberto (admin, 1440px)');
   const arvore = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec')].map(s => ({
     r: s.dataset.r, rot: s.querySelector('.lt-rot').textContent,
     icone: s.querySelector('.lt-item svg.ic')?.innerHTML.length || 0 })));
-  confere('os espaços, na ordem (admin vê também Seleção e Administração)',
+  /* o Studio (v23) é o décimo espaço: aparece para admin e para quem
+     está nos grupos dele (Studio › Configurações) */
+  confere('os espaços, na ordem (admin vê também Studio, Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Agenda|Atividades|OKRs|Projetos|Arquivos|Equipe|Informações|Serviços|Meus pedidos|Seleção|Administração',
+      'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Informações|Serviços|Meus pedidos|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
   confere('Seleção e Administração vêm depois do divisor "Gestão"',

@@ -23,6 +23,7 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **OKRs** | planejamento — os objetivos e o desdobramento de cada um | todos (edição: `admin`, `pessoal` e os responsáveis) |
 | **Projetos** | cada projeto: equipe, supervisor e o rol de arquivos | todos (criar: PMO e `admin`; editar: eles e o supervisor) |
 | **Arquivos** | documentos e registros controlados — código, revisão, status | todos no rol; o conteúdo segue a classe de cada série |
+| **Studio** | comunicação — criar as peças, planejar e aprovar as publicações | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
 | **Equipe** | pessoas — organograma e fichas | todos (a profundidade varia) |
 | **Informações** | documentos e políticas | todos |
 | **Serviços** | pedidos ao Depto. de Pessoal | todos |
@@ -38,8 +39,10 @@ para baixo.
 
 Até dez destinos no primeiro nível para toda a equipe (mais Seleção e
 Administração, para quem tem o papel), cada um com ícone, no **menu lateral**
-à esquerda. Com Projetos e Arquivos são nove: cabe mais um, e o seguinte
-precisa caber dentro de um que já existe, ou tomar o lugar dele. O segundo nível são os subitens de cada espaço — as abas da
+à esquerda. Com o Studio são dez: **o próximo precisa caber dentro de um que
+já existe, ou tomar o lugar dele**. O Studio é o único espaço do primeiro nível
+que some para quem não é dos grupos dele — é uma ferramenta de trabalho de uma
+equipe, como Seleção, e não um lugar da equipe inteira. O segundo nível são os subitens de cada espaço — as abas da
 Agenda, os quadros dos grupos da pessoa, as categorias de documento, cada
 serviço, cada painel —, pendurados numa linha-guia debaixo do espaço, como
 no painel da Cloudflare. Tudo o que tem endereço próprio vira subitem; o que
@@ -90,6 +93,12 @@ conforme quem entra é menu que ninguém aprende.
 #/informacoes[/<categoria>]
 #/servicos[/<tipo>]
 #/pedidos
+#/studio                    o quadro das publicações
+#/studio/calendario|ideias|modelos
+#/studio/criar[/<modelo>]   o criador (ex.: #/studio/criar/aniversario)
+#/studio/POST-14            uma publicação
+#/studio/POST-14/arte       a arte dela, no criador
+#/studio/config[/<aba>]     acesso, contas, imprensa, recursos
 #/selecao[/<aba>]           processo seletivo (candidatos, avaliacao, agenda,
                             dinamica, publicacoes, faq, config)
 #/selecao/candidatos/<id>   a ficha de um candidato
@@ -197,6 +206,7 @@ Todo objeto que uma pessoa cita em voz alta precisa de um código curto:
 | Solicitação | protocolo | `portal_solicitacoes` |
 | Projeto | `NEBULA` | `projetos.codigo` — o grupo da equipe é `NRO_PROJECT_NEBULA` |
 | Arquivo | `NRO-PES-007-2` | `doc_arquivos.codigo` — emissor, série (SN) e part number (PN); a revisão (`Rev. B`) fica fora do código |
+| Publicação | `POST-14` | `studio_publicacoes.codigo` — sequência única; a versão da arte fica fora do código, como a revisão de um arquivo |
 
 Sequência por grupo, não global: `ORT-14` diz de qual quadro a atividade é.
 O prefixo mora em `grupos.prefixo` e é gerado do nome, editável depois.
@@ -355,6 +365,23 @@ botão. O arquivo no Storage segue a mesma regra por política própria, em
 revisa, e um objeto que já é revisão não se apaga.
 
 ---
+
+### Studio: pronta é a aprovação que diz
+
+Uma publicação anda por ideia → produção → aprovação → pronta → publicada, e
+arrastar o cartão move — menos para **pronta**. Lá só se chega pela aprovação
+de alguém do grupo aprovador que não mandou a publicação para aprovação: é a
+regra de "revisar não é papel, é grupo", e mora num gatilho de
+`studio_publicacoes`, não na tela — nem um `update` direto furaria.
+
+A aprovação vale para uma **versão**: mudar a arte ou a legenda de uma
+publicação aprovada cria outra versão e a devolve para aprovação. Mudar a nota
+para quem publica, não.
+
+A escrita das publicações é só pelas funções (`studio_publicacao_salvar`,
+`studio_mover`, `studio_decidir`, `studio_excluir`): a tabela não tem política
+de escrita. É nelas que moram os avisos — quem aprova é avisado quando algo
+chega, quem responde é avisado da decisão.
 
 ## 8. Layout
 

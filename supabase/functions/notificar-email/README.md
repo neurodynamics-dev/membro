@@ -324,7 +324,8 @@ Para desligar por um tempo: `select cron.unschedule('notificar-email');`
 
 ## Quem recebe o quê
 
-A regra inteira mora no banco, em `notificacoes_email_lote()`, e é curta:
+A regra inteira mora no banco, em `notificacoes_email_lote()` (dona desde a
+migração 23.0), e é curta:
 
 - quem escolheu **A cada aviso** recebe o que estiver pendente;
 - quem escolheu **Um resumo por dia** só entra se já faz mais de 20h desde o
@@ -332,6 +333,10 @@ A regra inteira mora no banco, em `notificacoes_email_lote()`, e é curta:
 - quem escolheu **Só no portal** nunca entra;
 - quem nunca escolheu nada recebe como "a cada aviso" — a ausência de
   preferência não pode virar silêncio;
+- duas exceções saem **sempre**, qualquer que seja a preferência: o e-mail de
+  teste (é um pedido da própria pessoa) e o **lembrete da véspera do Studio**
+  (`studio_lembrete`: a publicação tem dia marcado, e um resumo que chega
+  depois dele não serve);
 - membro desligado, ou sem nenhum endereço na ficha, fica de fora.
 
 Cada pessoa muda isso sozinha: **sininho → Preferências de e-mail**.
