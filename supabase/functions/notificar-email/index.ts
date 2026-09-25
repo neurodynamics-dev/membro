@@ -14,6 +14,11 @@
    A regra de QUEM recebe O QUÊ não mora aqui — mora no banco, em
    notificacoes_email_lote(). Aqui só se monta e se envia.
 
+   Desde a 25.0 a função entrega também as DECLARAÇÕES DE PARTICIPAÇÃO
+   (a fila doc_envios): um evento aprovado emite uma declaração por
+   participante, e cada uma sai num e-mail só dela — inclusive para o
+   externo, que não tem conta no portal. Ver enviarDocumentos().
+
    Chame com a service role (é ela que tem execute nas duas RPCs).
    Mantenha a verificação de JWT LIGADA: diferente do agenda-ics,
    aqui não há token na URL e ninguém de fora precisa chamar.
@@ -317,6 +322,158 @@ export function corpoTexto(d: Destinatario): string {
     linhas + `\n\n—\nPortal do Membro · NeuroDynamics\n${PORTAL}\n`;
 }
 
+/* ============================================================
+   AS DECLARAÇÕES (SOMA 25.0)
+   Um e-mail por documento, não um resumo: é a entrega de uma
+   declaração, e sai qualquer que seja a preferência de e-mail da
+   pessoa. O endereço o banco já resolveu (o do externo vem do registro
+   do evento; o do membro, da ficha). O link leva à validação pública,
+   que mostra o documento e baixa a segunda via — o externo não tem
+   conta no portal, e o membro tem, e ganha também o link de lá.
+   ============================================================ */
+export interface EnvioDocumento {
+  id: number;
+  tipo: string;
+  para_nome: string;
+  para_email: string;
+  assunto: string;
+  dados: {
+    evento?: string; evento_codigo?: string; data_inicio?: string; data_fim?: string | null;
+    local?: string | null; modalidade?: string; horas?: number | string; papel?: string | null;
+    membro?: boolean; documento?: string; codigo?: string; url?: string; href?: string;
+  };
+}
+
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto",
+  "setembro", "outubro", "novembro", "dezembro"];
+const partesData = (iso?: string | null) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+  return m ? { a: +m[1], m: +m[2], d: +m[3] } : null;
+};
+/** "24 de setembro de 2026" */
+export function dataExtensa(iso?: string | null): string {
+  const p = partesData(iso);
+  return p ? `${p.d} de ${MESES[p.m - 1]} de ${p.a}` : "";
+}
+/** "em 24 de setembro de 2026", "de 5 a 7 de setembro de 2026", "de 30 de setembro a 2 de outubro de 2026" */
+export function periodoTexto(ini?: string | null, fim?: string | null): string {
+  const a = partesData(ini), b = partesData(fim);
+  if (!a) return "";
+  if (!b || (a.a === b.a && a.m === b.m && a.d === b.d)) return `em ${dataExtensa(ini)}`;
+  if (a.a === b.a && a.m === b.m) return `de ${a.d} a ${b.d} de ${MESES[a.m - 1]} de ${a.a}`;
+  if (a.a === b.a) return `de ${a.d} de ${MESES[a.m - 1]} a ${b.d} de ${MESES[b.m - 1]} de ${a.a}`;
+  return `de ${dataExtensa(ini)} a ${dataExtensa(fim)}`;
+}
+/** "8 horas", "1 hora", "2 horas e 30 minutos" */
+export function horasTexto(n?: number | string | null): string {
+  const t = Math.round(Number(n || 0) * 60), h = Math.floor(t / 60), m = t % 60;
+  const hs = h ? `${h} ${h === 1 ? "hora" : "horas"}` : "";
+  const ms = m ? `${m} ${m === 1 ? "minuto" : "minutos"}` : "";
+  return [hs, ms].filter(Boolean).join(" e ") || "0 hora";
+}
+const ondeTexto = (d: EnvioDocumento["dados"]): string =>
+  d.modalidade === "online" ? "online" : d.local ? `em ${d.local}${d.modalidade === "hibrido" ? " (híbrido)" : ""}` : "";
+const hostDe = (url?: string) => String(url || "https://auth.neurodynamics.dev").replace(/^https?:\/\//i, "").replace(/[/?#].*$/, "");
+
+export function declaracaoHTML(e: EnvioDocumento): string {
+  const d = e.dados || {};
+  const onde = ondeTexto(d);
+  const linha = (rot: string, val: string) => val ? `<tr>
+      <td style="padding:7px 12px;border-top:1px solid #d6d6da;font:700 11px/1.4 Helvetica,Arial,sans-serif;
+                 letter-spacing:.05em;text-transform:uppercase;color:#5e5e63;width:40%">${rot}</td>
+      <td style="padding:7px 12px;border-top:1px solid #d6d6da;font:400 14px/1.45 Helvetica,Arial,sans-serif;color:#1d1d1f">${val}</td></tr>` : "";
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width"><title>${esc(e.assunto)}</title></head>
+<body style="margin:0;padding:0;background:#f4f6f4">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4">
+    <tr><td align="center" style="padding:32px 16px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="max-width:560px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
+        <tr><td style="padding:28px 28px 8px">
+          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics"
+               style="display:block;border:0;outline:none">
+        </td></tr>
+        <tr><td style="padding:14px 28px 0">
+          <div style="font:400 15px/1.6 Helvetica,Arial,sans-serif;color:#1d1d1f">Olá, ${esc(primeiroNome(e.para_nome))}.</div>
+          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:6px">
+            A NeuroDynamics PD&amp;I emitiu a sua <b style="color:#1d1d1f">declaração de participação</b> no evento
+            <b style="color:#1d1d1f">${esc(d.evento || "")}</b>${d.data_inicio ? ", " + esc(periodoTexto(d.data_inicio, d.data_fim)) : ""}${onde ? ", " + esc(onde) : ""}.
+          </div>
+        </td></tr>
+        <tr><td style="padding:20px 28px 0">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #b9b9be;border-top:0">
+            <tr><td colspan="2" style="padding:8px 12px;background:#d9d9d9;border-top:1px solid #b9b9be;
+                font:700 11px/1.4 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#1d1d1f">
+              Declaração de participação</td></tr>
+            ${linha("Documento", esc(d.documento || ""))}
+            ${linha("Código verificador", `<span style="font-family:'Courier New',monospace;font-weight:700;letter-spacing:.06em">${esc(d.codigo || "")}</span>`)}
+            ${linha("Função", esc(d.papel || "Participante"))}
+            ${linha("Horas dedicadas", esc(horasTexto(d.horas)))}
+          </table>
+        </td></tr>
+        <tr><td style="padding:22px 28px 0">
+          <a href="${esc(d.url || "")}" style="display:inline-block;background:#00594F;color:#ffffff;
+             font:600 14px/1 Helvetica,Arial,sans-serif;text-decoration:none;padding:13px 20px;border-radius:9px">
+            Ver e baixar a declaração</a>
+          ${d.membro && d.href ? `<div style="font:400 13px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:12px">
+            Ela também fica no portal, em <a href="${esc(linkDe(d.href))}" style="color:#00594F;text-decoration:none">Serviços ›
+            Eventos e participações</a>.</div>` : ""}
+        </td></tr>
+        <tr><td style="padding:22px 28px 28px">
+          <div style="font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#8a908a;border-top:1px solid #e3e6e3;padding-top:16px">
+            A declaração dispensa assinatura. Quem a receber confere a autenticidade em
+            <a href="${esc(d.url || "")}" style="color:#00594F;text-decoration:none">${esc(hostDe(d.url))}</a>,
+            pelo código verificador — ou pela leitura do QR Code impresso no documento.
+            Você recebe este e-mail porque participou do evento${d.membro ? "" : " junto à equipe"} da NeuroDynamics PD&amp;I.
+          </div>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+export function declaracaoTexto(e: EnvioDocumento): string {
+  const d = e.dados || {};
+  const onde = ondeTexto(d);
+  return `Olá, ${primeiroNome(e.para_nome)}.\n\n`
+    + `A NeuroDynamics PD&I emitiu a sua declaração de participação no evento ${d.evento || ""}`
+    + `${d.data_inicio ? ", " + periodoTexto(d.data_inicio, d.data_fim) : ""}${onde ? ", " + onde : ""}.\n\n`
+    + `Documento: ${d.documento || ""}\nCódigo verificador: ${d.codigo || ""}\n`
+    + `Função: ${d.papel || "Participante"}\nHoras dedicadas: ${horasTexto(d.horas)}\n\n`
+    + `Ver e baixar a declaração: ${d.url || ""}\n`
+    + (d.membro && d.href ? `No portal: ${linkDe(d.href)}\n` : "")
+    + `\nA declaração dispensa assinatura: a autenticidade se confere em ${hostDe(d.url)}, pelo código verificador.\n`
+    + `\n—\nNeuroDynamics PD&I\n`;
+}
+
+/** Manda as declarações da fila e dá baixa. Sem a 25.0, diz isso e segue. */
+async function enviarDocumentos(): Promise<Record<string, unknown>> {
+  let lote: EnvioDocumento[];
+  try {
+    lote = (await rpc("doc_envios_lote", { p_limite: LOTE })) as EnvioDocumento[];
+  } catch (e) {
+    return /PGRST202|404|doc_envios_lote/.test(String(e))
+      ? { documentos: "sem_migracao_25" } : { documentos: "erro", documentos_detalhe: String(e) };
+  }
+  if (!lote?.length) return { documentos: 0 };
+  const enviados: number[] = [], falhas: number[] = [];
+  let erro = "";
+  for (const e of lote) {
+    try {
+      const m = await enviarUm(e.para_email, e.para_nome, e.assunto, declaracaoHTML(e), declaracaoTexto(e));
+      if (m) { falhas.push(e.id); erro = m; } else { enviados.push(e.id); }
+    } catch (x) { falhas.push(e.id); erro = String(x); }
+  }
+  try {
+    await rpc("doc_envios_baixa", { p: { enviados, falhas, erro } });
+  } catch (x) {
+    return { documentos: enviados.length, documentos_falhas: falhas.length,
+             documentos_detalhe: "enviou, mas não deu baixa: " + String(x) };
+  }
+  return { documentos: enviados.length, documentos_falhas: falhas.length, ...(erro ? { documentos_detalhe: erro } : {}) };
+}
+
 async function rpc(nome: string, corpo: unknown): Promise<unknown> {
   const r = await fetch(`${URL_BASE}/rest/v1/rpc/${nome}`, {
     method: "POST",
@@ -361,16 +518,20 @@ export async function servir(req: Request): Promise<Response> {
     }), { status: 200, headers: cabecalho });
   }
 
+  /* as declarações primeiro: são documentos, e saem mesmo que o sino
+     não tenha aviso nenhum para ninguém */
+  const docs = await enviarDocumentos();
+
   let destinos: Destinatario[];
   try {
     destinos = (await rpc("notificacoes_email_lote", { p_limite: LOTE })) as Destinatario[];
   } catch (e) {
-    return new Response(JSON.stringify({ status: "erro_no_lote", detalhe: String(e) }),
+    return new Response(JSON.stringify({ status: "erro_no_lote", detalhe: String(e), ...docs }),
       { status: 500, headers: cabecalho });
   }
 
   if (!destinos?.length) {
-    return new Response(JSON.stringify({ status: "ok", pessoas: 0, enviadas: 0 }),
+    return new Response(JSON.stringify({ status: "ok", pessoas: 0, enviadas: 0, ...docs }),
       { headers: cabecalho });
   }
 
@@ -397,7 +558,7 @@ export async function servir(req: Request): Promise<Response> {
     await rpc("notificacoes_email_baixa", { p: { enviadas, falhas, erro: ultimoErro } });
   } catch (e) {
     return new Response(JSON.stringify({
-      status: "enviou_mas_nao_deu_baixa", enviadas: enviadas.length, detalhe: String(e),
+      status: "enviou_mas_nao_deu_baixa", enviadas: enviadas.length, detalhe: String(e), ...docs,
     }), { status: 500, headers: cabecalho });
   }
 
@@ -409,6 +570,7 @@ export async function servir(req: Request): Promise<Response> {
     /* o remetente vai junto porque, quando TODAS falham, ele é o
        suspeito — é o único dado comum a todas as tentativas */
     ...(ultimoErro ? { detalhe: ultimoErro, provedor: PROVEDOR, de: DE } : {}),
+    ...docs,
   }), { headers: cabecalho });
 }
 

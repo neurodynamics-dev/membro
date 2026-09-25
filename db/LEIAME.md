@@ -42,7 +42,8 @@ congelados.
 ```
 db/
 ├── LEIAME.md                          este arquivo
-├── v14_unificacao.sql                 ← a próxima a aplicar
+├── v14_unificacao.sql … v27_cofre.sql  as migrações, em ordem
+├── testes/                            os testes, em PostgreSQL de verdade
 └── aplicadas/                         história, congelada
     ├── soma_v06_selecao.sql                 processo seletivo
     ├── soma_v07_selecao_slots.sql           agendamento das etapas
@@ -72,6 +73,9 @@ db/
 | `v22_estrutura_das_series.sql` | a estrutura de cada série pela coluna nova da NRO-PUB-001 — documento único, template → documentos ou template → registros —, 18 séries ajustadas, e a mudança de estrutura no registro de alterações |
 | `v23_studio.sql` | o Studio: publicações `POST-N` (ideia → produção → aprovação → pronta → publicada), aprovação pelo grupo aprovador com versão, histórico, o lembrete da véspera por e-mail (pg_cron), os recursos de imagem, a imprensa do site (`site_imprensa_publico`) e o bucket privado `studio` |
 | `v24_treinamentos.sql` | os treinamentos: `NRO-TRE-XXX` com revisão (Rev. A, B…), módulos em Markdown com verificação de conhecimento (uma correta, várias, V ou F) corrigida no banco — o gabarito não desce —, atribuição a grupos (obrigatório ou opcional), progresso que aproveita o que não mudou entre revisões, conclusão com certificado `CERT-XXXX-XXXX`, validade, o aviso a quem deve, o README de conteúdo e o prefixo `TRE` reservado em Arquivos |
+| `v25_documentos_eventos.sql` | os documentos que o SOMA emite: `doc_emitidos` (código verificador `XXXX-XXXX-XXXX`, código de controle, a fotografia do que foi impresso, a revogação), a validação pública `doc_validar()` — a única porta aberta à chave anônima —, a declaração de vínculo sob demanda (`NRO-DIR-004`, o PN é o registro), os eventos registrados `EXT-N` com aprovação por grupos e versão, a declaração de participação (`NRO-DIR-006`, o PN é o evento), a fila de e-mails `doc_envios` e as séries cujos PNs não moram no rol (`doc_series.pn_origem`) |
+| `v26_formularios.sql` | escrever o registro no portal: o formulário da série (`doc_series.formulario`), o rascunho por PN, o envio que gera a revisão pendente com os dados, a conferência da definição no banco, e os dois formulários que já vêm — a ata de reunião (`NRO-PUB-003`) e o relatório de execução de teste (`NRO-PRO-003`) |
+| `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
 
 **Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
 duplica nada.
@@ -191,6 +195,47 @@ Três coisas que valem saber:
   daria à equipe dois `NRO-TRE-003` diferentes. Se já houver um, a migração
   avisa e não cria a restrição. Sem a 20.0, a parte é pulada.
 
+A **25.0** são os documentos emitidos e os eventos. Ela acha a série da
+declaração de vínculo (a `NRO-DIR-004`, que a 21.0 trouxe como "DECLARAÇÃO DE
+MEMBRO"), dá a ela o nome do modelo em uso e a marca: os PNs dela não moram
+mais no rol — o PN é o registro do membro, e o banco não aceita PN novo nela.
+A de participação ela cria, no próximo SN livre da Diretoria. Quem aprova os
+eventos começa sendo o Depto. de Pessoal, e são duas aprovações. Confira:
+`select * from public.doc_emissao_config;` e
+`select grupos_aprovadores, aprovacoes_minimas from public.eventos_ext_config;`
+
+Três coisas que valem saber:
+
+- **a validação pública** é `doc_validar(código)`, com `execute` para `anon`:
+  é o que o `auth.neurodynamics.dev` chama. Ela devolve o que foi impresso,
+  com o CPF mascarado, e conta a consulta. Nenhuma tabela da 25.0 se lê
+  direto pela chave anônima;
+- **o e-mail das declarações** sai pela Edge Function `notificar-email`, que
+  passa a ler também a fila `doc_envios` — **publique a função de novo**
+  depois de aplicar a 25.0. Membro recebe também no sino, já marcado como
+  enviado por e-mail, para não receber dois;
+- **o código verificador** tem 60 bits sorteados (`gen_random_uuid`), em
+  Crockford base32: adivinhar um código que existe é inviável — é isso que
+  deixa a validação ser pública. O código de controle é o SHA-256 do que foi
+  impresso, com a hora em UTC.
+
+A **26.0** é escrever o registro no portal. Os dois formulários que ela traz
+só entram na série que ainda não tem um — rodar de novo não desfaz o que o
+PMO mudou. Precisa da 25.0 (série cujos PNs não moram no rol não ganha
+formulário). Confira:
+`select prefixo, sn, formulario->>'titulo', jsonb_array_length(formulario->'campos') from public.doc_series where formulario is not null;`
+
+A **27.0** é o cofre. Precisa do **Vault** do Supabase ligado (*Database →
+Extensions → supabase_vault*; em geral já vem, e é o mesmo em que a chave do
+agendamento do `notificar-email` mora) — sem ele, a migração para e diz onde
+ligar. O que é segredo não fica em tabela nenhuma: `cofre_credenciais` guarda
+só o identificador no Vault. Quem **gere** o cofre, além de `admin`, são os
+grupos que `admin` escolher — e só `admin` muda essa lista (um gatilho
+confere); o Depto. de Pessoal não gere o cofre por ser Depto. de Pessoal. O
+lembrete da troca é agendado no `pg_cron` (todo dia às 8h de Brasília), se o
+Cron estiver ligado; sem ele, sai quando alguém abre o cofre. Confira:
+`select grupos_gestores, rotacao_padrao_dias, aviso_dias, anterior_dias from public.cofre_config;`
+
 **O que o SQL Editor responde.** O editor do Supabase mostra só o último
 resultado que tem linhas. As migrações até a 20.0 terminam em *Success. No
 rows returned*. A 21.0 termina com a tabela **"o que a 21.0 deixou"**: sete
@@ -261,6 +306,32 @@ psql -d t24 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
             -f v24_treinamentos.sql
 psql -d t24 -f testes/v24_treinamentos.sql   # 117 asserções (RLS inclusa; roda a 24.0 de novo no fim)
 ```
+
+```bash
+# 25.0 a 27.0: cada uma num banco novo, sobre a mesma base (a 15.0 à 24.0)
+createdb tbase
+psql -d tbase -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
+psql -d tbase -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
+              -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f v20_projetos_arquivos.sql \
+              -f v21_rol_nro_pub_001.sql -f v22_estrutura_das_series.sql -f v23_studio.sql -f v24_treinamentos.sql
+
+createdb -T tbase t25
+psql -d t25 -f v25_documentos_eventos.sql
+psql -d t25 -f testes/v25_documentos.sql     # 130 asserções (anon, RLS, nulos; roda a 25.0 de novo no fim)
+
+createdb -T tbase t26
+psql -d t26 -f v25_documentos_eventos.sql -f v26_formularios.sql
+psql -d t26 -f testes/v26_formularios.sql    # 48 asserções
+
+createdb -T tbase t27
+psql -d t27 -f testes/esqueleto_vault.sql -f v27_cofre.sql
+psql -d t27 -f testes/v27_cofre.sql          # 91 asserções (os vetores da RFC 6238; roda a 27.0 de novo no fim)
+```
+
+O `esqueleto_vault.sql` faz para o Vault o que o de Storage faz para o
+Storage: o schema `vault`, a tabela de segredos, a view que decifra e as duas
+funções de gravar — sem a cifra, que é do Supabase. O que o teste prova é o
+caminho do cofre: quem lê, quem grava, o que fica registrado.
 
 O `esqueleto_storage.sql` é o mínimo do Supabase que o PostgreSQL puro não
 tem — `auth.uid()` e o schema `storage`, com RLS ligada em `storage.objects` —,

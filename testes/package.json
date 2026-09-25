@@ -2,9 +2,11 @@
   "name": "membro-testes",
   "private": true,
   "type": "module",
-  "description": "Testes de navegador do portal. Rode `npm install` aqui antes da primeira vez. O jspdf é o mesmo 2.5.1 que o portal busca no cdnjs: o teste do certificado o serve daqui.",
+  "description": "Testes de navegador do portal. Rode `npm install` aqui antes da primeira vez. O jspdf é o mesmo 2.5.1 que o portal busca no cdnjs, o qrcode-generator o mesmo 1.4.4 que o modelo de documento busca no jsDelivr, e o jsqr o mesmo 1.4.0 com que o cofre lê o QR Code do 2FA: os testes os servem daqui, para tudo rodar sem rede.",
   "devDependencies": {
+    "jspdf": "2.5.1",
+    "jsqr": "1.4.0",
     "playwright": "^1.63.0",
-    "jspdf": "2.5.1"
+    "qrcode-generator": "1.4.4"
   }
 }
