@@ -2527,6 +2527,280 @@ a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
 .tre-passos-lista{padding-left:18px;font-size:13px;line-height:1.6;display:flex;flex-direction:column;gap:8px;margin-top:10px;color:var(--muted)}
 .tre-pedido{white-space:pre-wrap;font-size:11.5px;margin-top:10px}
 
+/* ============ DOCUMENTOS E EVENTOS (v25) ============
+   A declaração de vínculo, os eventos registrados e o que espera a sua
+   ação no início (mod-documentos). A folha da prévia é papel — branca
+   nos dois temas, como o certificado dos treinamentos —, e imita o
+   modelo da NRO só o bastante para se reconhecer o documento: quem
+   desenha de verdade é o doc-nro.js. */
+.srv-bloco{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+  display:flex;align-items:center;gap:10px;margin:30px 0 12px}
+.srv-bloco::before{content:'';width:7px;height:7px;background:var(--syn)}
+.pg-head+.srv-bloco,.aviso-box+.srv-bloco{margin-top:0}
+a.srv.agora .lb{display:inline-flex;align-items:center;gap:7px;color:var(--syn-tx)}
+a.srv.agora .lb .ic{width:14px;height:14px}
+.fld label .opc{font-weight:400;letter-spacing:0;text-transform:none;color:var(--dim)}
+/* o início: o que espera a sua ação fora dos quadros */
+#sec-pend:empty{display:none}
+.pend-faixa{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:18px}
+a.pend-i{display:flex;align-items:center;gap:12px;border:1px solid rgba(var(--warn-rgb),.35);background:rgba(var(--warn-rgb),.06);
+  border-radius:14px;padding:12px 16px;transition:border-color .15s,background .15s}
+a.pend-i:hover{border-color:rgba(var(--warn-rgb),.6);background:rgba(var(--warn-rgb),.1)}
+a.pend-i>.ic{width:22px;height:22px;color:var(--warn-tx);flex:none}
+a.pend-i .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+a.pend-i .tx b{font-size:14px;font-weight:600}
+a.pend-i .ds{font-size:12px;color:var(--muted);line-height:1.45}
+a.pend-i .go{font-family:var(--fd);font-size:12.5px;font-weight:600;color:var(--warn-tx);white-space:nowrap}
+/* tabelas que rolam de lado no celular, e a coluna de botões */
+.tabela-rolar{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:10px}
+.tabela-rolar .tabela tr:last-child td{border-bottom:0}
+.tabela td.acoes-linha{white-space:nowrap;text-align:right;overflow:visible}
+.acoes-linha>*{vertical-align:middle}
+.acoes-linha>*+*{margin-left:6px}
+.acoes-linha .icon-btn{display:inline-grid}
+/* a declaração */
+.dcl-quem{max-width:420px}
+.dcl-grade{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+@media (max-width:980px){.dcl-grade{grid-template-columns:minmax(0,1fr)}}
+.dcl-folha{background:#FFFFFF;color:#1D1D1F;border-radius:6px;padding:20px 24px 14px;margin-bottom:18px;max-width:600px;
+  font-family:Arial,Helvetica,sans-serif;font-size:12.5px;line-height:1.6;box-shadow:0 10px 32px rgba(var(--sombra-rgb),calc(.28 * var(--sombra-k)))}
+.dcl-folha-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding-bottom:10px;border-bottom:1px solid #D9D9D9}
+.dcl-folha-cab .lg{font-family:var(--fd);font-weight:700;font-size:15px;letter-spacing:-.02em;color:#00352F}
+.dcl-folha-cab .dp{text-align:right;font-size:10px;line-height:1.45;color:#3A3A3C}
+.dcl-folha p{text-align:justify;margin:16px 0}
+.dcl-folha-pe{display:flex;align-items:center;gap:6px;border-top:3px double #8E8E93;padding-top:6px;
+  font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#6E6E73}
+.dcl-folha-pe .ic{width:12px;height:12px;flex:none}
+.dcl-dados{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0 18px}
+.dcl-dados>div{padding:9px 0;border-bottom:1px solid var(--line);min-width:0}
+.dcl-dados>div.full{grid-column:1/-1}
+.dcl-dados dt{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.dcl-dados dd{font-size:13.5px;margin-top:2px;overflow-wrap:anywhere;white-space:pre-line}
+.dcl-como h3,.evx-aprov h3,.evx-hist h3{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dcl-como h3 .ic,.evx-aprov h3 .ic,.evx-hist h3 .ic{width:17px;height:17px;color:var(--syn-tx)}
+.dcl-como ol{padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.55;color:var(--muted)}
+.dcl-como ol b{color:var(--ink);font-weight:600}
+.dcl-como li::marker{font-family:var(--fm);font-size:11.5px;color:var(--syn-tx)}
+.dcl-tab .chip.mini{margin-left:4px}
+/* os eventos: a lista */
+.evx-lista{display:flex;flex-direction:column;gap:10px}
+a.evx-card{display:flex;align-items:center;gap:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);
+  padding:14px 18px;transition:border-color .15s,background .15s}
+a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
+.evx-data{width:58px;flex:none;display:flex;flex-direction:column;align-items:center;border:1px solid var(--line2);border-radius:12px;
+  padding:6px 0 5px;font-family:var(--fm);font-size:10px;letter-spacing:.12em;color:var(--syn-tx);line-height:1.2}
+.evx-data b{font-family:var(--fd);font-size:22px;font-weight:600;letter-spacing:-.02em;color:var(--ink);line-height:1.1}
+.evx-data i{font-style:normal;color:var(--dim);letter-spacing:.06em}
+.evx-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.evx-tx .cod{font-family:var(--fm);font-size:10.5px;letter-spacing:.08em;color:var(--dim)}
+.evx-tx .tt{font-family:var(--fd);font-size:15.5px;font-weight:600;line-height:1.3}
+.evx-tx .mt{font-size:12.5px;color:var(--muted)}
+.evx-tx .nm{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evx-lado{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none;text-align:right}
+@media (max-width:640px){a.evx-card{flex-wrap:wrap}.evx-lado{flex-direction:row;flex-wrap:wrap;align-items:center;width:100%;justify-content:flex-start}}
+.tag-mini.evx-sua{border-color:var(--syn-borda);color:var(--syn-tx)}
+/* os eventos: a página de um */
+.evx-selos{display:flex;gap:8px;flex-wrap:wrap;margin:-8px 0 16px}
+.evx-minha{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid rgba(var(--ok-rgb),.35);background:rgba(var(--ok-rgb),.07);
+  border-radius:14px;padding:12px 16px;margin-bottom:16px}
+.evx-minha>span .ic{width:24px;height:24px;color:var(--ok);display:block}
+.evx-minha>div{flex:1;min-width:220px;display:flex;flex-direction:column;gap:2px}
+.evx-cols{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+@media (max-width:980px){.evx-cols{grid-template-columns:minmax(0,1fr)}}
+.evx-main{min-width:0}
+.evx-lado-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.evx-dados>div:nth-last-child(-n+1){border-bottom:0}
+.evx-tab td{vertical-align:middle}
+.evx-barra{height:5px;border-radius:3px;background:rgba(var(--tom),.08);overflow:hidden;margin:10px 0 4px}
+.evx-barra i{display:block;height:100%;background:var(--syn-borda);border-radius:3px;transition:width .3s}
+.evx-quem{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:10px;font-size:13px}
+.evx-quem:empty{display:none}
+.evx-quem .ic{width:14px;height:14px;color:var(--ok);vertical-align:-2px}
+.evx-hist ol{list-style:none;display:flex;flex-direction:column;gap:10px;font-size:12.5px;line-height:1.5;
+  border-left:1px solid var(--line2);padding-left:12px;max-height:420px;overflow:auto}
+.evx-hist .qd{display:block;font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+/* os eventos: registrar e editar */
+.form-card.evx-form{max-width:860px}
+.evx-part{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr) 84px 30px;gap:8px;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--line)}
+.evx-part:first-child{border-top:1px solid var(--line)}
+.evx-part input{padding:7px 10px;font-size:13px;min-width:0;width:100%}
+.ep-quem{display:flex;align-items:center;gap:9px;min-width:0}
+.ep-quem b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ep-quem.ext{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+@media (max-width:700px){.evx-part{grid-template-columns:minmax(0,1fr) 84px 30px}.ep-quem{grid-column:1/-1}.ep-papel{grid-column:1}}
+.evx-add{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.evx-add .btn{height:40px}
+.evx-cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
+.evx-cfg .card h3{margin-bottom:6px}
+#main>.tre-voltar+.topo-gestao{margin-top:4px}
+
+/* ============ FORMULÁRIOS (v26) ============
+   Escrever o PN no portal (mod-formularios): as seções do template,
+   cada uma num cartão, e ao lado o documento — o que falta, o rascunho
+   que grava sozinho, a prévia e o envio. */
+.frm-h1-t{display:block;font-size:.62em;font-weight:500;color:var(--muted);margin-top:4px}
+.frm-cols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+@media (max-width:1040px){.frm-cols{grid-template-columns:minmax(0,1fr)}}
+.frm-corpo{display:flex;flex-direction:column;gap:14px;min-width:0}
+.frm-sec{padding:18px 20px 6px}
+.frm-sec h2{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--syn-tx);
+  display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.frm-sec h2::before{content:'';width:7px;height:7px;background:var(--syn)}
+.frm-fld textarea{line-height:1.6;min-height:64px}
+.frm-fld.erro input,.frm-fld.erro textarea,.frm-fld.erro select,.frm-fld.erro .frm-linhas{border-color:rgba(var(--bad-rgb),.6)}
+.frm-fld.erro>label{color:var(--bad-tx)}
+.frm-obr{color:var(--warn-tx)}
+.frm-lado{position:sticky;top:20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (max-width:1040px){.frm-lado{position:static}}
+.frm-lado h3{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.frm-lado h3 .ic{width:17px;height:17px;color:var(--syn-tx)}
+.frm-ficha{grid-template-columns:1fr;margin-bottom:8px}
+.frm-status{font-size:12px;color:var(--dim);margin:6px 0 8px;min-height:18px}
+.frm-status.sujo{color:var(--warn-tx)}
+.frm-status.bad{color:var(--bad-tx)}
+.frm-falta{font-size:12.5px;line-height:1.55;color:var(--warn-tx);border:1px solid rgba(var(--warn-rgb),.35);
+  background:rgba(var(--warn-rgb),.06);border-radius:11px;padding:8px 11px}
+.frm-pronto{font-size:12.5px;color:var(--ok);display:flex;align-items:center;gap:6px}
+.frm-pronto .ic{width:15px;height:15px}
+.frm-acs{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.frm-acs .btn{justify-content:center}
+.frm-redacao{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:640px){.frm-redacao{grid-template-columns:1fr}}
+.frm-frase{font-style:italic}
+.frm-linhas{display:flex;flex-direction:column;gap:6px}
+.frm-linhas:empty{display:none}
+.frm-pessoa{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 30px;gap:6px;align-items:center}
+.frm-item{display:grid;grid-template-columns:24px minmax(0,1fr) 30px;gap:6px;align-items:center}
+.frm-item .n{font-family:var(--fm);font-size:11px;color:var(--syn-tx);text-align:right}
+.frm-linhas input{padding:7px 10px;font-size:13.5px;min-width:0;width:100%}
+.frm-add{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.frm-tab-w{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.frm-tab{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+.frm-tab th{font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);
+  text-align:left;padding:8px;border-bottom:1px solid var(--line2);background:rgba(var(--tom),.03)}
+.frm-tab td{padding:5px;border-bottom:1px solid var(--line);vertical-align:top}
+.frm-tab tr:last-child td{border-bottom:0}
+.frm-tab th.n,.frm-tab td.n{width:30px;text-align:center;font-family:var(--fm);font-size:11px;color:var(--syn-tx);padding-top:12px}
+.frm-tab td.acs{width:72px;white-space:nowrap}
+.frm-tab td.acs .icon-btn{display:inline-grid}
+.frm-tab textarea,.frm-tab input,.frm-tab select{width:100%;padding:6px 8px;font-size:12.5px;min-height:0;border-radius:8px}
+.frm-tab textarea{resize:none;overflow:hidden;line-height:1.45}
+/* configurações › formulários */
+.frm-modelo{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.frm-json{font-size:12px;line-height:1.55;min-height:320px;tab-size:2}
+.frm-ajuda{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.frm-ajuda summary{cursor:pointer;font-size:13px;font-weight:600}
+.frm-ajuda-c{margin-top:10px;display:flex;flex-direction:column;gap:8px;color:var(--muted);line-height:1.6}
+.frm-ajuda-c ul{padding-left:18px}
+.frm-ajuda-c code{font-family:var(--fm);font-size:.92em;color:var(--ink)}
+/* em Arquivos: a série que se escreve no portal e a que não mora no rol */
+.arq-frm-nota{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.55;color:var(--muted);
+  border:1px solid rgba(var(--syn-rgb),.3);background:rgba(var(--syn-rgb),.05);border-radius:12px;padding:10px 13px;margin-bottom:10px}
+.arq-frm-nota>.ic{width:17px;height:17px;color:var(--syn-tx);flex:none;margin-top:2px}
+.arq-frm-nota b{color:var(--ink);font-weight:600}
+.arq-pn-origem{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line2);border-radius:14px;padding:14px 16px;
+  background:rgba(var(--tom),.03);font-size:13.5px;line-height:1.6;color:var(--muted)}
+.arq-pn-origem>.ic{width:22px;height:22px;color:var(--syn-tx);flex:none}
+.arq-pn-origem .btn{margin-top:10px}
+.arq-pn-origem .btn .ic{width:14px;height:14px}
+
+/* ============ COFRE (v27) ============
+   As contas da equipe (mod-cofre). O segredo aparece num campo de cada
+   vez, com o botão de copiar ao lado — o gesto que mais se repete é
+   entrar e copiar. O código de duas etapas traz o anel da contagem,
+   como os aplicativos autenticadores. */
+.cof-filtro{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.cof-filtro input{flex:1;min-width:220px;max-width:420px}
+.cof-sec h2.srv-bloco{margin-top:22px}
+.cof-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px}
+@media (max-width:560px){.cof-lista{grid-template-columns:minmax(0,1fr)}}
+.cof-card{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:16px 18px 14px;
+  display:flex;flex-direction:column;gap:12px;min-width:0;transition:border-color .2s,box-shadow .2s}
+.cof-card.off{opacity:.62;border-style:dashed}
+.cof-card.destaque{border-color:var(--syn-borda);box-shadow:0 0 0 3px rgba(var(--syn-rgb),.15)}
+.cof-hd{display:flex;align-items:flex-start;gap:12px}
+.cof-ic{width:38px;height:38px;border-radius:11px;border:1px solid var(--line2);display:grid;place-items:center;color:var(--teal);flex:none}
+.cof-ic .ic{width:18px;height:18px}
+.cof-hd .tx{flex:1;min-width:0}
+.cof-hd h3{font-size:15.5px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.cof-hd h3 .rot{font-weight:400;color:var(--muted)}
+.cof-hd .mt{display:block;font-size:12px;color:var(--dim);margin-top:2px}
+.cof-hd .mt a{color:var(--syn-tx)}
+.cof-hd .mt a .ic{width:12px;height:12px;vertical-align:-1px}
+.cof-hd .pill{flex:none}
+.cof-campos{display:flex;flex-direction:column;gap:6px}
+.cof-campo{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:5px 6px 5px 12px;
+  background:rgba(var(--tom),.02);min-height:44px}
+.cof-campo .lb{font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);width:118px;flex:none}
+.cof-campo .vl{flex:1;min-width:0;display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.cof-campo .v{flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:560px){.cof-campo{flex-wrap:wrap;padding-top:8px}.cof-campo .lb{width:100%}}
+.cof-sen{letter-spacing:.1em;color:var(--muted)}
+.cof-sen.aberta{letter-spacing:0;color:var(--ink);user-select:all;white-space:normal;overflow-wrap:anywhere}
+.cof-cod{font-size:20px;font-weight:600;letter-spacing:.08em;color:var(--syn-tx);text-align:right}
+.cof-cod.venceu{color:var(--dim);text-decoration:line-through}
+.cof-anel{--p:1;width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:conic-gradient(var(--syn-borda) calc(var(--p) * 360deg), rgba(var(--tom),.1) 0)}
+.cof-anel b{width:23px;height:23px;border-radius:50%;background:var(--panel);display:grid;place-items:center;
+  font-family:var(--fm);font-size:9.5px;font-weight:500;color:var(--muted)}
+.cof-instr{font-size:12.5px;color:var(--muted);line-height:1.55;white-space:pre-line;border-left:2px solid var(--line2);padding-left:10px}
+.cof-pe{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;margin-top:auto}
+.cof-pe .acs,.cof-ja .acs{display:flex;gap:6px;flex-wrap:wrap}
+.cof-rodape{margin-top:22px}
+.cof-notas{font-family:var(--fm);font-size:12.5px;white-space:pre-wrap;word-break:break-word;background:rgba(var(--tom),.04);
+  border:1px solid var(--line);border-radius:12px;padding:12px 14px;max-height:300px;overflow:auto;user-select:all}
+.cof-log{list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13px;max-height:52vh;overflow:auto}
+.cof-log .qd{font-family:var(--fm);font-size:11px;color:var(--dim)}
+.cof-passos{padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:14px}
+.cof-passos li::marker{font-family:var(--fm);color:var(--syn-tx)}
+.linkish{color:var(--syn-tx);text-decoration:underline;font-size:inherit;padding:0}
+/* o gerador de senhas */
+.cof-ger{display:flex;flex-direction:column;gap:8px}
+.cof-ger-cp{display:flex;gap:6px}
+.cof-ger-cp input{flex:1;min-width:0;font-size:14px;letter-spacing:.02em}
+.cof-ger-op{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.cof-ger-op .check{font-size:12.5px}
+.cof-tam{display:inline-flex;align-items:center;gap:8px}
+.cof-tam input{width:120px;padding:0;border:0;background:none;accent-color:var(--syn-borda)}
+.cof-forca{font-size:12px;color:var(--dim)}
+.cof-forca .ok,.cof-totp-ok .ok{color:var(--ok)}
+.cof-forca .warn{color:var(--warn-tx)}
+.cof-forca .bad,.cof-totp-ok .bad{color:var(--bad-tx)}
+/* cadastrar e mudar */
+.form-card.cof-form{max-width:900px}
+.cof-ja{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid var(--line2);
+  border-radius:12px;padding:10px 12px;font-size:13px;color:var(--muted)}
+.cof-ja .ic{width:15px;height:15px;vertical-align:-2px;color:var(--ok)}
+.cof-ja.warn{border-color:rgba(var(--warn-rgb),.4);background:rgba(var(--warn-rgb),.06);color:var(--warn-tx)}
+.cof-totp-l{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.cof-totp-l input{flex:1;min-width:240px}
+.cof-qr{cursor:pointer}
+.cof-totp-ok{font-size:12.5px;color:var(--muted);margin-top:6px;min-height:18px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.cof-totp-ok .ic{width:14px;height:14px;vertical-align:-2px}
+.cof-agora{margin-left:auto;border:1px solid var(--line2);border-radius:9px;padding:3px 10px}
+.cof-agora b{color:var(--syn-tx);font-size:14px;letter-spacing:.06em}
+.cof-quem{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.cof-quem{grid-template-columns:1fr}}
+.cof-campo.solto{margin:4px 0 8px}
+/* a gestão */
+.cof-tab tr.off td{opacity:.55}
+.cof-sem{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin-bottom:10px}
+.cof-sem .lb{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);min-width:150px}
+.cof-sem .chip{display:inline-flex;align-items:center;gap:6px}
+.cof-sem .chip .ic{width:13px;height:13px}
+.vazio .glyph .ic{width:42px;height:42px;display:inline-block}
+/* dentro de um .fld, todo <label> vira rótulo de campo (caixa-alta, 10,5px);
+   as opções e os botões destes formulários voltam a ser o que são */
+.cof-ger-op label.check,.cof-ger-op label.cof-tam{display:inline-flex;align-items:center;gap:6px;border:0;padding:0;margin:0;
+  font-size:12.5px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted)}
+.cof-form .multi label.check,.evx-cfg .multi label.check,.cof-cfg .multi label.check{display:flex;align-items:center;gap:9px;
+  border:0;border-radius:0;padding:3px 2px;font-size:13px}
+.cof-form .fld>label.check{display:flex;align-items:flex-start;gap:9px;margin:0;font-size:13px;font-weight:400;letter-spacing:0;
+  text-transform:none;color:var(--muted)}
+.cof-form .fld label.btn{display:inline-flex;align-items:center;margin:0;font-size:12px;font-weight:600;letter-spacing:0;
+  text-transform:none;color:var(--ink)}
+
 /* ============ MODAL / TOAST ============ */
 #veil{position:fixed;inset:0;z-index:80;background:rgba(var(--veu-rgb),calc(.66 * var(--veu-k)));
   backdrop-filter:blur(8px);display:none}
@@ -2799,7 +3073,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '24.0';
+const VERSAO = '27.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -3029,7 +3303,13 @@ const ICONS = {
   enviar:'<path d="M20.5 3.5 10 14"/><path d="m20.5 3.5-6.5 17-4-6.5-6.5-4z"/>',
   /* os treinamentos (v24): o espaço e o certificado */
   capelo:'<path d="M2.5 9.2 12 4.8l9.5 4.4L12 13.6z"/><path d="M6.5 11.3v4.4c0 1.6 2.5 3.1 5.5 3.1s5.5-1.5 5.5-3.1v-4.4"/><path d="M21.5 9.2v5.3"/>',
-  selo:'<circle cx="12" cy="9.2" r="5.7"/><path d="m8.6 13.8-1.3 6.7 4.7-2.5 4.7 2.5-1.3-6.7"/><path d="m9.8 9.3 1.6 1.6 3-3.1"/>'
+  selo:'<circle cx="12" cy="9.2" r="5.7"/><path d="m8.6 13.8-1.3 6.7 4.7-2.5 4.7 2.5-1.3-6.7"/><path d="m9.8 9.3 1.6 1.6 3-3.1"/>',
+  /* os documentos emitidos, os eventos e o cofre (v25–v27) */
+  cofre:'<rect x="3.5" y="4" width="17" height="15.5" rx="2.5"/><circle cx="12" cy="11.8" r="3.3"/><path d="M12 8.5v1.1M12 14v1.1M15.3 11.8h-1.1M9.8 11.8H8.7M7 19.5V21M17 19.5V21"/>',
+  evento:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="m12 12.3 1.15 2.3 2.5.37-1.82 1.77.43 2.5L12 18.07l-2.26 1.17.43-2.5-1.82-1.77 2.5-.37z"/>',
+  escrever:'<path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V7.5z"/><path d="M14 3v4.5h4.5"/><path d="m9 16.5 4.8-4.8 1.6 1.6-4.8 4.8H9z"/>',
+  olho_fechado:'<path d="M3 3l18 18"/><path d="M10.6 5.6A10 10 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 3.9M6.4 7.4A16.6 16.6 0 0 0 2.5 12S6 18.5 12 18.5a9.6 9.6 0 0 0 4.3-1"/><path d="M9.9 10a3 3 0 0 0 4.1 4.2"/>',
+  dado:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.8" cy="8.8" r="1.1"/><circle cx="15.2" cy="15.2" r="1.1"/><circle cx="12" cy="12" r="1.1"/><circle cx="15.2" cy="8.8" r="1.1"/><circle cx="8.8" cy="15.2" r="1.1"/>'
 };
 const ic = (n, cls) => `<svg class="ic${cls?' '+cls:''}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;
@@ -3214,6 +3494,15 @@ function carregarScript(src){
    depois de um deploy. Suba junto com a versão do portal. */
 const carregarModulo = nome => carregarScript(`mod-${nome}.js?v=${VERSAO}`);
 const carregarLib    = carregarScript;
+/* O modelo de documento da NRO (doc-nro.js): a declaração de vínculo, a
+   de participação, o registro escrito no portal e a exportação do cofre
+   saem dele. Não é módulo — o auth.neurodynamics.dev desenha a segunda
+   via com ele também —, e por isso desce como biblioteca, com a versão
+   do portal na query. Quem o chama é o módulo, na hora de desenhar. */
+async function precisaDocNRO(){
+  if (!window.DocNRO) await carregarLib(`doc-nro.js?v=${VERSAO}`);
+  await DocNRO.precisa();
+}
 
 /* ---------------- busca global ---------------- */
 /* Cada módulo anuncia o que sabe achar. `buscar` é síncrono e roda sobre o
@@ -3246,6 +3535,10 @@ function acoesDaCasca(){
     ['Pedir afastamento', 'Afastamento temporário', '#/servicos/afastamento'],
     ['Ouvidoria anônima', 'Mensagem sem vínculo com a sua conta', '#/servicos/ouvidoria'],
     ['Meus pedidos', 'Acompanhar as suas solicitações', '#/servicos/pedidos'],
+    ['Declaração de vínculo', 'Emitir agora, em PDF, autenticável em auth.neurodynamics.dev', '#/servicos/declaracao'],
+    ['Registrar evento', 'A participação da equipe num evento, com a declaração de cada um', '#/servicos/eventos/novo'],
+    ['Eventos e participações', 'Os eventos registrados, as aprovações e as declarações', '#/servicos/eventos'],
+    ['Cofre de senhas', 'As contas da equipe: usuário, senha e o código de duas etapas', '#/servicos/cofre'],
     ['Treinamentos', 'O que os seus grupos pedem, e o que você já concluiu', '#/treinamentos'],
     ['Todos os treinamentos', 'O catálogo de formação da equipe', '#/treinamentos/todos'],
     ['Meus certificados', 'Os treinamentos concluídos, com o certificado em PDF', '#/treinamentos/certificados'],
@@ -3663,11 +3956,18 @@ function arvoreDoMenu(){
       { sub:'', rot:'Todos os documentos' },
       ...Object.entries(CAT_DOC).map(([sub, c]) => ({ sub, rot:c.l }))] },
     /* Meus pedidos mora aqui desde a v24: o décimo primeiro espaço não
-       cabia, e o acompanhamento do que se pediu é parte de pedir */
+       cabia, e o acompanhamento do que se pediu é parte de pedir. O
+       que o SOMA faz sozinho, sem pedido a ninguém — a declaração, o
+       registro de evento (v25) e o cofre (v27) —, tem o seu bloco,
+       antes dos pedidos: é o mesmo desenho da página de Serviços. */
     { r:'servicos', rot:'Serviços', ic:'servicos', filhos: [
       { sub:'', rot:'Todos os serviços' },
       { sub:'pedidos', rot:'Meus pedidos' },
-      { sep:true },
+      { rotulo:'Documentos e acessos' },
+      { sub:'declaracao', rot:'Declaração de vínculo' },
+      { sub:'eventos', rot:'Eventos e participações' },
+      { sub:'cofre', rot:'Cofre de senhas' },
+      { rotulo:'Ao Depto. de Pessoal' },
       ...SERVICOS_MENU.map(([sub, rot]) => ({ sub, rot }))] }
   ];
   const gestao = [];
@@ -4139,7 +4439,7 @@ function abrirSino(e){
       <span class="tt">${esc(n.titulo)}</span>
       ${n.corpo ? `<span class="cp">${esc(n.corpo)}</span>` : ''}
       <span class="qd">${fmtQuando(n.criado_em)}</span></button>`).join('')
-    : '<div class="sn-vazio">Nada por aqui. Você é avisado quando uma atividade sua anda, vence ou é sinalizada, quando um arquivo espera a sua revisão e quando um treinamento obrigatório chega para você.</div>';
+    : '<div class="sn-vazio">Nada por aqui. Você é avisado quando uma atividade sua anda, vence ou é sinalizada, quando um arquivo espera a sua revisão, quando um treinamento obrigatório chega para você, quando um evento espera a sua aprovação (ou a sua declaração de participação fica pronta) e quando uma senha do cofre que você mantém precisa ser trocada.</div>';
   p.hidden = false;
 }
 function fecharSino(){ const p = $('#sino-painel'); if (p) p.hidden = true; }
@@ -4374,6 +4674,7 @@ document.addEventListener('keydown', e => {
 async function pageHome(){
   $('#main').innerHTML = `
     <section id="sec-board"><div class="carregando"><span class="spin"></span> Carregando avisos…</div></section>
+    <section id="sec-pend"></section>
     <section id="sec-treinos"></section>
     <div class="home-grid tres">
       <div class="card" id="card-agenda">
@@ -4387,9 +4688,31 @@ async function pageHome(){
       <aside class="rail">${trilhoFerramentas()}</aside>
     </div>`;
   carregarBoard();
+  carregarPendenciasInicio();
   carregarTreinamentosResumo();
   carregarAgendaResumo();
   carregarCheckinResumo();
+}
+
+/* ---------- o que espera a sua ação, fora dos quadros ----------
+   Evento registrado esperando a sua aprovação (v25) e senha do cofre
+   para trocar — vencida, vencendo ou exposta por quem saiu (v27). Só
+   aparece quando há; sem as migrações, não aparece nada. */
+async function carregarPendenciasInicio(){
+  if (!state.perfil?.registro) return;
+  const conta = nome => sb.rpc(nome).then(r => r.error ? 0 : (Number(r.data) || 0), () => 0);
+  const [ev, cf] = await Promise.all([conta('eventos_ext_pendentes'), conta('cofre_pendencias')]);
+  const el = $('#sec-pend'); if (!el) return;
+  const it = [];
+  if (ev) it.push(`<a class="pend-i" href="#/servicos/eventos/aprovar">${ic('evento')}
+    <span class="tx"><b>${ev === 1 ? 'Um evento espera' : ev + ' eventos esperam'} a sua aprovação</b>
+    <span class="ds">Registro de participação da equipe — aprovado, cada participante recebe a declaração</span></span>
+    <span class="go">Aprovar →</span></a>`);
+  if (cf) it.push(`<a class="pend-i" href="#/servicos/cofre">${ic('cofre')}
+    <span class="tx"><b>${cf === 1 ? 'Uma senha' : cf + ' senhas'} do cofre para trocar</b>
+    <span class="ds">O prazo venceu, está vencendo ou alguém que a viu saiu da equipe</span></span>
+    <span class="go">Trocar →</span></a>`);
+  el.innerHTML = it.length ? `<div class="pend-faixa">${it.join('')}</div>` : '';
 }
 
 /* ---------- os treinamentos que esperam por você ----------
@@ -6780,17 +7103,66 @@ async function pageInformacoes(sub){
 /* ============================================================
    SERVIÇOS — solicitações ao Depto de Pessoal
    ============================================================ */
-function pageServicos(sub){
+/* A declaração de vínculo e os eventos (mod-documentos, v25) e o cofre
+   (mod-cofre, v27) moram em módulos: descem na primeira visita, como
+   qualquer outro espaço. */
+const SERVICOS_MODULO = {
+  declaracao: ['documentos', 'pageDeclaracao'],
+  eventos:    ['documentos', 'pageEventosExt'],
+  cofre:      ['cofre',      'pageCofre']
+};
+async function pageServicos(sub, sub2){
   if (sub === 'pedidos') return pagePedidos();
+  const mod = SERVICOS_MODULO[sub];
+  if (mod){
+    if (typeof window[mod[1]] !== 'function'){
+      $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
+      try { await carregarModulo(mod[0]); }
+      catch(e){
+        $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1>
+          <p class="lead">Esta parte do portal não pôde ser carregada (${esc(e.message)}).
+          Verifique a conexão e recarregue a página.</p></div>`;
+        return;
+      }
+    }
+    return window[mod[1]](sub2);
+  }
   if (sub) return formServico(sub);
   const semReg = !state.perfil.registro;
   $('#main').innerHTML = `
-    <div class="pg-head"><span class="eyebrow">Depto. de Pessoal</span>
+    <div class="pg-head"><span class="eyebrow">Serviços</span>
       <h1>Serviços</h1>
-      <p class="lead">Abra solicitações direto para o Departamento de Pessoal e acompanhe tudo
-        em <a href="#/servicos/pedidos" style="border-bottom:1px solid var(--line2)">Meus pedidos</a>.</p></div>
+      <p class="lead">Os documentos que o SOMA emite na hora, o cofre com as contas da equipe e os pedidos ao
+        Departamento de Pessoal — cujo andamento fica em
+        <a href="#/servicos/pedidos" style="border-bottom:1px solid var(--line2)">Meus pedidos</a>.</p></div>
     ${semReg ? `<div class="aviso-box warn">Sua conta ainda não está vinculada a um registro de membro,
       então as solicitações ficam bloqueadas. A ouvidoria continua aberta. Fale com o Depto. de Pessoal.</div>` : ''}
+    <h2 class="srv-bloco">Documentos e acessos</h2>
+    <div class="srv-grid">
+      <a class="srv agora" href="#/servicos/declaracao">
+        <span class="lb">${ic('selo')} Sai na hora</span>
+        <h3>Declaração de vínculo</h3>
+        <p>Em PDF, com os dados da sua ficha, os treinamentos concluídos e os eventos de que participou.
+          Quem receber confere a autenticidade em auth.neurodynamics.dev.</p>
+        <span class="go">Emitir →</span>
+      </a>
+      <a class="srv agora" href="#/servicos/eventos/novo">
+        <span class="lb">${ic('evento')} Representando a equipe</span>
+        <h3>Registrar evento</h3>
+        <p>Um congresso, uma feira, uma palestra: quem foi, onde, quando e quantas horas. Aprovado, cada
+          participante recebe a declaração de participação por e-mail. Os registrados ficam em
+          Eventos e participações.</p>
+        <span class="go">Registrar →</span>
+      </a>
+      <a class="srv agora" href="#/servicos/cofre">
+        <span class="lb">${ic('cofre')} Contas da equipe</span>
+        <h3>Cofre de senhas</h3>
+        <p>O usuário, a senha e o código de duas etapas das contas dos acessos que você tem — sem depender
+          do celular de ninguém.</p>
+        <span class="go">Abrir →</span>
+      </a>
+    </div>
+    <h2 class="srv-bloco">Pedidos ao Depto. de Pessoal</h2>
     <div class="srv-grid">
       <a class="srv hero" href="#/servicos/acesso">
         <span class="lb">O mais pedido</span>

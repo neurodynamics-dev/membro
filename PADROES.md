@@ -95,6 +95,12 @@ conforme quem entra é menu que ninguém aprende.
 #/informacoes[/<categoria>]
 #/servicos[/<tipo>]
 #/servicos/pedidos          meus pedidos (o antigo #/pedidos, que ainda abre)
+#/servicos/declaracao[/<registro>]  a declaração de vínculo (a de outra pessoa: Depto. de Pessoal)
+#/servicos/eventos[/aprovar|todos|novo|config]  os eventos registrados
+#/servicos/eventos/EXT-14[/editar]  um evento
+#/servicos/cofre[/<id>]     as contas que você usa (com uma em destaque)
+#/servicos/cofre/gestao|uso|config|nova[/<item>]|editar/<id>
+#/arquivos/<código>/escrever  escrever o PN no portal (ex.: #/arquivos/NRO-PUB-003-12/escrever)
 #/treinamentos              para você: o que os seus grupos pedem
 #/treinamentos/todos|certificados
 #/treinamentos/NRO-TRE-003  um treinamento: o programa e onde você está
@@ -141,6 +147,8 @@ só a lupa, sem caixa nem legenda, no eixo dos outros ícones. Acha **quatro coi
 | **Atividades** | código (`ORT-14`), título, responsável |
 | **Agenda e documentos** | título do compromisso, nome do documento |
 | **Treinamentos** | código (`NRO-TRE-003`), título |
+| **Eventos registrados** | código (`EXT-14`), nome |
+| **Cofre** | a conta (acesso e rótulo), o usuário, o endereço — nunca a senha |
 
 **O contrato.** Cada módulo registra as próprias fontes ao carregar:
 
@@ -227,6 +235,8 @@ Todo objeto que uma pessoa cita em voz alta precisa de um código curto:
 | Publicação | `POST-14` | `studio_publicacoes.codigo` — sequência única; a versão da arte fica fora do código, como a revisão de um arquivo |
 | Treinamento | `NRO-TRE-003` | `treinamentos.codigo` — do número; a revisão (`Rev. B`) fica fora do código, como num arquivo. O prefixo `TRE` não pode virar emissor em Arquivos |
 | Certificado | `CERT-3F9A-C21B` | `treinamento_conclusoes.certificado` — um por conclusão; confere-se em `#/treinamentos/certificado/<código>` |
+| Evento registrado | `EXT-14` | `eventos_ext.codigo` — sequência única; a participação da equipe num evento de fora (o `EVT-012` é um compromisso da agenda) |
+| Documento emitido | `Q8RT-5WZN-2KDH` | `doc_emitidos.codigo` — o código verificador: 12 caracteres do alfabeto de Crockford, sorteados. O documento em si é `NRO-DIR-004-17` (o PN é o registro) ou `NRO-DIR-006-14` (o PN é o evento); confere-se em `auth.neurodynamics.dev/?c=<código>` |
 
 Sequência por grupo, não global: `ORT-14` diz de qual quadro a atividade é.
 O prefixo mora em `grupos.prefixo` e é gerado do nome, editável depois.
@@ -384,6 +394,16 @@ botão. O arquivo no Storage segue a mesma regra por política própria, em
 `storage.objects`: a versão pendente só desce para quem a enviou e para quem
 revisa, e um objeto que já é revisão não se apaga.
 
+**Escrever no portal é enviar do mesmo jeito.** O registro escrito no portal
+(a ata, o relatório de teste) vira um PDF que sobe para o mesmo bucket e entra
+pela mesma porta (`doc_formulario_enviar` chama `doc_revisao_enviar`): a
+revisão fica pendente, o grupo revisor decide, e a regra de leitura é a da
+classe. A revisão guarda a definição e os dados que a geraram. O formato do
+formulário tem três lugares que andam juntos: a conferência no banco
+(`doc_formulario_problemas`), o editor (`mod-formularios.js`) e o desenho
+(`DocNRO.registro`, em `doc-nro.js`) — mudar a gramática é mudar os três no
+mesmo diff.
+
 ---
 
 ### Studio: pronta é a aprovação que diz
@@ -402,6 +422,45 @@ A escrita das publicações é só pelas funções (`studio_publicacao_salvar`,
 `studio_mover`, `studio_decidir`, `studio_excluir`): a tabela não tem política
 de escrita. É nelas que moram os avisos — quem aprova é avisado quando algo
 chega, quem responde é avisado da decisão.
+
+### Documentos emitidos: o modelo tem um dono só
+
+Tudo o que o SOMA emite ou exporta como documento sai do **modelo da NRO**,
+em `doc-nro.js`: o cabeçalho do NRO-PUB-002 (logo, departamento em negrito,
+título, código e revisão), as tabelas de cabeçalho cinza, a nota da classe e,
+nos documentos emitidos, a **legenda de autenticação** — o QR Code, a
+certidão, o código verificador e o de controle. Documento novo não desenha
+cabeçalho próprio: acrescenta uma função ali. O `auth.neurodynamics.dev`
+carrega o mesmo arquivo; não há cópia.
+
+Documento emitido **não se guarda**: guarda-se a fotografia do que foi
+impresso (`doc_emitidos.dados`), o código verificador e o de controle, e a
+segunda via se desenha de novo, igual. A validação pública lê por uma porta
+só (`doc_validar`), a única aberta à chave anônima, e mostra o CPF mascarado.
+Emitido não se corrige: **revoga-se** (com o motivo, que a validação mostra)
+e emite-se outro.
+
+### Eventos: como no Studio, aprovado é a aprovação que diz
+
+O registro de um evento anda por rascunho → aprovação → aprovado, e só as
+funções escrevem (`evento_ext_salvar`, `evento_ext_enviar`,
+`evento_ext_decidir`…). Aprovar é dos grupos escolhidos (e `admin`), nunca de
+quem mandou, uma vez por versão; mexer num evento em aprovação cria a versão
+seguinte, e as aprovações recomeçam. Com as que bastam, o banco emite as
+declarações, põe os e-mails na fila (`doc_envios`) e avisa no sino. Os
+e-mails dos externos são dado pessoal: só quem registrou, quem aprova e o
+Depto. de Pessoal os veem.
+
+### Cofre: o segredo sai um de cada vez, e registrado
+
+A lista das contas (`cofre_lista`) não traz segredo nenhum. A senha, a
+anterior e as notas saem por `cofre_revelar`, uma por clique, e cada saída
+entra no registro de uso (`viu_senha`, `copiou_senha`…); o código de duas
+etapas sai por `cofre_codigo`, calculado no banco — o segredo do 2FA nunca
+volta ao navegador. O que é segredo mora no Vault; as tabelas não têm
+política nenhuma, e quem usa, quem mantém e quem gere é regra de função
+(`cofre_via`, `cofre_mantem`, `cofre_gestor`). Na tela: a senha vista some
+em 20 segundos, e a área de transferência é limpa em 60.
 
 ### Treinamentos: o gabarito não desce
 

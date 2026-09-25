@@ -4,7 +4,8 @@
    ============================================================ */
 import { assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, servir,
          montarEnvio, lerResposta, faltaParaEnviar, pareceEndereco,
-         type Destinatario } from "./index.ts";
+         declaracaoHTML, declaracaoTexto, dataExtensa, periodoTexto, horasTexto,
+         type Destinatario, type EnvioDocumento } from "./index.ts";
 
 let falhas = 0;
 const ok = (n: string, c: boolean, extra = "") => {
@@ -206,6 +207,56 @@ const txt = corpoTexto(pessoa([{}]));
 ok("a versão em texto não tem tag", !/<[a-z]/i.test(txt), txt);
 ok("a versão em texto traz o link", txt.includes("/#/atividades/card/ORT-14"));
 ok("e é uma saudação de verdade", txt.startsWith("Olá, Carla."));
+
+/* --- a declaração de participação (25.0): um e-mail por documento,
+       para o membro e para o externo, que não tem conta no portal --- */
+ok("a data por extenso", dataExtensa("2026-09-24") === "24 de setembro de 2026");
+ok("um dia só", periodoTexto("2026-09-24", null) === "em 24 de setembro de 2026");
+ok("o mesmo dia no fim é um dia só", periodoTexto("2026-09-24", "2026-09-24") === "em 24 de setembro de 2026");
+ok("dias do mesmo mês", periodoTexto("2026-09-05", "2026-09-07") === "de 5 a 7 de setembro de 2026");
+ok("virando o mês", periodoTexto("2026-09-30", "2026-10-02") === "de 30 de setembro a 2 de outubro de 2026");
+ok("virando o ano", periodoTexto("2026-12-30", "2027-01-02") === "de 30 de dezembro de 2026 a 2 de janeiro de 2027");
+ok("horas inteiras", horasTexto(8) === "8 horas" && horasTexto(1) === "1 hora");
+ok("horas e minutos", horasTexto(2.5) === "2 horas e 30 minutos" && horasTexto("0.25") === "15 minutos");
+const envio = (d: Partial<EnvioDocumento["dados"]> = {}, o: Partial<EnvioDocumento> = {}): EnvioDocumento => ({
+  id: 7, tipo: "participacao", para_nome: "Helena Prado", para_email: "helena@exemplo.org",
+  assunto: "Declaração de participação — CBEB 2026",
+  dados: { evento: "CBEB 2026", evento_codigo: "EXT-1", data_inicio: "2026-09-05", data_fim: "2026-09-07",
+    local: "Centro de Convenções de Vitória (ES)", modalidade: "presencial", horas: 16, papel: "Coautor(a)",
+    membro: false, documento: "NRO-DIR-006-1", codigo: "3HVN-8Z2C-QW6E",
+    url: "https://auth.neurodynamics.dev/?c=3HVN-8Z2C-QW6E", href: "#/servicos/eventos/EXT-1", ...d },
+  ...o,
+});
+{
+  const h = declaracaoHTML(envio());
+  ok("a declaração traz o evento, o período e o local",
+     h.includes("CBEB 2026") && h.includes("de 5 a 7 de setembro de 2026") && h.includes("Centro de Convenções de Vitória (ES)"));
+  ok("o documento e o código verificador", h.includes("NRO-DIR-006-1") && h.includes("3HVN-8Z2C-QW6E"));
+  ok("a função e as horas por extenso", h.includes("Coautor(a)") && h.includes("16 horas"));
+  ok("o link vai para a validação pública, com o código",
+     h.includes('href="https://auth.neurodynamics.dev/?c=3HVN-8Z2C-QW6E"'));
+  ok("e diz onde se confere", h.includes(">auth.neurodynamics.dev</a>"));
+  ok("o externo não recebe link do portal, que ele não tem", !h.includes("#/servicos/eventos/EXT-1"));
+  ok("e é tratado pelo primeiro nome", h.includes("Olá, Helena."));
+  ok("o e-mail é claro, como os outros", h.includes("#ffffff"));
+}
+{
+  const h = declaracaoHTML(envio({ membro: true }, { para_nome: "Ana Figueiredo" }));
+  ok("o membro ganha também o link do portal", h.includes("/#/servicos/eventos/EXT-1"));
+  ok("online não diz lugar", declaracaoHTML(envio({ modalidade: "online", local: null })).includes(", online."));
+  ok("sem papel, participante", declaracaoHTML(envio({ papel: null })).includes(">Participante<"));
+}
+{
+  const h = declaracaoHTML(envio({ evento: 'Congresso <script>alert(1)</script> & "cia"' }));
+  ok("o nome do evento é escapado — quem registra escreve o que quiser",
+     !h.includes("<script>") && h.includes("&lt;script&gt;") && h.includes("&amp; &quot;cia&quot;"));
+}
+{
+  const t = declaracaoTexto(envio({ membro: true }));
+  ok("a versão em texto não tem tag", !/<[a-z]/i.test(t), t);
+  ok("e traz o código e o link", t.includes("3HVN-8Z2C-QW6E") && t.includes("https://auth.neurodynamics.dev/?c=3HVN-8Z2C-QW6E"));
+  ok("e, para o membro, o portal", t.includes("/#/servicos/eventos/EXT-1"));
+}
 
 console.log(falhas ? `\n${falhas} falha(s)` : "\nTudo verde.");
 if (falhas) (globalThis as { process?: { exitCode: number } }).process!.exitCode = 1;

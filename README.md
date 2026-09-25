@@ -46,7 +46,21 @@ SOMA · Gestão está sendo trazido, conforme o
 - **Informações** — biblioteca de documentos e políticas (estatuto,
   políticas, guias, formulários) publicados como links do Google Drive
   pelo Depto. de Pessoal; o controle fino de acesso continua no Drive.
-- **Serviços** — solicitações ao Depto. de Pessoal com protocolo:
+- **Serviços** — o que o SOMA faz na hora, sem pedido a ninguém, e as
+  solicitações ao Depto. de Pessoal. Na hora:
+  - **Declaração de vínculo** — em PDF, no modelo da NRO, com os dados da
+    ficha, os treinamentos concluídos e os eventos; sem assinatura, com
+    **código verificador** e QR Code, conferível em
+    `auth.neurodynamics.dev`. Ver [Documentos emitidos](#documentos-emitidos-e-a-validação);
+  - **Eventos e participações** — o registro da participação da equipe num
+    evento (quem foi, membros e externos, onde, quando, quantas horas);
+    aprovado por duas pessoas dos grupos escolhidos, cada participante
+    recebe por e-mail a **declaração de participação**, autenticável;
+  - **Cofre de senhas** — o usuário, a senha (gerada no SOMA) e o **código
+    de duas etapas** das contas de cada acesso do catálogo, para quem tem o
+    acesso; a troca periódica com lembrete. Ver [Cofre de senhas](#cofre-de-senhas).
+
+  E os pedidos ao Depto. de Pessoal, com protocolo:
   - **Solicitação de acesso** a documento, sistema/plataforma ou local,
     com catálogo do SOMA, **justificativa** e **tempo necessário**;
   - afastamento temporário (período + motivo);
@@ -68,7 +82,10 @@ SOMA · Gestão está sendo trazido, conforme o
   deve ter.
 - **Arquivos** — o controle de documentos e registros que era a planilha
   NRO-PUB-001: código `NRO-XXX-YYY-Z`, revisão, status, template, relações
-  entre arquivos, e nenhuma versão valendo antes de alguém revisar.
+  entre arquivos, e nenhuma versão valendo antes de alguém revisar. A ata de
+  reunião, o relatório de execução de teste — e toda série que o PMO quiser —
+  **se escrevem no próprio portal**, sem baixar o template. Ver
+  [Escrever o registro no portal](#escrever-o-registro-no-portal).
 - **Studio** — a comunicação: um criador de peças para as redes, no tamanho
   exato de cada uma, e o planejamento das publicações — quadro, calendário,
   ideias, aprovação e o lembrete da véspera por e-mail. Ver [Studio](#studio).
@@ -341,6 +358,45 @@ dela):
    aprovadas, mas sem arquivo (*Anexar o arquivo desta revisão*, na tela de
    cada um).
 
+### Escrever o registro no portal
+
+Uma ata, um relatório de teste: até a 25.0, era baixar o template, preencher
+no Word e subir de volta. Desde a 26.0 a série pode ter um **formulário** — os
+campos que o template pede —, e o PN se escreve na tela do arquivo
+(`#/arquivos/NRO-PUB-003-12/escrever`, `mod-formularios.js`):
+
+- criar um PN de uma série com formulário leva direto a escrever; na tela do
+  PN, *Escrever no portal* (ou *Continuar escrevendo*, se há rascunho);
+- os campos vêm nas seções do template, com o que já dá para preencher —
+  quem redige, hoje, agora, o projeto do PN — e o que falta, à direita;
+- o **rascunho grava sozinho** (`doc_formulario_rascunhos`), um por PN: quem
+  mais mexe no arquivo continua de onde parou; a versão devolvida volta com
+  o parecer, para corrigir;
+- *Ver o PDF* desenha o documento no **modelo da NRO**, com a revisão **em
+  vigor** do template — a ata em prosa e com as linhas numeradas, o relatório
+  com a ficha, o roteiro em tabela e a legenda do status;
+- *Mandar para revisão* gera o PDF, sobe para o bucket e cria a revisão
+  pendente pelo mesmo caminho de quem sobe um arquivo — conferência dos pais
+  e filhos, grupo revisor, sino e e-mail. A revisão guarda a definição e os
+  dados que a geraram, e o título do PN ganha o complemento (a ata "de
+  abril", o teste "da bancada 2"). O Word continua valendo: *Ou suba o
+  arquivo pronto*.
+
+Vêm dois formulários prontos, dos templates em uso: a **ata de reunião**
+(`NRO-PUB-003`) e o **relatório de execução de teste** (`NRO-PRO-003`). Os
+outros o PMO escreve em *Arquivos → Configurações → Formulários*: uma
+definição em JSON (os campos — texto, parágrafo, data, hora, número, escolha,
+pessoa, projeto, lista de pessoas, lista, tabela, redação — e, se quiser,
+como se imprimem), conferida na hora pela tela e de novo pelo banco. Quando
+o template muda de letra e o formulário não acompanha, a tela avisa.
+
+**As declarações não moram no rol.** A `NRO-DIR-004` (declaração de vínculo)
+e a `NRO-DIR-006` (declaração de participação em evento) são séries cujos PNs
+são gerados sob demanda — o PN da de vínculo é o **registro do membro**; o da
+de participação, o **número do evento** — e o arquivo não fica guardado. A
+tela da cabeça diz isso no lugar da lista de PNs, sem *Novo PN*, e o banco
+não aceita PN novo nelas (`doc_series.pn_origem`).
+
 ## Studio
 
 O espaço da comunicação, em `#/studio` (`mod-studio.js`, o planejamento, e
@@ -544,6 +600,84 @@ publicado). Os dados valem na hora; o conteúdo mora no rascunho, grava sozinho
 e só vale ao publicar. *Acompanhamento* mostra quem deve, quem está em dia e
 quem começou, e baixa a planilha.
 
+## Documentos emitidos e a validação
+
+O SOMA **emite** documentos: a declaração de vínculo e a declaração de
+participação em evento. Nenhum arquivo fica guardado — cada emissão ganha um
+**código verificador** (12 caracteres, `Q8RT-5WZN-2KDH`), um **código de
+controle** (o SHA-256 do que foi impresso) e a fotografia do que o documento
+diz, em `doc_emitidos`. A segunda via sai igual, com o mesmo código.
+
+Todo documento emitido sai no **modelo da NRO** (`doc-nro.js`, o desenho do
+NRO-PUB-002) e leva no rodapé de cada folha a **legenda de autenticação**: o
+QR Code, a certidão de emissão ("documento emitido pelo SOMA… dispensa
+assinatura"), o código verificador, o de controle e o endereço de validação.
+Sem assinatura, e sem finalidade escrita à mão: a declaração só afirma o que o
+SOMA registra.
+
+**Declaração de vínculo** (`#/servicos/declaracao`, `mod-documentos.js`). A
+primeira folha: nome, CPF, cargo e desde quando — ou de quando a quando, para
+quem saiu —, e o parágrafo que apresenta a NeuroDynamics. A segunda: o
+**registro de formação e de participação em eventos** — os treinamentos
+concluídos e os eventos aprovados. A tela mostra antes o que vai sair e avisa
+o que falta na ficha. O Depto. de Pessoal emite a de qualquer pessoa
+(`#/servicos/declaracao/<registro>`). O PN é o registro: a do 17 é
+`NRO-DIR-004-17`.
+
+**Eventos e participações** (`#/servicos/eventos`). O registro da
+participação da equipe num evento externo — um congresso, uma feira, uma
+palestra — vira o `EXT-14`: nome, como a equipe participou, modalidade,
+local, data (e até quando), horário, horas dedicadas e os participantes —
+membros, e externos só com nome e e-mail, cada um com a sua função e, se
+diferentes, as suas horas. Depois de o evento acontecer, vai para
+**aprovação**, como uma publicação do Studio: aprova quem está nos grupos
+escolhidos (e `admin`), nunca quem mandou, e são necessárias **duas** aprovações
+(o número é configurável). Mexer num evento em aprovação cria a versão
+seguinte, e as aprovações recomeçam. Aprovado, cada participante ganha a sua
+**declaração de participação** (`NRO-DIR-006-14`) e um **e-mail** com o link
+— o externo também. Reabrir para corrigir revoga as declarações emitidas; a
+validação passa a dizer isso.
+
+**A validação** mora em [`auth.neurodynamics.dev`](auth/README.md): uma
+página pública, sóbria de propósito, em que quem recebeu o papel digita o
+código (ou lê o QR Code) e vê o que foi impresso — com o CPF mascarado —, se o
+código de controle confere e se o documento foi revogado. A segunda via da
+declaração de participação sai de lá também, porque o externo não tem conta
+no portal. É a única porta aberta à chave anônima: `doc_validar()`.
+
+## Cofre de senhas
+
+As contas da equipe num lugar só (`#/servicos/cofre`, `mod-cofre.js`). Cada
+acesso do **catálogo de acessos** pode ter uma ou mais contas: o endereço, o
+usuário, a **senha** — gerada no SOMA, com o tamanho e os caracteres que o
+serviço aceitar —, o segredo do **código de duas etapas** e as **notas
+secretas** (códigos de recuperação). O que é segredo mora no **Vault** do
+Supabase, cifrado com uma chave que fica fora do banco: a tabela guarda só o
+identificador, e um backup não traz senha nenhuma.
+
+- **Quem usa** uma conta: os grupos dela (contando os subgrupos) e quem tem o
+  acesso do catálogo **concedido na ficha** — o mesmo que *Solicitação de
+  acesso* concede. Saiu do grupo, perdeu o acesso: perdeu a conta.
+- **Entrar e copiar**: o usuário, a senha e o código em um clique cada. A
+  senha vista some sozinha em 20 segundos, e a área de transferência é limpa
+  em 60. **Tudo o que sai fica registrado** — quem viu, quem copiou, quem
+  gerou código, e quando.
+- **O código de duas etapas** (TOTP, RFC 6238) é calculado **no banco**, a
+  cada pedido: o segredo do 2FA não volta ao navegador depois de guardado, e a
+  equipe não depende do celular de uma pessoa só. Para ligar, cola-se a chave
+  que o serviço mostra — ou um print do QR Code —, e a tela dá o código de
+  agora, para terminar a configuração no serviço.
+- **A troca periódica**: cada conta tem prazo (o padrão é 180 dias). A partir
+  de 14 dias antes, quem mantém recebe o aviso no sino e por e-mail, toda
+  semana; a senha de quem viu e depois saiu da equipe fica marcada como
+  **exposta**. A troca gera a senha nova e guarda a anterior por 30 dias —
+  se o serviço não aceitou a nova, ninguém fica trancado do lado de fora.
+- **Quem mantém**: os responsáveis de cada conta e a **gestão do cofre** —
+  `admin` e os grupos que `admin` escolhe. A gestão cadastra, vê as contas de
+  todos, os acessos ainda sem conta, o registro de uso inteiro e exporta o
+  **registro de contas digitais** (`NRO-DIR-003`) no modelo da NRO — sem
+  segredo nenhum.
+
 ## OKRs
 
 O planejamento estratégico da equipe, em `#/okrs` — veio do SOMA · Gestão
@@ -641,6 +775,16 @@ As bibliotecas pesadas descem com quem precisa delas: jsPDF e autotable com
 os relatórios, xlsx com a importação e com a exportação do quadro. No SOMA as
 três vinham no `<head>`, quase 1,3 MB em todo login, para todo papel.
 
+**O modelo de documento** é uma biblioteca, não um módulo: `doc-nro.js`
+desenha o NRO-PUB-002 — a logo, o departamento, o título, o código com a
+revisão, as tabelas de cabeçalho cinza, a legenda de autenticação com o QR
+Code vetorial — e tudo o que o SOMA emite ou exporta sai dele: a declaração
+de vínculo, a de participação, o registro escrito no portal, o registro de
+contas do cofre. Um nome só no escopo global (`window.DocNRO`); o módulo que
+precisa chama `precisaDocNRO()`, e o jsPDF e o gerador de QR descem na
+primeira vez. O `auth.neurodynamics.dev` carrega o mesmo arquivo, de
+`membro.neurodynamics.dev` — não existe uma segunda cópia do modelo.
+
 Declarar uma rota nova é uma linha em `ROTAS`:
 
 ```js
@@ -672,6 +816,11 @@ Sem as migrações do portal o app entra, mas o quadro de avisos, as
 solicitações e o assistente de agendamento ficam indisponíveis (as demais
 abas — agenda, check-in, calendário e organização — usam as tabelas que
 o SOMA já tem).
+
+A 27.0 (o cofre) precisa do **Vault** do Supabase ligado (*Database →
+Extensions → supabase_vault* — em geral já vem); sem ele, a migração para e
+diz isso. Depois da 25.0, **publique de novo** a Edge Function
+`notificar-email`: é ela que manda o e-mail das declarações de participação.
 
 Duas Edge Functions completam o par com o Google (as duas dá para colar
 pelo painel, sem CLI):
@@ -767,6 +916,19 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
   Depto. de Pessoal escolhem. O conteúdo com o gabarito só quem gere lê; quem faz
   o treinamento recebe o conteúdo sem as respostas, e a correção, a conclusão e o
   certificado saem de funções do banco — nenhuma escrita direta nas tabelas.
+- **Declaração de vínculo**: cada um emite a sua; o Depto. de Pessoal, a de
+  qualquer pessoa. Revogar é do titular (a própria) e do Depto. de Pessoal.
+- **Eventos**: registra quem tem registro; vê o evento aprovado toda a equipe
+  — antes, quem registrou, quem participa, quem aprova e o Depto. de Pessoal;
+  os e-mails dos externos, só quem registrou, quem aprova e o Depto. de
+  Pessoal. Aprovar é dos grupos escolhidos (e `admin`), nunca de quem mandou.
+- **Cofre**: usa quem está num grupo da conta ou tem o acesso concedido na
+  ficha; mantém quem é responsável e a gestão do cofre (`admin` e os grupos
+  que `admin` escolhe). O Depto. de Pessoal não gere o cofre por ser
+  Depto. de Pessoal: senha não é dado pessoal. Nenhuma tabela se lê direto.
+- **Escrever no portal**: quem envia versões do arquivo (o grupo do emissor,
+  a equipe do projeto, quem criou o PN); definir o formulário é do PMO e de
+  `admin`.
 - **Ouvidoria**: a mensagem é gravada por função `security definer`
   sem nenhuma referência à conta, sem gatilho de auditoria e com a data
   truncada para o dia. Anonimato por projeto, não por promessa.
@@ -805,6 +967,10 @@ demais sites:
 1. Ative o Pages neste repositório (branch `main`, raiz).
 2. No Cloudflare, aponte `membro.neurodynamics.dev` → `CNAME` para
    `neurodynamics-dev.github.io`.
+
+A validação dos documentos, `auth.neurodynamics.dev`, é outro domínio — e,
+portanto, outro repositório (`neurodynamics-dev/auth`), com o conteúdo da
+pasta [`auth/`](auth/README.md). O passo a passo está no README dela.
 
 ## Segurança
 

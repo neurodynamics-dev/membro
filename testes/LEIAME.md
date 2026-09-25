@@ -22,10 +22,26 @@ stub, e a correção da verificação é a mesma do banco: o teste responde erra
 e certo e confere o que volta. O progresso da pessoa logada fica em
 `window.__treProg`.
 
+As da 25.0 à 27.0 também: a declaração emite e revoga, o evento anda de
+rascunho a aprovado com as regras do banco (quem vê, quem aprova, nunca quem
+mandou) e emite uma declaração por participante; o cofre decide quem usa e
+quem mantém como o banco, e o código de duas etapas é calculado de verdade
+(RFC 6238, com o crypto do navegador) — o teste confere com o que calcula por
+conta própria; o formulário grava o rascunho e manda a revisão. Com
+`window.__teste.dir` posto **antes** de a página carregar (um
+`addInitScript`), o rol ganha a Diretoria e as duas séries das declarações,
+cujos PNs não moram no rol — sem ele, o rol é o de sempre, e os testes de
+Arquivos não mudam.
+
+Os PDFs são conferidos pelo texto que o modelo escreveu: `DocNRO.baixar` (e
+`DocNRO.abrir`, na prévia) deixam em `window.__docnro` o nome do arquivo, o
+número de folhas e o texto de cada uma.
+
 Da primeira vez, instale o Playwright (só o pacote — o Chromium já está no
-ambiente, e é para ele que os testes apontam com `executablePath`) e o jsPDF
-2.5.1, o mesmo que o portal busca no cdnjs: o teste dos treinamentos o serve
-daqui, para o certificado sair em PDF sem rede:
+ambiente, e é para ele que os testes apontam com `executablePath`) e as
+bibliotecas que o portal busca na rede, nas mesmas versões: o jsPDF 2.5.1 (do
+cdnjs), o qrcode-generator 1.4.4 e o jsQR 1.4.0 (do jsDelivr). Os testes os
+servem daqui, para os PDFs e os QR Codes saírem sem rede:
 
 ```bash
 cd testes && npm install
@@ -53,6 +69,10 @@ e rode daqui.
 | `menu-lateral.mjs` | o menu lateral: subitens por papel, item atual, a logo e a casinha que levam ao início, recolher e o voo do trilho (a busca vira só a lupa), a gaveta do celular, nenhuma rolagem horizontal; e o tema — o seletor, a escolha guardada e aplicada antes de a página aparecer, o contraste de cada texto no claro, a faixa de destaque que continua escura e as logos — com asserções (sai com código 1 se algo falhar) |
 | `arquivos-e-projetos.mjs` | o controle de arquivos e os projetos: a lista de todos os arquivos como primeira tela, o filtro por emissor e a barra secundária (para revisar, templates, visão geral, configurações), o rol por emissor, a tela do arquivo (etapas, registro de alterações, relações), enviar, aprovar e devolver revisão, template e registro, a estrutura de cada série (a coluna da NRO-PUB-001: a conta que filtra, "O que é este arquivo", o "Adicionar" que pergunta antes de criar), configurações, a exportação no formato da NRO-PUB-001, quem não é gestor, a logo gerada, a equipe e o rol de um projeto, e o celular — com asserções |
 | `studio.mjs` | o Studio: o quadro (colunas, o cartão que espera a sua aprovação, "pronta" só pela aprovação), o calendário (arrastar muda a data), as ideias, a galeria dos modelos, o criador (desenha, o texto muda a arte, a logo do LABBIO, o tema, lâmina nova, baixar), salvar no quadro (as artes sobem para o bucket, a peça vai junto), aprovar, o plano, as configurações (grupos, imprensa com o id do YouTube, recursos), quem não tem acesso, quem tem mas não aprova, e o celular — com asserções |
+| `documentos-e-eventos.mjs` | a declaração de vínculo e os eventos (v25): o bloco "Documentos e acessos" em Serviços e o aviso no início, a prévia (CPF mascarado na tela), emitir — o PDF no modelo da NRO, duas folhas, a frase, a legenda de autenticação em cada folha —, a segunda via, revogar com motivo, a de outra pessoa e o que falta na ficha dela, quem saiu "atuou"; os eventos — meus, para aprovar, todos, a busca, a página do aprovado, a minha declaração em PDF, os e-mails dos externos e mandar de novo, aprovar o que falta e as declarações saírem, registrar com membro e externo (e-mail inválido volta com a linha, o evento no futuro não vai), editar, reabrir revoga, cancelar, as configurações; quem só lê e quem só participou; o celular — com asserções |
+| `cofre.mjs` | o cofre (v27): o aviso no início, as contas por categoria, filtrar, ver a senha (e ela sumir sozinha), copiar a senha e o usuário (a área de transferência de verdade), o código de duas etapas conferido pela RFC 6238, as notas, a anterior, trocar a senha com o gerador (tamanho, conjuntos, sem parecidos), a busca; a gestão — todas, os acessos sem conta, o registro de contas em PDF sem segredo nenhum, nova conta com o 2FA pela chave e pelo QR Code de uma imagem, desativar, desligar o 2FA, o registro de uso filtrado, excluir, as configurações; quem só usa e o responsável que não mexe em quem usa; o celular — com asserções |
+| `formularios.mjs` | escrever o registro no portal (v26): a série que se escreve no portal, criar o PN e ir direto escrever, as seções, o que já vem preenchido, o que falta, o rascunho que grava sozinho e volta, a prévia em PDF (a frase da ata, as listas com a pontuação do template, as linhas numeradas), mandar — o PDF no bucket, a revisão pendente com os dados, o complemento do título, "escrito no portal" no registro de alterações —; o relatório de teste com a ficha e o roteiro em tabela; o registro aprovado que foi arquivo; Configurações › Formulários (JSON quebrado, tipo que não existe, começar de outro, salvar); as declarações sem "Novo PN"; quem não edita; o celular — com asserções |
+| `validacao.mjs` | o `auth.neurodynamics.dev` (a página de `../auth/`): o código em grupos de quatro, O lido como 0, código curto que não vai ao banco, autêntico com e sem o código de controle, controle que não confere, revogado, código que não existe, o QR Code que abre já consultado, a frase do mesmo modelo do portal, a segunda via só da de participação, nova consulta, o celular — com asserções |
 | `treinamentos.mjs` | os treinamentos: o espaço no menu (e Meus pedidos dentro de Serviços, com `#/pedidos` ainda abrindo), o obrigatório no início e na busca, o programa, o módulo em Markdown, o vídeo no player do site, o gabarito que não desce, a verificação reprovada e aprovada, o certificado em PDF e a conferência pelo código, a gestão, o editor que grava sozinho, importar o texto de um agente (o do README e um embrulhado em ```markdown), a pré-visualização, exportar e ler de volta, publicar, atribuir, novo do zero e de um texto, o acompanhamento e o CSV, as configurações e o README (ver, salvar, baixar com as referências, voltar ao padrão), a aba da ficha, quem não gere, quem gere por grupo, e o celular — com asserções |
 
 ```bash
@@ -69,7 +89,15 @@ node grupos-arvore.mjs
 node arquivos-e-projetos.mjs
 node studio.mjs
 node treinamentos.mjs
+node documentos-e-eventos.mjs
+node cofre.mjs
+node formularios.mjs
+node validacao.mjs                      # a página de ../auth/, servida pelo mesmo servidor
 ```
+
+Os testes que baixam PDF lançam o Chromium com `LANG=C.UTF-8`: o nome dos
+arquivos tem acento (`NRO-DIR-004-17 DECLARAÇÃO DE VÍNCULO - …pdf`), e num
+ambiente sem locale UTF-8 o Chromium troca o nome por "download".
 
 Para rodar por papel, gere um stub com o papel trocado:
 

@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Validação de documentos · NeuroDynamics PD&amp;I</title>
+<meta name="description" content="Conferência da autenticidade dos documentos emitidos eletronicamente pelo SOMA, o sistema de gestão da NeuroDynamics PD&amp;I.">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="favicon.png">
+<!--
+  auth.neurodynamics.dev — a validação pública dos documentos que o SOMA
+  emite (a declaração de vínculo, a de participação em evento). Uma página
+  só, de propósito: o que um externo precisa é digitar o código do rodapé
+  (ou ler o QR Code) e ver, do nosso lado, o que foi impresso.
+
+  Fala com o banco por uma porta só — doc_validar(), a única função aberta
+  à chave anônima na migração 25.0 — e desenha a segunda via da declaração
+  de participação com o mesmo modelo do portal: o doc-nro.js vem de
+  membro.neurodynamics.dev, e nunca há duas cópias dele. O passo a passo
+  para publicar está no README desta pasta.
+-->
+<style>
+:root{
+  --tinta:#1d1d1f; --texto:#303034; --cinza:#5e5e63; --claro:#8a8a8f;
+  --linha:#b9b9be; --linha2:#d6d6da; --cab:#d9d9d9; --fundo:#f4f4f5; --papel:#ffffff;
+  --ok:#1f5a34; --ok-f:#e9f2ec; --ok-b:#8fb59c;
+  --bad:#8b1d1d; --bad-f:#f7eaea; --bad-b:#c99a9a;
+  --warn:#6a4b00; --warn-f:#f7f1df; --warn-b:#cdb77a;
+  --foco:#1f4fa3;
+  --f:Arial, "Helvetica Neue", Helvetica, "Liberation Sans", sans-serif;
+  --fm:"Courier New", Courier, "Liberation Mono", monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--f);font-size:15px;line-height:1.55;color:var(--texto);background:var(--fundo);min-height:100vh;
+  display:flex;flex-direction:column}
+a{color:var(--foco)}
+:focus-visible{outline:2px solid var(--foco);outline-offset:2px}
+.w{width:100%;max-width:860px;margin:0 auto;padding:0 16px}
+/* a faixa institucional, como nos portais de governo */
+.faixa{background:var(--tinta);color:#e6e6e8;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase}
+.faixa .w{display:flex;justify-content:space-between;gap:12px;padding-top:7px;padding-bottom:7px;flex-wrap:wrap}
+.faixa a{color:#e6e6e8;text-decoration:none}
+.faixa a:hover{text-decoration:underline}
+.topo{background:var(--papel);border-bottom:3px double var(--linha)}
+.topo .w{display:flex;align-items:center;gap:18px;padding-top:22px;padding-bottom:20px}
+.topo .logo{height:34px;width:auto;flex:none}
+.topo .logo-tx{font-weight:700;font-size:19px;letter-spacing:-.01em;color:var(--tinta);flex:none}
+.topo .sep{width:1px;align-self:stretch;background:var(--linha2);flex:none}
+.topo h1{font-size:21px;line-height:1.2;color:var(--tinta)}
+.topo p{font-size:13px;color:var(--cinza);margin-top:3px}
+@media (max-width:560px){.topo .w{flex-wrap:wrap;gap:10px}.topo .sep{display:none}}
+main.w{flex:1;padding-top:26px;padding-bottom:40px}
+.bloco{background:var(--papel);border:1px solid var(--linha);margin-bottom:18px}
+.bloco>h2{font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tinta);
+  background:var(--cab);border-bottom:1px solid var(--linha);padding:8px 14px}
+.bloco>.corpo{padding:16px 16px 18px}
+.bloco p+p{margin-top:8px}
+.form{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:12px;align-items:end;margin-top:14px}
+@media (max-width:640px){.form{grid-template-columns:1fr}}
+.campo label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cinza);margin-bottom:5px}
+.campo label span{font-weight:400;text-transform:none;letter-spacing:0}
+.campo input{width:100%;font-family:var(--fm);font-size:18px;font-weight:700;letter-spacing:.08em;color:var(--tinta);
+  background:#fff;border:1px solid var(--linha);border-radius:0;padding:9px 10px;text-transform:uppercase}
+.campo input::placeholder{color:#b0b0b4;font-weight:400;letter-spacing:.04em}
+.campo input:focus{border-color:var(--foco);outline:1px solid var(--foco)}
+button,.botao{font-family:var(--f);font-size:14px;font-weight:700;color:#fff;background:var(--tinta);border:1px solid var(--tinta);
+  border-radius:0;padding:11px 22px;cursor:pointer;text-decoration:none;display:inline-block;line-height:1.3}
+button:hover,.botao:hover{background:#000}
+button:disabled{opacity:.55;cursor:default}
+button.sec,.botao.sec{background:#fff;color:var(--tinta)}
+button.sec:hover,.botao.sec:hover{background:var(--fundo)}
+.dica{font-size:12.5px;color:var(--cinza);margin-top:10px}
+.erro-campo{font-size:13px;color:var(--bad);margin-top:8px;min-height:1px}
+/* o resultado */
+.selo{border:1px solid;padding:14px 16px;display:flex;gap:14px;align-items:flex-start}
+.selo .marca{width:34px;height:34px;flex:none;border:2px solid currentColor;display:grid;place-items:center;font-weight:700;font-size:18px;line-height:1}
+.selo h3{font-size:16px;letter-spacing:.06em;text-transform:uppercase}
+.selo p{font-size:13.5px;margin-top:3px;color:var(--texto)}
+.selo.ok{color:var(--ok);background:var(--ok-f);border-color:var(--ok-b)}
+.selo.bad{color:var(--bad);background:var(--bad-f);border-color:var(--bad-b)}
+.selo.warn{color:var(--warn);background:var(--warn-f);border-color:var(--warn-b)}
+.ficha{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px}
+.ficha th,.ficha td{border:1px solid var(--linha);padding:7px 10px;text-align:left;vertical-align:top}
+.ficha th{width:34%;background:var(--fundo);font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--cinza)}
+.ficha td{color:var(--tinta)}
+.ficha .mono{font-family:var(--fm);font-weight:700;letter-spacing:.06em}
+.ficha .confere{display:block;font-size:12.5px;font-weight:700;margin-top:3px}
+.ficha .confere.ok{color:var(--ok)} .ficha .confere.bad{color:var(--bad)}
+@media (max-width:560px){.ficha th,.ficha td{display:block;width:100%;border-top:0}.ficha tr:first-child th{border-top:1px solid var(--linha)}}
+.declarado{margin-top:16px}
+.declarado h4,.tabela-t{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cinza);margin:16px 0 6px}
+.declarado blockquote{border-left:3px solid var(--linha);padding:4px 0 4px 14px;font-size:15px;line-height:1.65;text-align:justify;color:var(--tinta)}
+.tabela{width:100%;border-collapse:collapse;font-size:13px}
+.tabela th{background:var(--cab);font-weight:700;text-align:left;padding:6px 8px;border:1px solid var(--linha)}
+.tabela td{padding:6px 8px;border:1px solid var(--linha);vertical-align:top}
+.tabela-w{overflow-x:auto}
+.vazio{font-size:13px;color:var(--cinza);font-style:italic}
+.acoes{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.consultado{font-size:12px;color:var(--claro);margin-top:14px}
+.carregando{font-size:14px;color:var(--cinza);padding:6px 0}
+.sobre ol{padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.sobre .pq{font-size:13px;color:var(--cinza);margin-top:12px}
+footer{background:var(--papel);border-top:1px solid var(--linha);font-size:12px;color:var(--cinza)}
+footer .w{padding-top:16px;padding-bottom:20px;display:flex;flex-direction:column;gap:4px}
+footer b{color:var(--tinta)}
+.so-impresso{display:none}
+@media print{
+  body{background:#fff;font-size:12px}
+  .faixa,.no-print,#f-bloco,.sobre,footer .links{display:none!important}
+  .bloco{border-color:#999;break-inside:avoid}
+  .so-impresso{display:block}
+  main{padding:10px 0}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="faixa"><div class="w"><span>NeuroDynamics PD&amp;I · Instituição de Ciência e Tecnologia · UFMG</span>
+  <a href="https://neurodynamics.dev" rel="noopener">neurodynamics.dev</a></div></div>
+<header class="topo"><div class="w">
+  <img class="logo" id="logo" alt="NeuroDynamics" src="https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png"
+    onerror="this.replaceWith(Object.assign(document.createElement('span'), { className:'logo-tx', textContent:'NeuroDynamics' }))">
+  <span class="sep" aria-hidden="true"></span>
+  <div><h1>Validação de documentos</h1>
+    <p>Conferência da autenticidade dos documentos emitidos eletronicamente pelo SOMA, o sistema de gestão da NeuroDynamics PD&amp;I.</p></div>
+</div></header>
+
+<main class="w">
+  <section class="bloco" id="f-bloco">
+    <h2>1. Consultar documento</h2>
+    <div class="corpo">
+      <p>Informe o <b>código verificador</b> impresso no rodapé do documento — ou leia o QR Code com a câmera do celular, que
+        abre esta página com o código já preenchido. Para a conferência completa, informe também o <b>código de controle</b>.</p>
+      <form class="form" id="f" autocomplete="off" novalidate>
+        <div class="campo"><label for="c">Código verificador</label>
+          <input id="c" name="c" maxlength="16" placeholder="XXXX-XXXX-XXXX" spellcheck="false" autocapitalize="characters"
+            aria-describedby="c-dica c-erro" required></div>
+        <div class="campo"><label for="k">Código de controle <span>(opcional)</span></label>
+          <input id="k" name="k" maxlength="8" placeholder="8 caracteres" spellcheck="false" autocapitalize="characters"></div>
+        <div><button type="submit" id="b">Validar</button></div>
+      </form>
+      <p class="dica" id="c-dica">O código verificador tem 12 caracteres, em três grupos de quatro. As letras I, L, O e U não são usadas.</p>
+      <p class="erro-campo" id="c-erro" role="alert"></p>
+    </div>
+  </section>
+
+  <section class="bloco" id="res-bloco" hidden aria-live="polite">
+    <h2>2. Resultado da consulta</h2>
+    <div class="corpo" id="res"></div>
+  </section>
+
+  <section class="bloco sobre">
+    <h2>Sobre a validação</h2>
+    <div class="corpo">
+      <ol>
+        <li>Os documentos emitidos pelo SOMA dispensam assinatura: a autenticidade se confere aqui, pelo código verificador.</li>
+        <li>Esta página mostra o que foi impresso no documento na data da emissão. Qualquer diferença entre o papel e a tela indica
+          que o documento foi alterado depois de emitido.</li>
+        <li>O código de controle é calculado sobre o conteúdo do documento: se o informado não confere, o documento não é o que foi emitido.</li>
+        <li>Um documento pode ser revogado depois de emitido — por exemplo, quando o registro que o originou é corrigido. A consulta
+          informa a revogação e o motivo.</li>
+      </ol>
+      <p class="pq">Por proteção de dados pessoais (Lei nº 13.709/2018), o CPF aparece parcialmente mascarado.
+        A NeuroDynamics PD&amp;I não guarda cópia dos arquivos emitidos: guarda o que foi impresso, o código e a data.</p>
+    </div>
+  </section>
+  <p class="so-impresso" id="impresso"></p>
+</main>
+
+<footer><div class="w">
+  <span><b>NeuroDynamics PD&amp;I</b> · Laboratório de Engenharia Biomédica e Laboratório de Bioengenharia · Escola de Engenharia da
+    Universidade Federal de Minas Gerais · Belo Horizonte, MG</span>
+  <span class="links">Dúvidas sobre um documento: procure quem o apresentou, ou a NeuroDynamics PD&amp;I em
+    <a href="https://neurodynamics.dev" rel="noopener">neurodynamics.dev</a>.</span>
+</div></footer>
+
+<noscript><div class="w" style="padding-bottom:20px"><p>Esta página precisa de JavaScript para consultar o documento.</p></div></noscript>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* A chave anônima (publishable) é a mesma do portal: só abre o que as
+   políticas e as funções abrem — aqui, doc_validar(). */
+const CONFIG = {
+  SUPABASE_URL: 'https://rxzmkyjttzzpwtodqkve.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_MJFR-aaQqTS1BthxYJG2kg_5XGhs9wg',
+  /* o modelo de documento — um só, o do portal */
+  DOC_NRO: 'https://membro.neurodynamics.dev/doc-nro.js'
+};
+const sb = window.supabase ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY,
+  { auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false } }) : null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+let ultimo = null;
+
+/* O que se digita, do jeito que o código é guardado: sem espaço nem
+   traço, maiúsculas, O lido como 0, I e L como 1 — a mesma regra de
+   doc_normalizar_verificador(). */
+function normaliza(t){
+  const x = String(t || '').toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
+  return /^[0-9A-HJKMNP-TV-Z]{12}$/.test(x) ? `${x.slice(0, 4)}-${x.slice(4, 8)}-${x.slice(8)}` : null;
+}
+/* enquanto digita: os grupos de quatro aparecem sozinhos */
+$('#c').addEventListener('input', e => {
+  const el = e.target, cru = el.value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 12);
+  const fmt = cru.replace(/(.{4})(?=.)/g, '$1-');
+  if (fmt !== el.value) el.value = fmt;
+  $('#c-erro').textContent = '';
+});
+$('#k').addEventListener('input', e => { const v = e.target.value.toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 8); if (v !== e.target.value) e.target.value = v; });
+$('#f').addEventListener('submit', e => { e.preventDefault(); validar(); });
+
+let _docnro = null;
+function precisaDocNRO(){
+  if (window.DocNRO) return Promise.resolve();
+  if (_docnro) return _docnro;
+  _docnro = new Promise((ok, falha) => {
+    const s = document.createElement('script'); s.src = CONFIG.DOC_NRO; s.async = true;
+    s.onload = () => ok(); s.onerror = () => { _docnro = null; falha(new Error('o modelo de documento não carregou')); };
+    document.head.appendChild(s);
+  });
+  return _docnro;
+}
+
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const dataBR = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; };
+function momento(ts){
+  const d = new Date(ts); if (isNaN(d)) return '';
+  const p = Object.fromEntries(new Intl.DateTimeFormat('pt-BR', { timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit',
+    year:'numeric', hour:'2-digit', minute:'2-digit', hourCycle:'h23' }).formatToParts(d).map(x => [x.type, x.value]));
+  return `${p.day}/${p.month}/${p.year}, às ${p.hour}h${p.minute} (horário de Brasília)`;
+}
+const horas = n => { const t = Math.round(Number(n || 0) * 60), h = Math.floor(t / 60), m = t % 60; return m ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`; };
+const minutos = n => n ? horas(n / 60) : '—';
+const periodo = (a, b) => b && b !== a ? `${dataBR(a)} a ${dataBR(b)}` : dataBR(a);
+
+async function validar(){
+  const cod = normaliza($('#c').value);
+  if (!cod){
+    $('#c-erro').textContent = 'O código verificador tem 12 caracteres (letras e números), em três grupos de quatro. Confira a digitação.';
+    $('#c').focus(); return;
+  }
+  $('#c').value = cod;
+  const k = $('#k').value.trim().toUpperCase();
+  const url = new URL(location.href); url.searchParams.set('c', cod); url.searchParams.delete('k');
+  history.replaceState(null, '', url.pathname + url.search);
+  const box = $('#res'); $('#res-bloco').hidden = false;
+  box.innerHTML = '<p class="carregando">Consultando…</p>';
+  $('#b').disabled = true;
+  try{
+    if (!sb) throw new Error('sem conexão com o SOMA');
+    const { data, error } = await sb.rpc('doc_validar', { p_codigo: cod });
+    if (error) throw error;
+    desenhar(data, cod, k);
+  }catch(e){
+    box.innerHTML = `<div class="selo warn"><span class="marca" aria-hidden="true">!</span><div><h3>Não foi possível consultar agora</h3>
+      <p>A consulta não chegou ao SOMA (${esc(e.message || 'erro de rede')}). Tente de novo em instantes.</p></div></div>`;
+  }finally{
+    $('#b').disabled = false;
+    $('#res-bloco').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+}
+
+function desenhar(d, cod, k){
+  const box = $('#res');
+  ultimo = null;
+  if (!d || d.status === 'invalido'){
+    box.innerHTML = `<div class="selo warn"><span class="marca" aria-hidden="true">!</span><div><h3>Código inválido</h3>
+      <p>O código verificador tem 12 caracteres, em três grupos de quatro. Confira a digitação.</p></div></div>`;
+    return;
+  }
+  if (d.status === 'nao_encontrado'){
+    box.innerHTML = `<div class="selo bad"><span class="marca" aria-hidden="true">✕</span><div><h3>Nenhum documento com este código</h3>
+      <p>O SOMA não emitiu documento com o código verificador <b>${esc(cod)}</b>. Confira a digitação — as letras I, L, O e U não são
+        usadas. Se o código está correto, o documento apresentado não é autêntico.</p></div></div>`;
+    impresso(cod, 'nenhum documento encontrado');
+    return;
+  }
+  ultimo = d;
+  const rev = d.situacao === 'revogado';
+  const confere = k ? (k === String(d.controle || '').toUpperCase()) : null;
+  const dd = d.dados || {}, ev = dd.evento || {};
+  const selo = rev
+    ? `<div class="selo bad"><span class="marca" aria-hidden="true">✕</span><div><h3>Documento revogado</h3>
+        <p>Este documento foi emitido pelo SOMA, mas foi <b>revogado</b> em ${esc(momento(d.revogado_em))}${d.revogado_motivo
+          ? `. Motivo: ${esc(d.revogado_motivo)}` : ''}. Ele não vale mais.</p></div></div>`
+    : confere === false
+      ? `<div class="selo bad"><span class="marca" aria-hidden="true">✕</span><div><h3>O código de controle não confere</h3>
+          <p>Existe um documento emitido com este código verificador, mas o código de controle informado (<b>${esc(k)}</b>) não é o
+            dele. O documento apresentado foi alterado — compare-o com os dados abaixo.</p></div></div>`
+      : `<div class="selo ok"><span class="marca" aria-hidden="true">✓</span><div><h3>Documento autêntico</h3>
+          <p>Documento emitido pelo SOMA e válido${confere ? ', com o código de controle conferido' : ''}. Confira se o que está
+            impresso corresponde ao que se vê abaixo.</p></div></div>`;
+  const linhas = [
+    ['Documento', `<span class="mono">${esc(d.documento)}</span>${d.revisao ? ' · Rev. ' + esc(d.revisao) : ''}`],
+    ['Espécie', esc(d.titulo || '')],
+    ['Emitente', `NeuroDynamics PD&amp;I${d.emissor ? ' — ' + esc(d.emissor) : ''}`],
+    [d.tipo === 'participacao' ? 'Participante' : 'Titular', esc(String(d.titular || dd.nome || '').toUpperCase())],
+    ...(d.tipo === 'vinculo' && dd.cpf ? [['CPF', `<span class="mono">${esc(dd.cpf)}</span>`]] : []),
+    ...(d.tipo === 'participacao' ? [['Evento', `${esc(ev.nome || '')}${ev.codigo ? ` <span class="mono">(${esc(ev.codigo)})</span>` : ''}`],
+      ['Período', esc(periodo(ev.data_inicio, ev.data_fim))], ['Horas', esc(horas(dd.horas))]] : []),
+    ['Emitido em', esc(momento(d.emitido_em))],
+    ['Código verificador', `<span class="mono">${esc(d.codigo)}</span>`],
+    ['Código de controle', `<span class="mono">${esc(d.controle)}</span>${confere === true ? '<span class="confere ok">✓ confere com o informado</span>'
+      : confere === false ? `<span class="confere bad">✕ não confere com o informado (${esc(k)})</span>` : ''}`],
+    ['Situação', rev ? `<b style="color:var(--bad)">Revogado</b> em ${esc(momento(d.revogado_em))}` : '<b style="color:var(--ok)">Válido</b>']
+  ];
+  box.innerHTML = `${selo}
+    <table class="ficha"><tbody>${linhas.map(([a, b]) => `<tr><th scope="row">${a}</th><td>${b}</td></tr>`).join('')}</tbody></table>
+    <div class="declarado" id="declarado"></div>
+    <div class="acoes no-print">
+      ${d.segunda_via && !rev ? '<button type="button" id="via" onclick="segundaVia()">Baixar a segunda via (PDF)</button>' : ''}
+      <button type="button" class="sec" onclick="window.print()">Imprimir o comprovante da consulta</button>
+      <button type="button" class="sec" onclick="novaConsulta()">Nova consulta</button>
+    </div>
+    <p class="consultado">Consulta feita em ${esc(momento(new Date().toISOString()))}.</p>`;
+  impresso(cod, rev ? 'documento revogado' : confere === false ? 'código de controle não confere' : 'documento autêntico');
+  conteudo(d);
+}
+
+/* O que o documento declara, como está impresso. A frase vem do mesmo
+   modelo que desenhou o PDF (doc-nro.js); sem ele, fica só a ficha. */
+async function conteudo(d){
+  const el = $('#declarado'); if (!el) return;
+  const dd = d.dados || {};
+  let frase = '';
+  try{
+    await precisaDocNRO();
+    const partes = d.tipo === 'participacao' ? DocNRO.textoParticipacao(dd) : DocNRO.textoVinculo(dd);
+    frase = partes.map(p => p.b ? `<b>${esc(p.t)}</b>` : esc(p.t)).join('');
+  }catch(e){ frase = ''; }
+  let h = frase ? `<h4>O que o documento declara</h4><blockquote>${frase}</blockquote>` : '';
+  if (d.tipo === 'vinculo'){
+    const tre = dd.treinamentos || [], evs = dd.eventos || [];
+    h += `<p class="tabela-t">Treinamentos concluídos (${tre.length})</p>${tre.length ? `<div class="tabela-w"><table class="tabela"><thead><tr>
+      <th>Código</th><th>Treinamento</th><th>Rev.</th><th>Carga horária</th><th>Conclusão</th></tr></thead><tbody>${tre.map(t => `<tr>
+      <td>${esc(t.codigo)}</td><td>${esc(t.titulo)}</td><td>${esc(t.revisao || '—')}</td><td>${esc(minutos(t.carga_horaria_min))}</td>
+      <td>${esc(dataBR(t.concluido_em))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vazio">Nenhum até a data de emissão.</p>'}
+      <p class="tabela-t">Participação em eventos (${evs.length})</p>${evs.length ? `<div class="tabela-w"><table class="tabela"><thead><tr>
+      <th>Código</th><th>Evento</th><th>Período</th><th>Função</th><th>Horas</th></tr></thead><tbody>${evs.map(v => `<tr>
+      <td>${esc(v.codigo)}</td><td>${esc(v.nome)}</td><td>${esc(periodo(v.data_inicio, v.data_fim))}</td>
+      <td>${esc(v.papel || 'Participante')}</td><td>${esc(horas(v.horas))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vazio">Nenhum até a data de emissão.</p>'}`;
+  }
+  el.innerHTML = h;
+}
+
+async function segundaVia(){
+  const b = $('#via'); if (!ultimo || !b) return;
+  b.disabled = true; b.textContent = 'Gerando o PDF…';
+  try{
+    await precisaDocNRO();
+    await DocNRO.precisa();
+    DocNRO.baixar(DocNRO.declaracaoParticipacao(ultimo));
+  }catch(e){ alert('Não foi possível gerar o PDF agora: ' + (e.message || 'erro') + '. Tente de novo em instantes.'); }
+  finally{ b.disabled = false; b.textContent = 'Baixar a segunda via (PDF)'; }
+}
+function novaConsulta(){
+  ultimo = null; $('#res-bloco').hidden = true; $('#c').value = ''; $('#k').value = '';
+  history.replaceState(null, '', location.pathname); $('#c').focus();
+}
+function impresso(cod, resultado){
+  $('#impresso').textContent = `Comprovante de consulta: código verificador ${cod} — ${resultado}. Consulta em auth.neurodynamics.dev, `
+    + `em ${momento(new Date().toISOString())}.`;
+}
+
+/* aberto pelo QR Code: ?c=XXXX-XXXX-XXXX */
+(function(){
+  const q = new URLSearchParams(location.search);
+  const c = q.get('c') || q.get('codigo');
+  if (q.get('k')) $('#k').value = q.get('k').toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 8);
+  if (c){ $('#c').value = c; validar(); }
+})();
+</script>
+</body>
+</html>

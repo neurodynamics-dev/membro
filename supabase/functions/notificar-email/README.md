@@ -349,6 +349,30 @@ Uma falha de envio para uma pessoa não derruba o lote: o resto sai, e a
 notificação que falhou conta a tentativa. Depois de 5, ela para de ser tentada
 e continua visível no sininho — **o portal nunca depende do e-mail**.
 
+### As declarações de participação (desde a 25.0)
+
+Um evento registrado em **Serviços › Eventos e participações**, quando
+aprovado, emite uma declaração de participação por participante — e cada uma
+entra numa fila à parte, `doc_envios`. A mesma rodada da função entrega essa
+fila, antes dos avisos do sino, com três diferenças:
+
+- **um e-mail por declaração**, não um resumo: é a entrega de um documento;
+- **sai sempre**, qualquer que seja a preferência de e-mail — e sai também
+  para o **participante externo**, que não tem conta no portal (o endereço
+  dele é o que foi registrado no evento; o do membro, o da ficha);
+- o link leva à **validação pública** (`auth.neurodynamics.dev/?c=<código>`),
+  que mostra o documento e baixa a segunda via. O membro ganha também o link
+  do evento no portal.
+
+Quem lê e dá baixa são `doc_envios_lote()` e `doc_envios_baixa()`, com a mesma
+service role. Declaração revogada antes de sair (o evento foi reaberto) não é
+enviada. A resposta da função traz `documentos` (quantas saíram),
+`documentos_falhas` e, sem a migração 25.0 aplicada, `documentos:
+"sem_migracao_25"` — o sino continua funcionando do mesmo jeito.
+
+Não há nada novo para configurar: o provedor, o remetente e o agendamento são
+os mesmos. Depois de aplicar a 25.0, **publique a função de novo**.
+
 ---
 
 ## Na renomeação para `soma.neurodynamics.dev`
@@ -378,4 +402,7 @@ Entre elas estão os casos que mais custam caro:
   `address` onde o binding dos Workers usa `email`, e trocar os dois é o
   engano clássico;
 - a **resposta 200 com `success:false`** da Cloudflare, que é recusa: quem
-  olha só o código HTTP dá o envio por certo e não manda nada.
+  olha só o código HTTP dá o envio por certo e não manda nada;
+- o **e-mail da declaração de participação**: o período por extenso (virando
+  o mês e o ano), as horas, o link com o código para a validação pública, o
+  nome do evento escapado, e o link do portal só para quem é membro.
