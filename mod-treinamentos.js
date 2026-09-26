@@ -26,9 +26,10 @@
      #/treinamentos/NRO-TRE-003/2            o módulo 2, com a verificação
      #/treinamentos/NRO-TRE-003/editar       o rascunho (quem gere)
      #/treinamentos/NRO-TRE-003/acompanhamento  quem fez e quem deve (quem gere)
-     #/treinamentos/gestao                   todos, com rascunhos e arquivados
+     #/treinamentos/config                   todos, com rascunhos e arquivados (quem gere)
+     #/treinamentos/config/geral|readme      gestores, nota, certificado, README
      #/treinamentos/novo                     criar — ou começar de um texto
-     #/treinamentos/config[/readme]          gestores, nota, certificado, README
+     #/treinamentos/gestao                   endereço antigo: abre #/treinamentos/config
      #/treinamentos/certificado/CERT-XXXX-XXXX  conferir um certificado
 
    Precisa da migração db/v24_treinamentos.sql.
@@ -847,9 +848,9 @@ async function pageTreinamentos(sub, sub2){
   if (s === 'todos') return treTodos();
   if (s === 'certificados') return treCertificados();
   if (s === 'certificado') return treVerificar(sub2);
-  if (s === 'gestao') return so(treGestao);
+  if (s === 'gestao'){ history.replaceState(null, '', location.pathname + '#/treinamentos/config'); return so(treGestao); }
   if (s === 'novo') return so(treNovo);
-  if (s === 'config') return so(() => treConfig(sub2));
+  if (s === 'config') return so(() => sub2 === 'geral' || sub2 === 'readme' ? treConfig(sub2) : treGestao());
   if (/^nro-tre-\d{3,}$/i.test(s)){
     const cod = s.toUpperCase();
     if (sub2 === 'editar') return so(() => treEditor(cod));
@@ -875,13 +876,18 @@ function treFaltaBanco(erro){
   $('#main').innerHTML = `${treTopo('Treinamentos', '')}<div class="aviso-box err"><b>Os treinamentos ainda não estão no banco.</b>
     ${esc(erro?.message || '')}<br><span class="small">Falta aplicar a migração <code>db/v24_treinamentos.sql</code>.</span></div>`;
 }
+/* Nível 1: as seções do espaço. Configurações (de quem gere) reúne a
+   lista de todos os treinamentos, o geral e o README, no nível 2. */
 function treNav(atual){
   const n = (treino.lista || []).filter(t => t.obrigatorio && t.situacao !== 'concluido').length;
-  const it = [['', 'Para você'], ['todos', 'Todos'], ['certificados', 'Meus certificados']];
-  if (gereTreinamentos()) it.push(['gestao', 'Gestão'], ['config', 'Configurações']);
-  return `<nav class="arq-nav tre-nav" aria-label="Treinamentos">${it.map(([k, l]) =>
-    `<a href="#/treinamentos${k ? '/' + k : ''}" class="${atual === k ? 'on' : ''}">${l}${k === '' && n
-      ? ` <span class="n sua" title="Obrigatórios por fazer">${n}</span>` : ''}</a>`).join('')}</nav>`;
+  const it = [['', 'Para você', '#/treinamentos', n ? `<span class="n sua" title="Obrigatórios pendentes">${n}</span>` : ''],
+    ['todos', 'Todos', '#/treinamentos/todos'], ['certificados', 'Meus certificados', '#/treinamentos/certificados']];
+  if (gereTreinamentos()) it.push(['config', 'Configurações', '#/treinamentos/config']);
+  return navNivel1(it, atual, 'Treinamentos');
+}
+function treNavConfig(atual){
+  return navNivel2([['', 'Treinamentos', '#/treinamentos/config'], ['geral', 'Geral', '#/treinamentos/config/geral'],
+    ['readme', 'README de conteúdo', '#/treinamentos/config/readme']], atual, 'Configurações');
 }
 function treTopo(titulo, lead, acoes, olho){
   return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">${esc(olho || 'Treinamentos')}</span><h1>${titulo}</h1>
@@ -931,8 +937,7 @@ async function treParaVoce(){
   const semNada = !obrig.length && !andam.length && !recom.length;
   $('#main').innerHTML = `${treTopo('Para você',
       'Os treinamentos que os seus grupos pedem — os obrigatórios primeiro. Ao concluir, o certificado fica em <a href="#/treinamentos/certificados">Meus certificados</a>.',
-      gereTreinamentos() ? `<a class="btn ghost mini" href="#/treinamentos/gestao">${ic('quadro')} Gestão</a>
-        <a class="btn solid mini" href="#/treinamentos/novo">${ic('plus')} Novo treinamento</a>` : '')}
+      gereTreinamentos() ? `<a class="btn solid mini" href="#/treinamentos/novo">${ic('plus')} Novo treinamento</a>` : '')}
     ${treNav('')}
     ${!treEu() ? `<div class="aviso-box warn">A sua conta ainda não está ligada a um registro do quadro: dá para ler os
       treinamentos, mas o progresso e o certificado não ficam guardados. O Depto. de Pessoal faz o vínculo.</div>` : ''}
@@ -1306,10 +1311,9 @@ function treGestaoDesenhar(){
   const vis = G.lista.filter(t => !f || (f === 'rascunho' ? (t.status === 'rascunho' || G.revs.some(r => r.treinamento_id === t.id && r.status === 'rascunho')) : t.status === f));
   const atrib = t => G.atr.filter(a => a.treinamento_id === t.id).map(a => `<span class="chip mini${a.obrigatorio ? ' tem' : ''}" title="${a.obrigatorio ? 'Obrigatório' : 'Opcional'}">${esc(a.grupo_id == null ? 'Toda a equipe' : grupoPorId(a.grupo_id)?.nome || 'grupo ' + a.grupo_id)}</span>`).join(' ');
   const cont = st => G.lista.filter(t => t.status === st).length;
-  $('#main').innerHTML = `${treTopo('Gestão dos treinamentos', 'Todos os treinamentos, publicados ou não. O conteúdo muda no rascunho e só vale ao publicar; a atribuição vale na hora.',
-      `<a class="btn ghost mini" href="#/treinamentos/config/readme">${ic('doc')} README</a>
-       <a class="btn solid mini" href="#/treinamentos/novo">${ic('plus')} Novo treinamento</a>`)}
-    ${treNav('gestao')}
+  $('#main').innerHTML = `${treTopo('Configurações', '',
+      `<a class="btn solid mini" href="#/treinamentos/novo">${ic('plus')} Novo treinamento</a>`)}
+    ${treNav('config')}${treNavConfig('')}
     <div class="filtros"><div class="seg" role="group" aria-label="Situação">
       ${[['', 'Todos', G.lista.length], ['publicado', 'Publicados', cont('publicado')], ['rascunho', 'Com rascunho', null], ['arquivado', 'Arquivados', cont('arquivado')]].map(([k, l, n]) =>
         `<button class="${f === k ? 'on' : ''}" onclick="treino.gestao.filtro='${k}';treGestaoDesenhar()">${l}${n != null ? ` (${n})` : ''}</button>`).join('')}</div></div>
@@ -1338,7 +1342,7 @@ function treGestaoDesenhar(){
 function treNovo(){
   treino.ed = null; _treImp = null;
   $('#main').innerHTML = `${treTopo('Novo treinamento', 'O código sai sozinho (o seguinte ao último) — ou escolha o número, se o treinamento já tinha código fora do portal. A revisão começa na A, ao publicar.')}
-    ${treNav('gestao')}
+    ${treNav('config')}
     <div class="tre-novo">
       <div class="card"><h3>Do zero</h3>
         <div class="form-grid" style="margin-top:14px">
@@ -1869,7 +1873,7 @@ async function treEdExcluir(){
   const { data, error } = await sb.rpc('treinamento_excluir', { p_id: ed.t.id });
   if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para excluir'), true);
   treino.ed = null; treino.gestao = null; toast(`${data.codigo} excluído.`);
-  location.hash = '#/treinamentos/gestao';
+  location.hash = '#/treinamentos/config';
 }
 
 /* ---------------- importar, exportar, pré-visualizar ---------------- */
@@ -1960,7 +1964,7 @@ function treAcompDesenhar(){
   $('#main').innerHTML = `${treTopo(`${esc(t.titulo)}`, `${esc(t.codigo)} · ${t.revisao_atual ? 'Rev. ' + esc(t.revisao_atual) : 'não publicado'}. Quem tem o treinamento, pela atribuição, e quem o fez sem ter.`,
       `<a class="btn ghost mini" href="#/treinamentos/${esc(t.codigo)}/editar">${ic('pencil')} Editar</a>
        <button class="btn ghost mini" onclick="treAcompCSV()">${ic('down')} Planilha (CSV)</button>`, 'Acompanhamento')}
-    ${treNav('gestao')}
+    ${treNav('config')}
     <div class="metricas" style="margin-bottom:18px">
       <div class="metrica"><span class="rot">Obrigatório para</span><span class="val">${obr.length}</span><span class="var neutro">pessoas ativas</span></div>
       <div class="metrica"><span class="rot">Em dia</span><span class="val">${pct}%</span><span class="var ${pct === 100 ? 'sobe' : 'neutro'}">${emDia} de ${obr.length}</span></div>
@@ -1999,12 +2003,8 @@ async function treConfig(aba){
   const cfg = await treConfigCarregar();
   if (!cfg || cfg.id == null) return treFaltaBanco({ message:'treinamento_config não respondeu' });
   aba = aba === 'readme' ? 'readme' : 'geral';
-  const topo = `${treTopo('Configurações', aba === 'readme'
-      ? 'O guia que vai junto do pedido aos agentes de IA — e a quem escreve à mão. Baixe, edite aqui mesmo ou volte ao padrão do portal.'
-      : 'Quem gere os treinamentos, a nota para passar e quem assina o certificado.')}
-    ${treNav('config')}
-    <nav class="abas"><a href="#/treinamentos/config" class="${aba === 'geral' ? 'on' : ''}">Geral</a>
-      <a href="#/treinamentos/config/readme" class="${aba === 'readme' ? 'on' : ''}">README de conteúdo</a></nav>`;
+  const topo = `${treTopo('Configurações', '')}
+    ${treNav('config')}${treNavConfig(aba)}`;
   if (aba === 'readme') return treConfigReadme(topo, cfg);
   const gestores = new Set(cfg.grupos_gestores || []);
   treino.cfgGestores = new Set(gestores);

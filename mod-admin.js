@@ -22,7 +22,6 @@
 const adminP = {
   pronto:false, aba:'avisos',
   avisos:[], sel:null,
-  docs:[], docSel:null,
   sols:[], filtro:'pendentes', solAbertas:new Set(),
   ouvidoria:[], agendas:[],
   projetos:[], projSel:null, projIdioma:'en'
@@ -30,8 +29,6 @@ const adminP = {
 
 const LAYOUTS = {padrao:'Padrão', destaque:'Destaque (banda verde)', urgente:'Urgente',
                  evento:'Evento (bloco de data)', conquista:'Conquista'};
-const CAT_DOC_ADM = {institucional:'Institucional', politica:'Política', guia:'Guia',
-                     formulario:'Formulário', outro:'Outro'};
 
 /* Com onze painéis, aba não cabe mais: a Administração vira galeria —
    o componente "galeria de tiles" do design system — e cada painel tem
@@ -89,7 +86,7 @@ async function pageAdmin(sub, sub2){
 
   /* Um painel por vez: só existe um #sec-* na tela, e carregar os cinco
      juntos fazia quatro deles escreverem em contêiner inexistente. */
-  const carga = { avisos: admCarregarAvisos, documentos: admCarregarDocs,
+  const carga = { avisos: admCarregarAvisos,
                   solicitacoes: admCarregarSols, ouvidoria: admCarregarOuvidoria,
                   agendas: admCarregarAgendas };
   if (carga[k]) await carga[k]();
@@ -274,116 +271,6 @@ async function excluirAviso(id){
   toast('Aviso excluído.');
   adminP.sel = null;
   await admCarregarAvisos();
-}
-
-/* ============================================================
-   ABA 2 — DOCUMENTOS (aba "Informações" do portal)
-   ============================================================ */
-async function admCarregarDocs(){
-  const { data, error } = await sb.from('portal_documentos').select('*')
-    .order('categoria').order('ordem').order('titulo');
-  if (error){
-    $('#sec-documentos').innerHTML = `<div class="aviso-box err">Erro ao carregar os documentos:
-      ${esc(error.message)}. A migração <b>soma_v11_portal_documentos.sql</b> foi aplicada?</div>`;
-    return;
-  }
-  adminP.docs = data || [];
-  if (!adminP.docSel || !adminP.docs.find(d=>d.id===adminP.docSel))
-    adminP.docSel = adminP.docs[0]?.id || null;
-  desenhaDocs();
-}
-function desenhaDocs(){
-  $('#sec-documentos').innerHTML = `
-    <div class="aviso-box info">Os documentos aparecem na aba <b>Informações</b> do portal,
-      agrupados por categoria. Cole o link de compartilhamento do Drive. O controle fino de
-      acesso continua lá; aqui é a vitrine.</div>
-    <div class="editor">
-      <div>
-        <div class="lista">${adminP.docs.length ? adminP.docs.map(d=>`
-          <button class="item ${d.id===adminP.docSel?'on':''}" onclick="selDoc('${d.id}')">
-            <span><span class="nm">${esc(d.titulo)}</span>
-            <span class="sl">${esc(CAT_DOC_ADM[d.categoria]||d.categoria)} · ordem ${esc(d.ordem)}</span></span>
-            ${d.publicado ? '' : '<span class="off">oculto</span>'}
-          </button>`).join('')
-          : '<div class="vazio">Nenhum documento ainda.</div>'}</div>
-        <button class="btn ghost" style="width:100%;justify-content:center;margin-top:12px" onclick="novoDoc()">+ Novo documento</button>
-      </div>
-      <div class="form" id="doc-form"></div>
-    </div>`;
-  desenhaFormDoc();
-}
-function selDoc(id){ adminP.docSel = id; desenhaDocs(); }
-function desenhaFormDoc(){
-  const d = adminP.docs.find(x=>x.id===adminP.docSel);
-  const el = $('#doc-form'); if(!el) return;
-  if (!d){ el.innerHTML = '<div class="vazio">Selecione ou crie um documento.</div>'; return; }
-  el.innerHTML = `
-    <h2>${esc(d.titulo)}</h2>
-    <p class="sub">id ${esc(d.id).slice(0,8)} · atualizado ${d.atualizado_em?new Date(d.atualizado_em).toLocaleString('pt-BR'):'—'}</p>
-    <div class="fgrid">
-      <div class="fld full"><label>Título</label><input id="d-titulo" value="${esc(d.titulo)}"></div>
-      <div class="fld full"><label>Descrição (1 frase, opcional)</label>
-        <input id="d-desc" value="${esc(d.descricao||'')}" placeholder="ex.: Regras de uso dos espaços do LABBIO"></div>
-      <div class="fld full"><label>Link do Drive</label>
-        <input id="d-url" value="${esc(d.url||'')}" placeholder="https://drive.google.com/…">
-        <p class="mini">Use o link de compartilhamento ("qualquer pessoa na organização com o link", de preferência).</p></div>
-      <div class="fld"><label>Categoria</label>
-        <select id="d-cat">${Object.entries(CAT_DOC_ADM).map(([k,l])=>
-          `<option value="${k}" ${d.categoria===k?'selected':''}>${l}</option>`).join('')}</select></div>
-      <div class="fld"><label>Ordem na lista</label><input id="d-ordem" type="number" value="${esc(d.ordem)}"></div>
-      <label class="check full"><input id="d-pub" type="checkbox" ${d.publicado?'checked':''}>
-        Publicado na aba Informações</label>
-    </div>
-    <div class="acts">
-      <button class="btn solid" id="d-salvar" onclick="salvarDoc('${d.id}')">Salvar alterações</button>
-      <button class="btn perigo" onclick="excluirDoc('${d.id}')">Excluir</button>
-      ${d.url?`<a class="btn ghost" href="${esc(d.url)}" target="_blank" rel="noopener">Testar link ↗</a>`:''}
-    </div>`;
-}
-async function salvarDoc(id){
-  const v = {
-    titulo: $('#d-titulo').value.trim(),
-    descricao: $('#d-desc').value.trim() || null,
-    url: $('#d-url').value.trim(),
-    categoria: $('#d-cat').value,
-    ordem: parseInt($('#d-ordem').value, 10) || 100,
-    publicado: $('#d-pub').checked
-  };
-  if (!v.titulo){ toast('O título é obrigatório.', true); return; }
-  if (!/^https?:\/\//i.test(v.url)){ toast('O link precisa começar com http(s)://', true); return; }
-  $('#d-salvar').disabled = true;
-  try{
-    const { error } = await sb.from('portal_documentos').update(v).eq('id', id);
-    if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
-    toast('Documento salvo.');
-    await admCarregarDocs();
-  }catch(e){
-    falha(e, 'Não foi possível salvar');
-  }finally{
-    const b = $('#d-salvar'); if (b) b.disabled = false;
-  }
-}
-async function novoDoc(){
-  const titulo = prompt('Título do novo documento:');
-  if (!titulo) return;
-  const url = prompt('Link do Drive (pode ajustar depois):') || 'https://';
-  const { data, error } = await sb.from('portal_documentos')
-    .insert({ titulo, url, categoria:'outro', publicado:false,
-      ordem: 100 + adminP.docs.length * 10, criado_por: quemSouEu() })
-    .select().single();
-  if (error){ toast('Erro ao criar: ' + error.message, true); return; }
-  toast('Documento criado. Começa oculto: publique quando o link estiver certo.');
-  adminP.docSel = data.id;
-  await admCarregarDocs();
-}
-async function excluirDoc(id){
-  const d = adminP.docs.find(x=>x.id===id);
-  if (!confirm(`Excluir "${d?.titulo}" da biblioteca? O arquivo no Drive não é afetado.`)) return;
-  const { error } = await sb.from('portal_documentos').delete().eq('id', id);
-  if (error){ toast('Erro ao excluir: ' + error.message, true); return; }
-  toast('Documento excluído.');
-  adminP.docSel = null;
-  await admCarregarDocs();
 }
 
 /* ============================================================
@@ -1177,7 +1064,6 @@ registrarBusca({
   buscar: (t) => {
     if (!can()) return [];
     const itens = [
-      ...adminP.docs.map(d => ({ titulo:d.titulo, sub:'Documento · ' + (CAT_DOC_ADM[d.categoria]||''), href:'#/admin/documentos' })),
       ...adminP.avisos.map(a => ({ titulo:a.titulo, sub:'Aviso', href:'#/admin/avisos' })),
       ...adminP.projetos.map(p => ({ titulo:p.nome, sub:'Projeto do site', href:'#/admin/site' }))
     ];

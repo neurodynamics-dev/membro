@@ -20,7 +20,8 @@
    fechaModal, fmtD, ic, ibtn, confirma, falha, motivoRPC, avatarFoto,
    nomeDe, carregarModulo, registrarBusca, filtrarSimples, can,
    gruposEfetivos, gruposAcima, grupoPorId, viaDoGrupo, docGestor,
-   logoProjeto, carregarGrupos, carregarProjetosEArquivos, desenharMenu.
+   logoProjeto, POKEMON, TIPOS_POKEMON, PKM_SPRITE, pokemonDe, carregarGrupos,
+   carregarProjetosEArquivos, desenharMenu.
    ============================================================ */
 
 const projetosM = { lista:[], arquivos:[], padrao:[], erro:null, ver:'meus', status:'ativo',
@@ -153,7 +154,8 @@ async function pjPagina(p, aba){
   $('#main').innerHTML = `<div class="pj-topo">
       ${logoProjeto(p.logo_semente, 72, p.nome)}
       <div class="tx"><span class="eyebrow">Projeto · ${esc(p.codigo)}</span><h1>${esc(p.nome)}</h1>
-        ${p.descricao ? `<p class="lead">${esc(p.descricao)}</p>` : ''}</div>
+        ${p.descricao ? `<p class="lead">${esc(p.descricao)}</p>` : ''}
+        ${pkmLinhaHTML(p)}</div>
       <div class="acoes">${pjPill(p.status)}
         ${quadro ? `<a class="btn ghost mini" href="#/atividades/${esc(g.prefixo)}">${ic('quadro')} Quadro</a>` : ''}
         ${pjPodeEditar(p) ? `<button class="btn ghost mini" onclick="pjModalEditar('${p.id}')">${ic('pencil')} Editar</button>` : ''}</div>
@@ -198,7 +200,6 @@ async function pjPagina(p, aba){
 /* ---------------- novo projeto ---------------- */
 const pjCodigoDe = nome => String(nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
   .toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^[0-9]+/, '').slice(0, 16);
-const pjSemente = () => Math.random().toString(36).slice(2, 10);
 
 function pjModalNovo(){
   projetosM.novo = { semente:null, mexeuCodigo:false, equipe:new Set(), busca:'' };
@@ -208,10 +209,7 @@ function pjModalNovo(){
       <div class="fld"><label for="pn-nome">Nome</label><input id="pn-nome" placeholder="Nebula" oninput="pjNovoNome()"></div>
       <div class="fld"><label for="pn-cod">Código</label><input id="pn-cod" placeholder="NEBULA" maxlength="16"
         style="text-transform:uppercase;font-family:var(--fm)" oninput="projetosM.novo.mexeuCodigo=true;pjNovoLogo()"></div>
-      <div class="fld full"><div class="pj-logo-ed"><span id="pn-logo">${logoProjeto('?', 56)}</span>
-        <span class="tx">A logo sai do código, como os avatares do GitHub — o mesmo código, a mesma logo.
-          Não gostou? Sorteie outra.</span>
-        <button type="button" class="btn ghost mini" onclick="projetosM.novo.semente=pjSemente();pjNovoLogo()">${ic('refazer')} Outra</button></div></div>
+      <div class="fld full"><label>Pokémon</label><div id="pn-pkm"></div></div>
       <div class="fld full"><label for="pn-desc">Descrição</label><textarea id="pn-desc" rows="2" placeholder="Para que serve o projeto"></textarea></div>
       <div class="fld full"><label for="pn-sup">Supervisor</label><select id="pn-sup"><option value="">— escolha —</option>
         ${(state.membros || []).filter(m => ATIVOS_PJ.includes(m.status)).map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</select>
@@ -225,11 +223,12 @@ function pjModalNovo(){
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" id="pn-btn" onclick="pjCriar()">Criar o projeto</button></div>`, 'largo', true);
+  projetosM.novo.semente = 'pkm:' + pkmSortear();
+  pkmEdIniciar('pn-pkm');
   pjNovoLista(); $('#pn-nome').focus();
 }
 function pjNovoNome(){ if (!projetosM.novo.mexeuCodigo) $('#pn-cod').value = pjCodigoDe($('#pn-nome').value); pjNovoLogo(); }
-function pjNovoLogo(){ const n = projetosM.novo, cod = $('#pn-cod').value.trim().toUpperCase();
-  $('#pn-logo').innerHTML = logoProjeto(n.semente || cod.toLowerCase() || '?', 56, 'Logo'); }
+function pjNovoLogo(){ pkmEdDesenhar(); }
 function pjNovoLista(){
   const n = projetosM.novo, q = norm(n.busca);
   const lista = (state.membros || []).filter(m => ATIVOS_PJ.includes(m.status)
@@ -270,10 +269,81 @@ async function pjRecarregarFichas(){
   desenharMenu();
 }
 
+/* ---------------- o Pokémon ----------------
+   A escolha mora em projetosM.novo.semente ("pkm:<número>"): o mesmo
+   campo que o projeto_salvar já grava. A galeria abre por família, com
+   os estágios lado a lado, e busca por nome, número ou tipo. */
+const pkmSortear = () => POKEMON.basicos[Math.floor(Math.random() * POKEMON.basicos.length)];
+const pkmAtual = () => pokemonDe(projetosM.novo?.semente);
+function pkmEdIniciar(alvo){
+  projetosM.pkm = { alvo, aberta:false, q:'', tipo:'' };
+  pkmEdDesenhar();
+}
+function pkmEdDesenhar(){
+  const e = projetosM.pkm, el = e && $('#' + e.alvo); if (!el) return;
+  const pk = pkmAtual(), fam = POKEMON.familias[pk.familia];
+  el.innerHTML = `<div class="pkm-ed">${logoProjeto(projetosM.novo.semente, 64)}
+      <span class="tx"><b>${esc(pk.nome)}</b>#${String(pk.id).padStart(3, '0')} · ${esc(TIPOS_POKEMON[pk.tipo])}${
+        fam.estagios.length > 1 ? ` · estágio ${pk.estagio + 1} de ${fam.estagios.length}` : ''}</span>
+      <span class="acts"><button type="button" class="btn ghost mini" onclick="pkmEscolher(pkmSortear())">${ic('dado')} Sortear</button>
+        <button type="button" class="btn ghost mini" aria-expanded="${e.aberta}" onclick="projetosM.pkm.aberta=!projetosM.pkm.aberta;pkmEdDesenhar()">${e.aberta ? 'Fechar a lista' : 'Escolher'}</button></span></div>
+    ${e.aberta ? `<div class="pkm-gal">
+      <div class="pkm-gal-topo"><input type="search" id="pkm-q" placeholder="Nome ou número" value="${esc(e.q)}"
+          oninput="projetosM.pkm.q=this.value;pkmGalLista()" aria-label="Buscar Pokémon">
+        <select id="pkm-tipo" aria-label="Tipo" onchange="projetosM.pkm.tipo=this.value;pkmGalLista()">
+          <option value="">Todos os tipos</option>${Object.entries(TIPOS_POKEMON).filter(([k]) => POKEMON.familias.some(f => f.tipo === k))
+            .map(([k, l]) => `<option value="${k}" ${e.tipo === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="pkm-lista" id="pkm-lista"></div></div>` : ''}`;
+  if (e.aberta) pkmGalLista();
+}
+function pkmOpcao(id, atual){
+  const pk = POKEMON.porId.get(id);
+  return `<button type="button" class="pkm-op${id === atual ? ' on' : ''}" onclick="pkmEscolher(${id})"
+    aria-pressed="${id === atual}" title="${esc(pk.nome)}"><img src="${PKM_SPRITE(id)}" alt="" loading="lazy"
+    onerror="this.style.visibility='hidden'">${esc(pk.nome)}<span class="n">#${String(id).padStart(3, '0')}</span></button>`;
+}
+function pkmGalLista(){
+  const e = projetosM.pkm, el = $('#pkm-lista'); if (!el) return;
+  const q = norm(e.q).replace(/^#?0*/, ''), atual = pkmAtual().id;
+  const casa = id => { const pk = POKEMON.porId.get(id); return !q || norm(pk.nome).includes(q) || String(id) === q; };
+  const fams = POKEMON.familias.filter(f => (!e.tipo || f.tipo === e.tipo) && f.estagios.flat().some(casa));
+  el.innerHTML = fams.map(f => `<div class="pkm-fam t-${f.tipo}">${f.estagios.map(est =>
+      est.map(id => pkmOpcao(id, atual)).join('')).join('<span class="seta" aria-hidden="true">›</span>')}</div>`).join('')
+    || '<p class="muted small" style="padding:8px">Nenhum Pokémon com essa busca.</p>';
+}
+function pkmEscolher(id){
+  projetosM.novo.semente = 'pkm:' + id;
+  pkmEdDesenhar();
+  const f = $('#pkm-q'); if (f && projetosM.pkm.q){ f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+}
+/* A linha evolutiva, na página do projeto. Quem edita o projeto troca
+   o estágio com um clique (evoluir, ou voltar). */
+function pkmLinhaHTML(p){
+  const pk = pokemonDe(p.logo_semente), fam = POKEMON.familias[pk.familia];
+  if (fam.estagios.flat().length < 2) return '';
+  const pode = pjPodeEditar(p);
+  return `<div class="pkm-linha" aria-label="Linha evolutiva">${fam.estagios.map(est => est.map(id => {
+      const x = POKEMON.porId.get(id), on = id === pk.id;
+      const corpo = `<img src="${PKM_SPRITE(id)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">${esc(x.nome)}`;
+      return pode && !on
+        ? `<button type="button" class="pkm-op" onclick="pkmEvoluir('${p.id}', ${id})" title="${x.estagio > pk.estagio ? 'Evoluir para' : 'Voltar para'} ${esc(x.nome)}">${corpo}</button>`
+        : `<span class="pkm-op${on ? ' on' : ''}"${on ? ' aria-current="true"' : ''}>${corpo}</span>`;
+    }).join('')).join('<span class="seta muted" aria-hidden="true">›</span>')}</div>`;
+}
+async function pkmEvoluir(id, n){
+  const p = projetosM.lista.find(x => x.id === id); if (!p) return;
+  const de = pokemonDe(p.logo_semente), para = POKEMON.porId.get(n);
+  const { data, error } = await sb.rpc('projeto_salvar', { p: { id, logo_semente: 'pkm:' + n } });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível trocar o Pokémon'), true);
+  toast(`${para.estagio > de.estagio ? 'Evoluiu' : 'Voltou'}: ${de.nome} → ${para.nome}.`);
+  await carregarProjetosEArquivos();
+  pageProjetos(p.codigo);
+}
+
 /* ---------------- editar ---------------- */
 function pjModalEditar(id){
   const p = projetosM.lista.find(x => x.id === id); if (!p) return;
-  projetosM.novo = { semente: p.logo_semente };
+  projetosM.novo = { semente: 'pkm:' + pokemonDe(p.logo_semente).id };
   const eq = pjEquipe(p).map(x => x.m);
   const outros = (state.membros || []).filter(m => ATIVOS_PJ.includes(m.status) && !eq.includes(m));
   abreModal(`<h3>${esc(p.nome)}</h3>
@@ -281,10 +351,7 @@ function pjModalEditar(id){
       <div class="fld"><label for="pe-nome">Nome</label><input id="pe-nome" value="${esc(p.nome)}"></div>
       <div class="fld"><label for="pe-st">Status</label><select id="pe-st">${Object.entries(STATUS_PROJETO).map(([k, v]) =>
         `<option value="${k}" ${p.status === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></div>
-      <div class="fld full"><div class="pj-logo-ed"><span id="pe-logo">${logoProjeto(p.logo_semente, 56, p.nome)}</span>
-        <span class="tx">O código continua ${esc(p.codigo)}; só a logo muda.</span>
-        <button type="button" class="btn ghost mini" onclick="projetosM.novo.semente=pjSemente();$('#pe-logo').innerHTML=logoProjeto(projetosM.novo.semente,56)">${ic('refazer')} Outra</button>
-        <button type="button" class="btn ghost mini" onclick="projetosM.novo.semente='${esc(p.codigo.toLowerCase())}';$('#pe-logo').innerHTML=logoProjeto(projetosM.novo.semente,56)">A original</button></div></div>
+      <div class="fld full"><label>Pokémon</label><div id="pe-pkm"></div></div>
       <div class="fld full"><label for="pe-desc">Descrição</label><textarea id="pe-desc" rows="3">${esc(p.descricao || '')}</textarea></div>
       <div class="fld full"><label for="pe-sup">Supervisor</label><select id="pe-sup" ${docGestor() ? '' : 'disabled'}>
         <option value="">— sem supervisor —</option>
@@ -294,6 +361,7 @@ function pjModalEditar(id){
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" id="pe-btn" onclick="pjSalvar('${p.id}')">Salvar</button></div>`, 'largo');
+  pkmEdIniciar('pe-pkm');
 }
 async function pjSalvar(id){
   const p = projetosM.lista.find(x => x.id === id);

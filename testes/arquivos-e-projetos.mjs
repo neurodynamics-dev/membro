@@ -426,15 +426,17 @@ console.log('\nProjetos');
   confere('"Meus" começa vazio para quem não está em equipe nenhuma, e aponta para todos',
     /Você não está na equipe de nenhum projeto/.test(await p.textContent('.vazio')));
   await p.click('.vazio button:has-text("Ver todos")'); await p.waitForTimeout(300);
-  confere('em "Todos", o NEBULA, com a logo gerada e o progresso do padrão',
-    await p.locator('.pj-card').count() === 1 && await p.locator('.pj-card svg.logo-pj').count() === 1
+  confere('em "Todos", o NEBULA, com o Pokémon e o progresso do padrão',
+    await p.locator('.pj-card').count() === 1 && await p.locator('.pj-card .logo-pj.pkm').count() === 1
     && /1 de 3/.test(await p.textContent('.pj-card .pj-prog')));
-  const logos = await p.evaluate(() => {
-    const limpa = s => s.replace(/lgp\d+/g, 'X');
-    return { igual: limpa(logoProjeto('nebula', 40)) === limpa(logoProjeto('nebula', 40)),
-             difere: limpa(logoProjeto('nebula', 40)) !== limpa(logoProjeto('orion', 40)) };
-  });
-  confere('a logo: a mesma semente dá a mesma logo; outra semente, outra', logos.igual && logos.difere, logos);
+  const logos = await p.evaluate(() => ({
+    igual: logoProjeto('nebula', 40) === logoProjeto('nebula', 40),
+    escolhido: pokemonDaSemente('pkm:6') === 6 && /Charizard/.test(logoProjeto('pkm:6', 40)),
+    antigo: POKEMON.basicos.includes(pokemonDaSemente('orion')),
+    catalogo: POKEMON.porId.size > 300 && POKEMON.familias.every(f => f.estagios.every(e => e.length))
+  }));
+  confere('o Pokémon: a mesma semente dá o mesmo; "pkm:6" é o Charizard; semente antiga sorteia um primeiro estágio',
+    logos.igual && logos.escolhido && logos.antigo && logos.catalogo, logos);
 
   await ir(p, '#/projetos/NEBULA');
   confere('a página do projeto: nome, código, supervisor marcado na equipe',
@@ -470,15 +472,21 @@ console.log('\nProjetos');
   await p.waitForSelector('#pn-nome');
   await p.fill('#pn-nome', 'Órion II');
   confere('o código sai do nome, sem acento nem espaço', await p.inputValue('#pn-cod') === 'ORIONII');
-  const antes = await p.innerHTML('#pn-logo');
-  await p.click('#modal button:has-text("Outra")'); await p.waitForTimeout(100);
-  confere('"Outra" sorteia outra logo', (await p.innerHTML('#pn-logo')).replace(/lgp\d+/g, '') !== antes.replace(/lgp\d+/g, ''));
+  await p.click('#pn-pkm button:has-text("Escolher")'); await p.waitForSelector('#pkm-q');
+  await p.fill('#pkm-q', 'charm'); await p.waitForTimeout(150);
+  const fam = await p.$$eval('#pkm-lista .pkm-op', b => b.map(x => x.textContent.replace(/#\d+/, '').trim()));
+  confere('a galeria acha pelo nome e mostra a família inteira', fam.join() === 'Charmander,Charmeleon,Charizard', fam);
+  await p.click('#pkm-lista .pkm-op:has-text("Charmeleon")'); await p.waitForTimeout(100);
+  confere('escolher põe o Pokémon no projeto', /Charmeleon/.test(await p.textContent('#pn-pkm .pkm-ed b'))
+    && await p.evaluate(() => projetosM.novo.semente) === 'pkm:5');
   await p.selectOption('#pn-sup', '17');
   await p.check('#pn-lista .gr-cand:has-text("Ana Figueiredo") input');
   await p.click('#pn-btn'); await p.waitForTimeout(1500);
   const pj = await rpcs(p, 'projeto_salvar');
-  confere('criar manda código, supervisor, equipe e a semente sorteada',
-    pj.length === 1 && pj[0].codigo === 'ORIONII' && pj[0].supervisor === 17 && pj[0].equipe.includes(4) && !!pj[0].logo_semente, pj);
+  confere('criar manda código, supervisor, equipe e o Pokémon',
+    pj.length === 1 && pj[0].codigo === 'ORIONII' && pj[0].supervisor === 17 && pj[0].equipe.includes(4) && pj[0].logo_semente === 'pkm:5', pj);
+  await p.click('.pkm-linha button:has-text("Charizard")'); await p.waitForTimeout(900);
+  confere('a linha evolutiva evolui o Pokémon', (await rpcs(p, 'projeto_salvar')).at(-1).logo_semente === 'pkm:6');
   confere('e abre o projeto novo, com a supervisora na equipe',
     await p.evaluate(() => location.hash) === '#/projetos/ORIONII' && /Carla Mendonça/.test(await p.textContent('.pj-membro:has(.pj-sup)')));
   const menuPj2 = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec[data-r="projetos"] .lt-filho .nm')].map(x => x.textContent.trim()));

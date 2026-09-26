@@ -247,9 +247,13 @@ exemplar. A revisão não entra no código de propósito — `NRO-PES-007` conti
 sendo o mesmo procedimento na Rev. A e na Rev. F, e é esse endereço que as
 relações, os templates e os links apontam.
 
-A logo de um projeto também é identidade: sai de uma semente
-(`projetos.logo_semente`) por `logoProjeto()`, na casca, e a mesma semente dá
-a mesma logo em toda tela — no cartão, no menu e na página do projeto.
+O Pokémon de um projeto também é identidade: é escolhido na criação, mora em
+`projetos.logo_semente` como `pkm:<número da Pokédex>` e sai por
+`logoProjeto()`, na casca, igual em toda tela (no cartão, no menu e na página
+do projeto). A arte vem do repositório público da PokeAPI. A linha evolutiva
+aparece na página do projeto, e quem edita o projeto evolui o Pokémon com um
+clique. Projeto com semente antiga, de texto, ganha um Pokémon sorteado pela
+semente, sempre o mesmo, até alguém escolher.
 
 ### Um fato, um cartão
 
@@ -280,7 +284,8 @@ O sinal de prioridade é um **brilho no topo**, não uma barra na lateral: barra
 lateral come a largura de uma coluna que já tem 230px, e some quando a coluna
 estreita. Sinalizado troca a cor do brilho para âmbar — "olhe para mim" é o que
 um brilho quer dizer — e o ponto de prioridade continua ali, então nada se
-perde.
+perde. Na coluna Concluída o brilho sai e fica só o ponto: trabalho entregue
+não pede atenção.
 
 ### Quadro reservado
 

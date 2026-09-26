@@ -487,6 +487,8 @@ body.lt-animando footer#ft{transition:margin-left .22s var(--lt-ease)}
              0 3px 5px rgba(var(--sombra-rgb),calc(.4 * var(--sombra-k))),
              0 26px 46px -14px rgba(var(--sombra-rgb),calc(.85 * var(--sombra-k)))}
 .kb-card.sinalizada{border-color:rgba(var(--warn-rgb),.32)}
+/* concluída: o brilho sai, fica o ponto de prioridade */
+.kb-card.concluida::before{display:none}
 /* no claro, o cartão é papel branco sobre a coluna — o relevo é a sombra */
 [data-tema="claro"] .kb-card{background:#FFFFFF}
 
@@ -1083,27 +1085,6 @@ a.fer:hover .go{color:var(--syn-tx)}
 .org-sec h4{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.2em;
   text-transform:uppercase;color:var(--dim);margin-bottom:12px}
 
-/* ============ INFORMAÇÕES ============ */
-.doc-sec{margin-bottom:26px}
-.doc-sec h4{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:10px}
-.doc-sec h4::before{content:'';width:7px;height:7px;background:var(--syn)}
-.doc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-@media (max-width:820px){.doc-grid{grid-template-columns:1fr}}
-a.doc{display:flex;gap:14px;align-items:flex-start;border:1px solid var(--line);
-  border-radius:14px;padding:16px 18px;background:var(--card);
-  transition:border-color .2s, transform .2s}
-a.doc:hover{border-color:var(--line2);transform:translateY(-2px)}
-a.doc .ic{flex:none;width:38px;height:38px;border:1px solid var(--line2);border-radius:10px;
-  display:flex;align-items:center;justify-content:center;color:var(--teal)}
-a.doc .ic svg{width:18px;height:18px}
-a.doc .tx{min-width:0;flex:1}
-a.doc .tt{font-family:var(--fd);font-weight:600;font-size:14.5px}
-a.doc .ds{font-size:12.5px;color:var(--muted);margin-top:2px}
-a.doc .go{font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--dim);margin-top:8px;display:inline-block}
-a.doc:hover .go{color:var(--syn-tx)}
-
 /* ============ SERVIÇOS ============ */
 .srv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media (max-width:920px){.srv-grid{grid-template-columns:repeat(2,1fr)}}
@@ -1292,6 +1273,10 @@ footer#ft{border-top:1px solid var(--line);margin-top:clamp(60px,8vh,100px);
 /* utilitárias que o código portado usa */
 .small{font-size:12px} .muted{color:var(--muted)} .dim{color:var(--dim)}
 .chip.mini{padding:2px 8px;font-size:11px;border-radius:14px}
+a.chip{text-decoration:none}
+.chip.herdado{border-style:dashed;color:var(--dim)}
+.ficha-grupos{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+dd.ficha-grupos{margin-top:2px}
 .topo-gestao{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:26px 0 22px}
 .topo-gestao .tx{flex:1;min-width:240px}
 .topo-gestao h1{font-size:clamp(24px,3.4vw,34px);font-weight:600;line-height:1.1;margin:10px 0 6px}
@@ -1454,6 +1439,48 @@ button.pub-row.on{border-color:var(--syn-borda);background:rgba(var(--syn-rgb),.
    Cada projeto é uma equipe (um grupo dentro de NRO_PROJECTS) e um
    rol de arquivos. A logo vem de logoProjeto(), na casca. */
 .logo-pj{display:block;flex:none}
+/* o Pokémon do projeto: a arte sobre um brilho da cor do tipo */
+.logo-pj.pkm{--pk:var(--cinza-rgb);width:var(--px);height:var(--px);border-radius:24%;display:inline-grid;
+  place-items:center;position:relative;overflow:hidden;vertical-align:middle;
+  background:radial-gradient(circle at 50% 62%,rgba(var(--pk),.34),rgba(var(--pk),.06) 72%),var(--panel);
+  border:1px solid rgba(var(--pk),.4)}
+.logo-pj.pkm img{width:112%;height:112%;max-width:none;object-fit:contain;
+  filter:drop-shadow(0 2px 3px rgba(var(--sombra-rgb),calc(.45 * var(--sombra-k))))}
+.logo-pj.pkm.mini{border-radius:30%}
+.logo-pj.pkm.mini img{image-rendering:pixelated;width:150%;height:150%}
+.logo-pj.pkm.sem-arte::after{content:attr(data-ini);font-family:var(--fd);font-weight:700;
+  font-size:calc(var(--px) * .36);color:rgb(var(--pk))}
+.t-fogo,.t-lutador{--pk:var(--bad-rgb)} .t-agua,.t-voador{--pk:var(--info-rgb)}
+.t-planta,.t-inseto{--pk:var(--ok-rgb)} .t-eletrico{--pk:var(--syn-rgb)}
+.t-gelo,.t-dragao{--pk:var(--teal-rgb)} .t-veneno,.t-psiquico,.t-fantasma,.t-fada{--pk:var(--roxo-rgb)}
+.t-terra,.t-pedra{--pk:var(--warn-rgb)} .t-normal,.t-sombrio,.t-aco{--pk:var(--cinza-rgb)}
+/* a escolha: a galeria por família, com os estágios lado a lado */
+.pkm-ed{display:flex;align-items:center;gap:14px;padding:10px;border:1px solid var(--line2);
+  border-radius:14px;background:rgba(var(--tom),.02);flex-wrap:wrap}
+.pkm-ed .tx{flex:1;min-width:160px;font-size:12.5px;color:var(--muted);line-height:1.45}
+.pkm-ed .tx b{display:block;font-family:var(--fd);font-size:15px;color:var(--ink)}
+.pkm-ed .acts{margin:0;gap:8px}
+.pkm-gal{margin-top:10px;border:1px solid var(--line2);border-radius:14px;padding:10px}
+.pkm-gal-topo{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.pkm-gal-topo input{flex:1;min-width:180px}
+.pkm-gal-topo select{width:auto}
+.pkm-lista{display:flex;flex-wrap:wrap;gap:6px;max-height:320px;overflow-y:auto;padding-right:4px;align-content:flex-start}
+.pkm-fam{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:3px;border-radius:12px;
+  border:1px solid var(--line);background:rgba(var(--pk),.04)}
+.pkm-fam .seta{color:var(--dim);font-size:12px;margin:0 2px}
+.pkm-op{display:inline-flex;flex-direction:column;align-items:center;gap:1px;width:66px;padding:4px 2px;
+  border:1px solid transparent;border-radius:10px;font-size:10.5px;color:var(--muted);line-height:1.2;text-align:center}
+.pkm-op:hover{border-color:var(--line2);color:var(--ink)}
+.pkm-op.on{border-color:var(--syn-borda);background:rgba(var(--syn-rgb),.08);color:var(--ink)}
+.pkm-op img{width:64px;height:64px;margin:-8px -8px -6px;image-rendering:pixelated;object-fit:contain;max-width:none}
+.pkm-op .n{font-family:var(--fm);font-size:9px;color:var(--dim)}
+/* a linha evolutiva, na página do projeto */
+.pkm-linha{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pkm-linha .pkm-op{width:auto;flex-direction:row;gap:6px;padding:3px 9px 3px 3px;border-color:var(--line)}
+.pkm-linha .pkm-op img{width:44px;height:44px;margin:-8px -6px}
+.pkm-linha .pkm-op.on{border-color:var(--syn-borda)}
+.pkm-linha button.pkm-op{cursor:pointer}
+.pkm-linha span.pkm-op{cursor:default}
 .pj-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
 .pj-card{display:flex;flex-direction:column;gap:14px;text-align:left;border:1px solid var(--line);
   border-radius:var(--r);background:var(--card);padding:20px;color:var(--ink);
@@ -1855,12 +1882,41 @@ a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
    foram re-vestidas: fundo branco vira vidro sobre o Void, verde de
    ação vira Synapse, e a sombra vira borda. */
 
-/* controle segmentado — suficiente / insuficiente no apontamento */
+/* controle segmentado — os filtros e as escolhas de uma tela.
+   Em <button>; o item ligado é Synapse. */
 .seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden;
-  background:rgba(var(--tom),.03)}
-.seg button{padding:6px 12px;font-size:11.5px;font-weight:600;color:var(--dim);
-  display:inline-flex;align-items:center;gap:6px;transition:background .15s,color .15s}
-.seg button:hover{color:var(--ink);background:rgba(var(--tom),.05)}
+  background:rgba(var(--tom),.03);max-width:100%;flex-wrap:wrap}
+.seg button,.seg a{padding:6px 12px;font-size:11.5px;font-weight:600;color:var(--dim);
+  display:inline-flex;align-items:center;gap:6px;transition:background .15s,color .15s;
+  text-decoration:none;white-space:nowrap}
+.seg button:hover,.seg a:hover{color:var(--ink);background:rgba(var(--tom),.05)}
+.seg a.on,.seg a.on:hover{background:var(--syn);color:var(--deep)}
+
+/* navegação de nível 1 — as seções de um espaço: o contêiner de vidro
+   e a pílula clara no item atual. O nível 2 são as .abas, logo abaixo. */
+.nav1{display:flex;flex-wrap:wrap;gap:2px;margin:0 0 20px;padding:4px;border:1px solid var(--line);
+  border-radius:13px;width:fit-content;max-width:100%;background:var(--card)}
+.nav1 a,.nav1 button{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);
+  padding:6px 13px;border-radius:9px;white-space:nowrap;text-decoration:none;
+  transition:color .15s,background .15s}
+.nav1 a:hover,.nav1 button:hover{color:var(--ink);background:rgba(var(--tom),.05)}
+.nav1 a.on,.nav1 button.on{color:var(--ink);background:rgba(var(--tom),.09);font-weight:600}
+.nav1 .n,.abas .n{font-family:var(--fm);font-size:10px;line-height:16px;color:var(--dim);
+  border:1px solid var(--line2);border-radius:999px;padding:0 6px;margin-left:2px;font-weight:500}
+.nav1 .n.sua,.abas .n.sua{color:var(--deep);background:var(--syn);border-color:var(--syn-borda)}
+@media (max-width:640px){.nav1{width:100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .nav1::-webkit-scrollbar{display:none}}
+
+/* dica: o ícone de informação e o balão (um só, posicionado pela casca) */
+.dica{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
+  border-radius:50%;color:var(--dim);vertical-align:middle;margin-left:4px;flex:none;
+  transition:color .15s,background .15s}
+.dica:hover,.dica:focus-visible{color:var(--ink);background:rgba(var(--tom),.06)}
+.dica .ic{width:15px;height:15px}
+#dica-pop{position:fixed;z-index:1200;background:var(--panel);color:var(--muted);
+  border:1px solid var(--line2);border-radius:10px;padding:9px 12px;font-size:12.5px;
+  line-height:1.55;box-shadow:0 14px 34px -12px rgba(var(--sombra-rgb),calc(.7 * var(--sombra-k)));
+  pointer-events:none;white-space:pre-line}
 .seg button.on-ok{background:rgba(var(--ok-rgb),.14);color:var(--ok)}
 .seg button.on-bad{background:rgba(var(--bad-rgb),.14);color:var(--bad)}
 
@@ -3309,12 +3365,83 @@ const ICONS = {
   evento:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="m12 12.3 1.15 2.3 2.5.37-1.82 1.77.43 2.5L12 18.07l-2.26 1.17.43-2.5-1.82-1.77 2.5-.37z"/>',
   escrever:'<path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V7.5z"/><path d="M14 3v4.5h4.5"/><path d="m9 16.5 4.8-4.8 1.6 1.6-4.8 4.8H9z"/>',
   olho_fechado:'<path d="M3 3l18 18"/><path d="M10.6 5.6A10 10 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.2 3.9M6.4 7.4A16.6 16.6 0 0 0 2.5 12S6 18.5 12 18.5a9.6 9.6 0 0 0 4.3-1"/><path d="M9.9 10a3 3 0 0 0 4.1 4.2"/>',
-  dado:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.8" cy="8.8" r="1.1"/><circle cx="15.2" cy="15.2" r="1.1"/><circle cx="12" cy="12" r="1.1"/><circle cx="15.2" cy="8.8" r="1.1"/><circle cx="8.8" cy="15.2" r="1.1"/>'
+  dado:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="8.8" cy="8.8" r="1.1"/><circle cx="15.2" cy="15.2" r="1.1"/><circle cx="12" cy="12" r="1.1"/><circle cx="15.2" cy="8.8" r="1.1"/><circle cx="8.8" cy="15.2" r="1.1"/>',
+  /* revisão 28: a dica, a agenda e o início */
+  info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.8v.2"/>',
+  relogio:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  local:'<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  video:'<rect x="3" y="6.5" width="12.5" height="11" rx="2"/><path d="m15.5 10.5 5.5-3v9l-5.5-3"/>',
+  sino:'<path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  repetir:'<path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11V9.5A3.5 3.5 0 0 1 7 6h13.5"/><path d="M7 21.5 3.5 18 7 14.5"/><path d="M20.5 13v1.5A3.5 3.5 0 0 1 17 18H3.5"/>',
+  texto:'<path d="M4 6h16M4 10h16M4 14h10M4 18h7"/>',
+  link:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/>',
+  trofeu:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 5.5H5a2.5 2.5 0 0 0 3 3.6M16 5.5h3a2.5 2.5 0 0 1-3 3.6"/><path d="M12 13v3.5M8.5 20h7M9.5 20l.5-3.5h4l.5 3.5"/>',
+  fogo:'<path d="M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-3.4 2.4-5.2 3.6-7.8.4 1.6 1.2 2.6 2.4 3.2C11.6 7 13 4.6 15 3c-.3 2.8 1 4.6 2.2 6.2 1 1.4 1.3 2.8 1.3 4.2 0 4.4-2.6 7.6-6.5 7.6z"/><path d="M12 21c-1.5 0-2.7-1.2-2.7-2.8 0-1.7 1.4-2.5 2.7-4.2 1.3 1.7 2.7 2.5 2.7 4.2 0 1.6-1.2 2.8-2.7 2.8z"/>',
+  historico:'<path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3.5 4v4h4"/><path d="M12 8v4.3l2.8 1.7"/>',
+  qr:'<rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18zM18 14h2.5M14 18v2.5"/>',
+  mais_zoom:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5M8.5 11h5M11 8.5v5"/>',
+  menos_zoom:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5M8.5 11h5"/>',
+  enquadrar:'<path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/>'
 };
 const ic = (n, cls) => `<svg class="ic${cls?' '+cls:''}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;
 const ibtn = (icone, titulo, onclick, extra) =>
   `<button class="icon-btn ${extra||''}" title="${titulo}" aria-label="${titulo}" onclick="${onclick}">${ic(icone)}</button>`;
+
+/* ---------------- navegação dentro de um espaço ----------------
+   Uma regra só, em todo o portal (PADROES § 1):
+     nível 1, as seções do espaço (cada uma com endereço): o seletor
+       segmentado, a pílula clara no item atual (.nav1);
+     nível 2, os recortes de uma seção: abas sublinhadas (.abas);
+     filtro, que não muda o endereço: o controle segmentado (.seg).
+   Itens: [chave, rótulo, href, extra] — extra é HTML depois do rótulo
+   (uma contagem, por exemplo). */
+function navNivel1(itens, atual, rotulo){
+  return `<nav class="nav1" aria-label="${esc(rotulo || 'Seções')}">${itens.map(([k, l, href, extra]) =>
+    `<a href="${href}" class="${k === atual ? 'on' : ''}"${k === atual ? ' aria-current="page"' : ''}>${l}${extra || ''}</a>`).join('')}</nav>`;
+}
+function navNivel2(itens, atual, rotulo){
+  return `<nav class="abas" aria-label="${esc(rotulo || 'Recorte')}">${itens.map(([k, l, href, extra]) =>
+    `<a href="${href}" class="${k === atual ? 'on' : ''}"${k === atual ? ' aria-current="page"' : ''}>${l}${extra || ''}</a>`).join('')}</nav>`;
+}
+
+/* ---------------- dica ----------------
+   A instrução que precisa existir mora num ícone de informação, não no
+   corpo da tela. O texto abre num balão só (#dica-pop), posicionado
+   pela casca para nunca sair da janela. */
+function dica(texto, rotulo){
+  return `<button type="button" class="dica" aria-label="${esc(rotulo || 'Informação')}"
+    data-dica="${esc(texto)}">${ic('info')}</button>`;
+}
+const _dica = { alvo:null, fixo:false };
+function mostrarDica(bt, fixo){
+  let pop = document.getElementById('dica-pop');
+  if (!pop){ pop = document.createElement('div'); pop.id = 'dica-pop'; pop.setAttribute('role', 'tooltip'); document.body.appendChild(pop); }
+  pop.textContent = bt.dataset.dica || '';
+  pop.hidden = false; _dica.alvo = bt; _dica.fixo = !!fixo;
+  bt.setAttribute('aria-describedby', 'dica-pop');
+  const r = bt.getBoundingClientRect(), w = Math.min(300, innerWidth - 32);
+  pop.style.maxWidth = w + 'px';
+  const pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let x = r.left + r.width / 2 - pw / 2; x = Math.max(16, Math.min(x, innerWidth - pw - 16));
+  let y = r.bottom + 8; if (y + ph > innerHeight - 12) y = Math.max(12, r.top - ph - 8);
+  pop.style.left = x + 'px'; pop.style.top = y + 'px';
+}
+function esconderDica(){
+  const pop = document.getElementById('dica-pop'); if (pop) pop.hidden = true;
+  if (_dica.alvo) _dica.alvo.removeAttribute('aria-describedby');
+  _dica.alvo = null; _dica.fixo = false;
+}
+document.addEventListener('mouseover', e => { const b = e.target.closest?.('.dica'); if (b && !_dica.fixo) mostrarDica(b); });
+document.addEventListener('mouseout',  e => { const b = e.target.closest?.('.dica'); if (b && !_dica.fixo && !b.contains(e.relatedTarget)) esconderDica(); });
+document.addEventListener('focusin',   e => { const b = e.target.closest?.('.dica'); if (b) mostrarDica(b); });
+document.addEventListener('focusout',  e => { if (e.target.closest?.('.dica')) esconderDica(); });
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('.dica');
+  if (b){ e.preventDefault(); e.stopPropagation(); (_dica.alvo === b && _dica.fixo) ? esconderDica() : mostrarDica(b, true); return; }
+  if (_dica.fixo) esconderDica();
+}, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && _dica.alvo) esconderDica(); });
 
 
 /* As categorias do catálogo de acessos: a ficha e o catálogo usam as duas. */
@@ -3377,7 +3504,6 @@ function viaDoGrupo(m, nome){
    mora lá). A galeria, as rotas e o menu leem daqui. */
 const PAINEIS = [
   ['avisos',       'Quadro de avisos',    'Portal',   'O banner rotativo da home, com layout e ordem', can],
-  ['documentos',   'Documentos',          'Portal',   'A biblioteca de estatuto, políticas, guias e formulários', can],
   ['solicitacoes', 'Solicitações',        'Portal',   'Triagem dos pedidos ao Depto. de Pessoal', can],
   ['ouvidoria',    'Ouvidoria',           'Portal',   'As mensagens anônimas, para ler e tratar', can],
   ['agendas',      'Agendas',             'Portal',   'Quem conectou o Google Agenda e como está a sincronização', can],
@@ -3529,7 +3655,6 @@ function acoesDaCasca(){
     ['Atividades', 'O quadro do seu grupo', '#/atividades'],
     ['Equipe', 'Organograma e fichas', '#/equipe'],
     ['Apontamento semanal', 'Avaliar assiduidade e entregas do seu grupo', '#/equipe/apontamento'],
-    ['Informações', 'Documentos e políticas', '#/informacoes'],
     ['Serviços', 'Pedidos ao Depto. de Pessoal', '#/servicos'],
     ['Solicitar acesso', 'Documento, sistema ou local', '#/servicos/acesso'],
     ['Pedir afastamento', 'Afastamento temporário', '#/servicos/afastamento'],
@@ -3554,7 +3679,7 @@ function acoesDaCasca(){
     ['Configurações de arquivos', 'Grupo revisor de cada série, emissores, padrão de projeto', '#/arquivos/config']);
   if (gereTreinamentos()) a.push(
     ['Novo treinamento', 'Do zero, ou a partir do texto de um agente de IA', '#/treinamentos/novo'],
-    ['Gestão de treinamentos', 'Rascunhos, publicados, atribuição e acompanhamento', '#/treinamentos/gestao'],
+    ['Configurações dos treinamentos', 'Rascunhos, publicados, atribuição e acompanhamento', '#/treinamentos/config'],
     ['README dos treinamentos', 'O guia de conteúdo que vai junto do pedido aos agentes de IA', '#/treinamentos/config/readme']);
   if (podeStudio()) a.push(
     ['Studio', 'O quadro das publicações: ideias, produção, aprovação', '#/studio'],
@@ -3792,7 +3917,6 @@ const ROTAS = {
   agenda:      { desenha:'pageAgenda' },
   atividades:  { desenha:'pageAtividades', modulo:'atividades' },
   equipe:      { desenha:'pageEquipe' },   /* carrega mod-gestao por dentro, conforme a aba */
-  informacoes: { desenha:'pageInformacoes' },
   servicos:    { desenha:'pageServicos' },
   okrs:        { desenha:'pageOkrs', modulo:'okrs' },
   projetos:    { desenha:'pageProjetos', modulo:'projetos' },
@@ -3821,7 +3945,9 @@ const ALIAS = {
   auditoria:   ()    => ['admin', 'auditoria'],
   /* Meus pedidos virou subitem de Serviços (v24): o acompanhamento do
      que se pediu mora ao lado de onde se pede */
-  pedidos:     ()    => ['servicos', 'pedidos']
+  pedidos:     ()    => ['servicos', 'pedidos'],
+  /* Informações saiu na revisão 28: Arquivos já tem os documentos */
+  informacoes: ()    => ['arquivos', null]
 };
 
 function route(){
@@ -3950,11 +4076,7 @@ function arvoreDoMenu(){
       { sub:'', rot:'Para você', tambem:'^nro-tre-\\d+$' },
       { sub:'todos', rot:'Todos os treinamentos' },
       { sub:'certificados', rot:'Meus certificados', tambem:'^certificado$' },
-      ...(gereTreinamentos() ? [{ sep:true }, { sub:'gestao', rot:'Gestão', tambem:'^novo$' },
-        { sub:'config', rot:'Configurações' }] : [])] },
-    { r:'informacoes', rot:'Informações', ic:'livro', filhos: [
-      { sub:'', rot:'Todos os documentos' },
-      ...Object.entries(CAT_DOC).map(([sub, c]) => ({ sub, rot:c.l }))] },
+      ...(gereTreinamentos() ? [{ sep:true }, { sub:'config', rot:'Configurações', tambem:'^(novo|gestao)$' }] : [])] },
     /* Meus pedidos mora aqui desde a v24: o décimo primeiro espaço não
        cabia, e o acompanhamento do que se pediu é parte de pedir. O
        que o SOMA faz sozinho, sem pedido a ninguém — a declaração, o
@@ -4066,62 +4188,183 @@ function carregarTreinamentoConfig(){
 }
 const gereTreinamentos = () => can() || estouEmAlgum(state.treCfg?.grupos_gestores);
 
-/* ---------------- a logo de um projeto ----------------
-   Como os avatares do GitHub: uma grade 5×5 espelhada, sorteada de uma
-   semente — a mesma semente dá a mesma logo em qualquer tela, e trocar
-   a semente troca a logo. No lugar dos quadradinhos, a marca: o
-   quadrado de cantos redondos do símbolo, um degradê da paleta e um
-   traço grosso e contínuo ligando os pontos vizinhos, como sinapses.
-   Ponto solto fica maior (um neurônio); junção fica menor. */
-const LOGO_PALETAS = [
-  ['#CEDC00', '#7FA81F', '#050807'],   /* Synapse, como o ícone da marca */
-  ['#2DD4BF', '#0B7D6E', '#050807'],   /* Ion → Soma */
-  ['#4ADE97', '#0B7D6E', '#050807'],   /* Vital → Soma */
-  ['#7FA7F2', '#4B6FD6', '#050807'],   /* Plasma */
-  ['#A78BFA', '#6E56CF', '#050807'],   /* Dendrito */
-  ['#00594F', '#00352F', '#CEDC00'],   /* Axon → Cortex, traço Synapse */
-  ['#0B7D6E', '#00352F', '#2DD4BF']    /* Soma → Cortex, traço Ion */
-];
-let _logoN = 0;
-function logoProjeto(semente, px, rotulo){
+/* ---------------- o Pokémon de cada projeto ----------------
+   Cada projeto tem um Pokémon, escolhido na criação. A lista é por
+   família (a linha evolutiva): "tipo:n Nome>n Nome/n Nome", em que ">"
+   separa os estágios e "/" as formas de um mesmo estágio (a Eevee tem
+   oito). O número é o da Pokédex nacional; a arte vem do repositório
+   público da PokeAPI. O tipo dá a cor do fundo.
+   O Pokémon mora em projetos.logo_semente como "pkm:<número>". Projeto
+   de antes, com semente de texto, ganha um Pokémon sorteado pela
+   semente, sempre o mesmo, até alguém escolher. */
+const POKEMON_FAMILIAS = `
+planta:1 Bulbasaur>2 Ivysaur>3 Venusaur
+fogo:4 Charmander>5 Charmeleon>6 Charizard
+agua:7 Squirtle>8 Wartortle>9 Blastoise
+inseto:10 Caterpie>11 Metapod>12 Butterfree
+inseto:13 Weedle>14 Kakuna>15 Beedrill
+voador:16 Pidgey>17 Pidgeotto>18 Pidgeot
+normal:19 Rattata>20 Raticate
+voador:21 Spearow>22 Fearow
+veneno:23 Ekans>24 Arbok
+eletrico:172 Pichu>25 Pikachu>26 Raichu
+terra:27 Sandshrew>28 Sandslash
+veneno:29 Nidoran♀>30 Nidorina>31 Nidoqueen
+veneno:32 Nidoran♂>33 Nidorino>34 Nidoking
+fada:173 Cleffa>35 Clefairy>36 Clefable
+fogo:37 Vulpix>38 Ninetales
+fada:174 Igglybuff>39 Jigglypuff>40 Wigglytuff
+veneno:41 Zubat>42 Golbat>169 Crobat
+planta:43 Oddish>44 Gloom>45 Vileplume/182 Bellossom
+inseto:46 Paras>47 Parasect
+inseto:48 Venonat>49 Venomoth
+terra:50 Diglett>51 Dugtrio
+normal:52 Meowth>53 Persian
+agua:54 Psyduck>55 Golduck
+lutador:56 Mankey>57 Primeape>979 Annihilape
+fogo:58 Growlithe>59 Arcanine
+agua:60 Poliwag>61 Poliwhirl>62 Poliwrath/186 Politoed
+psiquico:63 Abra>64 Kadabra>65 Alakazam
+lutador:66 Machop>67 Machoke>68 Machamp
+planta:69 Bellsprout>70 Weepinbell>71 Victreebel
+agua:72 Tentacool>73 Tentacruel
+pedra:74 Geodude>75 Graveler>76 Golem
+fogo:77 Ponyta>78 Rapidash
+agua:79 Slowpoke>80 Slowbro/199 Slowking
+eletrico:81 Magnemite>82 Magneton>462 Magnezone
+normal:83 Farfetch'd
+normal:84 Doduo>85 Dodrio
+agua:86 Seel>87 Dewgong
+veneno:88 Grimer>89 Muk
+agua:90 Shellder>91 Cloyster
+fantasma:92 Gastly>93 Haunter>94 Gengar
+pedra:95 Onix>208 Steelix
+psiquico:96 Drowzee>97 Hypno
+agua:98 Krabby>99 Kingler
+eletrico:100 Voltorb>101 Electrode
+planta:102 Exeggcute>103 Exeggutor
+terra:104 Cubone>105 Marowak
+lutador:236 Tyrogue>106 Hitmonlee/107 Hitmonchan/237 Hitmontop
+normal:108 Lickitung>463 Lickilicky
+veneno:109 Koffing>110 Weezing
+terra:111 Rhyhorn>112 Rhydon>464 Rhyperior
+normal:440 Happiny>113 Chansey>242 Blissey
+planta:114 Tangela>465 Tangrowth
+normal:115 Kangaskhan
+agua:116 Horsea>117 Seadra>230 Kingdra
+agua:118 Goldeen>119 Seaking
+agua:120 Staryu>121 Starmie
+psiquico:439 Mime Jr.>122 Mr. Mime
+inseto:123 Scyther>212 Scizor
+gelo:238 Smoochum>124 Jynx
+eletrico:239 Elekid>125 Electabuzz>466 Electivire
+fogo:240 Magby>126 Magmar>467 Magmortar
+inseto:127 Pinsir
+normal:128 Tauros
+agua:129 Magikarp>130 Gyarados
+agua:131 Lapras
+normal:132 Ditto
+normal:133 Eevee>134 Vaporeon/135 Jolteon/136 Flareon/196 Espeon/197 Umbreon/470 Leafeon/471 Glaceon/700 Sylveon
+normal:137 Porygon>233 Porygon2>474 Porygon-Z
+pedra:138 Omanyte>139 Omastar
+pedra:140 Kabuto>141 Kabutops
+pedra:142 Aerodactyl
+normal:446 Munchlax>143 Snorlax
+gelo:144 Articuno
+eletrico:145 Zapdos
+fogo:146 Moltres
+dragao:147 Dratini>148 Dragonair>149 Dragonite
+psiquico:150 Mewtwo
+psiquico:151 Mew
+planta:152 Chikorita>153 Bayleef>154 Meganium
+fogo:155 Cyndaquil>156 Quilava>157 Typhlosion
+agua:158 Totodile>159 Croconaw>160 Feraligatr
+fada:175 Togepi>176 Togetic>468 Togekiss
+eletrico:179 Mareep>180 Flaaffy>181 Ampharos
+agua:298 Azurill>183 Marill>184 Azumarill
+sombrio:215 Sneasel>461 Weavile
+pedra:246 Larvitar>247 Pupitar>248 Tyranitar
+psiquico:249 Lugia
+fogo:250 Ho-Oh
+psiquico:251 Celebi
+planta:252 Treecko>253 Grovyle>254 Sceptile
+fogo:255 Torchic>256 Combusken>257 Blaziken
+agua:258 Mudkip>259 Marshtomp>260 Swampert
+psiquico:280 Ralts>281 Kirlia>282 Gardevoir/475 Gallade
+normal:287 Slakoth>288 Vigoroth>289 Slaking
+agua:349 Feebas>350 Milotic
+dragao:371 Bagon>372 Shelgon>373 Salamence
+aco:374 Beldum>375 Metang>376 Metagross
+dragao:384 Rayquaza
+aco:385 Jirachi
+planta:387 Turtwig>388 Grotle>389 Torterra
+fogo:390 Chimchar>391 Monferno>392 Infernape
+agua:393 Piplup>394 Prinplup>395 Empoleon
+eletrico:403 Shinx>404 Luxio>405 Luxray
+dragao:443 Gible>444 Gabite>445 Garchomp
+lutador:447 Riolu>448 Lucario
+eletrico:479 Rotom
+planta:495 Snivy>496 Servine>497 Serperior
+fogo:498 Tepig>499 Pignite>500 Emboar
+agua:501 Oshawott>502 Dewott>503 Samurott
+sombrio:570 Zorua>571 Zoroark
+fantasma:607 Litwick>608 Lampent>609 Chandelure
+dragao:610 Axew>611 Fraxure>612 Haxorus
+sombrio:633 Deino>634 Zweilous>635 Hydreigon
+planta:650 Chespin>651 Quilladin>652 Chesnaught
+fogo:653 Fennekin>654 Braixen>655 Delphox
+agua:656 Froakie>657 Frogadier>658 Greninja
+dragao:704 Goomy>705 Sliggoo>706 Goodra
+planta:722 Rowlet>723 Dartrix>724 Decidueye
+fogo:725 Litten>726 Torracat>727 Incineroar
+agua:728 Popplio>729 Brionne>730 Primarina
+fantasma:778 Mimikyu
+dragao:782 Jangmo-o>783 Hakamo-o>784 Kommo-o
+planta:810 Grookey>811 Thwackey>812 Rillaboom
+fogo:813 Scorbunny>814 Raboot>815 Cinderace
+agua:816 Sobble>817 Drizzile>818 Inteleon
+dragao:885 Dreepy>886 Drakloak>887 Dragapult
+planta:906 Sprigatito>907 Floragato>908 Meowscarada
+fogo:909 Fuecoco>910 Crocalor>911 Skeledirge
+agua:912 Quaxly>913 Quaxwell>914 Quaquaval
+eletrico:921 Pawmi>922 Pawmo>923 Pawmot
+fogo:935 Charcadet>936 Armarouge/937 Ceruledge
+dragao:996 Frigibax>997 Arctibax>998 Baxcalibur`;
+const TIPOS_POKEMON = { normal:'Normal', fogo:'Fogo', agua:'Água', planta:'Planta', eletrico:'Elétrico',
+  gelo:'Gelo', lutador:'Lutador', veneno:'Venenoso', terra:'Terra', voador:'Voador', psiquico:'Psíquico',
+  inseto:'Inseto', pedra:'Pedra', fantasma:'Fantasma', dragao:'Dragão', sombrio:'Sombrio', aco:'Aço', fada:'Fada' };
+const POKEMON = (() => {
+  const familias = [], porId = new Map();
+  POKEMON_FAMILIAS.trim().split('\n').forEach((linha, f) => {
+    const [tipo, resto] = linha.split(/:(.*)/s);
+    const estagios = resto.split('>').map((est, e) => est.split('/').map(x => {
+      const [, n, nome] = x.trim().match(/^(\d+) (.+)$/);
+      const pk = { id:+n, nome, tipo, familia:f, estagio:e };
+      porId.set(pk.id, pk); return pk.id;
+    }));
+    familias.push({ tipo, estagios });
+  });
+  return { familias, porId, basicos: familias.map(f => f.estagios[0][0]) };
+})();
+const PKM_ARTE   = n => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${n}.png`;
+const PKM_SPRITE = n => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${n}.png`;
+/* A semente vira o número: "pkm:25" é o Pikachu; texto é sorteado, sempre
+   igual para a mesma semente, entre os primeiros estágios. */
+function pokemonDaSemente(semente){
+  const m = String(semente || '').match(/^pkm:(\d+)$/);
+  if (m && POKEMON.porId.has(+m[1])) return +m[1];
   let h = 2166136261;                                    /* FNV-1a */
   for (const c of String(semente || '?')){ h ^= c.codePointAt(0); h = Math.imul(h, 16777619); }
-  let s = h >>> 0;
-  const sorte = () => {                                  /* mulberry32 */
-    s = (s + 0x6D2B79F5) >>> 0; let t = s;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  const [c1, c2, traco] = LOGO_PALETAS[Math.floor(sorte() * LOGO_PALETAS.length)];
-  let g;
-  do {   /* três colunas sorteadas, duas espelhadas; no mínimo seis pontos */
-    g = Array.from({ length:5 }, () => { const a = [0, 1, 2].map(() => sorte() < .52); return [a[0], a[1], a[2], a[1], a[0]]; });
-  } while (g.flat().filter(Boolean).length < 6);
-  const P = i => 20 + i * 15;
-  const on = (x, y) => x >= 0 && x < 5 && y >= 0 && y < 5 && g[y][x];
-  /* um quadrado de quatro pontos vira caixa, e a marca é traço, não
-     caixa: abre-se o lado de fora — o esquerdo na metade esquerda, o
-     direito na direita —, e a simetria continua */
-  const quadrado = (x, y) => on(x, y) && on(x + 1, y) && on(x, y + 1) && on(x + 1, y + 1);
-  const vertical = (x, y) => on(x, y) && on(x, y + 1)
-    && !(x <= 1 && quadrado(x, y)) && !(x >= 3 && quadrado(x - 1, y));
-  let linhas = '', pontos = '';
-  for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++){
-    if (!g[y][x]) continue;
-    const dir = on(x + 1, y), baixo = vertical(x, y);
-    const viz = dir + baixo + on(x - 1, y) + vertical(x, y - 1);
-    if (dir)   linhas += `M${P(x)} ${P(y)}H${P(x + 1)}`;
-    if (baixo) linhas += `M${P(x)} ${P(y)}V${P(y + 1)}`;
-    pontos += `<circle cx="${P(x)}" cy="${P(y)}" r="${viz === 0 ? 5.4 : viz === 1 ? 5.8 : 3.9}"/>`;
-  }
-  const id = 'lgp' + (++_logoN);
-  return `<svg class="logo-pj" viewBox="0 0 100 100" width="${px}" height="${px}" role="img"
-    aria-label="${esc(rotulo || 'Logo do projeto')}"><defs><linearGradient id="${id}" x1="0" y1="1" x2="1" y2="0">
-    <stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs>
-    <rect width="100" height="100" rx="22" fill="url(#${id})"/>
-    <path d="${linhas}" fill="none" stroke="${traco}" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <g fill="${traco}">${pontos}</g></svg>`;
+  return POKEMON.basicos[(h >>> 0) % POKEMON.basicos.length];
+}
+const pokemonDe = semente => POKEMON.porId.get(pokemonDaSemente(semente));
+function logoProjeto(semente, px, rotulo){
+  const pk = pokemonDe(semente);
+  const arte = px <= 28 ? PKM_SPRITE(pk.id) : PKM_ARTE(pk.id);
+  return `<span class="logo-pj pkm t-${pk.tipo}${px <= 28 ? ' mini' : ''}" style="--px:${px}px" role="img"
+    aria-label="${esc((rotulo ? rotulo + ': ' : '') + pk.nome)}" title="${esc(pk.nome)}" data-ini="${esc(pk.nome.slice(0, 2))}"
+    data-pkm="${pk.id}"><img src="${arte}" alt="" loading="lazy" decoding="async"
+    onerror="this.parentNode.classList.add('sem-arte');this.remove()"></span>`;
 }
 
 function desenharMenu(){
@@ -7041,64 +7284,8 @@ function desenhaOrg(filtro){
     if (inp){ inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); } }
 }
 
-/* ============================================================
-   INFORMAÇÕES — documentos e políticas (links do Drive)
-   ============================================================ */
-const CAT_DOC = {
-  institucional: {l:'Institucional', d:'Estatuto, regimento e documentos fundadores'},
-  politica:      {l:'Políticas',     d:'Regras e diretrizes vigentes da equipe'},
-  guia:          {l:'Guias',         d:'Manuais, tutoriais e trilhas de formação'},
-  formulario:    {l:'Formulários',   d:'Modelos e formulários oficiais'},
-  outro:         {l:'Outros',        d:'Demais documentos úteis'}
-};
+/* O ícone de documento: os Serviços e os treinamentos usam. */
 const IC_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
-/* #/informacoes/<categoria> mostra só aquela categoria — é o subitem do
-   menu lateral. Categoria desconhecida cai na biblioteca inteira. */
-async function pageInformacoes(sub){
-  const cat = sub && Object.prototype.hasOwnProperty.call(CAT_DOC, sub) ? sub : null;
-  $('#main').innerHTML = `
-    <div class="pg-head"><span class="eyebrow">Biblioteca da equipe</span>
-      <h1>${cat ? CAT_DOC[cat].l : 'Informações'}</h1>
-      <p class="lead">${cat ? CAT_DOC[cat].d + '. ' : 'Documentos oficiais, políticas, guias e formulários da NeuroDynamics, '
-        + 'mantidos pelo Depto. de Pessoal. '}Os arquivos abrem no Google Drive.</p></div>
-    <div id="docs-area"><div class="carregando"><span class="spin"></span> Carregando…</div></div>`;
-  const { data, error } = await sb.from('portal_documentos').select('*')
-    .order('ordem').order('titulo');
-  const el = $('#docs-area'); if(!el) return;
-  if (error){
-    el.innerHTML = `<div class="aviso-box err">Não foi possível carregar os documentos: ${esc(error.message)}.
-      A migração <b>soma_v11_portal_documentos.sql</b> já foi aplicada?</div>`;
-    return;
-  }
-  const docs = (data||[]).filter(d=>d.publicado!==false && (!cat || d.categoria===cat));
-  if (!docs.length){
-    el.innerHTML = cat
-      ? `<div class="empty">Nenhum documento em ${CAT_DOC[cat].l} por enquanto.<br>
-          <a href="#/informacoes" style="text-decoration:underline">Ver a biblioteca inteira</a></div>`
-      : `<div class="empty">Nenhum documento publicado ainda.<br>
-          O Depto. de Pessoal cadastra os links pelo painel do portal.</div>`;
-    return;
-  }
-  const cats = Object.keys(CAT_DOC).filter(c => docs.some(d=>d.categoria===c));
-  el.innerHTML = cats.map(c => `
-    <div class="doc-sec">
-      <h4>${CAT_DOC[c].l}<span style="letter-spacing:0;text-transform:none;color:var(--dim);margin-left:12px">${CAT_DOC[c].d}</span></h4>
-      <div class="doc-grid">
-        ${docs.filter(d=>d.categoria===c).map(d => `
-          <a class="doc" href="${esc(d.url)}" target="_blank" rel="noopener">
-            <span class="ic">${IC_DOC}</span>
-            <span class="tx">
-              <span class="tt">${esc(d.titulo)}</span>
-              ${d.descricao?`<span class="ds" style="display:block">${esc(d.descricao)}</span>`:''}
-              <span class="go">Abrir no Drive ↗</span>
-            </span>
-          </a>`).join('')}
-      </div>
-    </div>`).join('')
-    + `<div class="aviso-box info" style="margin-top:8px">O Drive negou o acesso a algum arquivo?
-      Abra uma <a href="#/servicos/acesso" style="text-decoration:underline">Solicitação de acesso</a>
-      informando o documento. O Depto. de Pessoal libera e responde por lá.</div>`;
-}
 
 /* ============================================================
    SERVIÇOS — solicitações ao Depto de Pessoal

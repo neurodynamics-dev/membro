@@ -333,7 +333,8 @@ function cartaoHTML(a){
   /* O brilho no topo é o sinal sempre presente: cor da prioridade, ou
      âmbar quando o cartão está sinalizado — sinalizado é "olhe para
      mim", que é justamente o que um brilho quer dizer. O ponto de
-     prioridade continua ali, então nada se perde na troca. */
+     prioridade continua ali, então nada se perde na troca. Concluída
+     não pede atenção: o brilho sai e fica só o ponto. */
   const cor = a.sinalizada ? 'var(--warn)' : corPrioridade(a.prioridade);
   const arraste = edito
     ? `draggable="true"
@@ -342,7 +343,7 @@ function cartaoHTML(a){
        ondragover="event.preventDefault();event.stopPropagation()"
        ondrop="event.stopPropagation();soltarEm(event,'${a.status}','${a.id}')"`
     : '';
-  return `<article class="kb-card${a.sinalizada?' sinalizada':''}${edito?'':' fixo'}"
+  return `<article class="kb-card${a.sinalizada?' sinalizada':''}${a.status==='concluida'?' concluida':''}${edito?'':' fixo'}"
     style="--pri:${cor}" data-id="${a.id}" ${arraste}
     onclick="location.hash='#/atividades/card/${a.codigo}'">
     <div class="kb-top">

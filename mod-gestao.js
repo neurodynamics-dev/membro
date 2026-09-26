@@ -182,7 +182,7 @@ function renderTabelaMembros(){
         <td class="nome" title="${esc(m.nome)}">${esc(m.nome)}</td>
         <td title="${esc(m.departamento||'')}">${esc(m.departamento||'—')}</td>
         <td title="${esc(m.cargo||'')}">${esc(m.cargo||'—')}</td>
-        <td title="${esc((m.grupos||[]).join(', '))}">${chips(m.grupos,2)}</td>
+        <td title="${esc([...gruposEfetivos(m)].join(', '))}">${chips([...gruposEfetivos(m)],2)}</td>
         <td>${pill(m.status)}</td></tr>`).join('')}</tbody></table></div>
     <div class="small muted" style="padding:10px 4px">${ms.length} de ${state.membros.length} registros</div>`
     : `<div class="empty">Nenhum membro corresponde aos filtros.</div>`;
@@ -385,6 +385,28 @@ function lerCampos(defs){
 }
 const membroAtual = () => state.membros.find(m => m.registro === gestao.ficha?.reg);
 
+/* Os grupos da ficha são os mesmos que Administração → Grupos mostra:
+   os postos direto (membros.grupos) e os que vêm por um subgrupo, na
+   ordem do catálogo. O herdado leva o nome do grupo de origem no title. */
+function gruposDaFicha(m){
+  const ordem = new Map((state.grupos || []).map((g, i) => [g.nome, i]));
+  return [...gruposEfetivos(m)]
+    .sort((a, b) => (ordem.get(a) ?? 1e6) - (ordem.get(b) ?? 1e6) || a.localeCompare(b, 'pt-BR'))
+    .map(nome => ({ nome, direto: (m.grupos || []).includes(nome), via: viaDoGrupo(m, nome) }));
+}
+function chipsGruposFicha(m){
+  const lista = gruposDaFicha(m);
+  if (!lista.length) return '<span class="muted">Sem grupo</span>';
+  return lista.map(g => {
+    const pf = grupoPorNome(g.nome)?.prefixo;
+    const dica = g.direto ? 'Na ficha' : `Por ${g.via}`;
+    const cls = `chip mini${g.direto ? '' : ' herdado'}`;
+    return can() && pf
+      ? `<a class="${cls}" href="#/admin/grupos/${esc(pf)}" title="${esc(dica)}">${esc(g.nome)}</a>`
+      : `<span class="${cls}" title="${esc(dica)}">${esc(g.nome)}</span>`;
+  }).join(' ');
+}
+
 async function abrirFicha(reg){
   if (location.hash !== '#/equipe/' + reg) { location.hash = '#/equipe/' + reg; return; }
   gestao.ficha = { reg, tab:'dados', ocorr:[], acessos:[], avals:[], aponts:[], pess:null, editando:false };
@@ -395,6 +417,13 @@ async function abrirFicha(reg){
 
 async function carregarFicha(){
   const reg = gestao.ficha.reg;
+  /* A linha do membro é relida a cada abertura: quem pôs a pessoa num
+     grupo em Administração → Grupos (ou noutra sessão) vê o grupo aqui. */
+  const linha = await sb.from('membros').select('*').eq('registro', reg).maybeSingle();
+  if (!linha.error && linha.data){
+    const ix = state.membros.findIndex(m => m.registro === reg);
+    if (ix >= 0) Object.assign(state.membros[ix], linha.data); else state.membros.push(linha.data);
+  }
   /* Consultas por chave: ocorrências e dados pessoais só para quem tem
      o quadro. Assim o papel de consulta nem chega a pedi-los. */
   const q = {
@@ -469,7 +498,7 @@ function renderFicha(){
         <div class="small muted" style="margin-top:3px">
           <span class="mono" style="color:var(--dim)">REG ${pad3(m.registro)}</span>
           · ${esc(m.cargo||'Sem cargo')} · ${esc(m.departamento||'Sem departamento')}${gestor?` · Gestor: ${esc(gestor)}`:''}</div>
-        <div style="margin-top:8px">${(m.grupos||[]).map(g=>`<span class="chip mini">${esc(g)}</span>`).join(' ')}</div>
+        <div class="ficha-grupos">${chipsGruposFicha(m)}</div>
       </div>
       <div>${pill(m.status)}</div>
     </div>
@@ -543,8 +572,9 @@ function renderTabDados(){
   $('#ficha-body').innerHTML = `<div class="card"><div class="dl">
     ${CAMPOS_MEMBRO.filter(c => !['nome','status','foto_url'].includes(c.k)).map(c => {
       let v = m[c.k];
-      if (c.t === 'grupos')      v = (v && v.length) ? v.join(', ') : null;
-      else if (c.t === 'date')   v = v ? fmtD(v) : null;
+      if (c.t === 'grupos') return `<div class="it"><dt>${c.l}</dt>
+        <dd class="ficha-grupos">${chipsGruposFicha(m)}</dd></div>`;
+      if (c.t === 'date')        v = v ? fmtD(v) : null;
       else if (c.t === 'gestor') v = v ? nomeDe(v) : null;
       return `<div class="it"><dt>${c.l}</dt>
         <dd>${esc(v) || '<span class="muted">—</span>'}</dd></div>`;
