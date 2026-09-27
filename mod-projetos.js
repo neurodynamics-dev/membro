@@ -160,9 +160,9 @@ async function pjPagina(p, aba){
         ${quadro ? `<a class="btn ghost mini" href="#/atividades/${esc(g.prefixo)}">${ic('quadro')} Quadro</a>` : ''}
         ${pjPodeEditar(p) ? `<button class="btn ghost mini" onclick="pjModalEditar('${p.id}')">${ic('pencil')} Editar</button>` : ''}</div>
     </div>
-    <nav class="abas"><a href="#/projetos/${esc(p.codigo)}" class="${aba ? '' : 'on'}">Visão geral</a>
-      <a href="#/projetos/${esc(p.codigo)}/arquivos" class="${aba === 'arquivos' ? 'on' : ''}">Arquivos · ${pr.ativos} de ${pr.total}</a></nav>
-    <div id="pj-corpo" style="margin-top:18px"></div>`;
+    ${navNivel1([['', 'Visão geral', '#/projetos/' + esc(p.codigo)],
+      ['arquivos', 'Arquivos', `#/projetos/${esc(p.codigo)}/arquivos`, `<span class="n">${pr.ativos}/${pr.total}</span>`]], aba, 'Projeto')}
+    <div id="pj-corpo"></div>`;
 
   if (aba === 'arquivos'){
     $('#pj-corpo').innerHTML = '<div class="carregando"><span class="spin"></span> Carregando o rol…</div>';

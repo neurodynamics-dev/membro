@@ -101,7 +101,7 @@ async function pageCofre(sub2){
 function cofNav(atual){
   if (!cof.gestor) return '';
   const it = [['', 'Minhas contas'], ['gestao', 'Gestão'], ['uso', 'Registro de uso'], ['config', 'Configurações']];
-  return `<nav class="arq-nav" aria-label="Cofre">${it.map(([k, rot]) => `<a href="#/servicos/cofre${k ? '/' + k : ''}"
+  return `<nav class="nav1" aria-label="Cofre">${it.map(([k, rot]) => `<a href="#/servicos/cofre${k ? '/' + k : ''}"
     class="${atual === (k || 'minhas') ? 'on' : ''}">${k === 'config' ? ic('engrenagem') + ' ' : ''}${rot}</a>`).join('')}</nav>`;
 }
 

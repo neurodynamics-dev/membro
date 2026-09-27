@@ -71,11 +71,11 @@ console.log('\nArquivos — o rol primeiro, a visão geral depois');
     (await p.textContent('main h1')) === 'Todos os arquivos'
     && (await linhas(p)).map(l => l.cod).join() === 'NRO-PES-004,NRO-PES-005,NRO-PES-007,NRO-PES-014,NRO-PRO-001,NRO-PRO-003,NRO-PRO-004,NRO-PUB-002,NRO-PUB-003',
     (await linhas(p)).map(l => l.cod));
-  const nav = await p.evaluate(() => [...document.querySelectorAll('.arq-nav a')].map(a => ({
+  const nav = await p.evaluate(() => [...document.querySelectorAll('.nav1 a')].map(a => ({
     t: a.textContent.replace(/\s+/g, ' ').trim(), on: a.classList.contains('on') })));
   confere('revisar, templates, visão geral e configurações ficam como secundários, numa linha abaixo do título',
     nav.map(x => x.t).join('|') === 'Todos os arquivos|Para revisar 1|Templates|Visão geral|Configurações'
-    && nav[0].on && await p.locator('.arq-nav .n.sua').count() === 1, nav);
+    && nav[0].on && await p.locator('.nav1 .n.sua').count() === 1, nav);
   confere('e o menu acende "Todos os arquivos"', JSON.stringify(await atual(p)) === '["Todos os arquivos"]', await atual(p));
   await p.selectOption('#arq-emissor', 'PES'); await p.waitForTimeout(900);
   confere('filtrar por emissor é o mesmo rol, com o endereço do emissor',
@@ -89,7 +89,7 @@ console.log('\nArquivos — o rol primeiro, a visão geral depois');
   await ir(p, '#/arquivos/visao');
   await p.waitForSelector('.metricas');
   confere('a visão geral mora em #/arquivos/visao, com a navegação marcada nela',
-    (await p.textContent('main h1')) === 'Visão geral' && (await p.textContent('.arq-nav a.on')).trim() === 'Visão geral');
+    (await p.textContent('main h1')) === 'Visão geral' && (await p.textContent('.nav1 a.on')).trim() === 'Visão geral');
   const met = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('.metrica')]
     .map(m => [m.querySelector('.rot').textContent.trim(), m.querySelector('.val').textContent.trim()])));
   confere('métricas: 10 ativos, 1 em revisão, 2 em rascunho, 1 para você', met['Ativos'] === '10' && met['Em revisão'] === '1'

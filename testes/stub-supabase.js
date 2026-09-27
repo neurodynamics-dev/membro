@@ -623,6 +623,76 @@
   DADOS.doc_series.find(s => s.id === 's-pro3').formulario = {"versao": 1, "rev": "A", "titulo": "Relatório de Execução de Teste", "complemento": "{nome}", "campos": [{"id": "nome", "rotulo": "Nome do teste", "tipo": "texto", "obrigatorio": true, "secao": "O teste"}, {"id": "numero", "rotulo": "#", "tipo": "texto", "secao": "O teste", "ajuda": "O número ou o identificador do teste no plano, se houver."}, {"id": "data", "rotulo": "Data", "tipo": "data", "obrigatorio": true, "secao": "O teste"}, {"id": "hora", "rotulo": "Hora", "tipo": "hora", "secao": "O teste"}, {"id": "local", "rotulo": "Local", "tipo": "texto", "secao": "O teste", "exemplo": "Bancada 2, LABBIO"}, {"id": "projeto", "rotulo": "Projeto", "tipo": "projeto", "secao": "O teste"}, {"id": "resultado", "rotulo": "Resultado", "tipo": "escolha", "obrigatorio": true, "secao": "O teste", "opcoes": ["Aprovado", "Aprovado com ressalvas", "Reprovado", "Inconclusivo"]}, {"id": "responsavel", "rotulo": "Responsável", "tipo": "membro", "obrigatorio": true, "secao": "O teste", "padrao": "eu"}, {"id": "objetivo", "rotulo": "Objetivo do teste", "tipo": "paragrafo", "obrigatorio": true, "secao": "Objetivo do teste", "ajuda": "Descreva o(s) propósito(s) do teste; o que está sendo verificado, qual comportamento ou requisito está em foco e por que este teste é necessário."}, {"id": "envolvidos", "rotulo": "Envolvidos", "tipo": "pessoas", "secao": "Envolvidos", "nota": "função no teste", "exemplo_nota": "operador da bancada"}, {"id": "equipamentos", "rotulo": "Equipamentos e ferramentas", "tipo": "paragrafo", "secao": "Preparação", "linhas": 3}, {"id": "precondicoes", "rotulo": "Pré-condições", "tipo": "paragrafo", "secao": "Preparação", "linhas": 3}, {"id": "versoes", "rotulo": "Versões de software e firmware", "tipo": "paragrafo", "secao": "Preparação", "linhas": 2}, {"id": "configuracoes", "rotulo": "Configurações especiais", "tipo": "paragrafo", "secao": "Preparação", "linhas": 2}, {"id": "roteiro", "rotulo": "Roteiro", "tipo": "tabela", "obrigatorio": true, "secao": "Roteiro", "numerada": true, "colunas": [{"id": "passo", "rotulo": "Passo / ação", "tipo": "paragrafo", "largura": 3}, {"id": "esperado", "rotulo": "Resultado esperado", "tipo": "paragrafo", "largura": 2}, {"id": "obtido", "rotulo": "Resultado obtido", "tipo": "paragrafo", "largura": 2}, {"id": "status", "rotulo": "Status", "tipo": "escolha", "largura": 1, "opcoes": [{"valor": "ok", "rotulo": "Ok", "simbolo": "ok"}, {"valor": "falhou", "rotulo": "Falhou", "simbolo": "x"}, {"valor": "parcial", "rotulo": "Parcial", "simbolo": "~"}, {"valor": "na", "rotulo": "N/A", "simbolo": "-"}]}, {"id": "comentarios", "rotulo": "Comentários", "tipo": "paragrafo", "largura": 2}]}, {"id": "conclusao", "rotulo": "Conclusão", "tipo": "paragrafo", "obrigatorio": true, "secao": "Conclusão"}], "impressao": [{"tipo": "ficha", "linhas": [[{"rotulo": "Nome do teste", "valor": "{nome}"}, {"rotulo": "#", "valor": "{numero}", "estreito": true}], [{"rotulo": "Data e hora", "valor": "{data}{hora?, às }{hora}"}, {"rotulo": "Local", "valor": "{local}"}], [{"rotulo": "Projeto", "valor": "{projeto}"}, {"rotulo": "Resultado", "valor": "{resultado}"}], [{"rotulo": "Responsável", "valor": "{responsavel}"}]]}, {"tipo": "secao", "titulo": "Objetivo do teste", "instrucao": "Descreva o(s) propósito(s) do teste; o que está sendo verificado, qual comportamento ou requisito está em foco e por que este teste é necessário.", "campos": ["objetivo"], "moldura": true}, {"tipo": "secao", "titulo": "Envolvidos", "campos": ["envolvidos"], "colunas": ["Nome", "Função no teste"]}, {"tipo": "secao", "titulo": "Preparação", "campos": ["equipamentos", "precondicoes", "versoes", "configuracoes"], "layout": "chave-valor"}, {"tipo": "secao", "titulo": "Roteiro", "campos": ["roteiro"], "legenda": "status"}, {"tipo": "secao", "titulo": "Conclusão", "campos": ["conclusao"], "moldura": true}]};
   DADOS.doc_formulario_rascunhos = [];
 
+  /* ---- v28: a agenda, no modelo do Google ----
+     Os eventos caem na semana de hoje, para a grade ter o que mostrar
+     em qualquer dia em que o teste rodar. agenda_itens monta o mesmo
+     formato do banco a partir daqui; agenda_evento, agenda_evento_salvar,
+     agenda_evento_excluir e agenda_responder mudam os dados como o banco
+     mudaria. Cada chamada fica em window.__rpcs. */
+  const agDiaAntes = iso => { const x = new Date(iso + 'T12:00:00'); x.setDate(x.getDate() - 1); return x.toISOString().slice(0, 10); };
+  const agDia = d => { const x = new Date(); x.setDate(x.getDate() + d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+  DADOS.espacos = [{ id:1, nome:'Sala de reuniões do LABBIO', ativo:true, ordem:1 }, { id:2, nome:'Bancada 2', ativo:true, ordem:2 }];
+  DADOS.agenda_predefinidos = [
+    { id:'pd1', nome:'Reunião geral', titulo:null, duracao_min:120, dia_inteiro:false, hora_inicio:'09:00:00', local:null, espaco_id:1, meet_url:null,
+      descricao:'Pauta no Drive.', visibilidade:'equipe', cor:'#2DD4BF', todos:true, grupos:[], convidados:[], lembretes:[1440, 60], recorrencia:'Única', ordem:10, ativo:true },
+    { id:'pd2', nome:'Reunião de gerência', titulo:null, duracao_min:60, dia_inteiro:false, hora_inicio:null, local:null, espaco_id:null, meet_url:'https://meet.google.com/ger-enc-ia',
+      descricao:null, visibilidade:'convidados', cor:'#CEDC00', todos:false, grupos:[6], convidados:[4], lembretes:[30], recorrencia:'Semanal', ordem:20, ativo:true }
+  ];
+  DADOS.agenda_preferencias = [];
+  DADOS.eventos = [
+    { id:'e1', numero:12, titulo:'Reunião geral', tipo:'Reunião geral', data:agDia(2), data_fim:null, hora_inicio:'14:00:00', hora_fim:'16:00:00',
+      local:null, espaco_id:1, meet_url:'https://meet.google.com/abc-defg-hij', pauta:'Fechamento do semestre.', status:'Preparação', owner_registro:4,
+      recorrencia:'Única', serie_id:null, visibilidade:'equipe', cor:null, predefinido_id:'pd1', lembretes:[1440, 60] },
+    { id:'e2', numero:13, titulo:'Revisão da órtese', tipo:'Evento', data:agDia(0), data_fim:null, hora_inicio:'10:00:00', hora_fim:'11:00:00',
+      local:'Bancada 2', espaco_id:null, meet_url:null, pauta:null, status:'Preparação', owner_registro:11,
+      recorrencia:'Única', serie_id:null, visibilidade:'convidados', cor:'#A78BFA', predefinido_id:null, lembretes:[30] },
+    { id:'e3', numero:14, titulo:'Almoço com o parceiro', tipo:'Evento', data:agDia(0), data_fim:null, hora_inicio:'10:30:00', hora_fim:'12:00:00',
+      local:'Restaurante setorial', espaco_id:null, meet_url:null, pauta:null, status:'Preparação', owner_registro:4,
+      recorrencia:'Única', serie_id:null, visibilidade:'convidados', cor:null, predefinido_id:null, lembretes:[30] },
+    { id:'e4', numero:15, titulo:'Daily do grupo', tipo:'Evento', data:agDia(1), data_fim:null, hora_inicio:'09:00:00', hora_fim:'09:15:00',
+      local:null, espaco_id:null, meet_url:'https://meet.google.com/dai-ly', pauta:null, status:'Preparação', owner_registro:4,
+      recorrencia:'Semanal', serie_id:'e4', visibilidade:'convidados', cor:'#4ADE97', predefinido_id:null, lembretes:[10] },
+    { id:'e5', numero:16, titulo:'CBEB 2026', tipo:'Evento', data:agDia(3), data_fim:agDia(5), hora_inicio:null, hora_fim:null,
+      local:'Vitória (ES)', espaco_id:null, meet_url:null, pauta:null, status:'Preparação', owner_registro:17,
+      recorrencia:'Única', serie_id:null, visibilidade:'equipe', cor:'#F5C36A', predefinido_id:null, lembretes:[] }
+  ];
+  DADOS.evento_participantes = [
+    { evento_id:'e1', registro:4, papel:'obrigatorio', resposta:'vou' }, { evento_id:'e1', registro:11, papel:'obrigatorio', resposta:'vou' },
+    { evento_id:'e1', registro:17, papel:'obrigatorio', resposta:'talvez' },
+    { evento_id:'e2', registro:11, papel:'obrigatorio', resposta:'vou' }, { evento_id:'e2', registro:4, papel:'obrigatorio', resposta:'pendente' },
+    { evento_id:'e3', registro:4, papel:'obrigatorio', resposta:'vou' },
+    { evento_id:'e4', registro:4, papel:'obrigatorio', resposta:'vou' }, { evento_id:'e4', registro:11, papel:'opcional', resposta:'pendente' },
+    { evento_id:'e5', registro:17, papel:'obrigatorio', resposta:'vou' }
+  ];
+  DADOS.evento_externos = [{ id:'x1', evento_id:'e3', email:'contato@parceiro.com', nome:'Dra. Lima', resposta:'vou' }];
+  DADOS.calendario_itens = [{ id:'m1', titulo:'Prazo UFMG: trancamento parcial', tipo:'prazo', data_inicio:agDia(4), data_fim:agDia(4), observacao:null, registro:null }];
+  DADOS.agenda_ausencias = [{ id:'au1', registro:17, tipo:'ferias', inicio:agDia(8) + 'T03:00:00Z', fim:agDia(12) + 'T03:00:00Z', dia_inteiro:true, observacao:null }];
+  DADOS.atividades = [
+    { id:'a1', codigo:'ORT-14', titulo:'Calibrar o encoder da bancada 2', prazo:agDia(1), status:'fazendo', prioridade:'alta', responsavel:4 },
+    { id:'a2', codigo:'ORT-15', titulo:'Revisar o USRS', prazo:agDia(40), status:'a_fazer', prioridade:'media', responsavel:4 }
+  ];
+  window.__agenda = DADOS;
+
+  /* ---- v29: a presença e o início ----
+     Três check-ins nas últimas horas, o placar do mês, uma folha de
+     check-in e os links úteis. */
+  const agoraMenos = min => new Date(Date.now() - min * 60000).toISOString();
+  DADOS.presencas = [{ registro:11, registrado_em:agoraMenos(35) }, { registro:4, registrado_em:agoraMenos(90) }, { registro:23, registrado_em:agoraMenos(150) }];
+  DADOS.status_membro = [{ registro:11, tipo:'find_me_at', local:'Bancada 2', definido_em:agoraMenos(30) }];
+  DADOS.checkin_folhas = [{ id:'f1', numero:1, token:'7b1f3c1e-2a4d-4c55-9d7e-0a1b2c3d4e5f', rotulo:'Porta do LABBIO', criada_em:agoraMenos(60*24*9),
+    criada_por:'Ana Figueiredo', revogada_em:null, usos:14, ultimo_uso:agoraMenos(60*26) }];
+  DADOS.portal_links = [
+    { id:'l1', titulo:'Drive da equipe', url:'https://drive.google.com', descricao:'Pastas compartilhadas', grupo:'Ferramentas', ordem:10, ativo:true },
+    { id:'l2', titulo:'Site institucional', url:'https://neurodynamics.dev', descricao:'neurodynamics.dev', grupo:'Institucional', ordem:20, ativo:true },
+    { id:'l3', titulo:'Presença', url:'#/equipe/presenca', descricao:'Check-in e placar', grupo:'Portal', ordem:30, ativo:true },
+    { id:'l4', titulo:'Truque', url:'javascript:alert(1)', descricao:null, grupo:'Portal', ordem:40, ativo:true }
+  ];
+  DADOS.placar = { mes: new Date().toISOString().slice(0, 7), dias_uteis_mes: 18,
+    ranking: [{ registro:11, nome:'Bruno Tavares', dias:15 }, { registro:4, nome:'Ana Figueiredo', dias:12 }, { registro:23, nome:'Diego Prado', dias:9 },
+      { registro:17, nome:'Carla Mendonça', dias:4 }],
+    sequencias: [{ registro:11, nome:'Bruno Tavares', atual:9, recorde:14 }, { registro:4, nome:'Ana Figueiredo', atual:3, recorde:6 }],
+    eu: { dias:12, posicao:2, atual:3, recorde:6 } };
+
   /* doc_arquivos é o que a lista de projetos lê para o progresso: sai do rol */
   DADOS.doc_arquivos = DADOS.doc_rol.map(r => ({ id:r.id, projeto_id:r.projeto_id || null, serie_id:r.serie_id,
     status:r.status, rev_pendente:r.rev_pendente }));
@@ -636,7 +706,8 @@
       eq(c, v){ filtros.push(r => c.split('.').reduce((o, k) => o?.[k], r) === v); return b; },
       neq(c, v){ filtros.push(r => r[c] !== v); return b; },
       in(c, vs){ filtros.push(r => vs.includes(r[c])); return b; },
-      gte(){ return b; }, lte(){ return b; },
+      gte(){ return b; }, lte(){ return b; }, gt(){ return b; }, lt(){ return b; },
+      or(){ return b; }, not(){ return b; }, is(){ return b; }, ilike(){ return b; },
       order(){ return b; }, limit(){ return b; },
       /* as escritas ficam em window.__escritas, para o teste conferir */
       insert(d){ (window.__escritas ||= []).push({ tabela, op:'insert', dados:d }); return b; },
@@ -1440,8 +1511,122 @@
             }
             return ok();
           }
-          if (nome === 'agenda_itens' || nome === 'agenda_manter_series') return { data: [], error: null };
-          if (nome === 'portal_agenda_ocupacao') return { data: [], error: null };
+          /* ---- v28: a agenda ---- */
+          const agReg = () => DADOS.perfis[0].registro, agGestor = () => ['admin','pessoal'].includes(DADOS.perfis[0].papel);
+          const agVe = e => e.visibilidade === 'equipe' || agGestor() || e.owner_registro === agReg()
+            || DADOS.evento_participantes.some(p => p.evento_id === e.id && p.registro === agReg());
+          if (nome === 'agenda_manter_series') return { data:0, error:null };
+          if (nome === 'agenda_itens'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const de = args.p_de, ate = args.p_ate, eu = agReg();
+            const evs = DADOS.eventos.filter(e => e.status !== 'Cancelado' && e.data <= ate && (e.data_fim || e.data) >= de && agVe(e)).map(e => {
+              const ps = DADOS.evento_participantes.filter(p => p.evento_id === e.id), meu = ps.find(p => p.registro === eu);
+              const pd = DADOS.agenda_predefinidos.find(x => x.id === e.predefinido_id);
+              return { id:'ev:' + e.id, origem:'evento', ref:e.id, tipo:e.tipo, titulo:e.titulo, cor:e.cor || pd?.cor || '#2DD4BF',
+                data_inicio:e.data, data_fim:e.data_fim || e.data, hora_inicio:e.hora_inicio, hora_fim:e.hora_fim, dia_inteiro:!e.hora_inicio,
+                local:DADOS.espacos.find(x => x.id === e.espaco_id)?.nome || e.local, meet_url:e.meet_url, pauta:e.pauta, numero:e.numero,
+                serie_id:e.serie_id, recorrencia:e.recorrencia, registro:e.owner_registro, sou_dono:e.owner_registro === eu,
+                sou_convidado:!!meu, minha_resposta:meu?.resposta || null, convidados:ps.length, confirmados:ps.filter(p => p.resposta === 'vou').length,
+                visibilidade:e.visibilidade };
+            });
+            const mks = DADOS.calendario_itens.filter(c => c.data_inicio <= ate && (c.data_fim || c.data_inicio) >= de).map(c => ({
+              id:'mk:' + c.id, origem:'marco', ref:c.id, tipo:c.tipo, titulo:c.titulo, cor:'#F5C36A', data_inicio:c.data_inicio,
+              data_fim:c.data_fim || c.data_inicio, hora_inicio:null, hora_fim:null, dia_inteiro:true, pauta:c.observacao, registro:c.registro,
+              sou_dono:c.registro === eu, recorrencia:'Única', visibilidade:'equipe' }));
+            const aus = DADOS.agenda_ausencias.filter(a => a.inicio.slice(0, 10) <= ate && a.fim.slice(0, 10) >= de).map(a => ({
+              id:'au:' + a.id, origem:'ausencia', ref:a.id, tipo:a.tipo, titulo:a.tipo === 'ferias' ? 'Férias' : 'Fora do escritório', cor:'#4C6FBF',
+              data_inicio:a.inicio.slice(0, 10), data_fim:agDiaAntes(a.fim.slice(0, 10)), hora_inicio:null, hora_fim:null, dia_inteiro:true,
+              registro:a.registro, sou_dono:a.registro === eu, recorrencia:'Única', visibilidade:'privado' }));
+            return { data:[...evs, ...mks, ...aus], error:null };
+          }
+          if (nome === 'agenda_evento'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const e = DADOS.eventos.find(x => x.id === args.p_id);
+            if (!e || !agVe(e)) return { data:{ status:'nao_encontrado' }, error:null };
+            const nomeDe = r => DADOS.membros.find(m => m.registro === r)?.nome;
+            const pode = agGestor() || e.owner_registro === agReg();
+            return { data:{ status:'ok', pode_editar:pode, minha_resposta:DADOS.evento_participantes.find(p => p.evento_id === e.id && p.registro === agReg())?.resposta || null,
+              evento:{ ...e, hora_inicio:e.hora_inicio?.slice(0, 5) || null, hora_fim:e.hora_fim?.slice(0, 5) || null, descricao:e.pauta,
+                cor:e.cor || DADOS.agenda_predefinidos.find(x => x.id === e.predefinido_id)?.cor || '#2DD4BF', cor_propria:e.cor || null,
+                organizador:nomeDe(e.owner_registro), cancelado:e.status === 'Cancelado', serie_ate:null },
+              participantes:DADOS.evento_participantes.filter(p => p.evento_id === e.id).map(p => ({ ...p, nome:nomeDe(p.registro) })),
+              externos:DADOS.evento_externos.filter(x => x.evento_id === e.id).map(x => pode ? x : { nome:x.nome, resposta:x.resposta }) }, error:null };
+          }
+          if (nome === 'agenda_evento_salvar'){
+            const p = args?.p || {};
+            (window.__rpcs ||= []).push({ nome, p });
+            if (window.__teste?.agendaSalvar) return { data:window.__teste.agendaSalvar, error:null };
+            let e = p.id ? DADOS.eventos.find(x => x.id === p.id) : null;
+            if (p.id && !e) return { data:{ status:'nao_encontrado' }, error:null };
+            if (e && !(agGestor() || e.owner_registro === agReg())) return { data:{ status:'sem_permissao' }, error:null };
+            const antes = e ? { ...e } : null;
+            if (!e){ const numero = Math.max(...DADOS.eventos.map(x => x.numero)) + 1;
+              e = { id:'e' + numero, numero, owner_registro:agReg(), status:'Preparação', recorrencia:'Única', visibilidade:'convidados', lembretes:[], tipo:'Evento' };
+              DADOS.eventos.push(e); }
+            if ('titulo' in p) e.titulo = p.titulo || e.titulo || '(sem título)';
+            if (p.data) e.data = p.data;
+            if ('data_fim' in p) e.data_fim = p.data_fim || null;
+            if (p.dia_inteiro){ e.hora_inicio = null; e.hora_fim = null; }
+            else { if ('hora_inicio' in p) e.hora_inicio = p.hora_inicio ? p.hora_inicio + ':00' : null; if ('hora_fim' in p) e.hora_fim = p.hora_fim ? p.hora_fim + ':00' : null; }
+            ['local','meet_url','visibilidade','cor','recorrencia','lembretes','predefinido_id'].forEach(k => { if (k in p) e[k] = p[k] === '' ? null : p[k]; });
+            if ('descricao' in p) e.pauta = p.descricao || null;
+            if ('espaco_id' in p) e.espaco_id = p.espaco_id ? +p.espaco_id : null;
+            let entraram = 0;
+            if ('obrigatorios' in p || 'opcionais' in p){
+              const todos = [...new Set([...(p.obrigatorios || []), ...(p.opcionais || []), e.owner_registro])];
+              const velhos = DADOS.evento_participantes.filter(x => x.evento_id === e.id);
+              entraram = todos.filter(r => !velhos.some(v => v.registro === r)).length;
+              DADOS.evento_participantes = DADOS.evento_participantes.filter(x => x.evento_id !== e.id || todos.includes(x.registro));
+              todos.forEach(r => { let x = DADOS.evento_participantes.find(y => y.evento_id === e.id && y.registro === r);
+                if (!x){ x = { evento_id:e.id, registro:r, resposta:r === e.owner_registro ? 'vou' : 'pendente' }; DADOS.evento_participantes.push(x); }
+                x.papel = (p.opcionais || []).includes(r) ? 'opcional' : 'obrigatorio'; });
+            }
+            if ('externos' in p){ DADOS.evento_externos = DADOS.evento_externos.filter(x => x.evento_id !== e.id);
+              (p.externos || []).forEach((x, i) => DADOS.evento_externos.push({ id:'x' + e.id + i, evento_id:e.id, email:x.email, nome:x.nome, resposta:'pendente' })); }
+            const mudou = antes ? [antes.data !== e.data && 'data', (antes.hora_inicio !== e.hora_inicio || antes.hora_fim !== e.hora_fim) && 'horário'].filter(Boolean) : [];
+            return { data:{ status:'ok', id:e.id, numero:e.numero, convidados:DADOS.evento_participantes.filter(x => x.evento_id === e.id).length,
+              entraram, mudou, eventos:1, ocorrencias:0 }, error:null };
+          }
+          if (nome === 'agenda_evento_excluir'){
+            const p = args?.p || {}; (window.__rpcs ||= []).push({ nome, p });
+            const e = DADOS.eventos.find(x => x.id === p.id); if (!e) return { data:{ status:'nao_encontrado' }, error:null };
+            e.status = 'Cancelado'; return { data:{ status:'ok', eventos:1 }, error:null };
+          }
+          if (nome === 'agenda_responder'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const x = DADOS.evento_participantes.find(y => y.evento_id === args.p_id && y.registro === agReg());
+            if (!x) return { data:{ status:'nao_convidado' }, error:null };
+            x.resposta = args.p_resposta; return { data:{ status:'ok', resposta:args.p_resposta }, error:null };
+          }
+          if (nome === 'agenda_marco_salvar' || nome === 'agenda_ausencia_salvar' || nome === 'agenda_marco_remover'){
+            (window.__rpcs ||= []).push({ nome, p:args?.p }); return { data:{ status:'ok', id:'novo' }, error:null };
+          }
+          /* ---- v29 ---- */
+          if (nome === 'labbio_placar'){ (window.__rpcs ||= []).push({ nome, p:args }); return { data:DADOS.placar, error:null }; }
+          if (nome === 'checkin_folha_criar'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            if (!agGestor()) return { data:{ status:'sem_permissao' }, error:null };
+            const f = { id:'f' + (DADOS.checkin_folhas.length + 1), numero:DADOS.checkin_folhas.length + 1, token:'0c9d8e7f-6a5b-4c3d-8e2f-1a0b9c8d7e6f',
+              rotulo:args.p_rotulo || null, criada_em:new Date().toISOString(), criada_por:'Ana Figueiredo', revogada_em:null, usos:0, ultimo_uso:null };
+            DADOS.checkin_folhas.unshift(f);
+            return { data:{ status:'ok', ...f }, error:null };
+          }
+          if (nome === 'checkin_folha_revogar'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const f = DADOS.checkin_folhas.find(x => x.id === args.p_id); if (!f) return { data:{ status:'nao_encontrado' }, error:null };
+            f.revogada_em = new Date().toISOString(); return { data:{ status:'ok' }, error:null };
+          }
+          if (nome === 'registrar_checkin_folha'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const f = DADOS.checkin_folhas.find(x => x.token === args.p_token && !x.revogada_em);
+            if (!f) return { data:{ status:'folha_invalida' }, error:null };
+            f.usos++; return { data:{ status:'ok', nome:'Ana Figueiredo', visitas_mes:13, anterior:null }, error:null };
+          }
+          if (nome === 'portal_agenda_ocupacao'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const d = new Date(args.p_de); const em = (h, m) => { const x = new Date(d); x.setHours(h, m, 0, 0); return x.toISOString(); };
+            return { data:(args.p_registros || []).includes(11) ? [{ registro:11, inicio:em(13, 0), fim:em(14, 30), dia_inteiro:false, titulo:null, origem:'google' }] : [], error:null };
+          }
           return { data: { status:'ok', codigo:'ORT-9', id:'novo' }, error: null };
         },
         /* o Storage: sobe, assina link, apaga — e anota tudo */

@@ -23,7 +23,7 @@ const adminP = {
   pronto:false, aba:'avisos',
   avisos:[], sel:null,
   sols:[], filtro:'pendentes', solAbertas:new Set(),
-  ouvidoria:[], agendas:[],
+  ouvidoria:[], agendas:[], links:[],
   projetos:[], projSel:null, projIdioma:'en'
 };
 
@@ -47,6 +47,7 @@ const ICONES_ADM = {
   importar:'<path d="M12 16V5M6.5 9.5 12 4l5.5 5.5M5 20h14"/>',
   relatorios:'<path d="M4 20h16M7 20V9M12 20V4M17 20v-7"/>',
   auditoria:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.5M4.5 12h.5M4.5 18h.5"/>',
+  links:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/>',
   site:'<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>'
 };
 const icAdm = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
@@ -86,7 +87,7 @@ async function pageAdmin(sub, sub2){
 
   /* Um painel por vez: só existe um #sec-* na tela, e carregar os cinco
      juntos fazia quatro deles escreverem em contêiner inexistente. */
-  const carga = { avisos: admCarregarAvisos,
+  const carga = { avisos: admCarregarAvisos, links: admCarregarLinks,
                   solicitacoes: admCarregarSols, ouvidoria: admCarregarOuvidoria,
                   agendas: admCarregarAgendas };
   if (carga[k]) await carga[k]();
@@ -129,6 +130,72 @@ function galeriaAdmin(){
   /* as contagens dos tiles pedem os dados; carrega em segundo plano */
   if (!adminP.pronto) Promise.all([admCarregarSols(), admCarregarOuvidoria()])
     .then(() => { if (location.hash.replace(/^#\//,'') === 'admin') galeriaAdmin(); }, () => {});
+}
+
+/* ============================================================
+   LINKS ÚTEIS (v29) — a coluna da direita do início
+   Endereço http(s) ou do próprio portal (#/…); o banco recusa o resto.
+   ============================================================ */
+async function admCarregarLinks(){
+  const el = $('#sec-links'); if (!el) return;
+  const { data, error } = await sb.from('portal_links').select('*').order('ordem').order('titulo');
+  if (error){ el.innerHTML = `<div class="aviso-box err">${/portal_links/.test(error.message || '')
+    ? 'Falta aplicar a migração db/v29_presenca_e_inicio.sql.' : esc(error.message)}</div>`; return; }
+  adminP.links = data || [];
+  const n = adminP.links.length;
+  el.innerHTML = `<div class="card"><div class="head"><h3>Links <span class="n">${n}</span></h3>
+      <button class="btn solid mini" onclick="admLinkEditar()">${ic('plus')} Novo link</button></div>
+    ${n ? `<table class="tabela trabalho"><thead><tr><th>Link</th><th>Grupo</th><th>Situação</th><th></th></tr></thead><tbody>
+      ${adminP.links.map((l, i) => `<tr>
+        <td><b>${esc(l.titulo)}</b><div class="small muted">${esc(l.url)}</div></td>
+        <td>${esc(l.grupo || '')}</td>
+        <td><span class="pill"><span class="dt ${l.ativo ? 'dt-ok' : 'dt-gray'}"></span>${l.ativo ? 'Visível' : 'Oculto'}</span></td>
+        <td style="text-align:right;white-space:nowrap">
+          ${i ? ibtn('back', 'Subir', `admLinkMover('${l.id}', -1)`, 'sm gira') : ''}${i < n - 1 ? ibtn('chevron', 'Descer', `admLinkMover('${l.id}', 1)`, 'sm gira') : ''}
+          ${ibtn('pencil', 'Editar', `admLinkEditar('${l.id}')`, 'sm')}
+          ${ibtn('trash', 'Excluir', `admLinkExcluir('${l.id}')`, 'sm')}</td></tr>`).join('')}</tbody></table>`
+      : '<p class="small muted">Nenhum link.</p>'}</div>`;
+}
+function admLinkEditar(id){
+  const l = id ? adminP.links.find(x => x.id === id) : null;
+  const grupos = [...new Set(adminP.links.map(x => x.grupo).filter(Boolean))];
+  abreModal(`<h3>${l ? 'Editar link' : 'Novo link'}</h3>
+    <div class="fld"><label for="lk-tit">Título</label><input id="lk-tit" maxlength="60" value="${esc(l?.titulo || '')}"></div>
+    <div class="fld"><label for="lk-url">Endereço</label><input id="lk-url" maxlength="400" value="${esc(l?.url || '')}" placeholder="https://… ou #/…"></div>
+    <div class="fld"><label for="lk-desc">Descrição</label><input id="lk-desc" maxlength="80" value="${esc(l?.descricao || '')}"></div>
+    <div class="fld"><label for="lk-grp">Grupo</label><input id="lk-grp" maxlength="40" list="lk-grupos" value="${esc(l?.grupo || '')}">
+      <datalist id="lk-grupos">${grupos.map(g => `<option value="${esc(g)}">`).join('')}</datalist></div>
+    <label class="check"><input type="checkbox" id="lk-ativo" ${!l || l.ativo ? 'checked' : ''}> Visível no início</label>
+    <p class="err-msg" id="lk-erro"></p>
+    <div class="acts"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" onclick="admLinkSalvar(${l ? `'${l.id}'` : 'null'})">Salvar</button></div>`);
+  setTimeout(() => $('#lk-tit')?.focus(), 30);
+}
+async function admLinkSalvar(id){
+  const d = { titulo: $('#lk-tit').value.trim(), url: $('#lk-url').value.trim(), descricao: $('#lk-desc').value.trim() || null,
+    grupo: $('#lk-grp').value.trim() || null, ativo: $('#lk-ativo').checked, criado_por: quemSouEu(), atualizado_em: new Date().toISOString() };
+  if (!d.titulo) return $('#lk-erro').textContent = 'Informe o título.';
+  if (!/^(https?:\/\/\S+|#\/\S*)$/i.test(d.url)) return $('#lk-erro').textContent = 'O endereço deve começar com https:// ou #/.';
+  if (!id) d.ordem = (Math.max(0, ...adminP.links.map(x => x.ordem || 0)) + 10);
+  const { error } = id ? await sb.from('portal_links').update(d).eq('id', id) : await sb.from('portal_links').insert(d);
+  if (error) return $('#lk-erro').textContent = 'Não foi possível salvar: ' + error.message;
+  fechaModal(); toast('Link salvo.'); admCarregarLinks();
+}
+async function admLinkMover(id, passo){
+  const ls = adminP.links, i = ls.findIndex(x => x.id === id), j = i + passo;
+  if (i < 0 || j < 0 || j >= ls.length) return;
+  [ls[i], ls[j]] = [ls[j], ls[i]];
+  const r = await Promise.all(ls.map((l, k) => (l.ordem === (k + 1) * 10) ? null
+    : sb.from('portal_links').update({ ordem: (k + 1) * 10 }).eq('id', l.id)).filter(Boolean));
+  const erro = r.find(x => x?.error); if (erro) toast('Não foi possível reordenar: ' + erro.error.message, true);
+  admCarregarLinks();
+}
+async function admLinkExcluir(id){
+  const l = adminP.links.find(x => x.id === id);
+  if (!await confirma(`Excluir o link “${l?.titulo || ''}”?`, 'Excluir')) return;
+  const { error } = await sb.from('portal_links').delete().eq('id', id);
+  if (error) return toast('Não foi possível excluir: ' + error.message, true);
+  toast('Link excluído.'); admCarregarLinks();
 }
 
 /* ============================================================
@@ -958,9 +1025,9 @@ function admDesenhaFormProjeto(){
       <div class="fld"><label>Slug (url)</label><input id="sp-slug" value="${esc(p.slug)}">
         <p class="mini">minúsculas, sem espaço ou acento</p></div>
       <div class="fld full">
-        <nav class="abas" style="margin-bottom:14px">${IDIOMAS.map(l =>
-          `<button class="aba ${l.k===adminP.projIdioma?'on':''}"
-            onclick="admTrocaIdioma('${l.k}')">${l.lb}</button>`).join('')}</nav>
+        <div class="seg" role="group" aria-label="Idioma" style="margin-bottom:14px">${IDIOMAS.map(l =>
+          `<button class="${l.k===adminP.projIdioma?'on':''}" aria-pressed="${l.k===adminP.projIdioma}"
+            onclick="admTrocaIdioma('${l.k}')">${l.lb}</button>`).join('')}</div>
         <p class="mini" style="margin:-8px 0 12px">O que ficar vazio em PT ou FR cai no texto em inglês.</p>
         ${IDIOMAS.map(l => `<div data-idioma="${l.k}" ${l.k===adminP.projIdioma?'':'hidden'}>
           <div class="fld"><label>Tagline · ${l.lb}</label>
@@ -991,8 +1058,9 @@ function admDesenhaFormProjeto(){
 }
 function admTrocaIdioma(k){
   adminP.projIdioma = k;
-  document.querySelectorAll('#site-form .abas .aba').forEach(b =>
-    b.classList.toggle('on', b.textContent.trim() === IDIOMAS.find(l=>l.k===k).lb));
+  document.querySelectorAll('#site-form .seg button').forEach(b => {
+    const on = b.textContent.trim() === IDIOMAS.find(l=>l.k===k).lb;
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
   document.querySelectorAll('[data-idioma]').forEach(d => d.hidden = (d.dataset.idioma !== k));
 }
 function admLerProjeto(){

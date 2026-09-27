@@ -166,7 +166,7 @@ function arqNavHTML(atual){
   const paraMim = arq.rol.filter(arqPossoRevisar).length;
   const it = (sub, rot, extra = '') => `<a href="#/arquivos${sub ? '/' + sub : ''}"${atual === sub
       ? ' class="on" aria-current="page"' : ''}>${rot}${extra}</a>`;
-  return `<nav class="arq-nav" aria-label="Arquivos">
+  return `<nav class="nav1" aria-label="Arquivos">
     ${it('', 'Todos os arquivos')}
     ${it('revisoes', 'Para revisar', arq.pendentes.length
       ? ` <span class="n${paraMim ? ' sua' : ''}" title="${paraMim ? paraMim + ' com você' : 'nenhuma com você'}">${arq.pendentes.length}</span>` : '')}

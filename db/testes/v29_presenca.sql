@@ -1,0 +1,129 @@
+\set ON_ERROR_STOP on
+\pset pager off
+-- ============================================================
+-- Teste da 29.0 — a folha de check-in, o placar e os links.
+-- Rode num banco com o esqueleto, o de Storage (auth.uid), a 15.0 e
+-- o esqueleto da agenda (calendario_itens já vem no esqueleto).
+-- ============================================================
+create or replace function ok(cond boolean, txt text) returns void language plpgsql as $$
+begin
+  if cond then raise notice '  ok   %', txt;
+  else raise exception 'FALHOU: %', txt; end if;
+end $$;
+create or replace function eu(p_reg integer, p_papel text) returns void language plpgsql as $$
+begin
+  perform set_config('teste.registro', coalesce(p_reg::text, ''), false);
+  perform set_config('teste.papel', p_papel, false);
+  perform set_config('teste.uid', coalesce((select id::text from perfis where registro = p_reg), ''), false);
+end $$;
+
+-- o check-in do SOMA, no mínimo que a 29.0 usa
+create table if not exists presencas (id bigserial primary key, registro integer not null, registrado_em timestamptz not null default now());
+insert into perfis (id, email, papel, registro) values
+  (gen_random_uuid(), 'ana@nro.dev', 'admin', 4), (gen_random_uuid(), 'bruno@nro.dev', 'leitura', 11),
+  (gen_random_uuid(), 'carla@nro.dev', 'leitura', 17), (gen_random_uuid(), 'diego@nro.dev', 'leitura', 23)
+on conflict do nothing;
+
+\ir ../v29_presenca_e_inicio.sql
+
+-- os dias úteis de trás para a frente, a partir de hoje, sem feriado
+create or replace function du(k integer) returns date language sql as $$
+  select dia from (
+    select d::date as dia, row_number() over (order by d desc) - 1 as i
+      from generate_series((now() at time zone 'America/Sao_Paulo')::date - 60, (now() at time zone 'America/Sao_Paulo')::date, interval '1 day') d
+     where extract(isodow from d) < 6
+       and not exists (select 1 from calendario_itens ci where ci.tipo = 'feriado' and ci.registro is null
+                        and d::date between ci.data_inicio and coalesce(ci.data_fim, ci.data_inicio))) x
+   where i = k $$;
+create or replace function marca(p_reg integer, p_dia date) returns void language sql as $$
+  insert into presencas (registro, registrado_em) values (p_reg, (p_dia + time '10:00')::timestamp at time zone 'America/Sao_Paulo') $$;
+create or replace function hoje_util() returns boolean language sql as $$ select du(0) = (now() at time zone 'America/Sao_Paulo')::date $$;
+
+do $$
+declare r jsonb; v_tok uuid; v_id uuid; v_fer date;
+begin
+  raise notice 'A folha';
+  perform eu(11, 'leitura');
+  perform ok(checkin_folha_criar('Recepção')->>'status' = 'sem_permissao', 'quem não é da gestão não gera folha');
+  perform eu(4, 'admin');
+  r := checkin_folha_criar('Recepção');
+  perform ok(r->>'status' = 'ok' and (r->>'token') is not null and r->>'criada_por' = 'Ana Figueiredo', 'a gestão gera, e fica quem gerou');
+  v_tok := (r->>'token')::uuid; v_id := (r->>'id')::uuid;
+
+  perform eu(null, 'leitura');
+  perform ok(registrar_checkin_folha(v_tok)->>'status' = 'sessao', 'sem sessão, a folha não registra ninguém');
+  perform eu(11, 'leitura');
+  r := registrar_checkin_folha(v_tok);
+  perform ok(r->>'status' = 'ok' and r->>'nome' = 'Bruno Tavares' and (r->>'visitas_mes')::int = 1, 'com sessão, registra a presença de quem leu');
+  perform ok((select origem from presencas where registro = 11 order by id desc limit 1) = 'folha', 'e marca que veio da folha');
+  perform ok(registrar_checkin_folha(v_tok)->>'status' = 'repetido', 'duas vezes seguidas é repetido');
+  perform ok((select usos from checkin_folhas where id = v_id) = 1, 'a folha conta os usos');
+  perform ok(registrar_checkin_folha(gen_random_uuid())->>'status' = 'folha_invalida', 'token que não é de folha nenhuma não vale');
+  perform eu(4, 'admin');
+  perform ok(checkin_folha_revogar(v_id)->>'status' = 'ok', 'a gestão revoga');
+  perform eu(17, 'leitura');
+  perform ok(registrar_checkin_folha(v_tok)->>'status' = 'folha_invalida', 'folha revogada não vale mais');
+  delete from presencas;
+
+  raise notice 'O placar';
+  -- um feriado no terceiro dia útil para trás
+  v_fer := du(2);
+  insert into calendario_itens (titulo, tipo, data_inicio, data_fim) values ('Feriado de teste', 'feriado', v_fer, v_fer);
+  perform marca(11, du(0)); perform marca(11, du(1)); perform marca(11, du(2)); perform marca(11, du(3)); perform marca(11, du(4));
+  perform marca(17, du(2)); perform marca(17, du(3));
+  perform marca(23, du(0)); perform marca(23, du(1)); perform marca(23, v_fer - 0); perform marca(23, du(2));
+  perform marca(4, du(1));
+  -- um sábado não conta nem quebra
+  if exists (select 1 from generate_series(du(1), du(0), interval '1 day') d where extract(isodow from d) = 6) then
+    perform marca(4, (select d::date from generate_series(du(1), du(0), interval '1 day') d where extract(isodow from d) = 6 limit 1));
+  end if;
+
+  perform eu(11, 'leitura');
+  r := labbio_placar(5);
+  perform ok((r->'sequencias'->0->>'registro')::int = 11 and (r->'sequencias'->0->>'atual')::int = 5, 'cinco dias úteis seguidos: o Bruno lidera a sequência');
+  perform ok((select (x->>'atual')::int from jsonb_array_elements(r->'sequencias') x where (x->>'registro')::int = 23) = 3,
+    'o feriado no meio não quebra: o Diego tem três');
+  perform ok(not exists (select 1 from jsonb_array_elements(r->'sequencias') x where (x->>'registro')::int = 17),
+    'quem parou há dois dias úteis está fora das sequências');
+  perform ok(coalesce((select (x->>'atual')::int from jsonb_array_elements(r->'sequencias') x where (x->>'registro')::int = 4), 0)
+    = case when hoje_util() then 1 else 0 end, 'o dia útil de hoje sem check-in ainda não quebra (o dia não acabou)');
+  perform ok((r->'eu'->>'atual')::int = 5 and (r->'eu'->>'recorde')::int = 5, 'e cada um vê a própria');
+  perform ok((r->'ranking'->0->>'registro')::int = 11
+    and (r->'ranking'->0->>'dias')::int = (select count(distinct (registrado_em at time zone 'America/Sao_Paulo')::date) from presencas
+       where registro = 11 and registrado_em >= date_trunc('month', now() at time zone 'America/Sao_Paulo') at time zone 'America/Sao_Paulo'),
+    'o ranking do mês conta os dias');
+  perform eu(17, 'leitura');
+  perform ok((labbio_placar(5)->'eu'->>'recorde')::int = 2 and (labbio_placar(5)->'eu'->>'atual')::int = 0, 'a Carla: recorde de dois, sequência zerada');
+  perform eu(null, 'leitura');
+  perform ok(labbio_placar(5) is null, 'sem sessão, nada');
+end $$;
+
+-- os links do início: todos leem, a gestão escreve
+select eu(23, 'leitura');
+set role authenticated;
+do $$
+begin
+  perform ok((select count(*) from portal_links) = 4, 'os quatro links de partida');
+  begin
+    insert into portal_links (titulo, url) values ('Meu blog', 'https://exemplo.com');
+    raise exception 'FALHOU: leitura criou link';
+  exception when insufficient_privilege then perform ok(true, 'quem não é da gestão não cria link'); end;
+  begin
+    insert into portal_links (titulo, url) values ('x', 'javascript:alert(1)');
+  exception when others then null; end;
+end $$;
+reset role;
+select eu(31, 'pessoal');
+set role authenticated;
+do $$
+begin
+  insert into portal_links (titulo, url, ordem) values ('Drive da equipe', 'https://drive.google.com', 5);
+  perform ok(exists (select 1 from portal_links where titulo = 'Drive da equipe'), 'o Depto. de Pessoal cria');
+  begin
+    insert into portal_links (titulo, url) values ('x', 'javascript:alert(1)');
+    raise exception 'FALHOU: aceitou javascript:';
+  exception when check_violation then perform ok(true, 'endereço que não é http nem do portal é recusado'); end;
+end $$;
+reset role;
+
+do $$ begin perform ok((select count(*) from migracoes where id = 'v29_presenca_e_inicio') = 1, 'registra a migração'); end $$;

@@ -1,9 +1,12 @@
 /* OKRs e Processo Seletivo, trazidos do SOMA · Gestão para o portal.
    Confere, com asserção (sai com código 1 se algo falhar):
      OKRs    — o endereço firma no objetivo em foco; os estratégicos são
-               subitens no menu e o desdobramento acende o pai; a cadeia,
-               o progresso, o detalhe com comentários, o comentar grava;
-               quem é só leitura não cria nem desdobra;
+               subitens no menu e o desdobramento acende o pai; a tela
+               infinita: só os desdobramentos, abrir mantém o que estava
+               aberto, fios entre pai e filhos, recolher, zoom, arrastar,
+               a busca da tela abre o caminho; o progresso, o detalhe com
+               comentários, o comentar grava; quem é só leitura não cria
+               nem desdobra;
      Seleção — as oito abas têm endereço e acendem no menu; visão geral,
                candidatos (filtro, seleção em lote, ficha por endereço),
                competências (nome com aspas não quebra), avaliação (grava
@@ -52,10 +55,11 @@ console.log('\nOKRs (admin)');
 {
   const { ctx, p, erros } = await abrir({ hash:'#/okrs' });
   confere('#/okrs firma o endereço no primeiro objetivo estratégico', await hash(p) === '#/okrs/OE1', await hash(p));
-  const oes = await p.evaluate(() => [...document.querySelectorAll('.okr-oe')].map(b => ({
-    cd: b.querySelector('.cd').textContent, on: b.classList.contains('on') })));
-  confere('a faixa mostra os dois estratégicos, com o OE1 aceso',
-    oes.map(o => o.cd).join() === 'OE1,OE2' && oes[0].on && !oes[1].on, oes);
+  const nos = () => p.evaluate(() => [...document.querySelectorAll('#okr-mundo .okr-no .okr-cod')].map(x => x.textContent));
+  const fios = () => p.evaluate(() => document.querySelectorAll('#okr-mundo .okr-fios path').length);
+  confere('a tela mostra só os dois estratégicos, com o OE1 em foco',
+    (await nos()).join() === 'OE1,OE2' && await p.evaluate(() => document.querySelector('.okr-no.foco .okr-cod').textContent) === 'OE1', await nos());
+  confere('sem a lista "no mesmo nível"', await p.locator('.org-sec, .org-bottom').count() === 0);
   const menu = await p.evaluate(() => {
     const s = document.querySelector('#lt-nav .lt-sec[data-r="okrs"]');
     return { filhos: [...s.querySelectorAll('.lt-filho .pf')].map(x => x.textContent),
@@ -63,31 +67,54 @@ console.log('\nOKRs (admin)');
   });
   confere('no menu, OKRs tem ícone e os estratégicos como subitens', menu.filhos.join() === 'OE1,OE2' && menu.icone > 20, menu);
   confere('e o OE1 está marcado', JSON.stringify(await atual(p)) === '["Consolidar a equipe de pesquisa"]', await atual(p));
-  const foco = await p.evaluate(() => ({ cod: document.querySelector('.okr-focus .okr-cod').textContent,
-    prog: document.querySelector('.okr-focus .okr-prog .pc')?.textContent }));
-  confere('o foco é o OE1, com o progresso das folhas (1 de 2)', foco.cod === 'OE1' && /1\/2.*50%/.test(foco.prog), foco);
-  const icones = await p.evaluate(() => [...document.querySelectorAll('main .btn .ic')].map(s => Math.round(s.getBoundingClientRect().width)));
-  confere('ícone dentro de botão aparece (tinha largura zero)', icones.length > 0 && icones.every(w => w >= 14), icones);
+  confere('o OE1 traz o progresso das folhas (1 de 2)',
+    await p.evaluate(() => document.querySelector('.okr-no[data-id="k1"] .okr-prog .pc')?.textContent) === '1/2');
+  const icones = await p.evaluate(() => [...document.querySelectorAll('main .btn .ic, main .icon-btn .ic')].map(s => Math.round(s.getBoundingClientRect().width)));
+  confere('ícone dentro de botão aparece (tinha largura zero)', icones.length > 0 && icones.every(w => w >= 12), icones);
 
-  await p.click('.org-sec .okr-card:has-text("OT1.2")'); await p.waitForTimeout(800);
-  confere('clicar num desdobramento navega para ele', await hash(p) === '#/okrs/OT1.2', await hash(p));
+  await p.click('.okr-no[data-id="k1"] .okr-abre'); await p.waitForTimeout(300);
+  confere('abrir o OE1 mostra os desdobramentos embaixo, ligados por fios',
+    (await nos()).join() === 'OE1,OT1.1,OT1.2,OE2' && await fios() === 2, [await nos(), await fios()]);
+  const y = await p.evaluate(() => Object.fromEntries(['k1', 'k3', 'k4'].map(id => [id, parseFloat(document.querySelector(`.okr-no[data-id="${id}"]`).style.top)])));
+  confere('um nível abaixo do outro, como no organograma', y.k3 > y.k1 && y.k3 === y.k4, y);
+  await p.click('.okr-no[data-id="k4"] .okr-abre'); await p.waitForTimeout(300);
+  confere('abrir o OT1.2 mantém o OE1 aberto', (await nos()).join() === 'OE1,OT1.1,OT1.2,OP1.2.1,OE2' && await fios() === 3, await nos());
+  confere('e fica guardado', await p.evaluate(() => JSON.parse(localStorage.getItem('nd.okr.abertos')).sort().join()) === 'k1,k4');
+  await p.click('.okr-no[data-id="k1"] .okr-abre'); await p.waitForTimeout(300);
+  confere('recolher o OE1 recolhe o que está embaixo', (await nos()).join() === 'OE1,OE2'
+    && await p.evaluate(() => JSON.parse(localStorage.getItem('nd.okr.abertos')).length) === 0, await nos());
+
+  const pct0 = await p.textContent('#okr-pct');
+  await p.click('.okr-ferr button[title="Mais zoom"]'); await p.waitForTimeout(400);
+  const pct1 = await p.textContent('#okr-pct');
+  confere('o zoom aumenta', parseInt(pct1) > parseInt(pct0), [pct0, pct1]);
+  const t0 = await p.evaluate(() => document.getElementById('okr-mundo').style.transform);
+  const cx = await p.evaluate(() => { const r = document.getElementById('okr-tela').getBoundingClientRect(); return { x: r.left + r.width - 60, y: r.top + r.height / 2 }; });
+  await p.mouse.move(cx.x, cx.y); await p.mouse.down(); await p.mouse.move(cx.x - 180, cx.y + 90, { steps:6 }); await p.mouse.up();
+  const t1 = await p.evaluate(() => document.getElementById('okr-mundo').style.transform);
+  confere('arrastar o fundo move a tela', t0 !== t1 && /translate/.test(t1), [t0, t1]);
+  await p.mouse.move(cx.x, cx.y); await p.keyboard.down('Control'); await p.mouse.wheel(0, -300); await p.keyboard.up('Control'); await p.waitForTimeout(200);
+  confere('Ctrl e a roda dão zoom', parseInt(await p.textContent('#okr-pct')) > parseInt(pct1), await p.textContent('#okr-pct'));
+
+  await p.fill('#okr-q', 'trainees'); await p.waitForTimeout(200);
+  await p.click('#okr-achados .op'); await p.waitForTimeout(800);
+  confere('a busca da tela leva ao objetivo', await hash(p) === '#/okrs/OT1.2', await hash(p));
+  confere('e abre o caminho até ele, em foco', await p.evaluate(() => document.querySelector('.okr-no.foco .okr-cod').textContent) === 'OT1.2'
+    && (await nos()).includes('OP1.2.1'), await nos());
   confere('no menu continua aceso o OE1, de quem ele desdobra',
     JSON.stringify(await atual(p)) === '["Consolidar a equipe de pesquisa"]', await atual(p));
-  const cadeia = await p.evaluate(() => ({
-    acima: [...document.querySelectorAll('.org-chain > .okr-card:not(.okr-focus) .okr-cod')].map(x => x.textContent),
-    foco: document.querySelector('.okr-focus .okr-cod').textContent,
-    filhos: [...document.querySelectorAll('.org-sec:first-child .okr-card .okr-cod')].map(x => x.textContent) }));
-  confere('a cadeia mostra o OE1 acima, o OT1.2 em foco e o OP1.2.1 abaixo',
-    cadeia.acima.join() === 'OE1' && cadeia.foco === 'OT1.2' && cadeia.filhos.join() === 'OP1.2.1', cadeia);
+  const foco = await p.evaluate(() => { const t = document.getElementById('okr-tela').getBoundingClientRect(), n = document.querySelector('.okr-no.foco').getBoundingClientRect();
+    return n.left >= t.left && n.right <= t.right && n.top >= t.top && n.bottom <= t.bottom; });
+  confere('o objetivo em foco fica à vista', foco);
   await p.goBack(); await p.waitForTimeout(800);
   confere('o voltar do navegador volta ao objetivo anterior', await hash(p) === '#/okrs/OE1', await hash(p));
 
-  await p.click('.okr-focus button:has-text("Detalhes")'); await p.waitForTimeout(600);
+  await p.click('.okr-no[data-id="k1"] .nm'); await p.waitForTimeout(600);
   const det = await p.evaluate(() => ({
     coms: document.querySelectorAll('#okr-coms .okr-com').length,
     sistema: document.querySelectorAll('#okr-coms .okr-com.sistema').length,
     status: [...document.querySelectorAll('#modal .chips .chip')].map(b => b.textContent) }));
-  confere('o detalhe traz os comentários, o automático marcado à parte', det.coms === 2 && det.sistema === 1, det);
+  confere('o título abre o detalhe com os comentários, o automático marcado à parte', det.coms === 2 && det.sistema === 1, det);
   confere('e o admin pode mover o status', det.status.length === 5, det);
   await limpaEscritas(p);
   await p.fill('#okr-novo-com', 'Duas vagas preenchidas.'); await p.click('#okr-com-btn'); await p.waitForTimeout(500);
@@ -115,14 +142,14 @@ console.log('\nOKRs (leitura)');
   const { ctx, p, erros } = await abrir({ hash:'#/okrs/OE2', stub: stubDe('leitura') });
   const t = await p.evaluate(() => ({
     novo: !!document.querySelector('.topo-gestao .btn.solid'),
-    desdobrar: !!document.querySelector('.okr-focus button:not([onclick*="Detalhe"])') }));
+    desdobrar: !!document.querySelector('.okr-no button[title="Desdobrar"]') }));
   confere('quem é só leitura não cria nem desdobra', !t.novo && !t.desdobrar, t);
-  await p.click('.okr-focus button:has-text("Detalhes")'); await p.waitForTimeout(500);
+  await p.click('.okr-no.foco .nm'); await p.waitForTimeout(500);
   confere('e não move o status de objetivo que não é seu',
     await p.evaluate(() => document.querySelectorAll('#modal .chips .chip').length) === 0);
   await p.keyboard.press('Escape');
   await ir(p, '#/okrs/OE1');
-  await p.click('.okr-focus button:has-text("Detalhes")'); await p.waitForTimeout(500);
+  await p.click('.okr-no.foco .nm'); await p.waitForTimeout(500);
   confere('mas move o de que é responsável (a Ana responde pelo OE1)',
     await p.evaluate(() => document.querySelectorAll('#modal .chips .chip').length) === 5);
   confere('sem erro de página', erros.length === 0, erros);
@@ -149,7 +176,7 @@ console.log('\nSeleção (admin)');
     menu.aberta && menu.filhos.join('|') === 'Visão geral|Candidatos|Avaliação|Agenda|Dinâmica|Publicações|FAQ|Configurações', menu);
   confere('e "Visão geral" marcada', JSON.stringify(await atual(p)) === '["Visão geral"]', await atual(p));
 
-  await p.click('.abas a:has-text("Candidatos")'); await p.waitForTimeout(800);
+  await p.click('.nav1 a:has-text("Candidatos")'); await p.waitForTimeout(800);
   confere('a aba é endereço: #/selecao/candidatos, e o menu acompanha',
     await hash(p) === '#/selecao/candidatos' && JSON.stringify(await atual(p)) === '["Candidatos"]', [await hash(p), await atual(p)]);
   confere('a lista traz os quatro candidatos', await p.locator('.tabela tbody tr.click').count() === 4);
@@ -177,10 +204,10 @@ console.log('\nSeleção (admin)');
   const ficha = await p.evaluate(() => ({ aberto: document.getElementById('modal').classList.contains('open'),
     nome: document.querySelector('#modal [style*="font-size:17px"]')?.textContent }));
   confere('#/selecao/candidatos/c1 abre a ficha por cima da lista', ficha.aberto && ficha.nome === 'Joana Ribeiro', ficha);
-  await p.click('#modal .abas button.aba:text-is("Ações")'); await p.waitForTimeout(200);
+  await p.click('#modal .nav1 button:text-is("Ações")'); await p.waitForTimeout(200);
   confere('as abas da ficha trocam de conteúdo',
     await p.evaluate(() => !document.getElementById('pstab-acoes').hidden && document.getElementById('pstab-dados').hidden));
-  await p.click('#modal .abas button.aba:text-is("Dados")');
+  await p.click('#modal .nav1 button:text-is("Dados")');
   await p.click('#modal button:has-text("Editar")'); await p.waitForTimeout(300);
   await p.click('#modal .cch:has-text("Python")'); await p.waitForTimeout(150);
   confere('competência com aspas no nome marca sem quebrar o clique',
@@ -215,7 +242,7 @@ console.log('\nSeleção (admin)');
 
   await ir(p, '#/selecao/dinamica/roteiro');
   const rot = await p.evaluate(() => ({ aviso: document.querySelector('#din-corpo .aviso-box')?.textContent || '',
-    sub: [...document.querySelectorAll('#sel-corpo .chips .chip.on')].map(c => c.textContent) }));
+    sub: [...document.querySelectorAll('#sel-corpo .abas a.on')].map(c => c.textContent) }));
   confere('dinâmica › roteiro: soma os blocos contra a janela', /60 min.*75 min/.test(rot.aviso) && rot.sub.join() === 'Roteiro', rot);
   confere('e o menu marca "Dinâmica"', JSON.stringify(await atual(p)) === '["Dinâmica"]', await atual(p));
   await ir(p, '#/selecao/dinamica/janelas');

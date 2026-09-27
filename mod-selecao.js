@@ -189,8 +189,7 @@ async function desenhaSelecao(){
         ${PS.edicoes.map(e=>`<option value="${e.id}" ${e.id===PS.ed.id?'selected':''}>${esc(e.nome)}</option>`).join('')}</select>`
     : `<span class="pill">${esc(PS.ed.nome)}</span>`;
   m.innerHTML = topo(seletor) + `
-    <nav class="abas">${PS_ABAS.map(([t,l])=>
-      `<a href="#/selecao${t==='geral'?'':'/'+t}" class="${PS.tab===t?'on':''}">${l}</a>`).join('')}</nav>
+    ${navNivel1(PS_ABAS.map(([t, l]) => [t, l, '#/selecao' + (t === 'geral' ? '' : '/' + t)]), PS.tab, 'Seleção')}
     <div id="sel-corpo"></div>`;
   ({geral:psGeral, candidatos:psCandidatos, avaliacao:psAvaliacao, agenda:psAgenda,
     dinamica:psDinamica, publicacoes:psPublicacoes, faq:psFaq, config:psConfig}[PS.tab]||psGeral)();
@@ -432,11 +431,11 @@ function psAbrirFicha(id){
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${psPill(c.status)}
         ${ibtn('x','Fechar','fechaModal()','sm')}</div>
     </div>
-    <div class="abas" style="margin-bottom:16px">
-      <button class="aba on" onclick="psFichaTab(this,'dados')">Dados</button>
-      <button class="aba" onclick="psFichaTab(this,'avals')">Avaliações (${psAvalsDe(id).length})</button>
-      <button class="aba" onclick="psFichaTab(this,'acoes')">Ações</button>
-    </div>
+    <nav class="nav1" aria-label="Candidato">
+      <button class="on" onclick="psFichaTab(this,'dados')">Dados</button>
+      <button onclick="psFichaTab(this,'avals')">Avaliações (${psAvalsDe(id).length})</button>
+      <button onclick="psFichaTab(this,'acoes')">Ações</button>
+    </nav>
     <div id="pstab-dados">
       <dl class="dl">
         ${[['E-mail',c.email],['Telefone',c.telefone],['Nascimento',c.data_nascimento?fmtD(c.data_nascimento):null],
@@ -801,8 +800,7 @@ const psDinTitulo = (i)=> {
 function psDinamica(){
   if(!PS.v12){ $('#sel-corpo').innerHTML = psDinFaltaV12(); return; }
   $('#sel-corpo').innerHTML = `
-    <div class="chips" style="margin-bottom:16px">${PS_DIN_SUB.map(([k,l])=>
-      `<a class="chip ${PS.dinSub===k?'on':''}" href="#/selecao/dinamica/${k}">${l}</a>`).join('')}</div>
+    ${navNivel2(PS_DIN_SUB.map(([k, l]) => [k, l, '#/selecao/dinamica/' + k]), PS.dinSub, 'Dinâmica')}
     <div id="din-corpo"></div>`;
   ({painel:psDinPainel, roteiro:psDinRoteiro, desafio:psDinDesafio,
     criterios:psDinCriterios, janelas:psDinJanelas}[PS.dinSub]||psDinPainel)();

@@ -55,6 +55,17 @@ cada pessoa; sem escolha, tela abaixo de 1280px começa recolhida). No
 trilho, passar o mouse — ou chegar pelo Tab — num ícone abre os subitens ao
 lado. Abaixo de 900px o menu vira gaveta, puxada pela barra de topo.
 
+**Seletores dentro de uma tela.** Uma regra só, em todo espaço:
+
+| Nível | Componente | Onde |
+|---|---|---|
+| 1 — as seções da tela | `.nav1`, o seletor segmentado com a pílula clara no item atual (`navNivel1()`) | as seções de um espaço (Arquivos, Studio, Treinamentos, Equipe, Seleção, Cofre, Eventos) ou de um objeto (a ficha, o projeto, o candidato) |
+| 2 — os recortes de uma seção | `.abas`, sublinhadas (`navNivel2()`) | Configurações › Geral · README; Dinâmica › Painel · Roteiro… |
+| filtro, que não troca de seção | `.seg`, o controle segmentado com o item ligado em Synapse | Meus · Todos, status, idioma, a visão da Agenda |
+
+Aba sublinhada no primeiro nível ou pílula no segundo é o erro que esta regra
+existe para evitar. O componente está no design system (card *Navegação*).
+
 A árvore mora em `arvoreDoMenu()`, na casca. Tela nova com endereço próprio
 entra lá como subitem do espaço dela; se a tela firma o endereço sozinha
 (como Atividades, que troca `#/atividades` pelo quadro que abriu), o menu

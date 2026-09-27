@@ -27,7 +27,8 @@
    carregarLib, registrarBusca, filtrarSimples, can, grupoPorId,
    gruposEfetivos, carregarStudioConfig, podeStudio,
    podeAprovarStudio, STUDIO_STATUS, STUDIO_REDES, STUDIO_FORMATOS,
-   STUDIO_PILARES, STUDIO_TIPOS, studioTipo, MES_CURTO, DIAS_LB.
+   STUDIO_PILARES, STUDIO_TIPOS, studioTipo, MES_CURTO, DIAS_LB,
+   calMesHTML, calMesLigar, MESES_LONGOS, maiuscula, isoDia, dataHora, dica.
    ============================================================ */
 
 const studioM = { pubs:[], aprov:[], erro:null, lembrou:false, urls:{},
@@ -119,11 +120,11 @@ function stNaoAchou(cod){
     <h3>Nada com o código ${esc(cod)}</h3><p>A publicação pode ter sido apagada. Procure no quadro.</p>
     <a class="btn ghost" href="#/studio">Quadro do Studio</a></div>`;
 }
-/* a navegação de dentro do Studio: a mesma linha de links de Arquivos */
+/* nível 1 do Studio: o seletor segmentado, como em todo espaço */
 function stNav(atual){
   const n = studioM.pubs.filter(stEsperaMim).length;
   const it = [['', 'Quadro'], ['calendario', 'Calendário'], ['ideias', 'Ideias'], ['criar', 'Criar'], ['modelos', 'Modelos'], ['config', 'Configurações']];
-  return `<nav class="arq-nav st-nav" aria-label="Studio">${it.map(([k, l]) =>
+  return `<nav class="nav1" aria-label="Studio">${it.map(([k, l]) =>
     `<a href="#/studio${k ? '/' + k : ''}" class="${atual === k ? 'on' : ''}">${l}${k === '' && n
       ? ` <span class="n sua" title="Esperando a sua aprovação">${n}</span>` : ''}</a>`).join('')}</nav>`;
 }
@@ -397,85 +398,71 @@ registrarBusca({
 });
 
 /* ============================================================
-   CALENDÁRIO — o mês da conta. Arrastar um cartão para um dia muda
-   a data (mantendo a hora); o que não tem data fica ao lado, pronto
-   para ser arrastado.
+   CALENDÁRIO — o mês da conta, no mesmo componente da Agenda
+   (calMesHTML). Arrastar para um dia muda a data e mantém a hora; o
+   que não tem data fica ao lado, pronto para ser arrastado, e soltar
+   ali tira a data.
    ============================================================ */
-const ST_MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 function stCalendario(){
   const { ano, mes } = studioM.cal;
   const f = studioM.filtro;
   const vis = stFiltradas();
-  const ini = new Date(ano, mes, 1), dow = (ini.getDay() + 6) % 7;
-  const dias = new Date(ano, mes + 1, 0).getDate();
-  const hoje = new Date(); const hojeK = `${hoje.getFullYear()}-${hoje.getMonth()}-${hoje.getDate()}`;
-  const doDia = {};
-  vis.filter(p => p.data_publicacao).forEach(p => { const d = new Date(p.data_publicacao);
-    if (d.getFullYear() === ano && d.getMonth() === mes) (doDia[d.getDate()] ||= []).push(p); });
-  Object.values(doDia).forEach(l => l.sort((a, b) => new Date(a.data_publicacao) - new Date(b.data_publicacao)));
+  const hh = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const pontos = p => (p.redes || []).map(r => STUDIO_REDES[r]?.c).filter(Boolean);
+  const itens = vis.filter(p => p.data_publicacao).map(p => { const d = new Date(p.data_publicacao);
+    return { id:p.id, titulo:p.titulo, cor:ST_COR_STATUS[p.status], de:isoDia(d), hora:hh(d), arrasta:true,
+      classe: stAtrasada(p) ? 'atras' : '', pontos:pontos(p), dica:`${p.codigo}, ${stRotStatus(p.status)}` }; });
   const semData = vis.filter(p => !p.data_publicacao && ['ideia', 'producao', 'aprovacao', 'pronta'].includes(p.status));
-  const celulas = [];
-  for (let i = 0; i < dow; i++) celulas.push('<div class="st-dia fora"></div>');
-  for (let d = 1; d <= dias; d++){
-    const ds = new Date(ano, mes, d), fds = [0, 6].includes(ds.getDay());
-    celulas.push(`<div class="st-dia${fds ? ' fds' : ''}${`${ano}-${mes}-${d}` === hojeK ? ' hoje' : ''}" data-dia="${d}"
-        ondragover="event.preventDefault();this.classList.add('sobre')" ondragleave="this.classList.remove('sobre')" ondrop="stSoltarDia(event,${d})">
-      <span class="d">${d}</span>${(doDia[d] || []).map(p => stChipCal(p)).join('')}</div>`);
-  }
-  while (celulas.length % 7) celulas.push('<div class="st-dia fora"></div>');
   const redesUsadas = [...new Set(studioM.pubs.flatMap(p => p.redes || []))].filter(r => STUDIO_REDES[r]);
-  $('#main').innerHTML = `${stTopo('Calendário', 'O que sai em cada dia, em cada rede. Arraste para mudar a data; na véspera, o responsável recebe o lembrete por e-mail.')}
+  $('#main').innerHTML = `${stTopo('Calendário', '')}
     ${stNav('calendario')}
-    <div class="st-cal-topo">
-      <div class="st-cal-mes"><button class="icon-btn" onclick="stMes(-1)" aria-label="Mês anterior">${ic('back')}</button>
-        <h2>${ST_MESES[mes]} <span>${ano}</span></h2>
-        <button class="icon-btn" onclick="stMes(1)" aria-label="Próximo mês">${ic('chevron')}</button>
-        <button class="btn ghost mini" onclick="studioM.cal={ano:new Date().getFullYear(),mes:new Date().getMonth()};stCalendario()">Hoje</button></div>
-      <div class="seg" role="group" aria-label="Rede"><button class="${!f.rede ? 'on' : ''}" onclick="studioM.filtro.rede='';stCalendario()">Todas</button>
-        ${redesUsadas.map(r => `<button class="${f.rede === r ? 'on' : ''}" onclick="studioM.filtro.rede='${r}';stCalendario()">${esc(STUDIO_REDES[r].l)}</button>`).join('')}</div>
-      <div class="st-legenda">${ST_COLUNAS.map(s => `<span><i style="background:${ST_COR_STATUS[s]}"></i>${esc(stRotStatus(s))}</span>`).join('')}</div>
+    <div class="cal-barra">
+      <button class="btn ghost mini" onclick="studioM.cal={ano:new Date().getFullYear(),mes:new Date().getMonth()};stCalendario()">Hoje</button>
+      <span class="cal-nav">${ibtn('back', 'Mês anterior', 'stMes(-1)', 'sm')}${ibtn('chevron', 'Próximo mês', 'stMes(1)', 'sm')}</span>
+      <h2 class="cal-tit">${maiuscula(MESES_LONGOS[mes])} de ${ano}</h2>
+      <span class="cal-dir">${dica('Arraste uma publicação para mudar a data. Na véspera, o responsável recebe um lembrete por e-mail.')}
+        <span class="seg" role="group" aria-label="Rede"><button class="${!f.rede ? 'on' : ''}" onclick="studioM.filtro.rede='';stCalendario()">Todas</button>
+        ${redesUsadas.map(r => `<button class="${f.rede === r ? 'on' : ''}" onclick="studioM.filtro.rede='${r}';stCalendario()">${esc(STUDIO_REDES[r].l)}</button>`).join('')}</span></span>
     </div>
+    <div class="st-legenda">${ST_COLUNAS.map(s => `<span><i style="background:${ST_COR_STATUS[s]}"></i>${esc(stRotStatus(s))}</span>`).join('')}</div>
     <div class="st-cal-grade">
-      <div class="st-cal">
-        ${DIAS_LB.map(d => `<div class="st-dsem">${d}</div>`).join('')}
-        ${celulas.join('')}
-      </div>
-      <aside class="st-semdata" ondragover="event.preventDefault();this.classList.add('sobre')" ondragleave="this.classList.remove('sobre')" ondrop="stSoltarDia(event,null)">
-        <h3>Sem data · ${semData.length}</h3>
-        <p class="small muted">Arraste para um dia do mês.</p>
-        ${semData.map(p => stChipCal(p, true)).join('') || '<p class="small muted" style="margin-top:10px">Tudo tem data.</p>'}
+      ${calMesHTML({ chave:'studio', ano, mes, itens, max:4 })}
+      <aside class="st-semdata" id="st-semdata" aria-label="Sem data">
+        <h3>Sem data <span class="n">${semData.length}</span></h3>
+        ${semData.map(p => `<button type="button" class="calm-chip" draggable="true" data-i="${esc(p.id)}" style="--cc:${ST_COR_STATUS[p.status]}"
+            title="${esc(p.codigo + ', ' + p.titulo)}">${pontos(p).length ? `<span class="calm-pts">${pontos(p).map(c => `<i style="background:${c}"></i>`).join('')}</span>` : ''}${esc(p.titulo)}<span class="stt">${esc(stRotStatus(p.status))}</span></button>`).join('')
+          || '<p class="small muted">Nenhuma.</p>'}
       </aside>
     </div>`;
-}
-function stChipCal(p, comStatus){
-  const d = p.data_publicacao ? new Date(p.data_publicacao) : null;
-  return `<a class="st-chip${stAtrasada(p) ? ' atras' : ''}" href="#/studio/${esc(p.codigo)}" draggable="true" style="--st:${ST_COR_STATUS[p.status]}"
-      ondragstart="studioM.arrastando='${p.id}';event.dataTransfer.effectAllowed='move'" title="${esc(p.codigo + ' · ' + p.titulo + ' · ' + stRotStatus(p.status))}">
-    ${d ? `<b>${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}</b>` : ''}
-    <span class="st-chip-redes">${(p.redes || []).map(r => `<i style="background:${STUDIO_REDES[r]?.c || 'var(--dim)'}" title="${esc(STUDIO_REDES[r]?.l || r)}"></i>`).join('')}</span>
-    <span class="tt">${esc(p.titulo)}</span>${comStatus ? `<span class="stt">${esc(stRotStatus(p.status))}</span>` : ''}</a>`;
+  const abrir = id => { const p = studioM.pubs.find(x => x.id === id); if (p) location.hash = '#/studio/' + p.codigo; };
+  calMesLigar('studio', { item: abrir, soltar: (id, iso) => stMudarData(id, iso) });
+  const sd = $('#st-semdata');
+  sd.addEventListener('click', e => { const c = e.target.closest('.calm-chip'); if (c) abrir(c.dataset.i); });
+  sd.addEventListener('dragstart', e => { const c = e.target.closest('.calm-chip'); if (c){ e.dataTransfer.setData('text/plain', c.dataset.i); e.dataTransfer.effectAllowed = 'move'; } });
+  sd.addEventListener('dragover', e => { e.preventDefault(); sd.classList.add('sobre'); });
+  sd.addEventListener('dragleave', e => { if (!sd.contains(e.relatedTarget)) sd.classList.remove('sobre'); });
+  sd.addEventListener('drop', e => { e.preventDefault(); sd.classList.remove('sobre');
+    const id = e.dataTransfer.getData('text/plain'); if (id) stMudarData(id, null); });
 }
 function stMes(d){
   let { ano, mes } = studioM.cal; mes += d;
   if (mes < 0){ mes = 11; ano--; } if (mes > 11){ mes = 0; ano++; }
   studioM.cal = { ano, mes }; stCalendario();
 }
-async function stSoltarDia(ev, dia){
-  ev.preventDefault();
-  document.querySelectorAll('.sobre').forEach(c => c.classList.remove('sobre'));
-  const p = studioM.pubs.find(x => x.id === studioM.arrastando); studioM.arrastando = null;
-  if (!p) return;
-  let iso = '';
-  if (dia){
+/* iso: o dia (AAAA-MM-DD) ou null, para ficar sem data */
+async function stMudarData(id, iso){
+  const p = studioM.pubs.find(x => x.id === id); if (!p) return;
+  let v = '';
+  if (iso){
     const antes = p.data_publicacao ? new Date(p.data_publicacao) : null;
-    const d = new Date(studioM.cal.ano, studioM.cal.mes, dia, antes ? antes.getHours() : 18, antes ? antes.getMinutes() : 0);
-    iso = d.toISOString();
+    const d = dataHora(iso, antes ? antes.getHours() * 60 + antes.getMinutes() : 18 * 60);
     if (antes && Math.abs(antes - d) < 60e3) return;
+    v = d.toISOString();
   } else if (!p.data_publicacao) return;
-  const { data, error } = await sb.rpc('studio_publicacao_salvar', { p: { id: p.id, data_publicacao: iso } });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para mudar a data'), true);
-  p.data_publicacao = iso || null;
-  toast(dia ? `${p.codigo} para ${dia}/${studioM.cal.mes + 1}.` : `${p.codigo} ficou sem data.`);
+  const { data, error } = await sb.rpc('studio_publicacao_salvar', { p: { id: p.id, data_publicacao: v } });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível mudar a data'), true);
+  p.data_publicacao = v || null;
+  toast(iso ? `${p.codigo} para ${fmtD(iso)}.` : `${p.codigo} ficou sem data.`);
   stCalendario();
 }
 

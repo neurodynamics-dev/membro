@@ -144,7 +144,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   await p.waitForTimeout(400);
   const meus = await p.evaluate(() => [...document.querySelectorAll('a.evx-card')].map(a => a.getAttribute('href').split('/').pop()));
   confere('Meus: o que registrei e de que participo', meus.join('|') === 'EXT-3|EXT-1', meus);
-  confere('a aba de aprovar conta o que me espera', /Para aprovar 1/.test(await texto(p, '.arq-nav')));
+  confere('a aba de aprovar conta o que me espera', /Para aprovar 1/.test(await texto(p, '.nav1')));
   confere('o cartão do aprovado traz o código da minha declaração', /K7QD-2M9X-P4TR/.test(await texto(p, 'a.evx-card[href$="EXT-1"]')));
   await ir(p, '#/servicos/eventos/aprovar');
   confere('Para aprovar: o do Bruno, que espera por mim',
@@ -255,7 +255,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   console.log('\nQuem só lê');
   const { ctx, p, erros } = await abrir({ stub: stubLeitura, hash:'#/servicos/eventos' });
   await p.waitForTimeout(400);
-  confere('sem configurações na navegação', !/Configurações/.test(await texto(p, '.arq-nav')));
+  confere('sem configurações na navegação', !/Configurações/.test(await texto(p, '.nav1')));
   await ir(p, '#/servicos/eventos/EXT-4', 1000);
   confere('o rascunho de outra pessoa não abre', /Nenhum evento EXT-4 para você/.test(await texto(p, '#main')));
   await ir(p, '#/servicos/eventos/EXT-1', 1000);

@@ -247,7 +247,7 @@ function evxNav(atual){
   const l = docs.ev.lista || [];
   const nAp = l.filter(e => e.posso_aprovar).length;
   const it = [['', 'Meus'], ['aprovar', 'Para aprovar'], ['todos', 'Todos da equipe']];
-  return `<nav class="arq-nav" aria-label="Eventos">${it.map(([k, rot]) => `<a href="#/servicos/eventos${k ? '/' + k : ''}"
+  return `<nav class="nav1" aria-label="Eventos">${it.map(([k, rot]) => `<a href="#/servicos/eventos${k ? '/' + k : ''}"
     class="${atual === (k || 'meus') ? 'on' : ''}">${rot}${k === 'aprovar' && nAp ? ` <span class="n sua">${nAp}</span>` : ''}</a>`).join('')}
     ${evxPodeConfigurar() ? `<a href="#/servicos/eventos/config" class="${atual === 'config' ? 'on' : ''}">${ic('engrenagem')} Configurações</a>` : ''}</nav>`;
 }

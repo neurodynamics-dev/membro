@@ -936,17 +936,13 @@ async function arquivarAtividade(){
 async function telaCarga(){
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Somando…</div>`;
   const { data, error } = await sb.from('atividades_carga').select('*').order('abertas', { ascending:false });
-  const gs = meusGrupos();
   const linhas = (data || []).filter(x => x.abertas > 0 || x.atrasadas > 0);
   const max = Math.max(1, ...linhas.map(x => x.abertas));
   $('#main').innerHTML = `
     <div class="topo-gestao"><div class="tx"><span class="eyebrow">Trabalho</span>
       <h1>Carga da equipe</h1>
-      <p class="lead">Quantas atividades abertas cada pessoa carrega, quantas estão atrasadas
-        e quantas estão sinalizadas.</p></div></div>
-    <nav class="abas">${gs.map(x =>
-      `<a href="#/atividades/${x.prefixo}">${esc(x.nome)}</a>`).join('')}
-      <a href="#/atividades/carga" class="on">Carga da equipe</a></nav>
+      <p class="lead">Atividades abertas, atrasadas e sinalizadas por pessoa.</p></div>
+      <div class="acoes"><a class="btn ghost" href="#/atividades">${ic('back')} Quadro</a></div></div>
     ${error ? avisoSemMigracao() : ''}
     ${linhas.length ? `<div class="card"><div class="barras">${linhas.map(x => `
       <div class="barra carga">

@@ -502,7 +502,7 @@ function renderFicha(){
       </div>
       <div>${pill(m.status)}</div>
     </div>
-    <nav class="abas">${abas.map(([k,l]) => `<button class="aba ${f.tab===k?'on':''}"
+    <nav class="nav1" aria-label="Ficha">${abas.map(([k,l]) => `<button class="${f.tab===k?'on':''}"
       onclick="gestao.ficha.tab='${k}';gestao.ficha.editando=false;renderFicha()">${l}</button>`).join('')}</nav>
     <div id="ficha-body"></div>${datalistsHTML()}`;
 

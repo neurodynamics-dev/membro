@@ -71,11 +71,11 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
 {
   const { ctx, p, erros } = await abrir();
   const espacos = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec > .lt-linha .lt-rot')].map(e => e.textContent));
-  confere('Treinamentos entre Equipe e Informações, e Meus pedidos saiu do primeiro nível',
-    espacos.join('|') === 'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Treinamentos|Informações|Serviços|Seleção|Administração', espacos);
+  confere('Treinamentos entre Equipe e Serviços, e Meus pedidos saiu do primeiro nível',
+    espacos.join('|') === 'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Treinamentos|Serviços|Seleção|Administração', espacos);
   const filhos = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec[data-r="treinamentos"] .lt-filho .nm')].map(e => e.textContent));
-  confere('os subitens de Treinamentos, com Gestão e Configurações para quem gere',
-    filhos.join('|') === 'Para você|Todos os treinamentos|Meus certificados|Gestão|Configurações', filhos);
+  confere('os subitens de Treinamentos, com Configurações para quem gere',
+    filhos.join('|') === 'Para você|Todos os treinamentos|Meus certificados|Configurações', filhos);
   const srv = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec[data-r="servicos"] .lt-filho .nm')].map(e => e.textContent));
   confere('Meus pedidos é subitem de Serviços', srv[1] === 'Meus pedidos', srv);
   await ir(p, '#/pedidos');
@@ -87,7 +87,6 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   confere('o início mostra o obrigatório por fazer', await p.evaluate(() =>
     !!document.querySelector('#sec-treinos .tre-inicio-i[href="#/treinamentos/NRO-TRE-001"]')));
   confere('e não o que já está concluído', await p.evaluate(() => !document.querySelector('#sec-treinos [href="#/treinamentos/NRO-TRE-002"]')));
-  confere('o trilho de ferramentas leva aos treinamentos', await p.evaluate(() => !!document.querySelector('.rail a.fer[href="#/treinamentos"]')));
 
   /* a busca acha o treinamento, antes de o módulo descer */
   await p.keyboard.press('/'); await p.waitForTimeout(200);
@@ -101,7 +100,7 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
     [...document.querySelectorAll('.tre-sec')].find(s => /Obrigatórios/.test(s.querySelector('h2').textContent))?.querySelector('[data-cod="NRO-TRE-001"]') != null));
   confere('e o concluído em Concluídos', await p.evaluate(() =>
     [...document.querySelectorAll('.tre-sec')].find(s => /Concluídos/.test(s.querySelector('h2').textContent))?.querySelector('[data-cod="NRO-TRE-002"]') != null));
-  confere('a contagem do topo e da barra', /1\s*obrigatório por fazer/.test(await texto(p, '.st-resumo')) && /1/.test(await texto(p, '.tre-nav .n')));
+  confere('a contagem do topo e da barra', /1\s*obrigatório por fazer/.test(await texto(p, '.st-resumo')) && /1/.test(await texto(p, '.nav1 .n')));
 
   await ir(p, '#/treinamentos/NRO-TRE-001', 1300);
   confere('o programa com os três módulos', await p.evaluate(() => document.querySelectorAll('.tre-programa .tre-mods li').length) === 3);
@@ -194,7 +193,9 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
 {
   const { ctx, p, erros } = await abrir({ hash:'#/treinamentos/gestao' });
   await p.waitForTimeout(600);
-  confere('Gestão: os três, com o rascunho e a revisão', await p.evaluate(() => document.querySelectorAll('.tabela.trabalho tbody tr').length) === 3
+  confere('o endereço antigo da gestão abre Configurações', await p.evaluate(() => location.hash) === '#/treinamentos/config'
+    && /Treinamentos/.test(await texto(p, '.abas a.on')) && /Configurações/.test(await texto(p, '.nav1 a.on')));
+  confere('Configurações › Treinamentos: os três, com o rascunho e a revisão', await p.evaluate(() => document.querySelectorAll('.tabela.trabalho tbody tr').length) === 3
     && /Rascunho/.test(await texto(p, 'tbody tr:nth-child(3)')) && /Rev\. B/.test(await texto(p, 'tbody tr:nth-child(1)')));
   confere('com a atribuição de cada um', /Órtese/.test(await texto(p, 'tbody tr:nth-child(1)')) && /Toda a equipe/.test(await texto(p, 'tbody tr:nth-child(2)')));
   await p.click('.seg button:nth-child(4)'); await p.waitForTimeout(200);
@@ -312,7 +313,7 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
     && criado.conteudo.modulos[0].verificacao.questoes[0].opcoes[0].correta === true, criado);
 
   /* configurações */
-  await ir(p, '#/treinamentos/config', 1500);
+  await ir(p, '#/treinamentos/config/geral', 1500);
   confere('quem gere: NRO_MANAGERS marcado', await p.evaluate(() => [...document.querySelectorAll('#tc-gestores .chip-b.on')].map(b => b.textContent).join()) === 'NRO_MANAGERS');
   const tinta = await p.evaluate(() => { const c = document.querySelector('#tc-previa canvas'); if (!c) return 0;
     const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 400) if (d[i] < 200) n++; return n; });
@@ -349,9 +350,9 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
 
   /* a ficha */
   await ir(p, '#/equipe/4', 1500);
-  const abas = await p.evaluate(() => [...document.querySelectorAll('.abas .aba')].map(a => a.textContent));
+  const abas = await p.evaluate(() => [...document.querySelectorAll('.nav1 button')].map(a => a.textContent));
   confere('a ficha tem a aba Treinamentos, com o número de certificados', abas.includes('Treinamentos (1)'), abas);
-  await p.click('.abas .aba:has-text("Treinamentos")'); await p.waitForTimeout(400);
+  await p.click('.nav1 button:has-text("Treinamentos")'); await p.waitForTimeout(400);
   confere('a aba mostra o obrigatório e o certificado', /0 de 1 obrigatório em dia/.test(await texto(p, '#ficha-body')) && /CERT-2A4B-9C1D/.test(await texto(p, '#ficha-body')));
   const pf = await baixa(p, () => p.click('#ficha-body .acc-row .icon-btn'));
   confere('e o certificado baixa dali (o módulo de treinamentos desce antes)', /^certificado-nro-tre-002-/.test(pf.nome), pf.nome);
@@ -364,7 +365,7 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   const { ctx, p, erros } = await abrir({ stub: stubLeitura, hash:'#/treinamentos' });
   const filhos = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec[data-r="treinamentos"] .lt-filho .nm')].map(e => e.textContent));
   confere('quem não gere: sem Gestão nem Configurações no menu', filhos.join('|') === 'Para você|Todos os treinamentos|Meus certificados', filhos);
-  confere('nem na barra da tela, nem o botão de novo', !/Gestão/.test(await texto(p, '.tre-nav')) && !(await p.$('.topo-gestao a[href="#/treinamentos/novo"]')));
+  confere('nem na barra da tela, nem o botão de novo', !/Gestão/.test(await texto(p, '.nav1')) && !(await p.$('.topo-gestao a[href="#/treinamentos/novo"]')));
   await ir(p, '#/treinamentos/gestao', 1000);
   confere('o endereço da gestão devolve para "Para você"', await p.evaluate(() => location.hash) === '#/treinamentos' && /Para você/.test(await texto(p, '#main h1')));
   await ir(p, '#/treinamentos/NRO-TRE-001/editar', 1000);
@@ -376,9 +377,9 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   await ctx.close();
 }
 {
-  const { ctx, p, erros } = await abrir({ stub: stubGrupo, hash:'#/treinamentos/config' });
+  const { ctx, p, erros } = await abrir({ stub: stubGrupo, hash:'#/treinamentos/config/geral' });
   await p.waitForTimeout(600);
-  confere('quem gere por grupo entra nas configurações', await p.evaluate(() => location.hash) === '#/treinamentos/config');
+  confere('quem gere por grupo entra nas configurações', await p.evaluate(() => location.hash) === '#/treinamentos/config/geral');
   confere('mas não muda quem gere (só admin e o Depto. de Pessoal)', await p.evaluate(() => [...document.querySelectorAll('#tc-gestores .chip-b')].every(b => b.disabled))
     && /Só admin e o Depto\. de Pessoal/.test(await texto(p, '.tre-cfg')));
   await p.click('.tre-cfg ~ .acts .btn.solid'); await p.waitForTimeout(400);
@@ -392,7 +393,7 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   const { ctx, p, erros } = await abrir({ vp:{ width:390, height:844 }, hash:'#/treinamentos' });
   confere('celular: Para você sem rolagem horizontal', await semRolagem(p));
   for (const h of ['#/treinamentos/NRO-TRE-001', '#/treinamentos/NRO-TRE-001/1', '#/treinamentos/NRO-TRE-001/2', '#/treinamentos/NRO-TRE-001/editar',
-    '#/treinamentos/gestao', '#/treinamentos/config', '#/treinamentos/config/readme', '#/treinamentos/certificados']){
+    '#/treinamentos/config', '#/treinamentos/config/geral', '#/treinamentos/config/readme', '#/treinamentos/certificados']){
     await ir(p, h, 1100);
     confere(`celular: ${h.replace('#/treinamentos', '…')} sem rolagem horizontal`, await semRolagem(p),
       await p.evaluate(() => [...document.querySelectorAll('#main *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).slice(0, 3).map(e => e.className)));

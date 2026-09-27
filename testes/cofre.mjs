@@ -243,7 +243,7 @@ const OTP = `otpauth://totp/Google:equipe@neurodynamics.dev?secret=${SEGREDO}&is
   await p.waitForTimeout(500);
   const ids = await p.evaluate(() => [...document.querySelectorAll('.cof-card')].map(c => c.id.slice(4)));
   confere('vê a que mantém e a do acesso concedido — não a de outro grupo', ids.sort().join() === [C1, C3].sort().join(), ids);
-  confere('sem a navegação da gestão e sem "Nova conta"', await p.locator('#main .arq-nav').count() === 0 && await p.locator('a:has-text("Nova conta")').count() === 0);
+  confere('sem a navegação da gestão e sem "Nova conta"', await p.locator('#main .nav1').count() === 0 && await p.locator('a:has-text("Nova conta")').count() === 0);
   confere('pelo acesso concedido, usa mas não troca', /pelo acesso concedido/.test(await texto(p, `#cof-${C3} .mt`))
     && await p.locator(`#cof-${C3} button:has-text("Trocar")`).count() === 0);
   confere('o responsável troca e edita', await p.locator(`#cof-${C1} button:has-text("Trocar a senha")`).count() === 1);
