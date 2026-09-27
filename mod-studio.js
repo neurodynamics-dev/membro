@@ -76,7 +76,7 @@ function stQuando(iso, curto){
   if (!iso) return '';
   const d = new Date(iso);
   const dia = d.toLocaleDateString('pt-BR', curto ? { day:'2-digit', month:'2-digit' } : { weekday:'short', day:'2-digit', month:'short' }).replace('.', '');
-  return `${dia} · ${d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' })}`;
+  return `${dia}, ${d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' })}`;
 }
 const stAtrasada = p => p.data_publicacao && !['publicada', 'arquivada'].includes(p.status) && new Date(p.data_publicacao) < new Date();
 const stRedesHTML = redes => (redes || []).map(r => { const x = STUDIO_REDES[r];
@@ -154,7 +154,7 @@ async function stQuadro(){
   const nAtras = vis.filter(stAtrasada).length;
   const nMim = vis.filter(stEsperaMim).length;
   const redesUsadas = [...new Set(studioM.pubs.flatMap(p => p.redes || []))].filter(r => STUDIO_REDES[r]);
-  $('#main').innerHTML = `${stTopo('Quadro de publicações', 'Da ideia ao ar. Arraste o cartão para mudar de coluna — menos para “Pronta para publicar”: lá só se chega pela aprovação.')}
+  $('#main').innerHTML = `${stTopo('Quadro de publicações', `${dica('Arraste o cartão para mudar de coluna. “Pronta para publicar” só pela aprovação.')}`)}
     ${stNav('')}
     <div class="st-resumo">
       <span class="st-num"><b>${nSemana}</b> nos próximos 7 dias</span>
@@ -239,7 +239,7 @@ async function stMover(id, st, link){
     toast(data?.status === 'precisa_aprovacao' ? 'Precisa da aprovação antes.' : motivoRPC(data, error, 'Não deu para mover'), true);
     return false;
   }
-  toast(st === 'aprovacao' ? 'Mandada para aprovação — quem aprova foi avisado.' : `Movida para “${stRotStatus(st)}”.`);
+  toast(st === 'aprovacao' ? 'Enviada para aprovação.' : `Movida para “${stRotStatus(st)}”.`);
   await stRecarregarTela();
   return true;
 }
@@ -247,7 +247,7 @@ async function stRecarregarTela(){ const r = route(); await pageStudio(r.sub, r.
 function stModalPublicada(id){
   const p = studioM.pubs.find(x => x.id === id);
   abreModal(`<h3>${ic('check')} Marcar como publicada</h3>
-    <p class="small muted" style="margin-bottom:12px">${esc(p?.codigo || '')} · ${esc(p?.titulo || '')}</p>
+    <p class="small muted" style="margin-bottom:12px">${esc(p?.codigo || '')} ${esc(p?.titulo || '')}</p>
     <div class="fld"><label for="st-link">Link da publicação (opcional)</label><input id="st-link" type="url" placeholder="https://www.instagram.com/p/…"></div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" onclick="stPublicadaOk('${id}')">Publicada</button></div>`);
@@ -270,12 +270,12 @@ function stIdeias(){
   const ideias = studioM.pubs.filter(p => p.status === 'ideia' && (!studioM.pilar || p.pilar === studioM.pilar))
     .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
   const todas = studioM.pubs.filter(p => p.status === 'ideia');
-  $('#main').innerHTML = `${stTopo('Ideias', 'Esboços sem data: às vezes só uma frase e o tipo de publicação. Quando uma amadurece, vira arte e vai para o quadro.',
+  $('#main').innerHTML = `${stTopo('Ideias', '',
       `<a class="btn solid mini" href="#/studio/criar">${ic('plus')} Criar publicação</a>`)}
     ${stNav('ideias')}
     <div class="st-ideia-nova card">
       <div class="fld"><label for="id-txt">A ideia</label>
-        <textarea id="id-txt" rows="2" placeholder="Nem que seja uma frase — ex.: mostrar a bancada de testes da órtese num reels"></textarea></div>
+        <textarea id="id-txt" rows="2" placeholder="ex.: mostrar a bancada de testes da órtese num reels"></textarea></div>
       <div class="st-ideia-campos">
         <div class="fld"><label for="id-tipo">Tipo</label><select id="id-tipo" onchange="stIdeiaTipo(this.value)"><option value="">—</option>${STUDIO_TIPOS.map(t =>
           `<option value="${t[0]}">${esc(t[1])}</option>`).join('')}</select></div>
@@ -291,12 +291,12 @@ function stIdeias(){
           ${xs.map(x => `<button class="chip-b" onclick="$('#id-txt').value='${esc(x.replace(/'/g, '’'))}';$('#id-pilar').value='${k}';$('#id-txt').focus()">${esc(x)}</button>`).join('')}</div>`).join('')}</div>
       </details>
     </div>
-    <div class="st-pilares-f"><button class="chip-b${!studioM.pilar ? ' on' : ''}" onclick="studioM.pilar='';stIdeias()">Todas · ${todas.length}</button>
+    <div class="st-pilares-f"><button class="chip-b${!studioM.pilar ? ' on' : ''}" onclick="studioM.pilar='';stIdeias()">Todas (${todas.length})</button>
       ${Object.entries(STUDIO_PILARES).map(([k, [l, , c]]) => { const n = todas.filter(p => p.pilar === k).length;
-        return n ? `<button class="chip-b${studioM.pilar === k ? ' on' : ''}" style="--c:${c}" onclick="studioM.pilar='${k}';stIdeias()"><i class="pt"></i>${esc(l)} · ${n}</button>` : ''; }).join('')}</div>
+        return n ? `<button class="chip-b${studioM.pilar === k ? ' on' : ''}" style="--c:${c}" onclick="studioM.pilar='${k}';stIdeias()"><i class="pt"></i>${esc(l)} (${n})</button>` : ''; }).join('')}</div>
     ${ideias.length ? `<div class="st-ideias">${ideias.map(stIdeiaCartao).join('')}</div>`
       : `<div class="vazio"><div class="glyph">✦</div><h3>${todas.length ? 'Nenhuma ideia neste pilar' : 'Nenhuma ideia guardada'}</h3>
-        <p>${todas.length ? 'Veja todas as ideias.' : 'Escreva a primeira aí em cima — uma frase já basta.'}</p></div>`}`;
+        ${todas.length ? '<p>Veja todas as ideias.</p>' : ''}</div>`}`;
 }
 function stRedesChips(sel){
   return Object.entries(STUDIO_REDES).map(([k, r]) => `<button type="button" class="st-rchip${sel.includes(k) ? ' on' : ''}" data-rede="${k}" style="--c:${r.c}"
@@ -315,7 +315,7 @@ function stIdeiaCartao(p){
     <div class="st-ideia-tx">${esc(p.titulo)}</div>
     <div class="st-tags">${tipo ? `<span>${esc(tipo[1])}</span>` : ''}${p.formato ? `<span>${esc(STUDIO_FORMATOS[p.formato] || p.formato)}</span>` : ''}
       ${pil ? `<span class="pil" style="--c:${pil[2]}">${esc(pil[0])}</span>` : ''}${stRedesHTML(p.redes)}</div>
-    <div class="st-ideia-pe"><span class="small muted">${esc(p.codigo)} · ${quem ? esc(primeiroNome(quem.nome)) + ', ' : ''}${fmtD(p.criado_em)}</span>
+    <div class="st-ideia-pe"><span class="small muted">${esc(p.codigo)}, ${quem ? esc(primeiroNome(quem.nome)) + ', ' : ''}${fmtD(p.criado_em)}</span>
       <span class="bts"><a class="btn ghost mini" href="#/studio/${esc(p.codigo)}/arte">${ic('imagem')} Criar a arte</a>
         ${ibtn('cal', 'Pôr data', `stModalData('${p.id}')`)}${ibtn('eye', 'Abrir', `location.hash='#/studio/${esc(p.codigo)}'`)}
         ${p.criado_por === stEu() || podeAprovarStudio() ? ibtn('trash', 'Apagar', `stExcluir('${p.id}')`) : ''}</span></div>
@@ -323,7 +323,7 @@ function stIdeiaCartao(p){
 }
 async function stGuardarIdeia(){
   const titulo = $('#id-txt').value.trim();
-  if (!titulo) return toast('Escreva a ideia — uma frase basta.', true);
+  if (!titulo) return toast('Escreva a ideia.', true);
   const p = { titulo, status:'ideia', categoria: $('#id-tipo').value, formato: $('#id-formato').value, pilar: $('#id-pilar').value,
     redes: stRedesLidas('#id-redes'), modelo: $('#id-tipo').value };
   const { data, error } = await sb.rpc('studio_publicacao_salvar', { p });
@@ -357,7 +357,7 @@ function stModalData(id){
   const d = p.data_publicacao ? new Date(p.data_publicacao) : null;
   const dd = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
   const hh = d ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : '18:00';
-  abreModal(`<h3>${ic('cal')} Quando sai</h3><p class="small muted" style="margin-bottom:12px">${esc(p.codigo)} · ${esc(p.titulo)}</p>
+  abreModal(`<h3>${ic('cal')} Quando sai</h3><p class="small muted" style="margin-bottom:12px">${esc(p.codigo)} ${esc(p.titulo)}</p>
     <div class="st-ideia-campos"><div class="fld"><label for="md-d">Dia</label><input id="md-d" type="date" value="${dd}"></div>
       <div class="fld"><label for="md-h">Hora</label><input id="md-h" type="time" value="${hh}"></div></div>
     <p class="small muted">Na véspera, quem responde pela publicação recebe um lembrete por e-mail.</p>
@@ -393,7 +393,7 @@ registrarBusca({
   fonte:'studio', rotulo:'Publicações',
   buscar: (t) => filtrarSimples(studioM.pubs.filter(p => p.status !== 'arquivada').map(p => ({
     codigo: p.codigo, titulo: p.titulo,
-    sub: stRotStatus(p.status) + (p.data_publicacao ? ' · ' + stQuando(p.data_publicacao, true) : ''),
+    sub: stRotStatus(p.status) + (p.data_publicacao ? ', ' + stQuando(p.data_publicacao, true) : ''),
     href: '#/studio/' + p.codigo })), t, 6)
 });
 
@@ -517,7 +517,7 @@ function stContaLegenda(){
     const lim = STUDIO_REDES[r].legenda;
     return `<span class="${t.length > lim ? 'passou' : ''}">${esc(STUDIO_REDES[r].l)} ${t.length}/${lim}</span>`;
   });
-  el.innerHTML = [...partes, `<span class="${tags > 30 ? 'passou' : ''}">${tags} hashtag${tags === 1 ? '' : 's'}${tags > 30 ? ' — o Instagram aceita 30' : ''}</span>`,
+  el.innerHTML = [...partes, `<span class="${tags > 30 ? 'passou' : ''}">${tags} hashtag${tags === 1 ? '' : 's'}${tags > 30 ? ' (o Instagram aceita 30)' : ''}</span>`,
     redes.includes('instagram') ? `<span>os primeiros 125 caracteres aparecem antes do “mais”</span>` : ''].filter(Boolean).join('');
 }
 function stPlanoLer(){
@@ -540,7 +540,7 @@ const ST_COMO = {
               'Collab: na tela de publicar, “Marcar pessoas” → “Convidar colaborador”. A outra conta precisa aceitar.',
               'Texto alternativo: “Configurações avançadas” → “Escrever texto alternativo”.'],
   linkedin:  ['Documento: suba o PDF (Baixar → PDF) em “Adicionar documento”, com um título.',
-              'Link no primeiro comentário, logo depois de publicar — no corpo, costuma custar alcance.',
+              'Link no primeiro comentário, logo após publicar; no corpo, reduz o alcance.',
               'Marque as páginas parceiras com @ no texto.'],
   youtube:   ['Thumbnail: “Detalhes” → “Miniatura” → enviar.', 'Tela final: “Tela final” → importar do vídeo ou pôr os elementos sobre os espaços da arte.'],
   tiktok:    ['Capa: escolha “Enviar capa” ao publicar o vídeo.'],
@@ -566,10 +566,10 @@ async function stPublicacao(cod){
   const passos = ST_COLUNAS.map((s, i) => { const at = ST_COLUNAS.indexOf(pub.status);
     return `<li class="${i < at ? 'feito' : i === at ? 'agora' : ''}"><span>${esc(stRotStatus(s))}</span></li>`; }).join('');
   const redesComo = (pub.redes || []).filter(r => ST_COMO[r]);
-  $('#main').innerHTML = `<div class="topo-gestao st-pub-topo"><div class="tx"><span class="eyebrow">Studio · ${esc(pub.codigo)}</span>
+  $('#main').innerHTML = `<div class="topo-gestao st-pub-topo"><div class="tx"><span class="eyebrow">Studio › ${esc(pub.codigo)}</span>
       <h1>${esc(pub.titulo)}</h1>
-      <p class="lead">${[tipo?.[1], pub.formato && STUDIO_FORMATOS[pub.formato], (pub.redes || []).map(r => STUDIO_REDES[r]?.l).filter(Boolean).join(', ')].filter(Boolean).map(esc).join(' · ') || 'Sem tipo nem rede ainda'}
-        ${pub.data_publicacao ? ` — <b>${esc(stQuando(pub.data_publicacao))}</b>` : ''}</p></div>
+      <p class="lead">${[tipo?.[1], pub.formato && STUDIO_FORMATOS[pub.formato], (pub.redes || []).map(r => STUDIO_REDES[r]?.l).filter(Boolean).join(', ')].filter(Boolean).map(esc).join(', ') || 'Sem tipo nem rede ainda'}
+        ${pub.data_publicacao ? `, <b>${esc(stQuando(pub.data_publicacao))}</b>` : ''}</p></div>
       <div class="acoes">${pub.formato === 'texto' ? '' : `<a class="btn ${pub.imagens?.length ? 'ghost' : 'solid'} mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} ${pub.imagens?.length ? 'Editar a arte' : 'Criar a arte'}</a>`}
         ${pub.status !== 'arquivada' ? `<button class="btn ghost mini" onclick="stArquivar('${pub.id}')">Arquivar</button>` : `<button class="btn ghost mini" onclick="stMover('${pub.id}','ideia')">Desarquivar</button>`}
         ${podeApagar ? ibtn('trash', 'Apagar', `stExcluir('${pub.id}')`) : ''}</div></div>
@@ -577,7 +577,7 @@ async function stPublicacao(cod){
     ${pub.status === 'arquivada' ? '<div class="aviso-box info">Arquivada: fora do quadro e do calendário.</div>' : `<ol class="st-passos">${passos}</ol>`}
     <div class="st-pub">
       <div class="st-pub-esq">
-        <section class="card st-arte"><h3>Arte${pub.imagens?.length ? ` · ${pub.imagens.length} ${pub.imagens.length === 1 ? 'imagem' : 'imagens'}` : ''}${pub.versao > 1 ? ` <span class="small muted">versão ${pub.versao}</span>` : ''}</h3>
+        <section class="card st-arte"><h3>Arte${pub.imagens?.length ? `, ${pub.imagens.length} ${pub.imagens.length === 1 ? 'imagem' : 'imagens'}` : ''}${pub.versao > 1 ? ` <span class="small muted">versão ${pub.versao}</span>` : ''}</h3>
           <div id="st-arte-corpo">${pub.imagens?.length ? '<div class="carregando"><span class="spin"></span></div>'
             : pub.formato === 'texto' ? '<p class="small muted" style="margin-top:8px">Publicação só de texto: não precisa de arte.</p>'
             : `<div class="vazio" style="padding:26px"><p>Ainda sem arte.</p><a class="btn solid mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} Criar a arte</a></div>`}</div>
@@ -598,7 +598,7 @@ async function stPublicacao(cod){
         </section>
         <section class="card st-hist"><h3>Histórico</h3>
           <ol>${hist.map(x => `<li><span class="q">${esc(fmtDT(x.criado_em))}</span><span><b>${esc(x.nome || 'Portal')}</b> ${esc(ST_ACOES[x.acao] || x.acao)}${x.detalhe ? ` <span class="d">${esc(x.detalhe)}</span>` : ''}</span></li>`).join('')
-            || '<li class="small muted">Nada ainda.</li>'}</ol></section>
+            || '<li class="small muted">Nada.</li>'}</ol></section>
       </div>
     </div>`;
   stPlanoLigar();
@@ -617,7 +617,7 @@ function stAprovHTML(pub, validas, todas){
       <button class="btn solid mini" onclick="stMover('${pub.id}','aprovacao')">${ic('enviar')} Mandar para aprovação</button>`;
   } else if (pub.status === 'aprovacao'){
     const quem = (state.membros || []).find(m => m.registro === pub.enviado_por);
-    h += `<p class="small muted" style="margin:6px 0 10px">Mandada por ${esc(quem?.nome || '—')}${pub.enviado_em ? ' em ' + esc(fmtDT(pub.enviado_em)) : ''} · versão ${pub.versao}</p>
+    h += `<p class="small muted" style="margin:6px 0 10px">Mandada por ${esc(quem?.nome || '—')}${pub.enviado_em ? ' em ' + esc(fmtDT(pub.enviado_em)) : ''}, versão ${pub.versao}</p>
       <div class="st-aprov-barra"><span style="width:${Math.min(100, 100 * validas.length / min)}%"></span></div>
       <p class="small" style="margin:6px 0 12px"><b>${validas.length} de ${min}</b> ${min === 1 ? 'aprovação' : 'aprovações'}${validas.length ? ': ' + validas.map(v => esc(v.nome)).join(', ') : ''}</p>
       ${podeAprovarStudio() && pub.enviado_por !== eu && !validas.some(v => v.registro === eu)
@@ -627,7 +627,7 @@ function stAprovHTML(pub, validas, todas){
         : validas.some(v => v.registro === eu) ? '<p class="small muted">Você já aprovou esta versão.</p>'
         : '<p class="small muted">Esperando o grupo aprovador.</p>'}`;
   } else if (pub.status === 'pronta'){
-    h += `<div class="aviso-box info" style="margin-top:8px">Aprovada${validas.length ? ' por ' + validas.map(v => esc(v.nome)).join(', ') : ''}. É só publicar na data.</div>
+    h += `<div class="aviso-box info" style="margin-top:8px">Aprovada${validas.length ? ' por ' + validas.map(v => esc(v.nome)).join(', ') : ''}. Publicar na data.</div>
       <button class="btn solid mini" onclick="stModalPublicada('${pub.id}')">${ic('check')} Marcar como publicada</button>`;
   } else if (pub.status === 'publicada'){
     h += `<p style="margin-top:8px">Publicada${pub.publicado_em ? ' em ' + esc(fmtDT(pub.publicado_em)) : ''}.</p>
@@ -652,7 +652,7 @@ async function stDecidirOk(id, dec){
     fora_de_aprovacao:'A publicação não está mais em aprovação.' };
   if (error || data?.status !== 'ok') return toast(MOT[data?.status] || motivoRPC(data, error, 'Não deu'), true);
   fechaModal();
-  toast(dec === 'devolver' ? 'Devolvida — quem responde foi avisado.' : data.situacao === 'pronta' ? 'Aprovada: pronta para publicar.'
+  toast(dec === 'devolver' ? 'Devolvida ao responsável.' : data.situacao === 'pronta' ? 'Aprovada: pronta para publicar.'
     : `Aprovação registrada. Falta${data.faltam > 1 ? 'm' : ''} ${data.faltam}.`);
   await stRecarregarTela();
 }
@@ -663,7 +663,7 @@ async function stSalvarPlano(id){
       && !await confirma('A publicação está aprovada. Com a legenda nova, ela volta para aprovação. Salvar?', 'Salvar')) return;
   const { data, error } = await sb.rpc('studio_publicacao_salvar', { p: { id, ...p } });
   if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para salvar'), true);
-  toast(data.situacao === 'aprovacao' && antes?.status === 'pronta' ? 'Salvo — voltou para aprovação.' : 'Plano salvo.');
+  toast(data.situacao === 'aprovacao' && antes?.status === 'pronta' ? 'Salvo; voltou para aprovação.' : 'Plano salvo.');
   await stCarregar(); await stPublicacao(antes.codigo);
 }
 async function stArquivar(id){
@@ -725,7 +725,7 @@ const stGestor = () => podeAprovarStudio();
 const stEditaImprensa = () => podeAprovarStudio() || can();
 async function stConfig(aba){
   if (!ST_ABAS_CONFIG.some(a => a[0] === aba)) aba = 'acesso';
-  $('#main').innerHTML = `${stTopo('Configurações', 'Quem entra no Studio e quem aprova, as contas da equipe, a imprensa do site e onde estão as nossas fotos.', '')}
+  $('#main').innerHTML = `${stTopo('Configurações', '', '')}
     ${stNav('config')}
     <nav class="abas">${ST_ABAS_CONFIG.map(([k, l]) => `<a href="#/studio/config/${k}" class="${aba === k ? 'on' : ''}">${l}</a>`).join('')}</nav>
     <div id="st-cfg"><div class="carregando"><span class="spin"></span></div></div>`;
@@ -759,7 +759,7 @@ function stCfgResumo(){
 }
 function stCfgAcesso(){
   const c = state.studioCfg || {}, pode = stGestor();
-  $('#st-cfg').innerHTML = `${pode ? '' : '<div class="aviso-box info">Só admin e quem aprova mexem aqui. Você vê como está.</div>'}
+  $('#st-cfg').innerHTML = `${pode ? '' : '<div class="aviso-box info">Somente leitura. Edição: admin e aprovadores.</div>'}
     <div class="st-cfg-2">
       <section class="card"><h3>Quem entra no Studio</h3>
         <p class="small muted" style="line-height:1.6;margin:4px 0 12px">Os grupos que usam o Studio. Quem está num subgrupo entra também.
@@ -767,7 +767,7 @@ function stCfgAcesso(){
         ${stGruposPicker('st-gp-acesso', c.grupos_acesso || [], pode)}</section>
       <section class="card"><h3>Quem aprova</h3>
         <p class="small muted" style="line-height:1.6;margin:4px 0 12px">Antes de ficar <b>pronta para publicar</b>, a publicação passa por
-          alguém destes grupos — que não seja quem mandou. Sem nenhum, aprova admin. Quem aprova também configura o Studio.</p>
+          membros destes grupos, exceto quem enviou. Sem grupo, aprova o admin. Quem aprova também configura o Studio.</p>
         ${stGruposPicker('st-gp-aprov', c.grupos_aprovadores || [], pode)}
         <div class="st-plano-2" style="margin-top:14px">
           <div class="fld"><label for="st-min">Aprovações necessárias</label><select id="st-min" ${pode ? '' : 'disabled'}>${[1, 2, 3].map(n =>
@@ -813,7 +813,7 @@ function stCfgContas(){
       <div class="fld"><label for="ct-us">Access Key</label><input id="ct-us" value="${esc(c.unsplash_chave || '')}" placeholder="a chave de acesso (não a Secret Key)" ${pode ? '' : 'disabled'}></div>
       <ol class="st-passos-txt"><li>Entre em <a href="https://unsplash.com/oauth/applications" target="_blank" rel="noopener">unsplash.com/oauth/applications</a> com a conta da equipe.</li>
         <li><b>New Application</b>, aceite os termos e dê um nome (ex.: Studio NeuroDynamics).</li>
-        <li>Copie a <b>Access Key</b> e cole aqui. A chave de demonstração faz 50 buscas por hora — para a equipe, sobra.</li></ol>
+        <li>Copie a <b>Access Key</b> e cole aqui. A chave de demonstração permite 50 buscas por hora.</li></ol>
     </section></div>
     ${pode ? `<div class="acts" style="justify-content:flex-end;margin-top:14px"><button class="btn solid" onclick="stCfgSalvarContas()">${ic('check')} Salvar</button></div>` : ''}`;
 }
@@ -841,20 +841,20 @@ async function stCfgImprensa(){
       ${i.tipo === 'video' ? `<span class="st-imp-th">${i.youtube ? `<img src="https://img.youtube.com/vi/${esc(i.youtube)}/mqdefault.jpg" alt="" loading="lazy">` : ic('play')}</span>`
         : `<span class="st-imp-th txt">${ic('doc')}</span>`}
       <span class="tx"><span class="nm">${esc(i.titulo || i.veiculo || 'Sem título')}</span>
-        <span class="sub">${esc([i.titulo ? i.veiculo : '', i.ano].filter(Boolean).join(' · '))}${i.publicado ? '' : ' · <b>fora do site</b>'}</span></span>
+        <span class="sub">${esc([i.titulo ? i.veiculo : '', i.ano].filter(Boolean).join(', '))}${i.publicado ? '' : ', <b>fora do site</b>'}</span></span>
       ${pode ? `<span class="bts">${n ? ibtn('back', 'Subir', `stImpOrdem('${i.id}',-1)`, 'cima') : ''}${n < tot - 1 ? ibtn('chevron', 'Descer', `stImpOrdem('${i.id}',1)`, 'baixo') : ''}
         ${ibtn(i.publicado ? 'eye' : 'x', i.publicado ? 'Tirar do site' : 'Pôr no site', `stImpPublicar('${i.id}',${!i.publicado})`)}
         ${ibtn('pencil', 'Editar', `stImpModal('${i.tipo}','${i.id}')`)}${ibtn('trash', 'Apagar', `stImpApagar('${i.id}')`)}</span>` : ''}</div>`;
   const vs = lista('video'), ms = lista('materia');
-  $('#st-cfg').innerHTML = `${pode ? '' : '<div class="aviso-box info">Quem edita a imprensa é a gestão do Studio, admin e o Depto. de Pessoal.</div>'}
+  $('#st-cfg').innerHTML = `${pode ? '' : '<div class="aviso-box info">Somente leitura. Edição: gestão do Studio, admin e Depto. de Pessoal.</div>'}
     <p class="small muted" style="line-height:1.6;margin-bottom:14px">A seção <b>Quem somos</b> do <a href="https://neurodynamics.dev/#/about" target="_blank" rel="noopener">site institucional</a>
       e a página <b>A NeuroDynamics</b> do <a href="https://selecao.neurodynamics.dev" target="_blank" rel="noopener">site do processo seletivo</a> leem daqui, na hora.
       A ordem aqui é a ordem lá. O título de vídeo é opcional: sem ele, o veículo vira o rótulo.</p>
     <div class="st-cfg-2">
-      <section class="card"><h3 style="display:flex;align-items:center;gap:10px">${ic('play')} Vídeos · ${vs.length}
+      <section class="card"><h3 style="display:flex;align-items:center;gap:10px">${ic('play')} Vídeos (${vs.length})
           ${pode ? `<button class="btn ghost mini" style="margin-left:auto" onclick="stImpModal('video')">${ic('plus')} Vídeo</button>` : ''}</h3>
         <div class="st-imps">${vs.map((i, n) => linha(i, n, vs.length)).join('') || '<p class="small muted">Nenhum vídeo: o carrossel some do site.</p>'}</div></section>
-      <section class="card"><h3 style="display:flex;align-items:center;gap:10px">${ic('doc')} Matérias escritas · ${ms.length}
+      <section class="card"><h3 style="display:flex;align-items:center;gap:10px">${ic('doc')} Matérias escritas (${ms.length})
           ${pode ? `<button class="btn ghost mini" style="margin-left:auto" onclick="stImpModal('materia')">${ic('plus')} Matéria</button>` : ''}</h3>
         <div class="st-imps">${ms.map((i, n) => linha(i, n, ms.length)).join('') || '<p class="small muted">Nenhuma matéria: os cartões somem do site.</p>'}</div></section>
     </div>`;
@@ -891,7 +891,7 @@ async function stImpSalvar(tipo, id){
   const q = id ? sb.from('site_imprensa').update(d).eq('id', id) : sb.from('site_imprensa').insert(d);
   const { error } = await q;
   if (error) return toast('Não deu para salvar: ' + error.message, true);
-  fechaModal(); toast('Salvo — o site já mostra.'); stCfgImprensa();
+  fechaModal(); toast('Salvo e publicado no site.'); stCfgImprensa();
 }
 async function stImpOrdem(id, d){
   const i = studioM.imprensa.find(x => x.id === id);
@@ -928,7 +928,7 @@ async function stCfgRecursos(){
       <a class="btn ghost mini" href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">${ic('link')} Brand guidelines</a></div>
     ${porTipo.length ? porTipo.map(([t, l]) => `<h4 class="adm-grupo">${esc(ST_RECURSO_TIPOS[t])}</h4>
       <div class="st-recs">${l.map(stRecCartao).join('')}</div>`).join('')
-      : `<div class="vazio"><div class="glyph">▣</div><h3>Nenhum recurso ainda</h3><p>Cadastre a pasta de fotos do Drive, o álbum do último evento, o repositório com as fotos dos projetos.</p>
+      : `<div class="vazio"><div class="glyph">▣</div><h3>Nenhum recurso</h3><p>Cadastre a pasta de fotos do Drive, o álbum do último evento, o repositório com as fotos dos projetos.</p>
         <button class="btn solid" onclick="stRecModal()">Cadastrar o primeiro</button></div>`}`;
 }
 function stRecCartao(r){

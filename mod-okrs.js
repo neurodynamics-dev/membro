@@ -74,14 +74,14 @@ function okrProgresso(o){ // % de folhas concluídas no desdobramento (cancelada
 }
 function okrPrazoInfo(o){
   if(!o.prazo) return {txt:'sem prazo', cls:'off'};
-  const rot = `${okrTrimestre(o.prazo)} · ${fmtD(o.prazo)}`;
+  const rot = `${okrTrimestre(o.prazo)}, ${fmtD(o.prazo)}`;
   if(o.status==='Concluído' || o.status==='Cancelado') return {txt:rot, cls:'off'};
   const hj = new Date(); hj.setHours(12,0,0,0);
   const dias = Math.round((new Date(o.prazo+'T12:00') - hj)/864e5);
-  if(dias<0)   return {txt:`${rot} · atrasado há ${-dias} dia${dias===-1?'':'s'}`, cls:'bad'};
-  if(dias===0) return {txt:`${rot} · vence hoje`, cls:'warn'};
-  if(dias<=14) return {txt:`${rot} · faltam ${dias} dia${dias===1?'':'s'}`, cls:'warn'};
-  return {txt:`${rot} · faltam ${dias} dias`, cls:'ok'};
+  if(dias<0)   return {txt:`${rot}, atrasado há ${-dias} dia${dias===-1?'':'s'}`, cls:'bad'};
+  if(dias===0) return {txt:`${rot}, vence hoje`, cls:'warn'};
+  if(dias<=14) return {txt:`${rot}, faltam ${dias} dia${dias===1?'':'s'}`, cls:'warn'};
+  return {txt:`${rot}, faltam ${dias} dias`, cls:'ok'};
 }
 function okrResps(o){ return (o.responsaveis||[]).map(r=>state.membros.find(m=>m.registro===r)||{registro:r, nome:'Reg. '+r}); }
 function okrRespAvatares(o){
@@ -351,13 +351,12 @@ function modalOKRDetalhe(id){
   abreModal(`
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
       <span class="okr-cod">${esc(o.codigo)}</span>
-      <span class="small dim">${OKR_NIVEL[o.nivel]||o.nivel} · ciclo ${o.ano}</span>
+      <span class="small dim">${OKR_NIVEL[o.nivel]||o.nivel}, ciclo ${o.ano}</span>
       <span style="flex:1"></span>${okrPill(o.status)}
     </div>
     <h3 style="margin-bottom:6px">${esc(o.titulo)}</h3>
     ${pai?`<div class="small muted" style="margin-bottom:12px">Desdobra
-      <a href="#/okrs/${encodeURIComponent(pai.codigo)}" onclick="fechaModal()" style="text-decoration:underline">${esc(pai.codigo)}</a>
-      — ${esc(pai.titulo)}</div>`:''}
+      <a href="#/okrs/${encodeURIComponent(pai.codigo)}" onclick="fechaModal()" style="text-decoration:underline">${esc(pai.codigo)}</a>: ${esc(pai.titulo)}</div>`:''}
     ${o.descricao?`<p class="small muted" style="line-height:1.6;margin-bottom:14px;white-space:pre-wrap">${esc(o.descricao)}</p>`:''}
     <dl class="dl" style="margin-bottom:16px">
       <div class="it"><dt>Eixo</dt><dd>${okrEixoChip(o.eixo)||'—'}</dd></div>
@@ -390,15 +389,15 @@ async function okrCarregarComentarios(id){
       .eq('objetivo_id', id).order('criado_em',{ascending:false});
     if(error) throw error;
     el.innerHTML = (data&&data.length) ? data.map(c=>`<div class="okr-com ${c.tipo==='sistema'?'sistema':''}">
-        <div class="hd"><b>${esc(c.autor)}</b> · ${fmtDT(c.criado_em)}${c.tipo==='sistema'?' · automático':''}</div>
+        <div class="hd"><b>${esc(c.autor)}</b>, ${fmtDT(c.criado_em)}${c.tipo==='sistema'?' (automático)':''}</div>
         <div class="tx">${esc(c.texto)}</div></div>`).join('')
-      : '<div class="empty">Nenhum comentário ainda. Registre o primeiro acompanhamento.</div>';
+      : '<div class="empty">Nenhum comentário.</div>';
   }catch(e){ el.innerHTML = `<div class="aviso-box err">Erro ao carregar os comentários: ${esc(e.message)}</div>`; }
 }
 async function okrComentar(id){
   const campo = $('#okr-novo-com'), bt = $('#okr-com-btn');
   const t = (campo?.value||'').trim();
-  if(!t){ toast('Escreva o comentário antes de enviar.', true); return; }
+  if(!t){ toast('Comentário vazio.', true); return; }
   if(bt) bt.disabled = true;
   try{
     const {error} = await sb.from('okr_comentarios').insert({objetivo_id:id, autor:quemSouEu(),
@@ -451,7 +450,7 @@ function modalOKREditar(id, paiId){
   const sel = o ? (o.responsaveis||[]) : [];
   const ano = o ? o.ano : (pai ? pai.ano : new Date().getFullYear());
   const temFilhos = o ? okrFilhos(o.id).length : 0;
-  abreModal(`<h3>${o?'Editar objetivo':'Novo objetivo'} <span class="small dim" style="font-weight:400">· ${OKR_NIVEL[nivel]||nivel}${pai?` · desdobra ${esc(pai.codigo)}`:''}</span></h3>
+  abreModal(`<h3>${o?'Editar objetivo':'Novo objetivo'} <span class="small dim" style="font-weight:400">${OKR_NIVEL[nivel]||nivel}${pai?`, desdobra ${esc(pai.codigo)}`:''}</span></h3>
     <div class="form-grid" style="margin-top:14px">
       <div class="fld"><label>Código</label><input id="okr-f-codigo" value="${esc(o?o.codigo:okrSugereCodigo(pai))}"></div>
       <div class="fld"><label>Status</label><select id="okr-f-status">${Object.keys(OKR_STATUS).map(s=>`<option ${((o?o.status:'Não iniciado')===s)?'selected':''}>${s}</option>`).join('')}</select></div>
@@ -467,7 +466,7 @@ function modalOKREditar(id, paiId){
           ${temFilhos?`<button type="button" class="btn ghost mini" onclick="okrPrazoDosFilhos('${o.id}')" title="Usa o prazo mais distante entre os desdobramentos">${ic('cal')} Pelos desdobramentos</button>`:''}
         </div></div>
       <div class="fld full"><label>Responsáveis</label>
-        <div class="multi">${membros.map(m=>`<label class="check"><input type="checkbox" class="okr-resp" value="${m.registro}" ${sel.includes(m.registro)?'checked':''}> ${esc(m.nome)} <span class="small dim">· ${esc(m.cargo||m.departamento||'')}</span></label>`).join('')
+        <div class="multi">${membros.map(m=>`<label class="check"><input type="checkbox" class="okr-resp" value="${m.registro}" ${sel.includes(m.registro)?'checked':''}> ${esc(m.nome)} <span class="small dim">${esc(m.cargo||m.departamento||'')}</span></label>`).join('')
           || '<div class="small dim">Nenhum membro ativo no quadro.</div>'}</div></div>
     </div>
     <div class="acts" style="justify-content:flex-end">
@@ -534,7 +533,7 @@ async function okrSalvar(id, paiId, nivel){
 async function okrExcluir(id){
   const o = okrPorId(id); if(!o) return;
   const n = okrDescendentes(id).length;
-  if(!await confirma(`Excluir <b>${esc(o.codigo)} — ${esc(o.titulo)}</b>?`
+  if(!await confirma(`Excluir <b>${esc(o.codigo)} ${esc(o.titulo)}</b>?`
       +(n?`<br>Os ${n} desdobramento(s) abaixo dele serão excluídos junto.`:'')
       +'<br>Os comentários também são removidos.','Excluir')){ modalOKRDetalhe(id); return; }
   try{
@@ -557,7 +556,7 @@ registrarBusca({
   fonte:'okrs', rotulo:'OKRs',
   buscar: (t) => filtrarSimples(OKR.itens.map(o => ({
     titulo: o.titulo,
-    sub: `${OKR_NIVEL[o.nivel]||o.nivel} · ${o.status}`,
+    sub: `${OKR_NIVEL[o.nivel]||o.nivel}, ${o.status}`,
     codigo: o.codigo,
     href: '#/okrs/' + encodeURIComponent(o.codigo)
   })), t, 6)

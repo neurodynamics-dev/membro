@@ -1609,9 +1609,8 @@ function crUnsplash(chave){
     ${k ? `<div class="cr-us-busca"><input id="cr-us-q" placeholder="Buscar (em inglês rende mais): laboratory, circuit…"
         value="${esc(criador.unsplash.termo)}" onkeydown="if(event.key==='Enter')crUnsplashBusca(1)">
       <button class="btn solid mini" onclick="crUnsplashBusca(1)">${ic('lupa')} Buscar</button></div>`
-      : `<div class="aviso-box info">Sem a chave do Unsplash, a busca abre no site. Escolha a foto, clique com o botão direito
-        na imagem, <b>Copiar endereço da imagem</b>, e cole em <b>Link</b>. A gestão do Studio põe a chave em
-        <a href="#/studio/config/contas" onclick="fechaModal()">Configurações</a> e a busca passa a ser aqui.</div>`}
+      : `<div class="aviso-box info">Sem chave do Unsplash, a busca abre no site: copie o endereço da imagem e cole em <b>Link</b>.
+        A chave é configurada em <a href="#/studio/config/contas" onclick="fechaModal()">Studio › Configurações</a>.</div>`}
     <div class="cr-us-sug">${CR_UNSPLASH_BUSCAS.map(([r, q]) => k
       ? `<button class="chip-b" onclick="$('#cr-us-q').value='${q}';crUnsplashBusca(1)">${r}</button>`
       : `<a class="chip-b" target="_blank" rel="noopener" href="https://unsplash.com/s/photos/${encodeURIComponent(q)}">${r} ↗</a>`).join('')}</div>
@@ -1778,7 +1777,7 @@ async function crMonta(){
       <a class="btn ghost mini" href="${pub ? '#/studio/' + esc(pub.codigo) : '#/studio'}">${ic('back')} ${pub ? esc(pub.codigo) : 'Studio'}</a>
       <input id="cr-nome" class="cr-nome" value="${esc(criador.titulo)}" placeholder="Nome da publicação — ex.: ${esc(nome)} de outubro"
         oninput="criador.titulo=this.value;criador.sujo=true;crGuardaRascunho()" aria-label="Nome da publicação">
-      <span class="cr-meta">${pub ? `${esc(pub.codigo)} · versão ${pub.versao || 1} · ${esc(STUDIO_STATUS.find(s => s[0] === pub.status)?.[1] || '')}` : 'Peça nova'}</span>
+      <span class="cr-meta">${pub ? `${esc(pub.codigo)}, versão ${pub.versao || 1}, ${esc(STUDIO_STATUS.find(s => s[0] === pub.status)?.[1] || '')}` : 'Peça nova'}</span>
       <div class="cr-acoes">
         <button class="btn ghost mini" onclick="crModalBaixar()">${ic('down')} Baixar</button>
         <button class="btn solid mini" onclick="crModalSalvar()">${ic('check')} ${pub ? 'Salvar a arte' : 'Salvar no quadro'}</button>
@@ -1834,7 +1833,7 @@ function crDesenharAgora(){
   crPinta(cv, peca, criador.atual, k, { previa:true, guias: $('#cr-guias')?.checked });
   cv.style.width = css + 'px'; cv.style.height = (css * T.h / T.w) + 'px';
   const n = peca.laminas.length;
-  $('#cr-onde').textContent = `${String(criador.atual + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')} · ${CR_LAYOUTS[crLamina().layout]?.l || ''} · ${T.l} · ${T.w} × ${T.h}`;
+  $('#cr-onde').textContent = `${String(criador.atual + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}, ${CR_LAYOUTS[crLamina().layout]?.l || ''}, ${T.l}, ${T.w} × ${T.h}`;
   document.querySelectorAll('.cr-nav').forEach(b => b.hidden = n < 2);
   const fita = $('#cr-fita');
   if (fita.children.length !== n + 1){
@@ -1925,9 +1924,9 @@ function crPainelEsq(){
       <div class="cr-chips">${M.tamanhos.map(t => `<button class="chip-b${peca.tamanho === t ? ' on' : ''}" onclick="crTamanho('${t}')"
         title="${esc(CR_TAMANHOS[t].onde)}">${esc(CR_TAMANHOS[t].l)}</button>`).join('')}</div>
       ${outros.length ? `<select class="cr-outros" onchange="if(this.value)crTamanho(this.value)" aria-label="Outros tamanhos">
-        <option value="">Outros tamanhos…</option>${outros.map(t => `<option value="${t}"${peca.tamanho === t ? ' selected' : ''}>${esc(CR_TAMANHOS[t].l)} · ${CR_TAMANHOS[t].w}×${CR_TAMANHOS[t].h}</option>`).join('')}</select>` : ''}
+        <option value="">Outros tamanhos…</option>${outros.map(t => `<option value="${t}"${peca.tamanho === t ? ' selected' : ''}>${esc(CR_TAMANHOS[t].l)}, ${CR_TAMANHOS[t].w}×${CR_TAMANHOS[t].h}</option>`).join('')}</select>` : ''}
       <p class="mini">${esc(CR_TAMANHOS[peca.tamanho].onde)}</p></section>
-    <section class="cr-sec"><h4>Lâminas · ${peca.laminas.length}</h4>
+    <section class="cr-sec"><h4>Lâminas (${peca.laminas.length})</h4>
       <ol class="cr-lams">${peca.laminas.map((l, i) => `<li class="${i === criador.atual ? 'on' : ''}">
         <button class="cr-lam" onclick="crIr(${i})"><span class="n">${String(i + 1).padStart(2, '0')}</span>
           <span class="nm">${esc(CR_LAYOUTS[l.layout]?.l || l.layout)}</span>
@@ -2175,7 +2174,7 @@ async function crModalSalvar(){
     (CR_LAYOUTS[l.layout].fotos || []).some(([k, , modos]) => { const f = l.fotos?.[k];
       return f && f.modo && !['nenhuma'].includes(f.modo) && !f.ref && ['pessoa', 'foto', 'thumb'].includes(l.layout); }));
   const avisoVazias = vazias.length ? `<div class="aviso-box warn">A${vazias.length > 1 ? 's lâminas' : ' lâmina'} ${vazias.map(v => String(v.i + 1).padStart(2, '0')).join(', ')}
-    ainda ${vazias.length > 1 ? 'têm' : 'tem'} o espaço da foto vazio. Dá para salvar assim e pôr a foto depois.</div>` : '';
+    ainda ${vazias.length > 1 ? 'têm' : 'tem'} o espaço da foto vazio. É possível salvar e incluir a foto depois.</div>` : '';
   if (pub){
     abreModal(`<h3>${ic('check')} Salvar a arte de ${esc(pub.codigo)}</h3>
       <p class="small muted" style="line-height:1.6;margin-bottom:12px">A arte vira a versão ${(pub.versao || 1) + 1}. As imagens antigas saem do quadro.
@@ -2288,7 +2287,7 @@ async function crPaginaModelos(){
         return `<a class="cr-card${M.laminas.length > 1 ? ' cr-varias' : ''}" href="#/studio/criar/${id}">
           <span class="cr-card-prev" data-modelo="${id}"></span>
           <span class="cr-card-tx"><span class="nm">${esc(tipo?.[1] || id)}</span>
-            <span class="sub">${M.laminas.length > 1 ? M.laminas.length + ' lâminas · ' : ''}${M.tamanhos.slice(0, 3).map(t => CR_TAMANHOS[t].l.split(' ')[0]).join(', ')}</span>
+            <span class="sub">${M.laminas.length > 1 ? M.laminas.length + ' lâminas, ' : ''}${M.tamanhos.slice(0, 3).map(t => CR_TAMANHOS[t].l.split(' ')[0]).join(', ')}</span>
             ${pil ? `<span class="pil" style="--c:${pil[2]}">${esc(pil[0])}</span>` : ''}</span></a>`; }).join('')}</div>`).join('')}`;
   await Promise.all([crCarregarMarcas(), crFontes()]);
   const dpr = window.devicePixelRatio || 1;

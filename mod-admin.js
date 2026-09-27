@@ -16,7 +16,7 @@
    Depende da casca para: sb, $, esc, norm, state, toast, fmtD, abreModal,
    fechaModal, can, registrarBusca, filtrarSimples, quemSouEu, ic, ibtn,
    avatarFoto, confirma, falha, motivoRPC, carregarGrupos, desenharMenu,
-   PAINEIS, GRUPOS_PAINEL, painelPermitido.
+   PAINEIS, GRUPOS_PAINEL, painelPermitido, dica.
    ============================================================ */
 
 const adminP = {
@@ -116,8 +116,7 @@ function galeriaAdmin(){
   $('#main').innerHTML = `
     <div class="topo-gestao"><div class="tx"><span class="eyebrow">Administração</span>
       <h1>Painéis</h1>
-      <p class="lead">O que a gestão mantém. Cada painel tem endereço próprio — dá para
-        mandar o link de um deles por mensagem.</p></div></div>
+</div></div>
     ${GRUPOS_PAINEL.map(g => {
       const itens = PAINEIS.filter(([,, gr]) => gr === g).filter(painelPermitido);
       if (!itens.length) return '';
@@ -216,18 +215,16 @@ async function admCarregarAvisos(){
 }
 function desenhaAvisos(){
   $('#sec-avisos').innerHTML = `
-    <div class="aviso-box info">O quadro rotaciona os avisos <b>publicados</b> na home do portal,
-      na ordem definida. Layouts: banda verde para destaques, coral para urgências, bloco de data
-      para eventos e acento lima para conquistas.</div>
+    <p class="small muted" style="margin-bottom:12px">Avisos publicados, na ordem definida. ${dica('Layouts: banda verde para destaques, coral para urgências, bloco de data para eventos e acento lima para conquistas.', 'Layouts')}</p>
     <div class="editor">
       <div>
         <div class="lista" id="av-lista">${adminP.avisos.length ? adminP.avisos.map(a=>`
           <button class="item ${a.id===adminP.sel?'on':''}" onclick="selAviso('${a.id}')">
             <span><span class="nm">${esc(a.titulo)}</span>
-            <span class="sl">${esc(LAYOUTS[a.layout]||a.layout)} · ordem ${esc(a.ordem)}</span></span>
+            <span class="sl">${esc(LAYOUTS[a.layout]||a.layout)}, ordem ${esc(a.ordem)}</span></span>
             ${a.publicado ? '' : '<span class="off">oculto</span>'}
           </button>`).join('')
-          : '<div class="vazio">Nenhum aviso ainda.</div>'}</div>
+          : '<div class="vazio">Nenhum aviso.</div>'}</div>
         <button class="btn ghost" style="width:100%;justify-content:center;margin-top:12px" onclick="novoAviso()">+ Novo aviso</button>
       </div>
       <div class="form" id="av-form"></div>
@@ -272,7 +269,7 @@ function desenhaFormAviso(){
   if (!a){ el.innerHTML = '<div class="vazio">Selecione ou crie um aviso.</div>'; return; }
   el.innerHTML = `
     <h2>${esc(a.titulo)}</h2>
-    <p class="sub">id ${esc(a.id).slice(0,8)} · atualizado ${a.atualizado_em?new Date(a.atualizado_em).toLocaleString('pt-BR'):'—'}</p>
+    <p class="sub">id ${esc(a.id).slice(0,8)}, atualizado ${a.atualizado_em?new Date(a.atualizado_em).toLocaleString('pt-BR'):'—'}</p>
     <div id="a-preview">${previewAviso(a)}</div>
     <div class="fgrid">
       <div class="fld full"><label>Título</label><input id="a-titulo" value="${esc(a.titulo)}" oninput="atualizaPreview()"></div>
@@ -416,7 +413,7 @@ function cartaoSol(s){
       ${s.tipo==='acesso' ? `<p style="font-size:11.5px;color:var(--dim);margin-top:10px">Ao aprovar,
         conceda o acesso na ficha do membro no SOMA (aba Acessos). Este painel só registra a decisão.</p>` : ''}
       ${s.respondido_por ? `<p style="font-size:11px;color:var(--dim);margin-top:8px">Última resposta:
-        ${esc(s.respondido_por)}${s.respondido_em?' · '+new Date(s.respondido_em).toLocaleString('pt-BR'):''}</p>` : ''}
+        ${esc(s.respondido_por)}${s.respondido_em?', '+new Date(s.respondido_em).toLocaleString('pt-BR'):''}</p>` : ''}
     </div>` : ''}
   </div>`;
 }
@@ -462,15 +459,13 @@ async function admCarregarOuvidoria(){
 }
 function desenhaOuvidoria(){
   $('#sec-ouvidoria').innerHTML = `
-    <div class="aviso-box info">As mensagens chegam <b>sem nenhuma identificação</b>: sem conta,
-      sem registro e com a data truncada para o dia. Trate cada uma com o cuidado de quem confiou
-      no canal.</div>
+    <p class="small muted" style="margin-bottom:12px">Mensagens anônimas: sem conta, sem registro e com a data truncada para o dia.</p>
     ${adminP.ouvidoria.length ? adminP.ouvidoria.map(o=>`
       <div class="ouv ${o.tratado?'tratado':''}">
         <div class="meta">
           <span class="pill">${esc(CAT_OUV[o.categoria]||o.categoria)}</span>
           <span class="mono" style="font-size:11px;color:var(--dim)">${fmtD(o.dia)}</span>
-          ${o.tratado ? `<span class="pill"><span class="dt" style="background:var(--ok)"></span>Tratada${o.tratado_por?' · '+esc(o.tratado_por):''}</span>` : ''}
+          ${o.tratado ? `<span class="pill"><span class="dt" style="background:var(--ok)"></span>Tratada${o.tratado_por?', '+esc(o.tratado_por):''}</span>` : ''}
           <span style="flex:1"></span>
           <button class="btn mini ${o.tratado?'ghost':'solid'}" onclick="marcarOuv('${o.id}', ${!o.tratado})">
             ${o.tratado?'Reabrir':'Marcar como tratada'}</button>
@@ -521,17 +516,15 @@ function desenhaAgendas(){
     return `<div class="ag-linha">
       <span class="dot ${dot}"></span>
       <div><span class="nm">${esc(m?.nome || 'Registro ' + a.registro)}</span>
-        <span class="sl">${esc(m?.departamento || '')}${m?.departamento ? ' · ' : ''}${
-          esc(String(a.expediente_inicio || '').slice(0,5))}–${esc(String(a.expediente_fim || '').slice(0,5))} · ${esc(a.fuso)}</span>
+        <span class="sl">${esc(m?.departamento || '')}${m?.departamento ? ', ' : ''}${
+          esc(String(a.expediente_inicio || '').slice(0,5))}–${esc(String(a.expediente_fim || '').slice(0,5))}, ${esc(a.fuso)}</span>
         ${a.ultimo_erro ? `<div class="ag-erro">${esc(a.ultimo_erro)}</div>` : ''}</div>
       <div class="quando"><b>${esc(txt)}</b>${a.ultima_sync ? fmtD(a.ultima_sync) : '—'}</div>
     </div>`;
   };
   $('#sec-agendas').innerHTML = `
-    <div class="aviso-box info">Cada membro conecta a própria agenda em
-      <b>membro.neurodynamics.dev/#/calendario/minha</b>, colando o endereço secreto em formato
-      iCal do Google Agenda. O link fica visível só para o dono — nem por aqui dá para lê-lo.
-      Daqui você acompanha o estado e força uma sincronização geral.</div>
+    <p class="small muted" style="margin-bottom:12px">Conexão feita por cada membro em Agenda › Configurações › Google Agenda.
+      ${dica('O endereço secreto (iCal) fica visível apenas para o dono da agenda.')}</p>
     <div class="acts" style="margin:0 0 16px">
       <button class="btn solid" id="ag-btn" onclick="sincronizarTodas()">Sincronizar todas agora</button>
       <button class="btn ghost" onclick="admCarregarAgendas()">Atualizar a lista</button>
@@ -546,7 +539,7 @@ function desenhaAgendas(){
           agendamento mostra apenas os eventos do SOMA.</div>`}
     ${semAgenda.length ? `<h2 style="font-size:14px;margin:26px 0 10px">Ainda sem agenda conectada</h2>
       <p class="mono" style="font-size:11.5px;color:var(--dim);line-height:1.9">${
-        semAgenda.map(m => esc(m.nome)).join(' · ')}</p>` : ''}`;
+        semAgenda.map(m => esc(m.nome)).join(', ')}</p>` : ''}`;
 }
 async function sincronizarTodas(){
   const b = $('#ag-btn'); b.disabled = true; b.textContent = 'Sincronizando…';
@@ -581,8 +574,6 @@ function pageCatalogo(){
       <p class="sub" style="margin:0">Os sistemas, locais e documentos cujo acesso a NRO controla</p>
       ${can() ? ibtn('plus','Novo item','modalItem()','primary') : ''}</div>
     <div class="card">
-    <p class="small muted" style="line-height:1.6;margin-bottom:14px">Cada linha é um sistema, local ou documento controlado.
-    Um item novo passa a valer para todos os membros na hora, sem alterar a estrutura.</p>
     <table class="tabela trabalho"><thead><tr><th>Item</th><th>Categoria</th><th>Situação</th>${can()?'<th></th>':''}</tr></thead>
     <tbody>${state.itensAcesso.map(i=>`<tr>
       <td style="font-weight:600">${esc(i.nome)}</td>
@@ -596,7 +587,7 @@ function pageCatalogo(){
 function modalItem(id){
   const i = id ? state.itensAcesso.find(x=>x.id===id) : null;
   abreModal(`<h3>${i?'Editar item de acesso':'Novo item de acesso'}</h3>
-    <div class="fld"><label>Nome</label><input id="it-nome" value="${esc(i?.nome||'')}" placeholder="ex.: Figma, Sala de reuniões, Termo de sigilo — Parceiro X"></div>
+    <div class="fld"><label>Nome</label><input id="it-nome" value="${esc(i?.nome||'')}" placeholder="ex.: Figma, Sala de reuniões, Termo de sigilo do Parceiro X"></div>
     <div class="fld"><label>Categoria</label><select id="it-cat">
       ${['sistema','local','documento'].map(c=>`<option value="${c}" ${i?.categoria===c?'selected':''}>${CAT_LABEL[c]}</option>`).join('')}</select></div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
@@ -684,11 +675,8 @@ function pageImportar(){
   $('#sec-importar').innerHTML = `
     <div class="card"><h3>Importar planilha do quadro</h3>
       <p class="small muted" style="line-height:1.65;margin-bottom:16px">
-        Dois formatos são aceitos: a planilha oficial <b>NRO-PES-005</b> (abas INSTITUCIONAL, FORM e
-        ACESSOS) e o <b>Excel exportado pelo próprio SOMA</b> (Relatórios → Quadro completo), inclusive
-        editado — ideal para manutenção em massa, como renomear cargos ou reorganizar grupos.
-        Só as colunas presentes no arquivo são atualizadas; registros existentes são casados pelo
-        número de registro — pode importar quantas vezes quiser sem duplicar.</p>
+        Formatos: <b>NRO-PES-005</b> (abas INSTITUCIONAL, FORM e ACESSOS) ou o <b>Excel exportado pelo SOMA</b>
+        (Relatórios › Quadro completo). ${dica('Só as colunas presentes no arquivo são atualizadas. Os membros são identificados pelo número de registro; importar de novo não duplica.')}</p>
       <div class="dropzone" onclick="document.getElementById('imp-file').click()">
         Clique para selecionar o arquivo<br><b>NRO-PES-005 ou exportação do SOMA (.xlsx)</b>
       </div>
@@ -753,9 +741,9 @@ async function lerArquivo(file){
     }
     pacote = {membros, pess, acessos};
     const nNovos = membros.filter(m=>!jaExiste.has(m.registro)).length;
-    $('#imp-resumo').innerHTML = `<div class="card"><h3>Pronto para importar — ${esc(file.name)}</h3>
+    $('#imp-resumo').innerHTML = `<div class="card"><h3>Pronto para importar: ${esc(file.name)}</h3>
       <label class="check"><input type="checkbox" id="ck-m" ${membros.length?'checked':'disabled'}>
-        <span><b>${membros.length}</b> membros — ${nNovos} novo(s), ${membros.length-nNovos} atualização(ões)</span></label>
+        <span><b>${membros.length}</b> membros: ${nNovos} novo(s), ${membros.length-nNovos} atualização(ões)</span></label>
       ${membros.length?`<p class="small muted" style="margin:2px 0 6px 26px">Colunas reconhecidas (só elas serão atualizadas): ${esc(colunasInst.join(', '))}</p>`:''}
       <label class="check"><input type="checkbox" id="ck-p" ${pess.length?'checked':'disabled'}>
         <span><b>${pess.length}</b> fichas de dados pessoais (aba FORM)</span></label>
@@ -903,13 +891,12 @@ function renderContas(perfis){
   const emailsComConta = new Set(perfis.map(p=>norm(p.email)));
   const semConta = state.membros.filter(m=> m.status==='Ativo'
     && ![m.email_nro, m.email_pessoal].some(e=> e && emailsComConta.has(norm(e))));
-  const regOpts = (sel)=> `<option value="">— sem vínculo —</option>` + state.membros.slice()
+  const regOpts = (sel)=> `<option value="">Sem vínculo</option>` + state.membros.slice()
     .sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'))
     .map(m=>`<option value="${m.registro}" ${m.registro===sel?'selected':''}>${esc(m.nome)}</option>`).join('');
   porContas(`<h3>Contas e perfis</h3>
-    <p class="small muted" style="line-height:1.6;margin-bottom:12px">Cada conta nasce com papel <b>Consulta</b>,
-    vinculada ao membro pelo e-mail usado no cadastro. Ajuste aqui o papel e o vínculo${souAdmin?'':' (somente administradores alteram papéis)'};
-    a chavinha envia o link de redefinição de senha para o e-mail da conta.</p>
+    <p class="small muted" style="line-height:1.6;margin-bottom:12px">Papel inicial: <b>Consulta</b>, com vínculo pelo e-mail do cadastro.${souAdmin?'':' Somente administradores alteram papéis.'}
+    ${dica('O botão da coluna Senha envia o link de redefinição ao e-mail da conta.')}</p>
     <div style="overflow:auto;max-height:56vh">
     <table class="tabela trabalho"><thead><tr><th>Conta</th><th>Membro vinculado</th><th>Papel</th><th style="text-align:right">Senha</th></tr></thead>
     <tbody>${perfis.map(p=>`<tr>
@@ -921,7 +908,7 @@ function renderContas(perfis){
       <td style="text-align:right">${ibtn('key','Enviar link de redefinição de senha',`ctReset('${p.id}')`,'sm ghost')}</td>
     </tr>`).join('')}</tbody></table></div>
     ${semConta.length?`<div class="aviso-box info" style="margin-top:14px"><b>${semConta.length} membro(s) ativo(s) ainda sem conta.</b>
-      Peçam que criem a conta na própria tela de login do SOMA, com o e-mail do quadro — o vínculo é automático.<br>
+      A conta é criada na tela de login, com o e-mail do quadro; o vínculo é automático.<br>
       <button class="btn ghost" style="margin-top:8px" onclick="ctConvite()">${ic('copy')} Copiar instruções de acesso</button></div>`:''}
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`,
     /* uma tabela de contas não cabe em 520px. O `querySelector('.modal')`
@@ -955,7 +942,7 @@ async function ctReset(id){
   }catch(e){ falha(e,'Erro ao enviar o link'); }
 }
 function ctConvite(){
-  copiar(`Acesso ao SOMA — NeuroDynamics
+  copiar(`Acesso ao SOMA, NeuroDynamics
 1) Abra ${URL_APP()}
 2) Clique em "Criar conta" e use o e-mail que está no quadro de pessoal (NRO ou pessoal).
 3) Confirme o e-mail pelo link recebido e faça login.
@@ -987,9 +974,9 @@ async function admCarregarProjetos(){
 
 function admDesenhaSite(){
   $('#sec-site').innerHTML = `
-    <div class="aviso-box info">Os vídeos e as matérias da seção <b>Quem somos</b> são editados no Studio${podeStudio()
-      ? `: <a href="#/studio/config/imprensa" style="text-decoration:underline">Studio › Configurações › Imprensa</a>.`
-      : ', pela gestão do Studio (admin e o grupo aprovador).'}</div>
+    <p class="small muted" style="margin-bottom:12px">Vídeos e matérias da seção Quem somos: ${podeStudio()
+      ? `<a href="#/studio/config/imprensa" style="text-decoration:underline">Studio › Configurações › Imprensa</a>.`
+      : 'Studio, pela gestão do Studio.'}</p>
     <div class="adm-grade">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px">
@@ -1007,7 +994,7 @@ function admDesenhaSite(){
       <span class="tx"><span class="nm">${esc(p.nome)}</span>
       <span class="sl">/${esc(p.slug)}</span></span>
       ${p.publicado ? '' : '<span class="off">oculto</span>'}</button>`).join('')
-    : '<div class="kb-vazio" style="text-align:left">Nenhum projeto ainda.</div>';
+    : '<div class="kb-vazio" style="text-align:left">Nenhum projeto.</div>';
   admDesenhaFormProjeto();
 }
 function admSelProjeto(id){ adminP.projSel = id; admDesenhaSite(); }
@@ -1018,7 +1005,7 @@ function admDesenhaFormProjeto(){
   if (!p){ el.innerHTML = '<div class="kb-vazio" style="text-align:left">Selecione ou crie um projeto.</div>'; return; }
   el.innerHTML = `
     <h3>${esc(p.nome)}</h3>
-    <p class="sub" style="margin-bottom:16px">id ${esc(String(p.id).slice(0,8))} ·
+    <p class="sub" style="margin-bottom:16px">id ${esc(String(p.id).slice(0,8))},
       atualizado ${p.atualizado_em ? fmtD(p.atualizado_em) : '—'}</p>
     <div class="form-grid">
       <div class="fld"><label>Nome</label><input id="sp-nome" value="${esc(p.nome)}"></div>
@@ -1030,11 +1017,11 @@ function admDesenhaFormProjeto(){
             onclick="admTrocaIdioma('${l.k}')">${l.lb}</button>`).join('')}</div>
         <p class="mini" style="margin:-8px 0 12px">O que ficar vazio em PT ou FR cai no texto em inglês.</p>
         ${IDIOMAS.map(l => `<div data-idioma="${l.k}" ${l.k===adminP.projIdioma?'':'hidden'}>
-          <div class="fld"><label>Tagline · ${l.lb}</label>
+          <div class="fld"><label>Tagline (${l.lb})</label>
             <input id="sp-tagline${l.sf}" value="${esc(p['tagline'+l.sf]||'')}"></div>
-          <div class="fld"><label>Resumo · ${l.lb} (cartão da home)</label>
+          <div class="fld"><label>Resumo (${l.lb}), cartão do início</label>
             <textarea id="sp-resumo${l.sf}" rows="2">${esc(p['resumo'+l.sf]||'')}</textarea></div>
-          <div class="fld"><label>Descrição · ${l.lb}</label>
+          <div class="fld"><label>Descrição (${l.lb})</label>
             <textarea id="sp-descricao${l.sf}" rows="5">${esc(p['descricao'+l.sf]||'')}</textarea></div>
         </div>`).join('')}
       </div>
@@ -1085,7 +1072,7 @@ async function admSalvarProjeto(id){
   try{
     const { error } = await sb.from('site_projetos').update(v).eq('id', id);
     if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
-    toast('Projeto salvo — já está no ar.');
+    toast('Projeto salvo e publicado.');
     await admCarregarProjetos();
   }catch(e){
     falha(e, 'Não foi possível salvar');
@@ -1102,7 +1089,7 @@ async function admNovoProjeto(){
     .insert({ nome, slug, publicado:false, ordem: 100 + adminP.projetos.length * 10 })
     .select().single();
   if (error){ toast('Erro ao criar: ' + error.message, true); return; }
-  toast('Projeto criado — começa oculto; publique quando estiver pronto.');
+  toast('Projeto criado como oculto.');
   adminP.projSel = data.id;
   await admCarregarProjetos();
 }
@@ -1293,7 +1280,7 @@ function renderGrupos(){
     ${temArvore ? '' : `<div class="aviso-box warn" style="margin-bottom:16px">
       <b>A árvore de grupos ainda não está no banco.</b> Sem a migração
       <code>db/v19_grupos_hierarquia.sql</code> os grupos continuam numa lista plana:
-      dá para editar e pôr pessoas, mas não para pôr um grupo dentro de outro.</div>`}
+      é possível editar e incluir pessoas, mas não aninhar grupos.</div>`}
     <div class="gr-lay">
       <div class="card gr-arv">
         <div class="gr-arv-topo">
@@ -1309,8 +1296,7 @@ function renderGrupos(){
 
 function admDetalheHTML(){
   const g = admGrupo(admGrupos.sel);
-  if (!g) return `<div class="vazio"><div class="glyph">∅</div><h3>Nenhum grupo ainda</h3>
-    <p>Crie o primeiro grupo — depois dá para pôr outros dentro dele.</p>
+  if (!g) return `<div class="vazio"><div class="glyph">∅</div><h3>Nenhum grupo</h3>
     <button class="btn solid" onclick="modalGrupo()">Novo grupo</button></div>`;
   const temArvore = admTemArvore();
   const caminho = admCaminho(g);
@@ -1360,7 +1346,7 @@ function admDetalheHTML(){
     ${temArvore ? `
     <div class="adm-grupo">Subgrupos</div>
     ${filhos.length ? `<div class="gr-sub">${filhos.map(f => `<a class="chip" href="#/admin/grupos/${encodeURIComponent(f.prefixo)}">
-        ${esc(f.nome)} <span class="muted small">· ${admPessoasDo(f).length}</span></a>`).join('')}</div>`
+        ${esc(f.nome)}<span class="muted small">, ${admPessoasDo(f).length}</span></a>`).join('')}</div>`
       : `<p class="muted small">Nenhum. Quem entrar num subgrupo de ${esc(g.nome)} passa a estar também aqui.</p>`}
 
     <div class="adm-grupo">Responsáveis</div>
@@ -1372,10 +1358,10 @@ function admDetalheHTML(){
     ${temArvore && herdados.length ? `<div class="seg" role="group" aria-label="Quais pessoas" style="margin-bottom:10px">
       ${[['todas', 'Todas', pessoas.length], ['ficha', 'Pela ficha', diretos.length], ['sub', 'Por subgrupo', herdados.length]]
         .map(([k, r, n]) => `<button class="${admGrupos.ver === k ? 'on' : ''}" aria-pressed="${admGrupos.ver === k}"
-          onclick="admVerPessoas('${k}')">${r} · ${n}</button>`).join('')}</div>` : ''}
+          onclick="admVerPessoas('${k}')">${r}, ${n}</button>`).join('')}</div>` : ''}
     <div class="gr-pessoas">${lista.map(({ m, via }) => `<div class="gr-pessoa">
         ${avatarFoto(m, 30, 11)}
-        <div class="tx"><div class="nm">${esc(m.nome)}</div><div class="cg">${esc(m.cargo || '—')}${m.status !== 'Ativo' ? ' · em pausa' : ''}</div></div>
+        <div class="tx"><div class="nm">${esc(m.nome)}</div><div class="cg">${esc(m.cargo || '—')}${m.status !== 'Ativo' ? ', em pausa' : ''}</div></div>
         ${via === g.nome
           ? `<span class="gr-via dir">pela ficha</span>${ibtn('x', 'Tirar de ' + esc(g.nome), `admTirarDoGrupo(${m.registro})`, 'perigo sm')}`
           : `<a class="gr-via" href="#/admin/grupos/${encodeURIComponent(grupoPrefixoDe(via))}"
@@ -1420,13 +1406,13 @@ function admAddHTML(g, pessoas){
           onchange="admMarcar(${m.registro}, this.checked)">
         ${avatarFoto(m, 26, 10)}
         <span class="tx"><span class="nm">${esc(m.nome)}</span>
-          <span class="cg">${esc(m.cargo || '—')}${ja.has(m.registro) ? ` · <span class="ja">já está por ${esc(ja.get(m.registro))}</span>` : ''}</span></span>
+          <span class="cg">${esc(m.cargo || '—')}${ja.has(m.registro) ? `, <span class="ja">já está por ${esc(ja.get(m.registro))}</span>` : ''}</span></span>
       </label>`).join('') || `<p class="muted small" style="padding:10px 0">${admGrupos.busca
         ? 'Ninguém com essa busca.' : 'Todo mundo que está ativo já está neste grupo.'}</p>`}
     </div>
     <div class="gr-add-barra">
       <span class="small muted">${n ? `${n} marcada${n > 1 ? 's' : ''}` : 'Marque quem entra.'}
-        ${n ? ` · <button class="gr-limpa" onclick="admGrupos.marcados.clear(); admRedesenharAdd()">limpar</button>` : ''}</span>
+        ${n ? `, <button class="gr-limpa" onclick="admGrupos.marcados.clear(); admRedesenharAdd()">limpar</button>` : ''}</span>
       <button class="btn solid mini" id="gr-add-btn" ${n ? '' : 'disabled'} onclick="admPorNoGrupo()">
         ${ic('plus')} ${n ? `Pôr ${n} pessoa${n > 1 ? 's' : ''}` : 'Pôr no grupo'}</button>
     </div>`;
@@ -1474,7 +1460,7 @@ async function admPorNoGrupo(){
     await admRecarregarFichas();
     const acima = admCaminho(g).slice(0, -1).map(x => x.nome).reverse();
     const n = data.adicionados ?? regs.length;
-    toast(`${n} pessoa${n === 1 ? '' : 's'} em ${g.nome}` + (acima.length ? ` — e, por ele, em ${acima.join(' e ')}.` : '.'));
+    toast(`${n} pessoa${n === 1 ? '' : 's'} em ${g.nome}` + (acima.length ? `, e por herança em ${acima.join(' e ')}.` : '.'));
     renderGrupos();
   }catch(e){ admFalhaGrupo(e, 'Erro ao pôr no grupo'); }
   finally{ const x = $('#gr-add-btn'); if (x && admGrupos.marcados.size){ x.disabled = false; } }
@@ -1552,7 +1538,7 @@ function modalGrupo(id, paiSugerido){
         <input id="gr-ordem" type="number" value="${g.ordem ?? 0}"></div>
       ${temArvore ? `
       <div class="fld full"><label for="gr-pai">Dentro de</label>
-        <select id="gr-pai"><option value="">— nenhum: fica na raiz —</option>
+        <select id="gr-pai"><option value="">Nenhum (raiz)</option>
           ${pais.map(x => `<option value="${x.id}" ${x.id === g.pai_id ? 'selected' : ''}>${esc(rotuloPai(x))}</option>`).join('')}
         </select>
         <span class="mailer-sub tight">Quem estiver neste grupo passa a estar também no grupo de cima.</span></div>
@@ -1583,8 +1569,7 @@ function modalGrupo(id, paiSugerido){
         </select></div>` : ''}
     </div>
     ${id ? `<p class="small muted" style="margin-top:12px;line-height:1.6">
-      Renomear aqui <b>também corrige a ficha</b> de quem está no grupo, na mesma
-      operação — o vínculo é por nome, e mudar só de um lado esvaziaria o grupo.</p>` : ''}
+      Renomear o grupo atualiza a ficha de quem está nele.</p>` : ''}
     <div class="acts" style="justify-content:space-between">
       ${id ? `<button class="btn ghost" onclick="modalFundirGrupo(${id})">Fundir com outro…</button>` : '<span></span>'}
       <span><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
@@ -1616,7 +1601,7 @@ async function salvarGrupo(id){
   const at = $('#gr-ativo'); if (at) p.ativo = at.value === 'sim';
   if (!p.nome)    return toast('O nome é obrigatório.', true);
   if (!/^[A-Z][A-Z0-9]{1,5}$/.test(p.prefixo))
-    return toast('O prefixo vai de 2 a 6 caracteres, começando por letra — ORT, DP2.', true);
+    return toast('Prefixo: 2 a 6 caracteres, começando por letra (ex.: ORT, DP2).', true);
   const estrutura = admTemArvore() ? {
     pai_id: $('#gr-pai').value ? Number($('#gr-pai').value) : null,
     quadro: $('#gr-quadro').checked,
@@ -1636,7 +1621,7 @@ async function salvarGrupo(id){
       const r = await sb.rpc('grupo_estrutura_salvar', { p: { id: data.id, ...estrutura } });
       if (r.error) throw r.error;
       if (r.data?.status === 'ciclo')
-        return toast('Esse grupo já está abaixo deste — pô-lo como pai fecharia um círculo.', true);
+        return toast('Esse grupo está abaixo deste e não pode ser o pai.', true);
       if (r.data?.status !== 'ok') return toast('O grupo foi salvo, mas a posição na árvore não.', true);
     }
     fechaModal();
@@ -1659,9 +1644,8 @@ function modalFundirGrupo(id){
   if (!outros.length) return toast('Não há outro grupo para fundir.', true);
   const filhos = admFilhos(id), pai = admGrupo(g.pai_id);
   abreModal(`<h3>Fundir grupo</h3>
-    <p class="sub" style="margin-bottom:16px">As atividades de <b>${esc(g.nome)}</b> passam
-      para o grupo escolhido e <b>ganham código novo</b>, com o prefixo dele. As pessoas
-      também passam. O grupo <b>${esc(g.nome)}</b> deixa de existir.</p>
+    <p class="sub" style="margin-bottom:16px">Atividades e pessoas de <b>${esc(g.nome)}</b> passam para o grupo escolhido,
+      com códigos novos no prefixo dele. <b>${esc(g.nome)}</b> é excluído.</p>
     <div class="form-grid">
       <div class="fld full"><label>Fundir ${esc(g.nome)} em</label>
         <select id="fu-alvo">${outros.map(x =>
@@ -1715,10 +1699,10 @@ function modalAcessoGrupo(id){
 
   abreModal(`<h3>Quem enxerga ${esc(g.nome)}</h3>
     <p class="sub" style="margin-bottom:18px">${g.reservado
-      ? 'Quadro fechado: só quem está na lista abaixo abre as atividades. Os demais veem que ele existe.'
-      : 'Quadro aberto: <b>toda a equipe já lê</b> este quadro. Conceder acesso aqui só serve para dar <b>edição</b> a quem não está no grupo.'}</p>
+      ? 'Quadro fechado: só a lista abaixo abre as atividades.'
+      : 'Quadro aberto: toda a equipe lê. Aqui se concede <b>edição</b> a quem não está no grupo.'}</p>
 
-    <div class="adm-grupo" style="margin-top:0">No grupo — edição</div>
+    <div class="adm-grupo" style="margin-top:0">No grupo</div>
     <div class="multi" style="max-height:170px">${noGrupo.map(({ m, via }) =>
       `<div class="acc-row" style="padding:6px 2px"><div class="nm">${esc(m.nome)}</div>
         <div class="mt">${esc(m.cargo || '')}</div><span class="muted small">${via === g.nome ? 'pela ficha' : 'por ' + esc(via)}</span></div>`
@@ -1741,7 +1725,7 @@ function modalAcessoGrupo(id){
     <div class="adm-grupo">Conceder a</div>
     <div class="form-grid">
       <div class="fld"><label>Pessoa</label>
-        <select id="ac-quem"><option value="">— escolha —</option>
+        <select id="ac-quem"><option value="">Escolha</option>
           ${fora.map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</select></div>
       <div class="fld"><label>Nível</label>
         <select id="ac-nivel">${NIVEIS_GRUPO.filter(([k]) => k !== 'nenhum').map(([k, r, d]) =>
@@ -1780,7 +1764,7 @@ registrarBusca({
         codigo: g.prefixo, titulo: g.nome,
         sub: [admCaminho(g).slice(0, -1).map(x => x.nome).join(' › '),
               g.quadro === false ? 'sem quadro' : g.reservado ? 'quadro fechado' : 'quadro aberto']
-             .filter(Boolean).join(' · '),
+             .filter(Boolean).join(', '),
         href: '#/admin/grupos/' + encodeURIComponent(g.prefixo) })), t, 5)
     : []
 });

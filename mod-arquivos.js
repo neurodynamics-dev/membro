@@ -30,7 +30,7 @@
    fechaModal, fmtD, fmtDT, ic, ibtn, confirma, falha, motivoRPC,
    avatarFoto, nomeDe, carregarLib, carregarModulo, registrarBusca,
    filtrarSimples, gruposEfetivos, grupoPorId, docGestor, logoProjeto,
-   carregarProjetosEArquivos.
+   carregarProjetosEArquivos, dica.
    ============================================================ */
 
 const arq = {
@@ -63,16 +63,16 @@ const ARQ_ICONE = { template:'molde', documento:'doc', registro:'registro' };
    doc_estrutura_frase() (db/v22_estrutura_das_series.sql). "avulso" é
    o NRO-PUB-002: documento sem PN com subtipo template. */
 const ARQ_ESTRUTURAS = {
-  unico:      { rot:'Documento único', curto:'Documento único · sem PN',
+  unico:      { rot:'Documento único', curto:'Documento único, sem PN',
                 frase:'um documento para toda a equipe, sem template e sem filhos', tipo:'documento', multiplo:false,
                 ex:'uma política, um procedimento: existe um só, e revisa (Rev. A, B…)' },
-  documentos: { rot:'Template → documentos', curto:'Template · cada PN é um documento',
+  documentos: { rot:'Template → documentos', curto:'Template, cada PN é um documento',
                 frase:'um template, cada pn é um documento filho da série', tipo:'documento', multiplo:true,
                 ex:'um termo de abertura por projeto: cada PN é um documento, e cada um revisa' },
-  registros:  { rot:'Template → registros', curto:'Template · cada PN é um registro',
+  registros:  { rot:'Template → registros', curto:'Template, cada PN é um registro',
                 frase:'um template, cada pn é um registro filho da série', tipo:'registro', multiplo:true,
                 ex:'uma ata por reunião: cada PN é um registro, que depois de aprovado não muda' },
-  avulso:     { rot:'Template avulso', curto:'Template avulso · sem PN',
+  avulso:     { rot:'Template avulso', curto:'Template avulso, sem PN',
                 frase:'um template avulso, sem pn', tipo:'documento', multiplo:false,
                 ex:'o modelo de base dos outros, como o NRO-PUB-002' }
 };
@@ -81,7 +81,7 @@ const arqEstrutura = s => s.multiplo ? (s.tipo === 'registro' ? 'registros' : 'd
 /* O que a linha é, em poucas palavras: o template e o que nasce dele,
    o documento único, ou o PN — documento ou registro. */
 const arqComoE = r => r.pn != null
-  ? `${r.tipo === 'registro' ? 'Registro' : 'Documento'} · PN ${r.pn}`
+  ? `${r.tipo === 'registro' ? 'Registro' : 'Documento'}, PN ${r.pn}`
   : ARQ_ESTRUTURAS[arqEstrutura(r)].curto;
 const RE_CODIGO = /^NRO-[A-Z]{3}-\d{3}(-\d+)?$/;
 
@@ -196,11 +196,11 @@ function arqVisao(){
   const recentes = [...rol].sort((a, b) => String(b.alterado_em).localeCompare(String(a.alterado_em))).slice(0, 8);
   const fila = (r, extra) => `<a class="arq-fila" href="#/arquivos/${esc(r.codigo)}">
       <span class="arq-ic ${r.natureza}">${ic(ARQ_ICONE[r.natureza])}</span>
-      <span class="tx"><span class="tt"><span class="arq-rev" style="color:var(--syn-tx)">${esc(r.codigo)}</span> · ${esc(r.titulo)}</span>
+      <span class="tx"><span class="tt"><span class="arq-rev" style="color:var(--syn-tx)">${esc(r.codigo)}</span> ${esc(r.titulo)}</span>
         <span class="mt">${extra}</span></span></a>`;
 
   $('#main').innerHTML = arqTopo('Arquivos', 'Visão geral',
-    'O que aguarda você, o que se mexeu por último e como o rol se organiza, por emissor e por estrutura.',
+    '',
     `<button class="btn ghost mini" onclick="arqExportar()">${ic('down')} Exportar planilha</button>
      ${arqPossoAdicionar() ? `<button class="btn solid mini" onclick="arqModalAdicionar()">${ic('plus')} Adicionar</button>` : ''}`)
   + arqNavHTML('visao')
@@ -214,13 +214,13 @@ function arqVisao(){
     <div class="pj-cols" style="margin-bottom:18px">
       <div class="card"><h3>Para você revisar</h3>
         ${paraMim.length ? paraMim.map(r => { const p = arqPendente(r.id);
-            return fila(r, `${p.rev ? 'Rev. ' + esc(p.rev) + ' · enviada' : 'Registro · enviado'} por ${esc(p.enviado_nome || '—')} em ${fmtD(p.enviado_em)}`); }).join('')
+            return fila(r, `${p.rev ? 'Rev. ' + esc(p.rev) + ', enviada' : 'Registro, enviado'} por ${esc(p.enviado_nome || '—')} em ${fmtD(p.enviado_em)}`); }).join('')
           : '<p class="muted small">Nada aguardando a sua revisão.</p>'}
         ${meus.length ? `<h3 style="margin-top:18px">Seus envios aguardando</h3>${meus.map(({ p, r }) =>
-            fila(r, `${p.rev ? 'Rev. ' + esc(p.rev) : 'Registro'} · com ${esc(arqRevisores(r))} desde ${fmtD(p.enviado_em)}`)).join('')}` : ''}
+            fila(r, `${p.rev ? 'Rev. ' + esc(p.rev) : 'Registro'}, com ${esc(arqRevisores(r))} desde ${fmtD(p.enviado_em)}`)).join('')}` : ''}
       </div>
       <div class="card"><h3>Mexidos por último</h3>
-        ${recentes.map(r => fila(r, `${fmtD(r.alterado_em)} · ${esc(r.alterado_nome || '—')}`)).join('') || '<p class="muted small">Nenhum arquivo ainda.</p>'}
+        ${recentes.map(r => fila(r, `${fmtD(r.alterado_em)}, ${esc(r.alterado_nome || '—')}`)).join('') || '<p class="muted small">Nenhum arquivo.</p>'}
       </div>
     </div>
     <div class="adm-grupo" style="margin-top:0">Como o rol se organiza</div>
@@ -243,10 +243,10 @@ function arqLinha(r, o = {}){
   const pend = r.rev_pendente
     ? `<span class="arq-pend" title="Versão aguardando revisão">${r.rev_pendente === '—' ? 'em revisão' : esc(r.rev_pendente) + ' em revisão'}</span>` : '';
   const rev = r.natureza === 'registro'
-    ? (r.template_rev ? `<span class="tpl" title="Registro não se revisa: esta é a revisão do template usado">Rev. ${esc(r.template_rev)} · tpl</span>` : '—')
+    ? (r.template_rev ? `<span class="tpl" title="Registro não se revisa: esta é a revisão do template usado">Rev. ${esc(r.template_rev)}, tpl</span>` : '—')
     : (r.rev_vigente ? `Rev. ${esc(r.rev_vigente)}` : '—');
   const cls = r.classe !== 'publico'
-    ? ` · <span class="arq-cls ${r.classe}">${ic(r.classe === 'confidencial' ? 'cadeado' : 'shield')}${ARQ_CLASSES[r.classe][0]}</span>` : '';
+    ? `, <span class="arq-cls ${r.classe}">${ic(r.classe === 'confidencial' ? 'cadeado' : 'shield')}${ARQ_CLASSES[r.classe][0]}</span>` : '';
   const npn = r.pn == null && Number(r.n_pns) > 0 ? `<span class="arq-npn">${r.n_pns} PN</span>` : '';
   const caret = o.caret
     ? (Number(r.n_pns) > 0
@@ -254,7 +254,7 @@ function arqLinha(r, o = {}){
              onclick="event.stopPropagation(); arqAlternarSerie('${r.serie_id}')">${ic('chevron')}</button>`
         : '<span class="arq-caret sem" aria-hidden="true"></span>')
     : '';
-  const sub = o.sub ?? `${esc(arqComoE(r))} · ${esc(ARQ_SUBTIPOS[r.subtipo] || r.subtipo)}${cls}`;
+  const sub = o.sub ?? `${esc(arqComoE(r))}, ${esc(ARQ_SUBTIPOS[r.subtipo] || r.subtipo)}${cls}`;
   return `<tr class="click${r.pn != null && o.aninhado ? ' pn' : ''}" tabindex="0"
       onclick="location.hash='#/arquivos/${esc(r.codigo)}'" onkeydown="if(event.key==='Enter')this.click()">
     <td><div class="cel-cod">${caret}<span class="arq-ic ${r.natureza}">${ic(ARQ_ICONE[r.natureza])}</span>
@@ -313,9 +313,9 @@ function arqLista(pref){
   const e = pref ? arqEmissor(pref) : null;
   arq.rolAtual = pref || '';
   const arg = pref ? `'${pref}'` : '';
-  $('#main').innerHTML = arqTopo(pref ? `Arquivos · NRO-${esc(pref)}` : 'Arquivos', pref ? esc(e.nome) : 'Todos os arquivos',
-    pref ? `A aba ${esc(pref)} da NRO-PUB-001.${e.grupo_id ? ` Quem responde por ela é o grupo <b>${esc(arqGrupoNome(e.grupo_id) || '—')}</b>.` : ''}`
-         : 'O rol da NRO-PUB-001, vivo: cada arquivo com código, revisão, status e quem mexeu por último — e toda versão nova passa por revisão antes de valer.',
+  $('#main').innerHTML = arqTopo(pref ? `Arquivos NRO-${esc(pref)}` : 'Arquivos', pref ? esc(e.nome) : 'Todos os arquivos',
+    pref ? `Aba ${esc(pref)} da NRO-PUB-001.${e.grupo_id ? ` Responsável: <b>${esc(arqGrupoNome(e.grupo_id) || 'não definido')}</b>.` : ''}`
+         : 'Rol da NRO-PUB-001. Toda versão nova passa por revisão antes de entrar em vigor.',
     `<button class="btn ghost mini" onclick="arqExportar(${arg})">${ic('down')} Exportar</button>
      ${arqPossoAdicionar(pref) ? `<button class="btn solid mini" onclick="arqModalAdicionar(${arg})">${ic('plus')} Adicionar</button>` : ''}`)
   + arqNavHTML('')
@@ -346,7 +346,7 @@ function arqFiltrosHTML(){
       oninput="arq.filtro.q=this.value;arqRedesenharRol(true)"></div>
     <div class="fld"><label for="arq-emissor">Emissor</label><select id="arq-emissor"
         onchange="location.hash = this.value ? '#/arquivos/' + this.value : '#/arquivos'">
-      <option value="">Todos</option>${arq.emissores.map(e => `<option value="${e.prefixo}" ${arq.rolAtual === e.prefixo ? 'selected' : ''}>NRO-${esc(e.prefixo)} — ${
+      <option value="">Todos</option>${arq.emissores.map(e => `<option value="${e.prefixo}" ${arq.rolAtual === e.prefixo ? 'selected' : ''}>NRO-${esc(e.prefixo)} ${
         esc(e.nome.replace(/^Departamento\s+(de|d[oa]s?)\s+/i, ''))}</option>`).join('')}</select></div>
     ${sel('status', 'Status', Object.entries(ARQ_STATUS).map(([k, v]) => [k, v[0]]))}
     ${sel('estrutura', 'Estrutura da série', Object.entries(ARQ_ESTRUTURAS).map(([k, v]) => [k, v.rot]))}
@@ -373,7 +373,7 @@ function arqRedesenharRol(digitando){
           : '')).join('');
   }
   box.innerHTML = arqTabela(corpo, { ordenar:true, vazio: arqFiltroAtivo()
-    ? 'Nenhum arquivo com esse filtro.' : arq.rolAtual ? 'Nenhuma série neste emissor ainda.' : 'Nenhum arquivo no rol ainda.' });
+    ? 'Nenhum arquivo com esse filtro.' : arq.rolAtual ? 'Nenhuma série neste emissor.' : 'Nenhum arquivo no rol.' });
 }
 
 /* ============================================================
@@ -383,27 +383,27 @@ function arqRevisoes(){
   const itens = arq.pendentes.map(p => ({ p, r: arq.rol.find(r => r.id === p.arquivo_id) })).filter(x => x.r)
     .sort((a, b) => String(a.p.enviado_em).localeCompare(String(b.p.enviado_em)));
   const minhas = itens.filter(x => arqPossoRevisar(x.r));
-  const linha = ({ p, r }) => arqLinha(r, { sub: `${p.rev ? 'Rev. ' + esc(p.rev) + ' · enviada' : 'Registro · enviado'} por ${esc(p.enviado_nome || '—')} em ${fmtD(p.enviado_em)} · revisa ${esc(arqRevisores(r))}` });
+  const linha = ({ p, r }) => arqLinha(r, { sub: `${p.rev ? 'Rev. ' + esc(p.rev) + ', enviada' : 'Registro, enviado'} por ${esc(p.enviado_nome || '—')} em ${fmtD(p.enviado_em)}, revisa ${esc(arqRevisores(r))}` });
   $('#main').innerHTML = arqTopo('Arquivos', 'Para revisar',
-    'Toda versão nova — a primeira de um arquivo ou uma revisão — fica pendente até alguém do grupo revisor da série, que não seja quem enviou, aprovar. Até lá, ela não está disponível.')
+    'Versões novas pendentes. A aprovação cabe ao grupo revisor da série, exceto a quem enviou.')
   + arqNavHTML('revisoes')
-  + `<div class="adm-grupo" style="margin-top:0">Com você · ${minhas.length}</div>`
+  + `<div class="adm-grupo" style="margin-top:0">Com você (${minhas.length})</div>`
   + arqTabela(minhas.map(linha).join(''), { vazio:'Nada aguardando a sua revisão.' })
-  + `<div class="adm-grupo">Todas as pendentes · ${itens.length}</div>`
+  + `<div class="adm-grupo">Todas as pendentes (${itens.length})</div>`
   + arqTabela(itens.map(linha).join(''), { vazio:'Nenhuma versão aguardando revisão.' });
 }
 
 function arqTemplates(){
   const tpls = arq.rol.filter(r => r.natureza === 'template').sort((a, b) => a.codigo.localeCompare(b.codigo));
   $('#main').innerHTML = arqTopo('Arquivos', 'Templates',
-    'Os moldes: a cabeça de cada série com PN — cada PN nasce do template da sua série — e o NRO-PUB-002, o modelo de base. Quando um template ganha revisão, a tela dele mostra quem ainda usa a anterior.')
+    'A cabeça de cada série com PN e o NRO-PUB-002, modelo de base.')
   + arqNavHTML('templates')
   + arqTabela(tpls.map(t => {
       const usos = arq.rol.filter(r => r.template_id === t.id);
       const velhos = usos.filter(r => r.template_rev && t.rev_vigente && r.template_rev !== t.rev_vigente).length;
-      return arqLinha(t, { sub: `${esc(arqComoE(t))} · usado por ${usos.length} arquivo${usos.length === 1 ? '' : 's'}${velhos
-        ? ` · <span class="arq-velho">${velhos} numa revisão anterior</span>` : ''}` });
-    }).join(''), { vazio:'Nenhum template ainda.' });
+      return arqLinha(t, { sub: `${esc(arqComoE(t))}, usado por ${usos.length} arquivo${usos.length === 1 ? '' : 's'}${velhos
+        ? `, <span class="arq-velho">${velhos} numa revisão anterior</span>` : ''}` });
+    }).join(''), { vazio:'Nenhum template.' });
 }
 
 /* ============================================================
@@ -418,7 +418,7 @@ async function arqTela(codigo, modo){
   if (!r){
     $('#main').innerHTML = `<div class="vazio" style="margin-top:40px"><div class="glyph">?</div>
       <h3>Nenhum arquivo com o código ${esc(codigo)}</h3>
-      <p>Confira o código — ou procure pelo título no rol do emissor.</p>
+      <p>Verifique o código ou procure pelo título no rol do emissor.</p>
       <a class="btn ghost" href="#/arquivos">Voltar aos arquivos</a></div>`;
     return;
   }
@@ -483,7 +483,7 @@ function arqDesenharTela(){
   const cabeca = r.pn != null ? arq.rol.find(x => x.serie_id === r.serie_id && x.pn == null) : null;
   const pj = arqProjeto(r.projeto_id);
   $('#main').innerHTML = `<div class="arq-folha${tpl ? ' tpl' : ''}">
-    ${tpl ? `<span class="arq-fita">${ic('molde')} ${esc(arqNatureza(r))} — molde, não documento</span>` : ''}
+    ${tpl ? `<span class="arq-fita">${ic('molde')} ${esc(arqNatureza(r))}: molde, não documento</span>` : ''}
     <nav class="arq-migalha" aria-label="Caminho"><a href="#/arquivos">Arquivos</a><span>›</span>
       <a href="#/arquivos/${esc(r.prefixo)}">${esc(e?.nome || r.prefixo)}</a>
       ${cabeca ? `<span>›</span><a href="#/arquivos/${esc(cabeca.codigo)}">${esc(cabeca.codigo)}</a>` : ''}
@@ -549,24 +549,24 @@ function arqOQueEHTML(r){
         : `o molde da série: os arquivos reais são os PNs, e cada um nasce daqui`)
     : eixo('Template ou arquivo real', 'Arquivo real', r.pn != null
         ? `nasceu do template ${esc(cab?.codigo || '')}${r.template_rev ? ', Rev. ' + esc(r.template_rev) : ''}`
-        : r.template_id ? `o próprio documento — escrito sobre o modelo ${esc(r.template_codigo || '')}`
+        : r.template_id ? `o próprio documento, escrito sobre o modelo ${esc(r.template_codigo || '')}`
         : 'o próprio documento: não nasce de template');
   const naSerie = r.pn != null
-    ? eixo('Na série', `Integrante · PN ${r.pn}`, npn === 1 ? `o único PN da série ${esc(cab?.codigo || '')} até agora`
+    ? eixo('Na série', `Integrante, PN ${r.pn}`, npn === 1 ? `o único PN da série ${esc(cab?.codigo || '')} até agora`
         : `um dos ${npn} PNs da série ${esc(cab?.codigo || '')}`)
     : tpl && est !== 'avulso'
-      ? eixo('Na série', 'Cabeça · sem PN', arqPnOrigem(r)
-          ? `cada ${est === 'registros' ? 'registro' : 'documento'} é um PN desta série — que não mora no rol: veja abaixo de onde vem`
+      ? eixo('Na série', 'Cabeça, sem PN', arqPnOrigem(r)
+          ? `cada ${est === 'registros' ? 'registro' : 'documento'} é um PN desta série, fora do rol (origem abaixo)`
           : `cada ${est === 'registros' ? 'registro' : 'documento'} é um PN desta série:
-          ${esc(r.codigo)}-1, -2… — ${npn ? npn + ' até agora' : 'nenhum ainda'}`)
-      : eixo('Na série', 'Arquivo único · sem PN', 'a série é só ele: sem template e sem filhos');
+          ${esc(r.codigo)}-1, -2…: ${npn ? npn + ' até agora' : 'nenhum'}`)
+      : eixo('Na série', 'Arquivo único, sem PN', 'a série é só ele: sem template e sem filhos');
   const muda = reg
-    ? eixo('Pode ser alterado?', 'Não · registro', 'depois de aprovado, fica como está: ele diz o que aconteceu. A Rev. dele é a do template usado')
+    ? eixo('Pode ser alterado?', 'Não, registro', 'depois de aprovado, fica como está: ele diz o que aconteceu. A Rev. dele é a do template usado')
     : tpl
-      ? eixo('Pode ser alterado?', 'Sim · template', est === 'registros'
+      ? eixo('Pode ser alterado?', 'Sim, template', est === 'registros'
           ? 'o template revisa (Rev. A, B…); os registros que nascem dele, não'
           : 'revisa: Rev. A, B, C…')
-      : eixo('Pode ser alterado?', 'Sim · documento', r.pn != null ? 'revisa: Rev. A, B… — independente dos outros PNs' : 'revisa: Rev. A, B, C…');
+      : eixo('Pode ser alterado?', 'Sim, documento', r.pn != null ? 'revisa: Rev. A, B…, independente dos outros PNs' : 'revisa: Rev. A, B, C…');
   return `<div class="arq-sec"><h3>${ic('pasta')} O que é este arquivo</h3>
     <div class="arq-oque">${oQue}${naSerie}${muda}</div>
     <p class="arq-frase">${est === 'avulso'
@@ -583,7 +583,7 @@ function arqPrincipalHTML(t){
     const velho = r.template_rev && tplLinha.rev_vigente && r.template_rev !== tplLinha.rev_vigente;
     h += `<div class="arq-sec"><a class="arq-nasce" href="#/arquivos/${esc(tplLinha.codigo)}">
       <span class="arq-ic template">${ic('molde')}</span>
-      <span class="tx">Feito sobre o template <span class="cd">${esc(tplLinha.codigo)}</span>${r.template_rev ? ` — <b>Rev. ${esc(r.template_rev)}</b>` : ''}
+      <span class="tx">Feito sobre o template <span class="cd">${esc(tplLinha.codigo)}</span>${r.template_rev ? `, <b>Rev. ${esc(r.template_rev)}</b>` : ''}
         <span class="small muted" style="display:block">${esc(tplLinha.titulo)}</span>
         ${velho ? `<span class="small arq-velho" style="display:block">O template já está na Rev. ${esc(tplLinha.rev_vigente)}.
           ${r.natureza === 'registro' ? `Este registro foi feito na ${esc(r.template_rev)} e fica assim: registro não se revisa.`
@@ -594,9 +594,9 @@ function arqPrincipalHTML(t){
      lista só, com a revisão do template que cada um usou; outro arquivo
      que diga ter sido feito sobre ele vem à parte. */
   if (r.natureza === 'template'){
-    const subUso = u => `${u.projeto_codigo ? 'Projeto ' + esc(u.projeto_nome || u.projeto_codigo) + ' · ' : ''}${
+    const subUso = u => `${u.projeto_codigo ? 'Projeto ' + esc(u.projeto_nome || u.projeto_codigo) + ', ' : ''}${
       u.template_rev ? 'usa a Rev. ' + esc(u.template_rev) : 'revisão do template não informada'}${
-      u.template_rev && r.rev_vigente && u.template_rev !== r.rev_vigente ? ` · <span class="arq-velho">anterior à ${esc(r.rev_vigente)}</span>` : ''}`;
+      u.template_rev && r.rev_vigente && u.template_rev !== r.rev_vigente ? `, <span class="arq-velho">anterior à ${esc(r.rev_vigente)}</span>` : ''}`;
     const tabela = lista => arqTabela(lista.map(u => arqLinha(u, { compacto:true, sub: subUso(u) })).join(''), { compacto:true });
     const outros = arq.rol.filter(x => x.template_id === r.id && x.serie_id !== r.serie_id).sort((a, b) => a.codigo.localeCompare(b.codigo));
     const origem = arqPnOrigem(r), frmDef = arqFormulario(r);
@@ -609,17 +609,16 @@ function arqPrincipalHTML(t){
           <a class="btn ghost mini" href="${onde[0]}">${esc(onde[1])} ${ic('chevron')}</a></div></div></div>`;
     } else if (r.multiplo){
       const pns = arq.rol.filter(x => x.serie_id === r.serie_id && x.pn != null).sort((a, b) => a.pn - b.pn);
-      h += `<div class="arq-sec"><h3>Onde é usado · os PNs desta série · ${pns.length}
+      h += `<div class="arq-sec"><h3>Onde é usado: os PNs desta série (${pns.length})
           ${arqPossoCriar(r) && r.status !== 'obsoleto' ? `<span class="acts"><button class="btn ghost mini" onclick="arqModalNovoPN('${r.serie_id}')">${ic('plus')} Novo PN</button></span>` : ''}</h3>
-        ${frmDef ? `<p class="arq-frm-nota">${ic('escrever')} <span>Os PNs desta série <b>se escrevem no portal</b>: crie o PN e escreva na tela dele,
-          sem baixar o template — o portal gera o documento no modelo da NRO${r.rev_vigente ? ', com a Rev. ' + esc(r.rev_vigente) : ''}.
+        ${frmDef ? `<p class="arq-frm-nota">${ic('escrever')} <span>Os PNs desta série são escritos no portal${r.rev_vigente ? ', na Rev. ' + esc(r.rev_vigente) : ''}.
           ${frmDef.rev && r.rev_vigente && frmDef.rev !== r.rev_vigente ? `<b class="arq-velho">O formulário foi feito para a Rev. ${esc(frmDef.rev)}: o PMO precisa conferir.</b>` : ''}</span></p>` : ''}
         ${pns.length ? tabela(pns)
-          : `<p class="muted small">Nenhum ainda. Cada ${r.tipo === 'registro' ? 'registro' : 'documento'} desta série é um PN que nasce deste template.</p>`}</div>`;
+          : `<p class="muted small">Nenhum. Cada ${r.tipo === 'registro' ? 'registro' : 'documento'} desta série é um PN que nasce deste template.</p>`}</div>`;
     }
     if (!r.multiplo || outros.length)
-      h += `<div class="arq-sec"><h3>${r.multiplo ? 'Também feitos sobre ele' : 'Onde é usado'} · ${outros.length}</h3>
-        ${outros.length ? tabela(outros) : '<p class="muted small">Nenhum arquivo diz que foi feito sobre este template ainda.</p>'}</div>`;
+      h += `<div class="arq-sec"><h3>${r.multiplo ? 'Também feitos sobre ele' : 'Onde é usado'} (${outros.length})</h3>
+        ${outros.length ? tabela(outros) : '<p class="muted small">Nenhum arquivo diz que foi feito sobre este template.</p>'}</div>`;
   }
   /* relações */
   h += `<div class="arq-sec"><h3>${ic('ramo')} Relações
@@ -640,16 +639,15 @@ function arqNo(x, o = {}){
   const tira = o.tirar ? `<button class="x" title="Desfazer a relação" aria-label="Desfazer a relação com ${esc(x.codigo)}"
       onclick="event.preventDefault(); event.stopPropagation(); arqTirarRelacao('${o.tirar[0]}', '${o.tirar[1]}')">×</button>` : '';
   return `<${o.foco ? 'div' : 'a'} class="arq-no${o.foco ? ' foco' : ''}${x.status === 'obsoleto' ? ' obs' : ''}"
-      ${o.foco ? '' : `href="#/arquivos/${esc(x.codigo)}"`} title="${esc(x.codigo)} — ${esc(x.titulo)}">
+      ${o.foco ? '' : `href="#/arquivos/${esc(x.codigo)}"`} title="${esc(x.codigo)} ${esc(x.titulo)}">
     <span class="arq-ic ${x.natureza}">${ic(ARQ_ICONE[x.natureza])}</span>
-    <span class="tx"><span class="cd">${esc(x.codigo)}${x.rev_vigente ? ' · Rev. ' + esc(x.rev_vigente) : ''}</span>
+    <span class="tx"><span class="cd">${esc(x.codigo)}${x.rev_vigente ? ', Rev. ' + esc(x.rev_vigente) : ''}</span>
       <span class="tt">${esc(x.titulo)}</span></span>${tira}</${o.foco ? 'div' : 'a'}>`;
 }
 function arqRelacoesHTML(t){
   const r = t.r;
   if (!t.pais.length && !t.filhos.length) return `<p class="muted small" style="line-height:1.6">Sem pai nem filho.
-    Relacione quando mudar um arquivo obrigar a olhar outro — o checklist de offboarding é filho do procedimento de
-    desligamento: revisar o procedimento pede conferir o checklist.</p>`;
+    ${dica('Relacione arquivos quando a mudança de um exige conferir o outro. Exemplo: o checklist de offboarding é filho do procedimento de desligamento.')}</p>`;
   const tira = (pai, filho) => t.editar ? [pai, filho] : null;
   return `<div class="arq-rel">
     ${t.pais.length ? `<span class="rot">Pai${t.pais.length > 1 ? 's' : ''}</span>
@@ -657,7 +655,7 @@ function arqRelacoesHTML(t){
     ${arqNo(r, { foco:true })}
     ${t.filhos.length ? `<span class="liga"></span><div class="fila">${t.filhos.map(f => arqNo(f, { tirar: tira(r.id, f.id) })).join('')}</div>
       <span class="rot" style="margin:7px 0 0">Filho${t.filhos.length > 1 ? 's' : ''}</span>` : ''}
-    ${t.irmaos.length ? `<div class="arq-irmaos"><span class="rot">Irmãos — filhos do mesmo pai</span>
+    ${t.irmaos.length ? `<div class="arq-irmaos"><span class="rot">Irmãos (filhos do mesmo pai)</span>
       <div class="fila">${t.irmaos.map(x => arqNo(x)).join('')}</div></div>` : ''}
   </div>`;
 }
@@ -675,7 +673,7 @@ function arqLogHTML(t){
   const r = t.r, ev = [];
   const tr = t.tplRevs.find(v => v.rev === r.template_rev);
   if (tr) ev.push({ q: tr.revisado_em || tr.enviado_em, c:'tpl',
-    tx: `Template ${esc(r.template_codigo)} Rev. ${esc(tr.rev)} — redigido por ${esc(tr.enviado_nome || '—')}${
+    tx: `Template ${esc(r.template_codigo)} Rev. ${esc(tr.rev)}, redigido por ${esc(tr.enviado_nome || '—')}${
       tr.revisor_nome ? `, revisado por ${esc(tr.revisor_nome)}` : ''}` });
   ev.push({ q: r.criado_em, c:'', tx: `${esc(r.codigo)} criado por ${esc(r.autor_nome || '—')}` });
   t.evs.forEach(e => { if (e.tipo === 'criou') return;
@@ -687,7 +685,7 @@ function arqLogHTML(t){
     ev.push({ q: v.enviado_em, c:'', tx: `${nome} ${v.formulario ? 'escrit' + a + ' no portal e enviad' + a : 'enviad' + a} por ${esc(v.enviado_nome || '—')}`, ob: esc(v.mudancas || ''),
       confere: v.relacionados, baixar: v.caminho && v.estado !== 'pendente' ? v.id : null });
     if (['aprovada', 'substituida'].includes(v.estado))
-      ev.push({ q: v.revisado_em, c:'ok', tx: `${nome} aprovad${a}${v.revisor_nome ? ' por ' + esc(v.revisor_nome) : ''}${v.importada ? ' — na planilha NRO-PUB-001' : ''}`,
+      ev.push({ q: v.revisado_em, c:'ok', tx: `${nome} aprovad${a}${v.revisor_nome ? ' por ' + esc(v.revisor_nome) : ''}${v.importada ? ', na planilha NRO-PUB-001' : ''}`,
         ob: esc(v.parecer || '') });
     if (v.estado === 'devolvida') ev.push({ q: v.revisado_em, c:'bad', tx: `${nome} devolvid${a} por ${esc(v.revisor_nome || '—')}`, ob: esc(v.parecer || '') });
     if (v.estado === 'cancelada') ev.push({ q: v.enviado_em, c:'', tx: `${nome} retirad${a} por quem enviou, antes da revisão` });
@@ -697,7 +695,7 @@ function arqLogHTML(t){
   return `<div class="arq-log">${ev.map(x => `<div class="arq-ev ${x.c}">
       <div class="qd">${x.q ? fmtDT(x.q) : 'agora'}</div><div class="tx">${x.tx}</div>
       ${x.ob ? `<div class="ob">${x.ob}</div>` : ''}
-      ${(x.confere || []).length ? `<div class="confere">${x.confere.map(c => `<span class="chip mini">${esc(c.codigo)} · ${
+      ${(x.confere || []).length ? `<div class="confere">${x.confere.map(c => `<span class="chip mini">${esc(c.codigo)}, ${
           c.decisao === 'revisado' ? 'revisado junto' : 'sem mudança'}</span>`).join('')}</div>` : ''}
       ${x.baixar ? `<button class="gr-limpa" style="margin-top:4px" onclick="arqBaixar('${x.baixar}')">baixar esta versão</button>` : ''}
     </div>`).join('')}</div>`;
@@ -712,7 +710,7 @@ function arqLadoHTML(t){
   let a = '';
   if (v && v.caminho && t.ler) a += `<button class="btn solid" onclick="arqBaixar('${v.id}')">${ic('down')} Baixar ${v.rev ? 'a Rev. ' + esc(v.rev) : 'o registro'}</button>`;
   else if (v && !v.caminho) a += `<p class="small muted" style="line-height:1.55">${v.rev ? 'A Rev. ' + esc(v.rev) : 'Esta versão'} foi aprovada na planilha
-      NRO-PUB-001 e o arquivo ainda não subiu para o portal — o original está no Drive CTA.</p>
+      NRO-PUB-001. O arquivo não está no portal; o original está no Drive CTA.</p>
     ${docGestor() ? `<button class="btn ghost" onclick="arqModalAnexar('${v.id}')">${ic('subir')} Anexar o arquivo desta revisão</button>` : ''}`;
   const escreve = r.pn != null && !!arqFormulario(r);
   if (escreve && t.editar && r.status !== 'obsoleto' && !p && !registroFechado)
@@ -720,9 +718,9 @@ function arqLadoHTML(t){
       ${t.rascunho ? `<p class="small muted" style="line-height:1.5">Rascunho gravado ${fmtDT(t.rascunho.atualizado_em)}${
         t.rascunho.atualizado_nome ? ' por ' + esc(t.rascunho.atualizado_nome) : ''}.</p>` : ''}`;
   if (t.editar && r.status !== 'obsoleto' && !p && !registroFechado)
-    a += `<button class="btn ${v || escreve ? 'ghost' : 'solid'}" onclick="arqModalEnviar()">${ic('subir')} ${escreve ? (r.natureza === 'registro' ? 'Ou suba o arquivo pronto' : 'Ou suba a revisão pronta') : acao}</button>`;
-  if (registroFechado) a += `<p class="small muted" style="line-height:1.55">Registro aprovado não se revisa: ele diz o que aconteceu.</p>`;
-  if (!t.editar && r.status !== 'obsoleto' && !p) a += `<p class="small muted" style="line-height:1.55">Quem envia versões deste arquivo é
+    a += `<button class="btn ${v || escreve ? 'ghost' : 'solid'}" onclick="arqModalEnviar()">${ic('subir')} ${escreve ? (r.natureza === 'registro' ? 'Enviar arquivo pronto' : 'Enviar revisão pronta') : acao}</button>`;
+  if (registroFechado) a += `<p class="small muted" style="line-height:1.55">Registro aprovado não recebe revisão.</p>`;
+  if (!t.editar && r.status !== 'obsoleto' && !p) a += `<p class="small muted" style="line-height:1.55">Enviam versões:
     ${r.projeto_id ? 'a equipe do projeto, ' : ''}o grupo do emissor${arqEmissor(r.prefixo)?.grupo_id ? ` (${esc(arqGrupoNome(arqEmissor(r.prefixo).grupo_id) || '—')})` : ''} e quem o criou.</p>`;
 
   const pendHTML = p ? `<div class="arq-pendente">
@@ -741,19 +739,19 @@ function arqLadoHTML(t){
   const tplLinha = r.template_id ? arq.rol.find(x => x.id === r.template_id) : null;
   const it = (dt, dd) => `<div><dt>${dt}</dt><dd>${dd}</dd></div>`;
   const meta = `<dl class="arq-meta">
-    ${it('Código', `<span style="font-family:var(--fm)">${esc(r.codigo)}</span>${r.pn != null ? ` <span class="dim">· PN ${r.pn}</span>` : ''}`)}
-    ${it('Natureza', `${esc(arqNatureza(r))} · ${esc(ARQ_SUBTIPOS[r.subtipo] || r.subtipo)}`)}
+    ${it('Código', `<span style="font-family:var(--fm)">${esc(r.codigo)}</span>${r.pn != null ? `<span class="dim">, PN ${r.pn}</span>` : ''}`)}
+    ${it('Natureza', `${esc(arqNatureza(r))}, ${esc(ARQ_SUBTIPOS[r.subtipo] || r.subtipo)}`)}
     ${it('Classe', `${ARQ_CLASSES[r.classe][0]} <span class="dim">— ${ARQ_CLASSES[r.classe][1]}</span>`)}
     ${it('Emissor', `<a href="#/arquivos/${esc(r.prefixo)}">${esc(arqEmissor(r.prefixo)?.nome || r.prefixo)}</a>`)}
     ${pj ? it('Projeto', `<a href="#/projetos/${esc(pj.codigo)}">${esc(pj.nome)}</a>`) : ''}
-    ${it('Autor deste arquivo', `${esc(r.autor_nome || '—')} <span class="dim">· criou em ${fmtD(r.criado_em)}</span>`)}
+    ${it('Autor deste arquivo', `${esc(r.autor_nome || '—')}<span class="dim">, criou em ${fmtD(r.criado_em)}</span>`)}
     ${r.natureza === 'registro'
       ? it('Revisão', r.template_rev ? `Rev. ${esc(r.template_rev)} <span class="dim">do template</span>` : '—')
-      : it('Revisão em vigor', r.rev_vigente ? `Rev. ${esc(r.rev_vigente)}${v?.revisado_em ? ` <span class="dim">· aprovada em ${fmtD(v.revisado_em)}</span>` : ''}` : '<span class="dim">nenhuma ainda</span>')}
+      : it('Revisão em vigor', r.rev_vigente ? `Rev. ${esc(r.rev_vigente)}${v?.revisado_em ? `<span class="dim">, aprovada em ${fmtD(v.revisado_em)}</span>` : ''}` : '<span class="dim">nenhuma</span>')}
     ${v ? it('Revisado por', `${esc(v.revisor_nome || '—')}`) : ''}
     ${it('Grupo revisor', `${esc(arqRevisores(r))}${r.grupo_revisor ? '' : ' <span class="dim">— a série não tem grupo próprio</span>'}`)}
-    ${tplLinha ? it('Template', `<a href="#/arquivos/${esc(tplLinha.codigo)}">${esc(tplLinha.codigo)}</a>${r.template_rev ? ` <span class="dim">· Rev. ${esc(r.template_rev)}</span>` : ''}`) : ''}
-    ${it('Última alteração', `${fmtD(r.alterado_em)} <span class="dim">· ${esc(r.alterado_nome || '—')}</span>`)}
+    ${tplLinha ? it('Template', `<a href="#/arquivos/${esc(tplLinha.codigo)}">${esc(tplLinha.codigo)}</a>${r.template_rev ? `<span class="dim">, Rev. ${esc(r.template_rev)}</span>` : ''}`) : ''}
+    ${it('Última alteração', `${fmtD(r.alterado_em)}<span class="dim">, ${esc(r.alterado_nome || '—')}</span>`)}
   </dl>`;
 
   const gestao = [];
@@ -809,8 +807,8 @@ function arqModalEnviar(){
   arq.envio = { arquivo:null, decisoes:{}, rels };
   const titulo = registro ? `Enviar o registro ${r.codigo}` : primeira ? `Enviar a primeira versão de ${r.codigo}` : `Submeter a Rev. ${rev} de ${r.codigo}`;
   abreModal(`<h3>${esc(titulo)}</h3>
-    <p class="sub" style="margin-bottom:14px">${registro ? 'O registro' : `A Rev. ${rev}`} fica <b>pendente</b> até alguém de
-      <b>${esc(arqRevisores(r))}</b> — que não seja você — aprovar. Eles recebem o aviso no sino e por e-mail.
+    <p class="sub" style="margin-bottom:14px">${registro ? 'O registro' : `A Rev. ${rev}`} fica <b>pendente</b> até a aprovação de
+      <b>${esc(arqRevisores(r))}</b>, exceto por você.
       ${registro ? 'Aprovado, o registro não se revisa mais.' : primeira ? '' : `Até lá, a Rev. ${esc(r.rev_vigente)} continua valendo.`}</p>
     <input type="file" id="ae-arq" hidden onchange="arqEscolheu(this.files[0])">
     <div class="arq-arrasta" id="ae-zona" tabindex="0" role="button" onclick="document.getElementById('ae-arq').click()"
@@ -825,7 +823,7 @@ function arqModalEnviar(){
         .map(x => `<option ${x === tpl.rev_vigente ? 'selected' : ''}>${esc(x)}</option>`).join('') || '<option value="">—</option>'}</select></div>` : ''}
     ${rels.length ? `<div class="adm-grupo">Os relacionados</div>
       <p class="small muted" style="margin:-4px 0 10px;line-height:1.55">Mudar ${esc(r.codigo)} pode obrigar a mudar estes.
-        Para cada um, diga o que você fez — é isto que fica no registro de alterações.</p>
+        Informe o que foi feito em cada um; isso vai para o registro de alterações.</p>
       <div class="arq-conf" id="ae-conf">${arqConfHTML()}</div>` : ''}
     <div class="acts" style="justify-content:flex-end;margin-top:16px">
       <button class="btn ghost" onclick="fechaModal()">Cancelar</button>
@@ -837,8 +835,8 @@ function arqConfHTML(){
     const d = e.decisoes[x.id];
     const pend = arqPendente(x.id);
     return `<div class="arq-conf-l${e.faltou && !d ? ' falta' : ''}">
-      <span class="tx"><span class="cd">${esc(x.codigo)}</span> <span class="small muted">· ${lado}</span>
-        <span class="tt">${esc(x.titulo)} — ${x.rev_vigente ? 'Rev. ' + esc(x.rev_vigente) : 'sem revisão em vigor'}${pend ? `, ${pend.rev ? 'Rev. ' + esc(pend.rev) : 'versão'} em revisão` : ''}</span></span>
+      <span class="tx"><span class="cd">${esc(x.codigo)}</span><span class="small muted">, ${lado}</span>
+        <span class="tt">${esc(x.titulo)}, ${x.rev_vigente ? 'Rev. ' + esc(x.rev_vigente) : 'sem revisão em vigor'}${pend ? `, ${pend.rev ? 'Rev. ' + esc(pend.rev) : 'versão'} em revisão` : ''}</span></span>
       <div class="seg" role="group" aria-label="O que você fez com ${esc(x.codigo)}">
         <button type="button" class="${d === 'revisado' ? 'on' : ''}" aria-pressed="${d === 'revisado'}" onclick="arqDecide('${x.id}','revisado')">Revisei junto</button>
         <button type="button" class="${d === 'sem_mudanca' ? 'on' : ''}" aria-pressed="${d === 'sem_mudanca'}" onclick="arqDecide('${x.id}','sem_mudanca')">Não precisa mudar</button>
@@ -851,7 +849,7 @@ function arqEscolheu(f){
   if (f.size > 50 * 1024 * 1024) return toast('O arquivo passa de 50 MB, o limite do portal.', true);
   arq.envio.arquivo = f;
   const z = $('#ae-zona');
-  if (z){ z.classList.add('tem'); z.innerHTML = `<b>${esc(f.name)}</b><br><span class="small">${(f.size / 1024).toLocaleString('pt-BR', { maximumFractionDigits:0 })} KB · clique para trocar</span>`; }
+  if (z){ z.classList.add('tem'); z.innerHTML = `<b>${esc(f.name)}</b><br><span class="small">${(f.size / 1024).toLocaleString('pt-BR', { maximumFractionDigits:0 })} KB, clique para trocar</span>`; }
 }
 /* O nome guardado no Storage: sem acento e sem caractere que atrapalhe
    um caminho. O nome original, com acento, fica na revisão. */
@@ -871,7 +869,7 @@ async function arqSubir(r, f){
     { contentType: f.type || 'application/octet-stream', upsert:false });
   if (error){
     const m = error.message || '';
-    throw new Error(/bucket not found/i.test(m) ? 'o bucket "arquivos" não existe — falta aplicar a migração v20'
+    throw new Error(/bucket not found/i.test(m) ? 'o bucket "arquivos" não existe: falta aplicar a migração v20'
       : /row-level|policy|unauthorized|403/i.test(m) ? 'você não envia arquivos para este código'
       : /too large|exceeded|413/i.test(m) ? 'o arquivo passa do limite do Storage' : m);
   }
@@ -927,7 +925,7 @@ function arqModalDecidir(dec){
 }
 async function arqDecidir(dec){
   const t = arq.tela, par = $('#ad-par').value.trim();
-  if (dec === 'devolver' && !par) return toast('Devolver pede um parecer — é o que a pessoa vai ler.', true);
+  if (dec === 'devolver' && !par) return toast('Informe o parecer para devolver.', true);
   const b = $('#ad-btn'); if (b) b.disabled = true;
   try{
     const { data, error } = await sb.rpc('doc_revisao_decidir', { p: { revisao_id: t.pend.id, decisao: dec, parecer: par || null } });
@@ -977,8 +975,7 @@ function arqModalAnexar(revId){
   const t = arq.tela, v = t.revs.find(x => x.id === revId);
   arq.envio = { arquivo:null, decisoes:{}, rels:[] };
   abreModal(`<h3>Anexar o arquivo da ${v.rev ? 'Rev. ' + esc(v.rev) : 'versão'} de ${esc(t.r.codigo)}</h3>
-    <p class="sub" style="margin-bottom:14px">A aprovação já aconteceu, na planilha NRO-PUB-001. Aqui o arquivo só
-      ganha o seu lugar no portal — não é uma revisão nova, e ninguém precisa aprovar de novo.</p>
+    <p class="sub" style="margin-bottom:14px">Versão já aprovada na planilha NRO-PUB-001. Anexar não gera revisão nem nova aprovação.</p>
     <input type="file" id="ae-arq" hidden onchange="arqEscolheu(this.files[0])">
     <div class="arq-arrasta" id="ae-zona" tabindex="0" role="button" onclick="document.getElementById('ae-arq').click()"
       ondragover="event.preventDefault();this.classList.add('sobre')" ondragleave="this.classList.remove('sobre')"
@@ -1010,10 +1007,10 @@ function arqModalEditar(){
     <div class="form-grid">
       ${r.pn != null ? `<div class="fld full"><label for="aed-tit">Complemento do título</label>
         <input id="aed-tit" value="${esc(r.complemento || '')}" placeholder="${esc(r.projeto_nome || 'bancada 2')}">
-        <span class="mailer-sub tight">Aparece depois do título da série: ${esc(r.serie_titulo)} — …</span></div>` : ''}
+        <span class="mailer-sub tight">Aparece depois do título da série: ${esc(r.serie_titulo)}, …</span></div>` : ''}
       <div class="fld full"><label for="aed-tpl">Feito sobre o template</label>
         <select id="aed-tpl"><option value="">— nenhum —</option>${tpls.map(x =>
-          `<option value="${x.id}" ${x.id === r.template_id ? 'selected' : ''}>${esc(x.codigo)} — ${esc(x.titulo)}</option>`).join('')}</select></div>
+          `<option value="${x.id}" ${x.id === r.template_id ? 'selected' : ''}>${esc(x.codigo)} ${esc(x.titulo)}</option>`).join('')}</select></div>
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" onclick="arqSalvarEdicao()">Salvar</button></div>`);
@@ -1091,20 +1088,19 @@ function arqModalAdicionar(pref){
   const op = (ic_, cls, titulo, texto, corpo) => `<div class="arq-add-op">
       <div class="cab"><span class="arq-ic ${cls}">${ic(ic_)}</span><div><b>${titulo}</b><span>${texto}</span></div></div>${corpo}</div>`;
   abreModal(`<h3>Adicionar ${pref ? 'ao NRO-' + esc(pref) : 'ao rol'}</h3>
-    <p class="sub" style="margin-bottom:14px">O que você vai pôr no rol? Cada caminho cria uma coisa diferente.</p>
     <div class="arq-add">
       ${op('doc', 'documento', 'Um arquivo real, integrante de uma série',
-        'Um PN novo — uma ata, um relatório de teste, o termo de abertura de um projeto. Nasce do template da série: escolha qual.',
+        'PN novo (ata, relatório de teste, termo de abertura), criado a partir do template da série.',
         tpls.length ? `<div class="fld" style="margin:0"><label for="aa-tpl">Série</label><select id="aa-tpl">${tpls.map(r =>
-            `<option value="${r.serie_id}">${esc(r.codigo)} — ${esc(r.titulo)} (${r.tipo === 'registro' ? 'cada PN é um registro' : 'cada PN é um documento'})</option>`).join('')}</select></div>
+            `<option value="${r.serie_id}">${esc(r.codigo)} ${esc(r.titulo)} (${r.tipo === 'registro' ? 'cada PN é um registro' : 'cada PN é um documento'})</option>`).join('')}</select></div>
           <div class="acts" style="justify-content:flex-end;margin:10px 0 0">
             <button class="btn solid mini" onclick="arqModalNovoPN(document.getElementById('aa-tpl').value)">Continuar</button></div>`
         : `<p class="muted small" style="margin:0">Nenhuma série com PN em que você possa criar${pref ? ' neste emissor' : ''}.</p>`)}
       ${docGestor() ? op('molde', 'template', 'Uma série nova',
-        'Uma espécie de arquivo que o rol ainda não tem. Nasce a cabeça da série, sem PN: o próprio documento, ou o template de onde os PNs vão nascer.',
+        'Tipo de arquivo que o rol ainda não tem. Cria a cabeça da série, sem PN: o documento ou o template dos PNs.',
         `<div class="acts" style="margin:10px 0 0;flex-wrap:wrap;gap:8px">${['unico', 'documentos', 'registros'].map(k =>
           `<button class="btn ghost mini" onclick="arqModalSerie(null, '${pref || ''}', '${k}')" title="${esc(ARQ_ESTRUTURAS[k].frase)}">${ARQ_ESTRUTURAS[k].rot}</button>`).join('')}</div>`)
-        : '<p class="small muted" style="margin:0">Série nova — documento único ou template — quem cria é o PMO.</p>'}
+        : '<p class="small muted" style="margin:0">Séries novas são criadas pelo PMO.</p>'}
       <p class="small muted" style="margin:0;line-height:1.6">Uma revisão nova de um arquivo que já existe não se adiciona aqui:
         abra o arquivo e use <b style="color:var(--ink)">Enviar revisão</b>. Ele continua com o mesmo código, e ganha a letra seguinte.</p>
     </div>
@@ -1123,8 +1119,8 @@ function arqModalNovoPN(serieId, projetoId){
       <div>Vai nascer <b>${esc(cab.codigo)}-${prox}</b>: ${reg ? 'um <strong>registro</strong>' : 'um <strong>documento</strong>'},
         arquivo real, integrante da série ${esc(cab.titulo)}.
         <span class="dt">Nasce em rascunho, do template ${esc(cab.codigo)}${cab.rev_vigente ? ' Rev. ' + esc(cab.rev_vigente) : ''}, e você é o autor.
-          ${reg ? 'Depois de aprovado, registro não se altera — o que mudar vira outro registro.'
-                : 'Documento revisa: Rev. A, B… — este PN por conta própria.'}</span></div></div>
+          ${reg ? 'Registro aprovado não se altera; mudanças geram outro registro.'
+                : 'O documento tem revisões próprias: Rev. A, B…'}</span></div></div>
     <div class="form-grid">
       <div class="fld full"><label for="apn-tit">Complemento do título (opcional)</label>
         <input id="apn-tit" placeholder="bancada 2, reunião geral de setembro…"></div>
@@ -1142,7 +1138,7 @@ async function arqCriarPN(serieId, projetoId, titulo){
   if (data?.status === 'ja_existe'){ fechaModal(); toast(`Este projeto já tem o seu: ${data.codigo}.`); location.hash = '#/arquivos/' + data.codigo; return; }
   if (data?.status !== 'ok') return toast(motivoRPC(data, null, 'Não foi possível criar'), true);
   const escreve = !!arqFormulario({ serie_id: serieId });
-  fechaModal(); toast(`${data.codigo} criado. ${escreve ? 'Agora escreva — o rascunho grava sozinho.' : 'Agora envie a primeira versão.'}`);
+  fechaModal(); toast(`${data.codigo} criado. ${escreve ? 'O rascunho é salvo automaticamente.' : 'Envie a primeira versão.'}`);
   await arqCarregar(true);
   location.hash = '#/arquivos/' + data.codigo + (escreve ? '/escrever' : '');
 }
@@ -1165,13 +1161,13 @@ async function arqRolDoProjeto(pj, podeCriar){
     const cab = arq.rol.find(r => r.serie_id === pd.serie_id && r.pn == null); if (!cab) return;
     noPadrao.add(pd.serie_id);
     const pns = doProjeto.filter(r => r.serie_id === pd.serie_id).sort((a, b) => a.pn - b.pn);
-    pns.forEach(r => { corpo += arqLinha(r, { sub: `${esc(arqComoE(r))} · ${esc(ARQ_SUBTIPOS[r.subtipo])}${pd.quantidade === 'varios' ? ' · um de vários' : ''}` });
+    pns.forEach(r => { corpo += arqLinha(r, { sub: `${esc(arqComoE(r))}, ${esc(ARQ_SUBTIPOS[r.subtipo])}${pd.quantidade === 'varios' ? ', um de vários' : ''}` });
       resumo[r.status === 'ativo' ? 'ativos' : arqPendente(r.id) || r.status === 'em_revisao' ? 'revisao' : 'rascunho']++; });
     if (!pns.length || pd.quantidade === 'varios'){
       if (!pns.length) resumo.criar++;
       corpo += `<tr class="previsto"><td><div class="cel-cod"><span class="arq-ic ${cab.tipo === 'registro' ? 'registro' : 'documento'}">${ic(cab.tipo === 'registro' ? 'registro' : 'doc')}</span>
           <span class="cod">${esc(cab.codigo)}-·</span></div></td>
-        <td><span class="tit">${esc(cab.titulo)}</span><span class="sub">${pns.length ? 'mais um' : 'a criar'} · ${cab.tipo === 'registro' ? 'um registro' : 'um documento'} do template ${esc(cab.codigo)}${cab.rev_vigente ? ' Rev. ' + esc(cab.rev_vigente) : ''}</span></td>
+        <td><span class="tit">${esc(cab.titulo)}</span><span class="sub">${pns.length ? 'mais um' : 'a criar'}, ${cab.tipo === 'registro' ? 'um registro' : 'um documento'} do template ${esc(cab.codigo)}${cab.rev_vigente ? ' Rev. ' + esc(cab.rev_vigente) : ''}</span></td>
         <td class="arq-rev">—</td><td>—</td>
         <td>${podeCriar ? `<button class="btn ghost mini" onclick="arqCriarPN('${pd.serie_id}', '${pj.id}', null)">${ic('plus')} Criar</button>`
           : '<span class="muted small">a criar</span>'}</td></tr>`;
@@ -1195,7 +1191,7 @@ async function arqConfig(aba){
   const s = await sb.from('doc_series').select('*').order('prefixo').order('sn');
   arq.series = s.data || [];
   $('#main').innerHTML = arqTopo('Arquivos', 'Configurações',
-    'Quem revisa e quem lê cada série, os emissores e o padrão de projeto. Mudar aqui vale para todos os arquivos da série — e o padrão, para o rol de todos os projetos.')
+    'Revisores e leitores de cada série, emissores e padrão de projeto.')
     + arqNavHTML('config')
     + `<nav class="abas">${ABAS_CFG.map(([k, l]) => `<a href="#/arquivos/config/${k}" class="${k === aba ? 'on' : ''}">${l}</a>`).join('')}</nav>
     <div id="cfg-corpo" style="margin-top:18px"></div>`;
@@ -1225,7 +1221,7 @@ function arqCfgSeries(){
       <div class="fld cresce"><label>Buscar</label><input value="${esc(f.q)}" placeholder="Código ou título"
         oninput="arq.cfgFiltro.q=this.value;clearTimeout(window._cfgT);window._cfgT=setTimeout(arqCfgSeries,150)"></div>
       <div class="fld"><label>Emissor</label><select onchange="arq.cfgFiltro.emissor=this.value;arqCfgSeries()">
-        <option value="">Todos</option>${arq.emissores.map(e => `<option value="${e.prefixo}" ${f.emissor === e.prefixo ? 'selected' : ''}>${esc(e.prefixo)} — ${esc(e.nome)}</option>`).join('')}</select></div>
+        <option value="">Todos</option>${arq.emissores.map(e => `<option value="${e.prefixo}" ${f.emissor === e.prefixo ? 'selected' : ''}>${esc(e.prefixo)} ${esc(e.nome)}</option>`).join('')}</select></div>
       <button class="btn solid mini" style="align-self:flex-end;margin-bottom:2px" onclick="arqModalSerie(null, arq.cfgFiltro.emissor)">${ic('plus')} Nova série</button>
     </div>
     <div class="card" style="padding:0"><div class="wrap" style="max-height:none"><table class="tabela trabalho fixa">
@@ -1254,23 +1250,23 @@ function arqModalSerie(id, prefixo, estrutura){
   abreModal(`<h3>${s ? 'Série ' + arqCodSerie(s) : 'Nova série'}</h3>
     <div class="form-grid">
       ${s ? '' : `<div class="fld"><label for="as-pref">Emissor</label><select id="as-pref" onchange="document.getElementById('as-sn').placeholder='próximo livre: '+String(arqProxSN(this.value)).padStart(3,'0')">
-          ${arq.emissores.map(e => `<option value="${e.prefixo}" ${e.prefixo === pref ? 'selected' : ''}>${esc(e.prefixo)} — ${esc(e.nome)}</option>`).join('')}</select></div>
+          ${arq.emissores.map(e => `<option value="${e.prefixo}" ${e.prefixo === pref ? 'selected' : ''}>${esc(e.prefixo)} ${esc(e.nome)}</option>`).join('')}</select></div>
         <div class="fld"><label for="as-sn">Número de série (SN)</label><input id="as-sn" type="number" min="1" max="999"
           placeholder="próximo livre: ${String(proxSN(pref)).padStart(3, '0')}"></div>`}
       <div class="fld full"><label for="as-tit">Título</label><input id="as-tit" value="${esc(s?.titulo || '')}" placeholder="PROCEDIMENTO DE ADMISSÃO"></div>
-      <div class="fld full"><label>Estrutura — a coluna ao lado do título na NRO-PUB-001</label>
+      <div class="fld full"><label>Estrutura (coluna ao lado do título na NRO-PUB-001)</label>
         <div class="multi" id="as-est" style="max-height:none">${['unico', 'documentos', 'registros'].map(k => { const E = ARQ_ESTRUTURAS[k];
           return `<label class="check"><input type="radio" name="as-est" value="${k}" ${est === k ? 'checked' : ''} ${temPN ? 'disabled' : ''}>
-            <span><b style="color:var(--ink)">${E.rot}</b> — “${E.frase}”<br><span class="dim">${E.ex}</span></span></label>`; }).join('')}</div>
+            <span><b style="color:var(--ink)">${E.rot}</b>: “${E.frase}”<br><span class="dim">${E.ex}</span></span></label>`; }).join('')}</div>
         ${temPN ? '<span class="mailer-sub tight">A série já tem PN: a estrutura não muda mais por aqui.</span>' : ''}</div>
       <div class="fld"><label for="as-sub">Subtipo</label><select id="as-sub">${Object.entries(ARQ_SUBTIPOS).map(([k, v]) =>
         `<option value="${k}" ${(s?.subtipo || 'outro') === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
         <span class="mailer-sub tight">Documento único com subtipo Template/modelo é um template avulso, como o NRO-PUB-002.</span></div>
       <div class="fld full"><label>Classe</label><div class="multi" style="max-height:none">${Object.entries(ARQ_CLASSES).map(([k, [l, d]]) =>
         `<label class="check"><input type="radio" name="as-cls" value="${k}" ${(s?.classe || 'controlado') === k ? 'checked' : ''}>
-          <span><b style="color:var(--ink)">${l}</b> — ${d}</span></label>`).join('')}</div></div>
+          <span><b style="color:var(--ink)">${l}</b>: ${d}</span></label>`).join('')}</div></div>
       <div class="fld full"><label for="as-rev">Grupo revisor</label><select id="as-rev"><option value="">— o PMO —</option>${opG(s?.grupo_revisor)}</select>
-        <span class="mailer-sub tight">Quem aprova cada versão nova desta série — e recebe o aviso por e-mail. Quem enviou nunca aprova a própria.</span></div>
+        <span class="mailer-sub tight">Aprova as versões novas da série e recebe o aviso por e-mail. Quem envia não aprova a própria versão.</span></div>
       <div class="fld full"><label>Grupos que também leem</label><div class="multi" id="as-leit">${grupos.map(g =>
         `<label class="check"><input type="checkbox" value="${g.id}" ${(s?.grupos_leitura || []).includes(g.id) ? 'checked' : ''}> ${esc(g.nome)}</label>`).join('')}</div>
         <span class="mailer-sub tight">Na classe confidencial, são os únicos (com o grupo revisor). Quem está num subgrupo também lê.</span></div>
@@ -1298,7 +1294,7 @@ async function arqSalvarSerie(id){
     const { data, error } = await sb.rpc('doc_serie_salvar', { p });
     if (error) throw error;
     const msg = { duplicado:'Esse SN já existe neste emissor.', tem_pn:'A série já tem PN: a estrutura não muda mais.',
-                  no_padrao:'A série está no padrão de projeto: precisa continuar com PN — não pode ser documento único.' }[data?.status];
+                  no_padrao:'A série está no padrão de projeto e precisa ter PN.' }[data?.status];
     if (data?.status !== 'ok') return toast(msg || motivoRPC(data, null, 'Não foi possível salvar'), true);
     fechaModal();
     toast(id ? 'Série salva.' : `${data.codigo} criada, em rascunho.`);
@@ -1343,9 +1339,8 @@ function arqCfgPadrao(){
   const pad = [...arq.padrao].sort((a, b) => a.ordem - b.ordem);
   const cab = id => arq.rol.find(r => r.serie_id === id && r.pn == null);
   const fora = arq.rol.filter(r => r.pn == null && r.multiplo && !pad.some(p => p.serie_id === r.serie_id));
-  $('#cfg-corpo').innerHTML = `<p class="small muted" style="margin-bottom:12px;line-height:1.6">As séries que todo projeto
-      tem. O rol de cada projeto é este padrão aplicado a ele — mudar aqui muda o de todos, na hora. Só entra série com
-      PN: cada projeto ganha o seu.</p>
+  $('#cfg-corpo').innerHTML = `<p class="small muted" style="margin-bottom:12px;line-height:1.6">Séries com PN que todo projeto tem.
+      A mudança vale para o rol de todos os projetos.</p>
     <div class="card arq-cfg-lista">${pad.map((p, i) => { const c = cab(p.serie_id); return `<div class="acc-row">
         <span class="muted small" style="font-family:var(--fm);width:22px">${i + 1}</span>
         <span class="nm"><span style="font-family:var(--fm);color:var(--syn-tx)">${esc(c?.codigo || '?')}</span> ${esc(c?.titulo || '')}</span>
@@ -1356,7 +1351,7 @@ function arqCfgPadrao(){
         ${ibtn('x', 'Tirar do padrão', `arqPadraoTirar('${p.serie_id}')`, 'perigo sm')}</div>`; }).join('')
       || '<p class="muted small">O padrão está vazio.</p>'}
       <div class="acc-row"><select id="pd-add" style="flex:1;height:34px"><option value="">Pôr uma série no padrão…</option>${fora.map(r =>
-        `<option value="${r.serie_id}">${esc(r.codigo)} — ${esc(r.titulo)}</option>`).join('')}</select>
+        `<option value="${r.serie_id}">${esc(r.codigo)} ${esc(r.titulo)}</option>`).join('')}</select>
         <button class="btn solid mini" onclick="arqPadraoPor()">${ic('plus')} Pôr</button></div></div>`;
 }
 async function arqPadraoRecarregar(){ await arqCarregar(true); arqCfgPadrao(); }
@@ -1366,7 +1361,7 @@ async function arqPadraoPor(){
   if (error) return falha(error, 'Erro'); toast('Posta no padrão. O rol de todos os projetos já tem esta linha.'); arqPadraoRecarregar();
 }
 async function arqPadraoTirar(id){
-  if (!await confirma('Tirar esta série do padrão? Os PNs que os projetos já criaram continuam existindo — só deixam de ser cobrados.', 'Tirar')) return;
+  if (!await confirma('Tirar esta série do padrão? Os PNs já criados permanecem, mas deixam de ser exigidos.', 'Tirar')) return;
   const { error } = await sb.from('doc_padrao_projeto').delete().eq('serie_id', id);
   if (error) return falha(error, 'Erro'); arqPadraoRecarregar();
 }
@@ -1470,6 +1465,6 @@ registrarBusca({
   fonte:'arquivos', rotulo:'Arquivos',
   buscar: (t) => filtrarSimples(arq.rol.map(r => ({
     codigo: r.codigo, titulo: r.titulo,
-    sub: [arqNatureza(r), (ARQ_STATUS[r.status] || [])[0], r.rev_vigente ? 'Rev. ' + r.rev_vigente : ''].filter(Boolean).join(' · '),
+    sub: [arqNatureza(r), (ARQ_STATUS[r.status] || [])[0], r.rev_vigente ? 'Rev. ' + r.rev_vigente : ''].filter(Boolean).join(', '),
     href: '#/arquivos/' + r.codigo })), t, 6)
 });

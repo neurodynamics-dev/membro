@@ -31,7 +31,7 @@
 
    Depende da casca para: sb, $, esc, norm, state, can, toast, abreModal,
    fechaModal, fmtD, fmtDT, ic, confirma, falha, motivoRPC, nomeDe,
-   avatarFoto, registrarBusca, precisaDocNRO, hojeISO, grupoPorId.
+   avatarFoto, registrarBusca, precisaDocNRO, hojeISO, grupoPorId, dica.
    ============================================================ */
 
 const docs = { previa:null, emitidas:null, alvo:null, ev:{ lista:null, erro:null }, evAtual:null, evForm:null, cfg:null };
@@ -51,7 +51,7 @@ const DOC_FALTA = {
   desde: 'A ficha não tem a data de ingresso: a declaração sai sem o “desde quando”.'
 };
 const MOTIVO_DOC = {
-  sem_serie: 'A série da declaração não está configurada — falta aplicar a migração v25.',
+  sem_serie: 'Série da declaração não configurada: falta aplicar a migração v25.',
   futuro: 'O evento ainda não aconteceu: registre agora e mande para aprovação depois dele.',
   propria: 'Quem mandou para aprovação não aprova o próprio registro.',
   ja_aprovou: 'Você já aprovou esta versão.',
@@ -65,7 +65,7 @@ const MOTIVO_DOC = {
 const docMotivo = (data, error, padrao) => error ? motivoRPC(null, error, padrao)
   : MOTIVO_DOC[data?.status] || motivoRPC(data, null, padrao);
 const docTopo = (titulo, lead, acoes, olho) => `<div class="topo-gestao"><div class="tx">
-  <span class="eyebrow">${esc(olho || 'Serviços · Documentos')}</span><h1>${titulo}</h1>
+  <span class="eyebrow">${esc(olho || 'Serviços › Documentos')}</span><h1>${titulo}</h1>
   ${lead ? `<p class="lead">${lead}</p>` : ''}</div>${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
 const docFaltaBanco = (erro, titulo) => `${docTopo(titulo, '')}<div class="aviso-box err"><b>Isto ainda não está no banco.</b>
   ${esc(erro?.message || '')}<br><span class="small">Falta aplicar a migração <code>db/v25_documentos_eventos.sql</code>.</span></div>`;
@@ -126,13 +126,10 @@ function dclDesenhar(){
       <select id="dcl-quem" onchange="location.hash = '#/servicos/declaracao/' + this.value">${[...state.membros]
         .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'))
         .map(m => `<option value="${m.registro}" ${m.registro === docs.alvo ? 'selected' : ''}>${esc(m.nome)}${
-          m.status && m.status !== 'Ativo' ? ' · ' + esc(m.status) : ''}</option>`).join('')}</select></div>` : '';
+          m.status && m.status !== 'Ativo' ? ', ' + esc(m.status) : ''}</option>`).join('')}</select></div>` : '';
   const ativas = docs.emitidas.filter(x => x.tipo === 'vinculo');
   const part = docs.emitidas.filter(x => x.tipo === 'participacao');
-  $('#main').innerHTML = `${docTopo('Declaração de vínculo',
-      `A declaração sai na hora, em PDF, no modelo da NRO: os dados da ${eu ? 'sua ' : ''}ficha na primeira folha e, na segunda,
-       os treinamentos concluídos e os eventos de que ${eu ? 'você participou' : 'a pessoa participou'}. Ela não fica guardada no
-       portal — cada emissão ganha um código verificador, e quem a receber confere em ${esc(docHost(p.url_validacao))}.`)}
+  $('#main').innerHTML = `${docTopo('Declaração de vínculo', '')}
     ${outros}
     <div class="dcl-grade">
       <div class="card dcl-previa">
@@ -141,7 +138,7 @@ function dclDesenhar(){
             <span class="dp"><b>${esc(p.emissor || 'Diretoria')}</b><br>Declaração de vínculo<br>${esc(p.documento || '')}${p.revisao ? ' Rev. ' + esc(p.revisao) : ''}</span></div>
           <p>Declaramos, para os devidos fins, que <b>${esc(String(d.nome || '').toUpperCase())}</b>${d.cpf ? ', CPF nº ' + esc(dclCpfTela(d.cpf)) + ',' : ''}
             ${d.vigente === false ? 'atuou' : 'atua'} ${d.cargo ? 'como ' + esc(String(d.cargo).toUpperCase()) : 'na equipe'} da NeuroDynamics PD&amp;I ${esc(vinc)}.</p>
-          <div class="dcl-folha-pe">${ic('dado')} código verificador · QR Code · ${esc(docHost(p.url_validacao))}</div>
+          <div class="dcl-folha-pe">${ic('dado')} código verificador, QR Code, ${esc(docHost(p.url_validacao))}</div>
         </div>
         <dl class="dcl-dados">
           <div><dt>Documento</dt><dd class="mono">${esc(p.documento || '—')}${p.revisao ? ' Rev. ' + esc(p.revisao) : ''}</dd></div>
@@ -149,28 +146,27 @@ function dclDesenhar(){
           <div><dt>CPF</dt><dd class="mono">${d.cpf ? esc(dclCpfTela(d.cpf)) : '<span class="dim">não consta na ficha</span>'}</dd></div>
           <div><dt>Cargo</dt><dd>${esc(d.cargo || '—')}</dd></div>
           <div><dt>Vínculo</dt><dd>${esc(vinc.charAt(0).toUpperCase() + vinc.slice(1))}</dd></div>
-          <div><dt>Segunda folha</dt><dd>${nT} ${nT === 1 ? 'treinamento' : 'treinamentos'} · ${nE} ${nE === 1 ? 'evento' : 'eventos'}</dd></div>
+          <div><dt>Segunda folha</dt><dd>${nT} ${nT === 1 ? 'treinamento' : 'treinamentos'}, ${nE} ${nE === 1 ? 'evento' : 'eventos'}</dd></div>
         </dl>
         ${(p.faltam || []).length ? `<div class="aviso-box warn" style="margin:14px 0 0">${(p.faltam || []).map(f => esc(DOC_FALTA[f] || f)).join('<br>')}
-          <br><span class="small">Quem atualiza a ficha é o Depto. de Pessoal${can() ? ` — <a href="#/equipe/${docs.alvo}" style="text-decoration:underline">abrir a ficha</a>` : ''}.</span></div>` : ''}
+          <br><span class="small">A ficha é atualizada pelo Depto. de Pessoal.${can() ? ` <a href="#/equipe/${docs.alvo}" style="text-decoration:underline">Abrir a ficha</a>` : ''}</span></div>` : ''}
         <div class="acts" style="margin-top:18px">
           <button class="btn solid" id="dcl-btn" onclick="dclEmitir()">${ic('selo')} Emitir a declaração</button>
-          <span class="small muted">Sem assinatura: vale o código.</span>
+          <span class="small muted">Dispensa assinatura.</span>
         </div>
       </div>
       <aside class="card dcl-como">
-        <h3>${ic('shield')} Como se confere</h3>
+        <h3>${ic('shield')} Verificação</h3>
         <ol>
-          <li>O rodapé de cada folha traz o <b>código verificador</b>, o código de controle e um QR Code.</li>
-          <li>Quem recebe abre <b>${esc(docHost(p.url_validacao))}</b> — ou lê o QR Code — e vê o que foi impresso, com o CPF mascarado.</li>
-          <li>Qualquer diferença entre o papel e a tela é adulteração. Uma emissão revogada aparece como revogada.</li>
+          <li>Código verificador e QR Code no rodapé de cada folha.</li>
+          <li>Consulta em <b>${esc(docHost(p.url_validacao))}</b>, com o CPF mascarado.</li>
+          <li>Emissões revogadas aparecem como revogadas.</li>
         </ol>
-        <p class="small muted" style="margin-top:10px">O portal não guarda o arquivo: guarda o que foi impresso, o código e quando. A
-          segunda via sai igual, com o mesmo código.</p>
+        <p class="small muted" style="margin-top:10px">A segunda via mantém o código.</p>
       </aside>
     </div>
     <div class="tre-sec" style="margin-top:26px"><h2>Emitidas <span class="n">${ativas.length}</span></h2>
-      ${ativas.length ? dclTabela(ativas) : `<p class="small muted" style="margin-top:6px">Nenhuma declaração emitida ainda.</p>`}</div>
+      ${ativas.length ? dclTabela(ativas) : `<p class="small muted" style="margin-top:6px">Nenhuma declaração emitida.</p>`}</div>
     ${part.length ? `<div class="tre-sec"><h2>Declarações de participação <span class="n">${part.length}</span></h2>${dclTabela(part)}</div>` : ''}`;
 }
 /* o CPF na tela: só os seis do meio, como a validação pública mostra */
@@ -186,7 +182,7 @@ function dclTabela(lista){
       <td><span class="mono">${esc(x.documento)}${x.revisao ? ' Rev. ' + esc(x.revisao) : ''}</span>${x.evento_codigo
         ? ` <a class="chip mini" href="#/servicos/eventos/${esc(x.evento_codigo)}">${esc(x.evento_codigo)}</a>` : ''}</td>
       <td>${fmtDT(x.emitido_em)}<span class="small dim" style="display:block">${esc(x.emitido_nome || '')}</span></td>
-      <td>${x.consultas ? `${x.consultas}× <span class="small dim">· ${fmtD(x.consultado_em)}</span>` : '<span class="dim">ainda não</span>'}</td>
+      <td>${x.consultas ? `${x.consultas}×<span class="small dim">, ${fmtD(x.consultado_em)}</span>` : '<span class="dim">ainda não</span>'}</td>
       <td>${x.revogado_em ? `<span class="pill p-bad" title="${esc(x.revogado_motivo || '')}"><span class="dt dt-bad"></span>Revogada</span>`
         : '<span class="pill p-ok"><span class="dt dt-ok"></span>Válida</span>'}</td>
       <td class="acoes-linha">
@@ -209,8 +205,7 @@ async function dclEmitir(){
 }
 function dclRevogar(codigo){
   abreModal(`<h3>Revogar a declaração ${esc(codigo)}</h3>
-    <p class="sub" style="margin-bottom:14px">A validação passa a dizer que ela foi revogada, com o motivo. Revogar não apaga nada — e
-      não tem volta: emita outra, se precisar.</p>
+    <p class="sub" style="margin-bottom:14px">A validação passa a exibir a revogação e o motivo. A ação é irreversível.</p>
     <div class="fld"><label for="dcl-mot">Motivo</label>
       <textarea id="dcl-mot" rows="3" placeholder="Emitida antes de a ficha ser atualizada."></textarea></div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
@@ -218,7 +213,7 @@ function dclRevogar(codigo){
 }
 async function dclRevogarConfirma(codigo){
   const mot = $('#dcl-mot')?.value.trim();
-  if (!mot) return toast('Diga o motivo — é o que a validação vai mostrar.', true);
+  if (!mot) return toast('Informe o motivo.', true);
   const { data, error } = await sb.rpc('doc_emitido_revogar', { p_codigo: codigo, p_motivo: mot });
   if (error || data?.status !== 'ok') return toast(docMotivo(data, error, 'Não foi possível revogar'), true);
   fechaModal(); toast('Declaração revogada.');
@@ -256,7 +251,7 @@ const evxPill = st => { const s = EVX_STATUS[st] || { l:st, dt:'dt-gray', p:'' }
 const evxPeriodo = e => e.data_fim && e.data_fim !== e.data_inicio ? `${fmtD(e.data_inicio)} a ${fmtD(e.data_fim)}` : fmtD(e.data_inicio);
 const evxHoras = h => { const t = Math.round(Number(h || 0) * 60), hh = Math.floor(t / 60), mm = t % 60;
   return mm ? `${hh}h${String(mm).padStart(2, '0')}` : `${hh}h`; };
-const evxOnde = e => e.modalidade === 'online' ? 'Online' : (e.local || '—') + (e.modalidade === 'hibrido' ? ' · híbrido' : '');
+const evxOnde = e => e.modalidade === 'online' ? 'Online' : (e.local || '—') + (e.modalidade === 'hibrido' ? ', híbrido' : '');
 
 async function evxLista(filtro){
   $('#main').innerHTML = docCarregando();
@@ -269,18 +264,14 @@ async function evxLista(filtro){
     : l.filter(e => e.eu_participo || e.criado_por === eu);
   const grupos = (cfg?.grupos_aprovadores || []).map(id => grupoPorId(id)?.nome).filter(Boolean);
   $('#main').innerHTML = `${docTopo('Eventos e participações',
-      `A participação da equipe num evento — um congresso, uma feira, uma palestra. Registrado, ele vai para a aprovação de
-       ${cfg?.aprovacoes_minimas || 2} ${Number(cfg?.aprovacoes_minimas || 2) === 1 ? 'pessoa' : 'pessoas'} ${grupos.length
-         ? 'de ' + esc(grupos.join(', ')) : 'da administração'}; aprovado, cada participante recebe por e-mail a declaração de
-       participação, autenticável.`,
+      `Aprovação: ${cfg?.aprovacoes_minimas || 2} ${Number(cfg?.aprovacoes_minimas || 2) === 1 ? 'pessoa' : 'pessoas'} ${grupos.length
+         ? 'de ' + esc(grupos.join(', ')) : 'da administração'}. ${dica('Aprovado o registro, cada participante recebe a declaração de participação por e-mail.')}`,
       `<a class="btn solid" href="#/servicos/eventos/novo">${ic('plus')} Registrar evento</a>`)}
     ${evxNav(filtro)}
     ${lista.length ? `<div class="evx-lista">${lista.map(evxCartao).join('')}</div>`
       : `<div class="vazio"><div class="glyph">${filtro === 'aprovar' ? '✓' : '·'}</div>
-          <h3>${filtro === 'aprovar' ? 'Nada esperando a sua aprovação' : filtro === 'todos' ? 'Nenhum evento aprovado ainda'
-            : 'Você ainda não registrou nem participou de nenhum evento'}</h3>
-          <p>${filtro === 'aprovar' ? 'Quando alguém mandar um registro para aprovação, ele aparece aqui — e no seu início.'
-            : 'Foi a um evento representando a equipe? Registre: quem foi, onde, quando e quantas horas.'}</p>
+          <h3>${filtro === 'aprovar' ? 'Nada aguardando aprovação' : filtro === 'todos' ? 'Nenhum evento aprovado'
+            : 'Nenhum evento registrado'}</h3>
           ${filtro !== 'aprovar' ? `<a class="btn ghost" href="#/servicos/eventos/novo">Registrar evento</a>` : ''}</div>`}`;
 }
 function evxCartao(e){
@@ -290,7 +281,7 @@ function evxCartao(e){
       <i>${esc(String(e.data_inicio || '').slice(0, 4))}</i></span>
     <span class="evx-tx"><span class="cod">${esc(e.codigo)}</span>
       <span class="tt">${esc(e.nome)}</span>
-      <span class="mt">${esc(evxPeriodo(e))} · ${esc(evxOnde(e))} · ${evxHoras(e.horas)} · ${e.participantes} ${e.participantes === 1 ? 'pessoa' : 'pessoas'}</span>
+      <span class="mt">${esc(evxPeriodo(e))}, ${esc(evxOnde(e))}, ${evxHoras(e.horas)}, ${e.participantes} ${e.participantes === 1 ? 'pessoa' : 'pessoas'}</span>
       <span class="nm">${(e.nomes || []).map(esc).join(', ')}${e.participantes > (e.nomes || []).length ? '…' : ''}</span></span>
     <span class="evx-lado">${evxPill(e.status)}
       ${e.status === 'aprovacao' ? `<span class="small">${e.aprovacoes} de ${e.aprovacoes_minimas} aprovações</span>` : ''}
@@ -327,7 +318,7 @@ function evxDesenharPagina(){
   ].join('');
   $('#main').innerHTML = `
     <a class="tre-voltar" href="#/servicos/eventos" style="margin-top:22px">${ic('back')} Eventos e participações</a>
-    ${docTopo(esc(e.nome), '', acoes, `${e.codigo} · evento registrado`)}
+    ${docTopo(esc(e.nome), '', acoes, `Evento registrado ${e.codigo}`)}
     <div class="evx-selos">${evxPill(e.status)}
       <span class="pill"><span class="dt dt-info"></span>${esc(EVX_MODALIDADE[e.modalidade] || e.modalidade)}</span>
       ${e.versao > 1 ? `<span class="pill"><span class="dt dt-gray"></span>versão ${e.versao}</span>` : ''}</div>
@@ -336,15 +327,15 @@ function evxDesenharPagina(){
     ${e.status === 'cancelado' ? `<div class="aviso-box err">Cancelado: ${esc(e.motivo || '')}</div>` : ''}
     ${meu && meu.declaracao && e.status === 'aprovado' ? `<div class="evx-minha">
       <span>${ic('selo')}</span><div><b>A sua declaração de participação</b>
-      <span class="small">Código verificador <span class="mono">${esc(meu.declaracao)}</span> · ${evxHoras(meu.horas || e.horas)} · também foi para o seu e-mail</span></div>
+      <span class="small">Código verificador <span class="mono">${esc(meu.declaracao)}</span>, ${evxHoras(meu.horas || e.horas)}. Enviada também por e-mail.</span></div>
       <button class="btn solid" onclick="docSegundaVia('${esc(meu.declaracao)}')">${ic('down')} Baixar</button></div>` : ''}
     <div class="evx-cols">
       <div class="evx-main">
         <div class="card"><dl class="dcl-dados evx-dados">
-          <div><dt>Quando</dt><dd>${esc(evxPeriodo(e))}${e.hora_inicio ? ` · ${esc(e.hora_inicio)}${e.hora_fim ? ' às ' + esc(e.hora_fim) : ''}` : ''}</dd></div>
+          <div><dt>Quando</dt><dd>${esc(evxPeriodo(e))}${e.hora_inicio ? `, ${esc(e.hora_inicio)}${e.hora_fim ? ' às ' + esc(e.hora_fim) : ''}` : ''}</dd></div>
           <div><dt>Onde</dt><dd>${esc(evxOnde(e))}</dd></div>
           <div><dt>Horas dedicadas</dt><dd>${evxHoras(e.horas)} <span class="dim small">por participante, salvo indicação</span></dd></div>
-          <div><dt>Registrado por</dt><dd>${esc(e.criado_nome || '—')} <span class="dim small">· ${fmtD(e.criado_em)}</span></dd></div>
+          <div><dt>Registrado por</dt><dd>${esc(e.criado_nome || '—')}<span class="dim small">, ${fmtD(e.criado_em)}</span></dd></div>
           ${e.descricao ? `<div class="full"><dt>Como a equipe participou</dt><dd>${esc(e.descricao)}</dd></div>` : ''}
         </dl></div>
         <div class="tre-sec" style="margin-top:22px"><h2>Participantes <span class="n">${(d.participantes || []).length}</span></h2>
@@ -389,13 +380,12 @@ const EVX_ACAO = { criou:'registrou', editou:'editou', enviou:'mandou para aprov
 
 async function evxEnviar(){
   const e = docs.evAtual?.evento; if (!e) return;
-  const ok = await confirma(`Mandar <b>${esc(e.codigo)}</b> para aprovação? Quem aprova recebe o aviso no sino e por e-mail. Depois de
-    aprovado, o registro fecha e cada participante recebe a declaração.`, 'Enviar');
+  const ok = await confirma(`Enviar <b>${esc(e.codigo)}</b> para aprovação? Após aprovado, o registro é fechado e as declarações são emitidas.`, 'Enviar');
   if (!ok) return;
   const { data, error } = await sb.rpc('evento_ext_enviar', { p_id: e.id });
   if (error || data?.status !== 'ok') return toast(docMotivo(data, error, 'Não foi possível enviar'), true);
   toast(data.aprovadores ? `Enviado. ${data.aprovadores} ${data.aprovadores === 1 ? 'pessoa foi avisada' : 'pessoas foram avisadas'}.`
-    : 'Enviado — mas ninguém está no grupo que aprova. Avise o Depto. de Pessoal.', !data.aprovadores);
+    : 'Enviado, mas o grupo aprovador está vazio. Informe o Depto. de Pessoal.', !data.aprovadores);
   evxPagina(e.codigo);
 }
 function evxModalDecidir(dec){
@@ -429,8 +419,8 @@ function evxModalMotivo(acao){
   const e = docs.evAtual.evento;
   abreModal(`<h3>${acao === 'reabrir' ? 'Reabrir' : 'Cancelar'} ${esc(e.codigo)}</h3>
     <p class="sub" style="margin-bottom:14px">${acao === 'reabrir'
-      ? 'As declarações de participação já emitidas são <b>revogadas</b> — a validação passa a dizer isso —, o registro volta a rascunho, e quem o registrou corrige e manda de novo. Aprovado outra vez, cada participante recebe uma declaração nova.'
-      : 'O registro deixa de valer e não volta. Para registrar de novo, crie outro.'}</p>
+      ? 'As declarações emitidas são <b>revogadas</b> e o registro volta a rascunho. Uma nova aprovação emite declarações novas.'
+      : 'O cancelamento é irreversível.'}</p>
     <div class="fld"><label for="evx-mot">Motivo</label><textarea id="evx-mot" rows="3"></textarea></div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Voltar</button>
       <button class="btn perigo" onclick="evxMotivo('${acao}')">${acao === 'reabrir' ? 'Reabrir e revogar' : 'Cancelar o registro'}</button></div>`);
@@ -478,8 +468,8 @@ async function evxFormulario(codigo){
     <div class="form-card evx-form">
       <div class="form-grid">
         <div class="fld full"><label for="ef-nome">Nome do evento</label>
-          <input id="ef-nome" maxlength="200" value="${esc(f.nome)}" placeholder="CBEB 2026 — Congresso Brasileiro de Engenharia Biomédica"></div>
-        <div class="fld full"><label for="ef-desc">Como a equipe participou <span class="opc">(opcional — vai na declaração)</span></label>
+          <input id="ef-nome" maxlength="200" value="${esc(f.nome)}" placeholder="CBEB 2026, Congresso Brasileiro de Engenharia Biomédica"></div>
+        <div class="fld full"><label for="ef-desc">Como a equipe participou <span class="opc">(opcional, sai na declaração)</span></label>
           <textarea id="ef-desc" rows="2" maxlength="2000" placeholder="Apresentação do pôster do projeto Nebula no estande da UFMG.">${esc(f.descricao)}</textarea></div>
         <div class="fld full"><label>Modalidade</label>
           <div class="seg" role="group" aria-label="Modalidade" id="ef-mod">${Object.entries(EVX_MODALIDADE).map(([k, l]) =>
@@ -543,7 +533,7 @@ function evxDesenharParticipantes(){
       <input class="ep-horas" type="number" min="0.5" step="0.5" aria-label="Horas de ${esc(p.nome || 'participante')}" placeholder="horas" value="${esc(p.horas || '')}">
       <button type="button" class="icon-btn sm" title="Tirar da lista" aria-label="Tirar ${esc(p.nome || 'participante')} da lista" onclick="evxTirar(${i})">${ic('x')}</button>
     </div>`).join('')
-    : `<p class="small muted" style="margin:0 0 10px">Ninguém ainda. Acrescente os membros que foram — e quem foi de fora, com nome e e-mail.</p>`;
+    : `<p class="small muted" style="margin:0 0 10px">Nenhum participante. Externos precisam de nome e e-mail.</p>`;
 }
 function evxAddMembro(){
   evxLerCampos();
@@ -565,7 +555,7 @@ function evxTirar(i){ evxLerCampos(); docs.evForm.participantes.splice(i, 1); ev
 
 const EVX_CAMPO = {
   nome:'Dê o nome do evento (ao menos três letras).', data_inicio:'Diga a data do evento.', data_fim:'O fim não pode vir antes do início.',
-  hora_fim:'O horário de fim precisa ser depois do de início.', horas:'Diga quantas horas foram dedicadas.', local:'Diga onde foi — ou marque online.',
+  hora_fim:'O horário de fim precisa ser depois do de início.', horas:'Informe as horas dedicadas.', local:'Informe o local ou marque online.',
   modalidade:'Escolha a modalidade.', participantes:'Acrescente ao menos um participante.', descricao:'A descrição passou de 2.000 caracteres.'
 };
 const EVX_PART = { nome:'falta o nome', email:'o e-mail não parece um e-mail', repetido:'aparece duas vezes', horas:'as horas não valem',
@@ -618,12 +608,11 @@ async function evxConfig(){
   const gs = (state.grupos || []).slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   const sel = new Set(c.grupos_aprovadores || []);
   const d = c.doc || {};
-  $('#main').innerHTML = `${docTopo('Configurações dos eventos e das declarações', 'Quem aprova os registros de evento e o que toda declaração emitida pelo SOMA repete.')}
+  $('#main').innerHTML = `${docTopo('Configurações dos eventos e das declarações', '')}
     ${evxNav('config')}
     <div class="evx-cfg">
       <div class="card"><h3>Quem aprova os eventos</h3>
-        <p class="small muted" style="margin:4px 0 12px">Quem está num destes grupos (contando os subgrupos) aprova — nunca quem mandou para
-          aprovação. Sem grupo nenhum, aprova quem é admin.</p>
+        <p class="small muted" style="margin:4px 0 12px">Membros destes grupos e subgrupos, exceto quem enviou. Sem grupo, aprova o admin.</p>
         <div class="multi" style="max-height:260px">${gs.map(g => `<label class="check"><input type="checkbox" class="evc-g" value="${g.id}"
           ${sel.has(g.id) ? 'checked' : ''}> ${esc(g.nome)}</label>`).join('')}</div>
         <div class="fld" style="margin-top:14px"><label for="evc-min">Aprovações necessárias</label>
@@ -661,7 +650,7 @@ registrarBusca({
   buscar: termo => {
     const t = norm(termo);
     return (docs.ev.lista || []).filter(e => norm(e.codigo).includes(t) || norm(e.nome).includes(t)).slice(0, 8)
-      .map(e => ({ titulo: `${e.codigo} · ${e.nome}`, sub: `${(EVX_STATUS[e.status] || {}).l || e.status} · ${evxPeriodo(e)}`,
+      .map(e => ({ titulo: `${e.codigo} ${e.nome}`, sub: `${(EVX_STATUS[e.status] || {}).l || e.status}, ${evxPeriodo(e)}`,
                    href: '#/servicos/eventos/' + e.codigo, peso: norm(e.codigo) === t ? 10 : 4 }));
   }
 });

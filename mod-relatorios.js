@@ -17,7 +17,7 @@
    Depende da casca para: sb, $, esc, norm, state, can, podeSelecao,
    toast, abreModal, fechaModal, fmtD, hojeISO, pad3, nomeDe,
    quemSouEu, carregarLib, registrarBusca, filtrarSimples, copiar,
-   abrirEmail, gmailCompose, marcados, gruposEfetivos, gruposDaEquipe.
+   abrirEmail, gmailCompose, marcados, gruposEfetivos, gruposDaEquipe, dica.
    ============================================================ */
 
 const CDN_JSPDF     = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -70,15 +70,15 @@ function pageRelatorios(){
     t('door','Lista para a portaria','Autorização de entrada na Escola de Engenharia, com espaço para assinatura e envio à SLOG.','modalPortaria()');
     t('clip','Lista de assinatura em evento','Presença dos ativos para imprimir, com nome do evento e data.','modalAssinatura()');
   }
-  t('mail','Lista de e-mails','Os e-mails por grupo e status, para enviar comunicado.','modalEmails()');
+  t('mail','Lista de e-mails','E-mails por grupo e status.','modalEmails()');
   if (podeSelecao())
-    t('flag','E-mails dos candidatos','O envio para os candidatos do processo seletivo, por status da fase.','modalEmailsCandidatos()');
-  t('mailer','Full mailer','Um e-mail no padrão NeuroDynamics — tema por área, logo recolorida e HTML pronto.','modalMailer()');
+    t('flag','E-mails dos candidatos','Candidatos do processo seletivo, por status.','modalEmailsCandidatos()');
+  t('mailer','Full mailer','E-mail no padrão NeuroDynamics, com tema por área e HTML pronto.','modalMailer()');
   /* Estes dois expõem o quadro inteiro — quem tem acesso a quê e a
      exportação geral. Ficam com can(): a Comissão de Seleção precisa
      dos e-mails dos candidatos, não do efetivo. */
   if (can()){
-    t('key','Lista de autorizados','Quem tem acesso ativo a um sistema, local ou documento — em PDF.','modalAutorizados()');
+    t('key','Lista de autorizados','Quem tem acesso ativo a um sistema, local ou documento, em PDF.','modalAutorizados()');
     t('down','Quadro completo','Exportação geral do quadro em Excel ou PDF, com filtros.','modalQuadro()');
   }
 
@@ -115,7 +115,7 @@ async function copiarHTML(html){
         'text/html': new Blob([corpo], {type:'text/html'}),
         'text/plain': new Blob([html], {type:'text/plain'}),
       })]);
-      toast('E-mail copiado — cole no seu editor (Gmail, Outlook, Zimbra…).');
+      toast('E-mail copiado.');
       return;
     }
     throw new Error('ClipboardItem indisponível');
@@ -128,7 +128,7 @@ async function copiarHTML(html){
       const range=document.createRange(); range.selectNodeContents(div);
       const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
       const ok=document.execCommand('copy'); sel.removeAllRanges(); div.remove();
-      if(ok){ toast('E-mail copiado — cole no seu editor.'); return; }
+      if(ok){ toast('E-mail copiado.'); return; }
       throw new Error('execCommand falhou');
     }catch(e2){ copiar(html); }
   }
@@ -190,7 +190,7 @@ function pdfRodape(doc, texto){
   const total = doc.getNumberOfPages();
   for(let i=1;i<=total;i++){
     doc.setPage(i); doc.setFontSize(7.5); doc.setTextColor(110,110,115);
-    doc.text(texto || `SOMA · uso interno · gerado por ${quemSouEu()} em ${new Date().toLocaleDateString('pt-BR')}`, 12, H-8);
+    doc.text(texto || `SOMA, uso interno, gerado por ${quemSouEu()} em ${new Date().toLocaleDateString('pt-BR')}`, 12, H-8);
     doc.text(`Página ${i} de ${total}`, W-12, H-8, {align:'right'});
   }
 }
@@ -245,9 +245,9 @@ async function gerarRelatorioMembro(){
     const f = gestao.ficha;
     const temPess = can() && !!f.pess;
     const doc = pdfNovo();
-    let y = pdfCabecalho(doc, 'FICHA DO MEMBRO — '+m.nome.toUpperCase(),
-      `Registro ${pad3(m.registro)} · ${m.status} · Emitida em ${new Date().toLocaleDateString('pt-BR')}`
-      + (temPess?' · CONFIDENCIAL — contém dados pessoais protegidos pela LGPD':''));
+    let y = pdfCabecalho(doc, 'FICHA DO MEMBRO: '+m.nome.toUpperCase(),
+      `Registro ${pad3(m.registro)}, ${m.status}, Emitida em ${new Date().toLocaleDateString('pt-BR')}`
+      + (temPess?', CONFIDENCIAL: dados pessoais protegidos pela LGPD':''));
     const fu = fotoDe(m);
     if (fu){ try{
       const bl = await (await fetch(fu)).blob();
@@ -286,19 +286,19 @@ async function gerarRelatorioMembro(){
       [['Ciclo','Data','Assiduidade','Comprometimento','Depto de Pessoal','Responsável']],
       f.avals.map(a=>[a.ciclo, fmtD(a.data), a.assiduidade!=null?a.assiduidade+'/5':'—',
         a.comprometimento!=null?a.comprometimento+'/5':'—',
-        a.encaminhar_pessoal?(a.tratado?'Encaminhada · tratada':'Encaminhada · pendente'):'—', a.responsavel||'—']));
+        a.encaminhar_pessoal?(a.tratado?'Encaminhada, tratada':'Encaminhada, pendente'):'—', a.responsavel||'—']));
     if(f.aponts.length) y = secaoTabela(doc, y, 'APONTAMENTOS SEMANAIS RECENTES',
       [['Data','Grupo','Assiduidade','Entregas','Sinalização']],
       f.aponts.map(a=>[fmtD(a.data), a.apont?.grupo||'—', a.assiduidade||'—', a.entregas||'—',
-        a.sinalizado?(a.tratado?'Sinalizado · tratado':'Sinalizado · pendente'):'—']));
+        a.sinalizado?(a.tratado?'Sinalizado, tratado':'Sinalizado, pendente'):'—']));
     if(temPess){
       const pess = CAMPOS_PESS.map(c=>{ let v = f.pess[c.k];
         if(c.t==='date') v = v? fmtD(v) : '';
         if(c.t==='bool') v = v===true?'Sim':(v===false?'Não':'');
         return [c.l, v||'—']; });
-      y = secaoTabela(doc, y, 'DADOS PESSOAIS (CONFIDENCIAL — LGPD)', null, pess, rot);
+      y = secaoTabela(doc, y, 'DADOS PESSOAIS (CONFIDENCIAL, LGPD)', null, pess, rot);
     }
-    pdfRodape(doc, `SOMA · uso interno${temPess?' · CONFIDENCIAL (LGPD)':''} · gerado por ${quemSouEu()} em ${new Date().toLocaleDateString('pt-BR')}`);
+    pdfRodape(doc, `SOMA, uso interno${temPess?', CONFIDENCIAL (LGPD)':''}, gerado por ${quemSouEu()} em ${new Date().toLocaleDateString('pt-BR')}`);
     doc.save(`NRO-PES_ficha_${pad3(m.registro)}_${hojeISO()}.pdf`);
     toast('Relatório do membro gerado.');
   }catch(e){ falha(e,'Erro ao gerar o relatório'); }
@@ -335,10 +335,10 @@ async function gerarListaPortaria(){
     const mats = await buscarMatriculas(lista.map(m=>m.registro));
     const doc = pdfNovo();
     const sub = `Locais: ${locais.join(' e ')}`
-      + (dataAc?`\nData do acesso: ${fmtD(dataAc)}${horaAc?' · Horário: '+horaAc:''}`:(horaAc?`\nHorário: ${horaAc}`:''))
+      + (dataAc?`\nData do acesso: ${fmtD(dataAc)}${horaAc?', Horário: '+horaAc:''}`:(horaAc?`\nHorário: ${horaAc}`:''))
       + (grupos.length?`\nGrupos: ${grupos.join(', ')}`:'')
-      + `\nEmitida em ${new Date().toLocaleDateString('pt-BR')} · ${lista.length} pessoa(s)`;
-    const y = pdfCabecalho(doc, 'LISTA PARA ACESSO — ESCOLA DE ENGENHARIA', sub);
+      + `\nEmitida em ${new Date().toLocaleDateString('pt-BR')}, ${lista.length} pessoa(s)`;
+    const y = pdfCabecalho(doc, 'LISTA PARA ACESSO: ESCOLA DE ENGENHARIA', sub);
     doc.autoTable({ startY:y, theme:'grid',
       head:[['Nome','Matrícula','Assinatura']],
       body:lista.map(m=>[m.nome, mats.get(m.registro)||'—','']),
@@ -362,21 +362,19 @@ ${dataAc?'Data: '+fmtD(dataAc)+'\n':''}${horaAc?'Horário: '+horaAc+'\n':''}Tota
 Em caso de dúvidas, contatar ${respNome} em ${respTel}.
 
 Atenciosamente,
-Departamento de Pessoal — NeuroDynamics`;
-    const assunto = `Autorização de acesso — NeuroDynamics${dataAc?' — '+fmtD(dataAc):''}`;
+Departamento de Pessoal, NeuroDynamics`;
+    const assunto = `Autorização de acesso, NeuroDynamics${dataAc?', '+fmtD(dataAc):''}`;
     const mailtoHref = `mailto:slog@eng.ufmg.br?cc=marcondes@neurodynamics.dev&subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
     const gmailHref = gmailCompose({to:'slog@eng.ufmg.br', cc:'marcondes@neurodynamics.dev', su:assunto, body:corpo});
     abreModal(`<h3>Lista gerada</h3>
-      <p style="line-height:1.6">O PDF foi baixado. Para prosseguir, abra o e-mail para a Seção de Logística —
-      o texto já vai pronto, com cópia para marcondes@neurodynamics.dev. <b>Anexe o PDF que acabou de ser baixado</b> antes de enviar
-      (por segurança, o navegador não anexa arquivos sozinho).</p>
+      <p style="line-height:1.6">PDF baixado. O e-mail para a Seção de Logística abre com o texto e cópia para
+      marcondes@neurodynamics.dev. <b>Anexe o PDF antes de enviar.</b></p>
       <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button>
       <a class="btn ghost" href="${esc(mailtoHref)}"
         onclick="abrirEmail(this.href);setTimeout(fechaModal,400);return false">${ic('mail')} App de e-mail</a>
       <a class="btn solid" href="${esc(gmailHref)}" target="_blank" rel="noopener"
         onclick="setTimeout(fechaModal,400)">${ic('mail')} Abrir no Gmail</a></div>
-      <p class="small muted" style="margin-top:10px">“App de e-mail” usa o programa padrão do computador;
-      se nada acontecer ao clicar, é porque não há um configurado — use o Gmail.</p>`, true);
+      <p class="small muted" style="margin-top:10px">“App de e-mail” usa o programa padrão do computador. Sem programa configurado, use o Gmail.</p>`, true);
   }catch(e){ falha(e,'Erro ao gerar a lista'); }
 }
 /* --- 2. lista para assinatura em evento --- */
@@ -398,8 +396,8 @@ async function gerarListaAssinatura(){
     if(!lista.length){ toast('Nenhum membro ativo com esses filtros.', true); return; }
     const mats = await buscarMatriculas(lista.map(m=>m.registro));
     const doc = pdfNovo();
-    const y = pdfCabecalho(doc, 'LISTA DE PRESENÇA — '+nomeEv.toUpperCase(),
-      `Data do evento: ${fmtD(dataEv)}${grupos.length?' · Grupos: '+grupos.join(', '):''} · ${lista.length} convidado(s)`);
+    const y = pdfCabecalho(doc, 'LISTA DE PRESENÇA: '+nomeEv.toUpperCase(),
+      `Data do evento: ${fmtD(dataEv)}${grupos.length?', Grupos: '+grupos.join(', '):''}, ${lista.length} convidado(s)`);
     doc.autoTable({ startY:y, theme:'grid',
       head:[['Nome','Matrícula','Assinatura']],
       body:lista.map(m=>[m.nome, mats.get(m.registro)||'—','']),
@@ -430,7 +428,7 @@ function gerarEmails(){
   const mailtoHref = `mailto:${eu}?bcc=${encodeURIComponent(emails.join(','))}`;
   const gmailHref = gmailCompose({to:eu, bcc:emails.join(',')});
   $('#eml-result').innerHTML = emails.length ? `
-    <div class="fld" style="margin-top:4px"><label>${emails.length} e-mail(s) · separados por vírgula</label>
+    <div class="fld" style="margin-top:4px"><label>${emails.length} e-mail(s), separados por vírgula</label>
       <textarea id="eml-texto" readonly style="min-height:110px;font-size:12.5px">${esc(emails.join(', '))}</textarea></div>
     ${semEmail.length?`<p class="small muted">⚠ ${semEmail.length} membro(s) sem e-mail cadastrado: ${esc(semEmail.map(m=>m.nome).join('; '))}</p>`:''}
     <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
@@ -438,8 +436,7 @@ function gerarEmails(){
       <a class="btn ghost" id="eml-mailto" href="${esc(mailtoHref)}" onclick="return abrirEmail(this.href)">${ic('mail')} App de e-mail (Cco)</a>
       <a class="btn ghost" href="${esc(gmailHref)}" target="_blank" rel="noopener">${ic('mail')} Abrir no Gmail (Cco)</a>
     </div>
-    ${eu?`<p class="small muted" style="margin-top:6px">O e-mail abre endereçado a você (${esc(eu)}) com todos em Cco, preservando a privacidade dos endereços.
-    Se o “App de e-mail” não abrir nada, não há um configurado no computador — use o Gmail.</p>`:''}`
+    ${eu?`<p class="small muted" style="margin-top:6px">Destinatário: ${esc(eu)}; os demais em Cco. Sem programa de e-mail configurado, use o Gmail.</p>`:''}`
     : '<div class="empty">Nenhum e-mail encontrado com esses filtros.</div>';
 }
 /* --- 3b. full mailer (gerador de e-mails estilizados) --- */
@@ -457,14 +454,14 @@ const AREAS_MAILER = [
    recolorida · bandRule=régua sobre o fundo · bodyAccent=cor legível para
    chamada/links/réguas no corpo (fundo branco) · btnBg/btnInk=botão. */
 const THEMES_MAILER = {
-  teal:          {nome:'Menta & Teal · P&D',            band:'#E4EFEC', onBand:'#00352F', logo:'#00594F', bandRule:'#00594F', bodyAccent:'#00594F', btnBg:'#00594F', btnInk:'#FFFFFF'},
-  clinica:       {nome:'Clínica · Cyan sereno',         band:'#E2F0F2', onBand:'#0B5A64', logo:'#0F7C8A', bandRule:'#0F7C8A', bodyAccent:'#0F7C8A', btnBg:'#0F7C8A', btnInk:'#FFFFFF'},
-  pessoal:       {nome:'Pessoal · Bronze acolhedor',    band:'#F4EEDC', onBand:'#5E4A12', logo:'#8A6D1F', bandRule:'#8A6D1F', bodyAccent:'#7A5E15', btnBg:'#8A6D1F', btnInk:'#FFFFFF'},
-  institucional: {nome:'Institucional · Deep + Lima',   band:'#00352F', onBand:'#F5F5F7', logo:'#CEDC00', bandRule:'#CEDC00', bodyAccent:'#00594F', btnBg:'#00352F', btnInk:'#FFFFFF', dark:true},
-  marketing:     {nome:'Marketing · Lima viva',         band:'#F1F5D6', onBand:'#3E5200', logo:'#5C7A00', bandRule:'#5C7A00', bodyAccent:'#5C7A00', btnBg:'#5C7A00', btnInk:'#FFFFFF'},
-  sinapse:       {nome:'Sinapse · Lima & Verde',        band:'#EDF2C8', onBand:'#00352F', logo:'#00594F', bandRule:'#00594F', bodyAccent:'#00594F', btnBg:'#00594F', btnInk:'#FFFFFF'},
-  deep:          {nome:'Deep Total · Verde escuro',     band:'#00594F', onBand:'#FFFFFF', logo:'#FFFFFF', bandRule:'#CEDC00', bodyAccent:'#00594F', btnBg:'#00594F', btnInk:'#FFFFFF', dark:true},
-  grafite:       {nome:'Grafite · Neutro',              band:'#F0F0F2', onBand:'#1D1D1F', logo:'#1D1D1F', bandRule:'#1D1D1F', bodyAccent:'#1D1D1F', btnBg:'#1D1D1F', btnInk:'#FFFFFF'},
+  teal:          {nome:'Menta & Teal, P&D',            band:'#E4EFEC', onBand:'#00352F', logo:'#00594F', bandRule:'#00594F', bodyAccent:'#00594F', btnBg:'#00594F', btnInk:'#FFFFFF'},
+  clinica:       {nome:'Clínica, Cyan sereno',         band:'#E2F0F2', onBand:'#0B5A64', logo:'#0F7C8A', bandRule:'#0F7C8A', bodyAccent:'#0F7C8A', btnBg:'#0F7C8A', btnInk:'#FFFFFF'},
+  pessoal:       {nome:'Pessoal, Bronze acolhedor',    band:'#F4EEDC', onBand:'#5E4A12', logo:'#8A6D1F', bandRule:'#8A6D1F', bodyAccent:'#7A5E15', btnBg:'#8A6D1F', btnInk:'#FFFFFF'},
+  institucional: {nome:'Institucional, Deep + Lima',   band:'#00352F', onBand:'#F5F5F7', logo:'#CEDC00', bandRule:'#CEDC00', bodyAccent:'#00594F', btnBg:'#00352F', btnInk:'#FFFFFF', dark:true},
+  marketing:     {nome:'Marketing, Lima viva',         band:'#F1F5D6', onBand:'#3E5200', logo:'#5C7A00', bandRule:'#5C7A00', bodyAccent:'#5C7A00', btnBg:'#5C7A00', btnInk:'#FFFFFF'},
+  sinapse:       {nome:'Sinapse, Lima & Verde',        band:'#EDF2C8', onBand:'#00352F', logo:'#00594F', bandRule:'#00594F', bodyAccent:'#00594F', btnBg:'#00594F', btnInk:'#FFFFFF'},
+  deep:          {nome:'Deep Total, Verde escuro',     band:'#00594F', onBand:'#FFFFFF', logo:'#FFFFFF', bandRule:'#CEDC00', bodyAccent:'#00594F', btnBg:'#00594F', btnInk:'#FFFFFF', dark:true},
+  grafite:       {nome:'Grafite, Neutro',              band:'#F0F0F2', onBand:'#1D1D1F', logo:'#1D1D1F', bandRule:'#1D1D1F', bodyAccent:'#1D1D1F', btnBg:'#1D1D1F', btnInk:'#FFFFFF'},
 };
 const SOCIAIS_MAILER = [
   {k:'site',      l:'Site (https://…)'},
@@ -599,8 +596,8 @@ function mlAbrir(){
 }
 function modalMailer(){
   const temaOpts = Object.entries(THEMES_MAILER).map(([k,v])=>`<option value="${k}">${esc(v.nome)}</option>`).join('');
-  abreModal(`<h3>Full mailer — e-mail estilizado</h3>
-    <p class="mailer-sub">Monte um comunicado no padrão visual da NeuroDynamics. Escolha a área (sugere título e combinação de cores) ou crie um título próprio; a logo acompanha a cor do tema. As imagens (logo e ícones) entram por link do site do SOMA — nada é anexado ao e-mail. Ajuste os textos e copie/baixe o HTML pronto.</p>
+  abreModal(`<h3>Full mailer</h3>
+    <p class="mailer-sub">Comunicado no padrão visual da NeuroDynamics. ${dica('A área sugere o título e as cores; a logo acompanha o tema. Imagens entram por link, sem anexos.')}</p>
     <div class="mailer-wrap">
       <div class="mailer-form">
         <div class="fld"><label>Área / seção</label>
@@ -621,14 +618,14 @@ function modalMailer(){
 
 Compartilhamos aqui as principais novidades e próximos passos da nossa equipe. Nas últimas semanas avançamos em frentes importantes e queremos manter todos alinhados sobre o que vem por aí.
 
-Qualquer dúvida, é só responder a este e-mail — estamos à disposição.</textarea>
+Em caso de dúvidas, responda a este e-mail.</textarea>
           <span class="mailer-sub tight">Separe parágrafos com uma linha em branco.</span></div>
-        <div class="fld"><label>Botão — rótulo <span class="muted">(opcional)</span></label>
+        <div class="fld"><label>Rótulo do botão <span class="muted">(opcional)</span></label>
           <input id="ml-cta" oninput="mlUpd()" placeholder="ex.: Saiba mais"></div>
-        <div class="fld"><label>Botão — link</label>
+        <div class="fld"><label>Link do botão</label>
           <input id="ml-ctaurl" oninput="mlUpd()" placeholder="https://…"></div>
         <div class="fld"><label>Texto do rodapé <span class="muted">(opcional)</span></label>
-          <textarea id="ml-foot" oninput="mlUpd()" style="min-height:60px">NeuroDynamics · Escola de Engenharia da UFMG · Belo Horizonte/MG</textarea></div>
+          <textarea id="ml-foot" oninput="mlUpd()" style="min-height:60px">NeuroDynamics, Escola de Engenharia da UFMG, Belo Horizonte/MG</textarea></div>
         <div class="fld"><label>Links do rodapé <span class="muted">(separados por | )</span></label>
           <input id="ml-links" value="Inscrever-se | Cancelar inscrição | Contato | Política de Privacidade | Enviar feedback" oninput="mlUpd()"></div>
         <div class="fld"><label>Letra miúda <span class="muted">(uma linha por parágrafo)</span></label>
@@ -677,7 +674,7 @@ const PS_CONJ_EMAIL = [
   ['Todos', null]
 ];
 async function modalEmailsCandidatos(){
-  abreModal('<h3>Lista de e-mails · candidatos</h3><div class="empty">Carregando o processo seletivo…</div>');
+  abreModal('<h3>Lista de e-mails dos candidatos</h3><div class="empty">Carregando o processo seletivo…</div>');
   try{
     if(!REL_PS.edicoes){
       const {data, error} = await sb.from('ps_edicoes').select('id,nome,slug').order('criado_em',{ascending:false});
@@ -686,12 +683,12 @@ async function modalEmailsCandidatos(){
     }
   }catch(e){ fechaModal(); falha(e,'Não foi possível carregar as edições'); return; }
   if(!REL_PS.edicoes.length){
-    abreModal(`<h3>Lista de e-mails · candidatos</h3>
-      <div class="empty">Nenhuma edição do processo seletivo cadastrada ainda.</div>
+    abreModal(`<h3>Lista de e-mails dos candidatos</h3>
+      <div class="empty">Nenhuma edição do processo seletivo cadastrada.</div>
       <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`);
     return;
   }
-  abreModal(`<h3>Lista de e-mails · candidatos</h3>
+  abreModal(`<h3>Lista de e-mails dos candidatos</h3>
     <div class="form-grid">
       <div class="fld full"><label>Edição</label>
         <select id="emlc-ed" onchange="relEmlCandsLimpa()">
@@ -703,11 +700,11 @@ async function modalEmailsCandidatos(){
         <div class="multi">${Object.keys(PS_ST).map(s=>`<label class="check">
           <input type="checkbox" class="s-emlc" value="${s}" onchange="relEmlCandsLimpa()"> ${esc(PS_ST[s][0])}</label>`).join('')}</div></div>
       <div class="fld full"><label>Assunto do e-mail <span class="muted">(opcional, vai preenchido na tela de envio)</span></label>
-        <input id="emlc-assunto" placeholder="ex.: Processo Seletivo 2026 — resultado da 1ª fase"></div>
+        <input id="emlc-assunto" placeholder="ex.: Processo Seletivo 2026, resultado da 1ª fase"></div>
       <div class="fld full"><label>Destinatários</label>
         <select id="emlc-modo">
-          <option value="bcc">Cco — endereçado a mim, candidatos em cópia oculta (recomendado)</option>
-          <option value="to">Para — todos os candidatos visíveis entre si</option>
+          <option value="bcc">Cco: para mim, candidatos em cópia oculta (recomendado)</option>
+          <option value="to">Para: candidatos visíveis entre si</option>
         </select></div>
     </div>
     <div id="emlc-result"></div>
@@ -738,17 +735,15 @@ async function gerarEmailsCandidatos(){
   $('#emlc-result').innerHTML = emails.length ? `
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:-2px 0 10px">
       ${Object.keys(porStatus).map(s=>`<span class="chip">${esc((PS_ST[s]||[s])[0])}: ${porStatus[s]}</span>`).join('')}</div>
-    <div class="fld"><label>${emails.length} e-mail(s) · separados por vírgula <span class="muted">(dá para editar antes de enviar)</span></label>
+    <div class="fld"><label>${emails.length} e-mail(s), separados por vírgula <span class="muted">(editável)</span></label>
       <textarea id="emlc-texto" style="min-height:110px;font-size:12.5px">${esc(emails.join(', '))}</textarea></div>
     <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
       <button class="btn ghost" onclick="copiar(document.getElementById('emlc-texto').value)">${ic('copy')} Copiar</button>
       <button class="btn ghost" onclick="relEmlCandsEnviar('mailto')">${ic('mail')} App de e-mail</button>
       <button class="btn ghost" onclick="relEmlCandsEnviar('gmail')">${ic('mail')} Abrir no Gmail</button>
     </div>
-    ${emails.length>60?`<p class="small muted" style="margin-top:6px">São muitos endereços: alguns apps de e-mail truncam listas longas.
-      Se faltar alguém no rascunho, copie a lista e cole no campo Cco, ou divida o envio em blocos.</p>`:''}
-    ${eu?`<p class="small muted" style="margin-top:6px">Em Cco, o e-mail abre endereçado a você (${esc(eu)}) com os candidatos em cópia oculta,
-      preservando a privacidade dos endereços. Se o “App de e-mail” não abrir nada, não há um configurado no computador — use o Gmail.</p>`:''}`
+    ${emails.length>60?`<p class="small muted" style="margin-top:6px">Listas longas podem ser truncadas pelo programa de e-mail. Se necessário, copie a lista para o Cco ou divida o envio.</p>`:''}
+    ${eu?`<p class="small muted" style="margin-top:6px">Em Cco, o destinatário é ${esc(eu)}. Sem programa de e-mail configurado, use o Gmail.</p>`:''}`
     : `<div class="empty">Nenhum candidato ${todos.length?'com esses status':'inscrito nesta edição'}.</div>`;
 }
 function relEmlCandsEnviar(via){
@@ -788,9 +783,9 @@ async function gerarAutorizados(){
     const lista = filtraPorSelecao(sts, grupos).filter(m=>desde.has(m.registro));
     if(!lista.length){ toast('Ninguém com acesso ativo a esse item nesses filtros.', true); return; }
     const doc = pdfNovo();
-    const y = pdfCabecalho(doc, 'AUTORIZADOS — '+item.nome.toUpperCase(),
-      `${CAT_LABEL[item.categoria]} · ${lista.length} pessoa(s) com acesso ativo`
-      + (grupos.length?` · Grupos: ${grupos.join(', ')}`:'') + (sts.length?` · Status: ${sts.join(', ')}`:''));
+    const y = pdfCabecalho(doc, 'AUTORIZADOS: '+item.nome.toUpperCase(),
+      `${CAT_LABEL[item.categoria]}, ${lista.length} pessoa(s) com acesso ativo`
+      + (grupos.length?`, Grupos: ${grupos.join(', ')}`:'') + (sts.length?`, Status: ${sts.join(', ')}`:''));
     doc.autoTable({ startY:y, theme:'striped',
       head:[['Reg.','Nome','Departamento','Status','Concedido em']],
       body:lista.map(m=>[pad3(m.registro), m.nome, m.departamento||'—', m.status, desde.get(m.registro)?fmtD(desde.get(m.registro)):'—']),
@@ -843,8 +838,8 @@ function exportarPDFQuadro(){
     const lista = filtraPorSelecao(sts, grupos);
     const doc = pdfNovo('landscape');
     const y = pdfCabecalho(doc, 'QUADRO DE PESSOAL',
-      `${lista.length} registro(s)` + (sts.length?` · Status: ${sts.join(', ')}`:' · Todos os status')
-      + (grupos.length?` · Grupos: ${grupos.join(', ')}`:''));
+      `${lista.length} registro(s)` + (sts.length?`, Status: ${sts.join(', ')}`:', Todos os status')
+      + (grupos.length?`, Grupos: ${grupos.join(', ')}`:''));
     doc.autoTable({ startY:y,
       head:[['Reg.','Nome','Status','Departamento','Cargo','Gestor','Grupos','E-mail','Ingresso']],
       body:lista.map(m=>[pad3(m.registro), m.nome, m.status, m.departamento||'', m.cargo||'',

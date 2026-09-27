@@ -71,7 +71,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   console.log('\nServiços e a declaração de vínculo');
   const { ctx, p, erros } = await abrir();
   confere('o início avisa o evento que espera a aprovação',
-    /Um evento espera a sua aprovação/.test(await texto(p, '#sec-pend')) && await p.locator('#sec-pend a.pend-i[href="#/servicos/eventos/aprovar"]').count() === 1);
+    /Um evento aguarda aprovação/.test(await texto(p, '#sec-pend')) && await p.locator('#sec-pend a.pend-i[href="#/servicos/eventos/aprovar"]').count() === 1);
 
   await ir(p, '#/servicos');
   const blocos = await p.evaluate(() => [...document.querySelectorAll('#main h2.srv-bloco')].map(h => h.textContent));
@@ -84,7 +84,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   const previa = await texto(p, '.dcl-folha p');
   confere('a prévia diz o que a declaração vai dizer, com o CPF mascarado na tela',
     /que ANA FIGUEIREDO, CPF nº •••\.000\.000-••, atua como GERENTE DE PROJETO da NeuroDynamics PD&I desde março de 2024\./.test(previa), previa);
-  confere('e a segunda folha: um treinamento e um evento', /1 treinamento · 1 evento/.test(await texto(p, '.dcl-dados')));
+  confere('e a segunda folha: um treinamento e um evento', /1 treinamento, 1 evento/.test(await texto(p, '.dcl-dados')));
   confere('a ficha completa não tem aviso de falta', await p.locator('.dcl-previa .aviso-box').count() === 0);
   const tabs = await p.evaluate(() => [...document.querySelectorAll('.dcl-tab')].map(t => [...t.querySelectorAll('tbody tr')].map(r => r.textContent.replace(/\s+/g, ' '))));
   confere('as emitidas: a válida e a revogada', tabs[0]?.length === 2 && tabs[0].some(r => /Q8RT-5WZN-2KDH.*Válida/.test(r))
@@ -156,7 +156,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   await p.keyboard.press('/'); await p.waitForTimeout(200);
   await p.keyboard.type('cbeb', { delay:20 }); await p.waitForTimeout(300);
   const achou = await p.evaluate(() => [...document.querySelectorAll('.pl-item')].map(b => b.textContent.replace(/\s+/g, ' ').trim()));
-  confere('a busca acha o evento pelo nome', achou.some(t => /EXT-1 · CBEB 2026/.test(t)), achou);
+  confere('a busca acha o evento pelo nome', achou.some(t => /EXT-1 CBEB 2026/.test(t)), achou);
   await p.keyboard.press('Escape');
 
   /* o aprovado */

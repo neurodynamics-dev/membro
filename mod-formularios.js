@@ -36,7 +36,7 @@ const FRM_TIPOS = {
 };
 const FRM_MOTIVO = {
   sem_formulario: 'Esta série não tem formulário: o PN se faz baixando o template e subindo o arquivo.',
-  sem_pn: 'Só um PN se escreve no portal — o template, não.',
+  sem_pn: 'Somente PNs são escritos no portal; templates, não.',
   sem_permissao: 'Quem escreve os PNs desta série é o grupo do emissor, a equipe do projeto e quem criou o PN.',
   registro_fechado: 'Este registro já foi aprovado: registro não se altera.',
   obsoleto: 'O arquivo está obsoleto.',
@@ -76,8 +76,7 @@ async function frmEscrever(t, op = {}){
   if (data.fechado && !data.dados && !data.ultima){
     /* aprovado, e não foi escrito aqui: foi o arquivo que subiu */
     $('#main').innerHTML = `<a class="tre-voltar" href="#/arquivos/${esc(t.r.codigo)}" style="margin-top:22px">${ic('back')} ${esc(t.r.codigo)}</a>
-      <div class="aviso-box info" style="margin-top:18px">Este registro já foi aprovado — e foi enviado como arquivo, não escrito no
-        portal. Registro aprovado não se altera: o que ele diz está no arquivo, na tela de ${esc(t.r.codigo)}.</div>`;
+      <div class="aviso-box info" style="margin-top:18px">Registro aprovado, enviado como arquivo. O conteúdo está na tela de ${esc(t.r.codigo)}.</div>`;
     return;
   }
   frm.meta = data; frm.def = data.def || { campos:[] };
@@ -116,16 +115,15 @@ function frmDesenhar(){
   const defVelha = def.rev && m.template_rev && def.rev !== m.template_rev;
   $('#main').innerHTML = `
     <a class="tre-voltar" href="#/arquivos/${esc(r.codigo)}" style="margin-top:22px">${ic('back')} ${esc(r.codigo)}</a>
-    <div class="topo-gestao"><div class="tx"><span class="eyebrow">Arquivos · escrever no portal</span>
+    <div class="topo-gestao"><div class="tx"><span class="eyebrow">Arquivos › Escrever no portal</span>
       <h1>${esc(r.codigo)} <span class="frm-h1-t">${esc(def.titulo || r.serie_titulo || '')}</span></h1>
       <p class="lead">O que iria no template ${esc(m.template_codigo || '')}${m.template_rev ? ' Rev. ' + esc(m.template_rev) : ''}, escrito aqui mesmo.
         O rascunho grava sozinho; ao mandar, o portal gera o PDF no modelo da NRO e ${reg ? 'o registro' : `a Rev. ${esc(revDoc)}`} vai
         para a revisão de ${esc(frmRevisores(r))}.</p></div></div>
-    ${m.fechado ? `<div class="aviso-box info">Este registro já foi aprovado e não se altera mais — ele diz o que aconteceu. O que está abaixo é o que foi escrito.</div>` : ''}
-    ${!m.fechado && m.pendente ? `<div class="aviso-box warn">Há uma versão aguardando revisão. Enquanto a decisão não sai, não dá para mandar outra —
-      mas o rascunho continua gravando.</div>` : ''}
+    ${m.fechado ? `<div class="aviso-box info">Registro aprovado. Somente leitura.</div>` : ''}
+    ${!m.fechado && m.pendente ? `<div class="aviso-box warn">Versão aguardando revisão. Não é possível enviar outra até a decisão; o rascunho continua sendo salvo.</div>` : ''}
     ${!m.fechado && frm.origem === 'ultima' && u?.estado === 'devolvida' ? `<div class="aviso-box warn"><b>A versão de ${fmtD(u.enviado_em)} voltou para ajuste</b>${
-      u.revisor_nome ? ` — ${esc(u.revisor_nome)}` : ''}: ${esc(u.parecer || 'sem parecer')}.<br><span class="small">O formulário começa do que foi mandado: corrija e mande de novo.</span></div>` : ''}
+      u.revisor_nome ? ` por ${esc(u.revisor_nome)}` : ''}: ${esc(u.parecer || 'sem parecer')}.<br><span class="small">Corrija e envie de novo.</span></div>` : ''}
     ${!m.fechado && frm.origem === 'ultima' && u?.estado !== 'devolvida' ? `<div class="aviso-box info">O formulário começa da última versão escrita no portal${
       u?.rev ? ' (Rev. ' + esc(u.rev) + ')' : ''}: mude o que for preciso para a próxima.</div>` : ''}
     ${defVelha ? `<div class="aviso-box warn">O formulário foi feito para a Rev. ${esc(def.rev)} do template, e o template está na Rev. ${esc(m.template_rev)}.
@@ -142,7 +140,7 @@ function frmDesenhar(){
           <h3>${ic('escrever')} O documento</h3>
           <dl class="dcl-dados frm-ficha">
             <div class="full"><dt>Código</dt><dd class="mono">${esc(r.codigo)}${revDoc ? ' Rev. ' + esc(revDoc) : ''}</dd></div>
-            <div class="full"><dt>Template</dt><dd>${esc(m.template_codigo || '—')}${m.template_rev ? ' · Rev. ' + esc(m.template_rev) + ' em vigor' : ''}</dd></div>
+            <div class="full"><dt>Template</dt><dd>${esc(m.template_codigo || '—')}${m.template_rev ? ', Rev. ' + esc(m.template_rev) + ' em vigor' : ''}</dd></div>
             <div class="full"><dt>Revisa</dt><dd>${esc(frmRevisores(r))}</dd></div>
           </dl>
           <p class="frm-status" id="frm-status"></p>
@@ -305,7 +303,7 @@ function frmStatus(estado){
   el.textContent = frm.erro ? `Não gravou: ${frm.erro}` : estado === 'gravando' ? 'Gravando o rascunho…'
     : frm.sujo ? 'Alterações por gravar…'
     : frm.salvoEm ? `Rascunho gravado ${fmtDT(frm.salvoEm)}${frm.meta?.atualizado_nome && frm.origem === 'rascunho' && !frm.tocado ? ' por ' + frm.meta.atualizado_nome : ''}.`
-    : frm.origem === 'novo' ? 'Nada escrito ainda.' : 'O rascunho grava sozinho enquanto você escreve.';
+    : frm.origem === 'novo' ? 'Nada escrito.' : 'O rascunho grava sozinho enquanto você escreve.';
   if (estado === 'gravando') frm.tocado = true;
 }
 
@@ -372,15 +370,15 @@ async function frmEnviarModal(){
   const r = frm.t.r, m = frm.meta, reg = m.tipo === 'registro', rev = reg ? null : frmProxRev(m.rev_vigente);
   const rels = frmRelacionados(); frm.decisoes = {};
   abreModal(`<h3>Mandar ${reg ? 'o registro' : 'a Rev. ' + esc(rev) + ' de'} ${esc(r.codigo)} para revisão</h3>
-    <p class="sub" style="margin-bottom:14px">O portal gera o PDF no modelo da NRO, com o template ${esc(m.template_codigo || '')}${
-      m.template_rev ? ' Rev. ' + esc(m.template_rev) : ''}, e ${reg ? 'o registro fica pendente' : 'a revisão fica pendente'} até alguém de
-      <b>${esc(frmRevisores(r))}</b> — que não seja você — aprovar.${reg ? ' Aprovado, o registro não se altera mais.'
-        : m.rev_vigente ? ` Até lá, a Rev. ${esc(m.rev_vigente)} continua valendo.` : ''}</p>
+    <p class="sub" style="margin-bottom:14px">PDF gerado com o template ${esc(m.template_codigo || '')}${
+      m.template_rev ? ' Rev. ' + esc(m.template_rev) : ''}. ${reg ? 'O registro fica pendente' : 'A revisão fica pendente'} até a aprovação de
+      <b>${esc(frmRevisores(r))}</b>, exceto por você.${reg ? ' Após aprovado, o registro não se altera.'
+        : m.rev_vigente ? ` Até lá, vale a Rev. ${esc(m.rev_vigente)}.` : ''}</p>
     ${!reg ? `<div class="fld"><label for="fe-mud">O que mudou${m.rev_vigente ? '' : ' (opcional na primeira versão)'}</label>
       <textarea id="fe-mud" rows="3" placeholder="${m.rev_vigente ? 'O resultado do passo 4 e a conclusão.' : 'Versão inicial.'}"></textarea></div>` : ''}
     ${rels.length ? `<div class="adm-grupo">Os relacionados</div>
-      <p class="small muted" style="margin:-4px 0 10px;line-height:1.55">Mudar ${esc(r.codigo)} pode obrigar a mudar estes. Para cada um, diga o
-        que você fez — é isto que fica no registro de alterações.</p><div class="arq-conf" id="fe-conf">${frmConfHTML()}</div>` : ''}
+      <p class="small muted" style="margin:-4px 0 10px;line-height:1.55">Mudar ${esc(r.codigo)} pode exigir mudanças nestes.
+        Informe o que foi feito em cada um; isso vai para o registro de alterações.</p><div class="arq-conf" id="fe-conf">${frmConfHTML()}</div>` : ''}
     <div class="acts" style="justify-content:flex-end;margin-top:16px">
       <button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" id="fe-btn" onclick="frmEnviar()">${ic('enviar')} Gerar o PDF e mandar</button></div>`, 'largo');
@@ -388,7 +386,7 @@ async function frmEnviarModal(){
 function frmConfHTML(){
   return frmRelacionados().map(({ x, lado }) => { const d = frm.decisoes[x.id];
     return `<div class="arq-conf-l${frm.faltouRel && !d ? ' falta' : ''}"><span class="tx"><span class="cd">${esc(x.codigo)}</span>
-      <span class="small muted">· ${lado}</span><span class="tt">${esc(x.titulo)}</span></span>
+     <span class="small muted">, ${lado}</span><span class="tt">${esc(x.titulo)}</span></span>
       <div class="seg" role="group" aria-label="O que você fez com ${esc(x.codigo)}">
         <button type="button" class="${d === 'revisado' ? 'on' : ''}" aria-pressed="${d === 'revisado'}" onclick="frmDecide('${x.id}','revisado')">Revisei junto</button>
         <button type="button" class="${d === 'sem_mudanca' ? 'on' : ''}" aria-pressed="${d === 'sem_mudanca'}" onclick="frmDecide('${x.id}','sem_mudanca')">Não precisa mudar</button>
@@ -462,10 +460,8 @@ function frmConfig(series, rol, op = {}){
         : `<span class="dim">template ${c?.rev_vigente ? 'Rev. ' + esc(c.rev_vigente) : 'sem revisão'}</span>`}</td>
       <td class="acoes-linha">${f ? `<button class="btn ghost mini" onclick="frmCfgPrevia('${s.id}')">${ic('eye')} Ver como fica</button>` : ''}
         <button class="btn ${f ? 'ghost' : 'solid'} mini" onclick="frmCfgEditar('${s.id}')">${ic(f ? 'pencil' : 'plus')} ${f ? 'Editar' : 'Criar o formulário'}</button></td></tr>`; };
-  el.innerHTML = `<p class="small muted" style="max-width:760px;line-height:1.6;margin-bottom:14px">Uma série com PN pode ter um formulário:
-      os campos que o template pede. Com ele, o PN se escreve na tela do arquivo — sem baixar o template — e o portal gera o
-      documento no modelo da NRO com a revisão em vigor do template. Quando o template mudar de letra, confira se o formulário
-      acompanha e mude a "rev" dele.</p>
+  el.innerHTML = `<p class="small muted" style="max-width:760px;line-height:1.6;margin-bottom:14px">Formulário de uma série com PN: os campos do template, preenchidos no portal.
+      ${dica('Quando o template mudar de revisão, confira o formulário e atualize a "rev" dele.')}</p>
     <div class="tabela-rolar"><table class="tabela trabalho frm-cfg-tab"><thead><tr><th>Série</th><th>Campos</th><th>Feito para</th><th></th></tr></thead>
       <tbody>${com.map(linha).join('')}${sem.length ? `<tr><td colspan="4" class="adm-grupo" style="padding:14px 12px 6px">Sem formulário</td></tr>${sem.map(linha).join('')}` : ''}</tbody></table></div>
     ${fora.length ? `<p class="small dim" style="margin-top:12px">Fora daqui, porque os PNs não moram no rol: ${fora.map(s => esc(cod(s))).join(', ')}.</p>` : ''}`;
@@ -498,7 +494,7 @@ async function frmCfgPrevia(id, defTexto){
     const dados = frmExemplo(def);
     const comp = def.complemento ? DocNRO.preencher(def.complemento, def, dados) : '';
     const doc = DocNRO.registro(def, dados, { codigo:cod, rev: s.tipo === 'registro' ? c?.rev_vigente : 'A', emissor: em?.nome || s.prefixo,
-      titulo: s.titulo + (comp ? ' — ' + comp : ''), classe:s.classe, natureza:s.tipo, autor:'exemplo', em:hojeISO() });
+      titulo: s.titulo + (comp ? ': ' + comp : ''), classe:s.classe, natureza:s.tipo, autor:'exemplo', em:hojeISO() });
     DocNRO.abrir(doc, janela);
   }catch(e){ try{ janela?.close(); }catch(_){} falha(e, 'Não foi possível desenhar'); }
 }
@@ -510,7 +506,7 @@ function frmCfgEditar(id){
     campos:[{ id:'assunto', rotulo:'Assunto', tipo:'texto', obrigatorio:true }, { id:'data', rotulo:'Data', tipo:'data', obrigatorio:true, padrao:'hoje' },
       { id:'texto', rotulo:'Texto', tipo:'paragrafo', obrigatorio:true }] };
   abreModal(`<h3>Formulário de ${esc(`NRO-${s.prefixo}-${String(s.sn).padStart(3, '0')}`)}</h3>
-    <p class="sub" style="margin-bottom:10px">${esc(s.titulo)} · template ${c?.rev_vigente ? 'Rev. ' + esc(c.rev_vigente) + ' em vigor' : 'sem revisão em vigor'}</p>
+    <p class="sub" style="margin-bottom:10px">${esc(s.titulo)}, template ${c?.rev_vigente ? 'Rev. ' + esc(c.rev_vigente) + ' em vigor' : 'sem revisão em vigor'}</p>
     ${modelos.length ? `<div class="frm-modelo"><span class="small muted">Começar de:</span>${modelos.map(x =>
       `<button type="button" class="chip mini" onclick="frmCfgCopiar('${x.id}', '${c?.rev_vigente || ''}')">${esc(`NRO-${x.prefixo}-${String(x.sn).padStart(3, '0')}`)}</button>`).join('')}</div>` : ''}
     <textarea id="fc-json" class="frm-json mono" rows="20" spellcheck="false" oninput="frmCfgConferir()">${esc(JSON.stringify(base, null, 2))}</textarea>
@@ -569,7 +565,7 @@ function frmCfgConferir(){
   let f; try { f = JSON.parse(txt); } catch(e){ el.innerHTML = `<ul class="tre-probs"><li>O JSON não se lê: ${esc(e.message)}</li></ul>`; return null; }
   const p = frmProblemas(f);
   el.innerHTML = p.length ? `<ul class="tre-probs">${p.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
-    : `<p class="tre-pronto">${ic('check')} ${f.campos.length} campos, sem problema — pronto para salvar.</p>`;
+    : `<p class="tre-pronto">${ic('check')} ${f.campos.length} campos, sem erros.</p>`;
   return p.length ? null : f;
 }
 async function frmCfgSalvar(id, tirar){
@@ -591,17 +587,17 @@ async function frmCfgSalvar(id, tirar){
 function frmAjudaHTML(){
   return `<div class="frm-ajuda-c small">
     <p><b>O alto:</b> <code>titulo</code> (o nome do documento, no cabeçalho), <code>rev</code> (a revisão do template para a qual o
-      formulário foi feito), <code>cabecalho</code> (o departamento no cabeçalho — sem ele, o emissor), <code>complemento</code> (o
+      formulário foi feito), <code>cabecalho</code> (o departamento no cabeçalho; sem ele, o emissor), <code>complemento</code> (o
       que vai no título do PN, depois do nome da série) e <code>numerar_linhas</code> (como a ata).</p>
     <p><b>Os campos</b> (<code>campos</code>): <code>id</code>, <code>rotulo</code>, <code>tipo</code> e, se quiser,
       <code>obrigatorio</code>, <code>secao</code> (agrupa na tela), <code>ajuda</code>, <code>exemplo</code> e <code>padrao</code>
       (<code>"hoje"</code>, <code>"agora"</code>, <code>"eu"</code>). Os tipos:</p>
-    <ul>${Object.entries(FRM_TIPOS).map(([k, v]) => `<li><code>${k}</code> — ${esc(v)}</li>`).join('')}</ul>
-    <p><code>escolha</code> leva <code>opcoes</code> (texto, ou <code>{"valor","rotulo","simbolo"}</code> — o símbolo é o glifo da
+    <ul>${Object.entries(FRM_TIPOS).map(([k, v]) => `<li><code>${k}</code>: ${esc(v)}</li>`).join('')}</ul>
+    <p><code>escolha</code> leva <code>opcoes</code> (texto, ou <code>{"valor","rotulo","simbolo"}</code>; o símbolo é o glifo da
       tabela: ok, x, ~, -) e, com <code>"livre": true</code>, aceita o que se escrever. <code>tabela</code> leva <code>colunas</code>
       (<code>id</code>, <code>rotulo</code>, <code>tipo</code>, <code>largura</code>) e <code>numerada</code>.
       <code>pessoas</code> leva <code>nota</code> (o nome da segunda coluna).</p>
-    <p><b>A impressão</b> (<code>impressao</code>, opcional — sem ela, os campos curtos vão para uma ficha e os longos viram seções):
+    <p><b>A impressão</b> (<code>impressao</code>, opcional; sem ela, os campos curtos vão para uma ficha e os longos viram seções):
       blocos <code>texto</code> (uma frase com os campos no meio: <code>{data}</code> escreve o valor, <code>{hora?, às }</code>
       escreve ", às " só se houver hora), <code>campo</code> (uma lista ou um texto longo, com <code>marcador</code>,
       <code>pontuacao</code> e <code>final</code>), <code>ficha</code> (as <code>linhas</code> de rótulo e valor) e

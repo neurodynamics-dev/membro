@@ -129,7 +129,7 @@ console.log('\nArquivos — o rol primeiro, a visão geral depois');
   await p.click('button[aria-label="Mostrar os PNs de NRO-PUB-003"]'); await p.waitForTimeout(200);
   ls = await linhas(p);
   const ata = ls.find(l => l.cod === 'NRO-PUB-003-1');
-  confere('um clique abre os PNs, debaixo do template, com a revisão do template', ata?.pn && /Rev\. A · tpl/.test(ata.rev), ata);
+  confere('um clique abre os PNs, debaixo do template, com a revisão do template', ata?.pn && /Rev\. A, tpl/.test(ata.rev), ata);
   await p.click('.arq-tab tr:has-text("NRO-PUB-003-1")'); await p.waitForTimeout(900);
   confere('clicar na linha abre o arquivo', await p.evaluate(() => location.hash) === '#/arquivos/NRO-PUB-003-1');
   confere('nenhum erro de página', erros.length === 0, erros);
@@ -145,7 +145,7 @@ console.log('\nA tela de um arquivo');
     sub: e.querySelector('.sub').textContent.trim() })));
   confere('a barra está em "Em revisão", com a Rev. C com o PMO', etapas[1].agora && etapas[1].sub === 'Rev. C com PMO', etapas);
   confere('e "Ativo" aceso ao mesmo tempo: a Rev. B segue em vigor', etapas[2].feita && etapas[2].sub === 'Rev. B segue em vigor', etapas[2]);
-  confere('diz de qual template nasceu, e em qual revisão', /Feito sobre o template NRO-PUB-002 — Rev\. A/.test(await p.textContent('.arq-nasce')));
+  confere('diz de qual template nasceu, e em qual revisão', /Feito sobre o template NRO-PUB-002, Rev\. A/.test(await p.textContent('.arq-nasce')));
   const rel = await p.evaluate(() => ({ foco: document.querySelector('.arq-no.foco .cd').textContent,
     outros: [...document.querySelectorAll('.arq-rel a.arq-no .cd')].map(x => x.textContent) }));
   confere('as relações mostram o procedimento no meio e o checklist como filho',
@@ -154,9 +154,9 @@ console.log('\nA tela de um arquivo');
   confere('o registro de alterações começa na criação e termina no que está pendente',
     log[0] === 'NRO-PES-007 criado por Ana Figueiredo' && log.at(-1) === 'Rev. C aguarda a revisão de PMO', log);
   confere('e traz o template usado, quem enviou e quem aprovou cada revisão',
-    log.includes('Template NRO-PUB-002 Rev. A — redigido por MMARCONDES') && log.includes('Rev. C enviada por Bruno Tavares')
+    log.includes('Template NRO-PUB-002 Rev. A, redigido por MMARCONDES') && log.includes('Rev. C enviada por Bruno Tavares')
     && log.includes('Rev. B aprovada por Carla Mendonça'), log);
-  confere('a conferência de cada envio fica à vista', (await p.textContent('.arq-log')).includes('NRO-PES-014 · sem mudança'));
+  confere('a conferência de cada envio fica à vista', (await p.textContent('.arq-log')).includes('NRO-PES-014, sem mudança'));
   confere('o menu acende o emissor do arquivo', (await atual(p)).includes('Pessoal'), await atual(p));
 
   await p.evaluate(() => { window.__baixados = []; });
@@ -188,7 +188,7 @@ console.log('\nEnviar uma revisão');
   await p.waitForSelector('.arq-lado');
   await p.click('button:has-text("Submeter nova revisão")'); await p.waitForSelector('#ae-btn');
   confere('o modal diz que a Rev. B fica pendente até o PMO aprovar',
-    /A Rev\. B fica pendente até alguém de PMO/.test((await p.textContent('#modal')).replace(/\s+/g, ' ')));
+    /A Rev\. B fica pendente até a aprovação de PMO/.test((await p.textContent('#modal')).replace(/\s+/g, ' ')));
   confere('e lista o pai para conferir', (await p.textContent('#ae-conf')).includes('NRO-PES-007'));
   await p.click('#ae-btn'); await p.waitForTimeout(150);
   confere('sem arquivo, não envia', /Escolha o arquivo/.test(await toasts(p)));
@@ -231,7 +231,7 @@ console.log('\nTemplate, registro, fila e templates');
   const { ctx, p, erros } = await abrir({ hash:'#/arquivos/NRO-PUB-002' });
   await p.waitForSelector('.arq-folha');
   confere('template tem fundo de planta e a faixa que diz o que ele é',
-    await p.locator('.arq-folha.tpl').count() === 1 && /Template de documento — molde, não documento/.test(await p.textContent('.arq-fita')));
+    await p.locator('.arq-folha.tpl').count() === 1 && /Template de documento: molde, não documento/.test(await p.textContent('.arq-fita')));
   const usos = await p.evaluate(() => [...document.querySelectorAll('.arq-sec:has(h3) .arq-tab tbody tr .cod')].map(x => x.textContent));
   confere('e diz onde é usado', usos.join() === 'NRO-PES-007,NRO-PUB-003', usos);
   confere('a tabela de dentro da tela é compacta (sem a coluna de última alteração)',
@@ -241,13 +241,13 @@ console.log('\nTemplate, registro, fila e templates');
 
   await ir(p, '#/arquivos/NRO-PRO-003-1');
   confere('registro aprovado não oferece revisão', await p.locator('button:has-text("Submeter nova revisão")').count() === 0
-    && /Registro aprovado não se revisa/.test(await p.textContent('.arq-lado')));
+    && /Registro aprovado não recebe revisão/.test(await p.textContent('.arq-lado')));
   confere('e avisa que o template mudou — sem pedir revisão do registro',
     /Este registro foi feito na A e fica assim/.test(await p.textContent('.arq-nasce')));
   confere('o registro de alterações concorda no masculino', (await p.textContent('.arq-log')).includes('Registro enviado por Bruno Tavares'));
 
   await ir(p, '#/arquivos/revisoes');
-  confere('a fila mostra o que está com você', /Com você · 1/.test(await p.textContent('#main')));
+  confere('a fila mostra o que está com você', /Com você \(1\)/.test(await p.textContent('#main')));
   await ir(p, '#/arquivos/templates');
   const tpls = (await linhas(p)).map(l => l.cod);
   confere('a lista de templates tem os cinco (o quadro de pessoal é documento único)',
@@ -313,15 +313,15 @@ console.log('\nA estrutura de cada série — a coluna nova da NRO-PUB-001');
   const subs = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('.arq-tab tbody tr')].map(tr =>
     [tr.querySelector('.cod').textContent.trim(), tr.querySelector('.sub').textContent.trim()])));
   confere('cada linha diz o que é: o template, e o que nasce dele',
-    subs['NRO-PRO-003'].startsWith('Template · cada PN é um registro')
-    && subs['NRO-PRO-004'].startsWith('Template · cada PN é um documento'), subs);
+    subs['NRO-PRO-003'].startsWith('Template, cada PN é um registro')
+    && subs['NRO-PRO-004'].startsWith('Template, cada PN é um documento'), subs);
   await p.click('.arq-leg[data-est="registros"]'); await p.waitForTimeout(300);
   let ls = await linhas(p);
   confere('clicar numa estrutura filtra o rol — a cabeça e os PNs',
     ls.map(l => l.cod).join() === 'NRO-PRO-003,NRO-PRO-003-1'
     && await p.getAttribute('.arq-leg[data-est="registros"]', 'aria-pressed') === 'true', ls.map(l => l.cod));
   const pnSub = await p.textContent('.arq-tab tr:has-text("NRO-PRO-003-1") .sub');
-  confere('e o PN diz que é registro, e qual PN', pnSub.startsWith('Registro · PN 1'), pnSub);
+  confere('e o PN diz que é registro, e qual PN', pnSub.startsWith('Registro, PN 1'), pnSub);
   await p.click('.arq-leg[data-est="registros"]'); await p.waitForTimeout(300);
   confere('um segundo clique tira o filtro', (await linhas(p)).length === 3);
 
@@ -330,21 +330,21 @@ console.log('\nA estrutura de cada série — a coluna nova da NRO-PUB-001');
     fr: document.querySelector('.arq-frase').textContent.replace(/\s+/g, ' ').trim() })); };
   let e = await eixos('#/arquivos/NRO-PRO-003');
   confere('template de registros: template, cabeça da série sem PN, se altera (os registros dele, não)',
-    e.v.join('|') === 'Template|Cabeça · sem PN|Sim · template'
+    e.v.join('|') === 'Template|Cabeça, sem PN|Sim, template'
     && e.fr.includes('“um template, cada pn é um registro filho da série”'), e);
   const secs = await p.evaluate(() => [...document.querySelectorAll('.arq-sec h3')].map(h => h.firstChild.textContent.trim()));
   const usoPN = await p.textContent('.arq-sec:has(h3:has-text("Onde é usado")) .arq-tab .sub');
   confere('no template, os PNs são onde ele é usado — uma lista só, com a revisão que cada um usou',
     secs.filter(x => /Onde é usado|PNs desta série/.test(x)).length === 1
-    && /Projeto Nebula · usa a Rev\. A · anterior à B/.test(usoPN), { secs, usoPN });
+    && /Projeto Nebula, usa a Rev\. A, anterior à B/.test(usoPN), { secs, usoPN });
   e = await eixos('#/arquivos/NRO-PRO-003-1');
   confere('registro: arquivo real, integrante da série com PN, não se altera',
-    e.v.join('|') === 'Arquivo real|Integrante · PN 1|Não · registro', e);
+    e.v.join('|') === 'Arquivo real|Integrante, PN 1|Não, registro', e);
   e = await eixos('#/arquivos/NRO-PRO-001-1');
-  confere('documento com PN: arquivo real, integrante, se altera', e.v.join('|') === 'Arquivo real|Integrante · PN 1|Sim · documento', e);
+  confere('documento com PN: arquivo real, integrante, se altera', e.v.join('|') === 'Arquivo real|Integrante, PN 1|Sim, documento', e);
   e = await eixos('#/arquivos/NRO-PES-005');
   confere('documento único: arquivo real, único da série, se altera',
-    e.v.join('|') === 'Arquivo real|Arquivo único · sem PN|Sim · documento'
+    e.v.join('|') === 'Arquivo real|Arquivo único, sem PN|Sim, documento'
     && e.fr.includes('“um documento para toda a equipe, sem template e sem filhos”'), e);
   e = await eixos('#/arquivos/NRO-PUB-002');
   confere('o NRO-PUB-002 é template avulso: a coluna veio vazia para ele', e.v[0] === 'Template' && /veio vazia/.test(e.fr), e);
@@ -354,14 +354,14 @@ console.log('\nA estrutura de cada série — a coluna nova da NRO-PUB-001');
   await p.click('.topo-gestao button:has-text("Adicionar")'); await p.waitForSelector('.arq-add');
   const ops = await p.evaluate(() => [...document.querySelectorAll('#aa-tpl option')].map(o => o.textContent));
   confere('"Adicionar" pergunta o que é: um arquivo real numa série (os templates do emissor) ou uma série nova',
-    ops.length === 3 && ops[1] === 'NRO-PRO-003 — RELATÓRIO DE EXECUÇÃO DE TESTES (cada PN é um registro)'
+    ops.length === 3 && ops[1] === 'NRO-PRO-003 RELATÓRIO DE EXECUÇÃO DE TESTES (cada PN é um registro)'
     && await p.locator('.arq-add-op:has-text("Uma série nova") button').count() === 3, ops);
   await p.selectOption('#aa-tpl', 's-pro3'); await p.click('.arq-add button:has-text("Continuar")');
   await p.waitForSelector('#apn-btn');
   const nasce = (await p.textContent('.arq-nasce-pn')).replace(/\s+/g, ' ');
   confere('o PN novo diz o que vai nascer: o código, que é um registro, e de qual template',
     /Vai nascer NRO-PRO-003-2: um registro, arquivo real, integrante da série/.test(nasce)
-    && /do template NRO-PRO-003 Rev\. B/.test(nasce) && /registro não se altera/.test(nasce), nasce);
+    && /do template NRO-PRO-003 Rev\. B/.test(nasce) && /Registro aprovado não se altera/.test(nasce), nasce);
   await p.keyboard.press('Escape'); await p.waitForTimeout(200);
   await p.click('.topo-gestao button:has-text("Adicionar")'); await p.waitForSelector('.arq-add');
   await p.click('.arq-add-op button:has-text("Template → registros")'); await p.waitForSelector('#as-btn');
@@ -440,7 +440,7 @@ console.log('\nProjetos');
 
   await ir(p, '#/projetos/NEBULA');
   confere('a página do projeto: nome, código, supervisor marcado na equipe',
-    (await p.textContent('.pj-topo h1')).trim() === 'Nebula' && /Projeto · NEBULA/.test(await p.textContent('.pj-topo'))
+    (await p.textContent('.pj-topo h1')).trim() === 'Nebula' && /Projeto NEBULA/.test(await p.textContent('.pj-topo'))
     && /Bruno Tavares/.test(await p.textContent('.pj-membro:has(.pj-sup)')));
   confere('diz que a equipe é o grupo NRO_PROJECT_NEBULA, dentro de NRO_PROJECTS',
     /NRO_PROJECT_NEBULA.*NRO_PROJECTS/.test((await p.textContent('#pj-corpo')).replace(/\s+/g, ' ')));

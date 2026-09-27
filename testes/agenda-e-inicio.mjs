@@ -61,8 +61,10 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   confere('a semana: a grade de horas com os eventos', await p.locator('.agw-ev').count() >= 2);
   confere('a barra do calendário: Hoje, as setas, o título e a visão', await p.locator('.cal-barra .cal-tit').count() === 1
     && await texto(p, '.cal-barra .seg button.on') === 'Semana');
+  await ir(p, '#/agenda/semana/' + dia(1), 1200);
   const corpo = await texto(p, '#agx-corpo');
   confere('as outras camadas: a tarefa com prazo (ORT-14)', /ORT-14/.test(corpo), corpo.slice(0, 200));
+  await ir(p, '#/agenda/semana/' + dia(0), 1200);
 
   await p.keyboard.press('m'); await p.waitForTimeout(900);
   confere('M: a visão do mês', /^#\/agenda\/mes\//.test(await p.evaluate(() => location.hash)) && await p.locator('.calm').count() === 1);

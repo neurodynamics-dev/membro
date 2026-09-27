@@ -299,8 +299,8 @@ function agBlocosDoDia(lista){
     const curto = alt < 36;
     return `<button class="agw-ev${i.editavel && i.origem === 'evento' ? ' ed' : ''}${i.resposta === 'nao' ? ' recusado' : ''}${i.resposta === 'pendente' ? ' pendente' : ''}${curto ? ' curto' : ''}"
       style="top:${top}px;height:${alt}px;left:calc(${col} * 100% / ${n});width:calc(100% / ${n} - 3px);--cc:${esc(i.cor)}"
-      data-k="${esc(i.k)}" title="${esc(i.titulo)} · ${minHHMM(i.hi)}–${minHHMM(i.hf)}">
-      <span class="t">${esc(i.titulo)}</span>${curto ? `<span class="h">${minHHMM(i.hi)}</span>` : `<span class="h">${minHHMM(i.hi)} – ${minHHMM(i.hf)}${i.bruto?.local ? ' · ' + esc(i.bruto.local) : ''}</span>`}
+      data-k="${esc(i.k)}" title="${esc(i.titulo)}, ${minHHMM(i.hi)}–${minHHMM(i.hf)}">
+      <span class="t">${esc(i.titulo)}</span>${curto ? `<span class="h">${minHHMM(i.hi)}</span>` : `<span class="h">${minHHMM(i.hi)} – ${minHHMM(i.hf)}${i.bruto?.local ? ', ' + esc(i.bruto.local) : ''}</span>`}
       ${i.editavel && i.origem === 'evento' ? '<span class="agw-puxa" data-puxa="1"></span>' : ''}</button>`;
   }).join('');
 }
@@ -417,7 +417,7 @@ function agRapido(dia, m0, m1, x, y){
   const div = document.createElement('div');
   div.id = 'agx-rapido'; div.className = 'agx-rapido'; div.setAttribute('role', 'dialog'); div.setAttribute('aria-label', 'Novo evento');
   div.innerHTML = `<input id="agr-tit" placeholder="Adicionar título" maxlength="160" aria-label="Título">
-    <div class="agr-quando">${ic('relogio')} ${esc(agCap(agDataLonga(dia)))} · ${minHHMM(m0)} – ${minHHMM(Math.min(m1, 24*60 - 1))}</div>
+    <div class="agr-quando">${ic('relogio')} ${esc(agCap(agDataLonga(dia)))}, ${minHHMM(m0)} – ${minHHMM(Math.min(m1, 24*60 - 1))}</div>
     ${pd.length ? `<select id="agr-pd" aria-label="Evento predefinido"><option value="">Evento</option>${pd.map(p =>
       `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('')}</select>` : ''}
     <div class="acts"><button class="btn ghost mini" onclick="agRapidoMais('${dia}',${m0},${m1})">Mais opções</button>
@@ -648,8 +648,8 @@ function agEventoDesenhar(){
           <span class="evp-cores" role="group" aria-label="Cor">${['', ...AG_CORES].map(c => `<button type="button" class="${(f.cor || '') === c ? 'on' : ''}"
             style="--cc:${c || 'transparent'}" title="${c ? 'Cor ' + c : 'A cor do tipo'}" aria-label="${c ? 'Cor ' + c : 'A cor do tipo'}" onclick="agEvCor('${c}', this)">${c ? '' : 'A'}</button>`).join('')}</span></div>
         <div class="evp-lin top">${ic('texto')}<textarea id="ev-desc" rows="6" placeholder="Descrição" oninput="agenda.ev.f.descricao=this.value" aria-label="Descrição">${esc(f.descricao)}</textarea></div>
-        ${ev.novo ? '' : `<p class="evp-rodape">${ev.numero ? `EVT-${String(ev.numero).padStart(3, '0')} · ` : ''}Organiza: ${esc(ev.organizador || '—')}
-          · <a href="${esc(agLinkGoogle())}" target="_blank" rel="noopener">Adicionar ao Google Agenda</a></p>`}
+        ${ev.novo ? '' : `<p class="evp-rodape">${ev.numero ? `EVT-${String(ev.numero).padStart(3, '0')}. ` : ''}Organização: ${esc(ev.organizador || 'não informada')}.
+          <a href="${esc(agLinkGoogle())}" target="_blank" rel="noopener">Adicionar ao Google Agenda</a></p>`}
         ${agRsvpHTML()}
       </div>
       <aside class="evp-conv">
@@ -671,7 +671,7 @@ function agEventoDesenhar(){
 function agEventoLeitura(volta){
   const ev = agenda.ev, f = ev.f;
   const quando = (f.data_fim && f.data_fim !== f.data ? `${agCap(agDataLonga(f.data))} a ${agDataLonga(f.data_fim)}` : agCap(agDataLonga(f.data, true)))
-    + (f.dia_inteiro ? '' : ` · ${f.hi} – ${f.hf}`);
+    + (f.dia_inteiro ? '' : `, ${f.hi} – ${f.hf}`);
   const esp = (agenda.espacos || []).find(e => String(e.id) === String(f.espaco_id))?.nome;
   const conv = [...ev.conv];
   const conta = k => conv.filter(([, v]) => v.resposta === k).length + ev.ext.filter(x => x.resposta === k).length;
@@ -688,8 +688,8 @@ function agEventoLeitura(volta){
       ${f.lembretes.length ? `<div class="evp-lin">${ic('sino')}<span>${f.lembretes.map(agRotuloLembrete).join(', ')}</span></div>` : ''}
       <div class="evp-lin">${ic('eye')}<span>${AG_VIS[f.visibilidade]}</span></div>
       ${f.descricao ? `<div class="evp-lin top">${ic('texto')}<div class="evp-desc">${esc(f.descricao)}</div></div>` : ''}
-      <p class="evp-rodape">${ev.numero ? `EVT-${String(ev.numero).padStart(3, '0')} · ` : ''}Organiza: ${esc(ev.organizador || '—')}
-        · <a href="${esc(agLinkGoogle())}" target="_blank" rel="noopener">Adicionar ao Google Agenda</a></p>
+      <p class="evp-rodape">${ev.numero ? `EVT-${String(ev.numero).padStart(3, '0')}. ` : ''}Organização: ${esc(ev.organizador || 'não informada')}.
+        <a href="${esc(agLinkGoogle())}" target="_blank" rel="noopener">Adicionar ao Google Agenda</a></p>
       ${agRsvpHTML()}
     </div>
     <aside class="evp-conv"><h3>Convidados <span class="n">${conv.length + ev.ext.length}</span></h3>
@@ -743,7 +743,7 @@ function agEvDiaInteiro(on){
 function agEvCor(c, bt){ agenda.ev.f.cor = c; bt.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === bt)); }
 function agLembretesHTML(){
   const l = agenda.ev.f.lembretes;
-  return l.map((m, i) => `<span class="evp-lemb-l">E-mail e sino · <select onchange="agenda.ev.f.lembretes[${i}]=+this.value" aria-label="Notificação">
+  return l.map((m, i) => `<span class="evp-lemb-l">E-mail e notificação: <select onchange="agenda.ev.f.lembretes[${i}]=+this.value" aria-label="Notificação">
       ${[...new Set([...AG_LEMBRETES, m])].sort((a, b) => a - b).map(x => `<option value="${x}" ${x === m ? 'selected' : ''}>${agRotuloLembrete(x)}</option>`).join('')}</select>
       ${ibtn('x', 'Tirar a notificação', `agenda.ev.f.lembretes.splice(${i},1);document.getElementById('ev-lemb').innerHTML=agLembretesHTML()`, 'sm')}</span>`).join('')
     + (l.length < 5 ? `<button type="button" class="evp-link" onclick="agenda.ev.f.lembretes.push(${l.length ? 1440 : 30});document.getElementById('ev-lemb').innerHTML=agLembretesHTML()">Adicionar notificação</button>` : '');
@@ -780,7 +780,7 @@ function agExtLinha(x, pode, i){
   const [rot, cls, sim] = AG_RESP[x.resposta || 'pendente'] || AG_RESP.pendente;
   return `<div class="evp-p"><span class="avx" style="width:30px;height:30px;font-size:11px">${esc((x.nome || x.email || '?').slice(0, 2).toUpperCase())}</span>
     <span class="rs ${cls}" title="${rot}">${sim}</span>
-    <span class="tx"><span class="nm">${esc(x.nome || x.email)}</span><span class="sb">${x.nome && x.email ? esc(x.email) + ' · ' : ''}de fora da equipe</span></span>
+    <span class="tx"><span class="nm">${esc(x.nome || x.email)}</span><span class="sb">${x.nome && x.email ? esc(x.email) + ', ' : ''}externo</span></span>
     ${pode ? ibtn('x', 'Tirar ' + esc(x.email), `agenda.ev.ext.splice(${i},1);agConvDesenhar()`, 'sm') : ''}</div>`;
 }
 function agConvDesenhar(){
@@ -799,7 +799,7 @@ function agOpcoesConv(q){
     out.push({ tipo:'email', id:q.trim().toLowerCase(), rot:q.trim(), sub:'Convidar por e-mail (de fora da equipe)' });
   gruposDaEquipe().filter(g => norm(g).includes(t)).slice(0, 4).forEach(g => {
     const n = membrosDoGrupo(g).filter(m => !ev.conv.has(m.registro)).length;
-    if (n) out.push({ tipo:'grupo', id:g, rot:g, sub:`Grupo · ${n} pessoa${n === 1 ? '' : 's'}` });
+    if (n) out.push({ tipo:'grupo', id:g, rot:g, sub:`Grupo, ${n} pessoa${n === 1 ? '' : 's'}` });
   });
   (state.membros || []).filter(m => ['Ativo', 'Em pausa / avaliação', 'Sob demanda'].includes(m.status) && !ev.conv.has(m.registro)
     && (norm(m.nome).includes(t) || norm(m.email_nro || '').includes(t))).slice(0, 7)
@@ -1017,7 +1017,7 @@ function agCfgPredefinidos(){
     ${lista.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th>Nome</th><th>Duração</th><th>Convidados</th><th>Notificações</th><th>Local</th><th></th></tr></thead>
       <tbody>${lista.map(p => `<tr class="${can() ? 'click' : ''}" ${can() ? `tabindex="0" onclick="agPdEditar('${p.id}')" onkeydown="if(event.key==='Enter')this.click()"` : ''}>
         <td class="nome"><span class="agc-pt" style="--cc:${esc(p.cor)}"></span>${esc(p.nome)}</td>
-        <td>${p.dia_inteiro ? 'Dia inteiro' : (p.duracao_min >= 60 && p.duracao_min % 60 === 0 ? p.duracao_min / 60 + ' h' : p.duracao_min + ' min')}${p.hora_inicio ? ' · ' + p.hora_inicio.slice(0, 5) : ''}</td>
+        <td>${p.dia_inteiro ? 'Dia inteiro' : (p.duracao_min >= 60 && p.duracao_min % 60 === 0 ? p.duracao_min / 60 + ' h' : p.duracao_min + ' min')}${p.hora_inicio ? ', ' + p.hora_inicio.slice(0, 5) : ''}</td>
         <td style="white-space:normal">${p.todos ? 'Toda a equipe' : [...grupos(p.grupos), ...(p.convidados || []).map(r => primeiroNome(nomeDe(r)))].map(esc).join(', ') || '<span class="dim">—</span>'}</td>
         <td>${(p.lembretes || []).map(agRotuloLembrete).join(', ') || '<span class="dim">nenhuma</span>'}</td>
         <td>${esc((agenda.espacos || []).find(e => e.id === p.espaco_id)?.nome || p.local || '—')}</td>
@@ -1184,5 +1184,5 @@ async function agDesconectar(){
 registrarBusca({
   fonte:'agenda', rotulo:'Agenda',
   buscar: (t) => filtrarSimples(agenda.itens.filter(i => i.origem === 'evento').map(i => ({
-    titulo: i.titulo, sub: `${fmtD(i.de)}${i.dia ? '' : ' · ' + minHHMM(i.hi)}`, href: i.href })), t, 6)
+    titulo: i.titulo, sub: `${fmtD(i.de)}${i.dia ? '' : ', ' + minHHMM(i.hi)}`, href: i.href })), t, 6)
 });
