@@ -247,8 +247,11 @@ predefinidos nascem dos tipos antigos (`evento_tipos`) e de três padrões
 `select nome, duracao_min, visibilidade, todos, grupos from public.agenda_predefinidos order by ordem;`
 
 A **29.0** precisa da tabela `presencas` do check-in e para, dizendo qual
-coluna, se ela tiver outra coluna obrigatória sem valor padrão. O placar
-conta os feriados de `calendario_itens` (tipo `feriado`, sem registro).
+coluna, se ela tiver outra coluna obrigatória sem valor padrão. O `id` do
+painel do Supabase (identity) não conta: ele se preenche sozinho. Um `id`
+uuid sem padrão ganha `gen_random_uuid()`, que só vale quando quem insere não
+manda o id (o quiosque manda, e nada muda para ele). O placar conta os
+feriados de `calendario_itens` (tipo `feriado`, sem registro).
 
 A **30.0** são os e-mails programados. Depois dela, **publique de novo** a
 Edge Function `notificar-email`: é ela que passa a cada cinco minutos, pega os
@@ -360,7 +363,11 @@ psql -d t28 -f testes/v28_agenda.sql         # 62 asserções
 # 29.0: a presença e o início (o teste roda a migração)
 createdb t29
 psql -d t29 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql -f v15_atividades.sql
-psql -d t29 -f testes/v29_presenca.sql       # 23 asserções
+psql -d t29 -f testes/v29_presenca.sql       # 23 asserções (presencas com id identity)
+# e o id de presencas em outras formas, num banco novo com a mesma base
+createdb t29b
+psql -d t29b -f testes/esqueleto.sql -f testes/esqueleto_storage.sql -f v15_atividades.sql
+psql -d t29b -f testes/v29_presencas_id.sql  # 4 asserções (uuid sem padrão; coluna obrigatória de fato)
 
 # 30.0: os e-mails programados e as pílulas (o teste roda a migração duas vezes)
 createdb t30

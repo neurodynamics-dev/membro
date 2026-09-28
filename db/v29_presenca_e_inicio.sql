@@ -27,11 +27,22 @@ begin
     raise exception using message = 'Falta aplicar as migrações da agenda (13.0) e do portal (10.0).';
   end if;
   -- a folha grava a presença com registro e hora; se a tabela tiver
-  -- outra coluna obrigatória sem padrão, é melhor parar aqui dizendo qual
+  -- outra coluna obrigatória sem padrão, é melhor parar aqui dizendo qual.
+  -- Coluna identity (o "id int8" que o painel do Supabase cria) e coluna
+  -- gerada se preenchem sozinhas, mas o information_schema mostra as duas
+  -- sem valor padrão: ficam de fora da conta.
+  -- Um id uuid sem padrão ganha gen_random_uuid(): só vale quando quem
+  -- insere não manda o id, então o quiosque, que manda, não muda nada.
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'presencas' and column_name = 'id'
+                and data_type = 'uuid' and column_default is null) then
+    alter table public.presencas alter column id set default gen_random_uuid();
+  end if;
   select string_agg(column_name, ', ') into v_col
     from information_schema.columns
    where table_schema = 'public' and table_name = 'presencas'
      and is_nullable = 'NO' and column_default is null
+     and is_identity = 'NO' and is_generated = 'NEVER'
      and column_name not in ('registro', 'registrado_em', 'origem');
   if v_col is not null then
     raise exception using message = 'presencas tem coluna obrigatória sem valor padrão: ' || v_col,
