@@ -160,7 +160,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   console.log('\nProgramados');
   confere('na fila, em ordem, com a contagem no seletor',
     (await p.locator('.ml-tab').first().locator('tbody tr').count()) === 2 && (await texto(p, '.nav1 a[href="#/admin/emails/programados"] .n')) === '2');
-  confere('o histórico mostra o enviado, com quantos', (await texto(p, 'section.card:nth-of-type(2) .ml-tab')).includes('2 enviado(s)'));
+  confere('o histórico mostra o enviado, com quantos', (await texto(p, '#ml-historico .ml-tab')).includes('2 enviado(s)'));
   await p.locator('.ml-tab tbody tr', { hasText:'Assunto PIL-02' }).locator('button[title="Reagendar"]').click(); await p.waitForTimeout(700);
   confere('reagendar abre com a data e o destino que estavam', (await texto(p, '#modal.open h3')) === 'Reagendar envio'
     && await p.evaluate(() => document.querySelector('#mp-modo button.on').textContent) === 'Equipe toda');
@@ -174,7 +174,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   await p.click('#modal button:has-text("Cancelar o envio")'); await p.waitForTimeout(1000);
   confere('cancelar tira da fila e passa ao histórico',
     JSON.stringify(await rpcs(p, 'email_programado_cancelar')) === '[{"p_id":"e1"}]'
-    && (await texto(p, 'section.card:nth-of-type(2) .ml-tab')).includes('Cancelado'));
+    && (await texto(p, '#ml-historico .ml-tab')).includes('Cancelado'));
   confere('sem erro de página', erros.length === 0, erros);
   await ctx.close();
 }

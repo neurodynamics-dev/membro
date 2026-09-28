@@ -47,6 +47,15 @@ conta própria; o formulário grava o rascunho e manda a revisão. Com
 cujos PNs não moram no rol — sem ele, o rol é o de sempre, e os testes de
 Arquivos não mudam.
 
+As da 32.0 (`notificacoes_limpar`, `fila_empurrar`, `fila_situacao`,
+`push_inscrever`, `push_cancelar`, `push_meus`, `push_teste`) apagam, inscrevem
+e cancelam no stub como o banco; `push_chave_publica` devolve uma chave P-256 de
+verdade, para o Chromium aceitar a inscrição. `window.__teste.fila`
+(`'parada'` ou `'sem_cron'`) muda o que `fila_situacao` conta, e
+`window.__teste.fn` (`'ocupada'`, `'push'`) muda o que a Edge Function
+responde. Cada chamada a uma função entra em `window.__invocacoes` como
+`{ nome, corpo }`.
+
 Os PDFs são conferidos pelo texto que o modelo escreveu: `DocNRO.baixar` (e
 `DocNRO.abrir`, na prévia) deixam em `window.__docnro` o nome do arquivo, o
 número de folhas e o texto de cada uma.
@@ -77,7 +86,7 @@ e rode daqui.
 | `carga-por-papel.mjs` | que papel baixa qual módulo (um `leitura` não baixa o `mod-gestao`) |
 | `quadro-e-acesso.mjs` | espaço do quadro, rolagem horizontal, nível de acesso por grupo e o cartão |
 | `ajustes-de-tela.mjs` | ordem dos grupos, quadro padrão, fundo do dropdown, o Full mailer em tela inteira e o comentário que falha |
-| `teste-de-email.mjs` | o botão "Enviar um e-mail de teste": as nove coisas que podem falhar viram nove recados distintos |
+| `teste-de-email.mjs` | o botão "Enviar um e-mail de teste": cada coisa que pode falhar vira um recado próprio, e o teste que a passada do agendamento levou antes da do botão conta como enviado |
 | `okrs-e-selecao.mjs` | OKRs e Processo Seletivo, vindos do SOMA · Gestão: endereços, menu, permissões por papel, o que cada ação grava — com asserções |
 | `grupos-arvore.mjs` | grupos dentro de grupos: a árvore em Administração, quem está pela ficha e por subgrupo, pôr várias pessoas de uma vez, tirar, o pai que não fecha círculo, e a herança no menu, na Agenda e no quadro de pessoal — com asserções |
 | `menu-lateral.mjs` | o menu lateral: subitens por papel, item atual, a logo e a casinha que levam ao início, recolher e o voo do trilho (a busca vira só a lupa), a gaveta do celular, nenhuma rolagem horizontal; e o tema — o seletor, a escolha guardada e aplicada antes de a página aparecer, o contraste de cada texto no claro, a faixa de destaque que continua escura e as logos — com asserções (sai com código 1 se algo falhar) |
@@ -90,6 +99,8 @@ e rode daqui.
 | `agenda-e-inicio.mjs` | a agenda no modelo do Google (a semana com as camadas, os atalhos M, D, J, T, criar rápido, a página do evento com predefinido e convidado, reagendar sem apagar perguntando se avisa, responder ao convite, os eventos predefinidos), a presença (quem está no LABBIO, o placar, gerar a folha de check-in: o QR desenhado no PDF é lido de volta com o jsQR e tem de ser o endereço com o token fixo; abrir esse endereço registra; folha revogada não vale), o início (a semana, o convite respondido ali, o placar, as tarefas, os links sem `javascript:`, os abertos por último), o rodapé, os atalhos e Administração › Links úteis — com asserções |
 | `treinamentos.mjs` | os treinamentos: o espaço no menu (e Meus pedidos dentro de Serviços, com `#/pedidos` ainda abrindo), o obrigatório no início e na busca, o programa, o módulo em Markdown, o vídeo no player do site, o gabarito que não desce, a verificação reprovada e aprovada, o certificado em PDF e a conferência pelo código, a gestão, o editor que grava sozinho, importar o texto de um agente (o do README e um embrulhado em ```markdown), a pré-visualização, exportar e ler de volta, publicar, atribuir, novo do zero e de um texto, o acompanhamento e o CSV, as configurações e o README (ver, salvar, baixar com as referências, voltar ao padrão), a aba da ficha, quem não gere, quem gere por grupo, e o celular — com asserções |
 | `emails.mjs` | os e-mails (v30): o Full mailer em tela inteira (o tile de Relatórios leva até ele), a prévia com o nome de quem escreve, as redes vindas de Studio › Contas (link salvo ou montado pelo usuário, e desmarcar), o botão para uma tela do portal, o rodapé sem link morto, as cores dos seis remetentes (departamentos claros e distintos, a Leadership escura; as imagens da cor nova existem), o rascunho que sobrevive, a marca do nome fora do que se copia; programar (quem recebe e quem está sem e-mail, por grupo com os de baixo, só para mim; o que vai ao banco), a fila e o histórico, reagendar, cancelar; as pílulas (quem assina, para quem, grupo extinto, a série de quatro em quatro dias sem fim de semana e sem repetir a fila, pôr na série, editar, link recusado, abrir no mailer); o link de cada rede no Studio; o Comitê de Seleção sem programar, quem só lê sem entrar, e o celular — com asserções |
+| `notificacoes.mjs` | o sino que não empilha e o aviso no aparelho (v32): o × de cada aviso, limpar as lidas, o recado de migração que falta; ativar as notificações neste aparelho (a permissão, a inscrição com a chave do servidor, o nome do aparelho), a notificação de teste, desativar, os outros aparelhos e remover, a permissão bloqueada, o iPhone fora da tela de início, o convite do sino e o "agora não", sair da conta cancela a inscrição; o empurrão da fila (quando o banco diz que está parada, e só então); o teste de e-mail com a fila ocupada; o card "A fila de envio" em Programados (em dia, parada, sem agendamento) e o "Rodar a fila agora"; o manifesto, os ícones e o `sw.js` — com asserções |
+| `tour.mjs` | o tour do SOMA (`tour.html`), de quem ainda não tem conta a quem já entrou: as treze etapas sem erro; criar a conta (o que o formulário recusa, o e-mail em minúsculas, o link que volta para o tour, "confira o seu e-mail", reenviar com espera), entrar (senha errada, e-mail não confirmado, a conta pronta com o primeiro nome), esqueci a senha; com conta, o que é da pessoa: o menu com o que ela alcança, o perfil e os grupos, as tarefas e os quadros dela, a posição no placar, o check-in, os treinamentos, o Studio conforme o acesso (e o que muda para quem não é dos grupos dele), a agenda, a equipe, o celular (iPhone, Android, o QR para o computador, as notificações no aparelho) e a ajuda; o celular de 390 px (nada vaza, a barra de baixo, a gaveta das etapas), os links do e-mail de confirmação vencido e de nova senha, o tema e o "continuar de onde parou" — com asserções |
 | `ps-entrevistas.mjs` | as entrevistas online do PS (v31), em Seleção › Agenda: o link da chamada no lugar do local, com "Criar no Meet"; sem link ou sem https:// não cria; quem abre fica responsável; a dinâmica continua com local; o chip online com o nome; o horário antigo tracejado; o horário com o link, quem abriu e o último e-mail; reagendar o candidato com motivo; mudar hora e link avisando; assumir o horário antigo; excluir avisando; a ficha com a chamada; o celular — com asserções |
 
 ```bash
@@ -113,6 +124,8 @@ node validacao.mjs                      # a página de ../auth/, servida pelo me
 node agenda-e-inicio.mjs
 node emails.mjs
 node ps-entrevistas.mjs
+node notificacoes.mjs
+node tour.mjs
 ```
 
 Os testes que baixam PDF lançam o Chromium com `LANG=C.UTF-8`: o nome dos

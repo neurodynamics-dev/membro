@@ -9,6 +9,12 @@ manda **um e-mail por pessoa** com tudo o que está pendente e dá baixa.
 
 Agrupar é de propósito: cinco avisos na mesma hora viram um e-mail, não cinco.
 
+Desde a 32.0 a fila **anda sozinha**: o próprio banco chama a função a cada
+minuto e logo depois de cada aviso novo, sem chave para colar em lugar
+nenhum (passo 6). A mesma passada leva os avisos do sino **ao aparelho** de
+quem ativou as notificações no navegador ou no celular (Web Push, ver
+[No aparelho](#no-aparelho-320)).
+
 ---
 
 ## Antes de tudo: o Cloudflare que você já usa não envia
@@ -169,9 +175,15 @@ status **Active**.
 > das primeiras versões; sem ela o botão de teste do portal não consegue ler a
 > resposta, mesmo com a função no ar.
 
-> **Não mexa na verificação de JWT** (vem ligada, e é assim que tem de ficar).
-> Diferente do `agenda-ics`, aqui não há token na URL e ninguém de fora
-> precisa chamar: quem chama é o agendamento, autenticado.
+> **Desligue a verificação de JWT** (desde a 32.0): Edge Functions →
+> `notificar-email` → **Details** → *Enforce JWT verification* desligado →
+> **Save**. A função confere sozinha quem chama: a senha que a 32.0 guardou
+> no Vault (o agendamento do banco), a service role ou a sessão de quem está
+> no portal. Com a verificação ligada, o painel recusa, antes de a função ver
+> o pedido, todo chamado do agendamento que chegue sem um JWT (e as chaves
+> novas do Supabase, `sb_secret_…`, não são JWT): a fila só anda quando
+> alguém aperta o teste do portal, que vai com a sessão da pessoa. É o
+> sintoma que a 32.0 corrige.
 
 > **Quando o arquivo mudar** — porque eu corrigi alguma coisa —, é o mesmo
 > caminho: Edge Functions → `notificar-email` → **Code** → apagar, colar a
@@ -181,8 +193,8 @@ status **Active**.
 
 Depois de publicar, o teste é **um clique dentro do próprio portal**:
 
-> sininho (no alto, à direita) → **Preferências de e-mail** → **Enviar um
-> e-mail de teste**
+> sininho (no pé do menu; no celular, no topo) → **Preferências de avisos**
+> → **Enviar um e-mail de teste**
 
 Ele faz o ciclo inteiro na hora: cria um aviso para você, manda a função rodar
 sem esperar o agendamento, e conta o que aconteceu em cada etapa. Não depende
@@ -198,7 +210,7 @@ existe — "não chegou nada" sozinho não ajuda ninguém:
 | A sua ficha não tem e-mail | Equipe › a sua ficha › preencha *E-mail NRO* ou *E-mail pessoal* |
 | A função não foi encontrada | volte ao passo 5 — e confira o nome, que tem de ser exatamente `notificar-email` |
 | O navegador não conseguiu falar com a função | ou ela não está publicada, ou está numa versão antiga, sem a liberação de origem. Veja o quadro abaixo |
-| A função recusou a autenticação (401) | saia e entre no portal de novo |
+| A função recusou a autenticação (401) | saia e entre no portal de novo. Persistindo, republique a função com o arquivo atual e desligue a verificação de JWT (passo 5) |
 | A função respondeu `erro` | o detalhe vem junto; os Logs têm o resto |
 | ainda não sabe por onde enviar | volte ao passo 4 — a mensagem diz **qual** segredo falta. Nada se perde |
 | rodou mas não enviou nada | vem junto a resposta literal do provedor **e o remetente que ele tentou usar**. Quando *todas* falham, o suspeito é o remetente: é o único dado comum a todas as tentativas |
@@ -227,7 +239,18 @@ Se quiser ver os detalhes da execução, eles ficam em **Edge Functions** →
 
 ### Testar pelo SQL, se preferir
 
-Mesma coisa, sem sair do SQL Editor:
+Mesma coisa, sem sair do SQL Editor. Desde a 32.0, uma linha manda a função
+rodar agora, com a senha do Vault, sem chave nenhuma à mão:
+
+```sql
+select fila_chamar('manual');
+```
+
+Ela devolve o id da chamada (ou nulo, quando já há uma passada rodando ou
+houve uma chamada nos últimos 20 segundos), e a passada aparece em
+`fila_passadas`, como no passo 6.
+
+Antes da 32.0, o caminho era chamar pelo `pg_net` com a service role:
 
 ```sql
 -- 1. cria o aviso de teste para VOCÊ (usa a sua sessão)
@@ -254,73 +277,89 @@ select net.http_post(
 O `net.http_post` devolve só um número (o id da chamada) — o resultado de
 verdade está nos **Logs** da função.
 
-## Passo 6 — Agendar
+## Passo 6 — Agendar (a migração 32.0 faz isso)
 
 A função não se chama sozinha: alguém precisa acordá-la de tempos em tempos.
+Desde a 32.0, quem acorda é o **próprio banco**, e não há nada para montar à
+mão. Aplique [`db/v32_fila_e_notificacoes.sql`](../../../db/v32_fila_e_notificacoes.sql)
+no SQL Editor (o arquivo inteiro, **Run**) e confira as duas coisas do passo 5:
+a função publicada com o arquivo atual e a verificação de JWT desligada.
 
-### Pelo painel — é o caminho curto
+O que a migração monta:
 
-1. menu lateral → **Integrations** → **Cron**;
-2. se aparecer um convite para ligar as extensões `pg_cron` e `pg_net`,
-   aceite — são o relógio e o telefone do banco;
-3. **Create job**;
-4. preencha:
-   - **Name**: `notificar-email`
-   - **Schedule**: `*/5 * * * *` (a cada cinco minutos)
-   - **Type**: *Supabase Edge Function* → escolha `notificar-email` na lista;
-5. **Create**.
+- **o relógio**: liga o `pg_cron` e o `pg_net` (o relógio e o telefone do
+  banco) e agenda `soma-fila`, **a cada minuto**, que chama
+  `fila_chamar('agendamento')`;
+- **a senha**: gera uma e guarda no Vault (`soma_fila_token`). O banco manda
+  a senha no cabeçalho `x-soma-fila` e a função confere com
+  `fila_token_confere()`. Nenhuma chave de API fica escrita no agendamento;
+- **o aviso na hora**: um aviso novo no sino, um e-mail da agenda, uma
+  declaração ou um e-mail do processo seletivo acordam a fila logo depois de
+  gravados (o gatilho `fila_acordar`), sem esperar o minuto do relógio. Os
+  avisos de teste não acordam: quem testa manda a função rodar em seguida;
+- **uma passada de cada vez** (`fila_passada_inicio` e `_fim`): as funções
+  que leem as filas não reservam linhas, e duas passadas ao mesmo tempo
+  mandariam o mesmo e-mail duas vezes. Quem chega com outra rodando recebe
+  `{"status":"ocupada"}` e desiste, porque a outra leva o que estiver na fila;
+- **o registro**: cada passada fica em `fila_passadas` (de onde veio, quando,
+  o que saiu), com as últimas 2000;
+- **a rede de segurança**: sem o agendamento, o portal aberto dá o empurrão
+  (`fila_empurrar`), no máximo um a cada dois minutos para a equipe inteira,
+  e só quando a fila está parada.
 
-O painel cuida da autenticação sozinho — por isso este caminho é melhor: não
-precisa colar chave nenhuma.
+O agendamento antigo, `notificar-email`, montado pelo passo 6 das versões
+anteriores deste arquivo, **sai**: com os dois, a fila passaria duas vezes.
+O endereço do projeto e a chave que estavam escritos nele ficam guardados no
+Vault. Se você criou o agendamento com **outro nome**, apague-o em
+Integrations → Cron: o `soma-fila` faz o mesmo.
 
-Cinco minutos é um bom intervalo: perto o bastante de "imediato" para quem
-espera resposta, e longe o bastante para juntar numa mensagem só a rajada de
-avisos que uma mesma ação gera.
-
-### Pelo SQL, se o painel não oferecer o Cron
-
-No **SQL Editor**, uma vez só. A chave fica guardada no cofre do banco, em vez
-de escrita dentro da tabela de agendamentos:
-
-```sql
-create extension if not exists pg_cron;
-create extension if not exists pg_net;
-
-select vault.create_secret('<a-chave-service_role>', 'chave_servico');
-
-select cron.schedule('notificar-email', '*/5 * * * *', $$
-  select net.http_post(
-    url     := 'https://<referencia-do-projeto>.supabase.co/functions/v1/notificar-email',
-    headers := jsonb_build_object(
-                 'Content-Type',  'application/json',
-                 'Authorization', 'Bearer ' ||
-                   (select decrypted_secret from vault.decrypted_secrets
-                     where name = 'chave_servico'))
-  );
-$$);
-```
+> **Se a migração avisar que não conseguiu ligar o `pg_cron` ou o `pg_net`:**
+> ligue os dois pelo painel (Integrations → **Cron**; Database → Extensions →
+> **pg_net**) e rode a 32.0 de novo. Enquanto isso, a fila anda pelo portal
+> aberto e pelo teste.
 
 ### Conferir se está rodando
 
-**SQL Editor**, quando quiser:
+O jeito curto é **Administração › E-mails › Programados**, no card *A fila de
+envio*: ele diz se a fila anda sozinha, quando foi a última passada do
+agendamento, o que espera em cada fila e o último erro. Quando o agendamento
+existe mas as passadas não chegam, o recado aponta a verificação de JWT. O
+botão **Rodar a fila agora** faz uma passada na hora.
+
+Pelo **SQL Editor**:
 
 ```sql
-select status, start_time, return_message
-  from cron.job_run_details
- order by start_time desc
+-- o agendamento
+select jobname, schedule, active from cron.job where jobname = 'soma-fila';
+
+-- as últimas passadas, com o que cada uma respondeu
+select origem, inicio, fim, resultado
+  from fila_passadas
+ order by id desc
  limit 10;
 ```
 
-`succeeded` na coluna `status` quer dizer que a chamada saiu. **Se o que você
-quer saber é se o e-mail saiu**, isso está nos Logs da função, como no passo 5b.
+A origem diz quem chamou: `agendamento` (o relógio), `evento` (um aviso
+novo), `portal` (o empurrão), `teste` (o botão do portal), `manual` (o
+`fila_chamar('manual')` do passo 5b) ou `servico` (a service role por extenso). Sem nenhuma linha `agendamento` nos
+últimos minutos, o relógio não está chegando: confira a verificação de JWT e
+a resposta do `pg_net`:
 
-Para desligar por um tempo: `select cron.unschedule('notificar-email');`
+```sql
+select status_code, content, created
+  from net._http_response
+ order by created desc
+ limit 5;
+```
+
+Para desligar por um tempo: `select cron.unschedule('soma-fila');`. Para
+ligar de novo, rode a 32.0 outra vez.
 
 > **"CLI"** é o jeito de mexer no Supabase digitando comandos numa janela preta
 > de terminal, em vez de clicando no painel. Dá no mesmo, e nada neste arquivo
 > precisa dela. Se um dia alguém da equipe preferir esse caminho, os comandos
-> equivalentes são `npx supabase functions deploy notificar-email` e
-> `npx supabase secrets set …`.
+> equivalentes são `npx supabase functions deploy notificar-email --no-verify-jwt`
+> e `npx supabase secrets set …`.
 
 ## Quem recebe o quê
 
@@ -339,7 +378,7 @@ migração 23.0), e é curta:
   depois dele não serve);
 - membro desligado, ou sem nenhum endereço na ficha, fica de fora.
 
-Cada pessoa muda isso sozinha: **sininho → Preferências de e-mail**.
+Cada pessoa muda isso sozinha: **sininho → Preferências de avisos**.
 
 O endereço usado é o `email_nro`; não havendo, o `email_pessoal`. Quem não tem
 nenhum dos dois na ficha nunca recebe — vale conferir isso no quadro antes de
@@ -348,6 +387,52 @@ concluir que a função está quebrada.
 Uma falha de envio para uma pessoa não derruba o lote: o resto sai, e a
 notificação que falhou conta a tentativa. Depois de 5, ela para de ser tentada
 e continua visível no sininho — **o portal nunca depende do e-mail**.
+
+### No aparelho (32.0)
+
+Cada pessoa ativa as notificações **em cada aparelho** que quiser: sininho →
+**Preferências de avisos** → *Neste aparelho* → **Ativar neste aparelho** (o
+sino também convida, uma vez, quem ainda não ativou). O navegador pede a
+permissão, cria a inscrição e o portal a grava por `push_inscrever()` na
+tabela `push_inscricoes`. A cada passada, a função pega os avisos novos de quem
+tem inscrição (`push_lote()`), cifra cada mensagem para o aparelho (RFC 8291),
+assina com a chave VAPID (RFC 8292) e entrega ao serviço de push do
+navegador, que a mostra mesmo com o SOMA fechado. O toque na notificação abre
+o SOMA na tela do aviso (`sw.js`, na raiz do portal).
+
+- **Não há nada para configurar.** O par de chaves VAPID nasce na primeira
+  passada depois da 32.0 e fica no Vault (`soma_vapid_publica`,
+  `soma_vapid_privada`). Apagar a privada desfaz todas as inscrições: cada
+  aparelho precisa ativar de novo;
+- o aparelho recebe **só o que nasceu depois de ativar**; vários avisos de uma
+  vez viram um resumo ("5 avisos novos no SOMA", com os títulos);
+- a preferência de e-mail **não** vale aqui: quem ativou no aparelho recebe
+  no aparelho. Desativar é no mesmo lugar, e sair da conta desativa o
+  aparelho de onde se saiu. A lista *Outros aparelhos que recebem* remove os
+  que ficaram para trás;
+- **no iPhone e no iPad** (iOS 16.4 ou mais novo), o Safari só entrega
+  notificação ao SOMA **instalado na tela de início** e aberto pelo ícone. O
+  tour (`tour#celular`) ensina o passo a passo;
+- inscrição que o serviço de push dá por morta (404 ou 410: o navegador
+  revogou ou foi desinstalado) sai na hora; a que falha 20 vezes seguidas,
+  também;
+- o teste é **Enviar uma notificação de teste**, ao lado do *Desativar*: cria
+  um aviso só para o aparelho (`push_teste()`, sem e-mail e já lido) e roda a
+  fila.
+
+A resposta da função traz `push` (quantas saíram), `push_falhas`,
+`push_mortas` e, quando algo falha, `push_detalhe`; sem a 32.0,
+`push: "sem_migracao_32"`, e o e-mail segue como antes.
+
+### O sino que não empilha (32.0)
+
+- cada aviso tem o **×** para apagar, e o alto do sino tem **limpar as
+  lidas** (`notificacoes_limpar()`, sempre só os da própria pessoa);
+- o **expurgo** roda na passada da fila, uma vez por hora
+  (`notificacoes_expurgar()`): sai o que foi lido há mais de 30 dias,
+  qualquer aviso com mais de 120 e os de teste depois de um dia;
+- o **aviso do e-mail de teste** substitui o anterior e já nasce lido: é um
+  teste do envio, não uma novidade no sino.
 
 ### As declarações de participação (desde a 25.0)
 
@@ -442,7 +527,14 @@ Só as funções puras — enviar de verdade exige a conta do provedor.
 
 ```bash
 node --experimental-strip-types email.test.ts
+node --experimental-strip-types fila.test.ts
 ```
+
+O `fila.test.ts` roda a função inteira (`servir`) com o banco e os serviços
+de fora simulados: quem pode chamar (a senha do banco, a service role, a
+sessão, a chave anônima antiga, ninguém), a vez de cada passada (a segunda
+recebe *ocupada*, e a vez volta mesmo quando a passada falha) e o aviso que
+chega ao aparelho, decifrado e com a assinatura VAPID conferida.
 
 Entre elas estão os casos que mais custam caro:
 
@@ -457,4 +549,6 @@ Entre elas estão os casos que mais custam caro:
   o mês e o ano), as horas, o link com o código para a validação pública, o
   nome do evento escapado, e o link do portal só para quem é membro;
 - os **e-mails da agenda**: o convite com os três links de resposta, a
-  mudança, o cancelamento e o lembrete, com o título escapado.
+  mudança, o cancelamento e o lembrete, com o título escapado;
+- a **cifra do aviso no aparelho**, conferida byte a byte com o exemplo da
+  RFC 8291, e o JWT da VAPID (ES256) com a assinatura verificada.

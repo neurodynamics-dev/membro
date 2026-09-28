@@ -76,6 +76,10 @@ O link volta para o endereço de onde o pedido saiu. Esse endereço precisa
 estar em **Authentication → URL Configuration → Redirect URLs**: sem ele, o
 Supabase manda para a *Site URL*.
 
+O tour (`/tour`) também cria contas, e o link de confirmação dele volta para
+o próprio tour. Com `https://membro.neurodynamics.dev/**` na lista, o portal e
+o tour valem de uma vez.
+
 ---
 
 ## Para mudar um modelo

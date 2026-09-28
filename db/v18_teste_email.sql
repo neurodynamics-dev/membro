@@ -63,12 +63,17 @@ begin
     from notificacao_preferencias where registro = v_reg;
   v_modo := coalesce(v_modo, 'imediato');
 
-  insert into notificacoes (registro, tipo, titulo, corpo, href)
+  -- o teste substitui o anterior em vez de somar, e nasce lido: é um
+  -- teste do e-mail, não uma novidade no sino (desde a 32.0, que tem o
+  -- mesmo corpo — rodar qualquer uma das duas chega no mesmo lugar)
+  delete from notificacoes where registro = v_reg and tipo = 'teste_email';
+
+  insert into notificacoes (registro, tipo, titulo, corpo, href, lida)
   values (v_reg, 'teste_email',
           'Teste de envio — ' || to_char(now() at time zone 'America/Sao_Paulo', 'DD/MM HH24:MI:SS'),
           'Se este e-mail chegou na sua caixa, o envio do portal está '
           || 'configurado e funcionando. Pode apagar.',
-          '#/inicio')
+          '#/inicio', true)
   returning id into v_id;
 
   return jsonb_build_object('status','ok','id',v_id,'email',v_email,'modo',v_modo);

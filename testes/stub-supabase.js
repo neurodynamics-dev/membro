@@ -783,12 +783,77 @@
         from: builder,
         rpc: async (nome, args) => {
           if (nome === 'notificacoes_marcar_lidas') return { data: 1, error: null };
+          /* ---- v32: o sino que não empilha, a fila e o aparelho ---- */
+          if (nome === 'notificacoes_limpar'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            if ((window.__teste || {}).v32 === 'falta') return { data:null, error:{ message:'function public.notificacoes_limpar does not exist' } };
+            const antes = DADOS.notificacoes.length;
+            DADOS.notificacoes = DADOS.notificacoes.filter(n => n.registro !== 4 || !(
+              args?.p_ids ? args.p_ids.includes(n.id) : args?.p_todas ? true : n.lida));
+            return { data: antes - DADOS.notificacoes.length, error:null };
+          }
+          if (nome === 'fila_empurrar'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const f = window.__teste || {};
+            return { data: f.empurrar === undefined ? true : f.empurrar, error:null };
+          }
+          if (nome === 'fila_situacao'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const f = window.__teste || {};
+            const agora = Date.now();
+            const base = { status:'ok', agendada: f.fila !== 'sem_cron', em_curso_desde:null, ultima_inicio:new Date(agora - 40e3).toISOString(),
+              ultima_fim:new Date(agora - 38e3).toISOString(),
+              por_origem: f.fila === 'parada' ? { portal:new Date(agora - 40e3).toISOString(), agendamento:new Date(agora - 3 * 36e5).toISOString() }
+                : f.fila === 'sem_cron' ? { portal:new Date(agora - 40e3).toISOString() }
+                : { agendamento:new Date(agora - 40e3).toISOString() },
+              ultimo_erro: f.fila === 'parada' ? { quando:new Date(agora - 36e5).toISOString(), resultado:{ status:'erro', detalhe:'401 Invalid JWT' } } : null,
+              pendentes:{ avisos:3, agenda:1, declaracoes:0, programados:2, selecao:0 } };
+            return { data: base, error:null };
+          }
+          if (nome === 'push_chave_publica'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            /* uma chave P-256 de verdade, para o navegador aceitar a inscrição */
+            return { data: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4', error:null };
+          }
+          if (nome === 'push_inscrever'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            (DADOS.push_inscricoes ||= []).push({ id:'ap' + (DADOS.push_inscricoes.length + 1), ...args.p });
+            return { data:{ status:'ok', id:'ap1' }, error:null };
+          }
+          if (nome === 'push_cancelar'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const antes = (DADOS.push_inscricoes ||= []).length;
+            DADOS.push_inscricoes = DADOS.push_inscricoes.filter(a => !(a.endpoint === args.p_endpoint || a.id === args.p_id));
+            return { data: antes - DADOS.push_inscricoes.length, error:null };
+          }
+          if (nome === 'push_meus'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            /* window.__teste.outroAparelho: um celular inscrito antes, na mesma conta */
+            if ((window.__teste || {}).outroAparelho && !DADOS.__outroAparelho){
+              DADOS.__outroAparelho = true;
+              (DADOS.push_inscricoes ||= []).push({ id:'ap-velho', aparelho:'Safari no iPhone', endpoint:'https://web.push.apple.com/QAbc-celular-velho' });
+            }
+            return { data: (DADOS.push_inscricoes || []).map(a => ({ id:a.id, aparelho:a.aparelho, criado_em:'2026-09-20T10:00:00Z',
+              visto_em:'2026-09-28T10:00:00Z', endpoint_fim:String(a.endpoint || '').slice(-12) })), error:null };
+          }
+          if (nome === 'push_teste'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            return { data: (DADOS.push_inscricoes || []).length ? { status:'ok', id:99, aparelhos:DADOS.push_inscricoes.length }
+              : { status:'sem_inscricao' }, error:null };
+          }
           if (nome === 'notificacao_teste'){
             const f = window.__teste || {};
             if (f.rpc === 'sem_registro') return { data:{ status:'sem_registro' }, error:null };
             if (f.rpc === 'sem_email')    return { data:{ status:'sem_email' }, error:null };
             if (f.rpc === 'faltaMigracao')
               return { data:null, error:{ message:'function public.notificacao_teste() does not exist' } };
+            /* f.levado: a passada do agendamento levou o aviso antes da do teste */
+            if (f.levado){
+              DADOS.notificacoes = DADOS.notificacoes.filter(n => n.tipo !== 'teste_email');
+              DADOS.notificacoes.push({ id:900, registro:4, tipo:'teste_email', titulo:'Teste de envio', corpo:'', href:'#/inicio',
+                lida:true, criado_em:new Date().toISOString(), email_em:new Date().toISOString() });
+              return { data:{ status:'ok', id:900, email:'ana@neurodynamics.dev', modo:'imediato' }, error:null };
+            }
             return { data:{ status:'ok', id:1, email:'ana@neurodynamics.dev',
                             modo: f.modo || 'imediato' }, error:null };
           }
@@ -1757,8 +1822,11 @@
           }
         },
         functions: {
-          invoke: async () => {
+          invoke: async (nome, opcoes) => {
+            (window.__invocacoes ||= []).push({ nome, corpo: opcoes?.body ?? null });
             const f = window.__teste || {};
+            if (f.fn === 'ocupada') return { data:{ status:'ocupada', origem:'agendamento' }, error:null };
+            if (f.fn === 'push') return { data:{ status:'ok', pessoas:0, enviadas:0, push:1 }, error:null };
             /* as formas de erro que o supabase-js v2 devolve de verdade:
                FunctionsFetchError não tem context; FunctionsHttpError tem
                context, que é a Response — é dali que sai o motivo real */

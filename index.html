@@ -9,7 +9,14 @@
 try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.dataset.tema = 'claro'; }catch(e){}</script>
 <title>Portal do Membro | NeuroDynamics</title>
 <link rel="icon" type="image/png" href="favicon.png">
-<link rel="apple-touch-icon" href="favicon.png">
+<link rel="apple-touch-icon" href="icone-180.png">
+<!-- o SOMA como app na tela inicial (e as notificações no iPhone, que só
+     chegam ao app instalado): o nome, o ícone e a janela sem barra -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="SOMA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -364,13 +371,28 @@ body.lt-animando footer#ft{transition:margin-left .22s var(--lt-ease)}
   padding:13px 15px;border-bottom:1px solid var(--line);font-size:13.5px}
 .sn-topo button{font-size:11.5px;color:var(--dim);text-decoration:underline}
 .sn-topo button:hover{color:var(--ink)}
+.sn-topo .sn-acts{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+/* cada aviso tem o seu × para sair do sino; no toque, ele fica sempre à vista */
+.sn-linha{display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
+.sn-linha .sn-item{border-bottom:none;flex:1;min-width:0}
+.sn-x{flex-shrink:0;width:36px;display:grid;place-items:center;color:var(--dim);font-size:17px;line-height:1;
+  opacity:0;transition:opacity .15s,color .15s}
+.sn-linha:hover .sn-x,.sn-x:focus-visible{opacity:1}
+.sn-x:hover{color:var(--bad-tx)}
+@media (hover:none){.sn-x{opacity:1}}
+.sn-aparelho{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line);
+  background:rgba(var(--syn-rgb),.05);font-size:12px;color:var(--muted);line-height:1.45}
+.sn-aparelho .btn{flex-shrink:0}
 .sn-item{display:block;padding:12px 15px;border-bottom:1px solid var(--line);cursor:pointer;width:100%;text-align:left}
 .sn-item:hover{background:rgba(var(--tom),.04)}
 .sn-item.nova{border-left:2px solid var(--syn)}
+/* título, corpo e quando, cada um na sua linha */
+.sn-item .tt,.sn-item .cp,.sn-item .qd{display:block}
 .sn-item .tt{font-size:13px;font-weight:600;margin-bottom:2px}
 .sn-item .cp{font-size:12px;color:var(--muted);line-height:1.5}
 .sn-item .qd{font-family:var(--fm);font-size:10px;color:var(--dim);margin-top:4px}
-.sn-pe{border-top:1px solid var(--line);padding:9px 14px;text-align:right}
+.sn-pe{border-top:1px solid var(--line);padding:9px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sn-pe .sn-regra{font-size:10.5px;color:var(--dim)}
 .sn-pe button{background:none;border:none;color:var(--dim);font-family:inherit;font-size:11.5px;
   cursor:pointer;padding:2px 4px;border-radius:6px;transition:color .15s}
 .sn-pe button:hover{color:var(--syn-tx)}
@@ -2167,6 +2189,10 @@ a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
 .ml-st.warn{color:var(--warn-tx);border-color:rgba(var(--warn-rgb),.4)}
 .ml-st.ok{color:var(--ok);border-color:rgba(var(--ok-rgb),.4)}
 .ml-st.bad{color:var(--bad-tx);border-color:rgba(var(--bad-rgb),.4)}
+/* a fila de envio (32.0): se o agendamento chega e o que espera */
+.ml-fila-n{display:flex;gap:6px 20px;flex-wrap:wrap;margin:2px 0 10px;font-size:12.5px;color:var(--muted)}
+.ml-fila-n b{font-family:var(--fd);font-size:18px;color:var(--ink);margin-right:5px}
+.aviso-box.ok{background:rgba(var(--ok-rgb),.07);border-color:rgba(var(--ok-rgb),.3);color:var(--ok)}
 /* pílulas: a etiqueta do remetente usa as cores do próprio e-mail */
 .ml-pil-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .ml-pil-topo p{max-width:640px;line-height:1.6}
@@ -3066,6 +3092,16 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 #modal.open{display:block}
 #modal h3{font-size:17px;margin-bottom:12px}
 .pn-teste:empty{display:none}
+/* as preferências de avisos: o aparelho e o e-mail, cada um com o seu título */
+.pn-sec{font-family:var(--fm);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+  margin:16px 0 8px;display:flex;align-items:center;gap:10px}
+.pn-sec::after{content:'';flex:1;height:1px;background:var(--line)}
+.pn-push{font-size:13px;color:var(--muted);line-height:1.55}
+.pn-push b{color:var(--ink)}
+.pn-push .acts{margin-top:10px;justify-content:flex-start}
+.pn-push .pn-ap{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px}
+.pn-push .pn-ap:first-of-type{border-top:none}
+.pn-push .pn-ap span{flex:1;min-width:0}
 .pn-teste .aviso-box{font-size:12.5px;line-height:1.6}
 .aviso-vinculo{position:relative;
   background:rgba(var(--warn-rgb),.09);border:1px solid rgba(var(--warn-rgb),.30);
@@ -3262,9 +3298,12 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 <!-- NOTIFICAÇÕES -->
 <div id="sino-painel" hidden>
   <div class="sn-topo"><b>Notificações</b>
-    <button onclick="marcarTudoLido()" id="sn-lidas">marcar todas como lidas</button></div>
+    <span class="sn-acts"><button onclick="marcarTudoLido()" id="sn-lidas">marcar todas como lidas</button>
+      <button onclick="limparLidas()" id="sn-limpar">limpar as lidas</button></span></div>
+  <div id="sn-aparelho"></div>
   <div id="sn-lista"></div>
-  <div class="sn-pe"><button onclick="modalPreferenciaNotif()">Preferências de e-mail</button></div>
+  <div class="sn-pe"><span class="sn-regra">As lidas saem sozinhas em 30 dias.</span>
+    <button onclick="modalPreferenciaNotif()">Preferências de avisos</button></div>
 </div>
 
 <main id="main" hidden></main>
@@ -3280,7 +3319,7 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
       <nav aria-label="Ajuda">
         <h4>Ajuda</h4>
         <ul>
-          <li><a href="tour">Tour dos sistemas</a></li>
+          <li><a href="tour">Tour do SOMA</a></li>
           <li><button type="button" onclick="modalAtalhos()">Atalhos do teclado</button></li>
           <li><a href="#/servicos">Pedidos ao Depto. de Pessoal</a></li>
           <li><a href="#/servicos/ouvidoria">Ouvidoria anônima</a></li>
@@ -3290,7 +3329,7 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
       <nav aria-label="Sua conta">
         <h4>Sua conta</h4>
         <ul>
-          <li><button type="button" onclick="modalPreferenciaNotif()">Preferências de e-mail</button></li>
+          <li><button type="button" onclick="modalPreferenciaNotif()">Preferências de avisos</button></li>
           <li><a href="#/agenda/config/google">Google Agenda</a></li>
           <li><button type="button" id="ft-tema" onclick="alternarTema()">Tema claro</button></li>
           <li><button type="button" onclick="sair()">Sair da conta</button></li>
@@ -3969,6 +4008,10 @@ async function salvarNovaSenha(){
 let checkinPendente = new URLSearchParams(location.search).get('t');
 
 async function boot(){
+  /* o carteiro das notificações no aparelho, e a marca de "está instalado"
+     que o tour lê para riscar o passo do celular */
+  registrarSW();
+  try { if (emApp()) localStorage.setItem('nd.instalado', 'true'); } catch(e){}
   /* o imagotipo só no login; o menu lateral usa o ícone e o nome em texto */
   const logo = $('#logo-login');
   if (logo){
@@ -4024,7 +4067,15 @@ async function entrar(){
   }
   await abrirPortal();
 }
-async function sair(){ await sb.auth.signOut(); location.hash=''; location.reload(); }
+async function sair(){
+  /* o aparelho deixa de receber os avisos desta conta: num computador de
+     uso comum, a próxima pessoa não vê as notificações de quem saiu */
+  try {
+    const sub = await inscricaoAtual();
+    if (sub){ await sb.rpc('push_cancelar', { p_endpoint: sub.endpoint }); await sub.unsubscribe(); }
+  } catch(e){ /* sai do mesmo jeito */ }
+  await sb.auth.signOut(); location.hash=''; location.reload();
+}
 document.addEventListener('keydown', e=>{
   /* Enter aciona o botão do modo visível, não sempre o de entrar */
   if (e.key==='Enter' && !$('#v-login').hidden){
@@ -4085,6 +4136,11 @@ async function abrirPortal(){
   desenharMenu();
   mostrarCasca(true); $('#v-login').hidden = true;
   carregarNotificacoes();
+  sincronizarPush();
+  /* a fila de envio: se o agendamento do banco não estiver chegando, o
+     portal aberto empurra (32.0) */
+  setTimeout(empurrarFila, 6000);
+  state.filaTimer ||= setInterval(empurrarFila, 150e3);
   render(route());
 }
 
@@ -4888,19 +4944,48 @@ async function carregarNotificacoes(){
   ['#sino', '#sino-m'].forEach(s => { const e = $(s); if (e) e.hidden = false; });
   ['#sino-n', '#sino-m-n'].forEach(s => { const b = $(s); if (!b) return;
     b.hidden = !novas; b.textContent = novas > 9 ? '9+' : novas; });
+  /* no SOMA instalado na tela inicial, o número vai também no ícone */
+  try { if (navigator.setAppBadge) (novas ? navigator.setAppBadge(novas) : navigator.clearAppBadge()).catch(() => {}); } catch(e){}
 }
 function abrirSino(e){
   e?.stopPropagation();
   const p = $('#sino-painel');
   if (!p.hidden){ p.hidden = true; return; }
+  desenharSino();
+  p.hidden = false;
+  desenharConviteAparelho();
+}
+function desenharSino(){
   const ns = state.notifs || [];
-  $('#sn-lista').innerHTML = ns.length ? ns.map(n => `
+  $('#sn-lista').innerHTML = ns.length ? ns.map(n => `<div class="sn-linha">
     <button class="sn-item ${n.lida?'':'nova'}" onclick="irNotificacao(${n.id}, '${esc(n.href||'')}')">
       <span class="tt">${esc(n.titulo)}</span>
       ${n.corpo ? `<span class="cp">${esc(n.corpo)}</span>` : ''}
-      <span class="qd">${fmtQuando(n.criado_em)}</span></button>`).join('')
+      <span class="qd">${fmtQuando(n.criado_em)}</span></button>
+    <button class="sn-x" onclick="apagarNotificacao(${n.id}, event)" aria-label="Apagar este aviso" title="Apagar">×</button></div>`).join('')
     : '<div class="sn-vazio">Nada por aqui. Você é avisado quando uma atividade sua anda, vence ou é sinalizada, quando um arquivo espera a sua revisão, quando um treinamento obrigatório chega para você, quando um evento espera a sua aprovação (ou a sua declaração de participação fica pronta) e quando uma senha do cofre que você mantém precisa ser trocada.</div>';
-  p.hidden = false;
+  const lidas = ns.filter(n => n.lida).length;
+  const bl = $('#sn-limpar'); if (bl) bl.hidden = !lidas;
+  const bm = $('#sn-lidas'); if (bm) bm.hidden = !ns.some(n => !n.lida);
+}
+/* Apagar é da própria pessoa, e só dos seus (notificacoes_limpar, 32.0).
+   O sino guarda os 30 mais novos; apagando, os de trás aparecem. */
+async function apagarNotificacao(id, ev){
+  ev?.stopPropagation();
+  const { error } = await sb.rpc('notificacoes_limpar', { p_ids: [id] });
+  if (error) return toast(/notificacoes_limpar/.test(error.message || '')
+    ? 'Falta aplicar a migração db/v32_fila_e_notificacoes.sql.' : 'Não foi possível apagar: ' + error.message, true);
+  state.notifs = (state.notifs || []).filter(n => n.id !== id);
+  await carregarNotificacoes();
+  if (!$('#sino-painel').hidden) desenharSino();
+}
+async function limparLidas(){
+  const { data, error } = await sb.rpc('notificacoes_limpar');
+  if (error) return toast(/notificacoes_limpar/.test(error.message || '')
+    ? 'Falta aplicar a migração db/v32_fila_e_notificacoes.sql.' : 'Não foi possível limpar: ' + error.message, true);
+  await carregarNotificacoes();
+  desenharSino();
+  toast(data ? `${data} ${data === 1 ? 'aviso lido saiu' : 'avisos lidos saíram'} do sino.` : 'Nenhum aviso lido para limpar.');
 }
 function fecharSino(){ const p = $('#sino-painel'); if (p) p.hidden = true; }
 document.addEventListener('click', e => {
@@ -4936,7 +5021,10 @@ async function modalPreferenciaNotif(){
     if (data?.email_modo) atual = data.email_modo;
   }catch(e){ /* sem a migração, fica no padrão — a tela ainda serve */ }
 
-  abreModal(`<h3>Notificações por e-mail</h3>
+  abreModal(`<h3>Avisos</h3>
+    <div class="pn-sec">Neste aparelho</div>
+    <div id="pn-push" class="pn-push"><div class="carregando" style="padding:6px 0"><span class="spin"></span></div></div>
+    <div class="pn-sec">Por e-mail</div>
     <div class="multi" style="max-height:none">
       ${MODOS_NOTIF.map(([k, t, d]) => `<label class="check">
         <input type="radio" name="pn-modo" value="${k}" ${k===atual?'checked':''}>
@@ -4949,6 +5037,7 @@ async function modalPreferenciaNotif(){
       <span><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" id="pn-btn" onclick="salvarPreferenciaNotif()">Salvar</button></span></div>`,
     null, true);
+  desenharPush();
 }
 
 /* ============================================================
@@ -4980,9 +5069,18 @@ async function motivoDaFuncao(e){
     encontrada. Publique-a conforme o passo 5 do README, com esse nome exato.<br>
     <span class="small">O aviso fica guardado e é enviado quando a função existir.</span>`;
 
-  if (http === 401 || http === 403) return `A função recusou a autenticação
-    (${http}). Saia e entre no portal de novo; persistindo, é a verificação de
-    JWT da função que está diferente do padrão.`;
+  /* desde a 32.0 a própria função confere quem chama e diz o motivo no
+     corpo (nao_autorizado + detalhe); o 401 do painel só aparece com a
+     verificação de JWT ligada e uma sessão que ele não reconhece */
+  if (http === 401 || http === 403){
+    let corpo = null;
+    try { corpo = await ctx.clone().json(); } catch(_) { /* o 401 do painel não é JSON */ }
+    return `A função recusou a autenticação (${http}${corpo?.detalhe ? `: <code>${esc(corpo.detalhe)}</code>` : ''}).
+      Saia e entre no portal de novo.<br>
+      <span class="small">Persistindo, republique a função com a versão atual e deixe desligada a verificação
+      de JWT (Edge Functions › notificar-email › Details › Enforce JWT verification). A função confere sozinha
+      quem chama.</span>`;
+  }
 
   if (http){
     let corpo = null;
@@ -5025,8 +5123,12 @@ async function testarEmail(){
     diz(`Aviso criado. Mandando sair para <b>${esc(t.email)}</b>…`);
 
     /* 2. a função de envio, agora — sem esperar o agendamento. */
-    const { data: r, error: e2 } = await sb.functions.invoke('notificar-email');
+    const { data: r, error: e2 } = await sb.functions.invoke('notificar-email', { body: { origem: 'teste' } });
     if (e2) return diz(await motivoDaFuncao(e2), 'err');
+    /* outra passada da fila estava rodando e continuou rodando: o aviso
+       de teste entra nela ou na próxima, em até um minuto */
+    if (r?.status === 'ocupada') return diz(`A fila de envio está passando agora, e o seu teste entra nela.
+      Confira a caixa de <b>${esc(t.email)}</b> em um minuto.`);
 
     /* 3. o que ela respondeu. */
     if (r?.status === 'smtp_nao_configurado') return diz(
@@ -5039,7 +5141,14 @@ async function testarEmail(){
        <code>db/v16_pessoal.sql</code> foi aplicada?`, 'err');
     if (r?.status !== 'ok') return diz(
       `A função respondeu <code>${esc(r?.status || 'sem status')}</code>.`, 'err');
-    if (!r.enviadas) return diz(
+    /* a passada do agendamento pode ter levado o aviso antes desta, que
+       então não encontra nada: o próprio aviso diz se o e-mail já saiu */
+    let jaSaiu = false;
+    if (!r.enviadas && t.id){
+      const { data: n } = await sb.from('notificacoes').select('email_em').eq('id', t.id).maybeSingle();
+      jaSaiu = !!n?.email_em;
+    }
+    if (!r.enviadas && !jaSaiu) return diz(
       `A função rodou mas não enviou nada (${r.falhas || 0} falha(s)).<br>
        ${r.detalhe
          ? `O provedor respondeu: <b>${esc(r.detalhe)}</b>`
@@ -5076,6 +5185,208 @@ async function salvarPreferenciaNotif(){
   }finally{
     const x = $('#pn-btn'); if (x){ x.disabled = false; x.textContent = 'Salvar'; }
   }
+}
+
+/* ============================================================
+   AS NOTIFICAÇÕES NO APARELHO (Web Push, 32.0)
+   O sino só avisa quem está com o portal aberto. Com o aparelho
+   inscrito, o mesmo aviso chega como notificação do sistema, com o
+   SOMA fechado: o navegador guarda a inscrição, o banco guarda o
+   endereço dela (push_inscricoes) e a passada da fila empurra.
+   Cada navegador se inscreve por si — é o aparelho que recebe, não a
+   conta. No iPhone e no iPad, só o SOMA instalado na tela de início
+   recebe (a Apple não entrega push a uma aba do Safari).
+   ============================================================ */
+const aparelhoPush = {
+  suportado: 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
+  sub: null, chave: null
+};
+const emApp = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch(e){ return false; } };
+const ehIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function deb64u(t){
+  let x = String(t || '').replace(/-/g, '+').replace(/_/g, '/'); while (x.length % 4) x += '=';
+  return Uint8Array.from(atob(x), c => c.charCodeAt(0));
+}
+function nomeDoAparelho(){
+  const ua = navigator.userAgent;
+  const nav = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /SamsungBrowser/.test(ua) ? 'Samsung Internet'
+    : /Firefox\/|FxiOS/.test(ua) ? 'Firefox' : /Chrome\/|CriOS/.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Navegador';
+  const so = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android'
+    : /Mac OS X/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
+  return (emApp() ? 'SOMA instalado' : nav) + (so ? ' no ' + so : '');
+}
+/* o service worker é só o carteiro das notificações: não guarda nada em
+   cache e não intercepta pedido nenhum (sw.js) */
+function registrarSW(){
+  if (!('serviceWorker' in navigator)) return Promise.resolve(null);
+  return navigator.serviceWorker.register('sw.js').catch(() => null);
+}
+/* tocar numa notificação com o SOMA já aberto: o carteiro pede a tela */
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => {
+  const h = String(e.data?.ir || '');
+  if (/^#\/[\w\-\/.%]*$/.test(h)) location.hash = h.replace(/^#/, '');
+});
+async function inscricaoAtual(){
+  if (!aparelhoPush.suportado) return null;
+  try { const reg = await navigator.serviceWorker.getRegistration(); aparelhoPush.sub = reg ? await reg.pushManager.getSubscription() : null; }
+  catch(e){ aparelhoPush.sub = null; }
+  return aparelhoPush.sub;
+}
+/* a chave pública nasce na primeira passada da fila. Se ainda não
+   nasceu, a própria pessoa acorda a fila (a sessão dela passa) e pergunta
+   de novo. */
+async function chavePublicaPush(){
+  if (aparelhoPush.chave) return aparelhoPush.chave;
+  const ler = () => sb.rpc('push_chave_publica').then(r => r.error ? null : r.data, () => null);
+  let k = await ler();
+  if (!k){
+    /* o par nasce na primeira passada da função; com outra passada
+       rodando, é ela que gera, e a chave chega em instantes */
+    await sb.functions.invoke('notificar-email', { body: { origem: 'portal' } }).catch(() => {});
+    k = await ler();
+    if (!k){ await new Promise(ok => setTimeout(ok, 3000)); k = await ler(); }
+  }
+  return (aparelhoPush.chave = k || null);
+}
+async function salvarInscricao(sub){
+  const j = sub.toJSON();
+  const { data, error } = await sb.rpc('push_inscrever', { p: { endpoint: j.endpoint,
+    p256dh: j.keys?.p256dh, auth: j.keys?.auth, aparelho: nomeDoAparelho() } });
+  if (error) throw error;
+  if (data?.status !== 'ok') throw new Error(MOTIVO_RPC[data?.status] || 'inscrição recusada (' + (data?.status || '?') + ')');
+}
+async function estadoPush(){
+  if (!state.perfil?.registro) return 'sem_registro';
+  if (!aparelhoPush.suportado) return ehIOS() && !emApp() ? 'ios_instalar' : 'sem_suporte';
+  if (Notification.permission === 'denied') return 'bloqueado';
+  return (await inscricaoAtual()) ? 'ativo' : 'inativo';
+}
+async function desenharPush(){
+  const el = $('#pn-push'); if (!el) return;
+  const st = await estadoPush();
+  const txt = {
+    sem_registro: 'Conta sem vínculo com um registro de membro: os avisos chegam depois do vínculo.',
+    sem_suporte: 'Este navegador não recebe notificações. No computador, use o Chrome, o Edge, o Firefox ou o Safari; no celular, o SOMA instalado na tela inicial.',
+    ios_instalar: `No iPhone e no iPad, as notificações chegam pelo <b>SOMA instalado na tela de início</b>. No Safari: Compartilhar,
+      Adicionar à Tela de Início. Abra o SOMA pelo ícone novo e ative aqui. <a href="tour#celular" style="text-decoration:underline">Passo a passo</a>`,
+    bloqueado: 'As notificações do SOMA estão <b>bloqueadas</b> neste navegador. Libere nas permissões do site (o cadeado ao lado do endereço) e volte aqui.',
+    inativo: 'Receba os avisos do sino como notificação deste aparelho, mesmo com o SOMA fechado.',
+    ativo: '<b>Ativadas neste aparelho.</b> Os avisos do sino chegam aqui também. Ao sair da conta, este aparelho deixa de receber.'
+  }[st];
+  el.innerHTML = `<p>${txt}</p>
+    ${st === 'inativo' ? '<div class="acts"><button class="btn solid mini" id="pn-ativar" onclick="ativarPush(this)">Ativar neste aparelho</button></div>' : ''}
+    ${st === 'ativo' ? `<div class="acts"><button class="btn ghost mini" onclick="testarPush(this)">Enviar uma notificação de teste</button>
+      <button class="btn ghost mini" onclick="desativarPush(this)">Desativar</button></div>` : ''}
+    <div id="pn-aps"></div>`;
+  if (st === 'sem_registro') return;
+  const { data } = await sb.rpc('push_meus').then(r => r, () => ({}));
+  const meu = aparelhoPush.sub?.endpoint ? aparelhoPush.sub.endpoint.slice(-12) : null;
+  const outros = (Array.isArray(data) ? data : []).filter(a => a.endpoint_fim !== meu);
+  const aps = $('#pn-aps');
+  if (aps && outros.length) aps.innerHTML = `<div class="small muted" style="margin:10px 0 2px">Outros aparelhos que recebem</div>
+    ${outros.map(a => `<div class="pn-ap"><span>${esc(a.aparelho || 'Aparelho')}<br><span class="small muted">desde ${fmtD(String(a.criado_em).slice(0, 10))}</span></span>
+      <button class="btn ghost mini" onclick="removerAparelho('${esc(a.id)}')">Remover</button></div>`).join('')}`;
+}
+async function ativarPush(bt){
+  if (bt){ bt.disabled = true; bt.textContent = 'Ativando…'; }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted'){ toast('Sem a permissão do navegador, as notificações não chegam.', true); return; }
+    const reg = (await registrarSW()) || await navigator.serviceWorker.getRegistration();
+    if (!reg) throw new Error('o service worker não registrou');
+    await navigator.serviceWorker.ready;
+    const chave = await chavePublicaPush();
+    if (!chave) throw new Error('o servidor de notificações ainda não tem chave. Aplique a migração 32.0 e publique a função notificar-email');
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: deb64u(chave) });
+    await salvarInscricao(sub);
+    aparelhoPush.sub = sub;
+    toast('Notificações ativadas neste aparelho.');
+  } catch(e){
+    falha(e, 'Não foi possível ativar');
+  } finally {
+    desenharPush(); desenharConviteAparelho();
+  }
+}
+async function desativarPush(bt){
+  if (bt) bt.disabled = true;
+  try {
+    const sub = await inscricaoAtual();
+    if (sub){ await sb.rpc('push_cancelar', { p_endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe(); }
+    aparelhoPush.sub = null;
+    toast('Este aparelho deixou de receber as notificações.');
+  } catch(e){ falha(e, 'Não foi possível desativar'); }
+  desenharPush(); desenharConviteAparelho();
+}
+async function removerAparelho(id){
+  const { error } = await sb.rpc('push_cancelar', { p_endpoint: null, p_id: id });
+  if (error) return toast('Não foi possível remover: ' + error.message, true);
+  toast('Aparelho removido.'); desenharPush();
+}
+async function testarPush(bt){
+  if (bt){ bt.disabled = true; bt.textContent = 'Enviando…'; }
+  try {
+    const { data, error } = await sb.rpc('push_teste');
+    if (error) throw error;
+    if (data?.status === 'sem_inscricao') return toast('Nenhum aparelho inscrito. Ative neste aparelho primeiro.', true);
+    if (data?.status !== 'ok') return toast(MOTIVO_RPC[data?.status] || 'Não foi possível testar.', true);
+    const { data: r, error: e2 } = await sb.functions.invoke('notificar-email', { body: { origem: 'teste' } });
+    if (e2) return toast('A notificação ficou na fila: a função de envio não respondeu agora.', true);
+    /* a passada do agendamento pode ter levado o aviso antes desta */
+    let jaFoi = false;
+    if (!(r?.push > 0) && r?.status !== 'ocupada' && data.id){
+      const { data: n } = await sb.from('notificacoes').select('push_em').eq('id', data.id).maybeSingle();
+      jaFoi = !!n?.push_em;
+    }
+    toast((typeof r?.push === 'number' && r.push > 0) || jaFoi ? 'Notificação enviada. Ela aparece em alguns segundos.'
+      : r?.status === 'ocupada' ? 'A fila está passando agora: a notificação sai nela, em instantes.'
+      : r?.push_detalhe ? 'O serviço de notificação recusou: ' + r.push_detalhe : 'Notificação na fila: ela sai na próxima passada.');
+  } catch(e){ falha(e, 'Não foi possível testar'); }
+  finally { const x = bt; if (x){ x.disabled = false; x.textContent = 'Enviar uma notificação de teste'; } }
+}
+/* o convite, no alto do sino, para quem ainda não recebe no aparelho */
+async function desenharConviteAparelho(){
+  const el = $('#sn-aparelho'); if (!el) return;
+  let dispensou = false; try { dispensou = localStorage.getItem('nd.push.convite') === 'nao'; } catch(e){}
+  const st = dispensou ? null : await estadoPush();
+  if (st !== 'inativo' && st !== 'ios_instalar'){ el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="sn-aparelho"><span>Receba estes avisos no ${ehIOS() || /Android/.test(navigator.userAgent) ? 'celular' : 'computador'}, mesmo com o SOMA fechado.</span>
+    <button class="btn solid mini" onclick="modalPreferenciaNotif()">${st === 'inativo' ? 'Ativar' : 'Como'}</button>
+    <button class="sn-x" style="opacity:1;width:24px" aria-label="Agora não" title="Agora não"
+      onclick="event.stopPropagation();try{localStorage.setItem('nd.push.convite','nao')}catch(e){};this.closest('.sn-aparelho').remove()">×</button></div>`;
+}
+/* a cada entrada no SOMA, a inscrição deste aparelho (se houver) se
+   confirma no banco: a conta pode ter mudado, e o navegador pode ter
+   trocado o endereço. Com a chave do servidor trocada, inscreve de novo. */
+async function sincronizarPush(){
+  if (!aparelhoPush.suportado || !state.perfil?.registro) return;
+  try {
+    if (Notification.permission !== 'granted') return;
+    const sub = await inscricaoAtual(); if (!sub) return;
+    const chave = await chavePublicaPush();
+    const atual = sub.options?.applicationServerKey ? new Uint8Array(sub.options.applicationServerKey) : null;
+    if (chave && atual && atual.join() !== deb64u(chave).join()){
+      await sub.unsubscribe();
+      const reg = await navigator.serviceWorker.ready;
+      aparelhoPush.sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: deb64u(chave) });
+      return salvarInscricao(aparelhoPush.sub);
+    }
+    await salvarInscricao(sub);
+  } catch(e){ /* na próxima entrada, de novo */ }
+}
+
+/* ============================================================
+   O EMPURRÃO DA FILA (32.0)
+   A fila de envio anda sozinha pelo agendamento do banco. Se ele não
+   estiver chegando, o portal aberto dá o empurrão: fila_empurrar diz
+   "sim" a um só, para a equipe inteira, a cada dois minutos — e só
+   quando a fila está parada. Quem recebe o "sim" chama a função com a
+   própria sessão, que é o que o teste de e-mail fazia.
+   ============================================================ */
+async function empurrarFila(){
+  if (!state.perfil?.registro || document.hidden) return;
+  const r = await sb.rpc('fila_empurrar').then(x => x, () => ({}));
+  if (r?.error || r?.data !== true) return;
+  sb.functions.invoke('notificar-email', { body: { origem: 'portal' } }).catch(() => {});
 }
 
 async function marcarTudoLido(){

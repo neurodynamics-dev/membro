@@ -39,7 +39,8 @@ const casos = {
   'função estourou (500)':      { fn:'estourou' },
   'SMTP não configurado':       { fn:'semSmtp' },
   'migração v16 faltando':      { fn:'semLote' },
-  'rodou mas não enviou nada':  { fn:'zero' }
+  'rodou mas não enviou nada':  { fn:'zero' },
+  'o agendamento levou antes':  { fn:'zero', levado:true }
 };
 const out = {};
 for (const [nome, c] of Object.entries(casos)) out[nome] = await testar(c);

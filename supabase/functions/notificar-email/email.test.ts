@@ -8,6 +8,8 @@ import { nomeExibicao, assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, s
          agendaHTML, agendaTexto, agendaFrase, linkResposta, linkGoogle, antecedenciaTexto,
          personalizar, diaExtenso, quandoPS, linkAcompanhar, fraseCandidato, candidatoHTML, candidatoTexto,
          resumoHTML, resumoTexto, dinamicaTexto, linkGooglePS,
+         b64u, deb64u, cifrarPush, jwtVapid, gerarChavesVapid, mensagemPush, paraOAparelho,
+         origemDoPapel, origemDoBanco,
          type Destinatario, type EnvioPS, type EnvioDocumento, type EnvioAgenda } from "./index.ts";
 
 let falhas = 0;
@@ -369,6 +371,97 @@ const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {
   const rt = resumoTexto(resumo);
   ok("a versão em texto do resumo", !/<[a-z]/i.test(rt) && rt.includes("14:00 às 14:30: Lia Moreira") && rt.includes("GitHub: https://github.com/lia")
      && rt.includes("Ficha: https://membro.neurodynamics.dev/#/selecao/candidatos/c1"));
+}
+
+/* --- as notificações no aparelho (32.0). A cifra é a da RFC 8291, e o
+       vetor de exemplo da própria RFC (seção 5) confere byte a byte: com
+       as mesmas chaves e o mesmo sal, o corpo tem de sair idêntico. --- */
+{
+  const as = {  // o servidor de aplicação, no exemplo da RFC
+    d: "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
+    pub: "BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8",
+  };
+  const uaPub = "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4";
+  const uaPriv = "q1dXpw3UpT5VOmu_cf_v6ih07Aems3njxI-JWgLcM94";
+  const auth = "BTBZMqHH6r4Tts7J_aSIgg";
+  const sal = deb64u("DGv6ra1nlYgDCS1FRnbzlw");
+  const esperado = "DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN";
+  const pub = deb64u(as.pub);
+  const jwk = (d: string | null, p: Uint8Array) => ({ kty: "EC", crv: "P-256", x: b64u(p.slice(1, 33)), y: b64u(p.slice(33, 65)), ...(d ? { d } : {}) });
+  const par = {
+    privateKey: await crypto.subtle.importKey("jwk", jwk(as.d, pub), { name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]),
+    publicKey: await crypto.subtle.importKey("jwk", jwk(null, pub), { name: "ECDH", namedCurve: "P-256" }, true, []),
+  } as CryptoKeyPair;
+  const corpo = await cifrarPush("When I grow up, I want to be a watermelon", uaPub, auth, { sal, par });
+  ok("a cifra do Web Push reproduz o exemplo da RFC 8291", b64u(corpo) === esperado, b64u(corpo));
+  ok("base64url vai e volta", b64u(deb64u(uaPub)) === uaPub && deb64u(uaPub).length === 65);
+
+  /* e o navegador consegue ler: decifrar como o navegador decifraria */
+  const decifrar = async (body: Uint8Array, privUa: string, pubUa: string, segredo: string): Promise<string> => {
+    const salt = body.slice(0, 16), idlen = body[20], asPubB = body.slice(21, 21 + idlen), cifra = body.slice(21 + idlen);
+    const pu = deb64u(pubUa);
+    const k = await crypto.subtle.importKey("jwk", jwk(privUa, pu), { name: "ECDH", namedCurve: "P-256" }, false, ["deriveBits"]);
+    const asK = await crypto.subtle.importKey("raw", asPubB, { name: "ECDH", namedCurve: "P-256" }, false, []);
+    const ecdh = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: asK }, k, 256));
+    const hk = async (s: Uint8Array, ikm: Uint8Array, info: Uint8Array, n: number) => new Uint8Array(await crypto.subtle.deriveBits(
+      { name: "HKDF", hash: "SHA-256", salt: s, info }, await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]), n * 8));
+    const te = new TextEncoder();
+    const ikm = await hk(deb64u(segredo), ecdh, new Uint8Array([...te.encode("WebPush: info\0"), ...pu, ...asPubB]), 32);
+    const cek = await hk(salt, ikm, te.encode("Content-Encoding: aes128gcm\0"), 16);
+    const nonce = await hk(salt, ikm, te.encode("Content-Encoding: nonce\0"), 12);
+    const claro = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: nonce },
+      await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["decrypt"]), cifra));
+    let fim = claro.length - 1; while (fim >= 0 && claro[fim] === 0) fim--;   // o preenchimento, se houver
+    if (claro[fim] !== 2) throw new Error("sem o delimitador do último registro");
+    return new TextDecoder().decode(claro.slice(0, fim));
+  };
+  ok("o navegador decifra o exemplo da RFC", (await decifrar(corpo, uaPriv, uaPub, auth)) === "When I grow up, I want to be a watermelon");
+  const msg = JSON.stringify({ t: "ORT-14 Calibrar", c: "Você é responsável", h: "#/atividades/card/ORT-14", tag: "n1" });
+  const c2 = await cifrarPush(msg, uaPub, auth);
+  ok("uma mensagem de verdade, com sal e chave sorteados, também se decifra", (await decifrar(c2, uaPriv, uaPub, auth)) === msg);
+  ok("e duas cifras da mesma mensagem nunca são iguais", b64u(await cifrarPush(msg, uaPub, auth)) !== b64u(c2));
+  ok("o cabeçalho diz registros de 4096 e a chave de 65 bytes", new DataView(c2.buffer).getUint32(16) === 4096 && c2[20] === 65);
+}
+{
+  const v = await gerarChavesVapid();
+  const pub = deb64u(v.publica), priv = JSON.parse(v.privada);
+  ok("o par VAPID novo: a pública em 65 bytes, sem compressão", pub.length === 65 && pub[0] === 4);
+  ok("e a privada em JWK, com d, x e y", !!priv.d && !!priv.x && !!priv.y && priv.crv === "P-256");
+  const agora = 1_790_000_000;
+  const jwt = await jwtVapid("https://fcm.googleapis.com", "mailto:soma@neurodynamics.dev", priv, agora);
+  const [cab, corpo, ass] = jwt.split(".");
+  const claims = JSON.parse(new TextDecoder().decode(deb64u(corpo)));
+  ok("o JWT do servidor é ES256", JSON.parse(new TextDecoder().decode(deb64u(cab))).alg === "ES256");
+  ok("para o serviço de push certo, de quem manda, por 12 horas",
+     claims.aud === "https://fcm.googleapis.com" && claims.sub === "mailto:soma@neurodynamics.dev" && claims.exp === agora + 43200);
+  const k = await crypto.subtle.importKey("raw", pub, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
+  ok("e a assinatura confere com a chave pública",
+     await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, k, deb64u(ass), new TextEncoder().encode(`${cab}.${corpo}`)));
+}
+{
+  const it = (id: number, titulo: string, criado = "2026-09-28T12:00:00Z", href: string | null = "#/atividades/card/ORT-" + id) =>
+    ({ id, tipo: "x", titulo, corpo: "corpo " + id, href, criado_em: criado });
+  const um = mensagemPush([it(7, "ORT-7 Revisar")]);
+  ok("um aviso vira uma notificação com o título, o corpo e o endereço", um.t === "ORT-7 Revisar" && um.c === "corpo 7"
+     && um.h === "#/atividades/card/ORT-7" && um.tag === "n7");
+  ok("endereço que não é do portal vira o início", mensagemPush([it(8, "x", undefined, "javascript:alert(1)")]).h === "#/");
+  const varios = mensagemPush([it(1, "um"), it(2, "dois"), it(3, "três"), it(4, "quatro"), it(5, "cinco")]);
+  ok("vários de uma vez viram um resumo", varios.t === "5 avisos novos no SOMA" && varios.tag === "resumo" && varios.h === "#/");
+  ok("com os quatro mais novos primeiro", varios.c.split("\n")[0] === "cinco" && varios.c.split("\n").length === 4);
+  ok("título comprido é cortado", mensagemPush([it(9, "a".repeat(300))]).t.length === 120);
+  const insc = { id: "i", endpoint: "https://x", p256dh: "", auth: "", criado_em: "2026-09-28T12:00:00Z" };
+  const itens = [it(1, "antes", "2026-09-28T11:00:00Z"), it(2, "depois", "2026-09-28T12:30:00Z")];
+  ok("o aparelho recém-inscrito não recebe o acumulado", paraOAparelho(itens, insc).map((i) => i.titulo).join() === "depois");
+}
+{
+  ok("a sessão de quem está no portal é o empurrão", JSON.stringify(origemDoPapel("authenticated", "")) === '{"origem":"portal"}');
+  ok("ou o teste, quando o portal diz que é teste", JSON.stringify(origemDoPapel("authenticated", "teste")) === '{"origem":"teste"}');
+  ok("a service role diz de onde vem", JSON.stringify(origemDoPapel("service_role", "evento")) === '{"origem":"evento"}'
+     && JSON.stringify(origemDoPapel("service_role", "qualquer")) === '{"origem":"servico"}');
+  ok("a chave anônima antiga do agendamento continua entrando", JSON.stringify(origemDoPapel("anon", "")) === '{"origem":"anon"}');
+  ok("papel desconhecido não entra", "erro" in origemDoPapel("postgres", ""));
+  ok("a senha do banco é agendamento, a não ser que diga evento",
+     origemDoBanco("") === "agendamento" && origemDoBanco("evento") === "evento" && origemDoBanco("portal") === "agendamento");
 }
 
 console.log(falhas ? `\n${falhas} falha(s)` : "\nTudo verde.");

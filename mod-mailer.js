@@ -495,12 +495,70 @@ async function mlProgramados(){
   const tabela = (itens, vazio) => itens.length ? `<div class="wrap"><table class="tabela ml-tab"><thead><tr><th>Quando</th><th>E-mail</th><th>Para</th><th>Situação</th><th></th></tr></thead>
     <tbody>${itens.map(linha).join('')}</tbody></table></div>` : `<div class="empty">${vazio}</div>`;
   el.innerHTML = `
+    <section class="card" style="margin-bottom:16px"><div class="head"><h3>A fila de envio ${dica('Uma passada da fila manda tudo o que venceu: os avisos do sino por e-mail e no aparelho, a agenda, as declarações, estes e-mails e os do processo seletivo. O agendamento do banco passa a cada minuto; sem ele, o portal aberto dá um empurrão a cada dois minutos.')}</h3></div>
+      <div id="ml-fila"><div class="carregando"><span class="spin"></span></div></div></section>
     <section class="card" style="margin-bottom:16px"><div class="head"><h3>Na fila <span class="n">${fila.length}</span></h3>
         <a href="#/admin/emails">Escrever um e-mail</a></div>
       ${tabela(fila, 'Nada programado. Escreva um e-mail ou programe a série das pílulas de conhecimento.')}</section>
-    <section class="card"><div class="head"><h3>Histórico</h3></div>
+    <section class="card" id="ml-historico"><div class="head"><h3>Histórico</h3></div>
       ${tabela(hist, 'Nenhum envio ainda.')}</section>`;
+  mlFilaSituacao();
 }
+/* ---------------- a fila de envio (32.0) ----------------
+   O que fila_situacao() conta: se o agendamento do banco existe e se as
+   passadas dele chegam à função, o que espera em cada fila e o último
+   erro. Até a 32.0, a fila só andava quando alguém apertava o teste de
+   e-mail; o recado aqui diz qual das duas coisas falta, quando falta. */
+async function mlFilaSituacao(){
+  const el = $('#ml-fila'); if (!el) return;
+  const r = await sb.rpc('fila_situacao').then(x => x, e => ({ error: e }));
+  if (r.error){
+    el.innerHTML = /fila_situacao/.test(r.error.message || '')
+      ? `<div class="aviso-box warn" style="margin:0">Falta aplicar a migração <code>db/v32_fila_e_notificacoes.sql</code>.
+         Sem ela, a fila só anda quando alguém aperta o teste de e-mail.</div>`
+      : `<p class="small muted">${esc(r.error.message)}</p>`;
+    return;
+  }
+  const d = r.data || {};
+  if (d.status !== 'ok'){ el.innerHTML = ''; return; }
+  const banco = [d.por_origem?.agendamento, d.por_origem?.evento].filter(Boolean).sort().pop();
+  const emDia = banco && Date.now() - new Date(banco).getTime() < 10 * 60e3;
+  const aviso = emDia
+    ? `<div class="aviso-box ok">A fila anda sozinha: a última passada do agendamento foi ${esc(fmtQuando(banco))}.</div>`
+    : !d.agendada
+    ? `<div class="aviso-box warn"><b>O agendamento automático não está ligado.</b> A fila anda quando alguém abre o portal (um
+        empurrão a cada dois minutos) ou pelo botão abaixo. Para ligar: no Supabase, ligue o Cron (Integrations) e o pg_net
+        (Database › Extensions) e rode de novo a migração 32.0.</div>`
+    : `<div class="aviso-box warn"><b>O agendamento está ligado, mas as passadas não chegam à função</b>${banco ? ` (a última chegou ${esc(fmtQuando(banco))})` : ''}.
+        Quase sempre é a verificação de JWT da função, que precisa ficar desligada: Edge Functions › notificar-email ›
+        Details › Enforce JWT verification. Enquanto isso, o portal aberto dá o empurrão.</div>`;
+  const pend = d.pendentes || {};
+  const nomes = [['avisos', 'avisos do sino'], ['agenda', 'da agenda'], ['declaracoes', 'declarações'],
+                 ['programados', 'programados vencidos'], ['selecao', 'do processo seletivo']];
+  const erro = d.ultimo_erro?.resultado;
+  el.innerHTML = `${aviso}
+    <div class="ml-fila-n">${nomes.filter(([k]) => k in pend).map(([k, l]) => `<span><b>${Number(pend[k]) || 0}</b>${l}</span>`).join('')}</div>
+    <p class="small muted">Última passada: ${d.ultima_inicio ? esc(fmtQuando(d.ultima_inicio)) : 'nenhuma'}${d.em_curso_desde ? ', rodando agora' : ''}.
+      ${erro ? `Último erro, ${esc(fmtQuando(d.ultimo_erro.quando))}: ${esc(erro.detalhe || erro.push_detalhe || erro.status || '')}.` : ''}</p>
+    <div class="acts" style="justify-content:flex-start"><button class="btn ghost mini" id="ml-rodar" onclick="mlRodarFila(this)">${ic('enviar')} Rodar a fila agora</button></div>`;
+}
+async function mlRodarFila(bt){
+  if (bt){ bt.disabled = true; bt.lastChild.textContent = ' Rodando…'; }
+  const { data, error } = await sb.functions.invoke('notificar-email', { body: { origem: 'teste' } });
+  if (error) toast('A função de envio não respondeu: ' + (error.message || 'erro'), true);
+  else if (data?.status === 'ocupada') toast('Já havia uma passada rodando: ela leva o que estiver na fila.');
+  else if (data?.status === 'ok' || data?.status === 'smtp_nao_configurado'){
+    const partes = [['enviadas', 'aviso(s) por e-mail'], ['push', 'no aparelho'], ['agenda', 'da agenda'], ['documentos', 'declaração(ões)'],
+                    ['programados', 'programado(s)'], ['ps', 'do processo seletivo']]
+      .filter(([k]) => typeof data[k] === 'number' && data[k] > 0).map(([k, l]) => `${data[k]} ${l}`);
+    toast(data.status === 'smtp_nao_configurado' ? 'A função rodou, mas falta configurar o e-mail: ' + (data.detalhe || '')
+      : partes.length ? 'Passada feita: ' + partes.join(', ') + '.' : 'Passada feita: nada esperava envio.');
+  }
+  else toast('A função respondeu ' + (data?.status || 'sem status') + (data?.detalhe ? ': ' + data.detalhe : '.'), true);
+  if (bt) bt.disabled = false;
+  mlProgramados();
+}
+
 async function mlLinhaCompleta(id){
   const { data, error } = await sb.from('email_programados').select('*').eq('id', id).maybeSingle();
   if (error || !data){ toast('Não foi possível abrir o e-mail' + (error ? ': ' + error.message : '.'), true); return null; }
