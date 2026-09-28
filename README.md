@@ -744,7 +744,7 @@ menu:
 | **Visão geral** | métricas, funil, pendências e os próximos horários |
 | **Candidatos** | a lista com busca e filtro, movimentação em lote, exportação CSV e a ficha (`#/selecao/candidatos/<id>`): dados, competências, avaliações, e-mail de confirmação e a integração ao quadro |
 | **Avaliação** | por fase, cada membro do comitê dá nota por critério; a nota do candidato é a média |
-| **Agenda** | as janelas de dinâmica e entrevista que o candidato escolhe no site, com presença. A entrevista é online: no lugar do local vai o link da chamada (o botão "Criar no Meet" abre uma sala, e o link é colado ali), e quem abre a janela fica registrado como responsável. No horário: reagendar o candidato, mudar dia, hora ou link, excluir, sempre avisando por e-mail |
+| **Agenda** | as janelas de dinâmica e entrevista que o candidato escolhe no site, com presença. A entrevista é online: no lugar do local vai o link da chamada (o botão "Criar no Meet" abre uma sala, e o link é colado ali), e quem abre a janela fica registrado como responsável. A entrevista é individual: cada horário tem uma vaga, e o campo "Vagas por horário" só aparece na dinâmica. No horário: reagendar o candidato, mudar dia, hora ou link, excluir, sempre avisando por e-mail |
 | **Dinâmica** | painel, roteiro, desafio, critérios e janelas — tudo o que as três páginas da dinâmica mostram no dia |
 | **Publicações** | edital, avisos e resultados: o site só mostra o que estiver publicado |
 | **FAQ** | as perguntas frequentes do site |

@@ -49,10 +49,12 @@ const entrevistas = async p => { await p.click('#sel-corpo .chip:has-text("Entre
 {
   console.log('\nAbrir janela');
   const { ctx, p, erros } = await abrir();
-  confere('a dinâmica continua com local', await p.locator('#ps-sl-local').count() === 1 && await p.locator('#ps-sl-link').count() === 0);
+  confere('a dinâmica continua com local e vagas por horário', await p.locator('#ps-sl-local').count() === 1
+    && await p.locator('#ps-sl-link').count() === 0 && await p.inputValue('#ps-sl-cap') === '8');
   await entrevistas(p);
   confere('a entrevista pede o link da chamada no lugar do local',
     await p.locator('#ps-sl-link').count() === 1 && await p.locator('#ps-sl-local').count() === 0);
+  confere('entrevista é individual: sem o campo de vagas', await p.locator('#ps-sl-cap').count() === 0);
   confere('com o atalho para criar a sala no Meet',
     await p.getAttribute('#sel-corpo a:has-text("Criar no Meet")', 'href') === 'https://meet.google.com/new');
   confere('e quem abre fica como responsável', (await texto(p, '#sel-corpo .card')).includes('Responsável: Ana Figueiredo'));
@@ -66,14 +68,16 @@ const entrevistas = async p => { await p.click('#sel-corpo .chip:has-text("Entre
   await p.click('button:has-text("Criar horários")'); await p.waitForTimeout(800);
   const ins = (await escritas(p, 'ps_slots')).find(x => x.op === 'insert')?.dados || [];
   confere('cria os oito horários das 14h às 18h, com o link e sem local',
-    ins.length === 8 && ins.every(x => x.link_reuniao === 'https://meet.google.com/nov-sala-xyz' && x.local === null && x.fase === 'entrevista'),
+    ins.length === 8 && ins.every(x => x.link_reuniao === 'https://meet.google.com/nov-sala-xyz' && x.local === null && x.fase === 'entrevista'
+      && x.capacidade === 1),
     ins.slice(0, 2));
 
   console.log('\nOs horários');
   await entrevistas(p);
   const chips = await p.locator('.slot-chip').allTextContents();
-  confere('o chip diz online e o primeiro nome de quem abriu',
-    chips.some(c => /14:00–14:30.*online.*Ana/.test(c.replace(/\s+/g, ' '))), chips.map(c => c.replace(/\s+/g, ' ').trim()));
+  confere('o chip diz reservado ou livre, online, e o primeiro nome de quem abriu',
+    chips.some(c => /14:00–14:30 reservado, online Ana/.test(c.replace(/\s+/g, ' ')))
+    && chips.some(c => /14:30–15:00 livre, online Ana/.test(c.replace(/\s+/g, ' '))), chips.map(c => c.replace(/\s+/g, ' ').trim()));
   confere('o horário antigo, sem link, aparece tracejado', await p.locator('.slot-chip.sem-link').count() === 1);
 
   console.log('\nO horário');
