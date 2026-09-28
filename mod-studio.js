@@ -28,7 +28,8 @@
    gruposEfetivos, carregarStudioConfig, podeStudio,
    podeAprovarStudio, STUDIO_STATUS, STUDIO_REDES, STUDIO_FORMATOS,
    STUDIO_PILARES, STUDIO_TIPOS, studioTipo, MES_CURTO, DIAS_LB,
-   calMesHTML, calMesLigar, MESES_LONGOS, maiuscula, isoDia, dataHora, dica.
+   calMesHTML, calMesLigar, MESES_LONGOS, maiuscula, isoDia, dataHora, dica,
+   linkDaConta.
    ============================================================ */
 
 const studioM = { pubs:[], aprov:[], erro:null, lembrou:false, urls:{},
@@ -798,14 +799,23 @@ async function stCfgSalvarAcesso(){
 }
 
 /* ---------------- contas e integrações ---------------- */
+/* O usuário vai nas artes (@neurodynamics); o link, no rodapé do Full
+   mailer (v30). Sem link, o mailer monta o que der pelo usuário
+   (linkDaConta, na casca): o placeholder mostra o que vai sair. */
 const ST_CONTAS = [['instagram', 'Instagram', '@neurodynamics'], ['linkedin', 'LinkedIn', 'NeuroDynamics'], ['youtube', 'YouTube', '@neurodynamics'],
   ['tiktok', 'TikTok', '@neurodynamics'], ['x', 'X', '@neurodynamics'], ['facebook', 'Facebook', 'NeuroDynamics'], ['site', 'Site', 'neurodynamics.dev']];
 function stCfgContas(){
-  const c = state.studioCfg || {}, contas = c.contas || {}, pode = stGestor();
+  const c = state.studioCfg || {}, contas = c.contas || {}, links = c.links || {}, pode = stGestor();
+  const derivado = k => linkDaConta(k, { contas }) || 'https://…';
   $('#st-cfg').innerHTML = `<div class="st-cfg-2">
     <section class="card"><h3>As contas da equipe</h3>
-      <p class="small muted" style="line-height:1.6;margin:4px 0 12px">Entram no rodapé das artes e na tela de encerramento dos vídeos.</p>
-      ${ST_CONTAS.map(([k, l, ph]) => `<div class="fld"><label for="ct-${k}">${l}</label><input id="ct-${k}" value="${esc(contas[k] || '')}" placeholder="${ph}" ${pode ? '' : 'disabled'}></div>`).join('')}
+      <p class="small muted" style="line-height:1.6;margin:4px 0 12px">O usuário entra no rodapé das artes e na tela de encerramento dos vídeos.
+        O link entra no rodapé dos e-mails do Full mailer. ${dica('Sem link, o e-mail usa o endereço montado a partir do usuário, quando a rede permite (Instagram, YouTube, TikTok, X e site). LinkedIn e Facebook precisam do link.')}</p>
+      <div class="st-conta-cab"><span>Usuário</span><span>Link</span></div>
+      ${ST_CONTAS.map(([k, l, ph]) => `<div class="fld"><label for="ct-${k}">${l}</label>
+        <div class="st-conta-linha"><input id="ct-${k}" value="${esc(contas[k] || '')}" placeholder="${ph}" ${pode ? '' : 'disabled'}
+            oninput="stCfgLinkPh('${k}')" aria-label="${l}: usuário">
+          <input id="lk-${k}" type="url" value="${esc(links[k] || '')}" placeholder="${esc(derivado(k))}" ${pode ? '' : 'disabled'} aria-label="${l}: link"></div></div>`).join('')}
     </section>
     <section class="card"><h3>Unsplash</h3>
       <p class="small muted" style="line-height:1.6;margin:4px 0 12px">Com a chave, a busca de fotos do Unsplash acontece dentro do criador,
@@ -817,11 +827,27 @@ function stCfgContas(){
     </section></div>
     ${pode ? `<div class="acts" style="justify-content:flex-end;margin-top:14px"><button class="btn solid" onclick="stCfgSalvarContas()">${ic('check')} Salvar</button></div>` : ''}`;
 }
+/* o placeholder do link acompanha o usuário digitado */
+function stCfgLinkPh(k){
+  const el = $('#lk-' + k); if (el) el.placeholder = linkDaConta(k, { contas: { [k]: $('#ct-' + k).value.trim() } }) || 'https://…';
+}
 async function stCfgSalvarContas(){
   const contas = Object.fromEntries(ST_CONTAS.map(([k]) => [k, $('#ct-' + k).value.trim()]).filter(([, v]) => v));
-  const { data, error } = await sb.from('studio_config').update({ contas, unsplash_chave: $('#ct-us').value.trim() || null }).eq('id', true).select();
+  const links = Object.fromEntries(ST_CONTAS.map(([k]) => [k, $('#lk-' + k).value.trim()]).filter(([, v]) => v));
+  const ruim = Object.entries(links).find(([, v]) => !/^https?:\/\/\S+$/i.test(v));
+  if (ruim) return toast(`O link de ${ST_CONTAS.find(([k]) => k === ruim[0])[1]} precisa começar com https://.`, true);
+  const dados = { contas, links, unsplash_chave: $('#ct-us').value.trim() || null };
+  let { data, error } = await sb.from('studio_config').update(dados).eq('id', true).select();
+  let semLinks = false;
+  /* sem a v30, a coluna dos links não existe: salva o resto e avisa */
+  if (error && /links/.test(error.message || '')){
+    delete dados.links; semLinks = true;
+    ({ data, error } = await sb.from('studio_config').update(dados).eq('id', true).select());
+  }
   if (error || (Array.isArray(data) && !data.length)) return toast('Não deu para salvar' + (error ? ': ' + error.message : ' — sem permissão.'), true);
-  await carregarStudioConfig(); toast('Contas salvas.'); stCfgContas();
+  await carregarStudioConfig();
+  toast(semLinks ? 'Usuários salvos. Os links precisam da migração v30.' : 'Contas salvas.', semLinks);
+  stCfgContas();
 }
 
 /* ---------------- imprensa do site ---------------- */

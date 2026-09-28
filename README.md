@@ -488,8 +488,10 @@ o que é (aniversário, na mídia…), o **formato** diz o que ela é na rede
 ### Configurações
 
 Em `#/studio/config`: os **grupos de acesso** e os **grupos aprovadores**,
-quantas aprovações bastam e o lembrete; as **contas** da equipe em cada rede
-(entram no rodapé das artes e na tela de encerramento) e a chave do Unsplash;
+quantas aprovações bastam e o lembrete; as **contas** da equipe em cada rede,
+com o usuário (entra no rodapé das artes e na tela de encerramento) e o
+**link** (entra no rodapé dos e-mails do Full mailer; sem link, o e-mail monta
+o endereço pelo usuário quando a rede permite), e a chave do Unsplash;
 a **imprensa do site** — os vídeos e as matérias da seção *Quem somos* do site
 institucional e da página *A NeuroDynamics* do site do processo seletivo, que
 os dois leem na hora por `site_imprensa_publico()`; e os **recursos de
@@ -677,6 +679,36 @@ identificador, e um backup não traz senha nenhuma.
   **registro de contas digitais** (`NRO-DIR-003`) no modelo da NRO — sem
   segredo nenhum.
 
+## E-mails
+
+O Full mailer e os envios programados, em `#/admin/emails` (`mod-mailer.js`).
+É tela inteira, com três seções:
+
+- **Escrever**: o comunicado no padrão visual da NeuroDynamics, com a prévia
+  ao lado (computador ou celular). O **remetente** é a área que assina: P&D,
+  Clínica, Depto. de Pessoal, Relações Institucionais, Marketing ou
+  **Leadership**, a liderança institucional. Cada uma assina com o próprio
+  nome (`Leadership | NeuroDynamics`) e as próprias cores: os departamentos em
+  tons claros e distintos entre si; a Leadership no verde profundo com a logo
+  lima. Os ícones das redes vêm dos links de Studio › Configurações ›
+  Contas. `{{primeiro_nome}}` vira o primeiro nome de cada pessoa no envio
+  programado; ao copiar ou baixar, a marca sai. O botão aceita uma tela do
+  portal (`#/agenda`), que vira o endereço completo no e-mail.
+- **Programados**: a fila e o histórico. Programar leva o e-mail pronto à
+  fila, para a equipe toda, para grupos (com os de baixo) ou só para quem
+  programa, como teste; a janela diz quantos recebem e quem está sem e-mail
+  na ficha. A Edge Function `notificar-email` passa a cada cinco minutos e
+  envia o que venceu. Na fila, dá para ver, reagendar e cancelar.
+- **Pílulas de conhecimento**: e-mails curtos que apresentam e relembram o
+  que o SOMA faz, cada um assinado pela área a que interessa e endereçado aos
+  grupos certos. Dezesseis vêm prontas (do placar do LABBIO à revisão de
+  arquivos). **Programar série** põe as marcadas na fila, uma a cada quatro
+  dias, sem cair em fim de semana e sem repetir o que já está na fila; pílula
+  de grupo que não existe mais fica de fora, com aviso.
+
+Escrever e copiar: gestão e Comitê de Seleção. Programar e mexer nas
+pílulas: `admin` e `pessoal`, a mesma regra das funções do banco.
+
 ## OKRs
 
 O planejamento estratégico da equipe, em `#/okrs` — veio do SOMA · Gestão
@@ -738,7 +770,8 @@ Duas coisas que a unificação trouxe de graça:
 | `mod-atividades.js` | O quadro de trabalho de cada grupo (`#/atividades`) |
 | `mod-gestao.js`| Quadro de pessoal, ficha e auditoria (`#/equipe/quadro`, `#/equipe/<registro>`) |
 | `mod-admin.js` | Os painéis da gestão (`#/admin`, `#/admin/<painel>`), inclusive Links úteis |
-| `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados, quadro completo e o Full mailer |
+| `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados e quadro completo |
+| `mod-mailer.js` | O Full mailer em tela inteira, os envios programados e as pílulas de conhecimento (`#/admin/emails`, `/programados`, `/pilulas`) |
 | `mod-okrs.js`  | O planejamento estratégico: a árvore de objetivos numa tela infinita (`#/okrs`, `#/okrs/<codigo>`) |
 | `mod-selecao.js` | O processo seletivo, por dentro: as oito abas do Comitê de Seleção (`#/selecao`, `#/selecao/<aba>`) |
 | `mod-projetos.js` | Os projetos: equipe, supervisor, Pokémon e rol (`#/projetos`, `#/projetos/<código>`) |
@@ -749,7 +782,7 @@ Duas coisas que a unificação trouxe de graça:
 | `studio/` | As marcas que o criador desenha: o imagotipo da NRO, o símbolo e a logo do LABBIO (do repositório do site), servidas daqui para o canvas poder exportar |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
 | `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
-| `mailer/`      | Ícones e logos recoloridas que o Full mailer embute nos e-mails |
+| `mailer/`      | Ícones e logos recoloridas que os e-mails do Full mailer mostram por link ([detalhes](mailer/README.md)) |
 | `tour.html`    | O tour pelos sistemas da equipe |
 | [`PADROES.md`](PADROES.md) | Os padrões do sistema: navegação, rotas, busca, módulos, identidade |
 | `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |
@@ -823,9 +856,10 @@ select id, aplicada_em from public.migracoes order by id;
 Sem as migrações do portal o app entra, mas o que depende delas mostra o
 aviso de qual falta. A agenda nova precisa da **28.0** (`v28_agenda.sql`); o
 placar, as folhas de check-in e os links úteis, da **29.0**
-(`v29_presenca_e_inicio.sql`). Depois da 28.0, **publique de novo** a Edge
-Function `notificar-email`: é ela que manda os convites, as mudanças e os
-lembretes da agenda.
+(`v29_presenca_e_inicio.sql`); os e-mails programados e as pílulas de
+conhecimento, da **30.0** (`v30_emails.sql`). Depois da 28.0 e da 30.0,
+**publique de novo** a Edge Function `notificar-email`: é ela que manda os
+convites, as mudanças e os lembretes da agenda, e os e-mails programados.
 
 A 27.0 (o cofre) precisa do **Vault** do Supabase ligado (*Database →
 Extensions → supabase_vault* — em geral já vem); sem ele, a migração para e
@@ -916,7 +950,9 @@ remove, quando a equipe decidir.
 - **Ausências** são de cada um: só a própria pessoa (ou o Depto. de Pessoal)
   cria e remove as suas.
 - **Administração** (`#/admin`) é liberada só para os papéis `admin` e `pessoal`
-  (o Comitê de Seleção entra só em Relatórios).
+  (o Comitê de Seleção entra só em Relatórios e no Full mailer, sem programar
+  envio).
+- **E-mails programados e pílulas** são de `admin`/`pessoal`.
 - **Seleção** (`#/selecao`) é de `admin`, `pessoal` e `selecao`.
 - **OKRs** (`#/okrs`) todos veem; criar e excluir é de `admin`/`pessoal`, e
   editar é deles e dos responsáveis de cada objetivo.

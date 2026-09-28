@@ -2,10 +2,11 @@
    email.test.ts — conferência do e-mail de notificação
    Rode com Node 22+:  node --experimental-strip-types email.test.ts
    ============================================================ */
-import { assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, servir,
+import { nomeExibicao, assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, servir,
          montarEnvio, lerResposta, faltaParaEnviar, pareceEndereco,
          declaracaoHTML, declaracaoTexto, dataExtensa, periodoTexto, horasTexto,
          agendaHTML, agendaTexto, agendaFrase, linkResposta, linkGoogle, antecedenciaTexto,
+         personalizar,
          type Destinatario, type EnvioDocumento, type EnvioAgenda } from "./index.ts";
 
 let falhas = 0;
@@ -293,6 +294,21 @@ const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {
   ok("título e descrição de quem criou o evento são escapados", !h.includes("<img src=x") && !h.includes("<b>oi</b>") && h.includes("&amp; &quot;cia&quot;"));
   const t = agendaTexto(convite("convite"));
   ok("a versão em texto traz os três links e o portal", !/<[a-z]/i.test(t) && t.includes("Vou: ") && t.includes("Não vou: ") && t.includes("/#/agenda/evento/ev1"));
+}
+
+/* ---------- os programados (30.0) ---------- */
+{
+  const html = '<p>Olá, {{primeiro_nome}}.</p><p>{{ nome }}</p>';
+  ok("o primeiro nome entra no lugar do marcador", personalizar(html, "Ana Figueiredo", true) === "<p>Olá, Ana.</p><p>Ana Figueiredo</p>");
+  ok("nome com HTML é escapado no HTML", personalizar(html, "<b>Zé</b> & Cia", true).includes("&lt;b&gt;Zé&lt;/b&gt;") && !personalizar(html, "<b>Zé</b>", true).includes("<b>"));
+  ok("no texto, vai cru", personalizar("Olá, {{primeiro_nome}}.", "Bruno Tavares", false) === "Olá, Bruno.");
+  ok("sem nome, o marcador some", personalizar("Olá, {{primeiro_nome}}.", "", false) === "Olá, .");
+  const e = montarEnvio("cloudflare", "portal@neurodynamics.dev", "Leadership | NeuroDynamics", "ana@nro.dev", "Ana", "x", "<p>x</p>", "x", "c", "t", "", "");
+  ok("o remetente da área vai no nome de exibição", (e.corpo as { from: { name: string } }).from.name === "Leadership | NeuroDynamics");
+  const r = montarEnvio("resend", "portal@nd.dev", "Depto. de Pessoal | NeuroDynamics", "a@b.dev", "", "x", "<p>x</p>", "x");
+  ok("no Resend, nome com ponto vai entre aspas", (r.corpo as unknown as { from: string }).from === '"Depto. de Pessoal | NeuroDynamics" <portal@nd.dev>');
+  ok("sem caractere especial, vai como está", nomeExibicao("Leadership | NeuroDynamics") === "Leadership | NeuroDynamics"
+    && nomeExibicao('P&D "x"') === "P&D x");
 }
 
 console.log(falhas ? `\n${falhas} falha(s)` : "\nTudo verde.");

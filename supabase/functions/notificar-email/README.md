@@ -392,6 +392,22 @@ resumo diário não repetir. A resposta da função traz `agenda` e
 `agenda_falhas`; sem a 28.0, `agenda: "sem_migracao_28"`. Depois de aplicar a
 28.0, **publique a função de novo**.
 
+### Os e-mails programados (30.0)
+
+O Full mailer (`#/admin/emails`) grava na fila `email_programados` o HTML
+pronto, o assunto, a área que assina e o destino (a equipe toda, grupos ou
+pessoas). A cada passada, a função pega até dez que venceram por
+`email_programados_lote()` (que já traz quem recebe, com e-mail, e marca
+*enviando* para duas passadas não mandarem o mesmo e-mail), troca
+`{{primeiro_nome}}` e `{{nome}}` para cada pessoa (escapados no HTML) e envia
+com o nome da área no remetente: `Leadership | NeuroDynamics <o DE de
+sempre>`. O endereço continua o mesmo; muda só o nome de exibição. No fim,
+`email_programados_baixa()` fecha como *enviado* (ou *erro*, se nenhum saiu)
+com as contagens. As pílulas de conhecimento entram pelo mesmo caminho. A
+resposta traz `programados` e `programados_falhas`; sem a 30.0,
+`programados: "sem_migracao_30"`. Depois de aplicar a 30.0, **publique a
+função de novo**.
+
 ---
 
 ## Na renomeação para `soma.neurodynamics.dev`

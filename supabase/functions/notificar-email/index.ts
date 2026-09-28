@@ -113,6 +113,14 @@ export function faltaParaEnviar(
 }
 
 /** Monta o pedido HTTP do provedor. Pura, para dar para conferir sem rede. */
+/** O nome de exibição no cabeçalho From. Com ponto, vírgula ou outro
+    caractere especial (o "Depto. de Pessoal" da 30.0), vai entre aspas,
+    como pede a RFC 5322; sem eles, como está. */
+export function nomeExibicao(nome: string): string {
+  const n = String(nome || "").replace(/["\\\r\n]/g, "").trim();
+  return /[()<>\[\]:;@,.]/.test(n) ? `"${n}"` : n;
+}
+
 export function montarEnvio(
   provedor: string, de: string, deNome: string, para: string, paraNome: string,
   assunto: string, html: string, texto: string,
@@ -123,7 +131,7 @@ export function montarEnvio(
       url: "https://api.resend.com/emails",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${chaveResend}` },
       corpo: {
-        from: `${deNome} <${de}>`, to: [para], subject: assunto, html, text: texto,
+        from: `${nomeExibicao(deNome)} <${de}>`, to: [para], subject: assunto, html, text: texto,
         ...(responder ? { reply_to: responder } : {}),
       },
     };
@@ -182,12 +190,12 @@ export function lerResposta(provedor: string, status: number, corpo: string): st
 
 /** Manda um e-mail. Devolve "" quando saiu, ou o motivo da recusa. */
 async function enviarUm(para: string, paraNome: string, assunto: string,
-                        html: string, texto: string): Promise<string> {
+                        html: string, texto: string, deNome = DE_NOME): Promise<string> {
   if (!pareceEndereco(para)) {
     return `o endereço do destinatário não parece um e-mail: "${para}" `
       + `(confira a ficha dele no quadro)`;
   }
-  const e = montarEnvio(PROVEDOR, DE, DE_NOME, para, paraNome, assunto, html, texto);
+  const e = montarEnvio(PROVEDOR, DE, deNome || DE_NOME, para, paraNome, assunto, html, texto);
   const r = await fetch(e.url, {
     method: "POST",
     headers: e.headers,
@@ -647,6 +655,56 @@ async function enviarDocumentos(): Promise<Record<string, unknown>> {
   return { documentos: enviados.length, documentos_falhas: falhas.length, ...(erro ? { documentos_detalhe: erro } : {}) };
 }
 
+/* ------------------------------------------------------------
+   OS E-MAILS PROGRAMADOS (30.0)
+   O Full mailer grava o HTML pronto; aqui só se troca o nome de cada
+   destinatário e se envia, com o remetente da área no nome de exibição.
+   ------------------------------------------------------------ */
+export type Programado = {
+  id: string; assunto: string; remetente_nome: string; html: string; texto: string;
+  destinatarios: { registro: number; nome: string; email: string }[];
+};
+
+/** Troca {{primeiro_nome}} e {{nome}}. No HTML, escapado; no texto, cru. */
+export function personalizar(modelo: string, nome: string, html: boolean): string {
+  const completo = String(nome || "").trim();
+  const primeiro = completo.split(/\s+/)[0] || "";
+  const v = (x: string) => html ? esc(x) : x;
+  return String(modelo || "")
+    .replace(/\{\{\s*primeiro_nome\s*\}\}/g, v(primeiro))
+    .replace(/\{\{\s*nome\s*\}\}/g, v(completo));
+}
+
+/** Manda os programados que venceram e dá baixa. Sem a 30.0, diz isso e segue. */
+async function enviarProgramados(): Promise<Record<string, unknown>> {
+  let lote: Programado[];
+  try {
+    lote = (await rpc("email_programados_lote", { p_limite: 10 })) as Programado[];
+  } catch (e) {
+    return /PGRST202|404|email_programados_lote/.test(String(e))
+      ? { programados: "sem_migracao_30" } : { programados: "erro", programados_detalhe: String(e) };
+  }
+  if (!lote?.length) return { programados: 0 };
+  let total = 0, totalFalhas = 0, erroGeral = "";
+  for (const p of lote) {
+    let enviados = 0, falhas = 0, erro = "";
+    for (const d of p.destinatarios || []) {
+      try {
+        const m = await enviarUm(d.email, d.nome, personalizar(p.assunto, d.nome, false),
+          personalizar(p.html, d.nome, true), personalizar(p.texto, d.nome, false), p.remetente_nome);
+        if (m) { falhas++; erro = m; } else { enviados++; }
+      } catch (x) { falhas++; erro = String(x); }
+    }
+    total += enviados; totalFalhas += falhas; if (erro) erroGeral = erro;
+    try {
+      await rpc("email_programados_baixa", { p: { id: p.id, enviados, falhas, erro } });
+    } catch (x) {
+      erroGeral = "enviou, mas não deu baixa: " + String(x);
+    }
+  }
+  return { programados: total, programados_falhas: totalFalhas, ...(erroGeral ? { programados_detalhe: erroGeral } : {}) };
+}
+
 async function rpc(nome: string, corpo: unknown): Promise<unknown> {
   const r = await fetch(`${URL_BASE}/rest/v1/rpc/${nome}`, {
     method: "POST",
@@ -693,7 +751,7 @@ export async function servir(req: Request): Promise<Response> {
 
   /* as declarações e a agenda primeiro: saem mesmo que o sino não
      tenha aviso nenhum para ninguém, e o lembrete tem hora */
-  const docs = { ...(await enviarDocumentos()), ...(await enviarAgenda()) };
+  const docs = { ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()) };
 
   let destinos: Destinatario[];
   try {

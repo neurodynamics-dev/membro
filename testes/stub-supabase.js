@@ -386,7 +386,9 @@
      Bruno; o aprovador é NRO_MANAGERS (id 6), da Carla. */
   const stDia = (d, h) => { const x = new Date(); x.setDate(x.getDate() + d); x.setHours(h || 18, 0, 0, 0); return x.toISOString(); };
   DADOS.studio_config = [{ id:true, grupos_acesso:[2], grupos_aprovadores:[6], aprovacoes_minimas:1, lembrete_email:true,
-    contas:{ instagram:'@neurodynamics.dev', linkedin:'NeuroDynamics' }, unsplash_chave:null }];
+    contas:{ instagram:'@neurodynamics.dev', linkedin:'NeuroDynamics' }, unsplash_chave:null,
+    /* v30: o LinkedIn tem link; o Instagram sai do usuário; sem site */
+    links:{ linkedin:'https://www.linkedin.com/company/neurodynamics' } }];
   DADOS.studio_publicacoes = [
     { id:'p1', numero:1, codigo:'POST-1', titulo:'Mostrar a bancada de testes da órtese num reels', status:'ideia', categoria:'bastidores', modelo:'bastidores',
       pilar:'conectar', redes:['instagram'], formato:'reels', data_publicacao:null, responsavel:11, criado_por:11, imagens:[], versao:1,
@@ -687,6 +689,30 @@
     { id:'l3', titulo:'Presença', url:'#/equipe/presenca', descricao:'Check-in e placar', grupo:'Portal', ordem:30, ativo:true },
     { id:'l4', titulo:'Truque', url:'javascript:alert(1)', descricao:null, grupo:'Portal', ordem:40, ativo:true }
   ];
+  /* ---- v30: as pílulas e os programados ----
+     O PIL-99 aponta para um grupo que não existe mais; o PIL-07 está fora
+     da série. Há um envio na fila (daqui a 2 dias) e um já feito. */
+  const pil = (codigo, remetente, grupos, titulo, ordem, extra) => ({ id:'r-' + codigo, codigo, remetente, grupos, assunto:'Assunto ' + codigo,
+    preheader:'Resumo ' + codigo, titulo, corpo:'Olá, {{primeiro_nome}}.\n\nTexto da pílula ' + codigo + '.', cta_rotulo:'Abrir', cta_link:'#/agenda',
+    ordem, ativo:true, atualizado_em:agoraMenos(60*24*3), atualizado_por:null, ...(extra || {}) });
+  DADOS.email_roteiros = [
+    pil('PIL-01', 'pessoal', [], 'Agora é possível acompanhar o ranking de acessos ao LABBIO', 10),
+    pil('PIL-02', 'leadership', [], 'Uma agenda só, no modelo do Google Agenda', 20),
+    pil('PIL-04', 'pd', ['NRO_PROJECTS'], 'Cada projeto tem o seu rol de arquivos', 40),
+    pil('PIL-05', 'ri', [], 'Eventos externos geram declaração de participação', 50),
+    pil('PIL-06', 'leadership', ['NRO_LEADERSHIP', 'NRO_MANAGERS'], 'Os OKRs agora se leem como um mapa', 60),
+    pil('PIL-07', 'pessoal', [], 'Os treinamentos atribuídos ao seu grupo estão no SOMA', 70, { ativo:false }),
+    pil('PIL-99', 'marketing', ['Grupo Antigo'], 'Uma pílula de grupo extinto', 990)
+  ];
+  const emDias = (d) => { const x = new Date(); x.setDate(x.getDate() + d); x.setHours(9, 0, 0, 0); return x.toISOString(); };
+  DADOS.email_programados = [
+    { id:'e1', assunto:'Assunto PIL-02', remetente:'leadership', remetente_nome:'Leadership | NeuroDynamics', html:'<p>Olá, {{primeiro_nome}}.</p>', texto:'',
+      todos:true, grupos:[], registros:[], enviar_em:emDias(2), status:'programado', roteiro_id:'r-PIL-02', criado_por:'Ana Figueiredo',
+      criado_em:agoraMenos(60), enviado_em:null, enviados:0, falhas:0, erro:null },
+    { id:'e2', assunto:'Assunto PIL-01', remetente:'pessoal', remetente_nome:'Depto. de Pessoal | NeuroDynamics', html:'<p>Olá, {{primeiro_nome}}.</p>', texto:'',
+      todos:true, grupos:[], registros:[], enviar_em:emDias(-3), status:'enviado', roteiro_id:'r-PIL-01', criado_por:'Ana Figueiredo',
+      criado_em:emDias(-5), enviado_em:emDias(-3), enviados:2, falhas:0, erro:null }
+  ];
   DADOS.placar = { mes: new Date().toISOString().slice(0, 7), dias_uteis_mes: 18,
     ranking: [{ registro:11, nome:'Bruno Tavares', dias:15 }, { registro:4, nome:'Ana Figueiredo', dias:12 }, { registro:23, nome:'Diego Prado', dias:9 },
       { registro:17, nome:'Carla Mendonça', dias:4 }],
@@ -713,12 +739,16 @@
       insert(d){ (window.__escritas ||= []).push({ tabela, op:'insert', dados:d }); return b; },
       update(d){ (window.__escritas ||= []).push({ tabela, op:'update', dados:d });
         if (tabela === 'treinamento_config') Object.assign(DADOS.treinamento_config[0], d, d.readme !== undefined ? { readme_atualizado_em:new Date().toISOString(), readme_atualizado_por:'Ana Figueiredo' } : {});
+        /* as pílulas (v30) mudam de verdade: a tela volta com o resultado */
+        if (tabela === 'email_roteiros') b._muda = d;
         return b; },
       upsert(d){ (window.__escritas ||= []).push({ tabela, op:'upsert', dados:d }); return b; },
       delete(){ (window.__escritas ||= []).push({ tabela, op:'delete' }); return b; },
       maybeSingle(){ b._um = true; return b; },
       single(){ b._um = true; return b; },
       then(ok){
+        if (b._muda){ DADOS[tabela].filter(r => filtros.every(f => f(r))).forEach(r => Object.assign(r, b._muda)); b._muda = null;
+          linhas = DADOS[tabela].map(r => ({ ...r })); }
         const res = linhas.filter(r => filtros.every(f => f(r)));
         return Promise.resolve(ok({ data: b._um ? (res[0] || null) : res, error: null }));
       }
@@ -1626,6 +1656,38 @@
             (window.__rpcs ||= []).push({ nome, p:args });
             const d = new Date(args.p_de); const em = (h, m) => { const x = new Date(d); x.setHours(h, m, 0, 0); return x.toISOString(); };
             return { data:(args.p_registros || []).includes(11) ? [{ registro:11, inicio:em(13, 0), fim:em(14, 30), dia_inteiro:false, titulo:null, origem:'google' }] : [], error:null };
+          }
+          /* ---- v30: os e-mails ---- */
+          if (nome === 'email_destinatarios' || nome === 'email_programar' || nome === 'email_programado_cancelar'){
+            (window.__rpcs ||= []).push({ nome, p: args?.p ?? args });
+            /* quem recebe, como email_destino_membros: ativos e em pausa, pelo grupo (e os de baixo) */
+            const abaixo = (id) => [id, ...DADOS.grupos.filter(g => g.pai_id === id).flatMap(g => abaixo(g.id))];
+            const destino = (p) => {
+              const nomes = new Set((p.grupos || []).flatMap(abaixo).map(id => DADOS.grupos.find(g => g.id === id)?.nome));
+              return DADOS.membros.filter(m => ['Ativo', 'Em pausa / avaliação'].includes(m.status)
+                && (p.todos || (p.registros || []).includes(m.registro) || (m.grupos || []).some(n => nomes.has(n))));
+            };
+            if (nome === 'email_destinatarios'){
+              const ds = destino(args.p), sem = ds.filter(m => !m.email_nro && !m.email_pessoal);
+              return { data:{ status:'ok', total:ds.length - sem.length, sem_email:sem.length, sem_email_nomes:sem.map(m => m.nome) }, error:null };
+            }
+            if (nome === 'email_programado_cancelar'){
+              const e = DADOS.email_programados.find(x => x.id === args.p_id && x.status === 'programado');
+              if (!e) return { data:{ status:'nao_encontrado' }, error:null };
+              e.status = 'cancelado'; return { data:{ status:'ok' }, error:null };
+            }
+            const itens = args.p.itens || [args.p], ids = [];
+            for (const v of itens){
+              if (!v.todos && !(v.grupos || []).length && !(v.registros || []).length) return { data:{ status:'invalido', campo:'destino' }, error:null };
+              if (new Date(v.enviar_em) < new Date(Date.now() - 10 * 60000)) return { data:{ status:'invalido', campo:'enviar_em' }, error:null };
+              const velho = v.id && DADOS.email_programados.find(x => x.id === v.id);
+              if (velho){ Object.assign(velho, v); ids.push(v.id); continue; }
+              const id = 'e' + (DADOS.email_programados.length + 1);
+              DADOS.email_programados.push({ ...v, id, status:'programado', criado_por:'Ana Figueiredo', criado_em:new Date().toISOString(),
+                enviado_em:null, enviados:0, falhas:0, erro:null });
+              ids.push(id);
+            }
+            return { data:{ status:'ok', ids }, error:null };
           }
           return { data: { status:'ok', codigo:'ORT-9', id:'novo' }, error: null };
         },

@@ -1106,8 +1106,8 @@ a.ini-rc .ic-q .ic{width:15px;height:15px}
 
 /* ============ MODAL LARGO ============ */
 #modal.largo{width:min(700px,calc(100vw - 32px))}
-/* para formulário com pré-visualização ao lado (o Full mailer): precisa
-   de largura de verdade, senão as duas colunas viram uma fita */
+/* para o que precisa de largura de verdade: a prévia de um e-mail
+   (programado ou pílula) e os formulários com pré-visualização ao lado */
 #modal.imenso{width:min(1180px,calc(100vw - 40px));max-height:92vh;padding:24px 26px}
 .dupla{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:560px){.dupla{grid-template-columns:1fr}}
@@ -2110,19 +2110,66 @@ a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
   max-height:260px;overflow-y:auto;white-space:pre-wrap;color:var(--muted)}
 .msg{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:10px}
 
-/* Full mailer: formulário à esquerda, pré-visualização grudada à direita.
-   O iframe fica branco de propósito — é um e-mail, não uma tela. */
-.mailer-wrap{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:22px;align-items:start}
-.mailer-form{max-height:64vh;overflow-y:auto;padding-right:8px}
-.mailer-form .fld{margin-bottom:12px}
-.mailer-prev{position:sticky;top:0}
-.mailer-prev iframe{width:100%;height:64vh;border:1px solid var(--line2);border-radius:12px;
-  background:#fff;display:block}
+/* Full mailer (#/admin/emails): tela inteira. Formulário à esquerda,
+   pré-visualização grudada à direita, da altura da janela. O iframe fica
+   branco de propósito: é um e-mail, não uma tela. */
+.ml-tela{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:20px;align-items:start}
+.ml-form{padding:18px 18px 8px}
+.ml-form .fld{margin-bottom:12px}
+.ml-form .dupla{gap:10px}
+.ml-mais{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:4px 0 14px;padding:10px 0 0}
+.ml-mais summary{cursor:pointer;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px}
+.ml-redes{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line2);border-radius:11px;
+  padding:10px 12px;background:rgba(var(--tom),.03)}
+.ml-redes .check{margin:0;text-transform:none;letter-spacing:normal;font-weight:400}
+.ml-redes .mono{font-size:11px;color:var(--dim);word-break:break-all}
+.ml-studio{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--muted)}
+.ml-studio:hover{color:var(--ink)}
+.ml-studio .ic{width:14px;height:14px}
+.ml-prev{position:sticky;top:16px;display:flex;flex-direction:column;gap:10px}
+.ml-barra{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ml-bts{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ml-prev iframe{width:100%;height:calc(100vh - 110px);min-height:520px;border:1px solid var(--line2);
+  border-radius:14px;background:#fff;display:block;margin:0 auto;transition:width .2s}
+.ml-prev iframe.cel{width:390px;max-width:100%}
+.ml-ver{width:100%;height:68vh;border:1px solid var(--line2);border-radius:12px;background:#fff;display:block}
+.ml-quando{display:flex;gap:8px;align-items:center}
+.ml-quando input{flex:1;min-width:0}
+@media (max-width:980px){.ml-tela{grid-template-columns:1fr}
+  .ml-prev{position:static}.ml-prev iframe{height:560px;min-height:0}}
+/* a ajuda miúda sob um campo: nasceu no mailer e hoje serve a vários formulários */
 .mailer-sub{display:block;font-size:11px;color:var(--dim);line-height:1.5;margin:-6px 0 10px}
 .mailer-sub.tight{margin:4px 0 0}
-.ml-soc{margin-bottom:6px}
-@media (max-width:780px){.mailer-wrap{grid-template-columns:1fr}
-  .mailer-prev{position:static}.mailer-prev iframe{height:440px}}
+/* programados */
+.ml-tab td{vertical-align:top}
+.ml-acoes{white-space:nowrap;text-align:right}
+.ml-st{display:inline-block;font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid var(--line2);border-radius:999px;padding:2px 9px;color:var(--muted)}
+.ml-st.info{color:var(--info-tx);border-color:rgba(var(--info-rgb),.4)}
+.ml-st.warn{color:var(--warn-tx);border-color:rgba(var(--warn-rgb),.4)}
+.ml-st.ok{color:var(--ok);border-color:rgba(var(--ok-rgb),.4)}
+.ml-st.bad{color:var(--bad-tx);border-color:rgba(var(--bad-rgb),.4)}
+/* pílulas: a etiqueta do remetente usa as cores do próprio e-mail */
+.ml-pil-topo{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.ml-pil-topo p{max-width:640px;line-height:1.6}
+.ml-rots{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.ml-rot{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:14px 16px 10px;
+  display:flex;flex-direction:column;gap:6px}
+.ml-rot.off{opacity:.6}
+.ml-rot h4{font-size:14.5px;font-weight:600;line-height:1.35}
+.ml-rot p{line-height:1.5}
+.ml-rot-cab{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ml-rot-bts{display:flex;gap:2px;margin-top:auto;padding-top:4px;border-top:1px solid var(--line)}
+.ml-rem{display:inline-block;font-size:11px;font-weight:600;border:1px solid;border-radius:7px;padding:2px 8px;white-space:nowrap}
+.ml-serie-cfg{display:grid;grid-template-columns:1.2fr .8fr .8fr 1.2fr;gap:10px;align-items:end}
+@media (max-width:620px){.ml-serie-cfg{grid-template-columns:1fr 1fr}}
+tr.ml-fora td{opacity:.6}
+.ml-lista .check{border:none;padding:1px 0;text-transform:none;letter-spacing:normal;font-weight:400;font-size:13px;align-items:flex-start}
+.fld .ml-chk,.ml-chk{border:none;padding:11px 0;text-transform:none;letter-spacing:normal;font-weight:400;font-size:13px;color:var(--muted)}
+.ml-serie-tab{font-size:12.5px}
+.ml-serie-tab th,.ml-serie-tab td{padding:8px 10px;vertical-align:top}
+.ml-serie-tab td.mono{white-space:nowrap}
 
 /* listas impressas: a portaria e os e-mails de candidatos */
 .l-port{font-size:12.5px;color:var(--muted);line-height:1.7}
@@ -2236,6 +2283,10 @@ a.gr-via:hover{color:var(--ink);border-color:var(--dim)}
 .st-conta .passou{color:var(--bad)}
 /* configurações */
 .st-cfg-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.st-conta-linha{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:8px}
+.st-conta-cab{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:8px;margin:0 0 12px;
+  padding-bottom:7px;border-bottom:1px solid var(--line);
+  font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 @media (max-width:900px){.st-cfg-2{grid-template-columns:1fr}}
 .st-gp{display:flex;flex-direction:column;gap:3px;max-height:320px;overflow-y:auto;border:1px solid var(--line);border-radius:11px;padding:6px}
 .st-gp-i{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;font-size:13.5px;cursor:pointer}
@@ -3251,7 +3302,7 @@ const CONFIG = {
 };
 /* Versão do portal. Acompanha a query dos módulos carregados sob
    demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '29.0';
+const VERSAO = '30.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -3611,15 +3662,18 @@ function viaDoGrupo(m, nome){
 
 /* Os painéis de Administração. Moravam em mod-admin, mas o menu lateral
    lista cada um como subitem — e o menu existe antes de o módulo ser
-   baixado. O quinto campo diz quem abre: Relatórios é o único que o
-   Comitê de Seleção também precisa (a lista de e-mails dos candidatos
-   mora lá). A galeria, as rotas e o menu leem daqui. */
+   baixado. O quinto campo diz quem abre: Relatórios e E-mails são os
+   que o Comitê de Seleção também precisa (a lista de e-mails dos
+   candidatos e o Full mailer; programar envio é só da gestão, e a tela
+   esconde). A galeria, as rotas e o menu leem daqui. */
 const PAINEIS = [
   ['avisos',       'Quadro de avisos',    'Portal',   'O banner rotativo da home, com layout e ordem', can],
   ['links',        'Links úteis',         'Portal',   'Os links da coluna direita do início', can],
   ['solicitacoes', 'Solicitações',        'Portal',   'Triagem dos pedidos ao Depto. de Pessoal', can],
   ['ouvidoria',    'Ouvidoria',           'Portal',   'As mensagens anônimas, para ler e tratar', can],
   ['agendas',      'Agendas',             'Portal',   'Quem conectou o Google Agenda e como está a sincronização', can],
+  ['emails',       'E-mails',             'Portal',   'Full mailer, envios programados e as pílulas de conhecimento',
+                                                       () => can() || podeSelecao()],
   ['contas',       'Contas e perfis',     'Pessoas',  'Papéis de acesso, vínculo com o quadro e senha', can],
   ['acessos',      'Catálogo de acessos', 'Pessoas',  'Os sistemas, locais e documentos controlados pela NRO', can],
   ['grupos',       'Grupos e quadros',    'Pessoas',  'A árvore de grupos, quem está em cada um e quem enxerga cada quadro', can],
@@ -4045,7 +4099,7 @@ const ROTAS = {
   studio:      { desenha:'pageStudio', modulo:'studio', permite: () => podeStudio(),
                  espera: () => state.studioPronto },
   selecao:     { desenha:'pageSelecao', modulo:'selecao', permite: () => podeSelecao() },
-  /* O Comitê de Seleção entra em Administração só pelos Relatórios —
+  /* O Comitê de Seleção entra em Administração só pelos Relatórios e pelos E-mails —
      a galeria mostra apenas os painéis que o papel permite. */
   admin:       { desenha:'pageAdmin', modulo:'admin', permite: () => can() || podeSelecao() }
 };
@@ -4102,8 +4156,7 @@ async function render(rt){
   const desenhar = window[def.desenha];
   if (typeof desenhar !== 'function'){
     $('#main').innerHTML = `<div class="pg-head"><h1>Tela indisponível</h1>
-      <p class="lead">Erro do portal: a rota não tem tela. Informe o Depto. de Pessoal.
-      avise o Depto. de Pessoal.</p></div>`;
+      <p class="lead">Erro do portal: a rota não tem tela. Informe o Depto. de Pessoal.</p></div>`;
     return;
   }
   await desenhar(rt.sub, rt.sub2);
@@ -4289,11 +4342,29 @@ function docGestor(){
    mostra. Sem a migração, a configuração não vem, e só admin vê o
    espaço (a tela explica o que falta). */
 function carregarStudioConfig(){
+  /* '*': os links das contas (v30) entram sem quebrar o Studio de quem
+     ainda não aplicou a migração — pedir a coluna pelo nome, sem ela,
+     derrubava a configuração inteira */
   return sb.from('studio_config')
-    .select('grupos_acesso,grupos_aprovadores,aprovacoes_minimas,lembrete_email,contas,unsplash_chave')
+    .select('*')
     .maybeSingle()
     .then(r => { state.studioCfg = r.error ? null : (r.data || null); desenharMenu(); },
           () => { state.studioCfg = null; });
+}
+/* O link de cada rede da equipe: o que Studio › Configurações › Contas
+   guarda (v30) e, sem ele, o que dá para montar pelo usuário. LinkedIn e
+   Facebook não têm endereço previsível: só com o link. O Studio mostra o
+   resultado como placeholder; o Full mailer monta o rodapé daqui. */
+const LINK_REDE = { instagram:'https://www.instagram.com/', youtube:'https://www.youtube.com/@',
+                    tiktok:'https://www.tiktok.com/@', x:'https://x.com/' };
+function linkDaConta(k, cfg = state.studioCfg){
+  const l = String(cfg?.links?.[k] || '').trim();
+  if (/^https?:\/\/\S+$/i.test(l)) return l;
+  const u = String(cfg?.contas?.[k] || '').trim();
+  if (/^https?:\/\/\S+$/i.test(u)) return u;
+  if (k === 'site' && /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(u)) return 'https://' + u;
+  if (LINK_REDE[k] && /^@?[\w.]+$/.test(u)) return LINK_REDE[k] + u.replace(/^@/, '');
+  return '';
 }
 /* a pessoa logada está (contando subgrupos) em algum destes grupos?
    O Studio e os treinamentos perguntam por aqui */

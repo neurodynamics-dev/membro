@@ -137,6 +137,7 @@ conforme quem entra é menu que ninguém aprende.
 #/selecao/dinamica/<sub>    painel, roteiro, desafio, criterios, janelas
 #/admin[/aba]               painéis
 #/admin/grupos/<prefixo>    a árvore de grupos, com um em foco
+#/admin/emails[/programados|pilulas]  o Full mailer, a fila e as pílulas
 ```
 
 **Regras:**

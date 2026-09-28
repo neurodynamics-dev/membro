@@ -1,19 +1,26 @@
 # Imagens do full mailer
 
-PNGs referenciados **por link** nos e-mails gerados em SOMA → Relatórios →
-Full mailer (`https://pessoal.neurodynamics.dev/mailer/…`, servidos pelo
-GitHub Pages deste repositório). Nada é embutido no HTML do e-mail: imagem
+PNGs referenciados **por link** nos e-mails gerados em Administração →
+E-mails (o Full mailer, `https://membro.neurodynamics.dev/mailer/…`, servidos
+pelo GitHub Pages deste repositório). A mesma pasta continua no repositório
+antigo, servida por `pessoal.neurodynamics.dev`: e-mail já enviado aponta para
+lá. Nada é embutido no HTML do e-mail: imagem
 em data-URI vira anexo do documento nos clientes de e-mail — ou é descartada.
 
 ## Arquivos
 
 - `logo-<cor>.png` — imagotipo NeuroDynamics recolorido, 564 px de largura
   (3× dos 188 px exibidos). Uma variante por cor `logo` dos temas
-  (`THEMES_MAILER` no index.html): `00594f`, `0f7c8a`, `8a6d1f`, `cedc00`,
-  `5c7a00`, `ffffff`, `1d1d1f`.
+  (`THEMES_MAILER` no `mod-mailer.js`): `00594f`, `0f7c8a`, `8a6d1f`, `cedc00`,
+  `5c7a00`, `ffffff`, `1d1d1f`, `3b4d9a`.
 - `ico-<rede>-<cor>.png` — ícones sociais (site, instagram, linkedin,
   youtube, x, facebook), 63 px (3× dos 21 px exibidos). Uma variante por cor
-  `bodyAccent` dos temas: `00594f`, `0f7c8a`, `7a5e15`, `5c7a00`, `1d1d1f`.
+  `bodyAccent` dos temas: `00594f`, `0f7c8a`, `7a5e15`, `5c7a00`, `1d1d1f`,
+  `3b4d9a`.
+
+O `3b4d9a` (anil) é o de Relações Institucionais, desde a 30.0: o
+departamento usava o tema escuro, bem mais forte que os outros, que agora é
+da Leadership. Os departamentos ficam em tons claros e distintos entre si.
 
 `<cor>` é o hex minúsculo sem `#`.
 

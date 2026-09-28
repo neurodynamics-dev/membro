@@ -22,6 +22,13 @@ stub, e a correção da verificação é a mesma do banco: o teste responde erra
 e certo e confere o que volta. O progresso da pessoa logada fica em
 `window.__treProg`.
 
+As da 30.0 (`email_destinatarios`, `email_programar`,
+`email_programado_cancelar`) contam quem recebe pelos grupos, com os de baixo,
+põem na fila e cancelam como o banco; `update` em `email_roteiros` muda a
+pílula de verdade, para a tela voltar com o resultado. As imagens do e-mail,
+que no ar moram em `membro.neurodynamics.dev/mailer/`, o teste serve da pasta
+`../mailer/`: assim ele confere que o PNG de cada cor existe.
+
 As da 25.0 à 27.0 também: a declaração emite e revoga, o evento anda de
 rascunho a aprovado com as regras do banco (quem vê, quem aprova, nunca quem
 mandou) e emite uma declaração por participante; o cofre decide quem usa e
@@ -62,7 +69,7 @@ e rode daqui.
 | `relatorios-por-papel.mjs` | quais relatórios cada papel alcança — na galeria, na busca e por chamada direta |
 | `carga-por-papel.mjs` | que papel baixa qual módulo (um `leitura` não baixa o `mod-gestao`) |
 | `quadro-e-acesso.mjs` | espaço do quadro, rolagem horizontal, nível de acesso por grupo e o cartão |
-| `ajustes-de-tela.mjs` | ordem dos grupos, quadro padrão, fundo do dropdown, Full mailer e o comentário que falha |
+| `ajustes-de-tela.mjs` | ordem dos grupos, quadro padrão, fundo do dropdown, o Full mailer em tela inteira e o comentário que falha |
 | `teste-de-email.mjs` | o botão "Enviar um e-mail de teste": as nove coisas que podem falhar viram nove recados distintos |
 | `okrs-e-selecao.mjs` | OKRs e Processo Seletivo, vindos do SOMA · Gestão: endereços, menu, permissões por papel, o que cada ação grava — com asserções |
 | `grupos-arvore.mjs` | grupos dentro de grupos: a árvore em Administração, quem está pela ficha e por subgrupo, pôr várias pessoas de uma vez, tirar, o pai que não fecha círculo, e a herança no menu, na Agenda e no quadro de pessoal — com asserções |
@@ -75,6 +82,7 @@ e rode daqui.
 | `validacao.mjs` | o `auth.neurodynamics.dev` (a página de `../auth/`): o código em grupos de quatro, O lido como 0, código curto que não vai ao banco, autêntico com e sem o código de controle, controle que não confere, revogado, código que não existe, o QR Code que abre já consultado, a frase do mesmo modelo do portal, a segunda via só da de participação, nova consulta, o celular — com asserções |
 | `agenda-e-inicio.mjs` | a agenda no modelo do Google (a semana com as camadas, os atalhos M, D, J, T, criar rápido, a página do evento com predefinido e convidado, reagendar sem apagar perguntando se avisa, responder ao convite, os eventos predefinidos), a presença (quem está no LABBIO, o placar, gerar a folha de check-in: o QR desenhado no PDF é lido de volta com o jsQR e tem de ser o endereço com o token fixo; abrir esse endereço registra; folha revogada não vale), o início (a semana, o convite respondido ali, o placar, as tarefas, os links sem `javascript:`, os abertos por último), o rodapé, os atalhos e Administração › Links úteis — com asserções |
 | `treinamentos.mjs` | os treinamentos: o espaço no menu (e Meus pedidos dentro de Serviços, com `#/pedidos` ainda abrindo), o obrigatório no início e na busca, o programa, o módulo em Markdown, o vídeo no player do site, o gabarito que não desce, a verificação reprovada e aprovada, o certificado em PDF e a conferência pelo código, a gestão, o editor que grava sozinho, importar o texto de um agente (o do README e um embrulhado em ```markdown), a pré-visualização, exportar e ler de volta, publicar, atribuir, novo do zero e de um texto, o acompanhamento e o CSV, as configurações e o README (ver, salvar, baixar com as referências, voltar ao padrão), a aba da ficha, quem não gere, quem gere por grupo, e o celular — com asserções |
+| `emails.mjs` | os e-mails (v30): o Full mailer em tela inteira (o tile de Relatórios leva até ele), a prévia com o nome de quem escreve, as redes vindas de Studio › Contas (link salvo ou montado pelo usuário, e desmarcar), o botão para uma tela do portal, o rodapé sem link morto, as cores dos seis remetentes (departamentos claros e distintos, a Leadership escura; as imagens da cor nova existem), o rascunho que sobrevive, a marca do nome fora do que se copia; programar (quem recebe e quem está sem e-mail, por grupo com os de baixo, só para mim; o que vai ao banco), a fila e o histórico, reagendar, cancelar; as pílulas (quem assina, para quem, grupo extinto, a série de quatro em quatro dias sem fim de semana e sem repetir a fila, pôr na série, editar, link recusado, abrir no mailer); o link de cada rede no Studio; o Comitê de Seleção sem programar, quem só lê sem entrar, e o celular — com asserções |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install
@@ -95,6 +103,7 @@ node cofre.mjs
 node formularios.mjs
 node validacao.mjs                      # a página de ../auth/, servida pelo mesmo servidor
 node agenda-e-inicio.mjs
+node emails.mjs
 ```
 
 Os testes que baixam PDF lançam o Chromium com `LANG=C.UTF-8`: o nome dos

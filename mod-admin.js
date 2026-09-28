@@ -46,6 +46,7 @@ const ICONES_ADM = {
   acessos:'<circle cx="8.5" cy="14.5" r="4.5"/><path d="M12 11.5 20 4M17 6.5l2.5 2.5M14.5 9l2 2"/>',
   importar:'<path d="M12 16V5M6.5 9.5 12 4l5.5 5.5M5 20h14"/>',
   relatorios:'<path d="M4 20h16M7 20V9M12 20V4M17 20v-7"/>',
+  emails:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="m4.5 7 7.5 5.4L19.5 7"/><path d="M7 15.5h5"/>',
   auditoria:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.5M4.5 12h.5M4.5 18h.5"/>',
   links:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/>',
   site:'<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>'
@@ -73,6 +74,7 @@ async function pageAdmin(sub, sub2){
 
   if (k === 'site')       return admCarregarProjetos();
   if (k === 'relatorios') return comModulo('relatorios', () => pageRelatorios());
+  if (k === 'emails')     return comModulo('mailer', () => pageMailer(sub2));
   if (k === 'auditoria')  return comModulo('gestao', async () => {
     await pageAuditoria();
     /* pageAuditoria desenha em #main; aqui ela mora dentro do painel */
