@@ -119,7 +119,7 @@ const chamadas = await p.evaluate(() => window.__membrosSalvos);
 confere('uma chamada só, com as duas pessoas',
   chamadas.length === 1 && chamadas[0].grupo_id === 8 && [...chamadas[0].adicionar].sort((a, b) => a - b).join() === '4,17', chamadas);
 const toastTxt = await p.evaluate(() => [...document.querySelectorAll('.toast')].map(t => t.textContent).join(' | '));
-confere('o aviso diz que entraram também no grupo de cima', /e, por ele, em NRO_PROJECTS/.test(toastTxt), toastTxt);
+confere('o aviso diz que entraram também no grupo de cima', /e por herança em NRO_PROJECTS/.test(toastTxt), toastTxt);
 ps = await pessoas(p);
 confere('as duas aparecem pela ficha', ps.filter(x => x.via === 'pela ficha').length === 3, ps);
 const menuAtv = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec[data-r="atividades"] .lt-sub a')]

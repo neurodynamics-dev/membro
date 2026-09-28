@@ -19,7 +19,11 @@
    participante, e cada uma sai num e-mail só dela — inclusive para o
    externo, que não tem conta no portal. Ver enviarDocumentos().
 
-   Chame com a service role (é ela que tem execute nas duas RPCs).
+   Desde a 28.0, também a fila da AGENDA (agenda_envios): convite,
+   alteração, cancelamento e lembrete de cada evento, com os botões
+   que respondem pelo e-mail. Ver enviarAgenda().
+
+   Chame com a service role (é ela que tem execute nas RPCs).
    Mantenha a verificação de JWT LIGADA: diferente do agenda-ics,
    aqui não há token na URL e ninguém de fora precisa chamar.
    ============================================================ */
@@ -109,6 +113,14 @@ export function faltaParaEnviar(
 }
 
 /** Monta o pedido HTTP do provedor. Pura, para dar para conferir sem rede. */
+/** O nome de exibição no cabeçalho From. Com ponto, vírgula ou outro
+    caractere especial (o "Depto. de Pessoal" da 30.0), vai entre aspas,
+    como pede a RFC 5322; sem eles, como está. */
+export function nomeExibicao(nome: string): string {
+  const n = String(nome || "").replace(/["\\\r\n]/g, "").trim();
+  return /[()<>\[\]:;@,.]/.test(n) ? `"${n}"` : n;
+}
+
 export function montarEnvio(
   provedor: string, de: string, deNome: string, para: string, paraNome: string,
   assunto: string, html: string, texto: string,
@@ -119,7 +131,7 @@ export function montarEnvio(
       url: "https://api.resend.com/emails",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${chaveResend}` },
       corpo: {
-        from: `${deNome} <${de}>`, to: [para], subject: assunto, html, text: texto,
+        from: `${nomeExibicao(deNome)} <${de}>`, to: [para], subject: assunto, html, text: texto,
         ...(responder ? { reply_to: responder } : {}),
       },
     };
@@ -178,12 +190,12 @@ export function lerResposta(provedor: string, status: number, corpo: string): st
 
 /** Manda um e-mail. Devolve "" quando saiu, ou o motivo da recusa. */
 async function enviarUm(para: string, paraNome: string, assunto: string,
-                        html: string, texto: string): Promise<string> {
+                        html: string, texto: string, deNome = DE_NOME): Promise<string> {
   if (!pareceEndereco(para)) {
     return `o endereço do destinatário não parece um e-mail: "${para}" `
       + `(confira a ficha dele no quadro)`;
   }
-  const e = montarEnvio(PROVEDOR, DE, DE_NOME, para, paraNome, assunto, html, texto);
+  const e = montarEnvio(PROVEDOR, DE, deNome || DE_NOME, para, paraNome, assunto, html, texto);
   const r = await fetch(e.url, {
     method: "POST",
     headers: e.headers,
@@ -447,6 +459,175 @@ export function declaracaoTexto(e: EnvioDocumento): string {
     + `\n—\nNeuroDynamics PD&I\n`;
 }
 
+/* ============================================================
+   A AGENDA (SOMA 28.0)
+   Convite, alteração, cancelamento e lembrete de um evento — um
+   e-mail por pessoa e por evento, qualquer que seja a preferência do
+   sino (cada um desliga os e-mails da agenda em Agenda ›
+   Configurações; o banco já tirou da fila quem desligou). Os botões
+   Vou / Talvez / Não vou levam a rsvp.html com o token do convite de
+   quem recebeu: responde sem login.
+   ============================================================ */
+export interface EnvioAgenda {
+  id: number;
+  tipo: "convite" | "alteracao" | "cancelamento" | "lembrete";
+  para_nome: string | null;
+  para_email: string;
+  token: string | null;
+  resposta: string | null;
+  membro: boolean;
+  assunto: string;
+  dados: {
+    evento_id?: string; numero?: number; titulo?: string; data?: string; data_fim?: string | null;
+    hora_inicio?: string | null; hora_fim?: string | null; quando?: string; local?: string | null;
+    meet_url?: string | null; descricao?: string | null; recorrencia?: string; organizador?: string | null;
+    href?: string; mudou?: string | null; minutos?: number;
+  };
+}
+
+const RESPOSTAS: Record<string, string> = { vou: "Vou", talvez: "Talvez", nao: "Não vou" };
+
+/** O link que responde pelo e-mail. */
+export function linkResposta(token: string | null | undefined, r: string): string {
+  return `${PORTAL}/rsvp.html?t=${encodeURIComponent(String(token || ""))}&r=${r}`;
+}
+
+/** "30 minutos", "1 hora", "1 dia", "2 dias e 3 horas" */
+export function antecedenciaTexto(min?: number | null): string {
+  const t = Math.max(0, Math.round(Number(min || 0)));
+  if (t === 0) return "agora";
+  const d = Math.floor(t / 1440), h = Math.floor((t % 1440) / 60), m = t % 60;
+  const p = (n: number, s: string, pl: string) => n ? `${n} ${n === 1 ? s : pl}` : "";
+  return [p(d, "dia", "dias"), p(h, "hora", "horas"), p(m, "minuto", "minutos")].filter(Boolean).join(" e ");
+}
+
+/** O evento no Google Agenda, pelo formulário de criação dele. */
+export function linkGoogle(d: EnvioAgenda["dados"]): string {
+  const dia = (iso?: string | null) => String(iso || "").replace(/-/g, "");
+  const p = new URLSearchParams({ action: "TEMPLATE", text: d.titulo || "Evento" });
+  if (!d.hora_inicio) {
+    const fim = new Date(`${d.data_fim || d.data}T12:00:00Z`); fim.setUTCDate(fim.getUTCDate() + 1);
+    p.set("dates", `${dia(d.data)}/${fim.toISOString().slice(0, 10).replace(/-/g, "")}`);
+  } else {
+    const hm = (h?: string | null) => String(h || "").replace(":", "") + "00";
+    p.set("dates", `${dia(d.data)}T${hm(d.hora_inicio)}/${dia(d.data_fim || d.data)}T${hm(d.hora_fim || d.hora_inicio)}`);
+    p.set("ctz", "America/Sao_Paulo");
+  }
+  if (d.local) p.set("location", d.local);
+  const det = [d.descricao, d.meet_url].filter(Boolean).join("\n\n");
+  if (det) p.set("details", det);
+  return "https://calendar.google.com/calendar/render?" + p.toString();
+}
+
+/** A frase de abertura, por tipo. */
+export function agendaFrase(e: EnvioAgenda): string {
+  const d = e.dados || {}, org = d.organizador ? `${d.organizador} ` : "";
+  if (e.tipo === "convite") return `${org || "A equipe "}convidou você para este evento.`;
+  if (e.tipo === "alteracao") return `Este evento mudou${d.mudou ? ` (${d.mudou})` : ""}.`;
+  if (e.tipo === "cancelamento") return `Este evento foi cancelado${d.mudou ? ` (${d.mudou})` : ""}.`;
+  return `Começa em ${antecedenciaTexto(d.minutos)}.`;
+}
+
+export function agendaHTML(e: EnvioAgenda): string {
+  const d = e.dados || {};
+  const cancelado = e.tipo === "cancelamento";
+  const linha = (rot: string, val: string) => val ? `<tr>
+      <td style="padding:6px 0;font:600 12px/1.5 Helvetica,Arial,sans-serif;color:#8a908a;width:92px;vertical-align:top">${rot}</td>
+      <td style="padding:6px 0;font:400 14px/1.5 Helvetica,Arial,sans-serif;color:#1d1d1f">${val}</td></tr>` : "";
+  const botao = (r: string) => {
+    const on = e.resposta === r;
+    return `<a href="${esc(linkResposta(e.token, r))}" style="display:inline-block;margin:0 6px 6px 0;
+      padding:11px 18px;border-radius:9px;font:600 14px/1 Helvetica,Arial,sans-serif;text-decoration:none;
+      ${on ? "background:#00594F;color:#ffffff;border:1px solid #00594F" : "background:#ffffff;color:#00594F;border:1px solid #b9c7c2"}">
+      ${RESPOSTAS[r]}</a>`;
+  };
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width"><title>${esc(e.assunto)}</title></head>
+<body style="margin:0;padding:0;background:#f4f6f4">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4">
+    <tr><td align="center" style="padding:32px 16px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="max-width:560px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
+        <tr><td style="padding:28px 28px 8px">
+          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics" style="display:block;border:0;outline:none">
+        </td></tr>
+        <tr><td style="padding:14px 28px 0">
+          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a">Olá, ${esc(primeiroNome(e.para_nome || ""))}. ${esc(agendaFrase(e))}</div>
+          <div style="font:700 21px/1.3 Helvetica,Arial,sans-serif;color:#1d1d1f;margin-top:10px;
+            ${cancelado ? "text-decoration:line-through;color:#8a908a" : ""}">${esc(d.titulo || "")}</div>
+        </td></tr>
+        <tr><td style="padding:12px 28px 0">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            ${linha("Quando", esc(d.quando || ""))}
+            ${linha("Repete", d.recorrencia && d.recorrencia !== "Única" ? esc(d.recorrencia) : "")}
+            ${linha("Onde", esc(d.local || ""))}
+            ${linha("Chamada", d.meet_url ? `<a href="${esc(d.meet_url)}" style="color:#00594F">${esc(d.meet_url)}</a>` : "")}
+            ${linha("Organiza", esc(d.organizador || ""))}
+          </table>
+          ${d.descricao && !cancelado ? `<div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;
+            margin-top:10px;white-space:pre-wrap;border-top:1px solid #e3e6e3;padding-top:12px">${esc(d.descricao)}</div>` : ""}
+        </td></tr>
+        ${cancelado || !e.token ? "" : `<tr><td style="padding:20px 28px 0">
+          <div style="font:600 12px/1.5 Helvetica,Arial,sans-serif;color:#8a908a;margin-bottom:8px">Você vai?</div>
+          ${botao("vou")}${botao("talvez")}${botao("nao")}
+        </td></tr>`}
+        <tr><td style="padding:14px 28px 0;font:400 13px/1.6 Helvetica,Arial,sans-serif">
+          ${cancelado ? "" : `<a href="${esc(linkGoogle(d))}" style="color:#00594F;text-decoration:none">Adicionar ao Google Agenda</a>`}
+          ${e.membro && d.href && !cancelado ? ` &nbsp;·&nbsp; <a href="${esc(linkDe(d.href))}" style="color:#00594F;text-decoration:none">Abrir no portal</a>` : ""}
+        </td></tr>
+        <tr><td style="padding:18px 28px 28px">
+          <div style="font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#8a908a;border-top:1px solid #e3e6e3;padding-top:14px">
+            Agenda da NeuroDynamics.${e.membro ? " Os e-mails da agenda se desligam em Agenda › Configurações." : ""}
+          </div>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+export function agendaTexto(e: EnvioAgenda): string {
+  const d = e.dados || {};
+  const cancelado = e.tipo === "cancelamento";
+  return `Olá, ${primeiroNome(e.para_nome || "")}. ${agendaFrase(e)}\n\n`
+    + `${d.titulo || ""}\n`
+    + `Quando: ${d.quando || ""}\n`
+    + (d.recorrencia && d.recorrencia !== "Única" ? `Repete: ${d.recorrencia}\n` : "")
+    + (d.local ? `Onde: ${d.local}\n` : "")
+    + (d.meet_url ? `Chamada: ${d.meet_url}\n` : "")
+    + (d.organizador ? `Organiza: ${d.organizador}\n` : "")
+    + (d.descricao && !cancelado ? `\n${d.descricao}\n` : "")
+    + (cancelado || !e.token ? "" : `\nVou: ${linkResposta(e.token, "vou")}\nTalvez: ${linkResposta(e.token, "talvez")}\nNão vou: ${linkResposta(e.token, "nao")}\n`)
+    + (e.membro && d.href && !cancelado ? `\nNo portal: ${linkDe(d.href)}\n` : "")
+    + `\n—\nAgenda da NeuroDynamics\n`;
+}
+
+/** Manda a fila da agenda e dá baixa. Sem a 28.0, diz isso e segue. */
+async function enviarAgenda(): Promise<Record<string, unknown>> {
+  let lote: EnvioAgenda[];
+  try {
+    lote = (await rpc("agenda_envios_lote", { p_limite: LOTE })) as EnvioAgenda[];
+  } catch (e) {
+    return /PGRST202|404|agenda_envios_lote/.test(String(e))
+      ? { agenda: "sem_migracao_28" } : { agenda: "erro", agenda_detalhe: String(e) };
+  }
+  if (!lote?.length) return { agenda: 0 };
+  const enviados: number[] = [], falhas: number[] = [];
+  let erro = "";
+  for (const e of lote) {
+    try {
+      const m = await enviarUm(e.para_email, e.para_nome || "", e.assunto, agendaHTML(e), agendaTexto(e));
+      if (m) { falhas.push(e.id); erro = m; } else { enviados.push(e.id); }
+    } catch (x) { falhas.push(e.id); erro = String(x); }
+  }
+  try {
+    await rpc("agenda_envios_baixa", { p: { enviados, falhas, erro } });
+  } catch (x) {
+    return { agenda: enviados.length, agenda_falhas: falhas.length, agenda_detalhe: "enviou, mas não deu baixa: " + String(x) };
+  }
+  return { agenda: enviados.length, agenda_falhas: falhas.length, ...(erro ? { agenda_detalhe: erro } : {}) };
+}
+
 /** Manda as declarações da fila e dá baixa. Sem a 25.0, diz isso e segue. */
 async function enviarDocumentos(): Promise<Record<string, unknown>> {
   let lote: EnvioDocumento[];
@@ -472,6 +653,56 @@ async function enviarDocumentos(): Promise<Record<string, unknown>> {
              documentos_detalhe: "enviou, mas não deu baixa: " + String(x) };
   }
   return { documentos: enviados.length, documentos_falhas: falhas.length, ...(erro ? { documentos_detalhe: erro } : {}) };
+}
+
+/* ------------------------------------------------------------
+   OS E-MAILS PROGRAMADOS (30.0)
+   O Full mailer grava o HTML pronto; aqui só se troca o nome de cada
+   destinatário e se envia, com o remetente da área no nome de exibição.
+   ------------------------------------------------------------ */
+export type Programado = {
+  id: string; assunto: string; remetente_nome: string; html: string; texto: string;
+  destinatarios: { registro: number; nome: string; email: string }[];
+};
+
+/** Troca {{primeiro_nome}} e {{nome}}. No HTML, escapado; no texto, cru. */
+export function personalizar(modelo: string, nome: string, html: boolean): string {
+  const completo = String(nome || "").trim();
+  const primeiro = completo.split(/\s+/)[0] || "";
+  const v = (x: string) => html ? esc(x) : x;
+  return String(modelo || "")
+    .replace(/\{\{\s*primeiro_nome\s*\}\}/g, v(primeiro))
+    .replace(/\{\{\s*nome\s*\}\}/g, v(completo));
+}
+
+/** Manda os programados que venceram e dá baixa. Sem a 30.0, diz isso e segue. */
+async function enviarProgramados(): Promise<Record<string, unknown>> {
+  let lote: Programado[];
+  try {
+    lote = (await rpc("email_programados_lote", { p_limite: 10 })) as Programado[];
+  } catch (e) {
+    return /PGRST202|404|email_programados_lote/.test(String(e))
+      ? { programados: "sem_migracao_30" } : { programados: "erro", programados_detalhe: String(e) };
+  }
+  if (!lote?.length) return { programados: 0 };
+  let total = 0, totalFalhas = 0, erroGeral = "";
+  for (const p of lote) {
+    let enviados = 0, falhas = 0, erro = "";
+    for (const d of p.destinatarios || []) {
+      try {
+        const m = await enviarUm(d.email, d.nome, personalizar(p.assunto, d.nome, false),
+          personalizar(p.html, d.nome, true), personalizar(p.texto, d.nome, false), p.remetente_nome);
+        if (m) { falhas++; erro = m; } else { enviados++; }
+      } catch (x) { falhas++; erro = String(x); }
+    }
+    total += enviados; totalFalhas += falhas; if (erro) erroGeral = erro;
+    try {
+      await rpc("email_programados_baixa", { p: { id: p.id, enviados, falhas, erro } });
+    } catch (x) {
+      erroGeral = "enviou, mas não deu baixa: " + String(x);
+    }
+  }
+  return { programados: total, programados_falhas: totalFalhas, ...(erroGeral ? { programados_detalhe: erroGeral } : {}) };
 }
 
 async function rpc(nome: string, corpo: unknown): Promise<unknown> {
@@ -518,9 +749,9 @@ export async function servir(req: Request): Promise<Response> {
     }), { status: 200, headers: cabecalho });
   }
 
-  /* as declarações primeiro: são documentos, e saem mesmo que o sino
-     não tenha aviso nenhum para ninguém */
-  const docs = await enviarDocumentos();
+  /* as declarações e a agenda primeiro: saem mesmo que o sino não
+     tenha aviso nenhum para ninguém, e o lembrete tem hora */
+  const docs = { ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()) };
 
   let destinos: Destinatario[];
   try {

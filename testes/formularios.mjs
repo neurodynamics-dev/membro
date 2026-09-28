@@ -67,10 +67,10 @@ async function previa(p, ctx){
   console.log('\nA ata de reunião, escrita no portal');
   const { ctx, p, erros } = await abrir({ hash:'#/arquivos/NRO-PUB-003' });
   await p.waitForTimeout(600);
-  confere('o template diz que os PNs se escrevem no portal', /se escrevem no portal/.test(await texto(p, '.arq-frm-nota')));
+  confere('o template diz que os PNs se escrevem no portal', /são escritos no portal/.test(await texto(p, '.arq-frm-nota')));
   await p.click('button:has-text("Novo PN")'); await p.waitForTimeout(300);
   await p.fill('#apn-tit', 'rascunho'); await p.click('#apn-btn'); await p.waitForTimeout(2000);
-  confere('criar o PN leva direto a escrever', await p.evaluate(() => location.hash) === '#/arquivos/NRO-PUB-003-2/escrever' && /Agora escreva/.test(await toasts(p)));
+  confere('criar o PN leva direto a escrever', await p.evaluate(() => location.hash) === '#/arquivos/NRO-PUB-003-2/escrever' && /rascunho é salvo automaticamente/.test(await toasts(p)));
   const secoes = await p.evaluate(() => [...document.querySelectorAll('.frm-sec h2')].map(h => h.textContent));
   confere('as seções do template', secoes.join('|') === 'A reunião|Quem esteve|Pauta|Discussão|Redação', secoes);
   const hoje = await p.evaluate(() => hojeISO());
@@ -122,7 +122,7 @@ async function previa(p, ctx){
   confere('a pessoa sem nome não entra', !/3\. ?[,;]/.test(t));
 
   await p.click('#frm-enviar'); await p.waitForTimeout(400);
-  confere('o modal diz o que vai acontecer', /fica pendente até alguém de PMO/.test(await texto(p, '#modal')));
+  confere('o modal diz o que vai acontecer', /fica pendente até a aprovação de PMO/.test(await texto(p, '#modal')));
   await p.click('#fe-btn'); await p.waitForTimeout(2500);
   const up = await p.evaluate(() => window.__uploads || []);
   confere('o PDF sobe para o bucket, no caminho do arquivo', up.length === 1 && up[0].bucket === 'arquivos' && up[0].op?.contentType === 'application/pdf'
@@ -187,7 +187,7 @@ async function previa(p, ctx){
   await p.waitForTimeout(600);
   confere('o registro aprovado não oferece escrever', await p.locator('a:has-text("Escrever no portal")').count() === 0);
   await ir(p, '#/arquivos/NRO-PUB-003-1/escrever', 1300);
-  confere('e, pelo endereço, diz que foi enviado como arquivo', /enviado como arquivo, não escrito no portal/.test(await texto(p, '#main')));
+  confere('e, pelo endereço, diz que foi enviado como arquivo', /enviado como arquivo/.test(await texto(p, '#main')));
 
   await ir(p, '#/arquivos/config/formularios', 1400);
   const tab = await p.evaluate(() => [...document.querySelectorAll('.frm-cfg-tab tbody tr')].map(r => r.textContent.replace(/\s+/g, ' ').trim()));
@@ -196,7 +196,7 @@ async function previa(p, ctx){
   confere('o relatório, feito para a Rev. A, com o template na B', /template na B/.test(tab[1]), tab[1]);
   confere('as declarações ficam de fora, porque os PNs não moram no rol', /Fora daqui.*NRO-DIR-004.*NRO-DIR-006/.test(await texto(p, '#cfg-corpo')));
   await p.click('.frm-cfg-tab tr:has-text("NRO-PRO-001") button:has-text("Criar o formulário")'); await p.waitForTimeout(400);
-  confere('criar começa de um esqueleto que já vale', /3 campos, sem problema/.test(await texto(p, '#fc-probs')));
+  confere('criar começa de um esqueleto que já vale', /3 campos, sem erros/.test(await texto(p, '#fc-probs')));
   await p.fill('#fc-json', '{ "titulo": "x", '); await p.dispatchEvent('#fc-json', 'input');
   confere('JSON quebrado é dito na hora', /O JSON não se lê/.test(await texto(p, '#fc-probs')));
   await p.fill('#fc-json', JSON.stringify({ titulo:'Termo', campos:[{ id:'x', rotulo:'X', tipo:'desenho' }, { id:'x', rotulo:'', tipo:'texto' }],
@@ -207,7 +207,7 @@ async function previa(p, ctx){
   await p.click('#modal button:has-text("Salvar")'); await p.waitForTimeout(300);
   confere('com problema, não salva', (await rpcs(p, 'doc_formulario_definir')).length === 0);
   await p.click('#modal .frm-modelo button:has-text("NRO-PUB-003")'); await p.waitForTimeout(150);
-  confere('começar de outro copia a definição, com a revisão deste template', /11 campos, sem problema/.test(await texto(p, '#fc-probs'))
+  confere('começar de outro copia a definição, com a revisão deste template', /11 campos, sem erros/.test(await texto(p, '#fc-probs'))
     && JSON.parse(await p.inputValue('#fc-json')).rev === 'A');
   await p.click('#modal button:has-text("Salvar")'); await p.waitForTimeout(1500);
   const def = await rpcs(p, 'doc_formulario_definir');
@@ -218,7 +218,7 @@ async function previa(p, ctx){
   await ir(p, '#/arquivos/NRO-DIR-004', 1300);
   confere('a declaração de vínculo diz de onde vêm os PNs', /não são registrados no rol/.test(await texto(p, '.arq-pn-origem'))
     && await p.locator('.arq-pn-origem a[href="#/servicos/declaracao"]').count() === 1);
-  confere('sem "Novo PN" e sem a lista de PNs', await p.locator('button:has-text("Novo PN")').count() === 0 && /não mora no rol/.test(await texto(p, '.arq-oque')));
+  confere('sem "Novo PN" e sem a lista de PNs', await p.locator('button:has-text("Novo PN")').count() === 0 && /fora do rol/.test(await texto(p, '.arq-oque')));
   await ir(p, '#/arquivos/NRO-DIR-006', 1300);
   confere('a de participação leva aos eventos', await p.locator('.arq-pn-origem a[href="#/servicos/eventos"]').count() === 1);
   confere('o "Adicionar" não oferece criar PN nas duas', await p.evaluate(() => arqTemplatesDe('DIR').length === 0 && arqTemplatesDe('').length > 0));

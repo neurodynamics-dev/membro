@@ -882,10 +882,52 @@
     return doc;
   }
 
+  /* ============================================================
+     A FOLHA DE CHECK-IN — o QR Code fixo do LABBIO, para quando o
+     quiosque não está ligado. O QR leva ao portal com o token da folha;
+     quem lê entra com a própria conta, e a presença é registrada como a
+     do quiosque. A folha é controlada: tem número, quem gerou e quando,
+     e deixa de valer ao ser revogada no portal.
+       f: { numero, token, rotulo, criada_em, criada_por, url }
+     ============================================================ */
+  function folhaCheckin(f){
+    const doc = novo();
+    const codigo = `CHK-${String(f.numero || 0).padStart(3, '0')}`;
+    const cab = { departamento:'Departamento de Pessoal', titulo:'Folha de check-in do LABBIO', codigo };
+    cabecalho(doc, cab);
+    doc.setProperties({ title:`${codigo} Folha de check-in do LABBIO`, author:'NeuroDynamics PD&I', creator:'SOMA · NeuroDynamics' });
+    /* o endereço do portal (com ou sem index.html) e o token da folha */
+    const u = new URL(f.url || 'https://membro.neurodynamics.dev/');
+    u.search = '?t=F-' + f.token; u.hash = '';
+    const url = u.toString();
+    const cx = PAG.w / 2;
+    cor(doc, TINTA); fonte(doc, 'bold', 30);
+    escreve(doc, 'Check-in no LABBIO', cx, 58, { align:'center' });
+    fonte(doc, 'normal', 13); cor(doc, CINZA);
+    escreve(doc, 'Leia o QR Code com a câmera do celular e entre com a sua conta.', cx, 68, { align:'center' });
+    /* o QR, grande, com a margem branca que a leitura pede */
+    const lado = 128, x = cx - lado / 2, y = 80;
+    doc.setDrawColor(TINTA[0], TINTA[1], TINTA[2]); doc.setLineWidth(.6);
+    doc.roundedRect(x - 9, y - 9, lado + 18, lado + 18, 4, 4, 'S');
+    qr(doc, url, x, y, lado);
+    cor(doc, TINTA); fonte(doc, 'bold', 16);
+    escreve(doc, `Folha ${codigo}`, cx, y + lado + 22, { align:'center' });
+    fonte(doc, 'normal', 10.5); cor(doc, CINZA);
+    const linha2 = [f.rotulo, `gerada em ${dataCurta(String(f.criada_em || '').slice(0, 10))}${f.criada_por ? ` por ${f.criada_por}` : ''}`].filter(Boolean).join(', ');
+    escreve(doc, linha2, cx, y + lado + 29, { align:'center' });
+    fonte(doc, 'normal', 9.5);
+    escreve(doc, 'Vale como o QR do quiosque até ser revogada em Equipe > Presença. Não copie nem fotografe esta folha.', cx, y + lado + 36, { align:'center' });
+    rodape(doc, { nota: notaDaClasse('controlado', 'Departamento de Pessoal', 'documento'),
+      texto: `${codigo} · folha controlada do SOMA` });
+    doc.__nome = `${codigo} FOLHA DE CHECK-IN DO LABBIO.pdf`;
+    doc.__url = url;
+    return doc;
+  }
+
   /* baixar: o nome segue o NRO-PUB-002 ("NRO-XXX-000 TÍTULO REV. B") */
   function baixar(doc, nome){
     const n = nome || doc.__nome || 'documento.pdf';
-    window.__docnro = { nome:n, paginas:doc.getNumberOfPages(), textos:doc.__textos.map(p => p.join(' ')) };
+    window.__docnro = { nome:n, paginas:doc.getNumberOfPages(), textos:doc.__textos.map(p => p.join(' ')), url:doc.__url || null };
     doc.save(n);
     return n;
   }
@@ -905,7 +947,7 @@
 
   window.DocNRO = {
     versao: '1', URL_VALIDACAO, precisa, novo, escritor, cabecalho, rodape, rodapeAutenticado, qr,
-    declaracaoVinculo, declaracaoParticipacao, registro, registroContas, baixar, blob, abrir,
+    declaracaoVinculo, declaracaoParticipacao, registro, registroContas, folhaCheckin, baixar, blob, abrir,
     textoVinculo, textoParticipacao, preencher, valorTexto, impressaoPadrao, notaDaClasse,
     limpa, dataExtenso, dataCurta, mesAno, horaExtenso, horasExtenso, periodo, momento, tituloFrase
   };

@@ -18,8 +18,8 @@ As decisões estão na seção 2; quem quiser só a ordem das coisas, pule para 
 | **4 · Painéis** | **Feita pela metade.** Os dois `admin.html` (portal e site) viraram `#/admin` — hoje uma galeria de doze painéis. Seleção e OKRs, que também eram desta fase, ficaram de fora (ver abaixo) |
 | **Agenda (revisão)** | **Feita.** Tudo editável depois de criado; marcos e ausências saem do back-end; nenhum tipo força recorrência |
 | **2 · Operações** | **Feita.** Apontamento em Equipe; relatórios, importação, contas e catálogo viram painéis de Administração, agora em galeria |
-| **3 · Eventos** | **Feita.** O dossiê vira a profundidade de um item da agenda (`#/agenda/evento/<id>`), com checklist, presenças e ata |
-| **5 · Corte** | **Feita.** `nro-pessoal` vira encaminhamento e acervo; o app antigo fica em `soma-legado.html` como rede de segurança; `brand`, `selecao` e o tour apontam para o portal |
+| **3 · Eventos** | **Feita, e revista na revisão 28.** O dossiê (checklist, presenças e ata) saiu: a agenda segue o modelo do Google Agenda, e `#/agenda/evento/<id>` é a página do evento (convidados, notificações, reagendar, resposta pelo e-mail) |
+| **5 · Corte** | **Feita.** `nro-pessoal` vira encaminhamento e acervo; o app antigo ficou em `soma-legado.html` como rede de segurança até a revisão 28, que o removeu; `brand`, `selecao` e o tour apontam para o portal |
 | **Pessoal no quadro** | **Feita.** Solicitação, apontamento e ocorrência viram cartão no quadro do Depto de Pessoal; o cartão de origem decide e concede o acesso na mesma transação; o quadro do Pessoal fecha (`reservado`) |
 | **Notificação por e-mail** | **Feita.** Edge Function `notificar-email` com SMTP por variável de ambiente, três modos por pessoa (a cada aviso / resumo diário / só no portal), agendamento documentado |
 | **Quadro e acesso** | **Feita.** Cinco colunas que cabem na janela (sem rolagem horizontal), grupos num seletor em vez de abas, cartão com relevo e brilho de prioridade, e nível de acesso por pessoa em cada quadro |

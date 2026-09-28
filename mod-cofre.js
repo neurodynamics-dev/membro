@@ -27,7 +27,7 @@
 
    Depende da casca para: sb, $, esc, norm, state, toast, abreModal,
    fechaModal, fmtD, fmtDT, ic, confirma, falha, motivoRPC, registrarBusca,
-   precisaDocNRO, hojeISO, grupoPorId, carregarLib, CAT_ACESSO.
+   precisaDocNRO, hojeISO, grupoPorId, carregarLib, CAT_ACESSO, dica.
    ============================================================ */
 
 const cof = { lista:null, erro:null, gestor:false, cfg:null, lembrou:false, form:null, limpeza:null, esconde:new Map() };
@@ -58,18 +58,18 @@ const COF_CAMPO = {
 };
 const COF_MOTIVO = {
   vazio:'Não há nada guardado aqui.', sem_totp:'Esta conta não tem código de duas etapas.',
-  totp_invalido:'O segredo do código de duas etapas guardado não é válido — quem mantém a conta precisa colá-lo de novo.'
+  totp_invalido:'Segredo do código de duas etapas inválido. Quem mantém a conta precisa cadastrá-lo de novo.'
 };
 const cofMotivo = (data, error, padrao) => error ? motivoRPC(null, error, padrao)
   : COF_MOTIVO[data?.status] || motivoRPC(data, null, padrao);
 const cofCarregando = t => `<div class="carregando"><span class="spin"></span> ${t || 'Abrindo o cofre…'}</div>`;
 const cofTopo = (titulo, lead, acoes) => `<div class="topo-gestao"><div class="tx">
-  <span class="eyebrow">Serviços · Cofre</span><h1>${titulo}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}</div>
+  <span class="eyebrow">Serviços › Cofre</span><h1>${titulo}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}</div>
   ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
 const cofFaltaBanco = erro => `${cofTopo('Cofre de senhas', '')}<div class="aviso-box err"><b>O cofre ainda não está no banco.</b>
   ${esc(erro?.message || '')}<br><span class="small">Falta aplicar a migração <code>db/v27_cofre.sql</code> — e, antes dela, ligar o
   Vault do Supabase (Database › Extensions › supabase_vault).</span></div>`;
-const cofNome = c => c ? `${c.item_nome}${c.rotulo ? ' — ' + c.rotulo : ''}` : '';
+const cofNome = c => c ? `${c.item_nome}${c.rotulo ? ' (' + c.rotulo + ')' : ''}` : '';
 const cofHost = url => String(url || '').replace(/^https?:\/\//i, '').replace(/[/?#].*$/, '');
 const cofPorId = id => (cof.lista || []).find(c => c.id === id) || null;
 
@@ -101,7 +101,7 @@ async function pageCofre(sub2){
 function cofNav(atual){
   if (!cof.gestor) return '';
   const it = [['', 'Minhas contas'], ['gestao', 'Gestão'], ['uso', 'Registro de uso'], ['config', 'Configurações']];
-  return `<nav class="arq-nav" aria-label="Cofre">${it.map(([k, rot]) => `<a href="#/servicos/cofre${k ? '/' + k : ''}"
+  return `<nav class="nav1" aria-label="Cofre">${it.map(([k, rot]) => `<a href="#/servicos/cofre${k ? '/' + k : ''}"
     class="${atual === (k || 'minhas') ? 'on' : ''}">${k === 'config' ? ic('engrenagem') + ' ' : ''}${rot}</a>`).join('')}</nav>`;
 }
 
@@ -114,18 +114,16 @@ function cofMinhas(destaque){
     .sort((a, b) => (a === 'sistema' ? -1 : b === 'sistema' ? 1 : String(a).localeCompare(String(b))));
   const pede = l.filter(c => c.mantem && ['vencida','vence_logo','exposta'].includes(c.situacao));
   $('#main').innerHTML = `${cofTopo('Cofre de senhas',
-      'As contas dos acessos que você tem: o usuário, a senha e o código de duas etapas, para entrar e copiar. Tudo o que sai do '
-      + 'cofre fica registrado — quem viu, quem copiou e quando.',
+      `Contas dos seus acessos. ${dica('Cada visualização e cópia fica registrada, com quem e quando.')}`,
       cof.gestor ? `<a class="btn solid" href="#/servicos/cofre/nova">${ic('plus')} Nova conta</a>` : '')}
     ${cofNav('minhas')}
-    ${pede.length ? `<div class="aviso-box warn">${pede.length === 1 ? 'Uma conta que você mantém pede' : pede.length + ' contas que você mantém pedem'}
-      a troca da senha: ${pede.map(c => `<a href="#/servicos/cofre/${c.id}" style="text-decoration:underline">${esc(cofNome(c))}</a>`).join(', ')}.</div>` : ''}
+    ${pede.length ? `<div class="aviso-box warn">${pede.length === 1 ? 'Uma conta mantida por você precisa' : pede.length + ' contas mantidas por você precisam'}
+      de troca de senha: ${pede.map(c => `<a href="#/servicos/cofre/${c.id}" style="text-decoration:underline">${esc(cofNome(c))}</a>`).join(', ')}.</div>` : ''}
     ${l.length ? `<div class="cof-filtro"><input id="cof-busca" type="search" placeholder="Filtrar pelo nome, usuário ou endereço"
         aria-label="Filtrar as contas" oninput="cofFiltrar(this.value)"></div>
       ${cats.map(k => `<section class="cof-sec" data-cat="${esc(k)}"><h2 class="srv-bloco">${esc(CAT_ACESSO[k] || (k === 'outros' ? 'Outros' : k))}</h2>
         <div class="cof-lista">${l.filter(c => (c.item_categoria || 'outros') === k).map(cofCartao).join('')}</div></section>`).join('')}
-      <p class="small dim cof-rodape">Falta uma conta aqui? Ela aparece para quem está num dos grupos dela e para quem tem o acesso
-        concedido na ficha — peça em <a href="#/servicos/acesso" style="text-decoration:underline">Serviços › Solicitação de acesso</a>.</p>`
+      <p class="small dim cof-rodape">Para acessar outra conta: <a href="#/servicos/acesso" style="text-decoration:underline">Serviços › Solicitação de acesso</a>.</p>`
     : `<div class="vazio"><div class="glyph">${ic('cofre')}</div><h3>Nenhuma conta para você no cofre</h3>
         <p>As contas aparecem para quem está num dos grupos delas e para quem tem o acesso concedido na ficha.
           Precisa de uma? Peça o acesso.</p>
@@ -143,11 +141,11 @@ function cofFiltrar(t){
 }
 const COF_IC = { sistema:'key', local:'cadeado', documento:'doc' };
 function cofPrazo(c){
-  if (!c.tem_senha) return c.mantem ? 'Sem senha no cofre — cadastre em Trocar a senha.' : 'Sem senha no cofre.';
+  if (!c.tem_senha) return c.mantem ? 'Sem senha no cofre. Cadastre em Trocar a senha.' : 'Sem senha no cofre.';
   const troca = c.trocada_em ? `Trocada em ${fmtD(c.trocada_em)}${c.trocada_nome ? ' por ' + esc(c.trocada_nome) : ''}` : '';
-  if (!c.vence_em) return troca + (troca ? ' · ' : '') + 'sem prazo de troca';
+  if (!c.vence_em) return troca + (troca ? ', ' : '') + 'sem prazo de troca';
   const venc = new Date(c.vence_em) < new Date() ? 'venceu em' : 'troca até';
-  return `${troca}${troca ? ' · ' : ''}${venc} ${fmtD(c.vence_em)}`;
+  return `${troca}${troca ? ', ' : ''}${venc} ${fmtD(c.vence_em)}`;
 }
 function cofCartao(c){
   const s = COF_SIT[c.situacao] || { l:c.situacao, p:'', dt:'dt-gray' };
@@ -156,7 +154,7 @@ function cofCartao(c){
     <header class="cof-hd">
       <span class="cof-ic">${ic(COF_IC[c.item_categoria] || 'cofre')}</span>
       <div class="tx"><h3>${esc(c.item_nome)}${c.rotulo ? ` <span class="rot">— ${esc(c.rotulo)}</span>` : ''}</h3>
-        <span class="mt">${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(cofHost(c.url))} ${ic('link')}</a> · ` : ''}${esc(COF_VIA[c.via] || '')}</span></div>
+        <span class="mt">${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">${esc(cofHost(c.url))} ${ic('link')}</a>, ` : ''}${esc(COF_VIA[c.via] || '')}</span></div>
       <span class="pill ${s.p}"><span class="dt ${s.dt}"></span>${s.l}</span>
     </header>
     <div class="cof-campos">
@@ -231,15 +229,15 @@ function cofEsconder(id){
 }
 async function cofNotas(id){
   const v = await cofRevelar(id, 'notas', 'ver'); if (v == null) return;
-  abreModal(`<h3>Notas secretas · ${esc(cofNome(cofPorId(id)))}</h3>
-    <p class="sub" style="margin-bottom:12px">Códigos de recuperação, perguntas de segurança — o que também é segredo. Ver ficou registrado.</p>
+  abreModal(`<h3>Notas secretas de ${esc(cofNome(cofPorId(id)))}</h3>
+    <p class="sub" style="margin-bottom:12px">Códigos de recuperação e perguntas de segurança. A visualização fica registrada.</p>
     <pre class="cof-notas">${esc(v)}</pre>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button>
       <button class="btn solid" onclick="cofCopiar('${id}','notas')">${ic('copy')} Copiar</button></div>`);
 }
 function cofAnterior(id){
   const c = cofPorId(id); if (!c) return;
-  abreModal(`<h3>A senha anterior · ${esc(cofNome(c))}</h3>
+  abreModal(`<h3>Senha anterior de ${esc(cofNome(c))}</h3>
     <p class="sub" style="margin-bottom:14px">Guardada até ${fmtD(c.anterior_ate)}, para o caso de o serviço não ter aceitado a troca. Se a
       nova já funciona, ela não serve para mais nada.</p>
     <div class="cof-campo solto"><span class="lb">Senha anterior</span><span class="vl"><span class="v mono cof-sen" id="cofant">••••••••••••</span>
@@ -291,13 +289,13 @@ async function cofUso(id){
   const c = cofPorId(id);
   const { data, error } = await sb.rpc('cofre_log_ler', { p_id: id, p_limite: 100 });
   if (error) return falha(error, 'Não foi possível ler o registro de uso');
-  abreModal(`<h3>Registro de uso · ${esc(cofNome(c))}</h3>
+  abreModal(`<h3>Registro de uso de ${esc(cofNome(c))}</h3>
     <p class="sub" style="margin-bottom:12px">Os cem movimentos mais recentes: quem viu ou copiou um segredo, gerou um código, mudou a conta.</p>
     ${(data || []).length ? `<ol class="cof-log">${data.map(cofLogLinha).join('')}</ol>` : '<p class="small muted">Ninguém usou esta conta ainda.</p>'}
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`);
 }
 const cofLogLinha = l => `<li><span class="qd">${fmtDT(l.criado_em)}</span> <b>${esc(l.nome || '—')}</b> ${esc(COF_ACAO[l.acao] || l.acao)}${
-  l.detalhe ? `<span class="small dim"> — ${esc(l.detalhe)}</span>` : ''}</li>`;
+  l.detalhe ? `<span class="small dim">: ${esc(l.detalhe)}</span>` : ''}</li>`;
 
 /* ============================================================
    O GERADOR DE SENHAS
@@ -353,7 +351,7 @@ function cofGerador(alvo){
 function cofNova(alvo){ const el = document.getElementById(alvo); if (!el) return; el.value = cofGerarSenha(); cofMedir(alvo); }
 function cofMedir(alvo){
   const el = document.getElementById(alvo), f = cofForca(el?.value), out = document.getElementById(alvo + '-forca');
-  if (out) out.innerHTML = f.bits ? `<span class="${f.c}">${f.l}</span> · ${f.bits} bits · ${el.value.length} caracteres` : '';
+  if (out) out.innerHTML = f.bits ? `<span class="${f.c}">${f.l}</span>, ${f.bits} bits, ${el.value.length} caracteres` : '';
 }
 function cofCopiarCampo(alvo){ const v = document.getElementById(alvo)?.value; if (v) cofParaAreaDeTransferencia(v, 'Senha copiada'); }
 
@@ -361,10 +359,10 @@ function cofCopiarCampo(alvo){ const v = document.getElementById(alvo)?.value; i
 function cofTrocar(id){
   const c = cofPorId(id); if (!c) return;
   const dias = cof.cfg?.anterior_dias ?? 30;
-  abreModal(`<h3>${c.tem_senha ? 'Trocar a senha' : 'Pôr a senha'} · ${esc(cofNome(c))}</h3>
+  abreModal(`<h3>${c.tem_senha ? 'Trocar a senha' : 'Definir a senha'} de ${esc(cofNome(c))}</h3>
     <ol class="cof-passos">
       <li>O cofre gerou uma senha nova, abaixo. Copie.</li>
-      <li>${c.tem_senha ? 'Troque no serviço' : 'Ponha no serviço'}${c.url ? ` — <a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">${esc(cofHost(c.url))}</a>` : ''}.
+      <li>${c.tem_senha ? 'Troque no serviço' : 'Cadastre no serviço'}${c.url ? `: <a href="${esc(c.url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">${esc(cofHost(c.url))}</a>` : ''}.
         ${c.tem_senha ? `Se ele pedir a senha atual, <button type="button" class="linkish" onclick="cofCopiar('${id}','senha')">copie a atual</button>.` : ''}</li>
       <li>Registre aqui a senha nova.${c.tem_senha && dias ? ` A atual fica guardada como anterior por ${dias} dias.` : ''}</li>
     </ol>
@@ -446,8 +444,7 @@ async function cofTotpConferir(){
     if (!document.body.contains(out)) return clearInterval(cofTotpTimer);
     const cod = await cofTotp(o.segredo, o);
     const r = o.periodo - Math.floor(Date.now() / 1000) % o.periodo;
-    out.innerHTML = `<span class="ok">${ic('check')} Chave válida</span>${o.emissor ? ` · ${esc(o.emissor)}` : ''}${o.conta ? ` · ${esc(o.conta)}` : ''}
-      · ${o.digitos} dígitos a cada ${o.periodo} s${o.algoritmo !== 'SHA1' ? ' · ' + o.algoritmo : ''}
+    out.innerHTML = `<span class="ok">${ic('check')} Chave válida</span>${o.emissor ? `, ${esc(o.emissor)}` : ''}${o.conta ? `, ${esc(o.conta)}` : ''}, ${o.digitos} dígitos a cada ${o.periodo} s${o.algoritmo !== 'SHA1' ? ', ' + o.algoritmo : ''}
       <span class="cof-agora">Código agora: <b class="mono">${esc(cofCodigoFmt(cod))}</b> <span class="dim">(${r} s)</span></span>`;
   };
   await mostra();
@@ -466,7 +463,7 @@ async function cofLerQR(inp){
     const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0); URL.revokeObjectURL(url);
     const px = cx.getImageData(0, 0, cv.width, cv.height);
     const r = window.jsQR(px.data, cv.width, cv.height, { inversionAttempts:'attemptBoth' });
-    if (!r?.data) return toast('Não achei um QR Code nessa imagem. Recorte só o QR e tente de novo — ou cole a chave.', true);
+    if (!r?.data) return toast('QR Code não encontrado na imagem. Recorte o QR ou cole a chave.', true);
     if (!/^otpauth:\/\//i.test(r.data)) return toast('O QR Code dessa imagem não é de código de duas etapas.', true);
     $('#cf-totp').value = r.data; cofTotpConferir();
     toast('QR Code lido. Confira o código de agora com o que o serviço pede.');
@@ -498,8 +495,7 @@ async function cofFormulario(id, itemId){
   $('#main').innerHTML = `
     <a class="tre-voltar" href="#/servicos/cofre${gest ? '/gestao' : ''}" style="margin-top:22px">${ic('back')} ${gest ? 'Gestão do cofre' : 'Cofre de senhas'}</a>
     ${cofTopo(c ? `Editar ${esc(cofNome(c))}` : 'Nova conta no cofre',
-      c ? 'A senha se troca pelo botão "Trocar a senha", na lista: a anterior fica guardada.' :
-      'O endereço, o usuário e a senha — que o cofre gera —, o código de duas etapas, se o serviço tiver, e quem usa a conta.')}
+      c ? 'Troca de senha: botão "Trocar a senha", na lista. A anterior fica guardada.' : '')}
     <div class="form-card cof-form">
       <div class="form-grid">
         <div class="fld full"><label for="cf-item">Acesso do catálogo</label>
@@ -512,10 +508,10 @@ async function cofFormulario(id, itemId){
           <input id="cf-url" maxlength="500" value="${esc(c?.url || '')}" placeholder="https://accounts.google.com"></div>
         <div class="fld full"><label for="cf-usu">Usuário</label>
           <input id="cf-usu" maxlength="200" value="${esc(c?.usuario || '')}" placeholder="equipe@neurodynamics.dev" autocomplete="off" class="mono"></div>
-        ${c ? '' : `<div class="fld full"><label for="cf-senha">Senha <span class="opc">(o cofre gera; ponha a mesma no serviço)</span></label>
+        ${c ? '' : `<div class="fld full"><label for="cf-senha">Senha <span class="opc">(gerada pelo cofre; use a mesma no serviço)</span></label>
           ${cofGerador('cf-senha')}
           <label class="check" style="margin-top:8px"><input type="checkbox" id="cf-sem-senha" onchange="$('#cf-senha').disabled = this.checked">
-            A conta não tem senha (entra por outra conta, por link) — ou ela vem depois</label></div>`}
+            Sem senha (acesso por outra conta ou link) ou cadastrada depois</label></div>`}
       </div>
 
       <div class="adm-grupo">Código de duas etapas</div>
@@ -542,10 +538,10 @@ async function cofFormulario(id, itemId){
       <div class="form-grid">
         <div class="fld"><label for="cf-prazo">Prazo de troca da senha</label>
           <select id="cf-prazo">${prazos.map(([v, r]) => `<option value="${v == null ? '' : v}" ${v === atual ? 'selected' : ''}>${r}</option>`).join('')}</select>
-          <p class="mini">${cof.cfg?.aviso_dias ?? 14} dias antes, quem mantém recebe o aviso no sino e por e-mail.</p></div>
+          <p class="mini">Aviso a quem mantém ${cof.cfg?.aviso_dias ?? 14} dias antes.</p></div>
         ${c ? `<div class="fld"><label>Situação</label><label class="check"><input type="checkbox" id="cf-ativo" ${c.ativo ? 'checked' : ''}>
-          Ativa — desmarcada, some da lista de quem usa, e o que está guardado fica</label></div>` : ''}
-      </div>` : `<p class="small dim" style="margin-top:12px">Quem usa, quem mantém e o prazo de troca são da gestão do cofre.</p>`}
+          Ativa (desmarcada, sai da lista de quem usa; os dados ficam guardados)</label></div>` : ''}
+      </div>` : `<p class="small dim" style="margin-top:12px">Usuários, responsáveis e prazo: gestão do cofre.</p>`}
 
       <p class="err-msg" id="cf-erro"></p>
       <div class="acts">
@@ -566,7 +562,7 @@ function cofDesenharTotp(){
   const c = f.id ? cofPorId(f.id) : null;
   clearInterval(cofTotpTimer);
   if (f.totp === 'manter'){
-    el.innerHTML = `<div class="cof-ja"><span>${ic('shield')} Ligado · ${c?.totp_digitos || 6} dígitos a cada ${c?.totp_periodo || 30} s.
+    el.innerHTML = `<div class="cof-ja"><span>${ic('shield')} Ligado, ${c?.totp_digitos || 6} dígitos a cada ${c?.totp_periodo || 30} s.
       O segredo está no cofre e não se mostra.</span>
       <span class="acs"><button type="button" class="btn ghost mini" onclick="cof.form.totp = 'novo'; cofDesenharTotp()">Substituir</button>
       <button type="button" class="btn ghost mini" onclick="cof.form.totp = 'tirar'; cofDesenharTotp()">Desligar</button></span></div>`;
@@ -583,8 +579,7 @@ function cofDesenharTotp(){
       oninput="cofTotpConferir()">
       <label class="btn ghost mini cof-qr">${ic('imagem')} Ler o QR de uma imagem<input type="file" accept="image/*" hidden onchange="cofLerQR(this)"></label>
       ${c?.tem_totp ? `<button type="button" class="btn ghost mini" onclick="cof.form.totp = 'manter'; cofDesenharTotp()">Manter o atual</button>` : ''}</div>
-    <p class="mini">Ao ligar o 2FA, o serviço mostra um QR Code e, em "não consegue ler?", a chave. Cole a chave (ou tire um print do QR):
-      o código de agora aparece aqui, para você terminar de ligar no serviço. Daí em diante, quem usa a conta gera o código pelo cofre.</p>
+    <p class="mini">Cole a chave do 2FA ou envie a imagem do QR. ${dica('Ao ativar o 2FA, o serviço exibe um QR Code e a chave. O código atual aparece aqui para concluir a ativação; depois, quem usa a conta gera o código pelo cofre.')}</p>
     <p class="cof-totp-ok" id="cf-totp-ok"></p></div>`;
   f.totp = 'novo';
 }
@@ -659,7 +654,7 @@ async function cofExcluir(id){
    A GESTÃO: todas as contas, os acessos sem conta, a exportação
    ============================================================ */
 const cofQuemUsa = c => [(c.grupos || []).map(id => grupoPorId(id)?.nome).filter(Boolean).join(', '), 'acesso concedido']
-  .filter(Boolean).join(' · ');
+  .filter(Boolean).join(', ');
 function cofGestao(){
   const l = cof.lista || [];
   const comConta = new Set(l.map(c => c.item_id));
@@ -685,9 +680,9 @@ function cofGestao(){
           <td class="acoes-linha"><a class="btn ghost mini" href="#/servicos/cofre/editar/${c.id}">${ic('pencil')} Editar</a>
             <button class="icon-btn sm" title="Registro de uso" aria-label="Registro de uso de ${esc(cofNome(c))}" onclick="cofUso('${c.id}')">${ic('relogio')}</button></td></tr>`; }).join('')}
       </tbody></table></div>` : `<div class="vazio"><div class="glyph">${ic('cofre')}</div><h3>O cofre está vazio</h3>
-        <p>Comece pelos sistemas do catálogo de acessos, abaixo: cada um que tem login ganha a sua conta.</p></div>`}
+        <p>Cadastre as contas a partir do catálogo de acessos, abaixo.</p></div>`}
     <div class="tre-sec" style="margin-top:28px"><h2>Acessos do catálogo sem conta no cofre <span class="n">${sem.length}</span></h2>
-      <p class="small muted" style="margin:4px 0 12px">Nem todo acesso tem conta — um local ou um termo, em geral, não tem.</p>
+      <p class="small muted" style="margin:4px 0 12px">Locais e termos, em geral, não têm conta.</p>
       ${sem.length ? semCats.map(k => `<div class="cof-sem"><span class="lb">${esc(CAT_ACESSO[k] || k)}</span>${sem.filter(i => (i.categoria || 'outros') === k)
         .map(i => `<a class="chip" href="#/servicos/cofre/nova/${esc(i.id)}">${ic('plus')} ${esc(i.nome)}</a>`).join('')}</div>`).join('')
         : '<p class="small muted">Todo acesso ativo do catálogo tem conta no cofre.</p>'}</div>`;
@@ -718,7 +713,7 @@ async function cofUsoTodos(){
   if (error){ $('#main').innerHTML = cofFaltaBanco(error); return; }
   const l = data || [];
   const contas = [...new Set(l.map(x => x.conta).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  $('#main').innerHTML = `${cofTopo('Registro de uso', 'Os quinhentos movimentos mais recentes do cofre: quem viu ou copiou um segredo, gerou um código, cadastrou, mudou ou excluiu uma conta.')}
+  $('#main').innerHTML = `${cofTopo('Registro de uso', 'Últimos 500 movimentos do cofre.')}
     ${cofNav('uso')}
     <div class="cof-filtro">
       <select id="cu-conta" onchange="cofUsoFiltrar()" aria-label="Conta"><option value="">Todas as contas</option>${contas.map(c => `<option>${esc(c)}</option>`).join('')}</select>
@@ -729,7 +724,7 @@ async function cofUsoTodos(){
         <td class="small">${fmtDT(x.criado_em)}</td><td><span class="nome">${esc(x.nome || '—')}</span></td>
         <td>${esc(COF_ACAO[x.acao] || x.acao)}${x.detalhe ? `<span class="small dim" style="display:block">${esc(x.detalhe)}</span>` : ''}</td>
         <td class="small">${esc(x.conta || '—')}</td></tr>`).join('')}</tbody></table></div>`
-      : '<div class="vazio"><div class="glyph">·</div><h3>Nada registrado ainda</h3><p>Quando alguém usar o cofre, aparece aqui.</p></div>'}`;
+      : '<div class="vazio"><div class="glyph">·</div><h3>Nada registrado</h3></div>'}`;
 }
 function cofUsoFiltrar(){
   const c = $('#cu-conta')?.value || '', t = $('#cu-acao')?.value || '';
@@ -741,7 +736,7 @@ function cofConfig(){
   const c = cof.cfg || {}, admin = state.perfil?.papel === 'admin';
   const sel = new Set(c.grupos_gestores || []);
   const gs = (state.grupos || []).slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  $('#main').innerHTML = `${cofTopo('Configurações do cofre', 'Quem gere o cofre e os prazos da troca das senhas.')}
+  $('#main').innerHTML = `${cofTopo('Configurações do cofre', '')}
     ${cofNav('config')}
     <div class="evx-cfg cof-cfg">
       <div class="card"><h3>Quem gere o cofre</h3>
@@ -780,7 +775,7 @@ registrarBusca({
   buscar: termo => {
     const t = norm(termo);
     return (cof.lista || []).filter(c => norm(cofNome(c)).includes(t) || norm(c.usuario || '').includes(t) || norm(cofHost(c.url)).includes(t))
-      .slice(0, 6).map(c => ({ titulo: cofNome(c), sub: [c.usuario, cofHost(c.url)].filter(Boolean).join(' · ') || 'Cofre de senhas',
+      .slice(0, 6).map(c => ({ titulo: cofNome(c), sub: [c.usuario, cofHost(c.url)].filter(Boolean).join(', ') || 'Cofre de senhas',
         href: '#/servicos/cofre/' + c.id, peso: 3 }));
   }
 });

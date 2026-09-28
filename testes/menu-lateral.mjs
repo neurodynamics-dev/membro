@@ -12,7 +12,7 @@
      6. celular: barra de topo, gaveta inerte quando fechada, Esc fecha,
         navegar fecha;
      7. nenhuma largura cria rolagem horizontal;
-     8. Informações filtra por categoria (o subitem novo).
+     8. Equipe › Presença (o check-in e o placar) acende o subitem.
    Rode com o portal servido da raiz: python3 -m http.server 8765 */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
@@ -79,7 +79,7 @@ console.log('\nAberto (admin, 1440px)');
      tomaram o lugar de Meus pedidos, que virou subitem de Serviços */
   confere('os espaços, na ordem (admin vê também Studio, Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Treinamentos|Informações|Serviços|Seleção|Administração',
+      'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Treinamentos|Serviços|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
   confere('Seleção e Administração vêm depois do divisor "Gestão"',
@@ -89,9 +89,9 @@ console.log('\nAberto (admin, 1440px)');
 
   let ag = await secao(p, 'agenda');
   confere('Agenda: ativa e aberta', ag.ativa && ag.aberta && ag.seta === 'true', ag);
-  confere('Agenda: subitens são as abas da tela',
-    ag.filhos.join('|') === 'Próximos|Mês|Agendar|Presença|Minha agenda', ag.filhos);
-  confere('só "Mês" está marcado', JSON.stringify(await atual(p)) === '["Mês"]', await atual(p));
+  confere('Agenda: o calendário e as configurações',
+    ag.filhos.join('|') === 'Calendário|Configurações', ag.filhos);
+  confere('a visão do mês marca "Calendário"', JSON.stringify(await atual(p)) === '["Calendário"]', await atual(p));
   const outra = await secao(p, 'servicos');
   confere('as outras seções começam fechadas', !outra.aberta && outra.visiveis === 0, outra);
 
@@ -112,21 +112,19 @@ console.log('\nAberto (admin, 1440px)');
   confere('a ficha (#/equipe/4) acende "Quadro de pessoal"',
     JSON.stringify(await atual(p)) === '["Quadro de pessoal"]', await atual(p));
 
-  await ir(p, '#/informacoes/guia', 900);
-  confere('Informações › Guias: marca o subitem', JSON.stringify(await atual(p)) === '["Guias"]');
-  const docs = await p.evaluate(() => ({ h1: document.querySelector('main h1').textContent,
-    titulos: [...document.querySelectorAll('.doc .tt')].map(t => t.textContent) }));
-  confere('e a página mostra só a categoria',
-    docs.h1 === 'Guias' && docs.titulos.join() === 'Guia do primeiro mês', docs);
-  await ir(p, '#/informacoes/politica', 900);
-  confere('categoria sem documento diz isso, com volta para a biblioteca',
-    await p.evaluate(() => /Nenhum documento em Políticas/.test(document.querySelector('#docs-area').textContent)
-      && !!document.querySelector('#docs-area a[href="#/informacoes"]')));
+  await ir(p, '#/equipe/presenca', 1200);
+  confere('Equipe › Presença marca o subitem', JSON.stringify(await atual(p)) === '["Presença"]', await atual(p));
+  await ir(p, '#/agenda/presenca', 1200);
+  confere('o endereço antigo da presença leva a Equipe › Presença',
+    await p.evaluate(() => location.hash) === '#/equipe/presenca' && JSON.stringify(await atual(p)) === '["Presença"]', await atual(p));
+  await ir(p, '#/informacoes', 900);
+  confere('Informações saiu: o endereço antigo leva a Arquivos', await p.evaluate(() => location.hash.startsWith('#/arquivos')
+    || document.querySelector('main h1')?.textContent === 'Todos os arquivos'), await p.evaluate(() => location.hash));
 
   await ir(p, '#/admin/contas', 1200);
   const adm = await secao(p, 'admin');
   confere('Administração: todos os painéis, em quatro grupos',
-    adm.filhos.length === 13 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
+    adm.filhos.length === 14 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
   confere('#/admin/contas marca "Contas e perfis"',
     JSON.stringify(await atual(p)) === '["Contas e perfis"]', await atual(p));
   await ir(p, '#/admin/site', 1200);
@@ -223,10 +221,10 @@ console.log('\nAberto (admin, 1440px)');
   let v = await vooVisivel('agenda');
   confere('mouse no ícone da Agenda abre o voo ao lado do trilho, na altura dele',
     v.visivel && v.left >= 68 && Math.abs(v.top - v.topoDoIcone) <= 6, v);
-  await p.hover('#lt-nav .lt-sec[data-r="agenda"] .lt-filho[data-sub="presenca"]');
-  await p.click('#lt-nav .lt-sec[data-r="agenda"] .lt-filho[data-sub="presenca"]');
+  await p.hover('#lt-nav .lt-sec[data-r="agenda"] .lt-filho[data-sub="config"]');
+  await p.click('#lt-nav .lt-sec[data-r="agenda"] .lt-filho[data-sub="config"]');
   await p.waitForTimeout(700);
-  confere('o subitem do voo navega', await p.evaluate(() => location.hash) === '#/agenda/presenca');
+  confere('o subitem do voo navega', await p.evaluate(() => location.hash) === '#/agenda/config');
   await p.mouse.move(900, 500);
   confere('tirar o mouse fecha o voo (o clique não o prende aberto)', !(await vooVisivel('agenda')).visivel);
 
@@ -332,10 +330,10 @@ console.log('\nCelular (390px)');
     await p.evaluate(() => !document.body.classList.contains('menu-open')
       && document.getElementById('hd').inert && document.activeElement.id === 'burger'));
   await p.click('#burger'); await p.waitForTimeout(400);
-  await p.click('#lt-nav .lt-sec[data-r="agenda"] .lt-filho[data-sub="minha"]');
+  await p.click('#lt-nav .lt-sec[data-r="agenda"] .lt-filho[data-sub="config"]');
   await p.waitForTimeout(700);
   confere('escolher um subitem navega e fecha a gaveta',
-    await p.evaluate(() => location.hash === '#/agenda/minha' && !document.body.classList.contains('menu-open')));
+    await p.evaluate(() => location.hash === '#/agenda/config' && !document.body.classList.contains('menu-open')));
   await p.click('#lt-veu', { force:true }).catch(() => {});
   await p.click('#burger'); await p.waitForTimeout(400);
   await p.mouse.click(370, 500); await p.waitForTimeout(350);
@@ -381,7 +379,7 @@ console.log('\nTema');
     const amostras = { 'título': 'main h1', 'texto de apoio': '.topo-gestao .lead', 'rótulo (dim)': '.topo-gestao .eyebrow',
       'item do menu': '#lt-nav .lt-item .lt-rot', 'código': '.arq-tab .cod', 'subtítulo da linha': '.arq-tab .sub',
       'quem mexeu': '.arq-tab .arq-quem', 'classe controlado': '.arq-cls.controlado', 'status ativo': '.pill.p-ok',
-      'link secundário': '.arq-nav a:not(.on)', 'selo Synapse': '.hd-tag', 'frase da estrutura': '.arq-leg .fr',
+      'link secundário': '.nav1 a:not(.on)', 'selo Synapse': '.hd-tag', 'frase da estrutura': '.arq-leg .fr',
       'rótulo de campo': '.fld label' };
     return Object.entries(amostras).map(([nome, sel]) => { const el = document.querySelector(sel); if (!el) return { nome, falta: true };
       const f = fundo(el), t = sobre(rgb(getComputedStyle(el).color), f), [a, b] = [lum(t), lum(f)].sort((x, y) => y - x);
@@ -434,8 +432,8 @@ console.log('\nTema');
 console.log('\nPor papel');
 for (const [papel, esperado] of [
   ['leitura', { admin:null, quadroPessoal:false, selecao:false }],
-  ['selecao', { admin:'Todos os painéis|Relatórios', quadroPessoal:false, selecao:true }],
-  ['pessoal', { admin:13, quadroPessoal:true, selecao:true }]
+  ['selecao', { admin:'Todos os painéis|E-mails|Relatórios', quadroPessoal:false, selecao:true }],
+  ['pessoal', { admin:14, quadroPessoal:true, selecao:true }]
 ]){
   const { ctx, p } = await abrir({ stub: stubDe(papel) });
   const adm = await secao(p, 'admin'), eq = await secao(p, 'equipe'), sel = await secao(p, 'selecao');

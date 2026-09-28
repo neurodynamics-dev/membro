@@ -44,7 +44,7 @@ const STATUS_DOT  = {'Ativo':['dt-ok','p-ok'], 'Em pausa / avaliação':['dt-war
 const TAB_LABEL = {membros:'Membros', dados_pessoais:'Dados pessoais', acessos_concedidos:'Acessos',
   ocorrencias:'Ocorrências', avaliacoes:'Avaliações', itens_de_acesso:'Catálogo',
   apontamentos:'Apontamentos', apontamento_itens:'Apontamentos', eventos:'Eventos',
-  evento_participantes:'Eventos · presenças', evento_checklist:'Eventos · checklist'};
+  evento_participantes:'Eventos, presenças', evento_checklist:'Eventos, checklist'};
 
 /* ---------------- utilidades ---------------- */
 const pill = (st) => { const [dot, cor] = STATUS_DOT[st] || ['dt-gray',''];
@@ -110,7 +110,7 @@ function renderQuadro(){
   $('#main').innerHTML = topoGestao({
     olho: 'Quadro de pessoal',
     titulo: 'Quadro',
-    lead: 'O quadro inteiro: quem está ativo, em pausa, sob demanda e desligado — e a ficha de cada um.',
+    lead: '',
     acoes: can() ? ibtn('plus','Novo membro','modalMembro()','primary') : ''
   }) + abasEquipe('quadro') + `
     <div class="metricas" style="margin-bottom:18px">
@@ -182,7 +182,7 @@ function renderTabelaMembros(){
         <td class="nome" title="${esc(m.nome)}">${esc(m.nome)}</td>
         <td title="${esc(m.departamento||'')}">${esc(m.departamento||'—')}</td>
         <td title="${esc(m.cargo||'')}">${esc(m.cargo||'—')}</td>
-        <td title="${esc((m.grupos||[]).join(', '))}">${chips(m.grupos,2)}</td>
+        <td title="${esc([...gruposEfetivos(m)].join(', '))}">${chips([...gruposEfetivos(m)],2)}</td>
         <td>${pill(m.status)}</td></tr>`).join('')}</tbody></table></div>
     <div class="small muted" style="padding:10px 4px">${ms.length} de ${state.membros.length} registros</div>`
     : `<div class="empty">Nenhum membro corresponde aos filtros.</div>`;
@@ -219,9 +219,9 @@ async function carregarOcorrenciasRecentes(){
       <p class="sub" style="margin-bottom:14px">Os últimos movimentos registrados no quadro</p>
       ${(oc && oc.length) ? `<div class="timeline">${oc.map(o=>`
         <div class="tl-item"><div class="dt">${fmtD(o.data)}</div>
-          <div class="tp">${esc(o.tipo)} · <a href="#/equipe/${o.registro}">${esc(o.membro?.nome || 'registro '+o.registro)}</a></div>
+          <div class="tp">${esc(o.tipo)}, <a href="#/equipe/${o.registro}">${esc(o.membro?.nome || 'registro '+o.registro)}</a></div>
           ${o.descricao ? `<div class="ds">${esc(o.descricao)}</div>` : ''}</div>`).join('')}</div>`
-        : '<div class="empty">Nenhuma ocorrência registrada ainda.</div>'}</div>`;
+        : '<div class="empty">Nenhuma ocorrência registrada.</div>'}</div>`;
   }catch(e){
     const el = $('#q-ocorr'); if (el) el.innerHTML = '';
   }
@@ -240,7 +240,7 @@ const CAMPOS_MEMBRO = [
   {k:'email_nro', l:'E-mail NRO', t:'text'},
   {k:'email_pessoal', l:'E-mail pessoal', t:'text'},
   {k:'telefone', l:'Telefone', t:'text'},
-  {k:'foto_url', l:'Foto (URL — vazio usa fotos/REG.jpg do repositório)', t:'text', full:true},
+  {k:'foto_url', l:'Foto (URL; vazio usa fotos/REG.jpg do repositório)', t:'text', full:true},
   {k:'data_ingresso', l:'Data de ingresso', t:'date'},
   {k:'forma_ingresso', l:'Forma de ingresso', t:'datalist', list:'dl-formas'},
   {k:'data_desligamento', l:'Data de desligamento', t:'date'},
@@ -385,6 +385,28 @@ function lerCampos(defs){
 }
 const membroAtual = () => state.membros.find(m => m.registro === gestao.ficha?.reg);
 
+/* Os grupos da ficha são os mesmos que Administração → Grupos mostra:
+   os postos direto (membros.grupos) e os que vêm por um subgrupo, na
+   ordem do catálogo. O herdado leva o nome do grupo de origem no title. */
+function gruposDaFicha(m){
+  const ordem = new Map((state.grupos || []).map((g, i) => [g.nome, i]));
+  return [...gruposEfetivos(m)]
+    .sort((a, b) => (ordem.get(a) ?? 1e6) - (ordem.get(b) ?? 1e6) || a.localeCompare(b, 'pt-BR'))
+    .map(nome => ({ nome, direto: (m.grupos || []).includes(nome), via: viaDoGrupo(m, nome) }));
+}
+function chipsGruposFicha(m){
+  const lista = gruposDaFicha(m);
+  if (!lista.length) return '<span class="muted">Sem grupo</span>';
+  return lista.map(g => {
+    const pf = grupoPorNome(g.nome)?.prefixo;
+    const dica = g.direto ? 'Na ficha' : `Por ${g.via}`;
+    const cls = `chip mini${g.direto ? '' : ' herdado'}`;
+    return can() && pf
+      ? `<a class="${cls}" href="#/admin/grupos/${esc(pf)}" title="${esc(dica)}">${esc(g.nome)}</a>`
+      : `<span class="${cls}" title="${esc(dica)}">${esc(g.nome)}</span>`;
+  }).join(' ');
+}
+
 async function abrirFicha(reg){
   if (location.hash !== '#/equipe/' + reg) { location.hash = '#/equipe/' + reg; return; }
   gestao.ficha = { reg, tab:'dados', ocorr:[], acessos:[], avals:[], aponts:[], pess:null, editando:false };
@@ -395,6 +417,13 @@ async function abrirFicha(reg){
 
 async function carregarFicha(){
   const reg = gestao.ficha.reg;
+  /* A linha do membro é relida a cada abertura: quem pôs a pessoa num
+     grupo em Administração → Grupos (ou noutra sessão) vê o grupo aqui. */
+  const linha = await sb.from('membros').select('*').eq('registro', reg).maybeSingle();
+  if (!linha.error && linha.data){
+    const ix = state.membros.findIndex(m => m.registro === reg);
+    if (ix >= 0) Object.assign(state.membros[ix], linha.data); else state.membros.push(linha.data);
+  }
   /* Consultas por chave: ocorrências e dados pessoais só para quem tem
      o quadro. Assim o papel de consulta nem chega a pedi-los. */
   const q = {
@@ -467,13 +496,12 @@ function renderFicha(){
       <div style="flex:1;min-width:220px">
         <div style="font-family:var(--fd);font-size:17px;font-weight:600">${esc(m.nome)}</div>
         <div class="small muted" style="margin-top:3px">
-          <span class="mono" style="color:var(--dim)">REG ${pad3(m.registro)}</span>
-          · ${esc(m.cargo||'Sem cargo')} · ${esc(m.departamento||'Sem departamento')}${gestor?` · Gestor: ${esc(gestor)}`:''}</div>
-        <div style="margin-top:8px">${(m.grupos||[]).map(g=>`<span class="chip mini">${esc(g)}</span>`).join(' ')}</div>
+          <span class="mono" style="color:var(--dim)">REG ${pad3(m.registro)}</span>, ${esc(m.cargo||'Sem cargo')}, ${esc(m.departamento||'Sem departamento')}${gestor?`, Gestor: ${esc(gestor)}`:''}</div>
+        <div class="ficha-grupos">${chipsGruposFicha(m)}</div>
       </div>
       <div>${pill(m.status)}</div>
     </div>
-    <nav class="abas">${abas.map(([k,l]) => `<button class="aba ${f.tab===k?'on':''}"
+    <nav class="nav1" aria-label="Ficha">${abas.map(([k,l]) => `<button class="${f.tab===k?'on':''}"
       onclick="gestao.ficha.tab='${k}';gestao.ficha.editando=false;renderFicha()">${l}</button>`).join('')}</nav>
     <div id="ficha-body"></div>${datalistsHTML()}`;
 
@@ -504,11 +532,11 @@ function renderTabTreinos(){
     <div class="card" style="margin-top:14px"><h3>Certificados</h3>
       <p class="sub" style="margin-bottom:10px">Cada conclusão, com o que foi concluído na época: o certificado não muda quando o treinamento é revisado</p>
       ${f.concl.length ? f.concl.map(c => `<div class="acc-row">
-          <span class="nm">${esc(c.titulo)} <span class="mt">${esc(c.codigo)} · Rev. ${esc(c.revisao)}</span></span>
-          <span class="mt">${fmtD(c.concluido_em)}${c.nota != null ? ' · ' + c.nota + '%' : ''}</span>
+          <span class="nm">${esc(c.titulo)} <span class="mt">${esc(c.codigo)}, Rev. ${esc(c.revisao)}</span></span>
+          <span class="mt">${fmtD(c.concluido_em)}${c.nota != null ? ', ' + c.nota + '%' : ''}</span>
           <span class="mt">${esc(c.certificado)}</span>
           ${ibtn('down', 'Baixar o certificado', `fichaCertificado('${esc(c.certificado)}', this)`, 'sm')}</div>`).join('')
-        : '<div class="empty">Nenhum certificado ainda.</div>'}
+        : '<div class="empty">Nenhum certificado.</div>'}
     </div>`;
 }
 async function fichaCertificado(cod, bt){
@@ -543,8 +571,9 @@ function renderTabDados(){
   $('#ficha-body').innerHTML = `<div class="card"><div class="dl">
     ${CAMPOS_MEMBRO.filter(c => !['nome','status','foto_url'].includes(c.k)).map(c => {
       let v = m[c.k];
-      if (c.t === 'grupos')      v = (v && v.length) ? v.join(', ') : null;
-      else if (c.t === 'date')   v = v ? fmtD(v) : null;
+      if (c.t === 'grupos') return `<div class="it"><dt>${c.l}</dt>
+        <dd class="ficha-grupos">${chipsGruposFicha(m)}</dd></div>`;
+      if (c.t === 'date')        v = v ? fmtD(v) : null;
       else if (c.t === 'gestor') v = v ? nomeDe(v) : null;
       return `<div class="it"><dt>${c.l}</dt>
         <dd>${esc(v) || '<span class="muted">—</span>'}</dd></div>`;
@@ -626,7 +655,7 @@ function renderTabOcorr(){
         <div class="tp">${esc(o.tipo)}</div>
         ${o.descricao ? `<div class="ds">${esc(o.descricao)}</div>` : ''}
         <div class="rp">Registrado por ${esc(o.responsavel||'—')}${can()
-          ? ` · <a href="#" onclick="excluirOcorrencia('${o.id}');return false">excluir</a>` : ''}</div>
+          ? `, <a href="#" onclick="excluirOcorrencia('${o.id}');return false">excluir</a>` : ''}</div>
       </div>`).join('')}</div>`
     : '<div class="empty">Nenhuma ocorrência registrada para este membro.</div>'}
   </div>`;
@@ -683,10 +712,10 @@ function renderTabAcessos(){
           let st, mt;
           if (a && a.ativo){
             st = `<span class="pill p-ok"><span class="dt dt-ok"></span>Concedido</span>`;
-            mt = `${a.concedido_em ? 'desde '+fmtD(a.concedido_em) : ''}${a.responsavel ? ' · por '+esc(a.responsavel) : ''}`;
+            mt = `${a.concedido_em ? 'desde '+fmtD(a.concedido_em) : ''}${a.responsavel ? ', por '+esc(a.responsavel) : ''}`;
           } else if (a){
             st = `<span class="pill"><span class="dt dt-gray"></span>Revogado</span>`;
-            mt = `${a.revogado_em ? 'em '+fmtD(a.revogado_em) : ''}${a.responsavel ? ' · por '+esc(a.responsavel) : ''}`;
+            mt = `${a.revogado_em ? 'em '+fmtD(a.revogado_em) : ''}${a.responsavel ? ', por '+esc(a.responsavel) : ''}`;
           } else { st = `<span class="muted small">Não concedido</span>`; mt = ''; }
           const btn = !can() ? '' : (a && a.ativo
             ? ibtn('x','Revogar acesso', `revogarAcesso('${a.id}')`, 'perigo sm')
@@ -744,11 +773,11 @@ function renderTabAvals(){
     ${f.avals.length ? f.avals.map(a => `
       <div class="aval-card"><div class="hd">
         <div><b>Ciclo ${esc(a.ciclo)}</b>
-          <span class="muted small">· ${fmtD(a.data)} · por ${esc(a.responsavel||'—')}</span></div>
+         <span class="muted small">, ${fmtD(a.data)}, por ${esc(a.responsavel||'—')}</span></div>
         <div>${score(a.assiduidade,'Assiduidade')}${score(a.comprometimento,'Comprometimento')}</div></div>
         ${a.apontamentos ? `<div class="small" style="line-height:1.55;white-space:pre-wrap;color:var(--muted)">${esc(a.apontamentos)}</div>` : ''}
         ${a.encaminhar_pessoal ? `<div style="margin-top:9px"><span class="pill ${a.tratado?'':'p-warn'}">
-          <span class="dt ${a.tratado?'dt-gray':'dt-warn'}"></span>${a.tratado?'Tratado pelo Depto. de Pessoal':'Encaminhado — pendente'}</span></div>` : ''}
+          <span class="dt ${a.tratado?'dt-gray':'dt-warn'}"></span>${a.tratado?'Tratado pelo Depto. de Pessoal':'Encaminhado, pendente'}</span></div>` : ''}
       </div>`).join('')
     : '<div class="empty">Nenhuma avaliação registrada.</div>'}
   </div>
@@ -765,7 +794,7 @@ function renderTabAvals(){
         <td>${a.sinalizado ? `<span class="pill ${a.tratado?'':'p-bad'}">
           <span class="dt ${a.tratado?'dt-gray':'dt-bad'}"></span>${a.tratado?'Tratada':'Pendente'}</span>` : '<span class="muted">—</span>'}</td>
         <td>${esc(a.apont?.responsavel||'—')}</td></tr>`).join('')}</tbody></table></div>`
-    : '<div class="empty">Nenhum apontamento semanal ainda. As lideranças os registram em Operações → Apontamento semanal.</div>'}
+    : '<div class="empty">Nenhum apontamento semanal. Registro em Equipe › Apontamento semanal.</div>'}
   </div>`;
 }
 function modalAval(reg){
@@ -814,8 +843,8 @@ function renderTabPess(){
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px">
       <div><h3>Dados pessoais</h3><p class="sub">Sob a LGPD</p></div>
       ${ibtn('pencil','Editar dados pessoais', "gestao.ficha.editando=true;renderFicha()", 'sm')}</div>
-    <div class="aviso-box warn">Dados sensíveis sob a LGPD — visíveis apenas para a Diretoria e o
-      Depto. de Pessoal. Não inclua estes campos em relatórios ou comunicações.</div>
+    <div class="aviso-box warn">Dados sensíveis (LGPD), visíveis apenas para a Diretoria e o Depto. de Pessoal.
+      Não inclua estes campos em relatórios ou comunicações.</div>
     ${p ? `<div class="dl">${CAMPOS_PESS.map(c => {
         let v = p[c.k];
         if (c.t === 'date') v = v ? fmtD(v) : null;
@@ -851,7 +880,7 @@ async function pageAuditoria(){
     $('#main').innerHTML = topoGestao({
       olho: 'Trilha de auditoria',
       titulo: 'Auditoria',
-      lead: 'Quem mudou o quê, quando — os últimos 400 eventos registrados pelo banco.'
+      lead: 'Últimos 400 eventos registrados.'
     }) + `
       <div class="filtros">
         <div class="fld cresce"><label>Buscar</label>
@@ -908,7 +937,7 @@ registrarBusca({
     if (!podeQuadro()) return [];
     return filtrarSimples(state.membros.map(m => ({
       titulo: m.nome,
-      sub: `${m.status}${m.cargo ? ' · ' + m.cargo : ''}`,
+      sub: `${m.status}${m.cargo ? ', ' + m.cargo : ''}`,
       codigo: pad3(m.registro),
       href: '#/equipe/' + m.registro
     })), t, 6);
@@ -964,16 +993,16 @@ function renderApontamentoLista(){
   const nSin = a.itens.filter(x=>x.sinalizado).length;
   $('#main').innerHTML = topo + `
     <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <div style="flex:1;min-width:220px"><b>Grupo:</b> ${esc(a.grupo)} <span class="muted small">· ${a.itens.length} membro(s) · ${fmtD(hojeISO())}</span></div>
+      <div style="flex:1;min-width:220px"><b>Grupo:</b> ${esc(a.grupo)}<span class="muted small">, ${a.itens.length} membro(s), ${fmtD(hojeISO())}</span></div>
       <button class="btn" onclick="gestao.apont=null;pageApontamento()">Trocar grupo</button>
       <button class="btn solid" onclick="salvarApontamento()">${ic('check')} Registrar apontamento</button>
     </div>
-    ${nSin?`<div class="aviso-box warn">${nSin} membro(s) sinalizado(s) — o Depto de Pessoal será notificado no painel.</div>`:''}
+    ${nSin?`<div class="aviso-box warn">${nSin} membro(s) sinalizado(s). O Depto. de Pessoal será notificado.</div>`:''}
     <div class="card" style="padding:6px 14px">
       <table class="tabela trabalho"><thead><tr><th>Reg.</th><th>Membro</th><th>Assiduidade</th><th>Entregas</th><th style="text-align:right">Sinalizar</th></tr></thead>
       <tbody>${a.itens.map((it,i)=>`<tr>
         <td class="reg">${pad3(it.registro)}</td>
-        <td><span style="font-weight:600">${esc(it.nome)}</span><br><span class="small muted">${esc(it.cargo||'—')}${it.status!=='Ativo'?' · '+esc(it.status):''}</span>
+        <td><span style="font-weight:600">${esc(it.nome)}</span><br><span class="small muted">${esc(it.cargo||'—')}${it.status!=='Ativo'?', '+esc(it.status):''}</span>
           ${it.sinalizado?`<br><span class="small" style="color:var(--bad)">⚑ ${esc(it.justificativa)}</span>`:''}</td>
         <td>${segNota(i,'assiduidade')}</td>
         <td>${segNota(i,'entregas')}</td>
@@ -994,9 +1023,8 @@ async function clicarFlag(i){
   const reinc = recentes.length>0;
   abreModal(`<h3>Sinalizar ${esc(it.nome)}</h3>
     ${reinc?`<div class="aviso-box warn"><b>Sinalização reincidente:</b> a última foi em ${fmtD(recentes[0].data)},
-      dentro da janela de 30 dias. Você pode abrir uma ocorrência formal junto com esta sinalização —
-      nesses casos, o Depto de Pessoal agenda uma reunião com o membro.</div>`
-    :`<div class="aviso-box info">Primeira sinalização recente. O Depto de Pessoal será orientado a <b>fazer contato</b> com o membro para avaliar o comprometimento e dialogar.</div>`}
+      dentro de 30 dias. Com ocorrência formal, o Depto. de Pessoal agenda uma reunião com o membro.</div>`
+    :`<div class="aviso-box info">Primeira sinalização recente. O Depto. de Pessoal fará contato com o membro.</div>`}
     <div class="fld"><label>Justificativa</label><select id="sn-just">${JUSTIFICATIVAS.map(j=>`<option>${j}</option>`).join('')}</select></div>
     <div class="fld"><label>Detalhes (opcional)</label><textarea id="sn-det" placeholder="Contexto que ajude o Depto de Pessoal…"></textarea></div>
     ${reinc?`<div class="fld"><label class="check"><input type="checkbox" id="sn-oc" checked> Abrir ocorrência de "Sinalização reincidente" na ficha do membro</label></div>`:''}
@@ -1007,7 +1035,7 @@ function confirmarSinalizacao(i, reinc){
   const it = gestao.apont.itens[i];
   const det = $('#sn-det').value.trim();
   it.sinalizado = true;
-  it.justificativa = $('#sn-just').value + (det? ' — '+det : '');
+  it.justificativa = $('#sn-just').value + (det? ': '+det : '');
   it.abrirOcorrencia = reinc && $('#sn-oc') ? $('#sn-oc').checked : false;
   fechaModal(); renderApontamentoLista();
 }
@@ -1030,8 +1058,8 @@ async function salvarApontamento(){
     $('#main').innerHTML = topo + `<div class="card" style="max-width:560px;text-align:center;padding:36px">
       <div class="sq" style="width:52px;height:52px;border-radius:16px;background:var(--soft);color:var(--green);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">${ic('check')}</div>
       <h3 style="margin-bottom:8px">Apontamento registrado</h3>
-      <p class="small muted" style="line-height:1.6;margin-bottom:18px">Grupo ${esc(a.grupo)} · ${a.itens.length} membro(s) avaliado(s)
-      ${nSin?` · ${nSin} sinalização(ões) encaminhada(s) ao Depto de Pessoal`:''}${ocs.length?` · ${ocs.length} ocorrência(s) aberta(s)`:''}.</p>
+      <p class="small muted" style="line-height:1.6;margin-bottom:18px">Grupo ${esc(a.grupo)}, ${a.itens.length} membro(s) avaliado(s)
+      ${nSin?`, ${nSin} sinalização(ões) encaminhada(s) ao Depto de Pessoal`:''}${ocs.length?`, ${ocs.length} ocorrência(s) aberta(s)`:''}.</p>
       <div style="display:flex;gap:10px;justify-content:center">
         <button class="btn ghost" onclick="gestao.apont=null;pageApontamento()">Novo apontamento</button>
         <a class="btn solid" href="#/equipe">Voltar à equipe</a></div>

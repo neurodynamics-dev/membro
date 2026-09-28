@@ -426,21 +426,16 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
       <div class="meta"><span class="no">03 / 05</span><span class="tag-amb int">Interna</span></div>
       <h3>Portal do Membro</h3>
       <a class="dom" href="https://membro.neurodynamics.dev" target="_blank" rel="noopener">membro.neurodynamics.dev</a>
-      <p class="ds">O seu ponto de partida no dia a dia — e, desde a última virada, o único.
-        O antigo <b>SOMA App</b> virou a aba Agenda daqui, então check-in, convites e presença
-        moram no mesmo lugar que os avisos, o organograma, os documentos e os pedidos. Na
-        página inicial, uma coluna à direita guarda o atalho para todas as outras ferramentas
-        da equipe.</p>
+      <p class="ds">O ponto de partida do dia a dia. No início: a sua semana, o placar do LABBIO,
+        as suas tarefas, os links úteis e o que você abriu por último.</p>
       <ul class="itens">
-        <li><span><b>Agenda</b> — uma agenda só: convites com RSVP, convidados editáveis a
-          qualquer momento, recorrência de verdade e as cerimônias do seu grupo</span></li>
-        <li><span><b>Agendar</b> — o livre/ocupado de todo mundo lado a lado, com sugestões
-          de horário</span></li>
-        <li><span><b>Presença</b> — check-in pelo QR da entrada, quem está no LABBIO agora,
-          <i>find me at</i> e "estou no laboratório até as 18h"</span></li>
-        <li><span><b>Minha agenda</b> — o seu Google Agenda ligado nos dois sentidos</span></li>
-        <li><span><b>Organização, Informações e Serviços</b> — organograma com busca,
-          documentos oficiais e pedidos com protocolo, incluindo a ouvidoria anônima</span></li>
+        <li><span><b>Agenda</b>: dia, semana e mês, no modelo do Google Agenda, com a página de
+          cada evento, convidados, notificações por e-mail e resposta pelo próprio e-mail</span></li>
+        <li><span><b>Presença</b>: check-in pelo QR da entrada, quem está no LABBIO agora, o
+          placar do mês e as sequências em dias úteis</span></li>
+        <li><span><b>Google Agenda</b>: ligado nos dois sentidos, em Agenda › Configurações</span></li>
+        <li><span><b>Equipe, Arquivos e Serviços</b>: organograma com busca, documentos
+          controlados e pedidos com protocolo, incluindo a ouvidoria anônima</span></li>
       </ul>
       <div class="acts"><a class="btn solid" href="./">Entrar no portal</a></div>
     </div>
@@ -577,8 +572,8 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
     <div class="fio reveal">
       <span class="no">FIO 04</span>
       <h3>Uma presença</h3>
-      <p>O check-in feito pelo <b>QR da entrada</b> aparece na aba Presença, na home do
-        portal e no painel do LABBIO em tempo real. Quem avisa que está no laboratório até
+      <p>O check-in feito pelo <b>QR da entrada</b> (ou pela folha de check-in) aparece em
+        Equipe › Presença, no início do portal e no painel do LABBIO em tempo real. Quem avisa que está no laboratório até
         as 18h entra na mesma conta. A equipe sabe quem está lá sem perguntar em grupo nenhum.</p>
     </div>
     <div class="fio reveal" style="grid-column:1/-1">
@@ -608,23 +603,23 @@ footer{border-top:1px solid var(--line);margin-top:clamp(90px,12vh,150px)}
     <div class="grow"><span class="q">Saber o que está acontecendo na equipe</span><span class="seta">→</span>
       <span class="r"><a href="./">Portal</a>, quadro de avisos na página inicial</span></div>
     <div class="grow"><span class="q">Confirmar presença em um evento</span><span class="seta">→</span>
-      <span class="r"><a href="./#/agenda">Portal</a>, aba Agenda (ou direto na home)</span></div>
+      <span class="r"><a href="./#/agenda">Portal</a>, na página do evento (ou no início)</span></div>
     <div class="grow"><span class="q">Marcar uma reunião achando horário para todo mundo</span><span class="seta">→</span>
-      <span class="r"><a href="./#/agenda/agendar">Portal</a>, Agenda → Agendar</span></div>
+      <span class="r"><a href="./#/agenda/novo">Portal</a>, Agenda → Criar, com a disponibilidade de cada convidado</span></div>
     <div class="grow"><span class="q">Mudar os convidados de algo que eu marquei</span><span class="seta">→</span>
-      <span class="r"><a href="./#/agenda">Portal</a>, Agenda → Convidados, no próprio compromisso</span></div>
-    <div class="grow"><span class="q">Definir a daily e as sprints do meu grupo</span><span class="seta">→</span>
-      <span class="r"><a href="./#/agenda">Portal</a>, Agenda → Cerimônias do grupo</span></div>
+      <span class="r"><a href="./#/agenda">Portal</a>, na página do evento</span></div>
+    <div class="grow"><span class="q">Marcar a daily do meu grupo</span><span class="seta">→</span>
+      <span class="r"><a href="./#/agenda/novo">Portal</a>, Agenda → Criar, com repetição em dias úteis</span></div>
     <div class="grow"><span class="q">Ver a agenda da NeuroDynamics no meu Google Agenda</span><span class="seta">→</span>
-      <span class="r"><a href="./#/agenda/minha">Portal</a>, Agenda → Minha agenda</span></div>
+      <span class="r"><a href="./#/agenda/config/google">Portal</a>, Agenda → Configurações → Google Agenda</span></div>
     <div class="grow"><span class="q">Fazer check-in ao chegar no LABBIO</span><span class="seta">→</span>
-      <span class="r"><a href="./#/agenda/presenca">Portal</a>, pelo QR code na entrada do laboratório</span></div>
+      <span class="r"><a href="./#/equipe/presenca">Portal</a>, pelo QR code na entrada do laboratório (ou na folha de check-in)</span></div>
     <div class="grow"><span class="q">Avisar que estou no laboratório, ou que saí um pouco</span><span class="seta">→</span>
-      <span class="r"><a href="./#/agenda/presenca">Portal</a>, Agenda → Presença</span></div>
+      <span class="r"><a href="./#/equipe/presenca">Portal</a>, Equipe → Presença</span></div>
     <div class="grow"><span class="q">Ver quem é quem e a cadeia de gestão</span><span class="seta">→</span>
       <span class="r"><a href="./#/organizacao">Portal</a>, seção Organização</span></div>
     <div class="grow"><span class="q">Achar o estatuto, uma política ou um formulário</span><span class="seta">→</span>
-      <span class="r"><a href="./#/informacoes">Portal</a>, seção Informações</span></div>
+      <span class="r"><a href="./#/arquivos">Portal</a>, seção Arquivos</span></div>
     <div class="grow"><span class="q">Pedir acesso a um sistema, documento ou local</span><span class="seta">→</span>
       <span class="r"><a href="./#/servicos">Portal</a>, seção Serviços</span></div>
     <div class="grow"><span class="q">Falar com a Gestão de Pessoas sem me identificar</span><span class="seta">→</span>

@@ -125,7 +125,7 @@ async function pageAtividades(sub, sub2){
   if (!gs.length){
     $('#main').innerHTML = `<div class="pg-head"><span class="eyebrow">Trabalho</span>
       <h1>Atividades</h1></div>
-      <div class="vazio"><div class="glyph">—</div><h3>Nenhum quadro ainda</h3>
+      <div class="vazio"><div class="glyph">—</div><h3>Nenhum quadro</h3>
       <p>Os quadros são por grupo, e ainda não existe nenhum. Quem cria é a
       Administração, em Grupos.</p></div>`;
     return;
@@ -333,7 +333,8 @@ function cartaoHTML(a){
   /* O brilho no topo é o sinal sempre presente: cor da prioridade, ou
      âmbar quando o cartão está sinalizado — sinalizado é "olhe para
      mim", que é justamente o que um brilho quer dizer. O ponto de
-     prioridade continua ali, então nada se perde na troca. */
+     prioridade continua ali, então nada se perde na troca. Concluída
+     não pede atenção: o brilho sai e fica só o ponto. */
   const cor = a.sinalizada ? 'var(--warn)' : corPrioridade(a.prioridade);
   const arraste = edito
     ? `draggable="true"
@@ -342,7 +343,7 @@ function cartaoHTML(a){
        ondragover="event.preventDefault();event.stopPropagation()"
        ondrop="event.stopPropagation();soltarEm(event,'${a.status}','${a.id}')"`
     : '';
-  return `<article class="kb-card${a.sinalizada?' sinalizada':''}${edito?'':' fixo'}"
+  return `<article class="kb-card${a.sinalizada?' sinalizada':''}${a.status==='concluida'?' concluida':''}${edito?'':' fixo'}"
     style="--pri:${cor}" data-id="${a.id}" ${arraste}
     onclick="location.hash='#/atividades/card/${a.codigo}'">
     <div class="kb-top">
@@ -414,7 +415,7 @@ async function soltarEm(ev, status, antesDoId){
 function modalNovaAtividade(status){
   const g = atividades.grupoAtual;
   abreModal(`<h3>Nova atividade</h3>
-    <p class="sub" style="margin-bottom:16px">Em ${esc(g.nome)} · o código sai na hora de salvar</p>
+    <p class="sub" style="margin-bottom:16px">Em ${esc(g.nome)}, o código sai na hora de salvar</p>
     <div class="form-grid">
       <div class="fld full"><label>O que precisa ser feito</label>
         <input id="na-tit" placeholder="Calibrar o encoder do protótipo"></div>
@@ -506,7 +507,7 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
         title="Voltar ao quadro" aria-label="Voltar ao quadro">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
           stroke-linecap="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></a></div>
-      <div class="tx"><span class="eyebrow">${esc(a.grupo)} · ${esc(a.codigo)}</span>
+      <div class="tx"><span class="eyebrow">${esc(a.grupo)}, ${esc(a.codigo)}</span>
         <h1 id="cd-titulo" class="editavel" onclick="editarTitulo()">${esc(a.titulo)}</h1>
         ${a.atrasada ? `<p class="lead" style="color:var(--bad)">Atrasada desde ${fmtD(a.prazo)}.</p>` : ''}</div>
       <div class="acoes">
@@ -530,7 +531,7 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
 
         <div class="card" style="margin-bottom:16px">
           <h3>Comentários ${comentarios.length ? `<span class="muted">(${comentarios.length})</span>` : ''}</h3>
-          <p class="sub" style="margin-bottom:16px">Mencione alguém para escalar o problema — a pessoa é notificada</p>
+          <p class="sub" style="margin-bottom:16px">A pessoa mencionada é notificada</p>
           <div class="cd-coments">${comentarios.map(c => {
             const q = (state.membros||[]).find(m => m.registro === c.registro);
             return `<div class="cm">
@@ -538,7 +539,7 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
               <div class="cm-cx"><div class="cm-tp"><b>${esc(q?.nome || 'Alguém')}</b>
                 <span>${fmtQuando(c.criado_em)}</span></div>
               <div class="cm-cp">${esc(c.corpo)}</div></div></div>`;
-          }).join('') || '<div class="kb-vazio" style="text-align:left">Nenhum comentário ainda.</div>'}</div>
+          }).join('') || '<div class="kb-vazio" style="text-align:left">Nenhum comentário.</div>'}</div>
           <div class="cd-novo">
             <textarea id="cd-coment" rows="2" placeholder="Escreva um comentário…"></textarea>
             <div class="cd-menc">
@@ -620,7 +621,7 @@ function blocoOrigem(a, o){
   if (!a.origem_tipo) return '';
   if (!o) return `<div class="card" style="margin-bottom:16px"><h3>De onde veio</h3>
     <p class="sub">Este cartão nasceu de ${esc(a.origem_tipo)}, mas o registro de
-      origem não foi encontrado — pode ter sido apagado.</p></div>`;
+      origem não foi encontrado.</p></div>`;
   if (o.status === 'sem_permissao') return `<div class="card" style="margin-bottom:16px">
     <h3>De onde veio</h3><p class="sub">Você não tem acesso ao conteúdo da origem.</p></div>`;
 
@@ -643,7 +644,7 @@ function origemSolicitacao(o){
   return `<div class="card" style="margin-bottom:16px">
     <h3>De onde veio</h3>
     <p class="sub" style="margin-bottom:14px">Solicitação ${esc(o.protocolo || '')} —
-      ${esc(TIPOS_SOL[o.especie] || o.especie)} · <span class="pill"><span class="dt"
+      ${esc(TIPOS_SOL[o.especie] || o.especie)}, <span class="pill"><span class="dt"
         style="background:${esc(STATUS_SOL[o.status]?.c || 'var(--dim)')}"></span
         >${esc(STATUS_SOL[o.status]?.l || o.status)}</span></p>
     <div class="dl">
@@ -653,7 +654,7 @@ function origemSolicitacao(o){
     </div>
     ${o.resposta ? `<div class="aviso-box" style="margin-top:14px"><b>Resposta:</b>
       ${esc(o.resposta)}<br><span class="small muted">${esc(o.respondido_por || '')}${
-        o.respondido_em ? ' · ' + fmtD(String(o.respondido_em).slice(0,10)) : ''}</span></div>` : ''}
+        o.respondido_em ? ', ' + fmtD(String(o.respondido_em).slice(0,10)) : ''}</span></div>` : ''}
     ${can() ? formDecisao(o, fechada) : (fechada ? '' :
       `<p class="sub" style="margin-top:14px">Só o Depto de Pessoal decide esta solicitação.</p>`)}
   </div>`;
@@ -672,11 +673,10 @@ function formDecisao(o, fechada){
       ${itens.length ? `<div class="multi" style="max-height:none">${itens.map(i => `
         <label class="check"><input type="checkbox" class="dec-item" value="${esc(i.id)}"
           ${marcado(i.id) ? 'checked' : ''} ${jaAtivo.has(i.id) ? 'disabled' : ''}>
-          <span>${esc(i.nome)}${jaAtivo.has(i.id) ? ' — já concedido' : ''}</span>
+          <span>${esc(i.nome)}${jaAtivo.has(i.id) ? ' (já concedido)' : ''}</span>
         </label>`).join('')}</div>`
         : '<p class="sub">O catálogo de acessos está vazio.</p>'}
-      <p class="small muted" style="margin-top:6px">O que você marcar entra no quadro de
-        acessos da pessoa junto com a decisão — não precisa passar pela ficha depois.</p>
+      <p class="small muted" style="margin-top:6px">Os itens marcados entram nos acessos da pessoa com a decisão.</p>
     </div>`;
 
   if (fechada) return `<div class="acts" style="margin-top:14px">
@@ -693,7 +693,7 @@ function formDecisao(o, fechada){
         </select></div>
       <div class="fld full"><label>Resposta para quem pediu</label>
         <textarea id="dec-resposta" rows="3"
-          placeholder="Obrigatória para recusar — ninguém merece um &quot;não&quot; sem explicação."></textarea></div>
+          placeholder="Obrigatória para recusar"></textarea></div>
       ${listaAcessos}
     </div>
     <div class="acts" style="margin-top:14px">
@@ -935,17 +935,13 @@ async function arquivarAtividade(){
 async function telaCarga(){
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Somando…</div>`;
   const { data, error } = await sb.from('atividades_carga').select('*').order('abertas', { ascending:false });
-  const gs = meusGrupos();
   const linhas = (data || []).filter(x => x.abertas > 0 || x.atrasadas > 0);
   const max = Math.max(1, ...linhas.map(x => x.abertas));
   $('#main').innerHTML = `
     <div class="topo-gestao"><div class="tx"><span class="eyebrow">Trabalho</span>
       <h1>Carga da equipe</h1>
-      <p class="lead">Quantas atividades abertas cada pessoa carrega, quantas estão atrasadas
-        e quantas estão sinalizadas.</p></div></div>
-    <nav class="abas">${gs.map(x =>
-      `<a href="#/atividades/${x.prefixo}">${esc(x.nome)}</a>`).join('')}
-      <a href="#/atividades/carga" class="on">Carga da equipe</a></nav>
+      <p class="lead">Atividades abertas, atrasadas e sinalizadas por pessoa.</p></div>
+      <div class="acoes"><a class="btn ghost" href="#/atividades">${ic('back')} Quadro</a></div></div>
     ${error ? avisoSemMigracao() : ''}
     ${linhas.length ? `<div class="card"><div class="barras">${linhas.map(x => `
       <div class="barra carga">
@@ -958,7 +954,7 @@ async function telaCarga(){
           ${x.horas_abertas > 0 ? `<span class="small muted">${x.horas_abertas}h</span>` : ''}
         </span>
       </div>`).join('')}</div></div>`
-      : '<div class="vazio"><div class="glyph">0</div><h3>Ninguém com atividade aberta</h3><p>Quando houver trabalho no quadro, a carga aparece aqui.</p></div>'}`;
+      : '<div class="vazio"><div class="glyph">0</div><h3>Ninguém com atividade aberta</h3></div>'}`;
 }
 
 /* ============================================================
@@ -968,7 +964,7 @@ registrarBusca({
   fonte:'atividades', rotulo:'Atividades',
   buscar: (t) => filtrarSimples(atividades.itens.map(a => ({
     titulo: a.titulo,
-    sub: `${rotuloStatus(a.status)} · ${a.grupo}${a.responsavel_nome ? ' · ' + a.responsavel_nome : ''}`,
+    sub: `${rotuloStatus(a.status)}, ${a.grupo}${a.responsavel_nome ? ', ' + a.responsavel_nome : ''}`,
     codigo: a.codigo,
     href: '#/atividades/card/' + a.codigo
   })), t, 6)

@@ -18,21 +18,21 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 
 | Espaço | O que é | Quem vê |
 |---|---|---|
-| **Agenda** | tempo — compromissos, presença, ausências, marcos | todos |
+| **Agenda** | tempo — eventos, marcos, ausências, e o que tem prazo (tarefas, publicações, treinamentos) | todos |
 | **Atividades** | trabalho — o quadro do seu grupo | todos |
 | **OKRs** | planejamento — os objetivos e o desdobramento de cada um | todos (edição: `admin`, `pessoal` e os responsáveis) |
 | **Projetos** | cada projeto: equipe, supervisor e o rol de arquivos | todos (criar: PMO e `admin`; editar: eles e o supervisor) |
 | **Arquivos** | documentos e registros controlados — código, revisão, status | todos no rol; o conteúdo segue a classe de cada série |
 | **Studio** | comunicação — criar as peças, planejar e aprovar as publicações | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
-| **Equipe** | pessoas — organograma e fichas | todos (a profundidade varia) |
+| **Equipe** | pessoas — organograma, fichas, presença no LABBIO e apontamento | todos (a profundidade varia) |
 | **Treinamentos** | formação — o que os seus grupos pedem, fazer, os certificados | todos (gerir: `admin`, `pessoal` e os grupos gestores) |
-| **Informações** | documentos e políticas | todos |
 | **Serviços** | pedidos ao Depto. de Pessoal — e, em *Meus pedidos*, o andamento deles | todos |
 | **Seleção** | os bastidores do processo seletivo | `admin`, `pessoal`, `selecao` |
 | **Administração** | os painéis: portal, site, catálogo, importação, auditoria | `admin`, `pessoal` (e `selecao`, só Relatórios) |
 
-O **início** — o seu dia: avisos, próximos compromissos, suas atividades,
-seus pedidos — não é item da lista: a logo no alto do menu leva a ele, e uma
+O **início** — a sua semana: avisos, o que espera a sua ação, a semana na
+agenda, o placar do LABBIO, as suas tarefas, os links úteis e o que você abriu
+por último — não é item da lista: a logo no alto do menu leva a ele, e uma
 casinha menor, ao lado dela, diz que leva. No trilho a casinha sai; a logo
 basta. Um item "Início" repetiria o caminho da logo e empurraria os espaços
 para baixo.
@@ -44,9 +44,9 @@ já existe, ou tomar o lugar dele**. Os Treinamentos foram o próximo, e tomaram
 o lugar de Meus pedidos, que coube dentro de Serviços — o andamento do que se
 pediu é parte de pedir, e `#/pedidos` continua abrindo pelo `ALIAS`. O Studio é o único espaço do primeiro nível
 que some para quem não é dos grupos dele — é uma ferramenta de trabalho de uma
-equipe, como Seleção, e não um lugar da equipe inteira. O segundo nível são os subitens de cada espaço — as abas da
-Agenda, os quadros dos grupos da pessoa, as categorias de documento, cada
-serviço, cada painel —, pendurados numa linha-guia debaixo do espaço, como
+equipe, como Seleção, e não um lugar da equipe inteira. O segundo nível são os subitens de cada espaço — o calendário e
+as configurações da Agenda, os quadros dos grupos da pessoa, cada serviço,
+cada painel —, pendurados numa linha-guia debaixo do espaço, como
 no painel da Cloudflare. Tudo o que tem endereço próprio vira subitem; o que
 é filtro dentro de uma tela, não.
 
@@ -54,6 +54,17 @@ O menu **recolhe** para um trilho de ícones (a escolha fica no navegador de
 cada pessoa; sem escolha, tela abaixo de 1280px começa recolhida). No
 trilho, passar o mouse — ou chegar pelo Tab — num ícone abre os subitens ao
 lado. Abaixo de 900px o menu vira gaveta, puxada pela barra de topo.
+
+**Seletores dentro de uma tela.** Uma regra só, em todo espaço:
+
+| Nível | Componente | Onde |
+|---|---|---|
+| 1 — as seções da tela | `.nav1`, o seletor segmentado com a pílula clara no item atual (`navNivel1()`) | as seções de um espaço (Arquivos, Studio, Treinamentos, Equipe, Seleção, Cofre, Eventos) ou de um objeto (a ficha, o projeto, o candidato) |
+| 2 — os recortes de uma seção | `.abas`, sublinhadas (`navNivel2()`) | Configurações › Geral · README; Dinâmica › Painel · Roteiro… |
+| filtro, que não troca de seção | `.seg`, o controle segmentado com o item ligado em Synapse | Meus · Todos, status, idioma, a visão da Agenda |
+
+Aba sublinhada no primeiro nível ou pílula no segundo é o erro que esta regra
+existe para evitar. O componente está no design system (card *Navegação*).
 
 A árvore mora em `arvoreDoMenu()`, na casca. Tela nova com endereço próprio
 entra lá como subitem do espaço dela; se a tela firma o endereço sozinha
@@ -77,12 +88,17 @@ conforme quem entra é menu que ninguém aprende.
 
 ```
 #/                          Início
-#/agenda[/mes|agendar|presenca|minha]
-#/agenda/<id>               um compromisso
+#/agenda                    a semana (o dia, no celular)
+#/agenda/dia|semana/<AAAA-MM-DD>
+#/agenda/mes/<AAAA-MM>
+#/agenda/evento/<id>        um evento: ver, responder, editar
+#/agenda/novo[/<AAAA-MM-DD>[T<HH:MM>[~<HH:MM>]]]
+#/agenda/config[/predefinidos|google]
 #/atividades[/<grupo>]      o quadro
 #/atividades/card/<codigo>  uma atividade (ex.: #/atividades/card/ORT-14)
 #/equipe                    organograma
 #/equipe/<registro>         a ficha
+#/equipe/quadro|presenca|apontamento
 #/okrs[/<codigo>]           a árvore de objetivos, com um em foco (OE1, OT1.2…)
 #/projetos[/novo]           os projetos
 #/projetos/<CÓDIGO>         um projeto (ex.: #/projetos/NEBULA)
@@ -92,7 +108,6 @@ conforme quem entra é menu que ninguém aprende.
 #/arquivos/visao            a visão geral: os números de cada emissor
 #/arquivos/revisoes|templates|config
 #/arquivos/<código>         um arquivo (ex.: #/arquivos/NRO-PES-007-2)
-#/informacoes[/<categoria>]
 #/servicos[/<tipo>]
 #/servicos/pedidos          meus pedidos (o antigo #/pedidos, que ainda abre)
 #/servicos/declaracao[/<registro>]  a declaração de vínculo (a de outra pessoa: Depto. de Pessoal)
@@ -106,8 +121,9 @@ conforme quem entra é menu que ninguém aprende.
 #/treinamentos/NRO-TRE-003  um treinamento: o programa e onde você está
 #/treinamentos/NRO-TRE-003/2  o módulo 2, com a verificação
 #/treinamentos/NRO-TRE-003/editar|acompanhamento
-#/treinamentos/gestao|novo
-#/treinamentos/config[/readme]  quem gere, a nota, o certificado, o README
+#/treinamentos/novo
+#/treinamentos/config[/geral|readme]  a gestão, quem gere, a nota, o README
+                            (#/treinamentos/gestao ainda abre)
 #/treinamentos/certificado/CERT-3F9A-C21B  conferir um certificado
 #/studio                    o quadro das publicações
 #/studio/calendario|ideias|modelos
@@ -121,6 +137,7 @@ conforme quem entra é menu que ninguém aprende.
 #/selecao/dinamica/<sub>    painel, roteiro, desafio, criterios, janelas
 #/admin[/aba]               painéis
 #/admin/grupos/<prefixo>    a árvore de grupos, com um em foco
+#/admin/emails[/programados|pilulas]  o Full mailer, a fila e as pílulas
 ```
 
 **Regras:**
@@ -129,7 +146,9 @@ conforme quem entra é menu que ninguém aprende.
 - o primeiro segmento é o espaço, o segundo é o recorte ou o objeto;
 - endereço antigo nunca quebra: entra uma linha em `ALIAS` no roteador
   (`calendario` → `agenda`, `quadro` → `equipe`, `organizacao` → `equipe`,
-  `pedidos` → `servicos/pedidos`);
+  `pedidos` → `servicos/pedidos`, `informacoes` → `arquivos`) — e, na
+  agenda, em `ALIAS_AGENDA` (`agenda/presenca` → `equipe/presenca`,
+  `agenda/agendar` → `agenda/novo`, `agenda/minha` → `agenda/config/google`);
 - rota sem permissão devolve para o início — nunca uma tela vazia dizendo
   "sem acesso" para quem nunca deveria ter visto o link.
 
@@ -212,8 +231,10 @@ global. Daí duas regras que não são estilo, são o que faz a tela abrir:
 2. **Módulo não depende de módulo.** `mod-relatorios` usar uma constante de
    `mod-gestao` funciona enquanto alguém passa pelo quadro antes de abrir
    Relatórios — e quebra para quem vai direto. Quando um módulo precisa
-   mesmo de outro (o dossiê de evento gera PDF), ele chama
-   `carregarModulo('relatorios')` **antes**, dentro da função.
+   mesmo de outro, ele chama `carregarModulo('<nome>')` **antes**, dentro da
+   função. O que duas telas dividem sobe para a casca: o calendário do mês
+   (Agenda e Studio), a leitura da agenda (Agenda e início), o placar do
+   LABBIO (Presença e início).
 
 `node testes/colisoes.mjs` confere a primeira. A segunda é leitura de
 diff — e as duas já falharam nesta base.
@@ -247,9 +268,13 @@ exemplar. A revisão não entra no código de propósito — `NRO-PES-007` conti
 sendo o mesmo procedimento na Rev. A e na Rev. F, e é esse endereço que as
 relações, os templates e os links apontam.
 
-A logo de um projeto também é identidade: sai de uma semente
-(`projetos.logo_semente`) por `logoProjeto()`, na casca, e a mesma semente dá
-a mesma logo em toda tela — no cartão, no menu e na página do projeto.
+O Pokémon de um projeto também é identidade: é escolhido na criação, mora em
+`projetos.logo_semente` como `pkm:<número da Pokédex>` e sai por
+`logoProjeto()`, na casca, igual em toda tela (no cartão, no menu e na página
+do projeto). A arte vem do repositório público da PokeAPI. A linha evolutiva
+aparece na página do projeto, e quem edita o projeto evolui o Pokémon com um
+clique. Projeto com semente antiga, de texto, ganha um Pokémon sorteado pela
+semente, sempre o mesmo, até alguém escolher.
 
 ### Um fato, um cartão
 
@@ -280,7 +305,8 @@ O sinal de prioridade é um **brilho no topo**, não uma barra na lateral: barra
 lateral come a largura de uma coluna que já tem 230px, e some quando a coluna
 estreita. Sinalizado troca a cor do brilho para âmbar — "olhe para mim" é o que
 um brilho quer dizer — e o ponto de prioridade continua ali, então nada se
-perde.
+perde. Na coluna Concluída o brilho sai e fica só o ponto: trabalho entregue
+não pede atenção.
 
 ### Quadro reservado
 
@@ -530,3 +556,29 @@ O tema vale antes de a página pintar: uma linha de script no `<head>` lê o
 Todo texto do claro lê a 4,5:1 ou mais sobre o fundo real — o teste do menu
 mede. O card *Tema claro* do design system traz os valores e o contraste de
 cada token.
+
+---
+
+## 9. Linguagem
+
+O portal fala como um documento da NRO: direto, formal e curto.
+
+- **Não explique o óbvio.** Que a declaração sai na hora e no modelo da NRO,
+  que um botão faz o que diz, que a lista vazia vai se encher: nada disso
+  precisa de frase. Estado vazio é uma linha ("Nenhuma tarefa aberta.").
+- **O que precisa de explicação vai para o ícone de informação**, `dica(texto)`
+  — uma regra de negócio, uma consequência que não se vê (revogar invalida a
+  validação; recolher o objetivo recolhe os de baixo). Nunca um parágrafo no
+  alto da tela para isso.
+- **Sem conversa.** Nada de "dá para", "é só", "por enquanto", "a gente";
+  nada de pergunta retórica. Impessoal ou imperativo: "Informe o motivo.",
+  não "Diga o motivo — é o que a validação vai mostrar."
+- **Sem travessão nem ponto médio em frase e rótulo.** Vírgula, dois-pontos
+  ou parênteses. Contagem no título vai entre parênteses ("Equipe (4)");
+  código e título, lado a lado ("ORT-14 Calibrar o encoder"). O travessão
+  fica como marca de campo vazio (`—`); o ponto médio, só na tipografia dos
+  documentos em PDF e nas artes do Studio.
+- **Erros dizem o que houve, não quem errou**: "Sem permissão para esta
+  ação.", "Conta sem vínculo com um registro de membro." — os textos comuns
+  moram em `MOTIVO_RPC`, na casca.
+

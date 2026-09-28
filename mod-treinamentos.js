@@ -26,9 +26,10 @@
      #/treinamentos/NRO-TRE-003/2            o módulo 2, com a verificação
      #/treinamentos/NRO-TRE-003/editar       o rascunho (quem gere)
      #/treinamentos/NRO-TRE-003/acompanhamento  quem fez e quem deve (quem gere)
-     #/treinamentos/gestao                   todos, com rascunhos e arquivados
+     #/treinamentos/config                   todos, com rascunhos e arquivados (quem gere)
+     #/treinamentos/config/geral|readme      gestores, nota, certificado, README
      #/treinamentos/novo                     criar — ou começar de um texto
-     #/treinamentos/config[/readme]          gestores, nota, certificado, README
+     #/treinamentos/gestao                   endereço antigo: abre #/treinamentos/config
      #/treinamentos/certificado/CERT-XXXX-XXXX  conferir um certificado
 
    Precisa da migração db/v24_treinamentos.sql.
@@ -39,7 +40,7 @@
    Depende da casca para: sb, $, esc, norm, state, toast, abreModal,
    fechaModal, fmtD, fmtDT, ic, ibtn, confirma, falha, motivoRPC,
    MOTIVO_RPC, copiar, carregarLib, can, grupoPorId, gereTreinamentos,
-   carregarTreinamentoConfig, IC_DOC.
+   carregarTreinamentoConfig, IC_DOC, dica.
    ============================================================ */
 
 const treino = { lista:null, erro:null, cat:'', q:'', atual:null, vf:{}, ed:null, acomp:null,
@@ -477,13 +478,13 @@ function treLerModulo(titulo, linhas, marca, n, avisos){
   }
   fechaQ();
   const qs = questoes.map((x, j) => {
-    const pre = `Módulo ${n} · questão ${j + 1}`;
+    const pre = `Módulo ${n}, questão ${j + 1}`;
     let tipo = null;
     const mk = x.enunciado.match(/\s*\{\s*(unica|única|multipla|múltipla|varias|várias|vf|v\/f|verdadeiro ou falso)\s*\}\s*$/i);
     if (mk){ x.enunciado = x.enunciado.slice(0, mk.index).trim();
       const t = norm(mk[1]); tipo = t === 'unica' ? 'unica' : /^(multipla|varias)$/.test(t) ? 'multipla' : 'vf'; }
     if (!tipo) tipo = x.marcas.has('vf') ? 'vf' : x.opcoes.filter(o => o.correta).length > 1 ? 'multipla' : 'unica';
-    if (x.marcas.size > 1) avisos.push(`${pre}: mistura [x] com [V]/[F] — use um só jeito por questão.`);
+    if (x.marcas.size > 1) avisos.push(`${pre}: mistura [x] com [V]/[F]; use uma forma por questão.`);
     const opcoes = x.opcoes.map((o, k) => ({ id:String.fromCharCode(97 + k), texto:o.texto, correta:!!o.correta }));
     const nc = opcoes.filter(o => o.correta).length;
     if (tipo !== 'vf' && opcoes.length < 2) avisos.push(`${pre}: precisa de pelo menos duas alternativas.`);
@@ -567,7 +568,7 @@ function treProblemas(c){
     if (ruins.length) out.push(`${pre}: link que o portal não abre (${ruins[0]}).`);
     const qids = new Set();
     (m.verificacao?.questoes || []).forEach((q, j) => {
-      const pq = `${pre} · questão ${j + 1}`;
+      const pq = `${pre}, questão ${j + 1}`;
       if (!q.id || qids.has(q.id) || !rx.test(q.id) || (q.opcoes || []).some(o => !rx.test(String(o.id || ''))))
         out.push(`${pq}: identificador vazio, repetido ou com caracteres que não valem.`);
       qids.add(q.id);
@@ -577,7 +578,7 @@ function treProblemas(c){
       if (q.tipo === 'vf'){ if (!ops.length) out.push(`${pq}: V ou F sem nenhuma afirmação.`); }
       else {
         if (ops.length < 2) out.push(`${pq}: precisa de pelo menos duas alternativas.`);
-        if (q.tipo === 'unica' && nc !== 1) out.push(`${pq}: uma correta só — há ${nc} marcadas.`);
+        if (q.tipo === 'unica' && nc !== 1) out.push(`${pq}: apenas uma correta, há ${nc} marcadas.`);
         else if (q.tipo === 'multipla' && !nc) out.push(`${pq}: nenhuma alternativa marcada como correta.`);
       }
     });
@@ -594,7 +595,7 @@ function treProblemas(c){
    pode reescrever o dela em Treinamentos › Configurações ›
    README (treinamento_config.readme); vazio, vale este.
    ============================================================ */
-const TRE_README_PADRAO = `# README · Treinamentos da NeuroDynamics
+const TRE_README_PADRAO = `# README: Treinamentos da NeuroDynamics
 
 Guia para escrever os treinamentos do portal do membro (membro.neurodynamics.dev › Treinamentos). Vale para quem escreve à mão e, principalmente, para os agentes de IA: entregue este arquivo junto com o pedido. O texto que voltar é colado em **Treinamentos › Importar texto** e vira o rascunho do treinamento — alguém da equipe revisa e publica.
 
@@ -699,7 +700,7 @@ A primeira linha é o link do vídeo; a segunda, o título que aparece embaixo d
 | uma tela do portal | o endereço dela | \`[Agenda](#/agenda)\`, \`[Serviços](#/servicos)\` |
 | fora do portal | o endereço completo | \`[site institucional](https://neurodynamics.dev)\` |
 
-As telas do portal que se pode citar: \`#/agenda\` (e \`#/agenda/mes\`, \`#/agenda/agendar\`, \`#/agenda/presenca\`, \`#/agenda/minha\`), \`#/atividades\`, \`#/okrs\`, \`#/projetos\`, \`#/arquivos\`, \`#/equipe\`, \`#/treinamentos\`, \`#/informacoes\` e \`#/servicos\` (e \`#/servicos/acesso\`, \`#/servicos/pedidos\`).
+As telas do portal que se pode citar: \`#/agenda\` (e \`#/agenda/mes\`, \`#/agenda/novo\`, \`#/agenda/config\`), \`#/atividades\`, \`#/okrs\`, \`#/projetos\`, \`#/arquivos\`, \`#/equipe\` (e \`#/equipe/presenca\`), \`#/treinamentos\` e \`#/servicos\` (e \`#/servicos/acesso\`, \`#/servicos/pedidos\`).
 
 - **Nunca invente código de documento.** Use só os da lista de referências que acompanha este arquivo (quando acompanha) ou os que vieram no pedido. Não sabe o código? Escreva o nome do documento e a marca \`[CONFIRMAR LINK: nome do documento]\`.
 - O texto do link diz para onde ele leva: "a [política de acesso ao LABBIO](arquivo:NRO-PES-015)", nunca "clique [aqui](…)".
@@ -711,8 +712,8 @@ No fim do módulo, a seção \`## Links relacionados\` junta o que vale abrir de
 \`\`\`
 ## Links relacionados
 
-- [Política de acesso ao LABBIO](arquivo:NRO-PES-015) — quem entra, em que horário e com que acompanhamento.
-- [Agenda do mês](#/agenda/mes) — onde aparecem os horários reservados do laboratório.
+- [Política de acesso ao LABBIO](arquivo:NRO-PES-015): quem entra, em que horário e com que acompanhamento.
+- [Agenda do mês](#/agenda/mes): onde aparecem os horários reservados do laboratório.
 \`\`\`
 
 ## 7. A verificação de conhecimento
@@ -734,7 +735,7 @@ Cada questão é um item numerado; as alternativas vêm logo abaixo, com recuo; 
    - [x] Os compromissos da equipe
    - [x] Os marcos do semestre
    - [ ] Os e-mails recebidos
-   > A Agenda junta compromissos, marcos e ausências — e-mail não entra.
+   > A Agenda junta compromissos, marcos e ausências; e-mail não entra.
 
 3. Verdadeiro ou falso: {vf}
    - [V] O portal lê o seu Google Agenda para saber quando você está ocupado.
@@ -811,8 +812,8 @@ Como fazer o check-in na entrada do LABBIO
 
 ## Links relacionados
 
-- [Política de acesso ao LABBIO](arquivo:NRO-PES-015) — as regras completas.
-- [Presença e check-in](#/agenda/presenca) — quem está no laboratório agora.
+- [Política de acesso ao LABBIO](arquivo:NRO-PES-015): as regras completas.
+- [Presença e check-in](#/equipe/presenca): quem está no laboratório agora.
 
 ## Verificação de conhecimento
 
@@ -847,9 +848,9 @@ async function pageTreinamentos(sub, sub2){
   if (s === 'todos') return treTodos();
   if (s === 'certificados') return treCertificados();
   if (s === 'certificado') return treVerificar(sub2);
-  if (s === 'gestao') return so(treGestao);
+  if (s === 'gestao'){ history.replaceState(null, '', location.pathname + '#/treinamentos/config'); return so(treGestao); }
   if (s === 'novo') return so(treNovo);
-  if (s === 'config') return so(() => treConfig(sub2));
+  if (s === 'config') return so(() => sub2 === 'geral' || sub2 === 'readme' ? treConfig(sub2) : treGestao());
   if (/^nro-tre-\d{3,}$/i.test(s)){
     const cod = s.toUpperCase();
     if (sub2 === 'editar') return so(() => treEditor(cod));
@@ -875,13 +876,18 @@ function treFaltaBanco(erro){
   $('#main').innerHTML = `${treTopo('Treinamentos', '')}<div class="aviso-box err"><b>Os treinamentos ainda não estão no banco.</b>
     ${esc(erro?.message || '')}<br><span class="small">Falta aplicar a migração <code>db/v24_treinamentos.sql</code>.</span></div>`;
 }
+/* Nível 1: as seções do espaço. Configurações (de quem gere) reúne a
+   lista de todos os treinamentos, o geral e o README, no nível 2. */
 function treNav(atual){
   const n = (treino.lista || []).filter(t => t.obrigatorio && t.situacao !== 'concluido').length;
-  const it = [['', 'Para você'], ['todos', 'Todos'], ['certificados', 'Meus certificados']];
-  if (gereTreinamentos()) it.push(['gestao', 'Gestão'], ['config', 'Configurações']);
-  return `<nav class="arq-nav tre-nav" aria-label="Treinamentos">${it.map(([k, l]) =>
-    `<a href="#/treinamentos${k ? '/' + k : ''}" class="${atual === k ? 'on' : ''}">${l}${k === '' && n
-      ? ` <span class="n sua" title="Obrigatórios por fazer">${n}</span>` : ''}</a>`).join('')}</nav>`;
+  const it = [['', 'Para você', '#/treinamentos', n ? `<span class="n sua" title="Obrigatórios pendentes">${n}</span>` : ''],
+    ['todos', 'Todos', '#/treinamentos/todos'], ['certificados', 'Meus certificados', '#/treinamentos/certificados']];
+  if (gereTreinamentos()) it.push(['config', 'Configurações', '#/treinamentos/config']);
+  return navNivel1(it, atual, 'Treinamentos');
+}
+function treNavConfig(atual){
+  return navNivel2([['', 'Treinamentos', '#/treinamentos/config'], ['geral', 'Geral', '#/treinamentos/config/geral'],
+    ['readme', 'README de conteúdo', '#/treinamentos/config/readme']], atual, 'Configurações');
 }
 function treTopo(titulo, lead, acoes, olho){
   return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">${esc(olho || 'Treinamentos')}</span><h1>${titulo}</h1>
@@ -911,10 +917,10 @@ function treCartao(t){
   const s = t.situacao, n = t.n_modulos || 0;
   const pct = s === 'concluido' ? 100 : n ? Math.round(100 * (t.feitos || 0) / n) : 0;
   return `<a class="tre-card s-${esc(s)}" href="#/treinamentos/${esc(t.codigo)}" data-cod="${esc(t.codigo)}">
-    <div class="tre-card-top"><span class="cod">${esc(t.codigo)} · ${esc(treRev(t.revisao))}</span>${treObrig(t.obrigatorio)}</div>
+    <div class="tre-card-top"><span class="cod">${esc(t.codigo)}, ${esc(treRev(t.revisao))}</span>${treObrig(t.obrigatorio)}</div>
     <div class="tt">${esc(t.titulo)}</div>
     ${t.resumo ? `<div class="rs">${esc(t.resumo)}</div>` : ''}
-    <div class="meta">${[n + (n === 1 ? ' módulo' : ' módulos'), treDuracao(t.carga_horaria_min), t.categoria].filter(Boolean).map(esc).join(' · ')}</div>
+    <div class="meta">${[n + (n === 1 ? ' módulo' : ' módulos'), treDuracao(t.carga_horaria_min), t.categoria].filter(Boolean).map(esc).join(', ')}</div>
     <div class="tre-prog" title="${t.feitos || 0} de ${n} módulos"><i style="width:${pct}%"></i></div>
     <div class="pe">${trePill(s)}<span class="go">${treAcao(t)} →</span></div></a>`;
 }
@@ -930,12 +936,10 @@ async function treParaVoce(){
     ${sub ? `<p class="small muted">${sub}</p>` : ''}<div class="tre-grade">${itens.map(treCartao).join('')}</div></section>` : '';
   const semNada = !obrig.length && !andam.length && !recom.length;
   $('#main').innerHTML = `${treTopo('Para você',
-      'Os treinamentos que os seus grupos pedem — os obrigatórios primeiro. Ao concluir, o certificado fica em <a href="#/treinamentos/certificados">Meus certificados</a>.',
-      gereTreinamentos() ? `<a class="btn ghost mini" href="#/treinamentos/gestao">${ic('quadro')} Gestão</a>
-        <a class="btn solid mini" href="#/treinamentos/novo">${ic('plus')} Novo treinamento</a>` : '')}
+      'Treinamentos atribuídos aos seus grupos, os obrigatórios primeiro.',
+      gereTreinamentos() ? `<a class="btn solid mini" href="#/treinamentos/novo">${ic('plus')} Novo treinamento</a>` : '')}
     ${treNav('')}
-    ${!treEu() ? `<div class="aviso-box warn">A sua conta ainda não está ligada a um registro do quadro: dá para ler os
-      treinamentos, mas o progresso e o certificado não ficam guardados. O Depto. de Pessoal faz o vínculo.</div>` : ''}
+    ${!treEu() ? `<div class="aviso-box warn">Conta sem vínculo com um registro de membro: progresso e certificado não são salvos.</div>` : ''}
     <div class="st-resumo">
       <span class="st-num${obrig.length ? ' vez' : ''}"><b>${obrig.length}</b> obrigatório${obrig.length === 1 ? '' : 's'} por fazer</span>
       <span class="st-num"><b>${L.filter(t => t.situacao === 'andamento').length}</b> em andamento</span>
@@ -943,9 +947,7 @@ async function treParaVoce(){
     ${sec('Obrigatórios', 'Atribuídos a um grupo seu como obrigatórios. Um vencido ou com revisão nova precisa ser refeito.', obrig)}
     ${sec('Em andamento', '', andam)}
     ${sec('Recomendados para o seu grupo', 'Opcionais: atribuídos a um grupo seu, sem obrigação.', recom)}
-    ${semNada ? `<div class="vazio"><div class="glyph">✓</div><h3>${L.length ? 'Nada pendente para você' : 'Nenhum treinamento publicado ainda'}</h3>
-      <p>${L.length ? 'Nenhum treinamento atribuído aos seus grupos espera por você. Os outros estão em Todos os treinamentos.'
-        : 'Quando a equipe publicar o primeiro treinamento, ele aparece aqui.'}</p>
+    ${semNada ? `<div class="vazio"><div class="glyph">✓</div><h3>${L.length ? 'Nada pendente' : 'Nenhum treinamento publicado'}</h3>
       ${L.length ? '<a class="btn ghost" href="#/treinamentos/todos">Todos os treinamentos</a>' : ''}</div>` : ''}
     ${sec('Concluídos', '', feitos)}`;
 }
@@ -962,7 +964,7 @@ function treTodosDesenhar(){
   const q = norm(treino.q), cats = [...new Set(treino.lista.map(t => t.categoria).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt'));
   const vis = treino.lista.filter(t => (!treino.cat || t.categoria === treino.cat)
     && (!q || norm([t.codigo, t.titulo, t.resumo, t.categoria].join(' ')).includes(q)));
-  $('#main').innerHTML = `${treTopo('Todos os treinamentos', 'Tudo o que a equipe publicou. Qualquer um pode fazer qualquer treinamento — o que a atribuição muda é o que é obrigatório para quem.')}
+  $('#main').innerHTML = `${treTopo('Todos os treinamentos', '')}
     ${treNav('todos')}
     <div class="filtros">
       ${cats.length ? `<div class="chips" role="group" aria-label="Categoria"><button class="chip-b${!treino.cat ? ' on' : ''}" onclick="treino.cat='';treTodosDesenhar()">Todas</button>
@@ -970,7 +972,7 @@ function treTodosDesenhar(){
       <div class="fld cresce"><input id="tre-q" placeholder="Buscar por código, título ou assunto" value="${esc(treino.q)}"
         oninput="treino.q=this.value;clearTimeout(treino._q);treino._q=setTimeout(()=>{treTodosDesenhar();const e=$('#tre-q');e.focus();e.setSelectionRange(e.value.length,e.value.length)},220)"></div></div>
     ${vis.length ? `<div class="tre-grade">${vis.map(treCartao).join('')}</div>`
-      : `<div class="vazio"><h3>${treino.lista.length ? 'Nenhum treinamento com esse filtro' : 'Nenhum treinamento publicado ainda'}</h3>
+      : `<div class="vazio"><h3>${treino.lista.length ? 'Nenhum treinamento com esse filtro' : 'Nenhum treinamento publicado'}</h3>
         ${treino.lista.length ? `<p><button class="btn ghost" onclick="treino.q='';treino.cat='';treTodosDesenhar()">Limpar filtros</button></p>` : ''}</div>`}`;
 }
 
@@ -991,21 +993,21 @@ async function treCertificados(){
       return `<span class="pill p-ok"><span class="dt dt-ok"></span>Em dia${t.vence_em ? ' até ' + fmtD(t.vence_em) : ''}</span>`;
     return '<span class="pill"><span class="dt dt-gray"></span>Histórico</span>';
   };
-  $('#main').innerHTML = `${treTopo('Meus certificados', 'Cada treinamento concluído, com o certificado em PDF. O código no pé do certificado confere que ele é da equipe.')}
+  $('#main').innerHTML = `${treTopo('Meus certificados', '')}
     ${treNav('certificados')}
     ${lista.length ? `<div class="tre-certs">${lista.map((x, i) => `<div class="tre-cert-tile">
         <div class="tre-cert-fita"></div>
-        <div class="tre-cert-tx"><span class="cod">${esc(x.codigo)} · Rev. ${esc(x.revisao)}</span>
+        <div class="tre-cert-tx"><span class="cod">${esc(x.codigo)}, Rev. ${esc(x.revisao)}</span>
           <div class="tt">${esc(x.titulo)}</div>
-          <div class="meta">Concluído em ${esc(treDataLonga(x.concluido_em))}${x.nota != null ? ` · nota ${x.nota}%` : ''}${x.carga_horaria_min ? ' · ' + esc(treDuracao(x.carga_horaria_min)) : ''}</div>
+          <div class="meta">Concluído em ${esc(treDataLonga(x.concluido_em))}${x.nota != null ? `, nota ${x.nota}%` : ''}${x.carga_horaria_min ? ', ' + esc(treDuracao(x.carga_horaria_min)) : ''}</div>
           <div class="pe">${estado(x)}<span class="mono small dim">${esc(x.certificado)}</span></div></div>
         <div class="tre-cert-acs"><button class="btn solid mini" onclick="treBaixarCertificado('${esc(x.certificado)}', this)">${ic('down')} Baixar PDF</button>
           <button class="btn ghost mini" onclick="copiar('${esc(x.certificado)}')">${ic('copy')} Código</button></div></div>`).join('')}</div>`
-      : `<div class="vazio"><div class="glyph">—</div><h3>Nenhum certificado ainda</h3>
-        <p>Ao concluir o último módulo de um treinamento, o certificado aparece aqui.</p>
+      : `<div class="vazio"><div class="glyph">—</div><h3>Nenhum certificado</h3>
+        
         <a class="btn ghost" href="#/treinamentos">Para você</a></div>`}
     <div class="card tre-conferir"><h3>Conferir um certificado</h3>
-      <p class="small muted" style="margin:4px 0 12px">Recebeu um certificado da equipe? O código fica no pé dele.</p>
+      <p class="small muted" style="margin:4px 0 12px">Código impresso no rodapé do certificado.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="tre-cc" placeholder="CERT-XXXX-XXXX" style="max-width:220px;font-family:var(--fm)"
         onkeydown="if(event.key==='Enter')location.hash='#/treinamentos/certificado/'+this.value.trim()">
         <button class="btn ghost" onclick="location.hash='#/treinamentos/certificado/'+$('#tre-cc').value.trim()">Conferir</button></div></div>`;
@@ -1018,7 +1020,7 @@ async function treVerificar(cod){
     ${ok ? `<div class="card tre-verif-cert ${data.em_dia ? 'ok' : ''}">
         <span class="eyebrow">${data.em_dia ? 'Certificado válido' : 'Certificado da equipe'}</span>
         <h2>${esc(data.nome)}</h2>
-        <p>concluiu <b>${esc(data.titulo)}</b> (${esc(data.codigo)} · Rev. ${esc(data.revisao)}) em ${esc(treDataLonga(data.concluido_em))}.</p>
+        <p>concluiu <b>${esc(data.titulo)}</b> (${esc(data.codigo)}, Rev. ${esc(data.revisao)}) em ${esc(treDataLonga(data.concluido_em))}.</p>
         <div class="dl" style="margin-top:14px">
           <div class="it"><dt>Código</dt><dd class="mono">${esc(data.certificado)}</dd></div>
           <div class="it"><dt>Carga horária</dt><dd>${esc(treDuracao(data.carga_horaria_min)) || '—'}</dd></div>
@@ -1056,8 +1058,8 @@ async function treTreinamento(cod){
   const nota = t.nota_minima;
   let faixa = '';
   if (a.conclusao && s === 'concluido') faixa = `<div class="tre-faixa ok"><span class="ic">${ic('check')}</span><div class="tx">
-      <b>Concluído em ${esc(treDataLonga(a.conclusao.concluido_em))}</b> · Rev. ${esc(a.conclusao.revisao)}${a.conclusao.nota != null ? ` · nota ${a.conclusao.nota}%` : ''}
-      ${a.conclusao.vence_em ? `<span class="small muted"> · vale até ${fmtD(a.conclusao.vence_em)}</span>` : ''}</div>
+      <b>Concluído em ${esc(treDataLonga(a.conclusao.concluido_em))}</b>, Rev. ${esc(a.conclusao.revisao)}${a.conclusao.nota != null ? `, nota ${a.conclusao.nota}%` : ''}
+      ${a.conclusao.vence_em ? `<span class="small muted">, vale até ${fmtD(a.conclusao.vence_em)}</span>` : ''}</div>
       <button class="btn solid mini" onclick="treBaixarCertificado('${esc(a.conclusao.certificado)}', this)">${ic('down')} Certificado</button></div>`;
   else if (s === 'vencido') faixa = `<div class="tre-faixa bad"><div class="tx"><b>Venceu${a.conclusao?.vence_em ? ' em ' + fmtD(a.conclusao.vence_em) : ''}.</b>
       Este treinamento vale ${t.validade_meses} ${t.validade_meses === 1 ? 'mês' : 'meses'}: para ficar em dia, refaça os módulos. O certificado de antes continua no seu perfil.</div>
@@ -1067,7 +1069,7 @@ async function treTreinamento(cod){
   $('#main').innerHTML = `<div class="tre-hero">
       <div class="tre-hero-tx">
         <a class="tre-voltar" href="#/treinamentos">${ic('back')} Treinamentos</a>
-        <span class="eyebrow">${esc(t.codigo)} · Rev. ${esc(t.revisao)}${t.categoria ? ' · ' + esc(t.categoria) : ''}</span>
+        <span class="eyebrow">${esc(t.codigo)}, Rev. ${esc(t.revisao)}${t.categoria ? ', ' + esc(t.categoria) : ''}</span>
         <h1>${esc(t.titulo)}</h1>
         ${t.resumo ? `<p class="lead">${esc(t.resumo)}</p>` : ''}
         <div class="tre-hero-tags">${trePill(s)} ${treObrig(a.obrigatorio)}</div>
@@ -1082,7 +1084,7 @@ async function treTreinamento(cod){
       </dl>
     </div>
     ${faixa}
-    ${gereTreinamentos() ? `<div class="tre-gere"><span class="small muted">Você gere este treinamento.</span>
+    ${gereTreinamentos() ? `<div class="tre-gere"><span class="small muted">Gestão deste treinamento.</span>
       <a class="btn ghost mini" href="#/treinamentos/${esc(t.codigo)}/editar">${ic('pencil')} Editar</a>
       <a class="btn ghost mini" href="#/treinamentos/${esc(t.codigo)}/acompanhamento">${ic('users')} Acompanhamento</a></div>` : ''}
     <section class="tre-programa card">
@@ -1094,7 +1096,7 @@ async function treTreinamento(cod){
           <span class="n">${f ? ic('check') : String(i + 1).padStart(2, '0')}</span>
           <span class="tt">${esc(m.titulo)}</span>
           <span class="tags">${x.v ? `<span class="tag-mini">${x.v === 1 ? 'vídeo' : x.v + ' vídeos'}</span>` : ''}
-            ${x.q ? `<span class="tag-mini">verificação · ${x.q}</span>` : ''}</span></a></li>`; }).join('')}</ol>
+            ${x.q ? `<span class="tag-mini">verificação: ${x.q}</span>` : ''}</span></a></li>`; }).join('')}</ol>
       <div class="acts">${s !== 'vencido' ? `<a class="btn solid" href="#/treinamentos/${esc(t.codigo)}/${prox >= 0 ? prox + 1 : 1}">
         ${prox < 0 ? 'Rever do começo' : feitos.size ? 'Continuar do módulo ' + (prox + 1) : 'Começar'} →</a>` : ''}
         ${s === 'concluido' ? `<button class="btn ghost" onclick="treRecomecar()">${ic('refazer')} Refazer do zero</button>` : ''}</div>
@@ -1139,7 +1141,7 @@ async function treModulo(cod, n){
     <article class="tre-conteudo">
       ${a.situacao === 'vencido' ? `<div class="aviso-box warn">Este treinamento venceu: o que você fizer agora não renova o certificado.
         Para ficar em dia, <button class="tre-a" style="font:inherit" onclick="treRecomecar()">recomece do zero</button>.</div>` : ''}
-      <span class="eyebrow">Módulo ${String(n).padStart(2, '0')} de ${String(mods.length).padStart(2, '0')}${feito ? ' · concluído' : ''}</span>
+      <span class="eyebrow">Módulo ${String(n).padStart(2, '0')} de ${String(mods.length).padStart(2, '0')}${feito ? ', concluído' : ''}</span>
       <h1>${esc(m.titulo)}</h1>
       <div class="tre-md">${treMd(m.corpo, ctx)}</div>
       ${(m.links || []).length ? `<section class="tre-links"><h2>Links relacionados</h2><div class="doc-grid">${m.links.map(treLinkCartao).join('')}</div></section>` : ''}
@@ -1156,7 +1158,7 @@ async function treModulo(cod, n){
 function treLinkCartao(k){
   const h = treHref(k.url);
   const ext = h?.tipo === 'externo';
-  const onde = !h ? 'link que o portal não abre' : h.tipo === 'arquivo' ? `${h.codigo} · Arquivos →` : h.tipo === 'treinamento' ? `${h.codigo} · Treinamentos →`
+  const onde = !h ? 'link que o portal não abre' : h.tipo === 'arquivo' ? `${h.codigo} em Arquivos →` : h.tipo === 'treinamento' ? `${h.codigo} em Treinamentos →`
     : h.tipo === 'portal' ? 'No portal →' : (() => { try { return new URL(h.href).hostname.replace(/^www\./, '') + ' ↗'; } catch(e){ return 'Abrir ↗'; } })();
   return `<a class="doc" href="${esc(h?.href || '#')}"${ext ? ' target="_blank" rel="noopener"' : ''}>
     <span class="ic">${IC_DOC}</span><span class="tx"><span class="tt">${esc(k.titulo || k.url)}</span>
@@ -1167,8 +1169,8 @@ function treVerificacaoHTML(m, qs, res, t){
   return `<section class="tre-verif card" id="tre-verif">
     <div class="tre-verif-hd"><span class="eyebrow">Verificação de conhecimento</span>
       <h2>${qs.length} ${qs.length === 1 ? 'questão' : 'questões'}</h2>
-      <p class="small muted">${ja ? `Você já passou nesta verificação (melhor nota: ${res.melhor_nota}%). Pode refazer, se quiser — a nota que vale é a melhor.`
-        : `Para concluir o módulo, acerte pelo menos ${t.nota_minima}%. Cada questão vale um ponto, e só conta inteira. Dá para tentar de novo quantas vezes precisar.`}</p></div>
+      <p class="small muted">${ja ? `Verificação concluída (melhor nota: ${res.melhor_nota}%). Refazer é opcional; vale a melhor nota.`
+        : `Para concluir o módulo, acerte pelo menos ${t.nota_minima}%. Cada questão vale um ponto, sem pontuação parcial. Tentativas ilimitadas.`}</p></div>
     <ol class="tre-qs">${qs.map((q, j) => `<li class="tre-q" data-q="${esc(q.id)}">
       <div class="tre-q-en"><span class="n">${String(j + 1).padStart(2, '0')}</span><div>${treInline(q.enunciado).replace(/\n/g, '<br>')}
         <span class="tre-q-dica">${TRE_TIPOS[q.tipo]?.dica || ''}</span></div></div>
@@ -1205,7 +1207,7 @@ async function treEnviar(){
   const resp = treRespostas();
   const faltam = Object.entries(resp).filter(([, v]) => Array.isArray(v) ? !v.length : false).length
     + [...document.querySelectorAll('#tre-verif .tre-vf')].filter(el => treino.vf[el.closest('.tre-q').dataset.q]?.[el.dataset.o] === undefined).length;
-  if (faltam && !await confirma(`Há ${faltam === 1 ? 'uma resposta' : faltam + ' respostas'} em branco — em branco conta como errada. Enviar assim mesmo?`, 'Enviar')) return;
+  if (faltam && !await confirma(`${faltam === 1 ? 'Uma resposta' : faltam + ' respostas'} em branco, contadas como erradas. Enviar?`, 'Enviar')) return;
   const bt = $('#tre-enviar'); if (bt) bt.disabled = true;
   const { data, error } = await sb.rpc('treinamento_responder', { p_id: t.id, p_modulo: mid, p_respostas: resp });
   if (bt) bt.disabled = false;
@@ -1230,8 +1232,8 @@ async function treEnviar(){
   const el = $('#tre-res');
   el.className = 'tre-res ' + (data.aprovado ? 'ok' : 'bad');
   el.innerHTML = data.aprovado
-    ? `<b>Aprovado com ${data.nota}%</b> · ${data.acertos} de ${data.total}.`
-    : `<b>${data.acertos} de ${data.total} (${data.nota}%)</b> — a mínima é ${data.nota_minima}%. As questões marcadas estão erradas: reveja o módulo e tente de novo.`;
+    ? `<b>Aprovado com ${data.nota}%</b>, ${data.acertos} de ${data.total}.`
+    : `<b>${data.acertos} de ${data.total} (${data.nota}%)</b>. Mínimo: ${data.nota_minima}%. As questões marcadas estão erradas.`;
   a.feitos = data.feitos || a.feitos;
   a.situacao = data.situacao;
   (a.respostas ||= {})[mid] = { ...(a.respostas[mid] || {}), aprovado: data.aprovado || a.respostas[mid]?.aprovado,
@@ -1277,7 +1279,7 @@ function treParabens(cert){
   abreModal(`<div class="tre-parabens"><div class="tre-selo">${ic('capelo')}</div>
     <span class="eyebrow">Treinamento concluído</span>
     <h3>${esc(t.titulo)}</h3>
-    <p class="small muted">${esc(t.codigo)} · Rev. ${esc(t.revisao)}. A conclusão ficou registrada no seu perfil, e o certificado está pronto.</p>
+    <p class="small muted">${esc(t.codigo)}, Rev. ${esc(t.revisao)}. Conclusão registrada; certificado disponível.</p>
     <p class="mono small" style="margin-top:10px">${esc(cert)}</p>
     <div class="acts" style="justify-content:center">
       <button class="btn ghost" onclick="fechaModal();location.hash='#/treinamentos'">Voltar aos treinamentos</button>
@@ -1306,10 +1308,9 @@ function treGestaoDesenhar(){
   const vis = G.lista.filter(t => !f || (f === 'rascunho' ? (t.status === 'rascunho' || G.revs.some(r => r.treinamento_id === t.id && r.status === 'rascunho')) : t.status === f));
   const atrib = t => G.atr.filter(a => a.treinamento_id === t.id).map(a => `<span class="chip mini${a.obrigatorio ? ' tem' : ''}" title="${a.obrigatorio ? 'Obrigatório' : 'Opcional'}">${esc(a.grupo_id == null ? 'Toda a equipe' : grupoPorId(a.grupo_id)?.nome || 'grupo ' + a.grupo_id)}</span>`).join(' ');
   const cont = st => G.lista.filter(t => t.status === st).length;
-  $('#main').innerHTML = `${treTopo('Gestão dos treinamentos', 'Todos os treinamentos, publicados ou não. O conteúdo muda no rascunho e só vale ao publicar; a atribuição vale na hora.',
-      `<a class="btn ghost mini" href="#/treinamentos/config/readme">${ic('doc')} README</a>
-       <a class="btn solid mini" href="#/treinamentos/novo">${ic('plus')} Novo treinamento</a>`)}
-    ${treNav('gestao')}
+  $('#main').innerHTML = `${treTopo('Configurações', '',
+      `<a class="btn solid mini" href="#/treinamentos/novo">${ic('plus')} Novo treinamento</a>`)}
+    ${treNav('config')}${treNavConfig('')}
     <div class="filtros"><div class="seg" role="group" aria-label="Situação">
       ${[['', 'Todos', G.lista.length], ['publicado', 'Publicados', cont('publicado')], ['rascunho', 'Com rascunho', null], ['arquivado', 'Arquivados', cont('arquivado')]].map(([k, l, n]) =>
         `<button class="${f === k ? 'on' : ''}" onclick="treino.gestao.filtro='${k}';treGestaoDesenhar()">${l}${n != null ? ` (${n})` : ''}</button>`).join('')}</div></div>
@@ -1327,7 +1328,7 @@ function treGestaoDesenhar(){
           <td class="small muted">${fmtD(t.atualizado_em)}</td>
           <td onclick="event.stopPropagation()">${t.revisao_atual ? `<a class="btn ghost mini" href="#/treinamentos/${esc(t.codigo)}/acompanhamento">Acompanhamento</a>` : ''}</td></tr>`; }).join('')}
       </tbody></table></div>`
-      : `<div class="vazio"><div class="glyph">+</div><h3>${G.lista.length ? 'Nenhum treinamento com esse filtro' : 'Nenhum treinamento ainda'}</h3>
+      : `<div class="vazio"><div class="glyph">+</div><h3>${G.lista.length ? 'Nenhum treinamento com esse filtro' : 'Nenhum treinamento'}</h3>
         <p>${G.lista.length ? '' : 'Comece do zero ou de um texto escrito por um agente de IA, seguindo o README de conteúdo.'}</p>
         <a class="btn solid" href="#/treinamentos/novo">${ic('plus')} Novo treinamento</a></div>`}`;
 }
@@ -1337,8 +1338,8 @@ function treGestaoDesenhar(){
    ============================================================ */
 function treNovo(){
   treino.ed = null; _treImp = null;
-  $('#main').innerHTML = `${treTopo('Novo treinamento', 'O código sai sozinho (o seguinte ao último) — ou escolha o número, se o treinamento já tinha código fora do portal. A revisão começa na A, ao publicar.')}
-    ${treNav('gestao')}
+  $('#main').innerHTML = `${treTopo('Novo treinamento', `Código sequencial automático. ${dica('Escolha o número apenas se o treinamento já tinha código fora do portal. A revisão começa na A, ao publicar.')}`)}
+    ${treNav('config')}
     <div class="tre-novo">
       <div class="card"><h3>Do zero</h3>
         <div class="form-grid" style="margin-top:14px">
@@ -1350,8 +1351,8 @@ function treNovo(){
         </div>${treDatalistCats()}
         <div class="acts"><button class="btn solid" onclick="treCriar(false)">${ic('plus')} Criar e abrir o editor</button></div></div>
       <div class="card"><h3>De um texto</h3>
-        <p class="small muted" style="margin:6px 0 12px;line-height:1.6">Peça o treinamento a um agente de IA com o <b>README</b> e o <b>pedido-modelo</b>,
-          e cole aqui o que ele devolver. O portal lê os módulos, os vídeos, os links e as questões, e mostra o que precisar de conserto antes de criar.</p>
+        <p class="small muted" style="margin:6px 0 12px;line-height:1.6">Texto gerado por agente de IA a partir do <b>README</b> e do <b>pedido-modelo</b>.
+          ${dica('O portal lê módulos, vídeos, links e questões, e aponta o que precisa de correção antes de criar.')}</p>
         <div class="tre-imp-passos">
           <button class="btn ghost mini" onclick="treBaixarReadme(true)">${ic('down')} README</button>
           <button class="btn ghost mini" onclick="copiar(TRE_PEDIDO_MODELO)">${ic('copy')} Pedido-modelo</button>
@@ -1414,9 +1415,9 @@ function treImpPreviaHTML(r){
   const probs = [...new Set([...r.avisos, ...treProblemas(r.conteudo).filter(p => !r.avisos.includes(p))])];
   return `<div class="tre-imp-res">
     <div class="tre-imp-cab"><b>${esc(r.meta.titulo || 'Sem título no cabeçalho')}</b>
-      <span class="small muted">${ms.length} ${ms.length === 1 ? 'módulo' : 'módulos'} · ${nv} ${nv === 1 ? 'vídeo' : 'vídeos'} · ${nq} ${nq === 1 ? 'questão' : 'questões'}${r.meta.carga_horaria_min ? ' · ' + esc(treDuracao(r.meta.carga_horaria_min)) : ''}</span></div>
+      <span class="small muted">${ms.length} ${ms.length === 1 ? 'módulo' : 'módulos'}, ${nv} ${nv === 1 ? 'vídeo' : 'vídeos'}, ${nq} ${nq === 1 ? 'questão' : 'questões'}${r.meta.carga_horaria_min ? ', ' + esc(treDuracao(r.meta.carga_horaria_min)) : ''}</span></div>
     ${ms.length ? `<ol class="tre-imp-mods">${ms.map(m => `<li>${esc(m.titulo || '(sem título)')}${m.verificacao ? ` <span class="tag-mini">${m.verificacao.questoes.length} q.</span>` : ''}</li>`).join('')}</ol>` : ''}
-    ${probs.length ? `<div class="aviso-box warn"><b>${probs.length === 1 ? 'Um ponto' : probs.length + ' pontos'} para conferir</b> — dá para importar assim e consertar no editor; publicar, só depois:
+    ${probs.length ? `<div class="aviso-box warn"><b>${probs.length === 1 ? 'Um ponto' : probs.length + ' pontos'} para conferir.</b> A importação é permitida; a publicação, só após a correção:
       <ul>${probs.slice(0, 12).map(x => `<li>${esc(x)}</li>`).join('')}${probs.length > 12 ? `<li>e mais ${probs.length - 12}…</li>` : ''}</ul></div>`
       : ms.length ? '<div class="aviso-box lima">Tudo certo: o texto segue o formato do README.</div>' : ''}</div>`;
 }
@@ -1465,9 +1466,9 @@ function treEdDesenhar(){
   const ed = treino.ed, t = ed.t, letra = treProxLetra();
   const estado = ed.rasc
     ? (t.revisao_atual ? `Rascunho da Rev. ${letra}. Quem faz o treinamento continua vendo a Rev. ${esc(t.revisao_atual)} até você publicar.`
-                       : 'Rascunho — ainda não publicado: ninguém vê o treinamento até você publicar.')
+                       : 'Rascunho, não publicado.')
     : `Rev. ${esc(t.revisao_atual)} publicada${t.status === 'arquivado' ? ' e arquivada' : ''}. Mudar o conteúdo abre o rascunho da Rev. ${letra}.`;
-  $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">${esc(t.codigo)} · Editor</span>
+  $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Editor de ${esc(t.codigo)}</span>
       <h1 id="tre-ed-h1">${esc(ed.meta.titulo || 'Sem título')}</h1><p class="lead">${estado}</p></div>
       <div class="acoes">
         <button class="btn ghost mini" onclick="trePrevia(0)">${ic('eye')} Pré-visualizar</button>
@@ -1481,7 +1482,7 @@ function treEdDesenhar(){
         <button class="kb-add tre-ed-addmod" onclick="treEdAddModulo()">${ic('plus')} Módulo</button>
       </div>
       <aside class="tre-ed-lado">
-        <div class="card"><h3>Dados</h3><p class="sub" style="margin-bottom:12px">Valem na hora, sem publicar</p>
+        <div class="card"><h3>Dados</h3><p class="sub" style="margin-bottom:12px">Valem sem publicar</p>
           <div class="fld"><label for="te-titulo">Título</label><input id="te-titulo" value="${esc(ed.meta.titulo)}" oninput="treEdMeta('titulo',this.value)"></div>
           <div class="fld"><label for="te-resumo">Resumo</label><textarea id="te-resumo" rows="3" oninput="treEdMeta('resumo',this.value)">${esc(ed.meta.resumo)}</textarea></div>
           <div class="dupla">
@@ -1496,7 +1497,7 @@ function treEdDesenhar(){
           ${treDatalistCats()}</div>
         <div class="card" id="tre-ed-prob"></div>
         <div class="card" id="tre-ed-atr">${treEdAtribHTML()}</div>
-        <div class="card"><h3>O que mudou</h3><p class="sub" style="margin-bottom:10px">Vai com a revisão, para quem faz o treinamento</p>
+        <div class="card"><h3>O que mudou</h3><p class="sub" style="margin-bottom:10px">Publicado com a revisão</p>
           <textarea rows="3" placeholder="${t.revisao_atual ? 'Ex.: a aba Agendar foi refeita; vídeo novo no módulo 2.' : 'Versão inicial.'}" oninput="treino.ed.notas=this.value;treEdSujo('c')">${esc(ed.notas)}</textarea></div>
         ${treEdRevisoesHTML()}
         <div class="card tre-ed-zona"><h3>Mais</h3>
@@ -1512,8 +1513,8 @@ function treEdRevisoesHTML(){
   const rs = treino.ed.revs.filter(r => r.revisao).sort((a, b) => treRevOrd(b.revisao) - treRevOrd(a.revisao));
   if (!rs.length) return '';
   return `<div class="card"><h3>Revisões</h3><div class="timeline" style="margin-top:10px">${rs.map(r => `<div class="tl-item">
-    <div class="dt">Rev. ${esc(r.revisao)} · ${fmtD(r.publicado_em)}${r.status === 'publicada' ? ' · em vigor' : ''}</div>
-    <div class="tp">${esc(r.publicado_nome || '—')}${r.exige_refazer && r.revisao !== 'A' ? ' · pediu que refizessem' : ''}</div>
+    <div class="dt">Rev. ${esc(r.revisao)}, ${fmtD(r.publicado_em)}${r.status === 'publicada' ? ', em vigor' : ''}</div>
+    <div class="tp">${esc(r.publicado_nome || '—')}${r.exige_refazer && r.revisao !== 'A' ? ', pediu que refizessem' : ''}</div>
     ${r.notas ? `<div class="ds">${esc(r.notas)}</div>` : ''}</div>`).join('')}</div></div>`;
 }
 function treEdStatus(){
@@ -1587,7 +1588,7 @@ const treEdM = i => treino.ed.conteudo.modulos[i];
 const treP2 = n => String(n).padStart(2, '0');
 function treEdModsHTML(){
   const ms = treino.ed.conteudo.modulos;
-  if (!ms.length) return `<div class="vazio"><h3>Nenhum módulo ainda</h3><p>Escreva o primeiro, ou importe o texto que um agente de IA escreveu seguindo o README.</p>
+  if (!ms.length) return `<div class="vazio"><h3>Nenhum módulo</h3><p>Escreva o primeiro módulo ou importe um texto no formato do README.</p>
     <div class="acts" style="justify-content:center"><button class="btn ghost" onclick="treImportarModal()">${ic('subir')} Importar texto</button>
     <button class="btn solid" onclick="treEdAddModulo()">${ic('plus')} Primeiro módulo</button></div></div>`;
   return ms.map(treEdModHTML).join('');
@@ -1628,7 +1629,7 @@ function treEdModHTML(m, i){
           <input value="${esc(k.descricao || '')}" placeholder="Descrição curta (opcional)" aria-label="Descrição" oninput="treEdLink(${i},${j},'descricao',this.value)">
           ${ibtn('x', 'Tirar o link', `treEdLinkTirar(${i},${j})`, 'sm')}</div>`).join('')}
         <button class="kb-add" onclick="treEdLinkAdd(${i})">${ic('plus')} Link</button></div>
-      <div class="tre-ed-sub"><h4>Verificação de conhecimento <span class="small muted">— opcional</span></h4>
+      <div class="tre-ed-sub"><h4>Verificação de conhecimento <span class="small muted">(opcional)</span></h4>
         ${(m.verificacao?.questoes || []).map((q, j) => treEdQHTML(i, j, q, m.verificacao.questoes.length)).join('')}
         <div class="tre-ed-addq">${Object.entries(TRE_TIPOS).map(([k, v]) => `<button class="kb-add" onclick="treEdQAdd(${i},'${k}')">${ic('plus')} ${v.l}</button>`).join('')}</div></div>
     </div>` : ''}</div>`;
@@ -1643,7 +1644,7 @@ function treEdQHTML(i, j, q, nq){
         ${ibtn('trash', 'Excluir a questão', `treEdQTirar(${i},${j})`, 'sm perigo')}</span></div>
     <textarea rows="2" placeholder="Enunciado" aria-label="Enunciado" oninput="treEdQ(${i},${j},'enunciado',this.value)">${esc(q.enunciado)}</textarea>
     <div class="tre-ed-ops">${ops.map((o, k) => `<div class="tre-ed-op">
-      ${vf ? `<button class="tre-ed-vf ${o.correta ? 'v' : 'f'}" onclick="treEdOCorreta(${i},${j},${k})" title="${o.correta ? 'Verdadeira' : 'Falsa'} — clique para trocar">${o.correta ? 'V' : 'F'}</button>`
+      ${vf ? `<button class="tre-ed-vf ${o.correta ? 'v' : 'f'}" onclick="treEdOCorreta(${i},${j},${k})" title="${o.correta ? 'Verdadeira' : 'Falsa'} (clique para trocar)">${o.correta ? 'V' : 'F'}</button>`
         : `<button class="tre-ed-marca${o.correta ? ' on' : ''}" onclick="treEdOCorreta(${i},${j},${k})" aria-pressed="${!!o.correta}"
             title="${o.correta ? 'Correta' : 'Marcar como correta'}">${ic('check')}</button>`}
       <input value="${esc(o.texto)}" placeholder="${vf ? 'Afirmação' : 'Alternativa'}" aria-label="${vf ? 'Afirmação' : 'Alternativa'} ${k + 1}" oninput="treEdO(${i},${j},${k},this.value)">
@@ -1693,7 +1694,7 @@ function treEdInserir(i, tipo){
 }
 function treEdVideoModal(i){
   abreModal(`<h3>${ic('play')} Vídeo do YouTube</h3>
-    <p class="small muted" style="margin-bottom:12px">O vídeo aparece no mesmo player do site institucional. "Não listado" funciona; "privado", não.</p>
+    <p class="small muted" style="margin-bottom:12px">Vídeos "não listados" funcionam; "privados", não.</p>
     <div class="fld"><label for="tv-url">Link do vídeo</label><input id="tv-url" placeholder="https://www.youtube.com/watch?v=…" oninput="treEdVideoPrevia()"></div>
     <div class="fld"><label for="tv-tit">Título, embaixo do player</label><input id="tv-tit" placeholder="Ex.: Como cadastrar a sua agenda no SOMA"></div>
     <div id="tv-prev" class="small"></div>
@@ -1727,7 +1728,7 @@ async function treEdEscolherArquivo(i){
 function treEdArquivosFiltrar(i){
   const q = norm($('#ta-q')?.value || ''), el = $('#ta-lista'); if (!el) return;
   const vis = treino.arquivos.filter(a => !q || norm(a.codigo + ' ' + a.titulo).includes(q)).slice(0, 40);
-  el.innerHTML = !treino.arquivos.length ? `<p class="small muted">Não consegui ler o rol de arquivos. Escreva o link à mão: <code>[nome](arquivo:NRO-XXX-000)</code>.</p>`
+  el.innerHTML = !treino.arquivos.length ? `<p class="small muted">O rol de arquivos não carregou. Formato manual: <code>[nome](arquivo:NRO-XXX-000)</code>.</p>`
     : vis.length ? vis.map((a, k) => `<button class="tre-arq" onclick="treEdArquivoPor(${i},${treino.arquivos.indexOf(a)})"><span class="mono">${esc(a.codigo)}</span><span>${esc(a.titulo)}</span></button>`).join('')
     : '<p class="small muted">Nenhum arquivo com esse código ou título.</p>';
 }
@@ -1788,13 +1789,13 @@ function treGruposArvore(){
 function treEdAtribHTML(){
   const ed = treino.ed, sel = new Map(ed.atrib.map(a => [a.k, a.obrigatorio]));
   const linhas = [{ k:'todos', nome:'Toda a equipe', prof:0 }, ...treGruposArvore().map(x => ({ k:String(x.g.id), nome:x.g.nome, prof:x.prof }))];
-  return `<h3>Atribuição</h3><p class="sub" style="margin-bottom:10px">A grupos — quem está num grupo de baixo recebe também</p>
+  return `<h3>Atribuição</h3><p class="sub" style="margin-bottom:10px">Por grupo, incluindo os grupos abaixo</p>
     <div class="tre-atr">${linhas.map(r => { const on = sel.has(r.k), ob = sel.get(r.k);
       return `<div class="tre-atr-l${on ? ' on' : ''}" style="--prof:${r.prof}">
         <label class="check"><input type="checkbox"${on ? ' checked' : ''} onchange="treEdAtrib('${r.k}', this.checked ? true : null)"> ${esc(r.nome)}</label>
         ${on ? `<span class="seg"><button class="${ob ? 'on' : ''}" onclick="treEdAtrib('${r.k}', true)">Obrigatório</button><button class="${!ob ? 'on' : ''}" onclick="treEdAtrib('${r.k}', false)">Opcional</button></span>` : ''}</div>`; }).join('')}</div>
     <div class="acts" style="margin-top:12px"><button class="btn ${ed.atribSujo ? 'solid' : 'ghost'} mini" onclick="treEdAtribSalvar()"${ed.atribSujo ? '' : ' disabled'}>Salvar a atribuição</button>
-      <span class="small muted">${ed.t.status === 'publicado' ? 'Quem passar a dever o treinamento é avisado.' : 'Os avisos saem quando você publicar.'}</span></div>`;
+      <span class="small muted">${ed.t.status === 'publicado' ? 'Os novos obrigados são avisados.' : 'Avisos enviados na publicação.'}</span></div>`;
 }
 function treEdAtrib(k, v){
   const ed = treino.ed, i = ed.atrib.findIndex(a => a.k === k);
@@ -1817,16 +1818,15 @@ async function treEdAtribSalvar(){
 function treEdPublicarModal(){
   const ed = treino.ed, t = ed.t, letra = treProxLetra(), probs = treProblemas(ed.conteudo);
   if (!ed.rasc && !ed.sujoC && t.revisao_atual)
-    return abreModal(`<h3>Nada novo para publicar</h3><p class="small muted" style="line-height:1.6">O conteúdo é o mesmo da Rev. ${esc(t.revisao_atual)}, que já está publicada.
-      Mude um módulo e o rascunho da Rev. ${letra} se abre sozinho.</p><div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Voltar</button></div>`);
+    return abreModal(`<h3>Nada novo para publicar</h3><p class="small muted" style="line-height:1.6">Conteúdo igual ao da Rev. ${esc(t.revisao_atual)}, já publicada.</p><div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Voltar</button></div>`);
   abreModal(`<h3>${ic('enviar')} Publicar a Rev. ${letra}</h3>
     ${probs.length ? `<div class="aviso-box err" style="margin-top:12px"><b>Antes de publicar, resolva:</b><ul class="tre-probs">${probs.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div>
       <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Voltar ao editor</button></div>`
-    : `<p class="small muted" style="line-height:1.6;margin:8px 0 14px">Publicada, a Rev. ${letra} passa a ser a que todos fazem${t.revisao_atual ? `, e a Rev. ${esc(t.revisao_atual)} fica como substituída` : ''}.</p>
+    : `<p class="small muted" style="line-height:1.6;margin:8px 0 14px">A Rev. ${letra} entra em vigor${t.revisao_atual ? ` e substitui a Rev. ${esc(t.revisao_atual)}` : ''}.</p>
       <div class="fld"><label for="tre-pub-notas">O que mudou</label><textarea id="tre-pub-notas" rows="3" placeholder="${t.revisao_atual ? 'Ex.: a aba Agendar foi refeita; vídeo novo no módulo 2.' : 'Versão inicial.'}">${esc(ed.notas || '')}</textarea></div>
-      ${t.revisao_atual ? `<label class="check tre-refazer"><input type="checkbox" id="tre-pub-refazer"> <span><b>Pedir que todos refaçam.</b> Quem concluiu a Rev. ${esc(t.revisao_atual)} volta a dever o treinamento e é avisado.
-        Sem isso, quem concluiu continua em dia — é para mudança de conteúdo, não para correção de texto.</span></label>`
-        : '<p class="small muted">Quem tem o treinamento como obrigatório é avisado no sino e por e-mail, conforme a preferência de cada um.</p>'}
+      ${t.revisao_atual ? `<label class="check tre-refazer"><input type="checkbox" id="tre-pub-refazer"> <span><b>Exigir que todos refaçam.</b> Quem concluiu a Rev. ${esc(t.revisao_atual)} volta a ter o treinamento pendente.
+        Use para mudança de conteúdo, não para correção de texto.</span></label>`
+        : '<p class="small muted">Os obrigados são avisados nas notificações e por e-mail.</p>'}
       ${!ed.atrib.length ? '<div class="aviso-box warn" style="margin-top:12px">Ainda não foi atribuído a nenhum grupo: publicado, fica em Todos os treinamentos, sem ser obrigatório para ninguém.</div>' : ''}
       <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
         <button class="btn solid" id="tre-pub-ok" onclick="treEdPublicar()">Publicar a Rev. ${letra}</button></div>`}`);
@@ -1857,7 +1857,7 @@ async function treEdDescartar(){
 }
 async function treEdArquivar(arquivar){
   const ed = treino.ed;
-  if (arquivar && !await confirma('Arquivar? O treinamento sai de Todos os treinamentos e das pendências de todo mundo. Os certificados continuam valendo, e dá para desarquivar.', 'Arquivar')) return;
+  if (arquivar && !await confirma('Arquivar? O treinamento sai da lista e das pendências. Os certificados continuam válidos; é possível desarquivar.', 'Arquivar')) return;
   const { data, error } = await sb.rpc('treinamento_arquivar', { p_id: ed.t.id, p_arquivar: arquivar });
   if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para arquivar'), true);
   toast(arquivar ? 'Arquivado.' : 'Desarquivado.'); treino.lista = null; treEditor(ed.t.codigo);
@@ -1869,14 +1869,14 @@ async function treEdExcluir(){
   const { data, error } = await sb.rpc('treinamento_excluir', { p_id: ed.t.id });
   if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para excluir'), true);
   treino.ed = null; treino.gestao = null; toast(`${data.codigo} excluído.`);
-  location.hash = '#/treinamentos/gestao';
+  location.hash = '#/treinamentos/config';
 }
 
 /* ---------------- importar, exportar, pré-visualizar ---------------- */
 function treImportarModal(){
   _treImp = null;
   abreModal(`<h3>${ic('subir')} Importar um texto</h3>
-    <p class="small muted" style="line-height:1.6;margin:6px 0 12px">Cole o que o agente de IA devolveu — ou um arquivo exportado daqui. O formato é o do
+    <p class="small muted" style="line-height:1.6;margin:6px 0 12px">Cole o texto do agente de IA ou um arquivo exportado daqui. Formato:
       <a href="#/treinamentos/config/readme" target="_blank" rel="noopener" style="text-decoration:underline">README de conteúdo</a>.</p>
     <div class="tre-imp-passos">
       <button class="btn ghost mini" onclick="treBaixarReadme(true)">${ic('down')} README</button>
@@ -1918,16 +1918,16 @@ function treExportar(){
 /* a pré-visualização: o módulo como quem faz vai ver, com o gabarito marcado */
 function trePrevia(i){
   const ms = treino.ed.conteudo.modulos;
-  if (!ms.length) return toast('Nenhum módulo para pré-visualizar ainda.', true);
+  if (!ms.length) return toast('Nenhum módulo para pré-visualizar.', true);
   i = Math.max(0, Math.min(i, ms.length - 1));
   const m = ms[i], qs = m.verificacao?.questoes || [];
   abreModal(`<div class="tre-previa">
-    <div class="tre-previa-abas">${ms.map((x, k) => `<button class="${k === i ? 'on' : ''}" onclick="trePrevia(${k})">${treP2(k + 1)} · ${esc(x.titulo || 'sem título')}</button>`).join('')}</div>
-    <span class="eyebrow">Módulo ${treP2(i + 1)} de ${treP2(ms.length)} · pré-visualização</span>
+    <div class="tre-previa-abas">${ms.map((x, k) => `<button class="${k === i ? 'on' : ''}" onclick="trePrevia(${k})">${treP2(k + 1)}. ${esc(x.titulo || 'sem título')}</button>`).join('')}</div>
+    <span class="eyebrow">Módulo ${treP2(i + 1)} de ${treP2(ms.length)}, pré-visualização</span>
     <h2 class="tre-previa-tt">${esc(m.titulo || 'Sem título')}</h2>
     <div class="tre-md">${treMd(m.corpo)}</div>
     ${(m.links || []).length ? `<section class="tre-links"><h2>Links relacionados</h2><div class="doc-grid">${m.links.map(treLinkCartao).join('')}</div></section>` : ''}
-    ${qs.length ? `<section class="tre-verif card"><div class="tre-verif-hd"><span class="eyebrow">Verificação de conhecimento · com o gabarito</span></div>
+    ${qs.length ? `<section class="tre-verif card"><div class="tre-verif-hd"><span class="eyebrow">Verificação de conhecimento, com o gabarito</span></div>
       <ol class="tre-qs">${qs.map((q, j) => `<li class="tre-q"><div class="tre-q-en"><span class="n">${treP2(j + 1)}</span><div>${treInline(q.enunciado).replace(/\n/g, '<br>')}
         <span class="tre-q-dica">${TRE_TIPOS[q.tipo]?.l || ''}</span></div></div>
         <div class="tre-ops">${(q.opcoes || []).map(o => q.tipo === 'vf'
@@ -1957,10 +1957,10 @@ function treAcompDesenhar(){
   const pct = obr.length ? Math.round(100 * emDia / obr.length) : 0;
   const vis = linhas.filter(l => !f || (f === 'devem' ? l.obrigatorio && l.situacao !== 'concluido'
     : f === 'em_dia' ? l.situacao === 'concluido' : f === 'opcional' ? l.obrigatorio === false : true));
-  $('#main').innerHTML = `${treTopo(`${esc(t.titulo)}`, `${esc(t.codigo)} · ${t.revisao_atual ? 'Rev. ' + esc(t.revisao_atual) : 'não publicado'}. Quem tem o treinamento, pela atribuição, e quem o fez sem ter.`,
+  $('#main').innerHTML = `${treTopo(`${esc(t.titulo)}`, `${esc(t.codigo)}, ${t.revisao_atual ? 'Rev. ' + esc(t.revisao_atual) : 'não publicado'}. Acompanhamento por atribuição.`,
       `<a class="btn ghost mini" href="#/treinamentos/${esc(t.codigo)}/editar">${ic('pencil')} Editar</a>
        <button class="btn ghost mini" onclick="treAcompCSV()">${ic('down')} Planilha (CSV)</button>`, 'Acompanhamento')}
-    ${treNav('gestao')}
+    ${treNav('config')}
     <div class="metricas" style="margin-bottom:18px">
       <div class="metrica"><span class="rot">Obrigatório para</span><span class="val">${obr.length}</span><span class="var neutro">pessoas ativas</span></div>
       <div class="metrica"><span class="rot">Em dia</span><span class="val">${pct}%</span><span class="var ${pct === 100 ? 'sobe' : 'neutro'}">${emDia} de ${obr.length}</span></div>
@@ -1975,7 +1975,7 @@ function treAcompDesenhar(){
         <td>${trePill(l.situacao)}</td>
         <td><span class="tre-prog mini"><i style="width:${l.total ? Math.round(100 * (l.situacao === 'concluido' ? l.total : l.feitos) / l.total) : 0}%"></i></span>
           <span class="small muted">${l.situacao === 'concluido' ? l.total : l.feitos}/${l.total}</span></td>
-        <td class="small">${l.concluido_em ? fmtD(l.concluido_em) + (l.revisao ? ' · Rev. ' + esc(l.revisao) : '') : '—'}</td>
+        <td class="small">${l.concluido_em ? fmtD(l.concluido_em) + (l.revisao ? ', Rev. ' + esc(l.revisao) : '') : '—'}</td>
         <td class="num">${l.nota != null ? l.nota + '%' : '—'}</td>
         <td>${l.certificado ? `<button class="btn ghost mini" onclick="treBaixarCertificado('${esc(l.certificado)}', this)">${ic('down')} PDF</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>`
@@ -1999,26 +1999,22 @@ async function treConfig(aba){
   const cfg = await treConfigCarregar();
   if (!cfg || cfg.id == null) return treFaltaBanco({ message:'treinamento_config não respondeu' });
   aba = aba === 'readme' ? 'readme' : 'geral';
-  const topo = `${treTopo('Configurações', aba === 'readme'
-      ? 'O guia que vai junto do pedido aos agentes de IA — e a quem escreve à mão. Baixe, edite aqui mesmo ou volte ao padrão do portal.'
-      : 'Quem gere os treinamentos, a nota para passar e quem assina o certificado.')}
-    ${treNav('config')}
-    <nav class="abas"><a href="#/treinamentos/config" class="${aba === 'geral' ? 'on' : ''}">Geral</a>
-      <a href="#/treinamentos/config/readme" class="${aba === 'readme' ? 'on' : ''}">README de conteúdo</a></nav>`;
+  const topo = `${treTopo('Configurações', '')}
+    ${treNav('config')}${treNavConfig(aba)}`;
   if (aba === 'readme') return treConfigReadme(topo, cfg);
   const gestores = new Set(cfg.grupos_gestores || []);
   treino.cfgGestores = new Set(gestores);
   $('#main').innerHTML = `${topo}
     <div class="tre-cfg">
       <div class="card"><h3>Quem gere</h3>
-        <p class="small muted" style="margin:4px 0 12px;line-height:1.6">Admin e o Depto. de Pessoal gerem sempre. Quem está num destes grupos (ou num grupo abaixo deles)
-          também cria, edita, publica e atribui. ${can() ? '' : '<b>Só admin e o Depto. de Pessoal mudam esta lista.</b>'}</p>
+        <p class="small muted" style="margin:4px 0 12px;line-height:1.6">Além de admin e Depto. de Pessoal, estes grupos (e os abaixo deles) criam, editam, publicam e atribuem.
+          ${can() ? '' : '<b>Somente admin e Depto. de Pessoal alteram esta lista.</b>'}</p>
         <div class="chips" id="tc-gestores">${treGruposArvore().map(({ g }) => `<button class="chip-b${gestores.has(g.id) ? ' on' : ''}"${can() ? '' : ' disabled'}
           onclick="treCfgGestor(${g.id}, this)">${esc(g.nome)}</button>`).join('') || '<span class="small muted">Nenhum grupo cadastrado.</span>'}</div></div>
       <div class="card"><h3>Para passar</h3>
         <div class="fld" style="margin-top:12px;max-width:220px"><label for="tc-nota">Nota mínima padrão (%)</label>
           <input id="tc-nota" type="number" min="0" max="100" value="${esc(cfg.nota_minima ?? 70)}"></div>
-        <p class="small muted">Vale para cada verificação de conhecimento, nos treinamentos que não têm nota própria.</p></div>
+        <p class="small muted">Para verificações sem nota própria.</p></div>
       <div class="card tre-cfg-cert"><h3>O certificado</h3>
         <div class="dupla" style="margin-top:12px">
           <div class="fld"><label for="tc-ass">Quem assina</label><input id="tc-ass" value="${esc(cfg.assinatura_nome || '')}" placeholder="Departamento de Pessoal" oninput="treCfgPrevia()"></div>
@@ -2076,14 +2072,14 @@ function treConfigReadme(topo, cfg){
       <div class="tre-readme-ed">
         <div class="tre-ed-barra"><span class="seg"><button class="on" data-m="ed" onclick="treReadmeVer(false,this)">Escrever</button>
           <button data-m="ver" onclick="treReadmeVer(true,this)">Ver</button></span>
-          <span class="small muted">Markdown — o mesmo que ele descreve.</span></div>
+          <span class="small muted">Markdown, no formato descrito.</span></div>
         <textarea id="tr-readme" class="mono tre-readme-txt" rows="30" oninput="$('#tr-salvar').disabled=false">${esc(treReadme())}</textarea>
         <div id="tr-readme-ver" class="tre-md tre-readme-ver" hidden></div>
         <div class="acts"><button class="btn solid" id="tr-salvar" disabled onclick="treReadmeSalvar()">${ic('check')} Salvar o README</button>
           ${proprio ? `<button class="btn ghost" onclick="treReadmeRestaurar()">${ic('refazer')} Voltar ao padrão</button>` : ''}</div></div>
       <aside class="tre-readme-lado">
         <div class="card"><h3>Como usar</h3><ol class="tre-passos-lista">
-          <li>Baixe o README <b>com as referências</b> — a lista dos códigos de arquivo e de treinamento que existem, para o agente não inventar nenhum.</li>
+          <li>Baixe o README <b>com as referências</b>: os códigos de arquivo e de treinamento existentes.</li>
           <li>Copie o <b>pedido-modelo</b> e complete: o tema, o público, as fontes e os vídeos.</li>
           <li>Entregue os dois ao agente. O que ele devolver, cole em <b>Novo treinamento › De um texto</b> ou, num que já existe, em <b>Importar texto</b>.</li>
           <li>Revise no editor, veja a pré-visualização e publique.</li></ol></div>
@@ -2123,9 +2119,9 @@ async function treBaixarReadme(comRefs){
       sb.from('treinamentos').select('codigo,titulo,status').eq('status', 'publicado').order('numero')]);
     const arqs = (a.data || []).filter(x => x.status !== 'obsoleto' && x.status !== 'rascunho');
     const trs = t.data || [];
-    txt += `\n## Anexo · As referências que existem\n\nGerado pelo portal em ${new Date().toLocaleDateString('pt-BR')}. Só estes códigos existem — qualquer outro é invenção.\n`;
-    txt += `\n### Arquivos (use arquivo:CÓDIGO)\n\n${arqs.length ? arqs.map(x => `- ${x.codigo} — ${x.titulo}`).join('\n') : '- (nenhum arquivo em vigor)'}\n`;
-    txt += `\n### Treinamentos publicados (use treinamento:CÓDIGO)\n\n${trs.length ? trs.map(x => `- ${x.codigo} — ${x.titulo}`).join('\n') : '- (nenhum ainda)'}\n`;
+    txt += `\n## Anexo: as referências que existem\n\nGerado pelo portal em ${new Date().toLocaleDateString('pt-BR')}. Só estes códigos existem; qualquer outro é invenção.\n`;
+    txt += `\n### Arquivos (use arquivo:CÓDIGO)\n\n${arqs.length ? arqs.map(x => `- ${x.codigo}: ${x.titulo}`).join('\n') : '- (nenhum arquivo em vigor)'}\n`;
+    txt += `\n### Treinamentos publicados (use treinamento:CÓDIGO)\n\n${trs.length ? trs.map(x => `- ${x.codigo}: ${x.titulo}`).join('\n') : '- (nenhum ainda)'}\n`;
   }
   treBaixarTexto(comRefs ? 'README-treinamentos-com-referencias.md' : 'README-treinamentos.md', txt);
 }
@@ -2256,7 +2252,7 @@ async function treCertificadoCanvas(c, cfg, k){
   x.font = M(500, 3.3); x.fillStyle = '#45625B'; esp(.45); x.fillText(meta, X0, y + 16 * u); esp(0);
   if ((c.modulos || []).length){
     x.font = F(500, 3.5); x.fillStyle = '#66726D';
-    const txt = 'Conteúdo: ' + c.modulos.map((m, i) => `${i + 1}. ${m}`).join(' · ');
+    const txt = 'Conteúdo: ' + c.modulos.map((m, i) => `${i + 1}. ${m}`).join(', ');
     treQuebra(x, txt, XR - X0, 2).forEach((l, i) => x.fillText(l, X0, y + 25 * u + i * 5 * u));
   }
   /* o pé: a data, a assinatura e o código */
@@ -2280,8 +2276,8 @@ async function treCertificadoPDF(c, cfg){
   if (!window.jspdf) await carregarLib(TRE_CDN_PDF);
   const cv = await treCertificadoCanvas(c, cfg, 1);
   const pdf = new jspdf.jsPDF({ orientation:'landscape', unit:'mm', format:'a4', compress:true });
-  pdf.setProperties({ title:`Certificado · ${c.codigo} · ${c.nome}`, subject:c.titulo, author:'NeuroDynamics',
-    keywords:[c.certificado, c.codigo, 'Rev. ' + c.revisao].join(', '), creator:'Portal do Membro · NeuroDynamics' });
+  pdf.setProperties({ title:`Certificado, ${c.codigo}, ${c.nome}`, subject:c.titulo, author:'NeuroDynamics',
+    keywords:[c.certificado, c.codigo, 'Rev. ' + c.revisao].join(', '), creator:'Portal do Membro, NeuroDynamics' });
   pdf.addImage(cv.toDataURL('image/jpeg', .93), 'JPEG', 0, 0, 297, 210);
   /* a camada de texto, invisível: busca e cópia no PDF */
   pdf.setFontSize(9);

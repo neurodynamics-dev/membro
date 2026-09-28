@@ -2,10 +2,12 @@
    email.test.ts — conferência do e-mail de notificação
    Rode com Node 22+:  node --experimental-strip-types email.test.ts
    ============================================================ */
-import { assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, servir,
+import { nomeExibicao, assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, servir,
          montarEnvio, lerResposta, faltaParaEnviar, pareceEndereco,
          declaracaoHTML, declaracaoTexto, dataExtensa, periodoTexto, horasTexto,
-         type Destinatario, type EnvioDocumento } from "./index.ts";
+         agendaHTML, agendaTexto, agendaFrase, linkResposta, linkGoogle, antecedenciaTexto,
+         personalizar,
+         type Destinatario, type EnvioDocumento, type EnvioAgenda } from "./index.ts";
 
 let falhas = 0;
 const ok = (n: string, c: boolean, extra = "") => {
@@ -256,6 +258,57 @@ const envio = (d: Partial<EnvioDocumento["dados"]> = {}, o: Partial<EnvioDocumen
   ok("a versão em texto não tem tag", !/<[a-z]/i.test(t), t);
   ok("e traz o código e o link", t.includes("3HVN-8Z2C-QW6E") && t.includes("https://auth.neurodynamics.dev/?c=3HVN-8Z2C-QW6E"));
   ok("e, para o membro, o portal", t.includes("/#/servicos/eventos/EXT-1"));
+}
+
+/* --- a agenda (28.0): convite, alteração, cancelamento e lembrete --- */
+const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {}, e: Partial<EnvioAgenda> = {}): EnvioAgenda => ({
+  id: 1, tipo, para_nome: "Bruno Tavares", para_email: "bruno@nro.dev", token: "0f5c-tok", resposta: "pendente",
+  membro: true, assunto: "Convite: Revisão · sábado", ...e,
+  dados: { evento_id: "ev1", titulo: "Revisão do protótipo", data: "2026-10-03", hora_inicio: "14:00", hora_fim: "15:30",
+    quando: "sábado, 3 de outubro de 2026, das 14:00 às 15:30", local: "Sala 2", meet_url: "https://meet.google.com/abc-defg-hij",
+    descricao: "Levar a órtese.", recorrencia: "Única", organizador: "Carla Mendonça", href: "#/agenda/evento/ev1", ...d },
+});
+{
+  const h = agendaHTML(convite("convite"));
+  ok("convite: quem convidou, o título e quando", h.includes("Carla Mendonça convidou você") && h.includes("Revisão do protótipo")
+     && h.includes("sábado, 3 de outubro de 2026, das 14:00 às 15:30"));
+  ok("os três botões respondem pelo token", h.includes(linkResposta("0f5c-tok", "vou").replace(/&/g, "&amp;"))
+     && h.includes("rsvp.html?t=0f5c-tok&amp;r=talvez") && h.includes("r=nao") && /Não vou<\/a>/.test(h));
+  ok("o link do Google Agenda leva o horário e o fuso", linkGoogle(convite("convite").dados).includes("dates=20261003T140000%2F20261003T153000")
+     && linkGoogle(convite("convite").dados).includes("ctz=America%2FSao_Paulo"));
+  ok("dia inteiro de vários dias vai até o dia seguinte ao fim",
+     linkGoogle(convite("convite", { hora_inicio: null, hora_fim: null, data_fim: "2026-10-05" }).dados).includes("dates=20261003%2F20261006"));
+  ok("o membro ganha o link do portal", h.includes("/#/agenda/evento/ev1"));
+  ok("o de fora não", !agendaHTML(convite("convite", {}, { membro: false })).includes("#/agenda/evento/ev1"));
+}
+{
+  ok("alteração diz o que mudou", agendaFrase(convite("alteracao", { mudou: "data, horário" })) === "Este evento mudou (data, horário).");
+  const c = agendaHTML(convite("cancelamento"));
+  ok("cancelamento risca o título e não pergunta se vai", c.includes("line-through") && !c.includes("rsvp.html"));
+  ok("lembrete: quanto falta", agendaFrase(convite("lembrete", { minutos: 1440 })) === "Começa em 1 dia."
+     && antecedenciaTexto(90) === "1 hora e 30 minutos");
+  ok("a resposta dada fica marcada", agendaHTML(convite("lembrete", {}, { resposta: "vou" })).includes("background:#00594F;color:#ffffff;border:1px solid #00594F\">\n      Vou"));
+}
+{
+  const h = agendaHTML(convite("convite", { titulo: 'Reunião <img src=x onerror=alert(1)> & "cia"', descricao: "<b>oi</b>" }));
+  ok("título e descrição de quem criou o evento são escapados", !h.includes("<img src=x") && !h.includes("<b>oi</b>") && h.includes("&amp; &quot;cia&quot;"));
+  const t = agendaTexto(convite("convite"));
+  ok("a versão em texto traz os três links e o portal", !/<[a-z]/i.test(t) && t.includes("Vou: ") && t.includes("Não vou: ") && t.includes("/#/agenda/evento/ev1"));
+}
+
+/* ---------- os programados (30.0) ---------- */
+{
+  const html = '<p>Olá, {{primeiro_nome}}.</p><p>{{ nome }}</p>';
+  ok("o primeiro nome entra no lugar do marcador", personalizar(html, "Ana Figueiredo", true) === "<p>Olá, Ana.</p><p>Ana Figueiredo</p>");
+  ok("nome com HTML é escapado no HTML", personalizar(html, "<b>Zé</b> & Cia", true).includes("&lt;b&gt;Zé&lt;/b&gt;") && !personalizar(html, "<b>Zé</b>", true).includes("<b>"));
+  ok("no texto, vai cru", personalizar("Olá, {{primeiro_nome}}.", "Bruno Tavares", false) === "Olá, Bruno.");
+  ok("sem nome, o marcador some", personalizar("Olá, {{primeiro_nome}}.", "", false) === "Olá, .");
+  const e = montarEnvio("cloudflare", "portal@neurodynamics.dev", "Leadership | NeuroDynamics", "ana@nro.dev", "Ana", "x", "<p>x</p>", "x", "c", "t", "", "");
+  ok("o remetente da área vai no nome de exibição", (e.corpo as { from: { name: string } }).from.name === "Leadership | NeuroDynamics");
+  const r = montarEnvio("resend", "portal@nd.dev", "Depto. de Pessoal | NeuroDynamics", "a@b.dev", "", "x", "<p>x</p>", "x");
+  ok("no Resend, nome com ponto vai entre aspas", (r.corpo as unknown as { from: string }).from === '"Depto. de Pessoal | NeuroDynamics" <portal@nd.dev>');
+  ok("sem caractere especial, vai como está", nomeExibicao("Leadership | NeuroDynamics") === "Leadership | NeuroDynamics"
+    && nomeExibicao('P&D "x"') === "P&D x");
 }
 
 console.log(falhas ? `\n${falhas} falha(s)` : "\nTudo verde.");

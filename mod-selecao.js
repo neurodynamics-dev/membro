@@ -21,17 +21,17 @@
    toast, falha, abreModal, fechaModal, confirma, copiar, abrirEmail,
    gmailCompose, fmtD, fmtDT, hojeISO, ic, ibtn, avatarFoto, nomeDe,
    quemSouEu, FOTOS_BASE, FOTO_EXTS, ABAS_SELECAO, route,
-   registrarBusca, filtrarSimples.
+   registrarBusca, filtrarSimples, dica.
    ============================================================ */
 
 const SITE_PS = 'https://selecao.neurodynamics.dev';
 const PS_ST = {
-  inscrito:['Inscrito — em análise','dt-info'], indeferido:['Indeferido','dt-bad'],
+  inscrito:['Inscrito, em análise','dt-info'], indeferido:['Indeferido','dt-bad'],
   deferido:['Deferido','dt-ok'],
-  reprovado_dinamica:['Reprovado · dinâmica','dt-bad'], aprovado_dinamica:['Aprovado · dinâmica','dt-ok'],
-  reprovado_entrevista:['Reprovado · entrevista','dt-bad'], aprovado_entrevista:['Aprovado · entrevista','dt-ok'],
-  trainee:['Trainee','dt-warn'], reprovado_final:['Reprovado · final','dt-bad'],
-  aprovado_final:['Aprovado · final','dt-ok'], integrado:['Integrado','dt-ok'],
+  reprovado_dinamica:['Reprovado na dinâmica','dt-bad'], aprovado_dinamica:['Aprovado na dinâmica','dt-ok'],
+  reprovado_entrevista:['Reprovado na entrevista','dt-bad'], aprovado_entrevista:['Aprovado na entrevista','dt-ok'],
+  trainee:['Trainee','dt-warn'], reprovado_final:['Reprovado no final','dt-bad'],
+  aprovado_final:['Aprovado no final','dt-ok'], integrado:['Integrado','dt-ok'],
   desistente:['Desistente','dt-gray']
 };
 const PS_MOVS = [
@@ -58,7 +58,7 @@ const PS_FASES_AVAL = {
 };
 const PS_REC = {aprovar:'Aprovar', em_duvida:'Em dúvida', reprovar:'Reprovar'};
 const PS_TIPO_PUB = {edital:'Edital', aviso:'Aviso', deferimento:'Inscrições deferidas',
-  resultado_dinamica:'Resultado — 1ª fase', resultado_entrevista:'Resultado — 2ª fase',
+  resultado_dinamica:'Resultado da 1ª fase', resultado_entrevista:'Resultado da 2ª fase',
   resultado_final:'Resultado final'};
 const PS_SETS = {
   deferimento:['deferido','reprovado_dinamica','aprovado_dinamica','reprovado_entrevista','aprovado_entrevista','trainee','reprovado_final','aprovado_final','integrado'],
@@ -189,8 +189,7 @@ async function desenhaSelecao(){
         ${PS.edicoes.map(e=>`<option value="${e.id}" ${e.id===PS.ed.id?'selected':''}>${esc(e.nome)}</option>`).join('')}</select>`
     : `<span class="pill">${esc(PS.ed.nome)}</span>`;
   m.innerHTML = topo(seletor) + `
-    <nav class="abas">${PS_ABAS.map(([t,l])=>
-      `<a href="#/selecao${t==='geral'?'':'/'+t}" class="${PS.tab===t?'on':''}">${l}</a>`).join('')}</nav>
+    ${navNivel1(PS_ABAS.map(([t, l]) => [t, l, '#/selecao' + (t === 'geral' ? '' : '/' + t)]), PS.tab, 'Seleção')}
     <div id="sel-corpo"></div>`;
   ({geral:psGeral, candidatos:psCandidatos, avaliacao:psAvaliacao, agenda:psAgenda,
     dinamica:psDinamica, publicacoes:psPublicacoes, faq:psFaq, config:psConfig}[PS.tab]||psGeral)();
@@ -360,7 +359,7 @@ function psTextoConfirmacao(c){
   const ed = PS.ed, prim = String(c.nome||'').trim().split(/\s+/)[0] || '';
   const prot = c.protocolo || '(protocolo não gerado)';
   const din = PS.etapas.find(e=>e.fase==='dinamica');
-  const assunto = `NeuroDynamics — Inscrição deferida sob o protocolo #${prot}`;
+  const assunto = `NeuroDynamics: inscrição deferida sob o protocolo #${prot}`;
   const corpo = [
     `Olá, ${prim}!`,
     `Confirmamos o recebimento e a análise da sua inscrição no ${ed?ed.nome:'processo seletivo'} da NeuroDynamics.`,
@@ -385,16 +384,14 @@ function psEmailConfirmacao(id, voltaFicha){
           <span class="mono">${esc(c.protocolo||'sem protocolo')}</span></div></div>
       <div style="display:flex;gap:8px;align-items:center">${psPill(c.status)}${ibtn('x','Fechar',fechar,'sm')}</div>
     </div>
-    ${!c.protocolo?`<div class="aviso-box err">Este candidato ainda não tem número de protocolo gravado.
-      Ajuste o texto antes de enviar.</div>`:''}
-    ${!jaDeferido?`<div class="aviso-box warn">O candidato está como <b>${esc((PS_ST[c.status]||[c.status])[0])}</b> e o
-      texto abaixo comunica o <b>deferimento</b> da inscrição. Confira a movimentação na aba Ações da ficha antes de enviar.</div>`:''}
+    ${!c.protocolo?`<div class="aviso-box err">Candidato sem protocolo gravado. Ajuste o texto antes de enviar.</div>`:''}
+    ${!jaDeferido?`<div class="aviso-box warn">Situação atual: <b>${esc((PS_ST[c.status]||[c.status])[0])}</b>. O texto comunica o <b>deferimento</b>;
+      verifique a aba Ações da ficha antes de enviar.</div>`:''}
     <div class="fld"><label>Para</label><input id="pse-para" value="${esc(c.email)}"></div>
     <div class="fld"><label>Assunto</label><input id="pse-assunto" value="${esc(t.assunto)}"></div>
     <div class="fld"><label>Mensagem</label>
       <textarea id="pse-corpo" style="min-height:250px;font-size:13px;line-height:1.6">${esc(t.corpo)}</textarea></div>
-    <p class="small dim" style="margin:-4px 0 0">Edite o que precisar: o texto vai para o e-mail exatamente como estiver aqui.
-    Se o “App de e-mail” não abrir nada, não há um configurado no computador — use o Gmail.</p>
+    <p class="small dim" style="margin:-4px 0 0">O texto segue como está. Sem programa de e-mail configurado, use o Gmail.</p>
     <div class="acts" style="justify-content:flex-end">
       <button class="btn ghost" onclick="${fechar}">${voltaFicha?'Voltar à ficha':'Fechar'}</button>
       <button class="btn ghost" onclick="psEmailCopiar()">${ic('copy')} Copiar texto</button>
@@ -427,16 +424,16 @@ function psAbrirFicha(id){
       <div style="display:flex;gap:12px;align-items:center">
         ${avatarFoto({nome:c.nome}, 44, 14)}
         <div><div style="font-family:var(--fd);font-size:17px;font-weight:600">${esc(c.nome)}</div>
-        <div class="small muted"><span class="mono">${esc(c.protocolo||'—')}</span> · inscrição em ${psFmtDT(c.criado_em)}</div></div>
+        <div class="small muted"><span class="mono">${esc(c.protocolo||'—')}</span>, inscrição em ${psFmtDT(c.criado_em)}</div></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${psPill(c.status)}
         ${ibtn('x','Fechar','fechaModal()','sm')}</div>
     </div>
-    <div class="abas" style="margin-bottom:16px">
-      <button class="aba on" onclick="psFichaTab(this,'dados')">Dados</button>
-      <button class="aba" onclick="psFichaTab(this,'avals')">Avaliações (${psAvalsDe(id).length})</button>
-      <button class="aba" onclick="psFichaTab(this,'acoes')">Ações</button>
-    </div>
+    <nav class="nav1" aria-label="Candidato">
+      <button class="on" onclick="psFichaTab(this,'dados')">Dados</button>
+      <button onclick="psFichaTab(this,'avals')">Avaliações (${psAvalsDe(id).length})</button>
+      <button onclick="psFichaTab(this,'acoes')">Ações</button>
+    </nav>
     <div id="pstab-dados">
       <dl class="dl">
         ${[['E-mail',c.email],['Telefone',c.telefone],['Nascimento',c.data_nascimento?fmtD(c.data_nascimento):null],
@@ -467,13 +464,13 @@ function psAbrirFicha(id){
         const l = grupos[f]||[]; if(!l.length) return '';
         const md = psMedia(l);
         return `<div class="aval-card">
-          <div class="hd"><b>${PS_FASES_AVAL[f].lbl}</b>${md!=null?`<span class="nota-badge">★ ${md.toFixed(1)} · ${l.length} avaliação${l.length>1?'ões':''}</span>`:''}</div>
+          <div class="hd"><b>${PS_FASES_AVAL[f].lbl}</b>${md!=null?`<span class="nota-badge">★ ${md.toFixed(1)}, ${l.length} avaliação${l.length>1?'ões':''}</span>`:''}</div>
           ${l.map(a=>`<div class="small" style="border-top:1px solid var(--line);padding:8px 0">
             <b>${esc(a.avaliador||'—')}</b>: nota ${a.nota??'—'}
             ${a.recomendacao?` <span class="chip mini">${PS_REC[a.recomendacao]||a.recomendacao}</span>`:''}
             ${a.parecer?`<div class="muted" style="margin-top:3px;white-space:pre-wrap">${esc(a.parecer)}</div>`:''}
           </div>`).join('')}
-        </div>`; }).join('') || '<div class="empty">Nenhuma avaliação registrada ainda.<br>Use a aba "Avaliação".</div>'}
+        </div>`; }).join('') || '<div class="empty">Nenhuma avaliação registrada.<br>Use a aba "Avaliação".</div>'}
     </div>
     <div id="pstab-acoes" hidden>
       <div class="fld"><label>Mover para</label>
@@ -501,7 +498,7 @@ function psAbrirFicha(id){
         <button class="btn solid" onclick="psIntegrarCand('${c.id}')">${ic('check')} Integrar ao quadro</button>`
       : c.status==='integrado'
         ? `<p class="small">Integrado como membro, registro <b>${c.registro_membro??'—'}</b>.</p>`
-        : `<p class="small muted">Disponível quando o candidato estiver como <b>Trainee</b> ou <b>Aprovado · final</b>.</p>`}
+        : `<p class="small muted">Disponível quando o candidato estiver como <b>Trainee</b> ou <b>Aprovado no final</b>.</p>`}
     </div>
   `, 'largo');
 }
@@ -556,7 +553,7 @@ function psAvaliacao(){
     .map(x=>({...x, media:psMedia(x.avs)}))
     .sort((a,b)=> (b.media??-1)-(a.media??-1));
   $('#sel-corpo').innerHTML = `
-  <div class="aviso-box info">Selecione a fase, avalie cada candidato pelos critérios padronizados e acompanhe o consolidado. Cada membro do comitê registra a própria avaliação; a nota final é a média.</div>
+  <p class="small muted" style="margin-bottom:12px">Nota final: média das avaliações do comitê.</p>
   <div class="chips" style="margin-bottom:16px">${Object.keys(PS_FASES_AVAL).map(f=>
     `<button class="chip ${f===fase?'on':''}" onclick="PS.faseAval='${f}';psAvaliacao()">${PS_FASES_AVAL[f].lbl}</button>`).join('')}</div>
   <div class="card">
@@ -569,9 +566,9 @@ function psAvaliacao(){
         <div style="min-width:0;flex:1">
           <div class="nm">${esc(c.nome)} <span class="mono small dim">${esc(c.protocolo||'')}</span></div>
           <div class="mt">${psPill(c.status)}
-            ${ag&&ag.slot?` · ${fmtD(ag.slot.data)} ${psHm(ag.slot.hora_inicio)}`:''}
-            ${avs.length?` · ${avs.length} avaliação${avs.length>1?'ões':''}`:' · sem avaliações'}
-            ${Object.keys(recs).length?' · '+Object.entries(recs).map(([r,q])=>`${q}× ${PS_REC[r]}`).join(', '):''}
+            ${ag&&ag.slot?`, ${fmtD(ag.slot.data)} ${psHm(ag.slot.hora_inicio)}`:''}
+            ${avs.length?`, ${avs.length} avaliação${avs.length>1?'ões':''}`:', sem avaliações'}
+            ${Object.keys(recs).length?', '+Object.entries(recs).map(([r,q])=>`${q}× ${PS_REC[r]}`).join(', '):''}
           </div>
         </div>
         ${media!=null?`<span class="nota-badge">★ ${media.toFixed(1)}</span>`:''}
@@ -699,7 +696,7 @@ function psAbrirSlot(id){
   const ags = PS.agends.filter(a=>a.slot_id===id);
   abreModal(`
     <h3>${s.fase==='dinamica'?'Dinâmica':'Entrevista'}: ${fmtD(s.data)}, ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</h3>
-    <p class="small muted" style="margin:0 0 14px">${s.local?esc(s.local)+' · ':''}${ags.length}/${s.capacidade} vaga${s.capacidade>1?'s':''} ocupada${ags.length===1?'':'s'}</p>
+    <p class="small muted" style="margin:0 0 14px">${s.local?esc(s.local)+', ':''}${ags.length}/${s.capacidade} vaga${s.capacidade>1?'s':''} ocupada${ags.length===1?'':'s'}</p>
     ${ags.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th>Candidato</th><th>Contato</th><th>Presença</th></tr></thead><tbody>
       ${ags.map(a=>{ const c=psCand(a.candidato_id);
         return `<tr><td><span class="nome">${esc(c?.nome||'—')}</span><br><span class="reg">${esc(c?.protocolo||'')}</span></td>
@@ -764,21 +761,21 @@ const PS_DIN_CAMPOS = {
   bloco:    [['nome','Nome do bloco','txt'],['minutos','Minutos','num'],
              ['fala','O que o avaliador faz','lista','Uma ação por linha. É o que ele lê no celular durante o bloco.'],
              ['projetor','O que vai no projetor','txt'],
-             ['corte','Se atrasar','txt','O que cortar primeiro neste bloco — ou "Nunca".']],
+             ['corte','Se atrasar','txt','O que cortar primeiro neste bloco, ou "Nunca".']],
   caso:     [['titulo','Título do caso','txt'],
              ['contexto','Quem é a pessoa e o que acontece hoje','area','Três ou quatro linhas: nome, idade, o que ela já faz por conta e o que trava.'],
              ['decisao','A decisão','area','Uma frase dizendo o que o grupo precisa escolher, com o prazo e o tamanho da equipe.'],
-             ['opcoes','As três opções','lista','Uma por linha, começando pela letra. Cada uma diz o que é, quanto tempo leva e o que perde. As três precisam ser defensáveis: opção que ninguém escolheria não é opção, é enfeite.'],
-             ['fala','A frase da pessoa','area','A fala que fecha o caso. É ela que pesa as opções de um jeito que a lista sozinha não pesa.'],
+             ['opcoes','As três opções','lista','Uma por linha, começando pela letra: o que é, quanto tempo leva e o que perde. As três devem ser defensáveis.'],
+             ['fala','A frase da pessoa','area','A fala que fecha o caso e pondera as opções.'],
              ['pista','Pista de destravamento','area','A pergunta que o avaliador faz se o grupo travar.']],
   campo:    [['chave','Chave','txt','Sem espaço nem acento: é o nome interno do campo.'],
              ['rotulo','Rótulo','txt'],['ajuda','Texto de ajuda','area'],
              ['limite','Limite de caracteres','num'],['linhas','Altura em linhas','num']],
   criterio: [['nome','Critério','txt','Use o mesmo nome dos critérios da fase dinâmica, para a nota casar com a ficha.'],
-             ['a1','Âncora — nota 1','area'],['a3','Âncora — nota 3','area'],['a5','Âncora — nota 5','area']],
+             ['a1','Âncora da nota 1','area'],['a3','Âncora da nota 3','area'],['a5','Âncora da nota 5','area']],
   avaliador:[['nome','Nome','txt'],['cargo','Cargo na equipe','txt'],['curso','Curso','txt'],
              ['foto_url','Endereço da foto','txt','Opcional. Sem foto, o painel desenha as iniciais.'],
-             ['fala','Uma linha sobre a pessoa','area','O que ela faz aqui, na voz de quem apresenta.']]
+             ['fala','Uma linha sobre a pessoa','area','O que ela faz na equipe.']]
 };
 const PS_DIN_ROTULO = {cartao:'cartão', regra:'regra', bloco:'bloco', caso:'caso',
                        campo:'campo', criterio:'critério', avaliador:'avaliador'};
@@ -801,8 +798,7 @@ const psDinTitulo = (i)=> {
 function psDinamica(){
   if(!PS.v12){ $('#sel-corpo').innerHTML = psDinFaltaV12(); return; }
   $('#sel-corpo').innerHTML = `
-    <div class="chips" style="margin-bottom:16px">${PS_DIN_SUB.map(([k,l])=>
-      `<a class="chip ${PS.dinSub===k?'on':''}" href="#/selecao/dinamica/${k}">${l}</a>`).join('')}</div>
+    ${navNivel2(PS_DIN_SUB.map(([k, l]) => [k, l, '#/selecao/dinamica/' + k]), PS.dinSub, 'Dinâmica')}
     <div id="din-corpo"></div>`;
   ({painel:psDinPainel, roteiro:psDinRoteiro, desafio:psDinDesafio,
     criterios:psDinCriterios, janelas:psDinJanelas}[PS.dinSub]||psDinPainel)();
@@ -822,9 +818,9 @@ function psDinLista(tipo, slot, titulo, ajuda, extra){
     ${itens.map(i=>`<div class="pub-row">
       <div style="min-width:0;flex:1">
         <div class="tt">${esc(psDinTitulo(i))}</div>
-        <div class="mt">ordem ${i.ordem}${i.tipo==='bloco'&&i.dados?.minutos?` · ${i.dados.minutos} min`:''}${
-          i.tipo==='avaliador'&&i.dados?.registro!=null?` · ficha ${i.dados.registro}`:''}${
-          i.edicao_id===null?' · todas as edições':''}</div>
+        <div class="mt">ordem ${i.ordem}${i.tipo==='bloco'&&i.dados?.minutos?`, ${i.dados.minutos} min`:''}${
+          i.tipo==='avaliador'&&i.dados?.registro!=null?`, ficha ${i.dados.registro}`:''}${
+          i.edicao_id===null?', todas as edições':''}</div>
       </div>
       <span class="badge-pub ${i.ativo?'sim':''}">${i.ativo?'No ar':'Oculto'}</span>
       ${ibtn('pencil','Editar',`psDinEditar('${i.tipo}','${i.id}',${slot?`'${slot}'`:'null'})`,'sm')}
@@ -936,8 +932,7 @@ async function psDinSalvarCfg(campos){
 function psDinPainel(){
   const c = psDinCfg();
   $('#din-corpo').innerHTML = `
-  <div class="aviso-box info">O que está aqui é o que aparece no projetor durante a dinâmica.
-    O painel abre em <b>selecao.neurodynamics.dev/dinamica-painel.html</b>, com o código da janela.</div>
+  <p class="small muted" style="margin-bottom:12px">Conteúdo do projetor. Painel: <b>selecao.neurodynamics.dev/dinamica-painel.html</b>, com o código da janela.</p>
 
   <div class="card" style="margin-bottom:16px">
     <h3 style="margin-bottom:14px">Abertura</h3>
@@ -975,8 +970,8 @@ function psDinRoteiro(){
   $('#din-corpo').innerHTML = `
   <div class="aviso-box ${cabe?'info':'warn'}">
     Os blocos somam <b>${soma} min</b> de <b>${c.minutos_total||75} min</b> de janela.
-    ${cabe ? `Sobram ${(c.minutos_total||75)-soma} min de folga — é a margem para a sala que atrasa.`
-           : 'Não cabe. Corte blocos ou aumente a duração da janela abaixo.'}
+    ${cabe ? `Folga de ${(c.minutos_total||75)-soma} min.`
+           : 'Excede a janela. Corte blocos ou aumente a duração abaixo.'}
   </div>
 
   <div class="card" style="margin-bottom:16px">
@@ -1014,17 +1009,16 @@ function psDinDesafio(){
       <input id="dcfg-desafio_titulo" value="${esc(c.desafio_titulo||'')}"></div>
     <div class="fld"><label>Contexto lido em voz alta</label>
       <textarea id="dcfg-desafio_contexto" style="min-height:110px">${esc(c.desafio_contexto||'')}</textarea>
-      <div class="mini">Aparece no projetor e no celular do candidato.
-        Diga o que se espera e o que não se cobra — quem nunca viu uma bancada precisa ouvir isso.</div></div>
+      <div class="mini">Exibido no projetor e no celular do candidato. Informe o que se espera e o que não se cobra.</div></div>
     <button class="btn solid" onclick="psDinSalvarCfg(['desafio_titulo','desafio_contexto'])">
       ${ic('check')} Salvar briefing</button>
   </div>
 
   ${psDinLista('caso', null, 'Casos',
-    'Um caso por grupo, distribuídos na hora pela mesa. Tenha pelo menos tantos casos quanto o maior número de grupos que uma janela pode ter — com 15 candidatos e grupos de 5, três casos.')}
+    `Um caso por grupo, distribuído pela mesa. ${dica('Cadastre ao menos tantos casos quanto o maior número de grupos por janela. Exemplo: 15 candidatos em grupos de 5 pedem três casos.')}`)}
 
   ${psDinLista('campo', null, 'Campos do registro',
-    'O que cada grupo preenche no celular. Cinco campos curtos rendem mais que dois longos: obrigam a decidir. Mudar a <b>chave</b> de um campo depois da dinâmica desliga o texto já gravado — crie um campo novo em vez disso.')}`;
+    `Preenchidos por cada grupo no celular. ${dica('Mudar a chave de um campo depois da dinâmica desvincula o texto já gravado. Nesse caso, crie um campo novo.')}`)}`;
 }
 
 /* ---------- sub-aba: critérios ---------- */
@@ -1034,13 +1028,13 @@ function psDinCriterios(){
   const fora = crits.filter(c=>c && !oficiais.includes(c));
   $('#din-corpo').innerHTML = `
   <div class="aviso-box ${fora.length?'warn':'info'}">
-    A nota lançada na mesa cai na ficha do candidato, fase <b>dinâmica</b>, com o nome de quem avaliou.
-    ${fora.length ? `Estes critérios não batem com os da aba Avaliação e vão aparecer separados na ficha:
+    A nota da mesa vai para a ficha do candidato, fase <b>dinâmica</b>, com o nome do avaliador.
+    ${fora.length ? `Critérios diferentes dos da aba Avaliação, exibidos à parte na ficha:
       <b>${fora.map(esc).join(', ')}</b>.`
-    : 'Os critérios daqui batem com os da aba Avaliação — as duas telas mostram a mesma coisa.'}
+    : 'Critérios iguais aos da aba Avaliação.'}
   </div>
   ${psDinLista('criterio', null, 'Critérios e âncoras',
-    'A âncora é o que separa uma nota 3 de uma nota 5 na cabeça de dois avaliadores diferentes. Escreva comportamento observável, não qualidade abstrata — é o que faz duas mesas darem notas comparáveis.')}`;
+    `Descreva comportamento observável. ${dica('A âncora diferencia as notas entre avaliadores e torna as mesas comparáveis.')}`)}`;
 }
 
 /* ---------- sub-aba: janelas ---------- */
@@ -1054,13 +1048,12 @@ function psDinJanelas(){
     PS.dinJanela = null;
   }
   $('#din-corpo').innerHTML = `
-  <div class="aviso-box info">Cada janela tem um <b>código de quatro letras</b>: é ele que o candidato
-    digita, que vira o QR do painel e que abre a mesa do avaliador. A janela em si é criada na aba
-    <a href="#/selecao/agenda" style="text-decoration:underline">Agenda</a>.</div>
+  <p class="small muted" style="margin-bottom:12px">Janelas criadas na aba <a href="#/selecao/agenda" style="text-decoration:underline">Agenda</a>.
+    ${dica('O código de quatro letras de cada janela é digitado pelo candidato, gera o QR do painel e abre a mesa do avaliador.')}</p>
   ${slots.map(s=>`<div class="pub-row">
     <div style="min-width:0;flex:1">
-      <div class="tt">${fmtD(s.data)} · ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</div>
-      <div class="mt">${esc(s.local||'sem local')} · ${ocup(s)}/${s.capacidade} agendados${s.ativo?'':' · inativa'}</div>
+      <div class="tt">${fmtD(s.data)}, ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</div>
+      <div class="mt">${esc(s.local||'sem local')}, ${ocup(s)}/${s.capacidade} agendados${s.ativo?'':', inativa'}</div>
     </div>
     <span class="pill mono" style="letter-spacing:.16em">${s.codigo ? esc(s.codigo) : '— sem código —'}</span>
     <button class="btn ghost mini" onclick="PS.dinJanela='${s.id}';psDinamica()">Preparar</button>
@@ -1097,7 +1090,7 @@ function psDinJanela(s){
     <p class="small muted" style="line-height:1.7">A mesa e o painel só respondem entre
       <b>${psHm(s.hora_inicio)} menos ${psDinCfg().tolerancia_antes ?? 30} min</b> e
       <b>${psHm(s.hora_fim)} mais ${psDinCfg().tolerancia_depois ?? 30} min</b> do dia
-      ${fmtD(s.data)}. Fora disso não sai candidato, grupo nem roteiro — nem com login.</p>
+      ${fmtD(s.data)}. Fora desse intervalo, candidatos, grupos e roteiro ficam indisponíveis.</p>
   </div>
 
   ${psDinLista('avaliador', s.id, 'A mesa desta janela',
@@ -1166,9 +1159,7 @@ function psDinMesaEscolher(slot){
   PS.mesaBusca = '';
   abreModal(`
     <h3>Montar a mesa pelo quadro</h3>
-    <p class="small muted" style="margin:4px 0 12px;line-height:1.7">Marque quem vai estar na sala
-      neste horário. Nome, cargo, curso e foto vêm da ficha da pessoa; depois dá para ajustar cada
-      um e escrever a linha de apresentação.</p>
+    <p class="small muted" style="margin:4px 0 12px;line-height:1.7">Quem estará na sala neste horário. Os dados vêm da ficha e podem ser ajustados.</p>
     <div class="fld"><input id="mesa-q" placeholder="Buscar por nome, cargo ou departamento"
       oninput="PS.mesaBusca=this.value;psDinMesaCorpo()"></div>
     <div id="mesa-lista" style="max-height:46vh;overflow:auto;margin-bottom:6px"></div>
@@ -1193,7 +1184,7 @@ function psDinMesaCorpo(){
       ${avatarFoto(m, 32, 11)}
       <div style="min-width:0;flex:1">
         <div class="tt">${esc(m.nome||'')}</div>
-        <div class="mt">${esc(m.cargo||'sem cargo')}${m.departamento?' · '+esc(m.departamento):''}</div>
+        <div class="mt">${esc(m.cargo||'sem cargo')}${m.departamento?', '+esc(m.departamento):''}</div>
       </div>
       <span class="badge-pub ${on?'sim':''}">${on?'na mesa':'incluir'}</span>
     </button>`;
@@ -1279,14 +1270,13 @@ const psFaltaV11 = (oque)=> `<div class="aviso-box err"><b>Falta aplicar a migra
 function psFaq(){
   if(!PS.v11){ $('#sel-corpo').innerHTML = psFaltaV11('as perguntas frequentes'); return; }
   $('#sel-corpo').innerHTML = `
-  <div class="aviso-box info">Estas são as perguntas frequentes da página inicial do site.
-    Só as <b>publicadas</b> aparecem, na ordem definida em cada uma. Deixe "vale para" em
-    <b>todas as edições</b> para a pergunta continuar valendo nos próximos processos.</div>
+  <p class="small muted" style="margin-bottom:12px">Perguntas frequentes do site. Apenas as publicadas aparecem.
+    ${dica('Com "vale para" em todas as edições, a pergunta segue nos próximos processos.')}</p>
   <div style="margin-bottom:14px"><button class="btn solid" onclick="psEditarFaq()">${ic('plus')} Nova pergunta</button></div>
   ${PS.faq.map(f=>`<div class="pub-row">
     <div style="min-width:0;flex:1">
       <div class="tt">${esc(f.pergunta)}</div>
-      <div class="mt">ordem ${f.ordem} · ${f.edicao_id ? esc(PS.edicoes.find(e=>e.id===f.edicao_id)?.nome||'edição específica') : 'todas as edições'}</div>
+      <div class="mt">ordem ${f.ordem}, ${f.edicao_id ? esc(PS.edicoes.find(e=>e.id===f.edicao_id)?.nome||'edição específica') : 'todas as edições'}</div>
     </div>
     <span class="badge-pub ${f.publicada?'sim':''}">${f.publicada?'No ar':'Oculta'}</span>
     ${ibtn('pencil','Editar',`psEditarFaq('${f.id}')`,'sm')}
@@ -1306,7 +1296,7 @@ function psEditarFaq(id){
     <div class="fld"><label>Resposta</label>
       <textarea id="ps-fq-resp" style="min-height:150px" placeholder="A resposta como o candidato vai ler.">${esc(f?.resposta||'')}</textarea>
       <div class="mini">Formatação que o site entende: <b>*negrito*</b>, <b>[texto](https://link)</b> e linha em
-        branco para separar parágrafos. HTML digitado aqui aparece como texto — não é interpretado.</div></div>
+        branco para separar parágrafos. HTML não é interpretado.</div></div>
     <div class="form-grid">
       <div class="fld"><label>Ordem no site</label>
         <input id="ps-fq-ordem" type="number" value="${f?.ordem ?? prox}" step="10"></div>
@@ -1377,9 +1367,7 @@ function psEditarComps(id){
   psCompEdit = { id, tem:[...(c.competencias||[])], quer:[...(c.competencias_desejadas||[])] };
   abreModal(`
     <h3>Competências de ${esc(c.nome.split(' ')[0])}</h3>
-    <p class="small muted" style="margin:4px 0 14px">Um clique marca o que a pessoa <b>já tem</b>,
-      outro passa para o que <b>quer desenvolver</b>, o terceiro solta. Vale ajustar ao longo das
-      fases — a dinâmica e a entrevista costumam revelar o que a inscrição não mostrou.</p>
+    <p class="small muted" style="margin:4px 0 14px">Cliques alternam entre <b>já tem</b>, <b>quer desenvolver</b> e nenhum.</p>
     <div id="comp-corpo">${psCompsCorpo()}</div>
     <div class="fld" style="margin-top:14px"><label>Acrescentar uma etiqueta fora do catálogo</label>
       <div style="display:flex;gap:8px">
@@ -1449,7 +1437,7 @@ async function psSalvarComps(){
    ============================================================ */
 function psPublicacoes(){
   $('#sel-corpo').innerHTML = `
-  <div class="aviso-box info">O site público só mostra o que estiver <b>publicado</b>, e é a publicação de cada resultado que libera a situação correspondente para os candidatos. As listas de aprovados são geradas na hora, a partir do status atual.</div>
+  <p class="small muted" style="margin-bottom:12px">O site mostra apenas o que está publicado. ${dica('Publicar um resultado libera a situação correspondente para os candidatos. As listas de aprovados usam o status atual.')}</p>
   <div style="margin-bottom:14px"><button class="btn solid" onclick="psEditarPub()">${ic('plus')} Nova publicação</button></div>
   ${PS.pubs.map(p=>{
     const setPub = PS_SETS[p.tipo];
@@ -1458,7 +1446,7 @@ function psPublicacoes(){
       <div style="min-width:0;flex:1">
         <div class="tt">${esc(p.titulo)} <span class="chip mini">${PS_TIPO_PUB[p.tipo]||p.tipo}</span></div>
         <div class="mt">${p.publicado?`Publicado em ${psFmtDT(p.publicado_em)}`:`Rascunho, criado em ${psFmtDT(p.criado_em)}`}
-          ${qtd!=null?` · lista atual: <b>${qtd}</b> nome${qtd===1?'':'s'}`:''}</div>
+          ${qtd!=null?`, lista atual: <b>${qtd}</b> nome${qtd===1?'':'s'}`:''}</div>
       </div>
       <span class="badge-pub ${p.publicado?'sim':''}">${p.publicado?'No ar':'Rascunho'}</span>
       ${ibtn('pencil','Editar',`psEditarPub('${p.id}')`,'sm')}
@@ -1570,7 +1558,7 @@ function psConfig(){
         ${avatarFoto({nome:p.nome||p.email}, 28, 10)}
         <span style="flex:1"><b>${esc(p.nome||p.email)}</b> <span class="dim small">${esc(p.email)}</span></span>
         ${souAdmin?ibtn('x','Remover do comitê',`psTirarAcesso('${p.id}')`,'sm'):''}</div>`).join('')
-      || '<div class="empty">Ninguém com o papel selecao ainda. Apenas admin/pessoal acessam por enquanto.</div>')
+      || '<div class="empty">Ninguém com o papel selecao. Acesso atual: admin e pessoal.</div>')
     : '<div class="empty">A lista de perfis é visível apenas para admin/pessoal.</div>'}
     ${souAdmin?`<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
       <select id="ps-com-add" style="flex:1;min-width:240px">
@@ -1578,8 +1566,7 @@ function psConfig(){
         ${promoviveis.map(p=>`<option value="${p.id}">${esc(p.nome||p.email)} (${esc(p.email)})</option>`).join('')}
       </select>
       <button class="btn solid" onclick="psDarAcesso()">${ic('plus')} Incluir no comitê</button></div>
-      <p class="small dim" style="margin-top:8px">A pessoa precisa ter uma conta no portal (criada por ela mesma na tela de entrada,
-        em "Criar conta"). Contas admin/pessoal não aparecem aqui porque já têm acesso. A gestão completa de papéis fica em
+      <p class="small dim" style="margin-top:8px">Requer conta no portal. Admin e pessoal já têm acesso. Papéis:
         <a href="#/admin/contas" style="text-decoration:underline">Administração › Contas e perfis</a>.</p>`:''}
   </div>`;
 }
@@ -1686,7 +1673,7 @@ registrarBusca({
   fonte:'selecao', rotulo:'Candidatos',
   buscar: (t) => filtrarSimples(PS.candidatos.map(c => ({
     titulo: c.nome,
-    sub: `${(PS_ST[c.status]||[c.status])[0]}${c.curso ? ' · ' + c.curso : ''}`,
+    sub: `${(PS_ST[c.status]||[c.status])[0]}${c.curso ? ', ' + c.curso : ''}`,
     codigo: c.protocolo || '',
     href: '#/selecao/candidatos/' + c.id
   })), t, 6)

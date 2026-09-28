@@ -20,7 +20,8 @@
    fechaModal, fmtD, ic, ibtn, confirma, falha, motivoRPC, avatarFoto,
    nomeDe, carregarModulo, registrarBusca, filtrarSimples, can,
    gruposEfetivos, gruposAcima, grupoPorId, viaDoGrupo, docGestor,
-   logoProjeto, carregarGrupos, carregarProjetosEArquivos, desenharMenu.
+   logoProjeto, POKEMON, TIPOS_POKEMON, PKM_SPRITE, pokemonDe, carregarGrupos,
+   carregarProjetosEArquivos, desenharMenu, dica.
    ============================================================ */
 
 const projetosM = { lista:[], arquivos:[], padrao:[], erro:null, ver:'meus', status:'ativo',
@@ -100,7 +101,7 @@ async function pageProjetos(sub, sub2){
   const p = projetosM.lista.find(x => x.codigo === String(sub).toUpperCase());
   if (!p){
     $('#main').innerHTML = `<div class="vazio" style="margin-top:40px"><div class="glyph">?</div>
-      <h3>Nenhum projeto com o código ${esc(sub)}</h3><p>Ele pode ter mudado de código — procure na lista.</p>
+      <h3>Nenhum projeto com o código ${esc(sub)}</h3><p>Procure na lista.</p>
       <a class="btn ghost" href="#/projetos">Todos os projetos</a></div>`;
     return;
   }
@@ -113,19 +114,18 @@ function pjLista(){
   const mostra = f.lista.filter(p => (f.ver === 'todos' || pjSouDaEquipe(p)) && (!f.status || p.status === f.status));
   const meus = f.lista.filter(pjSouDaEquipe).length;
   $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Projetos</span>
-      <h1>Projetos</h1><p class="lead">Cada projeto é uma equipe — um grupo dentro de NRO_PROJECTS — e um rol de
-      arquivos, que segue o padrão de projeto definido pelo PMO.</p></div>
+      <h1>Projetos</h1></div>
       ${docGestor() ? `<div class="acoes"><button class="btn solid mini" onclick="pjModalNovo()">${ic('plus')} Novo projeto</button></div>` : ''}</div>
     <div class="filtros" style="align-items:center">
       <div class="seg" role="group" aria-label="Quais projetos">
-        <button class="${f.ver === 'meus' ? 'on' : ''}" aria-pressed="${f.ver === 'meus'}" onclick="projetosM.ver='meus';pjLista()">Meus · ${meus}</button>
-        <button class="${f.ver === 'todos' ? 'on' : ''}" aria-pressed="${f.ver === 'todos'}" onclick="projetosM.ver='todos';pjLista()">Todos · ${f.lista.length}</button></div>
+        <button class="${f.ver === 'meus' ? 'on' : ''}" aria-pressed="${f.ver === 'meus'}" onclick="projetosM.ver='meus';pjLista()">Meus (${meus})</button>
+        <button class="${f.ver === 'todos' ? 'on' : ''}" aria-pressed="${f.ver === 'todos'}" onclick="projetosM.ver='todos';pjLista()">Todos (${f.lista.length})</button></div>
       <div class="seg" role="group" aria-label="Status">
         ${[['ativo', 'Ativos'], ['pausado', 'Pausados'], ['encerrado', 'Encerrados'], ['', 'Qualquer status']].map(([k, l]) =>
           `<button class="${f.status === k ? 'on' : ''}" aria-pressed="${f.status === k}" onclick="projetosM.status='${k}';pjLista()">${l}</button>`).join('')}</div>
     </div>
     ${mostra.length ? `<div class="pj-grade">${mostra.map(pjCartao).join('')}</div>`
-      : `<div class="vazio"><div class="glyph">◇</div><h3>${f.ver === 'meus' && f.lista.length ? 'Você não está na equipe de nenhum projeto' + (f.status ? ' com esse status' : '') : 'Nenhum projeto ainda'}</h3>
+      : `<div class="vazio"><div class="glyph">◇</div><h3>${f.ver === 'meus' && f.lista.length ? 'Você não está na equipe de nenhum projeto' + (f.status ? ' com esse status' : '') : 'Nenhum projeto'}</h3>
         <p>${f.ver === 'meus' && f.lista.length ? 'Veja todos os projetos da equipe.' : docGestor() ? 'Crie o primeiro: ele ganha um grupo, uma logo e o rol do padrão.' : 'O PMO cria os projetos.'}</p>
         ${f.ver === 'meus' && f.lista.length ? `<button class="btn ghost" onclick="projetosM.ver='todos';pjLista()">Ver todos</button>`
           : docGestor() ? `<button class="btn solid" onclick="pjModalNovo()">Novo projeto</button>` : ''}</div>`}`;
@@ -139,7 +139,7 @@ function pjCartao(p){
     <span class="pj-prog">${pjBarra(pjProgresso(p))}</span>
     <span class="rodape"><span class="pj-rostos">${eq.slice(0, 5).map(x => avatarFoto(x.m, 24, 9)).join('')}
         ${eq.length > 5 ? `<span class="mais">+${eq.length - 5}</span>` : ''}${eq.length ? '' : 'sem equipe'}</span>
-      <span>${sup ? 'Supervisão: ' + esc(sup.nome.split(' ')[0]) : 'sem supervisor'} · ${pjPill(p.status)}</span></span>
+      <span>${sup ? 'Supervisão: ' + esc(sup.nome.split(' ')[0]) : 'sem supervisor'}, ${pjPill(p.status)}</span></span>
   </a>`;
 }
 
@@ -152,35 +152,35 @@ async function pjPagina(p, aba){
   const quadro = g && g.quadro !== false;
   $('#main').innerHTML = `<div class="pj-topo">
       ${logoProjeto(p.logo_semente, 72, p.nome)}
-      <div class="tx"><span class="eyebrow">Projeto · ${esc(p.codigo)}</span><h1>${esc(p.nome)}</h1>
-        ${p.descricao ? `<p class="lead">${esc(p.descricao)}</p>` : ''}</div>
+      <div class="tx"><span class="eyebrow">Projeto ${esc(p.codigo)}</span><h1>${esc(p.nome)}</h1>
+        ${p.descricao ? `<p class="lead">${esc(p.descricao)}</p>` : ''}
+        ${pkmLinhaHTML(p)}</div>
       <div class="acoes">${pjPill(p.status)}
         ${quadro ? `<a class="btn ghost mini" href="#/atividades/${esc(g.prefixo)}">${ic('quadro')} Quadro</a>` : ''}
         ${pjPodeEditar(p) ? `<button class="btn ghost mini" onclick="pjModalEditar('${p.id}')">${ic('pencil')} Editar</button>` : ''}</div>
     </div>
-    <nav class="abas"><a href="#/projetos/${esc(p.codigo)}" class="${aba ? '' : 'on'}">Visão geral</a>
-      <a href="#/projetos/${esc(p.codigo)}/arquivos" class="${aba === 'arquivos' ? 'on' : ''}">Arquivos · ${pr.ativos} de ${pr.total}</a></nav>
-    <div id="pj-corpo" style="margin-top:18px"></div>`;
+    ${navNivel1([['', 'Visão geral', '#/projetos/' + esc(p.codigo)],
+      ['arquivos', 'Arquivos', `#/projetos/${esc(p.codigo)}/arquivos`, `<span class="n">${pr.ativos}/${pr.total}</span>`]], aba, 'Projeto')}
+    <div id="pj-corpo"></div>`;
 
   if (aba === 'arquivos'){
     $('#pj-corpo').innerHTML = '<div class="carregando"><span class="spin"></span> Carregando o rol…</div>';
     try { await carregarModulo('arquivos'); }
     catch(e){ $('#pj-corpo').innerHTML = `<div class="aviso-box err">O rol não carregou (${esc(e.message)}). Recarregue a página.</div>`; return; }
     const { html } = await arqRolDoProjeto(p, pjSouDaEquipe(p) || docGestor());
-    $('#pj-corpo').innerHTML = `<p class="small muted" style="margin-bottom:12px;line-height:1.6">O padrão de projeto aplicado ao
-      ${esc(p.nome)}: uma linha por série do padrão — o PN deste projeto, ou "a criar". ${pjSouDaEquipe(p) || docGestor()
-        ? 'Criar um PN o deixa em rascunho; a primeira versão enviada vai para revisão.' : 'Quem cria os PNs é a equipe do projeto.'}</p>` + html;
+    $('#pj-corpo').innerHTML = `<p class="small muted" style="margin-bottom:12px;line-height:1.6">Padrão de projeto: uma linha por série. ${pjSouDaEquipe(p) || docGestor()
+        ? dica('O PN criado nasce em rascunho; a primeira versão enviada vai para revisão.') : 'Os PNs são criados pela equipe do projeto.'}</p>` + html;
     return;
   }
 
   $('#pj-corpo').innerHTML = `<div class="pj-cols">
-    <div class="card"><h3 style="display:flex;align-items:center;gap:10px">Equipe · ${eq.length}
+    <div class="card"><h3 style="display:flex;align-items:center;gap:10px">Equipe (${eq.length})
         ${pjPodeEquipe(p) ? `<button class="btn ghost mini" style="margin-left:auto" onclick="pjModalEquipe('${p.id}')">${ic('users')} Gerenciar</button>` : ''}</h3>
       ${!sup ? '<div class="aviso-box warn" style="margin:6px 0 10px">O projeto está sem supervisor.</div>'
         : !eq.some(x => x.m.registro === sup.registro) ? `<div class="aviso-box warn" style="margin:6px 0 10px">${esc(sup.nome)}, supervisor, não está mais na equipe.</div>` : ''}
       ${eq.map(({ m, via }) => `<div class="pj-membro">${avatarFoto(m, 32, 11)}
           <span class="tx"><span class="nm">${esc(m.nome)}</span><span class="cg">${esc(m.cargo || '—')}${
-            via && g && via !== g.nome ? ` · por ${esc(via)}` : ''}</span></span>
+            via && g && via !== g.nome ? `, por ${esc(via)}` : ''}</span></span>
           ${m.registro === p.supervisor ? '<span class="pj-sup">Supervisor</span>' : ''}</div>`).join('')
         || '<p class="muted small">Ninguém na equipe ainda.</p>'}
       <p class="small muted" style="margin-top:12px;line-height:1.6">A equipe é o grupo <b>${esc(g?.nome || '—')}</b>. Quem está nela
@@ -198,7 +198,6 @@ async function pjPagina(p, aba){
 /* ---------------- novo projeto ---------------- */
 const pjCodigoDe = nome => String(nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
   .toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/^[0-9]+/, '').slice(0, 16);
-const pjSemente = () => Math.random().toString(36).slice(2, 10);
 
 function pjModalNovo(){
   projetosM.novo = { semente:null, mexeuCodigo:false, equipe:new Set(), busca:'' };
@@ -208,10 +207,7 @@ function pjModalNovo(){
       <div class="fld"><label for="pn-nome">Nome</label><input id="pn-nome" placeholder="Nebula" oninput="pjNovoNome()"></div>
       <div class="fld"><label for="pn-cod">Código</label><input id="pn-cod" placeholder="NEBULA" maxlength="16"
         style="text-transform:uppercase;font-family:var(--fm)" oninput="projetosM.novo.mexeuCodigo=true;pjNovoLogo()"></div>
-      <div class="fld full"><div class="pj-logo-ed"><span id="pn-logo">${logoProjeto('?', 56)}</span>
-        <span class="tx">A logo sai do código, como os avatares do GitHub — o mesmo código, a mesma logo.
-          Não gostou? Sorteie outra.</span>
-        <button type="button" class="btn ghost mini" onclick="projetosM.novo.semente=pjSemente();pjNovoLogo()">${ic('refazer')} Outra</button></div></div>
+      <div class="fld full"><label>Pokémon</label><div id="pn-pkm"></div></div>
       <div class="fld full"><label for="pn-desc">Descrição</label><textarea id="pn-desc" rows="2" placeholder="Para que serve o projeto"></textarea></div>
       <div class="fld full"><label for="pn-sup">Supervisor</label><select id="pn-sup"><option value="">— escolha —</option>
         ${(state.membros || []).filter(m => ATIVOS_PJ.includes(m.status)).map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</select>
@@ -225,11 +221,12 @@ function pjModalNovo(){
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" id="pn-btn" onclick="pjCriar()">Criar o projeto</button></div>`, 'largo', true);
+  projetosM.novo.semente = 'pkm:' + pkmSortear();
+  pkmEdIniciar('pn-pkm');
   pjNovoLista(); $('#pn-nome').focus();
 }
 function pjNovoNome(){ if (!projetosM.novo.mexeuCodigo) $('#pn-cod').value = pjCodigoDe($('#pn-nome').value); pjNovoLogo(); }
-function pjNovoLogo(){ const n = projetosM.novo, cod = $('#pn-cod').value.trim().toUpperCase();
-  $('#pn-logo').innerHTML = logoProjeto(n.semente || cod.toLowerCase() || '?', 56, 'Logo'); }
+function pjNovoLogo(){ pkmEdDesenhar(); }
 function pjNovoLista(){
   const n = projetosM.novo, q = norm(n.busca);
   const lista = (state.membros || []).filter(m => ATIVOS_PJ.includes(m.status)
@@ -247,7 +244,7 @@ async function pjCriar(){
     equipe: [...n.equipe], grupo_id: $('#pn-grupo').value ? Number($('#pn-grupo').value) : null };
   if (n.semente) p.logo_semente = n.semente;
   if (!p.nome) return toast('O nome é obrigatório.', true);
-  if (!/^[A-Z][A-Z0-9]{1,15}$/.test(p.codigo)) return toast('O código vai de 2 a 16 letras e números, começando por letra — NEBULA, ORION2.', true);
+  if (!/^[A-Z][A-Z0-9]{1,15}$/.test(p.codigo)) return toast('Código: 2 a 16 letras e números, começando por letra (ex.: NEBULA, ORION2).', true);
   if (!p.supervisor) return toast('Escolha o supervisor.', true);
   const b = $('#pn-btn'); if (b){ b.disabled = true; b.textContent = 'Criando…'; }
   try{
@@ -270,10 +267,81 @@ async function pjRecarregarFichas(){
   desenharMenu();
 }
 
+/* ---------------- o Pokémon ----------------
+   A escolha mora em projetosM.novo.semente ("pkm:<número>"): o mesmo
+   campo que o projeto_salvar já grava. A galeria abre por família, com
+   os estágios lado a lado, e busca por nome, número ou tipo. */
+const pkmSortear = () => POKEMON.basicos[Math.floor(Math.random() * POKEMON.basicos.length)];
+const pkmAtual = () => pokemonDe(projetosM.novo?.semente);
+function pkmEdIniciar(alvo){
+  projetosM.pkm = { alvo, aberta:false, q:'', tipo:'' };
+  pkmEdDesenhar();
+}
+function pkmEdDesenhar(){
+  const e = projetosM.pkm, el = e && $('#' + e.alvo); if (!el) return;
+  const pk = pkmAtual(), fam = POKEMON.familias[pk.familia];
+  el.innerHTML = `<div class="pkm-ed">${logoProjeto(projetosM.novo.semente, 64)}
+      <span class="tx"><b>${esc(pk.nome)}</b>#${String(pk.id).padStart(3, '0')}, ${esc(TIPOS_POKEMON[pk.tipo])}${
+        fam.estagios.length > 1 ? `, estágio ${pk.estagio + 1} de ${fam.estagios.length}` : ''}</span>
+      <span class="acts"><button type="button" class="btn ghost mini" onclick="pkmEscolher(pkmSortear())">${ic('dado')} Sortear</button>
+        <button type="button" class="btn ghost mini" aria-expanded="${e.aberta}" onclick="projetosM.pkm.aberta=!projetosM.pkm.aberta;pkmEdDesenhar()">${e.aberta ? 'Fechar a lista' : 'Escolher'}</button></span></div>
+    ${e.aberta ? `<div class="pkm-gal">
+      <div class="pkm-gal-topo"><input type="search" id="pkm-q" placeholder="Nome ou número" value="${esc(e.q)}"
+          oninput="projetosM.pkm.q=this.value;pkmGalLista()" aria-label="Buscar Pokémon">
+        <select id="pkm-tipo" aria-label="Tipo" onchange="projetosM.pkm.tipo=this.value;pkmGalLista()">
+          <option value="">Todos os tipos</option>${Object.entries(TIPOS_POKEMON).filter(([k]) => POKEMON.familias.some(f => f.tipo === k))
+            .map(([k, l]) => `<option value="${k}" ${e.tipo === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="pkm-lista" id="pkm-lista"></div></div>` : ''}`;
+  if (e.aberta) pkmGalLista();
+}
+function pkmOpcao(id, atual){
+  const pk = POKEMON.porId.get(id);
+  return `<button type="button" class="pkm-op${id === atual ? ' on' : ''}" onclick="pkmEscolher(${id})"
+    aria-pressed="${id === atual}" title="${esc(pk.nome)}"><img src="${PKM_SPRITE(id)}" alt="" loading="lazy"
+    onerror="this.style.visibility='hidden'">${esc(pk.nome)}<span class="n">#${String(id).padStart(3, '0')}</span></button>`;
+}
+function pkmGalLista(){
+  const e = projetosM.pkm, el = $('#pkm-lista'); if (!el) return;
+  const q = norm(e.q).replace(/^#?0*/, ''), atual = pkmAtual().id;
+  const casa = id => { const pk = POKEMON.porId.get(id); return !q || norm(pk.nome).includes(q) || String(id) === q; };
+  const fams = POKEMON.familias.filter(f => (!e.tipo || f.tipo === e.tipo) && f.estagios.flat().some(casa));
+  el.innerHTML = fams.map(f => `<div class="pkm-fam t-${f.tipo}">${f.estagios.map(est =>
+      est.map(id => pkmOpcao(id, atual)).join('')).join('<span class="seta" aria-hidden="true">›</span>')}</div>`).join('')
+    || '<p class="muted small" style="padding:8px">Nenhum Pokémon com essa busca.</p>';
+}
+function pkmEscolher(id){
+  projetosM.novo.semente = 'pkm:' + id;
+  pkmEdDesenhar();
+  const f = $('#pkm-q'); if (f && projetosM.pkm.q){ f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+}
+/* A linha evolutiva, na página do projeto. Quem edita o projeto troca
+   o estágio com um clique (evoluir, ou voltar). */
+function pkmLinhaHTML(p){
+  const pk = pokemonDe(p.logo_semente), fam = POKEMON.familias[pk.familia];
+  if (fam.estagios.flat().length < 2) return '';
+  const pode = pjPodeEditar(p);
+  return `<div class="pkm-linha" aria-label="Linha evolutiva">${fam.estagios.map(est => est.map(id => {
+      const x = POKEMON.porId.get(id), on = id === pk.id;
+      const corpo = `<img src="${PKM_SPRITE(id)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">${esc(x.nome)}`;
+      return pode && !on
+        ? `<button type="button" class="pkm-op" onclick="pkmEvoluir('${p.id}', ${id})" title="${x.estagio > pk.estagio ? 'Evoluir para' : 'Voltar para'} ${esc(x.nome)}">${corpo}</button>`
+        : `<span class="pkm-op${on ? ' on' : ''}"${on ? ' aria-current="true"' : ''}>${corpo}</span>`;
+    }).join('')).join('<span class="seta muted" aria-hidden="true">›</span>')}</div>`;
+}
+async function pkmEvoluir(id, n){
+  const p = projetosM.lista.find(x => x.id === id); if (!p) return;
+  const de = pokemonDe(p.logo_semente), para = POKEMON.porId.get(n);
+  const { data, error } = await sb.rpc('projeto_salvar', { p: { id, logo_semente: 'pkm:' + n } });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível trocar o Pokémon'), true);
+  toast(`${para.estagio > de.estagio ? 'Evoluiu' : 'Voltou'}: ${de.nome} → ${para.nome}.`);
+  await carregarProjetosEArquivos();
+  pageProjetos(p.codigo);
+}
+
 /* ---------------- editar ---------------- */
 function pjModalEditar(id){
   const p = projetosM.lista.find(x => x.id === id); if (!p) return;
-  projetosM.novo = { semente: p.logo_semente };
+  projetosM.novo = { semente: 'pkm:' + pokemonDe(p.logo_semente).id };
   const eq = pjEquipe(p).map(x => x.m);
   const outros = (state.membros || []).filter(m => ATIVOS_PJ.includes(m.status) && !eq.includes(m));
   abreModal(`<h3>${esc(p.nome)}</h3>
@@ -281,19 +349,17 @@ function pjModalEditar(id){
       <div class="fld"><label for="pe-nome">Nome</label><input id="pe-nome" value="${esc(p.nome)}"></div>
       <div class="fld"><label for="pe-st">Status</label><select id="pe-st">${Object.entries(STATUS_PROJETO).map(([k, v]) =>
         `<option value="${k}" ${p.status === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></div>
-      <div class="fld full"><div class="pj-logo-ed"><span id="pe-logo">${logoProjeto(p.logo_semente, 56, p.nome)}</span>
-        <span class="tx">O código continua ${esc(p.codigo)}; só a logo muda.</span>
-        <button type="button" class="btn ghost mini" onclick="projetosM.novo.semente=pjSemente();$('#pe-logo').innerHTML=logoProjeto(projetosM.novo.semente,56)">${ic('refazer')} Outra</button>
-        <button type="button" class="btn ghost mini" onclick="projetosM.novo.semente='${esc(p.codigo.toLowerCase())}';$('#pe-logo').innerHTML=logoProjeto(projetosM.novo.semente,56)">A original</button></div></div>
+      <div class="fld full"><label>Pokémon</label><div id="pe-pkm"></div></div>
       <div class="fld full"><label for="pe-desc">Descrição</label><textarea id="pe-desc" rows="3">${esc(p.descricao || '')}</textarea></div>
       <div class="fld full"><label for="pe-sup">Supervisor</label><select id="pe-sup" ${docGestor() ? '' : 'disabled'}>
         <option value="">— sem supervisor —</option>
         <optgroup label="Da equipe">${eq.map(m => `<option value="${m.registro}" ${m.registro === p.supervisor ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</optgroup>
-        <optgroup label="De fora — entra na equipe">${outros.map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</optgroup></select>
+        <optgroup label="Fora da equipe (será incluído)">${outros.map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</optgroup></select>
         ${docGestor() ? '' : '<span class="mailer-sub tight">Trocar o supervisor é do PMO.</span>'}</div>
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" id="pe-btn" onclick="pjSalvar('${p.id}')">Salvar</button></div>`, 'largo');
+  pkmEdIniciar('pe-pkm');
 }
 async function pjSalvar(id){
   const p = projetosM.lista.find(x => x.id === id);
@@ -330,7 +396,7 @@ function pjEquipeDesenhar(){
   const eq = pjEquipe(p), dentro = new Set(eq.map(x => x.m.registro)), q = norm(e.busca);
   const cands = (state.membros || []).filter(m => ATIVOS_PJ.includes(m.status) && !dentro.has(m.registro)
     && (!q || [m.nome, m.cargo, m.departamento].some(x => norm(x).includes(q)))).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  $('#pq-corpo').innerHTML = `<div class="adm-grupo" style="margin-top:0">Na equipe · ${eq.length}</div>
+  $('#pq-corpo').innerHTML = `<div class="adm-grupo" style="margin-top:0">Na equipe (${eq.length})</div>
     <div class="gr-pessoas" style="max-height:220px">${eq.map(({ m, via }) => `<div class="gr-pessoa">${avatarFoto(m, 28, 10)}
       <div class="tx"><div class="nm">${esc(m.nome)}</div><div class="cg">${esc(m.cargo || '—')}</div></div>
       ${m.registro === p.supervisor ? '<span class="pj-sup">Supervisor</span>' : ''}

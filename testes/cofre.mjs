@@ -83,7 +83,7 @@ const OTP = `otpauth://totp/Google:equipe@neurodynamics.dev?secret=${SEGREDO}&is
   const secs = await p.evaluate(() => [...document.querySelectorAll('.cof-sec h2')].map(h => h.textContent));
   confere('as contas por categoria do catálogo, sistemas primeiro', secs.join('|') === 'Sistema / plataforma|Local', secs);
   confere('as três contas', await p.locator('.cof-card').count() === 3);
-  confere('o aviso das que eu mantenho e pedem troca', /2 contas que você mantém pedem a troca/.test(await texto(p, '.aviso-box.warn')));
+  confere('o aviso das que eu mantenho e pedem troca', /2 contas mantidas por você precisam de troca de senha/.test(await texto(p, '.aviso-box.warn')));
   confere('a situação de cada uma', /Troca vence logo/.test(await texto(p, `#cof-${C1} .pill`)) && /Troca vencida/.test(await texto(p, `#cof-${C2} .pill`))
     && /Em dia/.test(await texto(p, `#cof-${C3} .pill`)));
   confere('a lista não traz segredo nenhum', !/Gw!8vQ|Adm#5tR9|Fx4\$pL8|GEZDGNBV/.test(await p.content()));
@@ -129,7 +129,7 @@ const OTP = `otpauth://totp/Google:equipe@neurodynamics.dev?secret=${SEGREDO}&is
   const s1 = await p.inputValue('#cof-nova');
   confere('o gerador abre com 20 caracteres, dos quatro conjuntos', s1.length === 20 && /[A-Z]/.test(s1) && /[a-z]/.test(s1) && /\d/.test(s1) && /[^A-Za-z\d]/.test(s1), s1);
   confere('sem caracteres que se confundem', !/[0O1lI]/.test(s1), s1);
-  confere('e diz a força', /muito forte · \d+ bits · 20 caracteres/.test(await texto(p, '#cof-nova-forca')));
+  confere('e diz a força', /muito forte, \d+ bits, 20 caracteres/.test(await texto(p, '#cof-nova-forca')));
   await p.uncheck('#modal .cof-ger-op label:has-text("!@#") input'); await p.waitForTimeout(100);
   confere('sem símbolos, a nova vem sem símbolos', /^[A-Za-z0-9]{20}$/.test(await p.inputValue('#cof-nova')));
   await p.locator('#modal .cof-tam input').fill('32'); await p.waitForTimeout(100);
@@ -243,7 +243,7 @@ const OTP = `otpauth://totp/Google:equipe@neurodynamics.dev?secret=${SEGREDO}&is
   await p.waitForTimeout(500);
   const ids = await p.evaluate(() => [...document.querySelectorAll('.cof-card')].map(c => c.id.slice(4)));
   confere('vê a que mantém e a do acesso concedido — não a de outro grupo', ids.sort().join() === [C1, C3].sort().join(), ids);
-  confere('sem a navegação da gestão e sem "Nova conta"', await p.locator('#main .arq-nav').count() === 0 && await p.locator('a:has-text("Nova conta")').count() === 0);
+  confere('sem a navegação da gestão e sem "Nova conta"', await p.locator('#main .nav1').count() === 0 && await p.locator('a:has-text("Nova conta")').count() === 0);
   confere('pelo acesso concedido, usa mas não troca', /pelo acesso concedido/.test(await texto(p, `#cof-${C3} .mt`))
     && await p.locator(`#cof-${C3} button:has-text("Trocar")`).count() === 0);
   confere('o responsável troca e edita', await p.locator(`#cof-${C1} button:has-text("Trocar a senha")`).count() === 1);
@@ -251,7 +251,7 @@ const OTP = `otpauth://totp/Google:equipe@neurodynamics.dev?secret=${SEGREDO}&is
   confere('a gestão pelo endereço devolve à lista', await p.evaluate(() => location.hash) === '#/servicos/cofre');
   await ir(p, `#/servicos/cofre/editar/${C1}`, 1200);
   confere('o responsável edita sem os campos da gestão', await p.locator('input.cf-g').count() === 0 && await p.locator('#cf-prazo').count() === 0
-    && /são da gestão do cofre/.test(await texto(p, '.cof-form')));
+    && /gestão do cofre/.test(await texto(p, '.cof-form')));
   await p.fill('#cf-instr', 'Entre pelo navegador do laboratório, com a VPN.'); await p.click('#cf-salvar'); await p.waitForTimeout(1300);
   const sv = (await rpcs(p, 'cofre_salvar')).pop();
   confere('e salvar não manda quem usa, quem mantém, prazo nem acesso', sv?.id === C1 && !['grupos','responsaveis','rotacao_dias','item_id','ativo'].some(k => k in sv), sv);

@@ -10,42 +10,33 @@ SOMA · Gestão está sendo trazido, conforme o
 
 ## O que o portal faz
 
-- **Quadro de avisos** — banner rotativo na home, com layouts pré-definidos
-  (`padrão`, `destaque`, `urgente`, `evento`, `conquista`), mantido pela
-  gestão em Administração → Quadro de avisos.
-- **Resumo da agenda e do check-in** — os próximos eventos do mesmo
-  calendário do SOMA (com RSVP dos convites pendentes) e quem está no
-  LABBIO agora, pelas presenças do sistema de check-in.
-- **Agenda** — a agenda da equipe, uma só, em cinco abas. É aqui que mora
-  o que antes era o SOMA App:
-  - **Próximos** — o que vem pela frente para você, com RSVP, edição de
-    convidados, cancelamento e criação em dois toques;
-  - **Mês** — a mesma agenda em grade: eventos, cerimônias, marcos do
-    semestre e ausências, cada um com a cor do seu tipo;
-  - **Agendar** — o assistente de disponibilidade: escolha as pessoas ou o
-    grupo e veja, lado a lado, o livre/ocupado de cada um, com sugestões de
-    horário;
-  - **Presença** — check-in do LABBIO pelo QR da entrada, quem está lá
-    agora, *find me at*, *não perturbe* e os intervalos ("estou no
-    laboratório até as 18h", "saí para almoçar");
-  - **Minha agenda** — o Google Agenda nos dois sentidos: o portal lê o seu
-    `.ics` (para saber quando você está ocupado) e você assina o feed da
-    NeuroDynamics (para receber a agenda da equipe na sua agenda pessoal).
-
-  Todo item da agenda — compromisso, marco do semestre ou ausência — abre o
-  mesmo painel e é **editável por quem o criou**. Nenhum tipo escolhe repetição
-  por você: o padrão é não repetir.
-
-  Um compromisso que precisa de preparo abre o **dossiê**
-  (`#/agenda/evento/<id>`): checklist de preparação, presenças, pauta,
-  deliberações e a **ata em PDF**. No SOMA isso era uma tela separada, com
-  lista própria, sobre a mesma linha de `eventos` — a equipe marcava na agenda
-  e preparava em outro lugar.
-- **Equipe** — o Org Explorer (estilo Microsoft Teams):
-  cadeia de gestão, colegas de equipe e liderados, com busca.
-- **Informações** — biblioteca de documentos e políticas (estatuto,
-  políticas, guias, formulários) publicados como links do Google Drive
-  pelo Depto. de Pessoal; o controle fino de acesso continua no Drive.
+- **Início** — o quadro de avisos (quando há aviso publicado), o que espera
+  a sua ação, os treinamentos obrigatórios, **a sua semana** (sete dias, com
+  a carga de eventos de cada dia no expediente, as tarefas, as publicações e
+  os treinamentos que vencem, e os convites sem resposta, respondidos ali
+  mesmo), o **placar do LABBIO** (ranking do mês, sequências em dias úteis e
+  quem está lá agora), **as suas tarefas** e, na coluna da direita, os
+  **links úteis** (Administração › Links úteis) e os **abertos por último**.
+- **Agenda** — refeita no modelo do Google Agenda (revisão 28), em
+  `mod-agenda.js`: dia, semana e mês numa tela só, criar clicando ou
+  arrastando na grade, arrastar para reagendar, e a **página de cada
+  evento** (`#/agenda/evento/<id>`) com convidados (pessoas, grupos e
+  e-mails de fora), disponibilidade, notificações por e-mail, repetição,
+  Meet, local, cor e visibilidade. Os convidados respondem pelo portal ou
+  **pelo próprio e-mail** (`rsvp.html`). Nas configurações, os **eventos
+  predefinidos** (reunião geral, de gerência, com stakeholder…), com
+  duração, local, convidados e notificações, ficam no banco, fora do
+  código. As camadas da coluna esquerda juntam à agenda as suas tarefas
+  com prazo, as suas publicações do Studio e os treinamentos que vencem.
+  Atalhos de teclado do Google Agenda: T, D, S, M, J/K, C.
+  Ver [Agenda](#agenda).
+- **Equipe** — o Org Explorer (estilo Microsoft Teams): cadeia de gestão,
+  colegas de equipe e liderados, com busca; o quadro de pessoal; o
+  apontamento semanal; e **Presença** (`#/equipe/presenca`, `mod-presenca.js`):
+  quem está no LABBIO agora, o placar, o status do dia (*não perturbe*,
+  *onde estou*), os intervalos e, para a gestão, as **folhas de check-in**:
+  o QR Code fixo impresso em A4, que vale como o do quiosque até ser
+  revogado.
 - **Serviços** — o que o SOMA faz na hora, sem pedido a ninguém, e as
   solicitações ao Depto. de Pessoal. Na hora:
   - **Declaração de vínculo** — em PDF, no modelo da NRO, com os dados da
@@ -77,7 +68,7 @@ SOMA · Gestão está sendo trazido, conforme o
   atribuição a grupos (obrigatório ou opcional), a conclusão no perfil e o
   certificado em PDF. O texto vem, quase sempre, de um agente de IA que segue
   o README de conteúdo. Ver [Treinamentos](#treinamentos).
-- **Projetos** — cada projeto com código, logo gerada, supervisor, equipe
+- **Projetos** — cada projeto com código, um **Pokémon**, supervisor, equipe
   (um grupo dentro de `NRO_PROJECTS`) e o rol de arquivos que todo projeto
   deve ter.
 - **Arquivos** — o controle de documentos e registros que era a planilha
@@ -89,18 +80,18 @@ SOMA · Gestão está sendo trazido, conforme o
 - **Studio** — a comunicação: um criador de peças para as redes, no tamanho
   exato de cada uma, e o planejamento das publicações — quadro, calendário,
   ideias, aprovação e o lembrete da véspera por e-mail. Ver [Studio](#studio).
-- **Ferramentas da equipe** — trilho na página inicial com tudo o que a
-  NeuroDynamics usa: agenda, atividades, equipe, documentos, tour, site
-  institucional, brand guidelines, processo seletivo e GitHub.
+- **Rodapé** — fora do início, o próximo compromisso, quem está no LABBIO
+  e a sua sequência; e sempre a ajuda (tour, atalhos do teclado, pedidos,
+  ouvidoria) e a conta (preferências de e-mail, Google Agenda, tema, sair).
 
 ## Como o sistema se organiza
 
 A navegação é por **espaços** — o que você está fazendo —, não por qual app
 a tela veio: **Agenda · Atividades · OKRs · Projetos · Arquivos · Studio ·
-Equipe · Treinamentos · Informações · Serviços** (o Studio, para quem está
+Equipe · Treinamentos · Serviços** (o Studio, para quem está
 nos grupos dele), e, para quem tem o papel, **Seleção** e **Administração**. Eles ficam num **menu lateral** à esquerda,
-cada um com ícone e com os seus subitens logo abaixo — as abas da Agenda, os
-quadros dos seus grupos, as categorias de documento, cada serviço, cada
+cada um com ícone e com os seus subitens logo abaixo — o calendário e as
+configurações da Agenda, os quadros dos seus grupos, cada serviço, cada
 painel da Administração. O **início** não é item da lista: a logo no alto do
 menu leva a ele, e a casinha ao lado dela diz que leva. O menu **recolhe**
 para um trilho de ícones (o botão fica no pé dele; passar o mouse num ícone
@@ -117,9 +108,17 @@ escolha de cada pessoa, no botão ao lado do *sair*, na linha da sua conta
 (com o menu recolhido, pelo voo da conta). A escolha fica no navegador e vale
 desde o primeiro quadro da página — sem piscar escuro antes.
 
+Dentro de uma tela, os seletores seguem uma regra só: o **nível 1** (as
+seções do espaço) é o seletor segmentado, o **nível 2** são as abas
+sublinhadas e o **filtro** é o botão segmentado de cor. Explicação que não é
+óbvia fica num ícone de informação, não em parágrafo.
+
 Endereço antigo não quebra: `#/organizacao`, `#/quadro`, `#/calendario`,
-`#/auditoria` e `#/pedidos` (que desde a v24 é `#/servicos/pedidos`) continuam
-levando ao lugar certo.
+`#/auditoria`, `#/pedidos` (que desde a v24 é `#/servicos/pedidos`),
+`#/informacoes` (hoje Arquivos), `#/agenda/presenca` (hoje
+`#/equipe/presenca`), `#/agenda/agendar` (hoje `#/agenda/novo`) e
+`#/agenda/minha` (hoje `#/agenda/config/google`) continuam levando ao lugar
+certo.
 
 ## Atividades
 
@@ -231,10 +230,10 @@ arquivos**:
 - um membro da equipe é o **supervisor**, e ele vira responsável pelo grupo:
   ele mesmo põe e tira gente da equipe e edita o projeto;
 - o projeto tem código (`NEBULA`), nome, descrição, status (ativo, pausado,
-  encerrado) e uma **logo gerada** de uma semente, como os avatares do
-  GitHub, mas com a paleta e o traço da marca: uma grade 5×5 espelhada, com
-  os quadrados ligados como trilhas de circuito. A mesma semente dá sempre a
-  mesma logo; "Outra" sorteia outra antes de criar;
+  encerrado) e um **Pokémon**, escolhido na criação (as artes vêm da
+  PokeAPI): a página do projeto mostra a linha evolutiva, e o projeto pode
+  evoluir o Pokémon quando quiser. Fica em `projetos.logo_semente`, como
+  `pkm:<número>`;
 - o **rol** do projeto (`#/projetos/<código>/arquivos`) é o **padrão de
   projeto** aplicado a ele: as séries que todo projeto tem (termo de
   abertura, USRS, relatórios de teste…). O PMO põe uma série no padrão e
@@ -489,8 +488,10 @@ o que é (aniversário, na mídia…), o **formato** diz o que ela é na rede
 ### Configurações
 
 Em `#/studio/config`: os **grupos de acesso** e os **grupos aprovadores**,
-quantas aprovações bastam e o lembrete; as **contas** da equipe em cada rede
-(entram no rodapé das artes e na tela de encerramento) e a chave do Unsplash;
+quantas aprovações bastam e o lembrete; as **contas** da equipe em cada rede,
+com o usuário (entra no rodapé das artes e na tela de encerramento) e o
+**link** (entra no rodapé dos e-mails do Full mailer; sem link, o e-mail monta
+o endereço pelo usuário quando a rede permite), e a chave do Unsplash;
 a **imprensa do site** — os vídeos e as matérias da seção *Quem somos* do site
 institucional e da página *A NeuroDynamics* do site do processo seletivo, que
 os dois leem na hora por `site_imprensa_publico()`; e os **recursos de
@@ -678,12 +679,46 @@ identificador, e um backup não traz senha nenhuma.
   **registro de contas digitais** (`NRO-DIR-003`) no modelo da NRO — sem
   segredo nenhum.
 
+## E-mails
+
+O Full mailer e os envios programados, em `#/admin/emails` (`mod-mailer.js`).
+É tela inteira, com três seções:
+
+- **Escrever**: o comunicado no padrão visual da NeuroDynamics, com a prévia
+  ao lado (computador ou celular). O **remetente** é a área que assina: P&D,
+  Clínica, Depto. de Pessoal, Relações Institucionais, Marketing ou
+  **Leadership**, a liderança institucional. Cada uma assina com o próprio
+  nome (`Leadership | NeuroDynamics`) e as próprias cores: os departamentos em
+  tons claros e distintos entre si; a Leadership no verde profundo com a logo
+  lima. Os ícones das redes vêm dos links de Studio › Configurações ›
+  Contas. `{{primeiro_nome}}` vira o primeiro nome de cada pessoa no envio
+  programado; ao copiar ou baixar, a marca sai. O botão aceita uma tela do
+  portal (`#/agenda`), que vira o endereço completo no e-mail.
+- **Programados**: a fila e o histórico. Programar leva o e-mail pronto à
+  fila, para a equipe toda, para grupos (com os de baixo) ou só para quem
+  programa, como teste; a janela diz quantos recebem e quem está sem e-mail
+  na ficha. A Edge Function `notificar-email` passa a cada cinco minutos e
+  envia o que venceu. Na fila, dá para ver, reagendar e cancelar.
+- **Pílulas de conhecimento**: e-mails curtos que apresentam e relembram o
+  que o SOMA faz, cada um assinado pela área a que interessa e endereçado aos
+  grupos certos. Dezesseis vêm prontas (do placar do LABBIO à revisão de
+  arquivos). **Programar série** põe as marcadas na fila, uma a cada quatro
+  dias, sem cair em fim de semana e sem repetir o que já está na fila; pílula
+  de grupo que não existe mais fica de fora, com aviso.
+
+Escrever e copiar: gestão e Comitê de Seleção. Programar e mexer nas
+pílulas: `admin` e `pessoal`, a mesma regra das funções do banco.
+
 ## OKRs
 
 O planejamento estratégico da equipe, em `#/okrs` — veio do SOMA · Gestão
 (`mod-okrs.js`). É uma árvore de objetivos, do **estratégico** ao **tático**
-e ao **operacional**, desenhada como o organograma: quem está acima, o
-objetivo em foco, os desdobramentos dele e os que estão no mesmo nível.
+e ao **operacional**, desenhada numa **tela infinita**, como um quadro do
+Miro: os estratégicos em cima e, abaixo de cada objetivo aberto, só os
+**desdobramentos** dele, ligados por fios como num organograma. Abrir um
+objetivo não fecha o outro; o que está aberto fica guardado no navegador.
+Arrastar o fundo move a tela; `Ctrl` e a roda (ou o pinçar) dá zoom; os
+botões no canto dão zoom, enquadram tudo e recolhem.
 
 - cada objetivo tem **código** (`OE1`, `OT1.2`, `OP1.2.1`), responsáveis,
   eixo, prazo com o trimestre, status e **comentários** — mudar status ou
@@ -728,15 +763,18 @@ Duas coisas que a unificação trouxe de graça:
 
 | Arquivo        | O que é |
 |----------------|---------|
-| `index.html`   | A casca e o plano do membro (`#/`, `#/agenda`, `#/equipe`, `#/informacoes`, `#/servicos`, `#/servicos/pedidos`) |
+| `index.html`   | A casca e o plano do membro (`#/`, `#/equipe`, `#/servicos`, `#/servicos/pedidos`), o rodapé e o que as telas dividem |
+| `mod-agenda.js` | A agenda no modelo do Google: dia, semana, mês, a página do evento e as configurações (`#/agenda`, `#/agenda/evento/<id>`, `#/agenda/config`) |
+| `mod-presenca.js` | Equipe › Presença: no LABBIO agora, placar, status do dia, intervalos e folhas de check-in (`#/equipe/presenca`) |
+| `rsvp.html` | A resposta a um convite pelo link do e-mail, sem login |
 | `mod-atividades.js` | O quadro de trabalho de cada grupo (`#/atividades`) |
 | `mod-gestao.js`| Quadro de pessoal, ficha e auditoria (`#/equipe/quadro`, `#/equipe/<registro>`) |
-| `mod-admin.js` | Os doze painéis da gestão (`#/admin`, `#/admin/<painel>`) |
-| `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados, quadro completo e o Full mailer |
-| `mod-evento.js` | O dossiê de um compromisso: preparo, presenças e ata (`#/agenda/evento/<id>`) |
-| `mod-okrs.js`  | O planejamento estratégico: a árvore de objetivos (`#/okrs`, `#/okrs/<codigo>`) |
+| `mod-admin.js` | Os painéis da gestão (`#/admin`, `#/admin/<painel>`), inclusive Links úteis |
+| `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados e quadro completo |
+| `mod-mailer.js` | O Full mailer em tela inteira, os envios programados e as pílulas de conhecimento (`#/admin/emails`, `/programados`, `/pilulas`) |
+| `mod-okrs.js`  | O planejamento estratégico: a árvore de objetivos numa tela infinita (`#/okrs`, `#/okrs/<codigo>`) |
 | `mod-selecao.js` | O processo seletivo, por dentro: as oito abas do Comitê de Seleção (`#/selecao`, `#/selecao/<aba>`) |
-| `mod-projetos.js` | Os projetos: equipe, supervisor, logo e rol (`#/projetos`, `#/projetos/<código>`) |
+| `mod-projetos.js` | Os projetos: equipe, supervisor, Pokémon e rol (`#/projetos`, `#/projetos/<código>`) |
 | `mod-arquivos.js` | O controle de arquivos: a lista de todos os arquivos (filtra por emissor), tela do arquivo, revisões, templates, visão geral e configurações (`#/arquivos`, `#/arquivos/<código>`) |
 | `mod-studio.js` | O planejamento do Studio: quadro, calendário, ideias, a publicação e as configurações (`#/studio`, `#/studio/POST-14`) |
 | `mod-treinamentos.js` | A formação da equipe: para você, o catálogo, o módulo com a verificação, os certificados em PDF, o editor com a importação do texto dos agentes de IA, o acompanhamento e o README de conteúdo (`#/treinamentos`, `#/treinamentos/NRO-TRE-003`) |
@@ -744,7 +782,7 @@ Duas coisas que a unificação trouxe de graça:
 | `studio/` | As marcas que o criador desenha: o imagotipo da NRO, o símbolo e a logo do LABBIO (do repositório do site), servidas daqui para o canvas poder exportar |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
 | `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
-| `mailer/`      | Ícones e logos recoloridas que o Full mailer embute nos e-mails |
+| `mailer/`      | Ícones e logos recoloridas que os e-mails do Full mailer mostram por link ([detalhes](mailer/README.md)) |
 | `tour.html`    | O tour pelos sistemas da equipe |
 | [`PADROES.md`](PADROES.md) | Os padrões do sistema: navegação, rotas, busca, módulos, identidade |
 | `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |
@@ -756,8 +794,11 @@ Duas coisas que a unificação trouxe de graça:
 ## Arquitetura
 
 O `index.html` é a **casca**: tokens da marca, menu lateral, login,
-roteador, modal e toast — mais as telas do plano do membro (início, agenda,
-organização, informações, serviços e pedidos).
+roteador, modal e toast — mais as telas do plano do membro (início,
+organização, serviços e pedidos) e o que mais de uma tela lê: a leitura da
+agenda (`carregarItens`, `carregarAgendaPessoal`), o calendário do mês que a
+Agenda e o Studio dividem (`calMesHTML`, `calMesLigar`) e o placar do LABBIO
+(`placarLABBIO`, `placarHTML`).
 
 O resto desce sob demanda. Quando alguém abre uma rota de outro plano, o
 roteador injeta o `mod-<nome>.js` correspondente, uma vez por sessão, e só
@@ -812,10 +853,13 @@ sozinho o que já rodou:
 select id, aplicada_em from public.migracoes order by id;
 ```
 
-Sem as migrações do portal o app entra, mas o quadro de avisos, as
-solicitações e o assistente de agendamento ficam indisponíveis (as demais
-abas — agenda, check-in, calendário e organização — usam as tabelas que
-o SOMA já tem).
+Sem as migrações do portal o app entra, mas o que depende delas mostra o
+aviso de qual falta. A agenda nova precisa da **28.0** (`v28_agenda.sql`); o
+placar, as folhas de check-in e os links úteis, da **29.0**
+(`v29_presenca_e_inicio.sql`); os e-mails programados e as pílulas de
+conhecimento, da **30.0** (`v30_emails.sql`). Depois da 28.0 e da 30.0,
+**publique de novo** a Edge Function `notificar-email`: é ela que manda os
+convites, as mudanças e os lembretes da agenda, e os e-mails programados.
 
 A 27.0 (o cofre) precisa do **Vault** do Supabase ligado (*Database →
 Extensions → supabase_vault* — em geral já vem); sem ele, a migração para e
@@ -846,41 +890,50 @@ passa a só encaminhar, e continua servindo duas pastas que não podem sumir —
 `mailer/` (as imagens dos e-mails já enviados apontam para lá) e `fotos/` (as
 fotos do quadro, buscadas por `raw.githubusercontent.com`).
 
-## Uma agenda só
+## Agenda
 
-Antes desta versão a equipe tinha duas agendas separadas no banco (os
-`eventos`, com convidados e RSVP, e os `calendario_itens`, com os marcos) e
-uma terceira escrita à mão no HTML do portal (a agenda fixa do semestre).
-Agora existe **uma leitura só** — a função `agenda_itens` —, que junta:
+Uma **leitura só** — a função `agenda_itens` — junta as fontes da agenda da
+equipe:
 
 | Fonte | O que é | Quem vê |
 |---|---|---|
-| `eventos` | reuniões, testes, cerimônias, trabalho no LABBIO | conforme a **visibilidade** do evento |
+| `eventos` | reuniões, testes, trabalho no LABBIO | conforme a **visibilidade** do evento |
 | `calendario_itens` | marcos do semestre, feriados, calendário da UFMG, prazos | todo mundo (os pessoais, só a pessoa e admin/pessoal) |
-| `agenda_ausencias` | férias, afastamento e os intervalos de presença | férias e afastamento são privados; os intervalos são da equipe |
+| `agenda_ausencias` | férias, afastamento, fora do escritório | privados: aparecem como indisponível |
 
-**Visibilidade de cada evento**, escolhida no momento de criar (com o padrão
-vindo do tipo):
+E a Agenda junta, por pessoa, o que tem data sem ser da agenda: as tarefas
+do quadro de Atividades com prazo, as publicações do Studio e os
+treinamentos que vencem (`carregarAgendaPessoal`, na casca — o início lê a
+mesma coisa).
 
-- `equipe` — todo mundo vê. É o padrão da **Reunião geral**;
-- `convidados` — só o dono, os convidados e o Depto. de Pessoal;
-- `privado` — só o dono e o Depto. de Pessoal.
+**Visibilidade de cada evento**: `equipe` (todo mundo vê), `convidados` (o
+dono, os convidados e o Depto. de Pessoal) ou `privado`.
 
-**Tipos de evento** deixaram de ser uma lista no código dos dois apps: moram
-em `evento_tipos`, com cor, visibilidade padrão, checklist e a marcação de
-quais aparecem na criação rápida. Criar um tipo novo virou uma linha no banco.
+**Eventos predefinidos** (`agenda_predefinidos`, 28.0): nome, título,
+duração, horário sugerido, local ou espaço, Meet, descrição, visibilidade,
+cor, convidados (a equipe toda, grupos, pessoas), notificações e repetição.
+São mantidos em *Agenda › Configurações › Eventos predefinidos* por `admin` e
+`pessoal`; escolher um na criação preenche o evento.
 
-**Recorrência é recorrência.** Marcar um compromisso como semanal, quinzenal
-ou mensal cria as ocorrências futuras de verdade, cada uma com os seus
-convidados e o seu RSVP — não um "evento fantasma" que só existe na tela.
-O horizonte é de 120 dias e o portal o estica sozinho sempre que alguém abre
-a agenda. Dá para editar ou cancelar **só um encontro** ou **a série daqui
-para a frente**.
+**Recorrência é recorrência.** Uma série cria as ocorrências futuras de
+verdade, cada uma com os seus convidados e respostas. Editar, reagendar ou
+excluir pergunta: **este evento** ou **este e os seguintes**.
 
-**Cerimônias de scrum** são um caso dessa recorrência: cada grupo define em
-*Agenda → Cerimônias do grupo* os dias, o horário, a duração e o link do
-Meet da daily, da abertura e do fechamento de sprint, do review e da
-retrospectiva. O banco cria a série e convida quem está no grupo.
+**Reagendar sem apagar.** Mudar data ou horário (na página ou arrastando na
+grade) mantém o evento, os convidados e as respostas, e pergunta se avisa os
+convidados por e-mail.
+
+**E-mail.** As mudanças entram numa fila (`agenda_envios`) que a Edge
+Function `notificar-email` esvazia: convite, mudança, cancelamento e os
+**lembretes** configurados em cada evento. Cada convite tem um token próprio;
+o e-mail traz *Sim*, *Talvez* e *Não*, que respondem em `rsvp.html` sem
+login (`agenda_rsvp_token`). O aviso também aparece nas notificações do
+portal, sem duplicar o resumo diário.
+
+O que o sistema antigo fazia além do Google Agenda saiu: checklist por tipo,
+dossiê, presença por evento e cerimônias de scrum. As tabelas ficam no banco
+(comentadas como legado na 28.0); o bloco comentado no fim da migração as
+remove, quando a equipe decidir.
 
 ## Papéis e permissões
 
@@ -888,16 +941,18 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
   agenda, presença, calendário e organograma.
 - **Solicitações** exigem conta **vinculada a um registro de membro
   ativo** (vínculo feito pelo Depto. de Pessoal no SOMA · Gestão).
-- **Marcar compromissos** exige conta vinculada a um registro: o convite é
-  criado como um evento do SOMA, em nome de quem agendou.
-- **Editar convidados e cancelar** é de quem organiza o compromisso (ou de
-  `admin`/`pessoal`).
-- **Cerimônias de scrum de um grupo** são configuradas por quem está no
-  grupo (ou por `admin`/`pessoal`).
+- **Criar eventos** exige conta vinculada a um registro: o evento é criado em
+  nome de quem agendou.
+- **Editar, reagendar e excluir** é de quem organiza o evento (ou de
+  `admin`/`pessoal`); **eventos predefinidos**, de `admin`/`pessoal`.
+- **Folhas de check-in** são geradas e revogadas por `admin`/`pessoal`;
+  **links úteis**, também.
 - **Ausências** são de cada um: só a própria pessoa (ou o Depto. de Pessoal)
   cria e remove as suas.
 - **Administração** (`#/admin`) é liberada só para os papéis `admin` e `pessoal`
-  (o Comitê de Seleção entra só em Relatórios).
+  (o Comitê de Seleção entra só em Relatórios e no Full mailer, sem programar
+  envio).
+- **E-mails programados e pílulas** são de `admin`/`pessoal`.
 - **Seleção** (`#/selecao`) é de `admin`, `pessoal` e `selecao`.
 - **OKRs** (`#/okrs`) todos veem; criar e excluir é de `admin`/`pessoal`, e
   editar é deles e dos responsáveis de cada objetivo.
@@ -955,9 +1010,13 @@ retrospectiva. O banco cria a série e convida quem está no grupo.
    Google Agenda, o horário da última sincronização e o erro de quem
    falhou, e pode forçar uma sincronização geral. O link `.ics` em si
    **não** aparece ali — a RLS só o devolve ao próprio dono.
-6. **Tipos de evento**: a lista vive em `evento_tipos`. Para criar um tipo
-   novo, insira uma linha (nome, categoria, cor, visibilidade padrão, se
-   entra na criação rápida e o checklist). Nenhum deploy é necessário.
+6. **Eventos predefinidos**: em *Agenda › Configurações › Eventos
+   predefinidos*. Nenhum deploy é necessário.
+7. **Folha de check-in**: em *Equipe › Presença › Folhas de check-in*, gere
+   a folha (A4, com o QR fixo), imprima e guarde. Se ela se perder, revogue:
+   o QR deixa de registrar presença na hora.
+8. **Links úteis**: em *Administração › Links úteis*, os links da coluna
+   direita do início (endereços `https://` ou do próprio portal, `#/…`).
 
 ## Como publicar
 

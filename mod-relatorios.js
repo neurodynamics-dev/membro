@@ -1,8 +1,9 @@
 /* ============================================================
    MÓDULO · RELATÓRIOS
    As listas e documentos que a gestão gera: portaria, assinatura
-   em evento, e-mails, autorizados, quadro completo e o Full
-   mailer. Carregado sob demanda em #/admin/relatorios.
+   em evento, e-mails, autorizados e quadro completo. Carregado sob
+   demanda em #/admin/relatorios. O Full mailer mora em mod-mailer
+   (#/admin/emails) desde a 30.0; o tile daqui leva até lá.
 
    É aqui que moram as bibliotecas pesadas. No SOMA, xlsx, jsPDF e
    autotable vinham no <head> — quase 1,3 MB baixados em todo
@@ -17,7 +18,7 @@
    Depende da casca para: sb, $, esc, norm, state, can, podeSelecao,
    toast, abreModal, fechaModal, fmtD, hojeISO, pad3, nomeDe,
    quemSouEu, carregarLib, registrarBusca, filtrarSimples, copiar,
-   abrirEmail, gmailCompose, marcados, gruposEfetivos, gruposDaEquipe.
+   abrirEmail, gmailCompose, marcados, gruposEfetivos, gruposDaEquipe, dica.
    ============================================================ */
 
 const CDN_JSPDF     = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -70,15 +71,17 @@ function pageRelatorios(){
     t('door','Lista para a portaria','Autorização de entrada na Escola de Engenharia, com espaço para assinatura e envio à SLOG.','modalPortaria()');
     t('clip','Lista de assinatura em evento','Presença dos ativos para imprimir, com nome do evento e data.','modalAssinatura()');
   }
-  t('mail','Lista de e-mails','Os e-mails por grupo e status, para enviar comunicado.','modalEmails()');
+  t('mail','Lista de e-mails','E-mails por grupo e status.','modalEmails()');
   if (podeSelecao())
-    t('flag','E-mails dos candidatos','O envio para os candidatos do processo seletivo, por status da fase.','modalEmailsCandidatos()');
-  t('mailer','Full mailer','Um e-mail no padrão NeuroDynamics — tema por área, logo recolorida e HTML pronto.','modalMailer()');
+    t('flag','E-mails dos candidatos','Candidatos do processo seletivo, por status.','modalEmailsCandidatos()');
+  /* o Full mailer ganhou tela própria (v30), com envio programado e as
+     pílulas de conhecimento: o tile leva até lá */
+  t('mailer','Full mailer','E-mail no padrão NeuroDynamics, com a cor da área que assina. Abre em E-mails.',"location.hash='#/admin/emails'");
   /* Estes dois expõem o quadro inteiro — quem tem acesso a quê e a
      exportação geral. Ficam com can(): a Comissão de Seleção precisa
      dos e-mails dos candidatos, não do efetivo. */
   if (can()){
-    t('key','Lista de autorizados','Quem tem acesso ativo a um sistema, local ou documento — em PDF.','modalAutorizados()');
+    t('key','Lista de autorizados','Quem tem acesso ativo a um sistema, local ou documento, em PDF.','modalAutorizados()');
     t('down','Quadro completo','Exportação geral do quadro em Excel ou PDF, com filtros.','modalQuadro()');
   }
 
@@ -102,37 +105,6 @@ const ICONES_REL = {
 const icRel = (n) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
   stroke-linecap="round" stroke-linejoin="round">${ICONES_REL[n]||''}</svg>`;
 
-/* copia HTML como conteúdo formatado (rich text) — ao colar no editor de
-   e-mail o resultado sai renderizado, não como código. */
-async function copiarHTML(html){
-  // usa só o conteúdo do <body> na área de transferência, evitando que
-  // <title>/<head> vazem para o editor ao colar.
-  let corpo = html;
-  try{ const d=new DOMParser().parseFromString(html,'text/html'); if(d.body) corpo=d.body.innerHTML; }catch(e){}
-  try{
-    if(navigator.clipboard && window.ClipboardItem){
-      await navigator.clipboard.write([new ClipboardItem({
-        'text/html': new Blob([corpo], {type:'text/html'}),
-        'text/plain': new Blob([html], {type:'text/plain'}),
-      })]);
-      toast('E-mail copiado — cole no seu editor (Gmail, Outlook, Zimbra…).');
-      return;
-    }
-    throw new Error('ClipboardItem indisponível');
-  }catch(e){
-    try{ // reserva: seleciona um nó renderizado e copia via execCommand (colagem rica)
-      const div=document.createElement('div');
-      div.setAttribute('contenteditable','true');
-      div.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
-      div.innerHTML=corpo; document.body.appendChild(div);
-      const range=document.createRange(); range.selectNodeContents(div);
-      const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-      const ok=document.execCommand('copy'); sel.removeAllRanges(); div.remove();
-      if(ok){ toast('E-mail copiado — cole no seu editor.'); return; }
-      throw new Error('execCommand falhou');
-    }catch(e2){ copiar(html); }
-  }
-}
 function grupoCheckboxes(idPrefix, selecionados){
   const gs = gruposDaEquipe();
   if(!gs.length) return '<div class="muted small">Nenhum grupo cadastrado no quadro.</div>';
@@ -190,7 +162,7 @@ function pdfRodape(doc, texto){
   const total = doc.getNumberOfPages();
   for(let i=1;i<=total;i++){
     doc.setPage(i); doc.setFontSize(7.5); doc.setTextColor(110,110,115);
-    doc.text(texto || `SOMA · uso interno · gerado por ${quemSouEu()} em ${new Date().toLocaleDateString('pt-BR')}`, 12, H-8);
+    doc.text(texto || `SOMA, uso interno, gerado por ${quemSouEu()} em ${new Date().toLocaleDateString('pt-BR')}`, 12, H-8);
     doc.text(`Página ${i} de ${total}`, W-12, H-8, {align:'right'});
   }
 }
@@ -245,9 +217,9 @@ async function gerarRelatorioMembro(){
     const f = gestao.ficha;
     const temPess = can() && !!f.pess;
     const doc = pdfNovo();
-    let y = pdfCabecalho(doc, 'FICHA DO MEMBRO — '+m.nome.toUpperCase(),
-      `Registro ${pad3(m.registro)} · ${m.status} · Emitida em ${new Date().toLocaleDateString('pt-BR')}`
-      + (temPess?' · CONFIDENCIAL — contém dados pessoais protegidos pela LGPD':''));
+    let y = pdfCabecalho(doc, 'FICHA DO MEMBRO: '+m.nome.toUpperCase(),
+      `Registro ${pad3(m.registro)}, ${m.status}, Emitida em ${new Date().toLocaleDateString('pt-BR')}`
+      + (temPess?', CONFIDENCIAL: dados pessoais protegidos pela LGPD':''));
     const fu = fotoDe(m);
     if (fu){ try{
       const bl = await (await fetch(fu)).blob();
@@ -286,19 +258,19 @@ async function gerarRelatorioMembro(){
       [['Ciclo','Data','Assiduidade','Comprometimento','Depto de Pessoal','Responsável']],
       f.avals.map(a=>[a.ciclo, fmtD(a.data), a.assiduidade!=null?a.assiduidade+'/5':'—',
         a.comprometimento!=null?a.comprometimento+'/5':'—',
-        a.encaminhar_pessoal?(a.tratado?'Encaminhada · tratada':'Encaminhada · pendente'):'—', a.responsavel||'—']));
+        a.encaminhar_pessoal?(a.tratado?'Encaminhada, tratada':'Encaminhada, pendente'):'—', a.responsavel||'—']));
     if(f.aponts.length) y = secaoTabela(doc, y, 'APONTAMENTOS SEMANAIS RECENTES',
       [['Data','Grupo','Assiduidade','Entregas','Sinalização']],
       f.aponts.map(a=>[fmtD(a.data), a.apont?.grupo||'—', a.assiduidade||'—', a.entregas||'—',
-        a.sinalizado?(a.tratado?'Sinalizado · tratado':'Sinalizado · pendente'):'—']));
+        a.sinalizado?(a.tratado?'Sinalizado, tratado':'Sinalizado, pendente'):'—']));
     if(temPess){
       const pess = CAMPOS_PESS.map(c=>{ let v = f.pess[c.k];
         if(c.t==='date') v = v? fmtD(v) : '';
         if(c.t==='bool') v = v===true?'Sim':(v===false?'Não':'');
         return [c.l, v||'—']; });
-      y = secaoTabela(doc, y, 'DADOS PESSOAIS (CONFIDENCIAL — LGPD)', null, pess, rot);
+      y = secaoTabela(doc, y, 'DADOS PESSOAIS (CONFIDENCIAL, LGPD)', null, pess, rot);
     }
-    pdfRodape(doc, `SOMA · uso interno${temPess?' · CONFIDENCIAL (LGPD)':''} · gerado por ${quemSouEu()} em ${new Date().toLocaleDateString('pt-BR')}`);
+    pdfRodape(doc, `SOMA, uso interno${temPess?', CONFIDENCIAL (LGPD)':''}, gerado por ${quemSouEu()} em ${new Date().toLocaleDateString('pt-BR')}`);
     doc.save(`NRO-PES_ficha_${pad3(m.registro)}_${hojeISO()}.pdf`);
     toast('Relatório do membro gerado.');
   }catch(e){ falha(e,'Erro ao gerar o relatório'); }
@@ -335,10 +307,10 @@ async function gerarListaPortaria(){
     const mats = await buscarMatriculas(lista.map(m=>m.registro));
     const doc = pdfNovo();
     const sub = `Locais: ${locais.join(' e ')}`
-      + (dataAc?`\nData do acesso: ${fmtD(dataAc)}${horaAc?' · Horário: '+horaAc:''}`:(horaAc?`\nHorário: ${horaAc}`:''))
+      + (dataAc?`\nData do acesso: ${fmtD(dataAc)}${horaAc?', Horário: '+horaAc:''}`:(horaAc?`\nHorário: ${horaAc}`:''))
       + (grupos.length?`\nGrupos: ${grupos.join(', ')}`:'')
-      + `\nEmitida em ${new Date().toLocaleDateString('pt-BR')} · ${lista.length} pessoa(s)`;
-    const y = pdfCabecalho(doc, 'LISTA PARA ACESSO — ESCOLA DE ENGENHARIA', sub);
+      + `\nEmitida em ${new Date().toLocaleDateString('pt-BR')}, ${lista.length} pessoa(s)`;
+    const y = pdfCabecalho(doc, 'LISTA PARA ACESSO: ESCOLA DE ENGENHARIA', sub);
     doc.autoTable({ startY:y, theme:'grid',
       head:[['Nome','Matrícula','Assinatura']],
       body:lista.map(m=>[m.nome, mats.get(m.registro)||'—','']),
@@ -362,21 +334,19 @@ ${dataAc?'Data: '+fmtD(dataAc)+'\n':''}${horaAc?'Horário: '+horaAc+'\n':''}Tota
 Em caso de dúvidas, contatar ${respNome} em ${respTel}.
 
 Atenciosamente,
-Departamento de Pessoal — NeuroDynamics`;
-    const assunto = `Autorização de acesso — NeuroDynamics${dataAc?' — '+fmtD(dataAc):''}`;
+Departamento de Pessoal, NeuroDynamics`;
+    const assunto = `Autorização de acesso, NeuroDynamics${dataAc?', '+fmtD(dataAc):''}`;
     const mailtoHref = `mailto:slog@eng.ufmg.br?cc=marcondes@neurodynamics.dev&subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
     const gmailHref = gmailCompose({to:'slog@eng.ufmg.br', cc:'marcondes@neurodynamics.dev', su:assunto, body:corpo});
     abreModal(`<h3>Lista gerada</h3>
-      <p style="line-height:1.6">O PDF foi baixado. Para prosseguir, abra o e-mail para a Seção de Logística —
-      o texto já vai pronto, com cópia para marcondes@neurodynamics.dev. <b>Anexe o PDF que acabou de ser baixado</b> antes de enviar
-      (por segurança, o navegador não anexa arquivos sozinho).</p>
+      <p style="line-height:1.6">PDF baixado. O e-mail para a Seção de Logística abre com o texto e cópia para
+      marcondes@neurodynamics.dev. <b>Anexe o PDF antes de enviar.</b></p>
       <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button>
       <a class="btn ghost" href="${esc(mailtoHref)}"
         onclick="abrirEmail(this.href);setTimeout(fechaModal,400);return false">${ic('mail')} App de e-mail</a>
       <a class="btn solid" href="${esc(gmailHref)}" target="_blank" rel="noopener"
         onclick="setTimeout(fechaModal,400)">${ic('mail')} Abrir no Gmail</a></div>
-      <p class="small muted" style="margin-top:10px">“App de e-mail” usa o programa padrão do computador;
-      se nada acontecer ao clicar, é porque não há um configurado — use o Gmail.</p>`, true);
+      <p class="small muted" style="margin-top:10px">“App de e-mail” usa o programa padrão do computador. Sem programa configurado, use o Gmail.</p>`, true);
   }catch(e){ falha(e,'Erro ao gerar a lista'); }
 }
 /* --- 2. lista para assinatura em evento --- */
@@ -398,8 +368,8 @@ async function gerarListaAssinatura(){
     if(!lista.length){ toast('Nenhum membro ativo com esses filtros.', true); return; }
     const mats = await buscarMatriculas(lista.map(m=>m.registro));
     const doc = pdfNovo();
-    const y = pdfCabecalho(doc, 'LISTA DE PRESENÇA — '+nomeEv.toUpperCase(),
-      `Data do evento: ${fmtD(dataEv)}${grupos.length?' · Grupos: '+grupos.join(', '):''} · ${lista.length} convidado(s)`);
+    const y = pdfCabecalho(doc, 'LISTA DE PRESENÇA: '+nomeEv.toUpperCase(),
+      `Data do evento: ${fmtD(dataEv)}${grupos.length?', Grupos: '+grupos.join(', '):''}, ${lista.length} convidado(s)`);
     doc.autoTable({ startY:y, theme:'grid',
       head:[['Nome','Matrícula','Assinatura']],
       body:lista.map(m=>[m.nome, mats.get(m.registro)||'—','']),
@@ -430,7 +400,7 @@ function gerarEmails(){
   const mailtoHref = `mailto:${eu}?bcc=${encodeURIComponent(emails.join(','))}`;
   const gmailHref = gmailCompose({to:eu, bcc:emails.join(',')});
   $('#eml-result').innerHTML = emails.length ? `
-    <div class="fld" style="margin-top:4px"><label>${emails.length} e-mail(s) · separados por vírgula</label>
+    <div class="fld" style="margin-top:4px"><label>${emails.length} e-mail(s), separados por vírgula</label>
       <textarea id="eml-texto" readonly style="min-height:110px;font-size:12.5px">${esc(emails.join(', '))}</textarea></div>
     ${semEmail.length?`<p class="small muted">⚠ ${semEmail.length} membro(s) sem e-mail cadastrado: ${esc(semEmail.map(m=>m.nome).join('; '))}</p>`:''}
     <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
@@ -438,226 +408,8 @@ function gerarEmails(){
       <a class="btn ghost" id="eml-mailto" href="${esc(mailtoHref)}" onclick="return abrirEmail(this.href)">${ic('mail')} App de e-mail (Cco)</a>
       <a class="btn ghost" href="${esc(gmailHref)}" target="_blank" rel="noopener">${ic('mail')} Abrir no Gmail (Cco)</a>
     </div>
-    ${eu?`<p class="small muted" style="margin-top:6px">O e-mail abre endereçado a você (${esc(eu)}) com todos em Cco, preservando a privacidade dos endereços.
-    Se o “App de e-mail” não abrir nada, não há um configurado no computador — use o Gmail.</p>`:''}`
+    ${eu?`<p class="small muted" style="margin-top:6px">Destinatário: ${esc(eu)}; os demais em Cco. Sem programa de e-mail configurado, use o Gmail.</p>`:''}`
     : '<div class="empty">Nenhum e-mail encontrado com esses filtros.</div>';
-}
-/* --- 3b. full mailer (gerador de e-mails estilizados) --- */
-/* Áreas da equipe: cada uma sugere um título e uma combinação de cores. */
-const AREAS_MAILER = [
-  {t:'Pesquisa & Desenvolvimento',                tema:'teal'},
-  {t:'Clínica',                                   tema:'clinica'},
-  {t:'Departamento de Pessoal',                   tema:'pessoal'},
-  {t:'Relações Institucionais e Parcerias',       tema:'institucional'},
-  {t:'Marketing e Comunicação',                   tema:'marketing'},
-];
-/* Combinações de cores — base na paleta NeuroDynamics (teal #00594F, deep
-   #00352F, sinapse/lima #CEDC00) com auxiliares harmônicas. Campos:
-   band=fundo do cabeçalho · onBand=título sobre o fundo · logo=cor da logo
-   recolorida · bandRule=régua sobre o fundo · bodyAccent=cor legível para
-   chamada/links/réguas no corpo (fundo branco) · btnBg/btnInk=botão. */
-const THEMES_MAILER = {
-  teal:          {nome:'Menta & Teal · P&D',            band:'#E4EFEC', onBand:'#00352F', logo:'#00594F', bandRule:'#00594F', bodyAccent:'#00594F', btnBg:'#00594F', btnInk:'#FFFFFF'},
-  clinica:       {nome:'Clínica · Cyan sereno',         band:'#E2F0F2', onBand:'#0B5A64', logo:'#0F7C8A', bandRule:'#0F7C8A', bodyAccent:'#0F7C8A', btnBg:'#0F7C8A', btnInk:'#FFFFFF'},
-  pessoal:       {nome:'Pessoal · Bronze acolhedor',    band:'#F4EEDC', onBand:'#5E4A12', logo:'#8A6D1F', bandRule:'#8A6D1F', bodyAccent:'#7A5E15', btnBg:'#8A6D1F', btnInk:'#FFFFFF'},
-  institucional: {nome:'Institucional · Deep + Lima',   band:'#00352F', onBand:'#F5F5F7', logo:'#CEDC00', bandRule:'#CEDC00', bodyAccent:'#00594F', btnBg:'#00352F', btnInk:'#FFFFFF', dark:true},
-  marketing:     {nome:'Marketing · Lima viva',         band:'#F1F5D6', onBand:'#3E5200', logo:'#5C7A00', bandRule:'#5C7A00', bodyAccent:'#5C7A00', btnBg:'#5C7A00', btnInk:'#FFFFFF'},
-  sinapse:       {nome:'Sinapse · Lima & Verde',        band:'#EDF2C8', onBand:'#00352F', logo:'#00594F', bandRule:'#00594F', bodyAccent:'#00594F', btnBg:'#00594F', btnInk:'#FFFFFF'},
-  deep:          {nome:'Deep Total · Verde escuro',     band:'#00594F', onBand:'#FFFFFF', logo:'#FFFFFF', bandRule:'#CEDC00', bodyAccent:'#00594F', btnBg:'#00594F', btnInk:'#FFFFFF', dark:true},
-  grafite:       {nome:'Grafite · Neutro',              band:'#F0F0F2', onBand:'#1D1D1F', logo:'#1D1D1F', bandRule:'#1D1D1F', bodyAccent:'#1D1D1F', btnBg:'#1D1D1F', btnInk:'#FFFFFF'},
-};
-const SOCIAIS_MAILER = [
-  {k:'site',      l:'Site (https://…)'},
-  {k:'instagram', l:'Instagram (URL)'},
-  {k:'linkedin',  l:'LinkedIn (URL)'},
-  {k:'youtube',   l:'YouTube (URL)'},
-  {k:'x',         l:'X / Twitter (URL)'},
-  {k:'facebook',  l:'Facebook (URL)'},
-];
-/* Imagens do mailer POR LINK, nunca embutidas: clientes de e-mail tratam
-   imagens em data-URI como anexo do documento — ou as descartam (Gmail).
-   As variantes da logo (uma por cor de tema) e os ícones sociais (uma por
-   cor de acento) são PNGs na pasta /mailer deste repositório, servidos
-   pelo GitHub Pages no domínio do SOMA. Ao criar um TEMA NOVO em
-   THEMES_MAILER, gere os PNGs da nova cor (ver mailer/README.md). */
-/* As imagens do e-mail moram aqui a partir da unificação. A mesma pasta
-   continua no repositório antigo, servida por pessoal.neurodynamics.dev:
-   e-mail já enviado aponta para lá e não dá para reescrever a caixa de
-   entrada de ninguém. */
-const MAILER_IMG_BASE = 'https://membro.neurodynamics.dev/mailer/';
-const _hexArq = (hex)=> String(hex).replace('#','').toLowerCase();
-const mailerLogoURL = (hex)=> `${MAILER_IMG_BASE}logo-${_hexArq(hex)}.png`;
-function _socialImg(k, cor){
-  const alt = {site:'Site', instagram:'Instagram', linkedin:'LinkedIn', youtube:'YouTube', x:'X', facebook:'Facebook'}[k]||k;
-  return `<img src="${MAILER_IMG_BASE}ico-${k}-${_hexArq(cor)}.png" width="21" height="21" alt="${alt}"
-    style="display:block;border:0;outline:none;width:21px;height:21px">`;
-}
-const _escBr = (s)=> esc(s).replace(/\n/g,'<br>');
-function _mailerParas(txt){
-  return String(txt||'').split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean)
-    .map(p=>`<p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2A2A2E">${_escBr(p)}</p>`).join('');
-}
-function _mailerSocial(social, cor){
-  const items = SOCIAIS_MAILER.filter(s=>social[s.k]).map(s=>
-    `<a href="${esc(social[s.k])}" target="_blank" style="text-decoration:none;display:inline-block;margin:0 8px;vertical-align:middle">${_socialImg(s.k,cor)}</a>`).join('');
-  if(!items) return '';
-  return `<tr><td style="padding:24px 12px 4px">
-    <div style="border-top:2px solid ${cor};font-size:0;line-height:0">&nbsp;</div>
-    <div style="padding:15px 0">${items}</div>
-    <div style="border-top:2px solid ${cor};font-size:0;line-height:0">&nbsp;</div>
-  </td></tr>`;
-}
-function construirMailerHTML(cfg){
-  const th = cfg.tema, logo = cfg.logoUrl || mailerLogoURL(th.logo);
-  const paras = _mailerParas(cfg.corpo);
-  const cta = (cfg.ctaLabel && cfg.ctaUrl)
-    ? `<div style="height:10px;line-height:10px">&nbsp;</div>
-       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-         <td style="border-radius:10px;background:${th.btnBg}">
-           <a href="${esc(cfg.ctaUrl)}" target="_blank" style="display:inline-block;padding:12px 26px;font-size:14px;font-weight:600;color:${th.btnInk};text-decoration:none;border-radius:10px">${esc(cfg.ctaLabel)}</a>
-         </td></tr></table><div style="height:6px;line-height:6px">&nbsp;</div>`
-    : '';
-  const social = _mailerSocial(cfg.social||{}, th.bodyAccent);
-  const links = String(cfg.footLinks||'').split('|').map(s=>s.trim()).filter(Boolean)
-    .map(t=>`<a href="#" style="color:${th.bodyAccent};text-decoration:none">${esc(t)}</a>`)
-    .join('<span style="color:#B5B5BA"> | </span>');
-  const fine = String(cfg.fine||'').split(/\n/).map(s=>s.trim()).filter(Boolean)
-    .map(p=>`<p style="margin:0 0 8px;font-size:11px;line-height:1.6;color:#9A9AA0">${esc(p)}</p>`).join('');
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="x-apple-disable-message-reformatting">
-<title>${esc(cfg.titulo||'NeuroDynamics')}</title></head>
-<body style="margin:0;padding:0;background:#EFEFF1;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(cfg.preheader||'')}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#EFEFF1">
-<tr><td align="center" style="padding:26px 14px">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-  <tr><td style="background:${th.band};border-radius:16px;padding:30px 34px 26px">
-    <img src="${logo}" width="188" alt="NeuroDynamics" style="display:block;width:188px;max-width:62%;height:auto;border:0;outline:none;text-decoration:none">
-    <div style="height:22px;line-height:22px">&nbsp;</div>
-    <div style="border-top:1.5px solid ${th.bandRule};font-size:0;line-height:0">&nbsp;</div>
-    <div style="height:16px;line-height:16px">&nbsp;</div>
-    <div style="font-size:20px;font-weight:300;letter-spacing:.2px;line-height:1.35;color:${th.onBand}">${esc(cfg.titulo||'')}</div>
-  </td></tr>
-  <tr><td style="padding:32px 12px 6px">
-    ${cfg.chamada?`<h1 style="margin:0 0 18px;font-size:23px;font-weight:400;line-height:1.28;color:${th.bodyAccent}">${esc(cfg.chamada)}</h1>`:''}
-    ${paras}
-    ${cta}
-  </td></tr>
-  ${social}
-  ${cfg.footText?`<tr><td style="padding:10px 12px 4px"><p style="margin:0;font-size:12.5px;line-height:1.6;color:#7A7A80">${_escBr(cfg.footText)}</p></td></tr>`:''}
-  <tr><td style="padding:16px 12px 0"><div style="border-top:1px solid #D9D9DE;font-size:0;line-height:0">&nbsp;</div></td></tr>
-  ${links?`<tr><td style="padding:12px 12px 4px;font-size:12.5px;color:${th.bodyAccent}">${links}</td></tr>`:''}
-  ${fine?`<tr><td style="padding:8px 12px 26px">${fine}</td></tr>`:''}
-</table>
-</td></tr></table></body></html>`;
-}
-/* estado + UI */
-let _mailerHTML='', _mailerTimer=null;
-function mlLerCfg(){
-  const social={};
-  document.querySelectorAll('.ml-soc').forEach(i=>{ const u=i.value.trim(); if(u) social[i.dataset.k]=u; });
-  const temaKey = $('#ml-tema').value;
-  return {
-    titulo:$('#ml-titulo').value, temaKey, tema:THEMES_MAILER[temaKey]||THEMES_MAILER.teal,
-    preheader:$('#ml-pre').value, chamada:$('#ml-chamada').value, corpo:$('#ml-corpo').value,
-    ctaLabel:$('#ml-cta').value.trim(), ctaUrl:$('#ml-ctaurl').value.trim(),
-    footText:$('#ml-foot').value, footLinks:$('#ml-links').value, fine:$('#ml-fine').value, social,
-  };
-}
-function mlUpd(now){
-  clearTimeout(_mailerTimer);
-  const run = ()=>{
-    if(!$('#ml-prev')) return;
-    const cfg = mlLerCfg();
-    cfg.logoUrl = mailerLogoURL(cfg.tema.logo);
-    _mailerHTML = construirMailerHTML(cfg);
-    const f = $('#ml-prev'); if(f) f.srcdoc = _mailerHTML;
-  };
-  if(now) run(); else _mailerTimer = setTimeout(run, 150);
-}
-function mlArea(){
-  const v = $('#ml-area').value;
-  if(v==='custom'){ $('#ml-titulo').value=''; $('#ml-titulo').focus(); }
-  else { const a = AREAS_MAILER[+v]; if(a){ $('#ml-titulo').value=a.t; $('#ml-tema').value=a.tema; } }
-  mlUpd(true);
-}
-function mlCopiar(){ if(_mailerHTML) copiarHTML(_mailerHTML); }
-function mlCopiarCodigo(){ if(_mailerHTML) copiar(_mailerHTML); }
-function mlBaixar(){
-  if(!_mailerHTML) return;
-  const blob = new Blob([_mailerHTML], {type:'text/html;charset=utf-8'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `NRO_full_mailer_${hojeISO()}.html`; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href), 4000); toast('HTML baixado.');
-}
-function mlAbrir(){
-  if(!_mailerHTML) return;
-  const blob = new Blob([_mailerHTML], {type:'text/html;charset=utf-8'});
-  const url = URL.createObjectURL(blob); window.open(url,'_blank');
-  setTimeout(()=>URL.revokeObjectURL(url), 8000);
-}
-function modalMailer(){
-  const temaOpts = Object.entries(THEMES_MAILER).map(([k,v])=>`<option value="${k}">${esc(v.nome)}</option>`).join('');
-  abreModal(`<h3>Full mailer — e-mail estilizado</h3>
-    <p class="mailer-sub">Monte um comunicado no padrão visual da NeuroDynamics. Escolha a área (sugere título e combinação de cores) ou crie um título próprio; a logo acompanha a cor do tema. As imagens (logo e ícones) entram por link do site do SOMA — nada é anexado ao e-mail. Ajuste os textos e copie/baixe o HTML pronto.</p>
-    <div class="mailer-wrap">
-      <div class="mailer-form">
-        <div class="fld"><label>Área / seção</label>
-          <select id="ml-area" onchange="mlArea()">
-            ${AREAS_MAILER.map((a,i)=>`<option value="${i}">${esc(a.t)}</option>`).join('')}
-            <option value="custom">Outra (título personalizado)…</option>
-          </select></div>
-        <div class="fld"><label>Título do cabeçalho</label>
-          <input id="ml-titulo" value="${esc(AREAS_MAILER[0].t)}" oninput="mlUpd()"></div>
-        <div class="fld"><label>Tema / combinação de cores</label>
-          <select id="ml-tema" onchange="mlUpd()">${temaOpts}</select></div>
-        <div class="fld"><label>Pré-cabeçalho <span class="muted">(resumo na caixa de entrada)</span></label>
-          <input id="ml-pre" value="Confira as novidades desta edição." oninput="mlUpd()"></div>
-        <div class="fld"><label>Chamada (título do corpo)</label>
-          <input id="ml-chamada" value="Um novo marco para a NeuroDynamics" oninput="mlUpd()"></div>
-        <div class="fld"><label>Corpo do e-mail</label>
-          <textarea id="ml-corpo" oninput="mlUpd()" style="min-height:130px">Olá, tudo bem?
-
-Compartilhamos aqui as principais novidades e próximos passos da nossa equipe. Nas últimas semanas avançamos em frentes importantes e queremos manter todos alinhados sobre o que vem por aí.
-
-Qualquer dúvida, é só responder a este e-mail — estamos à disposição.</textarea>
-          <span class="mailer-sub tight">Separe parágrafos com uma linha em branco.</span></div>
-        <div class="fld"><label>Botão — rótulo <span class="muted">(opcional)</span></label>
-          <input id="ml-cta" oninput="mlUpd()" placeholder="ex.: Saiba mais"></div>
-        <div class="fld"><label>Botão — link</label>
-          <input id="ml-ctaurl" oninput="mlUpd()" placeholder="https://…"></div>
-        <div class="fld"><label>Texto do rodapé <span class="muted">(opcional)</span></label>
-          <textarea id="ml-foot" oninput="mlUpd()" style="min-height:60px">NeuroDynamics · Escola de Engenharia da UFMG · Belo Horizonte/MG</textarea></div>
-        <div class="fld"><label>Links do rodapé <span class="muted">(separados por | )</span></label>
-          <input id="ml-links" value="Inscrever-se | Cancelar inscrição | Contato | Política de Privacidade | Enviar feedback" oninput="mlUpd()"></div>
-        <div class="fld"><label>Letra miúda <span class="muted">(uma linha por parágrafo)</span></label>
-          <textarea id="ml-fine" oninput="mlUpd()" style="min-height:56px">Você recebeu este e-mail porque faz parte da rede da NeuroDynamics.
-© ${new Date().getFullYear()} NeuroDynamics. Todos os direitos reservados.</textarea></div>
-        <div class="fld"><label>Redes sociais / site <span class="muted">(em branco = oculta o ícone)</span></label>
-          ${SOCIAIS_MAILER.map(s=>`<input class="ml-soc" data-k="${s.k}" oninput="mlUpd()" placeholder="${s.l}" value="${s.k==='site'?'https://neurodynamics.dev':''}">`).join('')}
-        </div>
-      </div>
-      <div class="mailer-prev">
-        <iframe id="ml-prev" title="Prévia do e-mail"></iframe>
-      </div>
-    </div>
-    <div class="acts" style="justify-content:flex-end">
-      <button class="btn ghost" onclick="fechaModal()">Fechar</button>
-      <button class="btn ghost" onclick="mlAbrir()">${ic('eye')} Abrir em nova aba</button>
-      <button class="btn ghost" onclick="mlBaixar()">${ic('down')} Baixar .html</button>
-      <button class="btn ghost" onclick="mlCopiarCodigo()">${ic('copy')} Copiar código</button>
-      <button class="btn solid" onclick="mlCopiar()">${ic('mail')} Copiar e-mail</button>
-    </div>`, 'imenso', true);
-  /* 'imenso' porque são duas colunas — formulário e pré-visualização — e em
-     520px elas viravam uma fita. Persistente porque aqui se escreve um
-     comunicado inteiro: um clique torto fora não pode apagar tudo.
-
-     Antes havia aqui um `document.querySelector('.modal')` vindo do SOMA
-     antigo, onde o modal era uma CLASSE. No portal ele é um id, então a
-     linha nunca achou nada e nunca alargou coisa nenhuma. */
-  $('#ml-tema').value = AREAS_MAILER[0].tema;
-  _mailerHTML=''; mlUpd(true);
 }
 /* --- 3c. lista de e-mails dos candidatos (processo seletivo) ---
    Só aparece para quem acessa o módulo Seleção. Busca os candidatos da
@@ -677,7 +429,7 @@ const PS_CONJ_EMAIL = [
   ['Todos', null]
 ];
 async function modalEmailsCandidatos(){
-  abreModal('<h3>Lista de e-mails · candidatos</h3><div class="empty">Carregando o processo seletivo…</div>');
+  abreModal('<h3>Lista de e-mails dos candidatos</h3><div class="empty">Carregando o processo seletivo…</div>');
   try{
     if(!REL_PS.edicoes){
       const {data, error} = await sb.from('ps_edicoes').select('id,nome,slug').order('criado_em',{ascending:false});
@@ -686,12 +438,12 @@ async function modalEmailsCandidatos(){
     }
   }catch(e){ fechaModal(); falha(e,'Não foi possível carregar as edições'); return; }
   if(!REL_PS.edicoes.length){
-    abreModal(`<h3>Lista de e-mails · candidatos</h3>
-      <div class="empty">Nenhuma edição do processo seletivo cadastrada ainda.</div>
+    abreModal(`<h3>Lista de e-mails dos candidatos</h3>
+      <div class="empty">Nenhuma edição do processo seletivo cadastrada.</div>
       <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`);
     return;
   }
-  abreModal(`<h3>Lista de e-mails · candidatos</h3>
+  abreModal(`<h3>Lista de e-mails dos candidatos</h3>
     <div class="form-grid">
       <div class="fld full"><label>Edição</label>
         <select id="emlc-ed" onchange="relEmlCandsLimpa()">
@@ -703,11 +455,11 @@ async function modalEmailsCandidatos(){
         <div class="multi">${Object.keys(PS_ST).map(s=>`<label class="check">
           <input type="checkbox" class="s-emlc" value="${s}" onchange="relEmlCandsLimpa()"> ${esc(PS_ST[s][0])}</label>`).join('')}</div></div>
       <div class="fld full"><label>Assunto do e-mail <span class="muted">(opcional, vai preenchido na tela de envio)</span></label>
-        <input id="emlc-assunto" placeholder="ex.: Processo Seletivo 2026 — resultado da 1ª fase"></div>
+        <input id="emlc-assunto" placeholder="ex.: Processo Seletivo 2026, resultado da 1ª fase"></div>
       <div class="fld full"><label>Destinatários</label>
         <select id="emlc-modo">
-          <option value="bcc">Cco — endereçado a mim, candidatos em cópia oculta (recomendado)</option>
-          <option value="to">Para — todos os candidatos visíveis entre si</option>
+          <option value="bcc">Cco: para mim, candidatos em cópia oculta (recomendado)</option>
+          <option value="to">Para: candidatos visíveis entre si</option>
         </select></div>
     </div>
     <div id="emlc-result"></div>
@@ -738,17 +490,15 @@ async function gerarEmailsCandidatos(){
   $('#emlc-result').innerHTML = emails.length ? `
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:-2px 0 10px">
       ${Object.keys(porStatus).map(s=>`<span class="chip">${esc((PS_ST[s]||[s])[0])}: ${porStatus[s]}</span>`).join('')}</div>
-    <div class="fld"><label>${emails.length} e-mail(s) · separados por vírgula <span class="muted">(dá para editar antes de enviar)</span></label>
+    <div class="fld"><label>${emails.length} e-mail(s), separados por vírgula <span class="muted">(editável)</span></label>
       <textarea id="emlc-texto" style="min-height:110px;font-size:12.5px">${esc(emails.join(', '))}</textarea></div>
     <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
       <button class="btn ghost" onclick="copiar(document.getElementById('emlc-texto').value)">${ic('copy')} Copiar</button>
       <button class="btn ghost" onclick="relEmlCandsEnviar('mailto')">${ic('mail')} App de e-mail</button>
       <button class="btn ghost" onclick="relEmlCandsEnviar('gmail')">${ic('mail')} Abrir no Gmail</button>
     </div>
-    ${emails.length>60?`<p class="small muted" style="margin-top:6px">São muitos endereços: alguns apps de e-mail truncam listas longas.
-      Se faltar alguém no rascunho, copie a lista e cole no campo Cco, ou divida o envio em blocos.</p>`:''}
-    ${eu?`<p class="small muted" style="margin-top:6px">Em Cco, o e-mail abre endereçado a você (${esc(eu)}) com os candidatos em cópia oculta,
-      preservando a privacidade dos endereços. Se o “App de e-mail” não abrir nada, não há um configurado no computador — use o Gmail.</p>`:''}`
+    ${emails.length>60?`<p class="small muted" style="margin-top:6px">Listas longas podem ser truncadas pelo programa de e-mail. Se necessário, copie a lista para o Cco ou divida o envio.</p>`:''}
+    ${eu?`<p class="small muted" style="margin-top:6px">Em Cco, o destinatário é ${esc(eu)}. Sem programa de e-mail configurado, use o Gmail.</p>`:''}`
     : `<div class="empty">Nenhum candidato ${todos.length?'com esses status':'inscrito nesta edição'}.</div>`;
 }
 function relEmlCandsEnviar(via){
@@ -788,9 +538,9 @@ async function gerarAutorizados(){
     const lista = filtraPorSelecao(sts, grupos).filter(m=>desde.has(m.registro));
     if(!lista.length){ toast('Ninguém com acesso ativo a esse item nesses filtros.', true); return; }
     const doc = pdfNovo();
-    const y = pdfCabecalho(doc, 'AUTORIZADOS — '+item.nome.toUpperCase(),
-      `${CAT_LABEL[item.categoria]} · ${lista.length} pessoa(s) com acesso ativo`
-      + (grupos.length?` · Grupos: ${grupos.join(', ')}`:'') + (sts.length?` · Status: ${sts.join(', ')}`:''));
+    const y = pdfCabecalho(doc, 'AUTORIZADOS: '+item.nome.toUpperCase(),
+      `${CAT_LABEL[item.categoria]}, ${lista.length} pessoa(s) com acesso ativo`
+      + (grupos.length?`, Grupos: ${grupos.join(', ')}`:'') + (sts.length?`, Status: ${sts.join(', ')}`:''));
     doc.autoTable({ startY:y, theme:'striped',
       head:[['Reg.','Nome','Departamento','Status','Concedido em']],
       body:lista.map(m=>[pad3(m.registro), m.nome, m.departamento||'—', m.status, desde.get(m.registro)?fmtD(desde.get(m.registro)):'—']),
@@ -843,8 +593,8 @@ function exportarPDFQuadro(){
     const lista = filtraPorSelecao(sts, grupos);
     const doc = pdfNovo('landscape');
     const y = pdfCabecalho(doc, 'QUADRO DE PESSOAL',
-      `${lista.length} registro(s)` + (sts.length?` · Status: ${sts.join(', ')}`:' · Todos os status')
-      + (grupos.length?` · Grupos: ${grupos.join(', ')}`:''));
+      `${lista.length} registro(s)` + (sts.length?`, Status: ${sts.join(', ')}`:', Todos os status')
+      + (grupos.length?`, Grupos: ${grupos.join(', ')}`:''));
     doc.autoTable({ startY:y,
       head:[['Reg.','Nome','Status','Departamento','Cargo','Gestor','Grupos','E-mail','Ingresso']],
       body:lista.map(m=>[pad3(m.registro), m.nome, m.status, m.departamento||'', m.cargo||'',
@@ -870,7 +620,7 @@ registrarBusca({
     /* a busca não pode achar o que a galeria esconde */
     const itens = [
       { titulo:'Lista de e-mails', sub:'Por grupo e status', href:'#/admin/relatorios' },
-      { titulo:'Full mailer', sub:'E-mail no padrão da marca', href:'#/admin/relatorios' }
+      { titulo:'Full mailer', sub:'E-mail no padrão da marca', href:'#/admin/emails' }
     ];
     if (podeSelecao())
       itens.push({ titulo:'E-mails dos candidatos', sub:'Por status da fase', href:'#/admin/relatorios' });

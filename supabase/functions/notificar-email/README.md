@@ -373,6 +373,41 @@ enviada. A resposta da função traz `documentos` (quantas saíram),
 Não há nada novo para configurar: o provedor, o remetente e o agendamento são
 os mesmos. Depois de aplicar a 25.0, **publique a função de novo**.
 
+### A agenda (28.0)
+
+A agenda tem fila própria, `agenda_envios`, lida por `agenda_envios_lote()` e
+baixada por `agenda_envios_baixa()`, com a mesma service role. Entram nela:
+
+- o **convite**, com *Sim*, *Talvez* e *Não*: cada botão é um link para
+  `rsvp.html?t=<token>&r=<resposta>`, que responde sem login (o token é do
+  convite, um por pessoa, e só serve para responder);
+- a **mudança** de data, horário ou local, quando quem salvou escolheu avisar;
+- o **cancelamento**;
+- os **lembretes** de cada evento (os minutos antes definidos no evento ou
+  no predefinido), gerados pelo próprio `agenda_envios_lote()` na janela certa.
+
+Os convidados de fora recebem o convite e respondem pelo mesmo link. O aviso
+também entra nas notificações do portal, marcado como já enviado, para o
+resumo diário não repetir. A resposta da função traz `agenda` e
+`agenda_falhas`; sem a 28.0, `agenda: "sem_migracao_28"`. Depois de aplicar a
+28.0, **publique a função de novo**.
+
+### Os e-mails programados (30.0)
+
+O Full mailer (`#/admin/emails`) grava na fila `email_programados` o HTML
+pronto, o assunto, a área que assina e o destino (a equipe toda, grupos ou
+pessoas). A cada passada, a função pega até dez que venceram por
+`email_programados_lote()` (que já traz quem recebe, com e-mail, e marca
+*enviando* para duas passadas não mandarem o mesmo e-mail), troca
+`{{primeiro_nome}}` e `{{nome}}` para cada pessoa (escapados no HTML) e envia
+com o nome da área no remetente: `Leadership | NeuroDynamics <o DE de
+sempre>`. O endereço continua o mesmo; muda só o nome de exibição. No fim,
+`email_programados_baixa()` fecha como *enviado* (ou *erro*, se nenhum saiu)
+com as contagens. As pílulas de conhecimento entram pelo mesmo caminho. A
+resposta traz `programados` e `programados_falhas`; sem a 30.0,
+`programados: "sem_migracao_30"`. Depois de aplicar a 30.0, **publique a
+função de novo**.
+
 ---
 
 ## Na renomeação para `soma.neurodynamics.dev`
@@ -405,4 +440,6 @@ Entre elas estão os casos que mais custam caro:
   olha só o código HTTP dá o envio por certo e não manda nada;
 - o **e-mail da declaração de participação**: o período por extenso (virando
   o mês e o ano), as horas, o link com o código para a validação pública, o
-  nome do evento escapado, e o link do portal só para quem é membro.
+  nome do evento escapado, e o link do portal só para quem é membro;
+- os **e-mails da agenda**: o convite com os três links de resposta, a
+  mudança, o cancelamento e o lembrete, com o título escapado.
