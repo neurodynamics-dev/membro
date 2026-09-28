@@ -233,6 +233,12 @@ Ligar o envio é [uma configuração do
 projeto](supabase/functions/notificar-email/README.md); enquanto ela não
 existir, os avisos continuam no sino, intactos.
 
+O portal pode ir ao ar antes da 32.0: ele pergunta ao banco uma vez por
+sessão (`sondarV32`) e, sem a migração, não mostra o ×, o *limpar as lidas*,
+a regra dos 30 dias nem o convite do aparelho; as preferências dizem qual
+migração falta. O convite do aparelho espera também a chave VAPID, que a
+função gera na primeira passada depois de publicada.
+
 ### O SOMA na tela de início
 
 O portal tem manifesto (`manifest.webmanifest`), ícones (`icone-180.png` para

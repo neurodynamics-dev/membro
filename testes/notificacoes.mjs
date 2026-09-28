@@ -86,12 +86,32 @@ console.log('\nO sino');
   confere('sem erro na página', erros.length === 0, erros);
   await ctx.close();
 }
+/* o portal publicado antes da migração: não oferece o que ainda não funciona */
 {
-  const { ctx, p } = await abrir({ teste: { v32: 'falta' } });
+  const { ctx, p, erros } = await abrir({ teste: { v32: 'falta' } });
   await p.click('#sino');
-  await p.locator('#sn-lista .sn-x').first().click();
-  await p.waitForTimeout(300);
-  confere('sem a 32.0, o × diz qual migração falta', (await toasts(p)).some(t => /v32_fila_e_notificacoes/.test(t)), await toasts(p));
+  await p.waitForSelector('#sino-painel:not([hidden])');
+  await p.waitForTimeout(400);
+  confere('sem a 32.0, o sino não mostra o ×', await p.locator('#sn-lista .sn-linha').count() === 2 && await p.locator('#sn-lista .sn-x').count() === 0);
+  confere('nem "limpar as lidas", nem a regra dos 30 dias', await p.isHidden('#sn-limpar') && await p.isHidden('#sino-painel .sn-regra'));
+  confere('nem o convite do aparelho', (await p.textContent('#sn-aparelho')).trim() === '');
+  await p.evaluate(() => modalPreferenciaNotif());
+  await p.waitForFunction(() => /ainda não estão disponíveis/.test(document.querySelector('#pn-push')?.textContent || ''), null, { timeout:5000 });
+  confere('as preferências dizem qual migração falta, sem o botão de ativar',
+    (await p.textContent('#pn-push')).includes('v32_fila_e_notificacoes') && await p.locator('#pn-ativar').count() === 0);
+  await p.evaluate(() => empurrarFila());
+  confere('e o portal não pergunta pela fila', (await rpcs(p, 'fila_empurrar')).length === 0);
+  confere('sem erro na página', erros.length === 0, erros);
+  await ctx.close();
+}
+/* a 32.0 aplicada, mas a função ainda não gerou a chave do aparelho */
+{
+  const { ctx, p } = await abrir({ teste: { semChave: true } });
+  await p.click('#sino');
+  await p.waitForSelector('#sino-painel:not([hidden])');
+  await p.waitForTimeout(400);
+  confere('com a 32.0, o × e o "limpar" aparecem', await p.locator('#sn-lista .sn-x').count() === 2 && await p.isVisible('#sn-limpar'));
+  confere('e o convite do aparelho espera a chave do servidor', (await p.textContent('#sn-aparelho')).trim() === '');
   await ctx.close();
 }
 

@@ -4136,7 +4136,7 @@ async function abrirPortal(){
   desenharMenu();
   mostrarCasca(true); $('#v-login').hidden = true;
   carregarNotificacoes();
-  sincronizarPush();
+  sondarV32().then(() => sincronizarPush());
   /* a fila de envio: se o agendamento do banco não estiver chegando, o
      portal aberto empurra (32.0) */
   setTimeout(empurrarFila, 6000);
@@ -4954,19 +4954,24 @@ function abrirSino(e){
   desenharSino();
   p.hidden = false;
   desenharConviteAparelho();
+  /* o × e o "limpar" esperam a resposta da 32.0 */
+  if (state.v32 === undefined) sondarV32().then(() => { if (!p.hidden) desenharSino(); });
 }
 function desenharSino(){
   const ns = state.notifs || [];
+  const v32 = state.v32 === true;
   $('#sn-lista').innerHTML = ns.length ? ns.map(n => `<div class="sn-linha">
     <button class="sn-item ${n.lida?'':'nova'}" onclick="irNotificacao(${n.id}, '${esc(n.href||'')}')">
       <span class="tt">${esc(n.titulo)}</span>
       ${n.corpo ? `<span class="cp">${esc(n.corpo)}</span>` : ''}
       <span class="qd">${fmtQuando(n.criado_em)}</span></button>
-    <button class="sn-x" onclick="apagarNotificacao(${n.id}, event)" aria-label="Apagar este aviso" title="Apagar">×</button></div>`).join('')
+    ${v32 ? `<button class="sn-x" onclick="apagarNotificacao(${n.id}, event)" aria-label="Apagar este aviso" title="Apagar">×</button>` : ''}</div>`).join('')
     : '<div class="sn-vazio">Nada por aqui. Você é avisado quando uma atividade sua anda, vence ou é sinalizada, quando um arquivo espera a sua revisão, quando um treinamento obrigatório chega para você, quando um evento espera a sua aprovação (ou a sua declaração de participação fica pronta) e quando uma senha do cofre que você mantém precisa ser trocada.</div>';
   const lidas = ns.filter(n => n.lida).length;
-  const bl = $('#sn-limpar'); if (bl) bl.hidden = !lidas;
+  const bl = $('#sn-limpar'); if (bl) bl.hidden = !lidas || !v32;
   const bm = $('#sn-lidas'); if (bm) bm.hidden = !ns.some(n => !n.lida);
+  /* a regra dos 30 dias é o expurgo da 32.0 */
+  const rg = $('#sino-painel .sn-regra'); if (rg) rg.hidden = !v32;
 }
 /* Apagar é da própria pessoa, e só dos seus (notificacoes_limpar, 32.0).
    O sino guarda os 30 mais novos; apagando, os de trás aparecem. */
@@ -5201,6 +5206,19 @@ const aparelhoPush = {
   suportado: 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
   sub: null, chave: null
 };
+/* O × e o "limpar" do sino, o expurgo e o aviso no aparelho dependem da
+   32.0 no banco. O portal pergunta uma vez por sessão (a chave pública
+   VAPID vem na mesma resposta): publicado antes da migração, ele não
+   oferece à equipe o que ainda não funciona. Um erro de rede não conta
+   como "falta": a próxima chamada pergunta de novo. */
+function sondarV32(){
+  return state.v32Sondagem ||= sb.rpc('push_chave_publica').then(({ data, error }) => {
+    if (!error){ state.v32 = true; if (data) aparelhoPush.chave = data; return true; }
+    if (/push_chave_publica|PGRST202|does not exist|\b404\b/i.test(`${error.code || ''} ${error.message || ''}`)) return (state.v32 = false);
+    state.v32Sondagem = null;
+    return undefined;
+  }, () => { state.v32Sondagem = null; return undefined; });
+}
 const emApp = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch(e){ return false; } };
 const ehIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function deb64u(t){
@@ -5257,6 +5275,7 @@ async function salvarInscricao(sub){
 }
 async function estadoPush(){
   if (!state.perfil?.registro) return 'sem_registro';
+  if (await sondarV32() === false) return 'sem_servidor';
   if (!aparelhoPush.suportado) return ehIOS() && !emApp() ? 'ios_instalar' : 'sem_suporte';
   if (Notification.permission === 'denied') return 'bloqueado';
   return (await inscricaoAtual()) ? 'ativo' : 'inativo';
@@ -5266,6 +5285,7 @@ async function desenharPush(){
   const st = await estadoPush();
   const txt = {
     sem_registro: 'Conta sem vínculo com um registro de membro: os avisos chegam depois do vínculo.',
+    sem_servidor: 'As notificações no aparelho ainda não estão disponíveis. Falta aplicar a migração 32.0 (<code>db/v32_fila_e_notificacoes.sql</code>).',
     sem_suporte: 'Este navegador não recebe notificações. No computador, use o Chrome, o Edge, o Firefox ou o Safari; no celular, o SOMA instalado na tela inicial.',
     ios_instalar: `No iPhone e no iPad, as notificações chegam pelo <b>SOMA instalado na tela de início</b>. No Safari: Compartilhar,
       Adicionar à Tela de Início. Abra o SOMA pelo ícone novo e ative aqui. <a href="tour#celular" style="text-decoration:underline">Passo a passo</a>`,
@@ -5278,7 +5298,7 @@ async function desenharPush(){
     ${st === 'ativo' ? `<div class="acts"><button class="btn ghost mini" onclick="testarPush(this)">Enviar uma notificação de teste</button>
       <button class="btn ghost mini" onclick="desativarPush(this)">Desativar</button></div>` : ''}
     <div id="pn-aps"></div>`;
-  if (st === 'sem_registro') return;
+  if (st === 'sem_registro' || st === 'sem_servidor') return;
   const { data } = await sb.rpc('push_meus').then(r => r, () => ({}));
   const meu = aparelhoPush.sub?.endpoint ? aparelhoPush.sub.endpoint.slice(-12) : null;
   const outros = (Array.isArray(data) ? data : []).filter(a => a.endpoint_fim !== meu);
@@ -5348,7 +5368,10 @@ async function desenharConviteAparelho(){
   const el = $('#sn-aparelho'); if (!el) return;
   let dispensou = false; try { dispensou = localStorage.getItem('nd.push.convite') === 'nao'; } catch(e){}
   const st = dispensou ? null : await estadoPush();
-  if (st !== 'inativo' && st !== 'ios_instalar'){ el.innerHTML = ''; return; }
+  /* o convite espera o servidor pronto: a 32.0 e a chave VAPID, que a
+     função gera na primeira passada depois de publicada */
+  const pronto = state.v32 === true && !!aparelhoPush.chave;
+  if (!pronto || (st !== 'inativo' && st !== 'ios_instalar')){ el.innerHTML = ''; return; }
   el.innerHTML = `<div class="sn-aparelho"><span>Receba estes avisos no ${ehIOS() || /Android/.test(navigator.userAgent) ? 'celular' : 'computador'}, mesmo com o SOMA fechado.</span>
     <button class="btn solid mini" onclick="modalPreferenciaNotif()">${st === 'inativo' ? 'Ativar' : 'Como'}</button>
     <button class="sn-x" style="opacity:1;width:24px" aria-label="Agora não" title="Agora não"
@@ -5383,7 +5406,7 @@ async function sincronizarPush(){
    própria sessão, que é o que o teste de e-mail fazia.
    ============================================================ */
 async function empurrarFila(){
-  if (!state.perfil?.registro || document.hidden) return;
+  if (!state.perfil?.registro || document.hidden || state.v32 === false) return;
   const r = await sb.rpc('fila_empurrar').then(x => x, () => ({}));
   if (r?.error || r?.data !== true) return;
   sb.functions.invoke('notificar-email', { body: { origem: 'portal' } }).catch(() => {});

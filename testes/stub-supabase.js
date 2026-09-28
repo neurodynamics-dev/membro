@@ -812,6 +812,11 @@
           }
           if (nome === 'push_chave_publica'){
             (window.__rpcs ||= []).push({ nome, p:args });
+            const f = window.__teste || {};
+            /* v32 'falta': o portal publicado antes da migração; semChave: a
+               migração aplicada, mas a função ainda não gerou o par VAPID */
+            if (f.v32 === 'falta') return { data:null, error:{ code:'PGRST202', message:'Could not find the function public.push_chave_publica without parameters in the schema cache' } };
+            if (f.semChave) return { data:null, error:null };
             /* uma chave P-256 de verdade, para o navegador aceitar a inscrição */
             return { data: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4', error:null };
           }
