@@ -23,9 +23,13 @@
    alteração, cancelamento e lembrete de cada evento, com os botões
    que respondem pelo e-mail. Ver enviarAgenda().
 
-   Chame com a service role (é ela que tem execute nas RPCs).
-   Mantenha a verificação de JWT LIGADA: diferente do agenda-ics,
-   aqui não há token na URL e ninguém de fora precisa chamar.
+   Desde a 32.0, a função confere sozinha quem a chama (quemChama): a
+   senha do agendamento do banco, a service role ou um JWT que o próprio
+   PostgREST aceite. Por isso a verificação de JWT do painel fica
+   DESLIGADA — é ela que barrava o agendamento, que não tem JWT, e
+   deixava a fila parada até alguém apertar o teste do portal. A mesma
+   passada empurra os avisos do sino para os aparelhos inscritos (Web
+   Push) e é uma só por vez (fila_passada_inicio).
    ============================================================ */
 
 const env = (nome: string): string =>
@@ -979,6 +983,267 @@ async function rpc(nome: string, corpo: unknown): Promise<unknown> {
   return await r.json();
 }
 
+/* ============================================================
+   QUEM ACORDA A FILA (32.0)
+   Até a 31.0 esta função confiava na verificação de JWT do painel: quem
+   passasse por ela entrava. Só que o agendamento do banco não tem JWT
+   nenhum à mão — e a fila só andava quando alguém apertava o teste do
+   portal, que chama com a sessão da pessoa. Agora a função confere
+   sozinha, e a verificação do painel pode (e deve) ficar desligada:
+
+     x-soma-fila        a senha que a 32.0 guardou no Vault: é o
+                        agendamento do banco (fila_chamar);
+     Bearer <service>   a service role, por extenso (o SQL do README);
+     Bearer <JWT>       qualquer JWT que o próprio PostgREST aceite, e o
+                        papel dele: a sessão de quem está no portal (o
+                        teste e o empurrão), ou uma chave de serviço.
+   ============================================================ */
+const ORIGENS_DO_BANCO = ["agendamento", "evento", "manual"];
+
+/** De onde veio o chamado, pelo papel que o banco reconheceu no token. */
+export function origemDoPapel(papel: string, pedida: string): { origem: string } | { erro: string } {
+  if (papel === "service_role") return { origem: ORIGENS_DO_BANCO.includes(pedida) ? pedida : "servico" };
+  if (papel === "authenticated") return { origem: pedida === "teste" ? "teste" : "portal" };
+  /* a chave anônima antiga, num agendamento feito pelo painel antes da
+     32.0: entra, como entrava — a passada só manda o que já venceu */
+  if (papel === "anon") return { origem: "anon" };
+  return { erro: "papel_desconhecido" };
+}
+export const origemDoBanco = (pedida: string): string =>
+  ORIGENS_DO_BANCO.includes(pedida) ? pedida : "agendamento";
+
+const semMigracao32 = (e: unknown): boolean => /PGRST202|\b404\b|Could not find the function/i.test(String(e));
+
+async function quemChama(req: Request, pedida: string): Promise<{ origem: string } | { erro: string }> {
+  const senha = (req.headers.get("x-soma-fila") || "").trim();
+  if (senha) {
+    try {
+      return (await rpc("fila_token_confere", { p_token: senha })) === true
+        ? { origem: origemDoBanco(pedida) } : { erro: "senha_errada" };
+    } catch (e) {
+      return { erro: semMigracao32(e) ? "sem_migracao_32" : "senha_nao_conferida" };
+    }
+  }
+  const bearer = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  if (!bearer) return { erro: "sem_credencial" };
+  if (bearer === CHAVE_SERVICO) return { origem: ORIGENS_DO_BANCO.includes(pedida) ? pedida : "servico" };
+  const r = await fetch(`${URL_BASE}/rest/v1/rpc/fila_quem_sou`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: CHAVE_SERVICO, Authorization: `Bearer ${bearer}` },
+    body: "{}",
+  });
+  const texto = await r.text();
+  /* sem a 32.0 a função de conferir não existe: vale o que o painel
+     conferiu, como era antes */
+  if (r.status === 404 && semMigracao32(texto)) return { origem: pedida === "teste" ? "teste" : "servico" };
+  if (!r.ok) return { erro: "credencial_recusada" };
+  let q: { papel?: string } = {};
+  try { q = JSON.parse(texto); } catch { /* resposta estranha: recusa abaixo */ }
+  return origemDoPapel(String(q?.papel || ""), pedida);
+}
+
+/* ============================================================
+   UMA PASSADA DE CADA VEZ (32.0)
+   As funções que leem as filas não reservam linhas: duas passadas ao
+   mesmo tempo mandariam o mesmo e-mail duas vezes. A vez mora no banco
+   (fila_passada_inicio). O teste do portal espera a vez um pouco; o
+   resto, quando encontra outra passada rodando, desiste — ela já está
+   fazendo o trabalho.
+   ============================================================ */
+async function pegarVez(origem: string): Promise<{ id: number | null; ocupada?: unknown }> {
+  const tentativas = origem === "teste" ? 12 : 1;
+  for (let i = 0; i < tentativas; i++) {
+    let r: { status?: string; id?: number };
+    try {
+      r = (await rpc("fila_passada_inicio", { p_origem: origem })) as { status?: string; id?: number };
+    } catch (e) {
+      if (semMigracao32(e)) return { id: null };   // sem a 32.0: como antes, sem vez
+      throw e;
+    }
+    if (r?.status === "ok") return { id: Number(r.id) };
+    if (i + 1 >= tentativas) return { id: null, ocupada: r };
+    await new Promise((ok) => setTimeout(ok, 1500));
+  }
+  return { id: null };
+}
+async function devolverVez(id: number | null, resultado: unknown): Promise<void> {
+  if (!id) return;
+  try { await rpc("fila_passada_fim", { p_id: id, p_resultado: resultado }); }
+  catch (e) { console.error("fila_passada_fim", e); }
+}
+
+/* ============================================================
+   AS NOTIFICAÇÕES NO APARELHO — Web Push (32.0)
+   O aviso do sino também vai para os navegadores que a pessoa inscreveu
+   (sino › Preferências). Sem biblioteca: a cifra da mensagem (RFC 8291,
+   aes128gcm) e a assinatura do servidor (RFC 8292, VAPID com ES256) são
+   feitas com o WebCrypto, que o Deno e o Node já têm. O par de chaves
+   VAPID nasce aqui, na primeira passada, e mora no Vault.
+   ============================================================ */
+const utf8 = new TextEncoder();
+/** base64url sem preenchimento, o formato de tudo no Web Push. */
+export function b64u(bytes: Uint8Array): string {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+export function deb64u(texto: string): Uint8Array {
+  let s = String(texto || "").replace(/-/g, "+").replace(/_/g, "/");
+  while (s.length % 4) s += "=";
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function juntar(...partes: Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(partes.reduce((n, p) => n + p.length, 0));
+  let i = 0;
+  for (const p of partes) { out.set(p, i); i += p.length; }
+  return out;
+}
+async function hkdf(sal: Uint8Array, ikm: Uint8Array, info: Uint8Array, bytes: number): Promise<Uint8Array> {
+  const k = await crypto.subtle.importKey("raw", ikm, "HKDF", false, ["deriveBits"]);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt: sal, info }, k, bytes * 8));
+}
+
+/** Cifra a mensagem para um navegador (RFC 8291, aes128gcm): devolve o corpo do POST. */
+export async function cifrarPush(texto: string, p256dh: string, auth: string,
+                                 opc: { sal?: Uint8Array; par?: CryptoKeyPair } = {}): Promise<Uint8Array> {
+  const uaPub = deb64u(p256dh);      // a chave pública do navegador, 65 bytes
+  const segredo = deb64u(auth);      // o segredo de autenticação, 16 bytes
+  const par = opc.par ?? (await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"])) as CryptoKeyPair;
+  const asPub = new Uint8Array(await crypto.subtle.exportKey("raw", par.publicKey));
+  const uaChave = await crypto.subtle.importKey("raw", uaPub, { name: "ECDH", namedCurve: "P-256" }, false, []);
+  const ecdh = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: uaChave }, par.privateKey, 256));
+  const ikm = await hkdf(segredo, ecdh, juntar(utf8.encode("WebPush: info\0"), uaPub, asPub), 32);
+  const sal = opc.sal ?? crypto.getRandomValues(new Uint8Array(16));
+  const cek = await hkdf(sal, ikm, utf8.encode("Content-Encoding: aes128gcm\0"), 16);
+  const nonce = await hkdf(sal, ikm, utf8.encode("Content-Encoding: nonce\0"), 12);
+  const chave = await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["encrypt"]);
+  /* um registro só: o texto e o delimitador 0x02, que diz "é o último" */
+  const cifrado = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, chave,
+    juntar(utf8.encode(texto), new Uint8Array([2]))));
+  const cab = new Uint8Array(16 + 4 + 1 + asPub.length);
+  cab.set(sal, 0);
+  new DataView(cab.buffer).setUint32(16, 4096);
+  cab[20] = asPub.length;
+  cab.set(asPub, 21);
+  return juntar(cab, cifrado);
+}
+
+/** O JWT do servidor (RFC 8292): quem manda, para qual serviço, até quando. */
+export async function jwtVapid(aud: string, sub: string, privada: JsonWebKey,
+                               agora = Math.floor(Date.now() / 1000)): Promise<string> {
+  const cab = b64u(utf8.encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
+  const corpo = b64u(utf8.encode(JSON.stringify({ aud, exp: agora + 12 * 3600, sub })));
+  const { d, x, y, crv, kty } = privada;
+  const k = await crypto.subtle.importKey("jwk", { d, x, y, crv, kty }, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  const ass = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, k, utf8.encode(`${cab}.${corpo}`)));
+  return `${cab}.${corpo}.${b64u(ass)}`;
+}
+
+/** Um par VAPID novo: a pública em base64url (o que o navegador pede) e a privada em JWK. */
+export async function gerarChavesVapid(): Promise<{ publica: string; privada: string }> {
+  const par = (await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"])) as CryptoKeyPair;
+  return {
+    publica: b64u(new Uint8Array(await crypto.subtle.exportKey("raw", par.publicKey))),
+    privada: JSON.stringify(await crypto.subtle.exportKey("jwk", par.privateKey)),
+  };
+}
+
+export interface InscricaoPush { id: string; endpoint: string; p256dh: string; auth: string; criado_em: string; }
+export interface LotePush { registro: number; itens: ItemNotificacao[]; inscricoes: InscricaoPush[] | null; }
+
+const cortar = (s: unknown, n: number): string => {
+  const t = String(s ?? "").replace(/\s+/g, " ").trim();
+  return t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
+};
+/** O que o aparelho mostra: um aviso, ou o resumo de vários (mais de três de uma vez). */
+export function mensagemPush(itens: ItemNotificacao[]): { t: string; c: string; h: string; tag: string } {
+  const href = (h: string | null) => (/^#\/[\w\-\/.%]*$/.test(String(h || "")) ? String(h) : "#/");
+  if (itens.length <= 1) {
+    const i = itens[0];
+    return { t: cortar(i?.titulo || "SOMA", 120), c: cortar(i?.corpo || "", 240), h: href(i?.href ?? null), tag: "n" + (i?.id ?? 0) };
+  }
+  return {
+    t: `${itens.length} avisos novos no SOMA`,
+    c: itens.slice(-4).reverse().map((i) => cortar(i.titulo, 70)).join("\n"),
+    h: "#/",
+    tag: "resumo",
+  };
+}
+/** Os avisos de uma pessoa que vão para um aparelho: só os que nasceram depois da inscrição. */
+export function paraOAparelho(itens: ItemNotificacao[], insc: InscricaoPush): ItemNotificacao[] {
+  const desde = Date.parse(insc.criado_em || "") - 5000;
+  return itens.filter((i) => !(desde > 0) || Date.parse(i.criado_em) >= desde);
+}
+
+async function chavesVapid(): Promise<{ publica: string; privada: JsonWebKey } | null> {
+  let c = (await rpc("push_chaves", {})) as { publica?: string | null; privada?: string | null } | null;
+  if (!c?.publica || !c?.privada) {
+    const novo = await gerarChavesVapid();
+    c = (await rpc("push_chaves_gravar", { p_publica: novo.publica, p_privada: novo.privada })) as typeof c;
+  }
+  if (!c?.publica || !c?.privada) return null;
+  return { publica: c.publica, privada: JSON.parse(c.privada) as JsonWebKey };
+}
+
+async function enviarPush(): Promise<Record<string, unknown>> {
+  let vapid: { publica: string; privada: JsonWebKey } | null;
+  let lote: LotePush[];
+  try {
+    vapid = await chavesVapid();
+    lote = (await rpc("push_lote", { p_limite: 300 })) as LotePush[];
+  } catch (e) {
+    return semMigracao32(e) ? { push: "sem_migracao_32" } : { push: "erro", push_detalhe: String(e) };
+  }
+  if (!vapid || !lote?.length) return { push: 0 };
+  const sub = "mailto:" + (RESPONDER || DE || "soma@neurodynamics.dev");
+  const jwts = new Map<string, string>();
+  const itens: number[] = [], ok: string[] = [], mortas: string[] = [], falhas: string[] = [];
+  let enviadas = 0, ultimoErro = "";
+  const tarefas: Array<() => Promise<void>> = [];
+  for (const p of lote) {
+    p.itens.forEach((i) => itens.push(i.id));
+    for (const insc of p.inscricoes || []) {
+      const meus = paraOAparelho(p.itens, insc);
+      if (!meus.length) continue;
+      tarefas.push(async () => {
+        try {
+          const aud = new URL(insc.endpoint).origin;
+          if (!jwts.has(aud)) jwts.set(aud, await jwtVapid(aud, sub, vapid!.privada));
+          const corpo = await cifrarPush(JSON.stringify(mensagemPush(meus)), insc.p256dh, insc.auth);
+          const r = await fetch(insc.endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream",
+              TTL: "86400", Urgency: "normal",
+              Authorization: `vapid t=${jwts.get(aud)}, k=${vapid!.publica}`,
+            },
+            body: corpo,
+          });
+          /* 404 e 410: o navegador revogou ou apagou a inscrição */
+          if (r.status === 404 || r.status === 410) { mortas.push(insc.id); await r.body?.cancel(); return; }
+          if (!r.ok) { falhas.push(insc.id); ultimoErro = `${r.status} ${(await r.text()).slice(0, 200)}`; return; }
+          await r.body?.cancel();
+          ok.push(insc.id); enviadas++;
+        } catch (e) {
+          falhas.push(insc.id); ultimoErro = String(e);
+        }
+      });
+    }
+  }
+  /* de dez em dez: um serviço lento não segura o resto da passada */
+  for (let i = 0; i < tarefas.length; i += 10) await Promise.all(tarefas.slice(i, i + 10).map((t) => t()));
+  try {
+    await rpc("push_baixa", { p: { itens, ok, mortas, falhas } });
+  } catch (e) {
+    ultimoErro = "enviou, mas não deu baixa: " + String(e);
+  }
+  return { push: enviadas, push_falhas: falhas.length, push_mortas: mortas.length,
+           ...(ultimoErro ? { push_detalhe: ultimoErro } : {}) };
+}
+
 export async function servir(req: Request): Promise<Response> {
   /* a sondagem do navegador responde e para por aqui: ela não é o
      pedido de verdade, e executá-la mandaria e-mail à toa */
@@ -997,35 +1262,60 @@ export async function servir(req: Request): Promise<Response> {
     }), { status: 500, headers: cabecalho });
   }
 
+  let pedido: { origem?: string } = {};
+  try { pedido = req.method === "POST" ? JSON.parse((await req.text()) || "{}") : {}; } catch { pedido = {}; }
+  const quem = await quemChama(req, String(pedido?.origem || ""));
+  if ("erro" in quem) {
+    return new Response(JSON.stringify({ status: "nao_autorizado", detalhe: quem.erro }),
+      { status: 401, headers: cabecalho });
+  }
+
+  const vez = await pegarVez(quem.origem);
+  if (vez.ocupada) {
+    /* outra passada está rodando e vai levar o que estiver na fila */
+    return new Response(JSON.stringify({ status: "ocupada", origem: quem.origem, ...(vez.ocupada as object) }),
+      { headers: cabecalho });
+  }
+  let resposta: Record<string, unknown> = { status: "erro" };
+  let http = 200;
+  try {
+    [resposta, http] = await passada();
+    return new Response(JSON.stringify(resposta), { status: http, headers: cabecalho });
+  } catch (e) {
+    resposta = { status: "erro", detalhe: String(e) };
+    throw e;
+  } finally {
+    await devolverVez(vez.id, { ...resposta, origem: quem.origem });
+  }
+}
+
+/** Uma passada inteira: o aparelho, as filas próprias e os avisos do sino. */
+async function passada(): Promise<[Record<string, unknown>, number]> {
+  /* o aparelho primeiro: é rápido, é o que tem pressa, e não depende do
+     provedor de e-mail estar configurado */
+  const push = await enviarPush();
+
   /* Sem provedor configurado a função não é um erro: ela não tem o que
      fazer. Dizer isso em voz alta, com o nome do segredo que falta, é
      melhor do que queimar a tentativa de um aviso que nunca teve como
      sair. O status continua sendo "smtp_nao_configurado" porque é o que
      o portal já sabe ler e explicar. */
   const falta = faltaParaEnviar();
-  if (falta) {
-    return new Response(JSON.stringify({
-      status: "smtp_nao_configurado", detalhe: falta,
-    }), { status: 200, headers: cabecalho });
-  }
+  if (falta) return [{ status: "smtp_nao_configurado", detalhe: falta, ...push }, 200];
 
   /* as declarações e a agenda primeiro: saem mesmo que o sino não
      tenha aviso nenhum para ninguém, e o lembrete tem hora */
-  const docs = { ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()),
+  const docs = { ...push, ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()),
                  ...(await enviarPS()) };
 
   let destinos: Destinatario[];
   try {
     destinos = (await rpc("notificacoes_email_lote", { p_limite: LOTE })) as Destinatario[];
   } catch (e) {
-    return new Response(JSON.stringify({ status: "erro_no_lote", detalhe: String(e), ...docs }),
-      { status: 500, headers: cabecalho });
+    return [{ status: "erro_no_lote", detalhe: String(e), ...docs }, 500];
   }
 
-  if (!destinos?.length) {
-    return new Response(JSON.stringify({ status: "ok", pessoas: 0, enviadas: 0, ...docs }),
-      { headers: cabecalho });
-  }
+  if (!destinos?.length) return [{ status: "ok", pessoas: 0, enviadas: 0, ...docs }, 200];
 
   const enviadas: number[] = [];
   const falhas: number[] = [];
@@ -1049,12 +1339,12 @@ export async function servir(req: Request): Promise<Response> {
   try {
     await rpc("notificacoes_email_baixa", { p: { enviadas, falhas, erro: ultimoErro } });
   } catch (e) {
-    return new Response(JSON.stringify({
+    return [{
       status: "enviou_mas_nao_deu_baixa", enviadas: enviadas.length, detalhe: String(e), ...docs,
-    }), { status: 500, headers: cabecalho });
+    }, 500];
   }
 
-  return new Response(JSON.stringify({
+  return [{
     status: "ok", pessoas: destinos.length,
     enviadas: enviadas.length, falhas: falhas.length,
     /* o motivo da recusa vai junto: sem ele, "0 enviadas" não diz nada
@@ -1063,7 +1353,7 @@ export async function servir(req: Request): Promise<Response> {
        suspeito — é o único dado comum a todas as tentativas */
     ...(ultimoErro ? { detalhe: ultimoErro, provedor: PROVEDOR, de: DE } : {}),
     ...docs,
-  }), { headers: cabecalho });
+  }, 200];
 }
 
 const servidor = (globalThis as {

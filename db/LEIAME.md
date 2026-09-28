@@ -42,7 +42,7 @@ congelados.
 ```
 db/
 ├── LEIAME.md                          este arquivo
-├── v14_unificacao.sql … v31_ps_entrevistas.sql  as migrações, em ordem
+├── v14_unificacao.sql … v32_fila_e_notificacoes.sql  as migrações, em ordem
 ├── testes/                            os testes, em PostgreSQL de verdade
 └── aplicadas/                         história, congelada
     ├── soma_v06_selecao.sql                 processo seletivo
@@ -79,6 +79,7 @@ db/
 | `v29_presenca_e_inicio.sql` | as folhas de check-in (`checkin_folhas`: o QR fixo em A4, gerado e revogado pela gestão, `registrar_checkin_folha`), a origem de cada presença, o placar do LABBIO (`labbio_placar`: dias no mês e sequências em dias úteis, sem contar fim de semana e feriado) e os links úteis do início (`portal_links`) |
 | `v30_emails.sql` | os e-mails da equipe: o link de cada rede nas contas do Studio (`studio_config.links`), os roteiros das pílulas de conhecimento (`email_roteiros`, dezesseis prontos, cada um com a área que assina e os grupos a quem vai) e os e-mails programados do Full mailer (`email_programados`: `email_programar`, `email_destinatarios`, `email_programado_cancelar`; a fila da Edge Function em `email_programados_lote` e `email_programados_baixa`) |
 | `v31_ps_entrevistas.sql` | as entrevistas do processo seletivo online: quem abriu cada janela (`ps_slots.criado_por`), o link da chamada no lugar do local (`link_reuniao`, obrigatório em entrevista nova), o reagendamento pelo comitê (`ps_reagendar`, `ps_slot_editar`, `ps_slot_excluir`) e a fila de e-mails (`ps_envios`): a reserva, o reagendamento, o link e o cancelamento ao candidato, e o resumo da véspera ao responsável; o site ganha o link em `ps_acompanhar` e o "online" em `ps_horarios` |
+| `v32_fila_e_notificacoes.sql` | a fila de envio que anda sozinha: o banco chama a Edge Function `notificar-email` a cada minuto (`soma-fila`, pelo `pg_cron` e o `pg_net`) e logo depois de cada aviso novo (o gatilho `fila_acordar`), com uma senha que a migração gera e guarda no Vault (`soma_fila_token`); uma passada de cada vez (`fila_passada_inicio`, `fila_passada_fim`) e o registro delas (`fila_passadas`, `fila_situacao`); o empurrão do portal aberto (`fila_empurrar`). O sino que não empilha: `notificacoes_limpar`, o expurgo (`notificacoes_expurgar`) e o aviso de teste que substitui o anterior. As notificações no aparelho (Web Push): `push_inscricoes`, `push_inscrever`, `push_cancelar`, `push_meus`, as chaves VAPID no Vault e a fila da Edge Function em `push_lote` e `push_baixa`. Depois dela, publique de novo a `notificar-email` e desligue nela a verificação de JWT |
 | `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
 
 **Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
@@ -388,6 +389,14 @@ psql -d t30 -f testes/v30_emails.sql         # 27 asserções
 createdb t31
 psql -d t31 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql -f testes/esqueleto_ps.sql
 psql -d t31 -f testes/v31_ps_entrevistas.sql  # 36 asserções
+
+# 32.0: a fila, o sino e o aparelho (o teste roda a migração duas vezes e
+# troca o net.http_post por um que só anota o chamado)
+createdb t32
+psql -d t32 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
+psql -d t32 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
+            -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f testes/esqueleto_vault.sql
+psql -d t32 -f testes/v32_fila_e_notificacoes.sql  # 113 asserções
 ```
 
 O `esqueleto_vault.sql` faz para o Vault o que o de Storage faz para o

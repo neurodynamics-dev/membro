@@ -81,8 +81,15 @@ SOMA · Gestão está sendo trazido, conforme o
   exato de cada uma, e o planejamento das publicações — quadro, calendário,
   ideias, aprovação e o lembrete da véspera por e-mail. Ver [Studio](#studio).
 - **Rodapé** — fora do início, o próximo compromisso, quem está no LABBIO
-  e a sua sequência; e sempre a ajuda (tour, atalhos do teclado, pedidos,
-  ouvidoria) e a conta (preferências de e-mail, Google Agenda, tema, sair).
+  e a sua sequência; e sempre a ajuda (o tour do SOMA, atalhos do teclado,
+  pedidos, ouvidoria) e a conta (preferências de avisos, Google Agenda, tema,
+  sair).
+- **Tour do SOMA** (`tour.html`) — a porta de entrada de quem chega: explica
+  o que é o SOMA, cria a conta ali mesmo e, depois de entrar, mostra cada
+  espaço com os dados da própria pessoa. Ver [O tour do SOMA](#o-tour-do-soma).
+- **No celular** — o SOMA se instala na tela de início (iPhone e Android) e
+  abre como app, e os avisos do sino chegam como notificação do aparelho,
+  mesmo com o SOMA fechado. Ver [Avisos](#avisos-no-sino-por-e-mail-e-no-aparelho).
 
 ## Como o sistema se organiza
 
@@ -120,6 +127,49 @@ Endereço antigo não quebra: `#/organizacao`, `#/quadro`, `#/calendario`,
 `#/agenda/minha` (hoje `#/agenda/config/google`) continuam levando ao lugar
 certo.
 
+## O tour do SOMA
+
+`tour.html` (no rodapé, *Ajuda › Tour do SOMA*; no ar, `membro.neurodynamics.dev/tour`)
+é para quem nunca abriu o SOMA. Ele parte do zero, sem supor que a pessoa
+saiba o que é o sistema, e vai em treze etapas: as boas-vindas, a conta, o que
+é seu, a página inicial, as tarefas, o placar do LABBIO, a agenda, os
+treinamentos, o Studio, os serviços, a equipe e os documentos, o celular, e a
+ajuda com os próximos passos.
+
+- **Conduz a criar a conta ali mesmo.** Criar, entrar e *esqueci a senha*
+  são do próprio tour, com os erros traduzidos (senha errada, e-mail ainda
+  não confirmado, link vencido), a espera pelo e-mail de confirmação (com o
+  reenviar) e o endereço lembrado no navegador. O link de confirmação volta
+  para o tour; o de nova senha vai ao portal, que tem a tela de criar a senha.
+- **Mostra o que é da pessoa.** Depois de entrar, cada etapa lê o banco com a
+  sessão dela (o mesmo projeto e o mesmo endereço do portal, então a sessão é
+  a mesma): o menu com o que o papel e os grupos alcançam, as tarefas e os
+  quadros dela, a posição no placar do mês, os treinamentos obrigatórios que
+  faltam, a agenda dos próximos dias, os colegas dos grupos. O Studio aparece
+  como é para ela: o passo a passo do criador para quem é dos grupos do
+  Studio, e como pedir o acesso para quem não é. Sem conta, as mesmas
+  etapas mostram exemplos e convidam a entrar.
+- **Leva ao SOMA.** Cada espaço tem o botão que abre a tela dele no portal
+  (no computador, numa aba do SOMA que se reaproveita; no celular, na mesma
+  aba).
+- **Os primeiros passos** riscam sozinhos: criar a conta, a conta ligada ao
+  quadro de pessoal, o primeiro check-in, o SOMA na tela do celular, como
+  receber os avisos e os treinamentos obrigatórios em dia.
+- **O celular**: o passo a passo do iPhone (Safari, Compartilhar, Adicionar à
+  Tela de Início) e do Android (os três pontinhos, Adicionar à tela inicial
+  ou Instalar app), o botão de instalar quando o navegador oferece e, no
+  computador, um QR Code que abre essa etapa no celular. A mesma etapa ensina
+  a ligar as notificações no aparelho.
+
+No celular, o tour tem a barra de baixo (voltar, continuar) e a gaveta das
+etapas; ele lembra onde a pessoa parou e segue o tema escolhido no SOMA.
+
+> O link de confirmação volta para o endereço do tour, e esse endereço
+> precisa estar em **Authentication → URL Configuration → Redirect URLs** do
+> Supabase (por exemplo, `https://membro.neurodynamics.dev/**`). Sem ele, o
+> Supabase manda para a *Site URL*: a pessoa entra no portal do mesmo jeito,
+> só não volta ao tour.
+
 ## Atividades
 
 O quadro de trabalho de cada grupo, em `#/atividades`:
@@ -143,15 +193,54 @@ O quadro de trabalho de cada grupo, em `#/atividades`:
 - **todo movimento vira histórico** no cartão: quem moveu, quem atribuiu, quem
   mudou o prazo, quem sinalizou.
 
-As notificações aparecem no sino do pé do menu (no celular, no topo) e, se você quiser, também no
-seu e-mail: um e-mail por pessoa com tudo o que está pendente — cinco avisos
-na mesma hora chegam juntos, não cinco vezes. Cada um escolhe como quer
-receber no **sininho → Preferências de e-mail**: a cada aviso, um resumo por
-dia, ou só no portal.
+As notificações aparecem no sino do pé do menu (no celular, no topo), no
+e-mail e, para quem ativar, no próprio aparelho. Ver
+[Avisos](#avisos-no-sino-por-e-mail-e-no-aparelho).
+
+## Avisos: no sino, por e-mail e no aparelho
+
+Uma menção, uma atividade atribuída, um convite da agenda: tudo vira um aviso
+no **sino**, e o aviso sai do portal por dois caminhos, cada um escolhido pela
+pessoa em **sininho → Preferências de avisos** (ou no rodapé, em *Sua conta*):
+
+- **por e-mail**: um e-mail por pessoa com tudo o que está pendente (cinco
+  avisos na mesma hora chegam juntos, não cinco vezes), a cada aviso, num
+  resumo por dia ou nunca (*só no portal*);
+- **no aparelho** (32.0): **Ativar neste aparelho** liga as notificações do
+  navegador ou do celular, que chegam mesmo com o SOMA fechado. Vale para
+  cada aparelho em separado; a mesma tela lista os outros aparelhos que
+  recebem e remove os que ficaram para trás, e sair da conta desliga o
+  aparelho de onde se saiu. **No iPhone**, só o SOMA instalado na tela de
+  início recebe (o tour ensina: `tour#celular`).
+
+**O sino não empilha** (32.0): cada aviso tem o **×**, o alto do sino tem
+**limpar as lidas**, e o banco apaga sozinho o que foi lido há mais de 30
+dias, qualquer aviso com mais de 120 e os de teste depois de um dia. O aviso
+do e-mail de teste substitui o anterior e já nasce lido.
+
+**A fila anda sozinha** (32.0). Quem entrega o e-mail e a notificação do
+aparelho é a Edge Function `notificar-email`, e quem a acorda é o próprio
+banco: a cada minuto e logo depois de cada aviso novo, com uma senha guardada
+no Vault. Até a 31.0, o agendamento dependia de uma chave em formato JWT que a
+verificação da função aceitasse; sem ela, a fila só andava quando alguém
+apertava o teste de e-mail do portal, que vai com a sessão da pessoa. Em
+**Administração › E-mails › Programados**, o card *A fila
+de envio* diz se o agendamento está chegando, o que espera em cada fila e o
+último erro, e tem o **Rodar a fila agora**. Sem o agendamento, o portal
+aberto dá o empurrão, no máximo um a cada dois minutos para a equipe toda.
 
 Ligar o envio é [uma configuração do
 projeto](supabase/functions/notificar-email/README.md); enquanto ela não
 existir, os avisos continuam no sino, intactos.
+
+### O SOMA na tela de início
+
+O portal tem manifesto (`manifest.webmanifest`), ícones (`icone-180.png` para
+o iPhone, `icone-192.png` e `icone-512.png`, também em máscara, para o
+Android, e `icone-badge.png`, o selo monocromático da barra de notificações) e
+um *service worker* (`sw.js`, na raiz, para valer para o portal inteiro). O
+`sw.js` só entrega as notificações e abre o SOMA na tela do aviso: não guarda
+nada em cache, e o portal continua sempre na versão publicada.
 
 ## O plano de gestão
 
@@ -697,8 +786,10 @@ O Full mailer e os envios programados, em `#/admin/emails` (`mod-mailer.js`).
 - **Programados**: a fila e o histórico. Programar leva o e-mail pronto à
   fila, para a equipe toda, para grupos (com os de baixo) ou só para quem
   programa, como teste; a janela diz quantos recebem e quem está sem e-mail
-  na ficha. A Edge Function `notificar-email` passa a cada cinco minutos e
-  envia o que venceu. Na fila, dá para ver, reagendar e cancelar.
+  na ficha. A Edge Function `notificar-email` passa a cada minuto (desde a
+  32.0; ver [Avisos](#avisos-no-sino-por-e-mail-e-no-aparelho)) e envia o que
+  venceu. Na fila, dá para ver, reagendar e cancelar; no alto, o card *A fila
+  de envio* diz se ela está andando sozinha e tem o **Rodar a fila agora**.
 - **Pílulas de conhecimento**: e-mails curtos que apresentam e relembram o
   que o SOMA faz, cada um assinado pela área a que interessa e endereçado aos
   grupos certos. Dezesseis vêm prontas (do placar do LABBIO à revisão de
@@ -805,9 +896,12 @@ navegador; o membro copia o endereço e cola na janela de horários.
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
 | `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
 | `mailer/`      | Ícones e logos recoloridas que os e-mails do Full mailer mostram por link ([detalhes](mailer/README.md)) |
-| `tour.html`    | O tour pelos sistemas da equipe |
+| `tour.html`    | O tour do SOMA: conduz quem chega a criar a conta e mostra cada espaço com os dados da própria pessoa ([detalhes](#o-tour-do-soma)) |
+| `manifest.webmanifest`, `icone-*.png` | O SOMA instalável: nome, cores e ícones da tela de início (iPhone e Android) e o selo das notificações |
+| `sw.js`        | O *service worker*: recebe as notificações do aparelho e abre o SOMA na tela do aviso. Sem cache |
 | [`PADROES.md`](PADROES.md) | Os padrões do sistema: navegação, rotas, busca, módulos, identidade |
 | `db/`          | As migrações, em uma linha só ([LEIAME](db/LEIAME.md)) |
+| `supabase/functions/notificar-email/` | Edge Function (arquivo único) que esvazia as filas: os avisos por e-mail e no aparelho, a agenda, as declarações, os e-mails programados e o processo seletivo ([detalhes](supabase/functions/notificar-email/README.md)) |
 | `supabase/functions/agenda-sync/` | Edge Function (arquivo único) que lê o `.ics` de cada um e grava os horários ocupados ([detalhes](supabase/functions/agenda-sync/README.md)) |
 | `supabase/functions/agenda-ics/`  | Edge Function (arquivo único) que serve o feed da agenda para assinar no Google ([detalhes](supabase/functions/agenda-ics/README.md)) |
 | `CNAME`        | Domínio do GitHub Pages (`membro.neurodynamics.dev`) |
@@ -880,10 +974,16 @@ aviso de qual falta. A agenda nova precisa da **28.0** (`v28_agenda.sql`); o
 placar, as folhas de check-in e os links úteis, da **29.0**
 (`v29_presenca_e_inicio.sql`); os e-mails programados e as pílulas de
 conhecimento, da **30.0** (`v30_emails.sql`); as entrevistas online do
-processo seletivo e os e-mails delas, da **31.0** (`v31_ps_entrevistas.sql`).
-Depois da 28.0, da 30.0 e da 31.0,
+processo seletivo e os e-mails delas, da **31.0** (`v31_ps_entrevistas.sql`);
+a fila que anda sozinha, o sino que não empilha e as notificações no
+aparelho, da **32.0** (`v32_fila_e_notificacoes.sql`).
+Depois da 28.0, da 30.0, da 31.0 e da 32.0,
 **publique de novo** a Edge Function `notificar-email`: é ela que manda os
-convites, as mudanças e os lembretes da agenda, e os e-mails programados.
+convites, as mudanças e os lembretes da agenda, os e-mails programados e as
+notificações do aparelho. **Depois da 32.0, desligue nela a verificação de
+JWT** (Edge Functions › `notificar-email` › Details › *Enforce JWT
+verification*): a função passa a conferir sozinha quem chama, e é com ela
+desligada que o agendamento do banco consegue acordá-la.
 
 A 27.0 (o cofre) precisa do **Vault** do Supabase ligado (*Database →
 Extensions → supabase_vault* — em geral já vem); sem ele, a migração para e
