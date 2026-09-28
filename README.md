@@ -744,7 +744,7 @@ menu:
 | **Visão geral** | métricas, funil, pendências e os próximos horários |
 | **Candidatos** | a lista com busca e filtro, movimentação em lote, exportação CSV e a ficha (`#/selecao/candidatos/<id>`): dados, competências, avaliações, e-mail de confirmação e a integração ao quadro |
 | **Avaliação** | por fase, cada membro do comitê dá nota por critério; a nota do candidato é a média |
-| **Agenda** | as janelas de dinâmica e entrevista que o candidato escolhe no site, com presença |
+| **Agenda** | as janelas de dinâmica e entrevista que o candidato escolhe no site, com presença. A entrevista é online: no lugar do local vai o link da chamada (o botão "Criar no Meet" abre uma sala, e o link é colado ali), e quem abre a janela fica registrado como responsável. No horário: reagendar o candidato, mudar dia, hora ou link, excluir, sempre avisando por e-mail |
 | **Dinâmica** | painel, roteiro, desafio, critérios e janelas — tudo o que as três páginas da dinâmica mostram no dia |
 | **Publicações** | edital, avisos e resultados: o site só mostra o que estiver publicado |
 | **FAQ** | as perguntas frequentes do site |
@@ -758,6 +758,28 @@ Duas coisas que a unificação trouxe de graça:
   para quem abre a rota, e a rota só abre para quem pode. A barreira de
   verdade continua sendo a RLS do banco — isto é só não oferecer porta
   fechada, e não pesar no celular de quem nunca vai usar.
+
+### Os e-mails das entrevistas (31.0)
+
+A entrevista individual é online. Os e-mails saem pela Edge Function
+`notificar-email`, com o remetente "Processo Seletivo | NeuroDynamics":
+
+- **ao candidato**, quando ele reserva o horário no site: dia, hora, quem
+  conduz e o link da chamada, com o botão para entrar e o atalho para o
+  Google Agenda. A página de acompanhamento mostra o mesmo link;
+- **ao candidato**, quando a equipe reagenda (move para outro horário ou muda
+  o dia e a hora do horário), com o horário antigo riscado, o novo, o link e o
+  motivo; quando só o link muda; e quando o horário é excluído, com o botão
+  para escolher outro;
+- **a quem abriu os horários**, na véspera, a partir das 18h: as entrevistas
+  do dia seguinte, cada uma com o perfil do candidato (curso, áreas,
+  motivação, a nota da dinâmica, os links do Lattes, GitHub, LinkedIn e
+  portfólio), o link da chamada e a ficha no portal. Se a lista mudar depois
+  disso, sai um resumo atualizado.
+
+O link do Meet não é gerado pelo portal: criar a sala pede a API do Google
+Agenda com a conta de cada membro. "Criar no Meet" abre uma sala nova no
+navegador; o membro copia o endereço e cola na janela de horários.
 
 ## Conteúdo
 
@@ -857,7 +879,9 @@ Sem as migrações do portal o app entra, mas o que depende delas mostra o
 aviso de qual falta. A agenda nova precisa da **28.0** (`v28_agenda.sql`); o
 placar, as folhas de check-in e os links úteis, da **29.0**
 (`v29_presenca_e_inicio.sql`); os e-mails programados e as pílulas de
-conhecimento, da **30.0** (`v30_emails.sql`). Depois da 28.0 e da 30.0,
+conhecimento, da **30.0** (`v30_emails.sql`); as entrevistas online do
+processo seletivo e os e-mails delas, da **31.0** (`v31_ps_entrevistas.sql`).
+Depois da 28.0, da 30.0 e da 31.0,
 **publique de novo** a Edge Function `notificar-email`: é ela que manda os
 convites, as mudanças e os lembretes da agenda, e os e-mails programados.
 

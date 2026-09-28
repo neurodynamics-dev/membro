@@ -408,6 +408,21 @@ resposta traz `programados` e `programados_falhas`; sem a 30.0,
 `programados: "sem_migracao_30"`. Depois de aplicar a 30.0, **publique a
 função de novo**.
 
+### As entrevistas do processo seletivo (31.0)
+
+A fila é `ps_envios`, lida por `ps_envios_lote()` e baixada por
+`ps_envios_baixa()`, com a mesma service role e o remetente
+`Processo Seletivo | NeuroDynamics`. Ao candidato: a **confirmação** da reserva
+(com o link da chamada, quem conduz, o Google Agenda e a página de
+acompanhamento já preenchida), o **reagendamento** feito pela equipe (o
+horário antigo riscado, o novo e o motivo), a **troca do link** e o
+**cancelamento** do horário (com o botão para escolher outro). A quem abriu os
+horários: o **resumo da véspera**, gerado pelo próprio `ps_envios_lote()` a
+partir das 18h (Brasília), com o perfil de cada candidato do dia seguinte, a
+nota da dinâmica, os links e a ficha no portal. O endereço do site sai do
+segredo `PS_SITE_URL` (padrão `https://selecao.neurodynamics.dev`). A resposta
+da função traz `ps` e `ps_falhas`; sem a 31.0, `ps: "sem_migracao_31"`.
+
 ---
 
 ## Na renomeação para `soma.neurodynamics.dev`

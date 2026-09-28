@@ -42,7 +42,7 @@ congelados.
 ```
 db/
 ├── LEIAME.md                          este arquivo
-├── v14_unificacao.sql … v30_emails.sql  as migrações, em ordem
+├── v14_unificacao.sql … v31_ps_entrevistas.sql  as migrações, em ordem
 ├── testes/                            os testes, em PostgreSQL de verdade
 └── aplicadas/                         história, congelada
     ├── soma_v06_selecao.sql                 processo seletivo
@@ -78,6 +78,7 @@ db/
 | `v28_agenda.sql` | a agenda no modelo do Google: evento com fim em outro dia, cor própria, notificações (`lembretes`) e predefinido; convite com token para responder pelo e-mail; convidados de fora (`evento_externos`); os **eventos predefinidos** (`agenda_predefinidos`, semeados dos tipos antigos); as preferências de cada um; a fila de e-mails (`agenda_envios`) com os lembretes; e as funções `agenda_evento`, `agenda_evento_salvar` (criar, editar e reagendar este ou os seguintes), `agenda_evento_excluir`, `agenda_responder` e `agenda_rsvp_token` (a única aberta à chave anônima). Checklist, dossiê e presença por evento ficam comentados como legado |
 | `v29_presenca_e_inicio.sql` | as folhas de check-in (`checkin_folhas`: o QR fixo em A4, gerado e revogado pela gestão, `registrar_checkin_folha`), a origem de cada presença, o placar do LABBIO (`labbio_placar`: dias no mês e sequências em dias úteis, sem contar fim de semana e feriado) e os links úteis do início (`portal_links`) |
 | `v30_emails.sql` | os e-mails da equipe: o link de cada rede nas contas do Studio (`studio_config.links`), os roteiros das pílulas de conhecimento (`email_roteiros`, dezesseis prontos, cada um com a área que assina e os grupos a quem vai) e os e-mails programados do Full mailer (`email_programados`: `email_programar`, `email_destinatarios`, `email_programado_cancelar`; a fila da Edge Function em `email_programados_lote` e `email_programados_baixa`) |
+| `v31_ps_entrevistas.sql` | as entrevistas do processo seletivo online: quem abriu cada janela (`ps_slots.criado_por`), o link da chamada no lugar do local (`link_reuniao`, obrigatório em entrevista nova), o reagendamento pelo comitê (`ps_reagendar`, `ps_slot_editar`, `ps_slot_excluir`) e a fila de e-mails (`ps_envios`): a reserva, o reagendamento, o link e o cancelamento ao candidato, e o resumo da véspera ao responsável; o site ganha o link em `ps_acompanhar` e o "online" em `ps_horarios` |
 | `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
 
 **Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
@@ -259,6 +260,13 @@ programados que venceram e envia, com o nome da área no remetente. Quem
 programa e mexe nas pílulas: admin e pessoal. Confira as pílulas:
 `select codigo, remetente, grupos, assunto from public.email_roteiros order by ordem;`
 
+A **31.0** são as entrevistas online do processo seletivo. Ela precisa da 6.0
+e da 7.0 do PS (em `aplicadas/`). Depois dela, **publique de novo** a Edge
+Function `notificar-email` e o site `selecao.neurodynamics.dev`. Os horários
+de entrevista abertos antes dela continuam com o local e sem responsável: em
+Seleção › Agenda, "Mudar horário ou link" põe o link (e avisa quem já
+reservou), e "Assumir" põe você como responsável, para receber o resumo.
+
 **O que o SQL Editor responde.** O editor do Supabase mostra só o último
 resultado que tem linhas. As migrações até a 20.0 terminam em *Success. No
 rows returned*. A 21.0 termina com a tabela **"o que a 21.0 deixou"**: sete
@@ -375,6 +383,11 @@ psql -d t30 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
 psql -d t30 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
             -f v18_teste_email.sql -f v19_grupos_hierarquia.sql
 psql -d t30 -f testes/v30_emails.sql         # 27 asserções
+
+# 31.0: as entrevistas online do PS (o esqueleto do PS aplica a 6.0 e a 7.0; o teste, a 31.0 duas vezes)
+createdb t31
+psql -d t31 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql -f testes/esqueleto_ps.sql
+psql -d t31 -f testes/v31_ps_entrevistas.sql  # 36 asserções
 ```
 
 O `esqueleto_vault.sql` faz para o Vault o que o de Storage faz para o
