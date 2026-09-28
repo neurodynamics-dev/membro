@@ -694,7 +694,7 @@ function psAgenda(){
       <div class="fld"><label for="ps-sl-ini">Início</label><input id="ps-sl-ini" type="time" value="${fase==='dinamica'?'18:00':'14:00'}"></div>
       <div class="fld"><label for="ps-sl-fim">Fim</label><input id="ps-sl-fim" type="time" value="${fase==='dinamica'?'21:00':'18:00'}"></div>
       <div class="fld"><label for="ps-sl-dur">Duração (min)</label><input id="ps-sl-dur" type="number" value="${fase==='dinamica'?'90':'30'}"></div>
-      <div class="fld"><label for="ps-sl-cap">Vagas por horário</label><input id="ps-sl-cap" type="number" value="${fase==='dinamica'?'8':'1'}"></div>
+      ${fase==='dinamica' ? `<div class="fld"><label for="ps-sl-cap">Vagas por horário</label><input id="ps-sl-cap" type="number" value="8"></div>` : ''}
     </div>
     ${online ? `<p class="small muted" style="margin:0 0 12px">${eu ? `Responsável: <b>${esc(eu.nome)}</b>`
       : 'A sua conta não tem registro no quadro: os horários ficam sem responsável e ninguém recebe o resumo da véspera.'}</p>` : ''}
@@ -709,7 +709,7 @@ function psAgenda(){
         const semLink = PS.v31 && s.fase==='entrevista' && !psOnline(s);
         return `<button class="slot-chip ${o>=s.capacidade?'cheio':''} ${s.ativo?'':'inativo'} ${semLink?'sem-link':''}" onclick="psAbrirSlot('${s.id}')">
           <div class="h">${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</div>
-          <div class="o">${o}/${s.capacidade} vaga${s.capacidade>1?'s':''}${psOndeTxt(s)?', '+esc(psOndeTxt(s)):''}${semLink?', sem link':''}${s.ativo?'':', inativo'}</div>
+          <div class="o">${s.fase==='entrevista' ? (o?'reservado':'livre') : `${o}/${s.capacidade} vaga${s.capacidade>1?'s':''}`}${psOndeTxt(s)?', '+esc(psOndeTxt(s)):''}${semLink?', sem link':''}${s.ativo?'':', inativo'}</div>
           ${s.fase==='entrevista' && s.criado_por ? `<div class="o">${esc(psPrimeiro(s.criado_por))}</div>` : ''}
         </button>`; }).join('')}</div></div>`).join('')
       || `<div class="empty">Nenhum horário de ${fase==='dinamica'?'dinâmica':'entrevista'} aberto ainda.</div>`}
@@ -718,7 +718,8 @@ function psAgenda(){
 async function psCriarSlots(fase){
   const online = fase==='entrevista' && PS.v31;
   const data=$('#ps-sl-data').value, ini=$('#ps-sl-ini').value, fim=$('#ps-sl-fim').value;
-  const dur=parseInt($('#ps-sl-dur').value,10), cap=parseInt($('#ps-sl-cap').value,10);
+  /* a entrevista é individual: um candidato por horário, sempre */
+  const dur=parseInt($('#ps-sl-dur').value,10), cap = fase==='entrevista' ? 1 : parseInt($('#ps-sl-cap').value,10);
   const local = online ? '' : $('#ps-sl-local').value.trim();
   const link = online ? $('#ps-sl-link').value.trim() : '';
   if(!data||!ini||!fim||!dur||!cap){ toast('Preencha data, horários, duração e vagas.', true); return; }
@@ -746,7 +747,8 @@ function psAbrirSlot(id){
   const ent = s.fase==='entrevista', v31 = PS.v31;
   abreModal(`
     <h3>${ent?'Entrevista':'Dinâmica'}: ${fmtD(s.data)}, ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</h3>
-    <p class="small muted" style="margin:0 0 10px">${!psOnline(s) && s.local?esc(s.local)+', ':''}${ags.length}/${s.capacidade} vaga${s.capacidade>1?'s':''} ocupada${ags.length===1?'':'s'}</p>
+    <p class="small muted" style="margin:0 0 10px">${!psOnline(s) && s.local?esc(s.local)+', ':''}${ent ? (ags.length?'Reservado':'Livre')
+      : `${ags.length}/${s.capacidade} vaga${s.capacidade>1?'s':''} ocupada${ags.length===1?'':'s'}`}</p>
     ${ent && v31 ? `<div class="ps-slot-info">
       <div>${ic('video')} ${psOnline(s)
         ? `<a href="${esc(s.link_reuniao)}" target="_blank" rel="noopener">${esc(s.link_reuniao.replace(/^https?:\/\//,''))}</a>
