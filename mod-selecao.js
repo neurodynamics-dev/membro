@@ -15,13 +15,14 @@
                                       criterios, janelas
 
    Papéis: admin, pessoal e selecao (Comitê de Seleção). A barreira de
-   verdade é a RLS das tabelas ps_* (migrações soma_v06, v07, v11, v12).
+   verdade é a RLS das tabelas ps_* (migrações soma_v06, v07, v11, v12
+   e a v31, das entrevistas online e dos e-mails).
 
    Depende da casca para: sb, $, esc, norm, state, can, podeSelecao,
    toast, falha, abreModal, fechaModal, confirma, copiar, abrirEmail,
    gmailCompose, fmtD, fmtDT, hojeISO, ic, ibtn, avatarFoto, nomeDe,
    quemSouEu, FOTOS_BASE, FOTO_EXTS, ABAS_SELECAO, route,
-   registrarBusca, filtrarSimples, dica.
+   registrarBusca, filtrarSimples, dica, motivoRPC.
    ============================================================ */
 
 const SITE_PS = 'https://selecao.neurodynamics.dev';
@@ -71,7 +72,7 @@ const PS_FASES_ETAPA = ['divulgacao','inscricao','dinamica','entrevista','traine
 const PS = { pronto:false, erro:null, tab:'geral', edicoes:[], ed:null,
   candidatos:[], etapas:[], slots:[], agends:[], pubs:[], avals:[], perfis:[],
   faq:[], competencias:[], v11:false,
-  dinCfg:null, dinItens:[], v12:false, dinSub:'painel', dinJanela:null,
+  dinCfg:null, dinItens:[], v12:false, dinSub:'painel', dinJanela:null, envios:[], v31:false,
   mesaSel:new Set(), mesaBusca:'',
   filtros:{q:'',status:''}, selecionados:new Set(), faseAval:'dinamica', faseAgenda:'dinamica' };
 
@@ -130,6 +131,14 @@ async function psCarregar(){
     PS.dinItens = itens.data || [];
     PS.v12 = true;
   }catch(e){ PS.dinCfg = null; PS.dinItens = []; PS.v12 = false; }
+  /* as entrevistas online e os e-mails ao candidato: dependem da v31.
+     Sem ela, a Agenda continua com local e sem aviso. */
+  try{
+    const env = await sb.from('ps_envios').select('id,tipo,candidato_id,slot_id,criado_em,enviado_em,tentativas,erro')
+      .order('id', {ascending:false}).limit(1000);
+    if(env.error) throw env.error;
+    PS.envios = env.data || []; PS.v31 = true;
+  }catch(e){ PS.envios = []; PS.v31 = false; }
   PS.selecionados = new Set();
   PS.pronto = true;
 }
@@ -248,7 +257,7 @@ function psGeral(){
     <div class="card"><h3 style="margin-bottom:8px">Próximos horários</h3>
       ${proxSlots.length ? proxSlots.map(s=>`<div class="ps-linha">
           <span style="flex:1"><b>${fmtD(s.data)}</b> ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}
-            <span class="muted">(${s.fase==='dinamica'?'dinâmica':'entrevista'}${s.local?', '+esc(s.local):''})</span></span>
+            <span class="muted">(${s.fase==='dinamica'?'dinâmica':'entrevista'}${psOndeTxt(s)?', '+esc(psOndeTxt(s)):''})</span></span>
           <span class="mono small muted">${ocup(s)}/${s.capacidade}</span></div>`).join('')
         : '<div class="empty">Nenhum horário futuro aberto.<br>Abra janelas na aba Agenda.</div>'}
     </div>
@@ -455,7 +464,9 @@ function psAbrirFicha(id){
       ${c.motivacao?`${psRot('Motivação')}<p class="small muted" style="white-space:pre-wrap;line-height:1.6">${esc(c.motivacao)}</p>`:''}
       ${ags.length?`${psRot('Agendamentos')}
         ${ags.map(a=>`<div class="small" style="margin-top:5px"><b>${a.fase==='dinamica'?'Dinâmica':'Entrevista'}</b>:
-          ${a.slot?`${fmtD(a.slot.data)} ${psHm(a.slot.hora_inicio)}–${psHm(a.slot.hora_fim)}${a.slot.local?', '+esc(a.slot.local):''}`:'—'}
+          ${a.slot?`${fmtD(a.slot.data)} ${psHm(a.slot.hora_inicio)}–${psHm(a.slot.hora_fim)}${psOnline(a.slot)
+            ? `, <a href="${esc(a.slot.link_reuniao)}" target="_blank" rel="noopener">chamada</a>`
+            : a.slot.local?', '+esc(a.slot.local):''}${a.slot.criado_por&&a.fase==='entrevista'?`, com ${esc(a.slot.criado_por)}`:''}`:'—'}
           ${a.compareceu===true?'<span class="pill" style="margin-left:6px"><span class="dt dt-ok"></span>compareceu</span>'
             :a.compareceu===false?'<span class="pill" style="margin-left:6px"><span class="dt dt-bad"></span>faltou</span>':''}</div>`).join('')}`:''}
     </div>
@@ -633,29 +644,60 @@ async function psSalvarAval(){
 
 /* ============================================================
    AGENDA — as janelas de horário que o candidato escolhe no site
+   A dinâmica em grupo é presencial, com local. A entrevista é online
+   (v31): no lugar do local vai o link da chamada, e quem abre a janela
+   fica registrado como responsável. É ele quem recebe, na véspera, o
+   resumo das entrevistas do dia seguinte. Reservar, reagendar, trocar
+   o link e excluir o horário mandam e-mail ao candidato (ps_envios, a
+   Edge Function notificar-email envia).
    ============================================================ */
+const PS_MEET_NOVO = 'https://meet.google.com/new';
+const psOnline = s=> !!(s && s.link_reuniao);
+/* "online" ou o local; para a dinâmica, só o local */
+const psOndeTxt = s=> psOnline(s) ? 'online' : (s?.local || '');
+const psLinkOk = u=> /^https:\/\/\S+$/i.test(String(u||'').trim());
+const psPrimeiro = n=> String(n||'').trim().split(/\s+/)[0] || '';
+/* o último e-mail da fila para o candidato naquele horário */
+const PS_ENV_TIPO = {confirmacao:'Confirmação', reagendamento:'Reagendamento', link:'Link', cancelamento:'Cancelamento'};
+function psUltimoEnvio(candId){
+  const e = (PS.envios||[]).filter(x=>x.candidato_id===candId && x.tipo!=='resumo')[0];
+  if(!e) return '';
+  const t = PS_ENV_TIPO[e.tipo]||e.tipo;
+  if(e.enviado_em) return `${t} enviada ${fmtDT(e.enviado_em)}`;
+  if(e.tentativas>=5) return `${t} não saiu: ${e.erro||'erro'}`;
+  return `${t} na fila`;
+}
+
 function psAgenda(){
   const fase = PS.faseAgenda;
   const slots = PS.slots.filter(s=>s.fase===fase);
   const porDia = {};
   slots.forEach(s=>{ (porDia[s.data]=porDia[s.data]||[]).push(s); });
   const ocup = s=> PS.agends.filter(a=>a.slot_id===s.id).length;
+  const online = fase==='entrevista' && PS.v31;
+  const eu = (state.membros||[]).find(m=>m.registro===state.perfil?.registro);
   $('#sel-corpo').innerHTML = `
   <div class="chips" style="margin-bottom:16px">
     <button class="chip ${fase==='dinamica'?'on':''}" onclick="PS.faseAgenda='dinamica';psAgenda()">Dinâmicas em grupo</button>
     <button class="chip ${fase==='entrevista'?'on':''}" onclick="PS.faseAgenda='entrevista';psAgenda()">Entrevistas individuais</button>
   </div>
+  ${fase==='entrevista' && !PS.v31 ? `<div class="aviso-box warn">Para as entrevistas online e os e-mails ao candidato, falta aplicar a migração v31 (db/v31_ps_entrevistas.sql).</div>` : ''}
   <div class="card" style="margin-bottom:16px">
-    <h3>Abrir janela de horários</h3>
-    <p class="small muted" style="margin:4px 0 14px">Gera vários horários de uma vez. O candidato escolhe um deles no site.</p>
+    <h3>Abrir janela de horários ${online ? dica('A entrevista é online. Todos os horários desta janela usam o mesmo link de chamada. Quem abre a janela fica como responsável: recebe, na véspera, o resumo das entrevistas do dia seguinte, e o nome aparece para o candidato.') : ''}</h3>
+    <p class="small muted" style="margin:4px 0 14px">Gera vários horários de uma vez. O candidato escolhe um deles no site${online ? ' e recebe o link por e-mail' : ''}.</p>
     <div class="form-grid">
-      <div class="fld"><label>Data</label><input id="ps-sl-data" type="date"></div>
-      <div class="fld"><label>Local</label><input id="ps-sl-local" placeholder="Ex.: LABBIO, Sala de reunião"></div>
-      <div class="fld"><label>Início</label><input id="ps-sl-ini" type="time" value="${fase==='dinamica'?'18:00':'14:00'}"></div>
-      <div class="fld"><label>Fim</label><input id="ps-sl-fim" type="time" value="${fase==='dinamica'?'21:00':'18:00'}"></div>
-      <div class="fld"><label>Duração (min)</label><input id="ps-sl-dur" type="number" value="${fase==='dinamica'?'90':'30'}"></div>
-      <div class="fld"><label>Vagas por horário</label><input id="ps-sl-cap" type="number" value="${fase==='dinamica'?'8':'1'}"></div>
+      <div class="fld"><label for="ps-sl-data">Data</label><input id="ps-sl-data" type="date"></div>
+      ${online ? `<div class="fld"><label for="ps-sl-link">Link da chamada (Google Meet) ${dica('Clique em "Criar no Meet": o Google abre uma sala nova. Copie o endereço da sala (meet.google.com/abc-defg-hij) e cole aqui. A sala fica com a conta que a criou: use a conta com que você vai conduzir as entrevistas.')}</label>
+          <div class="ps-link-lin"><input id="ps-sl-link" type="url" placeholder="https://meet.google.com/abc-defg-hij">
+            <a class="btn ghost mini" href="${PS_MEET_NOVO}" target="_blank" rel="noopener">${ic('video')} Criar no Meet</a></div></div>`
+        : `<div class="fld"><label for="ps-sl-local">Local</label><input id="ps-sl-local" placeholder="Ex.: LABBIO, Sala de reunião"></div>`}
+      <div class="fld"><label for="ps-sl-ini">Início</label><input id="ps-sl-ini" type="time" value="${fase==='dinamica'?'18:00':'14:00'}"></div>
+      <div class="fld"><label for="ps-sl-fim">Fim</label><input id="ps-sl-fim" type="time" value="${fase==='dinamica'?'21:00':'18:00'}"></div>
+      <div class="fld"><label for="ps-sl-dur">Duração (min)</label><input id="ps-sl-dur" type="number" value="${fase==='dinamica'?'90':'30'}"></div>
+      <div class="fld"><label for="ps-sl-cap">Vagas por horário</label><input id="ps-sl-cap" type="number" value="${fase==='dinamica'?'8':'1'}"></div>
     </div>
+    ${online ? `<p class="small muted" style="margin:0 0 12px">${eu ? `Responsável: <b>${esc(eu.nome)}</b>`
+      : 'A sua conta não tem registro no quadro: os horários ficam sem responsável e ninguém recebe o resumo da véspera.'}</p>` : ''}
     <button class="btn solid" onclick="psCriarSlots('${fase}')">${ic('plus')} Criar horários</button>
   </div>
   <div class="card">
@@ -664,23 +706,30 @@ function psAgenda(){
       <div class="slot-dia"><h4>${new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'2-digit'})}</h4>
       <div class="slot-chips">${porDia[d].map(s=>{
         const o = ocup(s);
-        return `<button class="slot-chip ${o>=s.capacidade?'cheio':''} ${s.ativo?'':'inativo'}" onclick="psAbrirSlot('${s.id}')">
+        const semLink = PS.v31 && s.fase==='entrevista' && !psOnline(s);
+        return `<button class="slot-chip ${o>=s.capacidade?'cheio':''} ${s.ativo?'':'inativo'} ${semLink?'sem-link':''}" onclick="psAbrirSlot('${s.id}')">
           <div class="h">${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</div>
-          <div class="o">${o}/${s.capacidade} vaga${s.capacidade>1?'s':''}${s.local?', '+esc(s.local):''}${s.ativo?'':', inativo'}</div>
+          <div class="o">${o}/${s.capacidade} vaga${s.capacidade>1?'s':''}${psOndeTxt(s)?', '+esc(psOndeTxt(s)):''}${semLink?', sem link':''}${s.ativo?'':', inativo'}</div>
+          ${s.fase==='entrevista' && s.criado_por ? `<div class="o">${esc(psPrimeiro(s.criado_por))}</div>` : ''}
         </button>`; }).join('')}</div></div>`).join('')
       || `<div class="empty">Nenhum horário de ${fase==='dinamica'?'dinâmica':'entrevista'} aberto ainda.</div>`}
   </div>`;
 }
 async function psCriarSlots(fase){
+  const online = fase==='entrevista' && PS.v31;
   const data=$('#ps-sl-data').value, ini=$('#ps-sl-ini').value, fim=$('#ps-sl-fim').value;
-  const dur=parseInt($('#ps-sl-dur').value,10), cap=parseInt($('#ps-sl-cap').value,10), local=$('#ps-sl-local').value.trim();
+  const dur=parseInt($('#ps-sl-dur').value,10), cap=parseInt($('#ps-sl-cap').value,10);
+  const local = online ? '' : $('#ps-sl-local').value.trim();
+  const link = online ? $('#ps-sl-link').value.trim() : '';
   if(!data||!ini||!fim||!dur||!cap){ toast('Preencha data, horários, duração e vagas.', true); return; }
+  if(online && !psLinkOk(link)){ toast('Cole o link da chamada, começando com https://. Use "Criar no Meet" para abrir uma sala.', true); return; }
   const linhas=[]; let t = new Date(`${data}T${ini}:00`); const tf = new Date(`${data}T${fim}:00`);
   while(t < tf){
     const prox = new Date(t.getTime()+dur*60000);
     if(prox > tf) break;
     const h = x=> x.toTimeString().slice(0,5);
-    linhas.push({edicao_id:PS.ed.id, fase, data, hora_inicio:h(t), hora_fim:h(prox), capacidade:cap, local:local||null});
+    linhas.push({edicao_id:PS.ed.id, fase, data, hora_inicio:h(t), hora_fim:h(prox), capacidade:cap,
+      ...(online ? {link_reuniao:link, local:null} : {local:local||null})});
     t = prox;
   }
   if(!linhas.length){ toast('Nenhum horário cabe nessa janela.', true); return; }
@@ -694,20 +743,34 @@ async function psCriarSlots(fase){
 function psAbrirSlot(id){
   const s = PS.slots.find(x=>x.id===id); if(!s) return;
   const ags = PS.agends.filter(a=>a.slot_id===id);
+  const ent = s.fase==='entrevista', v31 = PS.v31;
   abreModal(`
-    <h3>${s.fase==='dinamica'?'Dinâmica':'Entrevista'}: ${fmtD(s.data)}, ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</h3>
-    <p class="small muted" style="margin:0 0 14px">${s.local?esc(s.local)+', ':''}${ags.length}/${s.capacidade} vaga${s.capacidade>1?'s':''} ocupada${ags.length===1?'':'s'}</p>
-    ${ags.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th>Candidato</th><th>Contato</th><th>Presença</th></tr></thead><tbody>
+    <h3>${ent?'Entrevista':'Dinâmica'}: ${fmtD(s.data)}, ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</h3>
+    <p class="small muted" style="margin:0 0 10px">${!psOnline(s) && s.local?esc(s.local)+', ':''}${ags.length}/${s.capacidade} vaga${s.capacidade>1?'s':''} ocupada${ags.length===1?'':'s'}</p>
+    ${ent && v31 ? `<div class="ps-slot-info">
+      <div>${ic('video')} ${psOnline(s)
+        ? `<a href="${esc(s.link_reuniao)}" target="_blank" rel="noopener">${esc(s.link_reuniao.replace(/^https?:\/\//,''))}</a>
+           ${ibtn('copy','Copiar o link',`copiar('${esc(s.link_reuniao)}')`,'sm')}`
+        : `<span class="ps-alerta">Sem link de chamada: o candidato não recebe onde entrar.</span>`}</div>
+      <div>${ic('users')} ${s.criado_por ? `<span>Aberta por <b>${esc(s.criado_por)}</b>, responsável pela entrevista</span>`
+        : `<span>Responsável não registrado.</span> ${dica('Horários abertos antes da versão 31 não guardam quem abriu. Assumir põe você como responsável: você passa a receber o resumo da véspera.')}
+           <button class="btn ghost mini" onclick="psAssumirSlot('${s.id}')">Assumir</button>`}</div>
+    </div>` : ''}
+    ${ags.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th>Candidato</th><th>Contato</th>${ent&&v31?'<th>E-mail</th>':''}<th>Presença</th>${ent&&v31?'<th></th>':''}</tr></thead><tbody>
       ${ags.map(a=>{ const c=psCand(a.candidato_id);
-        return `<tr><td><span class="nome">${esc(c?.nome||'—')}</span><br><span class="reg">${esc(c?.protocolo||'')}</span></td>
+        return `<tr><td><span class="nome">${esc(c?.nome||'—')}</span><br><span class="reg">${esc(c?.protocolo||'')}</span>
+            ${a.reagendado_por?`<br><span class="small muted">reagendado por ${esc(a.reagendado_por)}</span>`:''}</td>
           <td class="small">${esc(c?.telefone||'')}<br>${esc(c?.email||'')}</td>
+          ${ent&&v31?`<td class="small muted">${esc(psUltimoEnvio(a.candidato_id)||'—')}</td>`:''}
           <td><span class="seg">
             <button class="${a.compareceu===true?'on-ok':''}" onclick="psPresenca('${a.id}',true)">Sim</button>
             <button class="${a.compareceu===false?'on-bad':''}" onclick="psPresenca('${a.id}',false)">Não</button>
-          </span></td></tr>`; }).join('')}</tbody></table></div>`
+          </span></td>
+          ${ent&&v31?`<td>${ibtn('cal','Reagendar este candidato',`psReagendarCand('${a.id}')`,'sm')}</td>`:''}</tr>`; }).join('')}</tbody></table></div>`
     : '<div class="empty">Nenhum candidato agendado neste horário.</div>'}
     <div class="acts" style="justify-content:space-between">
       <span style="display:flex;gap:10px;flex-wrap:wrap">
+        ${ent && v31 ? `<button class="btn ghost" onclick="psEditarSlot('${s.id}')">${ic('pencil')} Mudar horário ou link</button>` : ''}
         <button class="btn ${s.ativo?'ghost':'solid'}" onclick="psToggleSlot('${s.id}',${!s.ativo})">${s.ativo?'Desativar horário':'Reativar horário'}</button>
         <button class="btn perigo" onclick="psExcluirSlot('${s.id}',${ags.length})">${ic('trash')} Excluir</button>
       </span>
@@ -730,15 +793,96 @@ async function psToggleSlot(id, ativo){
     fechaModal(); PS.pronto=false; desenhaSelecao();
   }catch(e){ falha(e,'Falha ao atualizar horário'); }
 }
+/* o banco diz qual campo recusou; a tela diz o que fazer */
+const PS_RPC_MSG = { lotado:'Esse horário está cheio. Escolha outro.', indisponivel:'Esse horário não está mais disponível.',
+  mesmo_horario:'O candidato já está nesse horário.', sem_permissao:'Só o Comitê de Seleção reagenda.' };
+const PS_CAMPO_MSG = { hora_fim:'O fim precisa ser depois do início.', link_reuniao:'A entrevista é online: informe um link https://.' };
+const psMsgRPC = (data, error, padrao)=> data?.status==='invalido' ? (PS_CAMPO_MSG[data.campo] || 'Verifique os campos.')
+  : PS_RPC_MSG[data?.status] || motivoRPC(data, error, padrao);
+const psAvisados = n=> n ? ` ${n} candidato${n>1?'s':''} ${n>1?'recebem':'recebe'} o aviso por e-mail.` : '';
+
 async function psExcluirSlot(id, qtd){
-  if(!await confirma(qtd?`Este horário tem <b>${qtd}</b> agendamento(s), que serão <b>removidos</b> junto. Excluir mesmo assim?`
+  const s = PS.slots.find(x=>x.id===id);
+  const avisa = PS.v31 && s?.fase==='entrevista' && qtd;
+  if(!await confirma(qtd?`Este horário tem <b>${qtd}</b> agendamento(s), que serão <b>removidos</b> junto.${avisa?' O candidato recebe um e-mail para escolher outro horário no site.':''} Excluir mesmo assim?`
     :'Excluir este horário?','Excluir')) return;
   try{
-    const {error} = await sb.from('ps_slots').delete().eq('id', id);
-    if(error) throw error;
-    toast('Horário excluído.');
-    PS.pronto=false; desenhaSelecao();
+    if(PS.v31){
+      const {data, error} = await sb.rpc('ps_slot_excluir', {p_slot:id, p_motivo:null});
+      if(error || data?.status!=='ok') return toast(psMsgRPC(data, error, 'Falha ao excluir'), true);
+      toast('Horário excluído.' + psAvisados(data.avisados));
+    } else {
+      const {error} = await sb.from('ps_slots').delete().eq('id', id);
+      if(error) throw error;
+      toast('Horário excluído.');
+    }
+    fechaModal(); PS.pronto=false; desenhaSelecao();
   }catch(e){ falha(e,'Falha ao excluir'); }
+}
+async function psAssumirSlot(id){
+  const {data, error} = await sb.rpc('ps_slot_editar', {p_slot:id, p:{assumir:true, avisar:false}});
+  if(error || data?.status!=='ok') return toast(psMsgRPC(data, error, 'Falha ao assumir'), true);
+  toast('Você é o responsável por este horário.');
+  fechaModal(); PS.pronto=false; desenhaSelecao();
+}
+/* mudar o dia, a hora ou o link do horário: quem está nele é avisado */
+function psEditarSlot(id){
+  const s = PS.slots.find(x=>x.id===id); if(!s) return;
+  const n = PS.agends.filter(a=>a.slot_id===id).length;
+  abreModal(`<h3>${ic('pencil')} Mudar horário ou link</h3>
+    <p class="small muted" style="margin:-2px 0 14px">${n ? `${n} candidato${n>1?'s estão':' está'} neste horário e ${n>1?'recebem':'recebe'} o novo por e-mail.` : 'Ninguém reservou este horário ainda.'}</p>
+    <div class="form-grid">
+      <div class="fld"><label for="pe-data">Data</label><input id="pe-data" type="date" value="${esc(s.data)}"></div>
+      <div class="fld"><label for="pe-ini">Início</label><input id="pe-ini" type="time" value="${psHm(s.hora_inicio)}"></div>
+      <div class="fld"><label for="pe-fim">Fim</label><input id="pe-fim" type="time" value="${psHm(s.hora_fim)}"></div>
+    </div>
+    <div class="fld"><label for="pe-link">Link da chamada</label>
+      <div class="ps-link-lin"><input id="pe-link" type="url" value="${esc(s.link_reuniao||'')}" placeholder="https://meet.google.com/abc-defg-hij">
+        <a class="btn ghost mini" href="${PS_MEET_NOVO}" target="_blank" rel="noopener">${ic('video')} Criar no Meet</a></div></div>
+    ${n ? `<div class="fld"><label for="pe-motivo">Motivo <span class="muted">(vai no e-mail, opcional)</span></label>
+      <input id="pe-motivo" placeholder="Ex.: conflito de agenda do entrevistador"></div>
+      <label class="check ml-chk"><input type="checkbox" id="pe-avisar" checked> Avisar ${n>1?'os candidatos':'o candidato'} por e-mail</label>` : ''}
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="psAbrirSlot('${s.id}')">Voltar</button>
+      <button class="btn solid" id="pe-ok" onclick="psSalvarSlot('${s.id}')">Salvar</button></div>`, 'largo', true);
+}
+async function psSalvarSlot(id){
+  const link = $('#pe-link').value.trim();
+  if(!psLinkOk(link)) return toast(PS_CAMPO_MSG.link_reuniao, true);
+  const p = { data:$('#pe-data').value, hora_inicio:$('#pe-ini').value, hora_fim:$('#pe-fim').value, link_reuniao:link,
+    motivo:$('#pe-motivo')?.value.trim() || null, avisar:$('#pe-avisar') ? $('#pe-avisar').checked : false };
+  $('#pe-ok').disabled = true;
+  const {data, error} = await sb.rpc('ps_slot_editar', {p_slot:id, p});
+  if(error || data?.status!=='ok'){ $('#pe-ok').disabled = false; return toast(psMsgRPC(data, error, 'Falha ao salvar'), true); }
+  toast('Horário atualizado.' + psAvisados(data.avisados));
+  fechaModal(); PS.pronto=false; desenhaSelecao();
+}
+/* mover um candidato para outro horário aberto da mesma fase */
+function psReagendarCand(agId){
+  const a = PS.agends.find(x=>x.id===agId); if(!a) return;
+  const c = psCand(a.candidato_id), hoje = hojeISO();
+  const livres = PS.slots.filter(s=>s.fase===a.fase && s.ativo && s.id!==a.slot_id && s.data>=hoje
+    && PS.agends.filter(x=>x.slot_id===s.id).length < s.capacidade);
+  const porDia = {}; livres.forEach(s=>{ (porDia[s.data]=porDia[s.data]||[]).push(s); });
+  abreModal(`<h3>${ic('cal')} Reagendar ${esc(c?.nome||'candidato')}</h3>
+    <p class="small muted" style="margin:-2px 0 14px">Horário atual: ${a.slot?`${fmtD(a.slot.data)}, ${psHm(a.slot.hora_inicio)}–${psHm(a.slot.hora_fim)}`:'—'}.
+      O candidato recebe o novo horário e o link por e-mail, e a página de acompanhamento mostra a mudança.</p>
+    ${livres.length ? `<div class="fld"><label>Novo horário</label><div class="ps-reag">${Object.keys(porDia).sort().map(d=>`
+      <div class="ps-reag-dia"><b>${new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'})}</b>
+        ${porDia[d].map(s=>`<label class="check"><input type="radio" name="pr-slot" value="${s.id}"> ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}${s.criado_por?` <span class="muted small">(${esc(psPrimeiro(s.criado_por))})</span>`:''}</label>`).join('')}</div>`).join('')}</div></div>
+      <div class="fld"><label for="pr-motivo">Motivo <span class="muted">(vai no e-mail, opcional)</span></label>
+        <input id="pr-motivo" placeholder="Ex.: imprevisto na agenda do entrevistador"></div>`
+    : '<div class="empty">Nenhum outro horário livre. Abra uma janela nova na Agenda e volte aqui.</div>'}
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="psAbrirSlot('${a.slot_id}')">Voltar</button>
+      ${livres.length ? `<button class="btn solid" id="pr-ok" onclick="psReagendarSalvar('${a.id}')">${ic('mail')} Reagendar e avisar</button>` : ''}</div>`, 'largo', true);
+}
+async function psReagendarSalvar(agId){
+  const slot = document.querySelector('input[name="pr-slot"]:checked')?.value;
+  if(!slot) return toast('Escolha o novo horário.', true);
+  $('#pr-ok').disabled = true;
+  const {data, error} = await sb.rpc('ps_reagendar', {p_agendamento:agId, p_slot:slot, p_motivo:$('#pr-motivo').value.trim() || null});
+  if(error || data?.status!=='ok'){ $('#pr-ok').disabled = false; return toast(psMsgRPC(data, error, 'Falha ao reagendar'), true); }
+  toast('Candidato reagendado.' + (data.email ? ' Ele recebe o novo horário por e-mail.' : ''));
+  fechaModal(); PS.pronto=false; desenhaSelecao();
 }
 
 /* ============================================================

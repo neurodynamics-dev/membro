@@ -6,8 +6,9 @@ import { nomeExibicao, assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, s
          montarEnvio, lerResposta, faltaParaEnviar, pareceEndereco,
          declaracaoHTML, declaracaoTexto, dataExtensa, periodoTexto, horasTexto,
          agendaHTML, agendaTexto, agendaFrase, linkResposta, linkGoogle, antecedenciaTexto,
-         personalizar,
-         type Destinatario, type EnvioDocumento, type EnvioAgenda } from "./index.ts";
+         personalizar, diaExtenso, quandoPS, linkAcompanhar, fraseCandidato, candidatoHTML, candidatoTexto,
+         resumoHTML, resumoTexto, dinamicaTexto, linkGooglePS,
+         type Destinatario, type EnvioPS, type EnvioDocumento, type EnvioAgenda } from "./index.ts";
 
 let falhas = 0;
 const ok = (n: string, c: boolean, extra = "") => {
@@ -309,6 +310,65 @@ const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {
   ok("no Resend, nome com ponto vai entre aspas", (r.corpo as unknown as { from: string }).from === '"Depto. de Pessoal | NeuroDynamics" <portal@nd.dev>');
   ok("sem caractere especial, vai como está", nomeExibicao("Leadership | NeuroDynamics") === "Leadership | NeuroDynamics"
     && nomeExibicao('P&D "x"') === "P&D x");
+}
+
+/* ---------- as entrevistas do processo seletivo (31.0) ---------- */
+{
+  const envio = (tipo: EnvioPS["tipo"], dados: Partial<EnvioPS["dados"]> = {}): EnvioPS => ({
+    id: 1, tipo, para_nome: "Lia Moreira", para_email: "lia@exemplo.com", assunto: "Entrevista confirmada: 14/10, 14:00",
+    dados: { data: "2026-10-14", hora_inicio: "14:00", hora_fim: "14:30", link: "https://meet.google.com/abc-defg-hij",
+             responsavel: "Ana Figueiredo", protocolo: "PS26-0001", email: "lia@exemplo.com", ...dados },
+  });
+  ok("o dia por extenso, com a semana", diaExtenso("2026-10-14") === "quarta-feira, 14 de outubro");
+  ok("o quando da entrevista", quandoPS({ data: "2026-10-14", hora_inicio: "14:00", hora_fim: "14:30" })
+     === "quarta-feira, 14 de outubro, das 14:00 às 14:30");
+  ok("a página de acompanhamento já vem preenchida",
+     linkAcompanhar(envio("confirmacao").dados) === "https://selecao.neurodynamics.dev/#/acompanhar?protocolo=PS26-0001&email=lia%40exemplo.com");
+  const c = candidatoHTML(envio("confirmacao"));
+  ok("a confirmação traz o link, o botão de entrar e quem conduz",
+     c.includes('href="https://meet.google.com/abc-defg-hij"') && c.includes("Entrar na chamada") && c.includes("Ana Figueiredo")
+     && c.includes("Olá, Lia.") && c.includes("quarta-feira, 14 de outubro, das 14:00 às 14:30"));
+  ok("e o Google Agenda com a chamada", c.includes("calendar.google.com") && linkGooglePS(envio("confirmacao").dados).includes("meet.google.com"));
+  const r = candidatoHTML(envio("reagendamento", { hora_inicio: "16:00", hora_fim: "16:30", motivo: "Imprevisto",
+    antes: { data: "2026-10-14", hora_inicio: "14:00", hora_fim: "14:30" } }));
+  ok("o reagendamento risca o horário antigo e diz o motivo", r.includes("line-through") && r.includes("das 14:00 às 14:30")
+     && r.includes("das 16:00 às 16:30") && r.includes("Imprevisto"));
+  const x = candidatoHTML(envio("cancelamento", { link: null, motivo: "Doença" }));
+  ok("o cancelamento pede um novo horário, sem link de chamada", x.includes("Escolher novo horário") && !x.includes("Entrar na chamada")
+     && x.includes("#/acompanhar?protocolo=PS26-0001"));
+  ok("o aviso de link diferencia a primeira vez da troca",
+     fraseCandidato(envio("link")).startsWith("Sua entrevista será online")
+     && fraseCandidato(envio("link", { antes: { link: "https://meet.google.com/old" } })).startsWith("O link da chamada"));
+  const pres = candidatoHTML(envio("confirmacao", { link: null, local: "LABBIO" }));
+  ok("horário antigo, presencial: diz onde e não fala em chamada", pres.includes("LABBIO") && !pres.includes("Google Meet")
+     && !pres.includes("Entrar na chamada"));
+  const inj = candidatoHTML(envio("confirmacao", { responsavel: '<img src=x onerror=alert(1)>', motivo: "<b>x</b>" }));
+  ok("o que veio do banco é escapado", !inj.includes("<img src=x") && !inj.includes("<b>x</b>"));
+  const t = candidatoTexto(envio("confirmacao"));
+  ok("a versão em texto do candidato", !/<[a-z]/i.test(t) && t.includes("Chamada: https://meet.google.com/abc-defg-hij") && t.includes("Página de acompanhamento: "));
+
+  const resumo: EnvioPS = { id: 2, tipo: "resumo", para_nome: "Ana Figueiredo", para_email: "ana@nro.dev", assunto: "Entrevistas de amanhã: 2",
+    dados: { dia: "2026-10-14", atualizacao: false, itens: [
+      { hora_inicio: "14:00", hora_fim: "14:30", link: "https://meet.google.com/abc-defg-hij", href: "#/selecao/candidatos/c1",
+        candidato: { nome: "Lia Moreira", curso: "Engenharia Biomédica", instituicao: "UFMG", periodo: "5º", areas: ["Órtese", "Sinais"],
+          motivacao: "Quero trabalhar com reabilitação.", github: "https://github.com/lia", lattes: "javascript:alert(1)",
+          email: "lia@exemplo.com", telefone: "31 99999-0001" },
+        dinamica: { nota: 4.0, avaliacoes: 2, aprovar: 1, em_duvida: 1, reprovar: 0 } },
+      { hora_inicio: "14:30", hora_fim: "15:00", link: "https://meet.google.com/abc-defg-hij", href: "#/selecao/candidatos/c2",
+        candidato: { nome: "Rui Campos" }, dinamica: { avaliacoes: 0 } }] } };
+  const h = resumoHTML(resumo);
+  ok("o resumo lista as entrevistas do dia, com o perfil", h.includes("2 entrevistas, quarta-feira, 14 de outubro")
+     && h.includes("Lia Moreira") && h.includes("Rui Campos") && h.includes("Engenharia Biomédica, UFMG, 5º período")
+     && h.includes("Órtese, Sinais") && h.includes("Quero trabalhar com reabilitação."));
+  ok("com a chamada e a ficha no portal", h.includes("Entrar na chamada") && h.includes("https://membro.neurodynamics.dev/#/selecao/candidatos/c1"));
+  ok("os links do candidato, só os http(s)", h.includes('href="https://github.com/lia"') && !h.includes("javascript:alert"));
+  ok("a dinâmica em uma linha", dinamicaTexto(resumo.dados.itens![0].dinamica) === "nota média 4 em 2 avaliações: 1 aprovar, 1 em dúvida"
+     && dinamicaTexto({ avaliacoes: 0 }) === "sem avaliação registrada");
+  ok("o resumo atualizado avisa que substitui o anterior",
+     resumoHTML({ ...resumo, dados: { ...resumo.dados, atualizacao: true } }).includes("este resumo substitui o anterior"));
+  const rt = resumoTexto(resumo);
+  ok("a versão em texto do resumo", !/<[a-z]/i.test(rt) && rt.includes("14:00 às 14:30: Lia Moreira") && rt.includes("GitHub: https://github.com/lia")
+     && rt.includes("Ficha: https://membro.neurodynamics.dev/#/selecao/candidatos/c1"));
 }
 
 console.log(falhas ? `\n${falhas} falha(s)` : "\nTudo verde.");

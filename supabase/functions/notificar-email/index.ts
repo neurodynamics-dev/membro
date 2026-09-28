@@ -656,6 +656,266 @@ async function enviarDocumentos(): Promise<Record<string, unknown>> {
 }
 
 /* ------------------------------------------------------------
+   AS ENTREVISTAS DO PROCESSO SELETIVO (31.0)
+   Ao candidato: a reserva (com o link da chamada), o reagendamento
+   feito pela equipe, a troca do link e o cancelamento do horário. Ao
+   responsável pelos horários: o resumo da véspera, com o perfil de
+   cada candidato e os links. A fila é ps_envios.
+   ------------------------------------------------------------ */
+const SITE_PS = env("PS_SITE_URL") || "https://selecao.neurodynamics.dev";
+const DE_PS = "Processo Seletivo | NeuroDynamics";
+
+export interface HorarioPS {
+  data?: string; hora_inicio?: string; hora_fim?: string; link?: string | null; local?: string | null;
+}
+export interface ItemResumoPS {
+  hora_inicio: string; hora_fim: string; link?: string | null; href?: string;
+  candidato: {
+    id?: string; nome: string; protocolo?: string; email?: string; telefone?: string | null;
+    curso?: string | null; instituicao?: string | null; periodo?: string | null; cidade?: string | null;
+    areas?: string[] | null; motivacao?: string | null; background?: string | null; disponibilidade?: string | null;
+    lattes?: string | null; github?: string | null; linkedin?: string | null; portfolio?: string | null;
+  };
+  dinamica?: { nota?: number | null; avaliacoes?: number; aprovar?: number; reprovar?: number; em_duvida?: number } | null;
+}
+export interface EnvioPS {
+  id: number;
+  tipo: "confirmacao" | "reagendamento" | "link" | "cancelamento" | "resumo";
+  para_nome: string | null;
+  para_email: string;
+  assunto: string;
+  dados: HorarioPS & {
+    responsavel?: string | null; protocolo?: string; email?: string; motivo?: string | null; por?: string | null;
+    antes?: HorarioPS | null; dia?: string; itens?: ItemResumoPS[]; atualizacao?: boolean;
+  };
+}
+
+const DIAS_SEMANA = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+/** "terça-feira, 14 de outubro" */
+export function diaExtenso(iso?: string | null): string {
+  const p = partesData(iso);
+  if (!p) return "";
+  return `${DIAS_SEMANA[new Date(Date.UTC(p.a, p.m - 1, p.d)).getUTCDay()]}, ${p.d} de ${MESES[p.m - 1]}`;
+}
+/** "terça-feira, 14 de outubro, das 14:00 às 14:30" */
+export function quandoPS(h?: HorarioPS | null): string {
+  if (!h?.data) return "";
+  return `${diaExtenso(h.data)}, das ${h.hora_inicio || ""} às ${h.hora_fim || ""}`;
+}
+/** a página de acompanhamento, já com a inscrição preenchida */
+export function linkAcompanhar(d: EnvioPS["dados"]): string {
+  const q = new URLSearchParams();
+  if (d.protocolo) q.set("protocolo", d.protocolo);
+  if (d.email) q.set("email", d.email);
+  return `${SITE_PS}/#/acompanhar${q.toString() ? "?" + q.toString() : ""}`;
+}
+/** a abertura, por tipo */
+export function fraseCandidato(e: EnvioPS): string {
+  const d = e.dados || {};
+  if (e.tipo === "confirmacao") return "Sua entrevista individual no processo seletivo da NeuroDynamics está confirmada.";
+  if (e.tipo === "reagendamento") return "A equipe precisou reagendar a sua entrevista. O novo horário está abaixo.";
+  if (e.tipo === "link") return d.antes?.link ? "O link da chamada da sua entrevista mudou. O horário continua o mesmo."
+    : "Sua entrevista será online. Este é o link da chamada; o horário continua o mesmo.";
+  return "A equipe precisou cancelar o horário da sua entrevista. Escolha um novo horário na página de acompanhamento.";
+}
+
+const linhaPS = (rot: string, val: string) => val ? `<tr>
+      <td style="padding:6px 0;font:600 12px/1.5 Helvetica,Arial,sans-serif;color:#8a908a;width:104px;vertical-align:top">${rot}</td>
+      <td style="padding:6px 0;font:400 14px/1.5 Helvetica,Arial,sans-serif;color:#1d1d1f">${val}</td></tr>` : "";
+const botaoPS = (href: string, rot: string) => `<a href="${esc(href)}" style="display:inline-block;margin:0 6px 6px 0;
+      padding:12px 20px;border-radius:9px;font:600 14px/1 Helvetica,Arial,sans-serif;text-decoration:none;
+      background:#00594F;color:#ffffff;border:1px solid #00594F">${esc(rot)}</a>`;
+const molduraPS = (titulo: string, miolo: string, rodape: string) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width"><title>${esc(titulo)}</title></head>
+<body style="margin:0;padding:0;background:#f4f6f4">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4">
+    <tr><td align="center" style="padding:32px 16px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="max-width:600px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
+        <tr><td style="padding:28px 28px 8px">
+          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics" style="display:block;border:0;outline:none">
+        </td></tr>
+        ${miolo}
+        <tr><td style="padding:18px 28px 28px">
+          <div style="font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#8a908a;border-top:1px solid #e3e6e3;padding-top:14px">${rodape}</div>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+/** o evento da entrevista no Google Agenda */
+export function linkGooglePS(d: HorarioPS): string {
+  return linkGoogle({ titulo: "Entrevista, Processo Seletivo NeuroDynamics", data: d.data, hora_inicio: d.hora_inicio,
+    hora_fim: d.hora_fim, meet_url: d.link || null, local: d.link ? null : d.local || null,
+    descricao: "Entrevista individual do processo seletivo da NeuroDynamics." });
+}
+
+export function candidatoHTML(e: EnvioPS): string {
+  const d = e.dados || {};
+  const cancelado = e.tipo === "cancelamento";
+  const chamada = d.link ? `<a href="${esc(d.link)}" style="color:#00594F">${esc(d.link)}</a>` : "";
+  const antes = d.antes && e.tipo === "reagendamento"
+    ? `<span style="text-decoration:line-through;color:#8a908a">${esc(quandoPS(d.antes))}</span>` : "";
+  const miolo = `
+        <tr><td style="padding:14px 28px 0">
+          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a">Olá, ${esc(primeiroNome(e.para_nome || ""))}. ${esc(fraseCandidato(e))}</div>
+          <div style="font:700 21px/1.3 Helvetica,Arial,sans-serif;color:#1d1d1f;margin-top:10px;
+            ${cancelado ? "text-decoration:line-through;color:#8a908a" : ""}">Entrevista individual</div>
+        </td></tr>
+        <tr><td style="padding:12px 28px 0">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            ${linhaPS(cancelado ? "Era" : "Quando", esc(quandoPS(d)))}
+            ${linhaPS("Antes", antes)}
+            ${cancelado ? "" : linhaPS("Chamada", chamada)}
+            ${cancelado || d.link ? "" : linhaPS("Onde", esc(d.local || ""))}
+            ${cancelado ? "" : linhaPS("Entrevista com", esc(d.responsavel || ""))}
+            ${linhaPS("Motivo", esc(d.motivo || ""))}
+            ${linhaPS("Protocolo", esc(d.protocolo || ""))}
+          </table>
+        </td></tr>
+        <tr><td style="padding:18px 28px 0">
+          ${cancelado ? botaoPS(linkAcompanhar(d), "Escolher novo horário") : d.link ? botaoPS(d.link, "Entrar na chamada") : ""}
+        </td></tr>
+        ${cancelado ? "" : `<tr><td style="padding:8px 28px 0;font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a">
+          ${d.link ? "A entrevista é online, pelo Google Meet. Entre alguns minutos antes, com câmera e microfone testados, de um lugar tranquilo."
+            : "Chegue com alguns minutos de antecedência."}
+          Se precisar de outro horário, reagende pela página de acompanhamento.
+        </td></tr>`}
+        <tr><td style="padding:14px 28px 0;font:400 13px/1.6 Helvetica,Arial,sans-serif">
+          ${cancelado ? "" : `<a href="${esc(linkGooglePS(d))}" style="color:#00594F;text-decoration:none">Adicionar ao Google Agenda</a> &nbsp;|&nbsp; `}
+          <a href="${esc(linkAcompanhar(d))}" style="color:#00594F;text-decoration:none">Página de acompanhamento</a>
+        </td></tr>`;
+  return molduraPS(e.assunto, miolo,
+    "Processo Seletivo da NeuroDynamics. Você recebeu este e-mail porque se inscreveu no processo seletivo.");
+}
+
+export function candidatoTexto(e: EnvioPS): string {
+  const d = e.dados || {};
+  const cancelado = e.tipo === "cancelamento";
+  return `Olá, ${primeiroNome(e.para_nome || "")}. ${fraseCandidato(e)}\n\n`
+    + `Entrevista individual\n`
+    + `${cancelado ? "Era" : "Quando"}: ${quandoPS(d)}\n`
+    + (d.antes && e.tipo === "reagendamento" ? `Antes: ${quandoPS(d.antes)}\n` : "")
+    + (!cancelado && d.link ? `Chamada: ${d.link}\n` : "")
+    + (!cancelado && !d.link && d.local ? `Onde: ${d.local}\n` : "")
+    + (!cancelado && d.responsavel ? `Entrevista com: ${d.responsavel}\n` : "")
+    + (d.motivo ? `Motivo: ${d.motivo}\n` : "")
+    + (d.protocolo ? `Protocolo: ${d.protocolo}\n` : "")
+    + (cancelado ? "" : d.link ? `\nA entrevista é online, pelo Google Meet. Entre alguns minutos antes, com câmera e microfone testados.\n`
+                                : `\nChegue com alguns minutos de antecedência.\n`)
+    + `\nPágina de acompanhamento: ${linkAcompanhar(d)}\n`
+    + `\nProcesso Seletivo da NeuroDynamics\n`;
+}
+
+/** "Nota média 4 em 2 avaliações: 1 aprovar, 1 em dúvida" */
+export function dinamicaTexto(x?: ItemResumoPS["dinamica"]): string {
+  if (!x || !x.avaliacoes) return "sem avaliação registrada";
+  const r = [x.aprovar ? `${x.aprovar} aprovar` : "", x.em_duvida ? `${x.em_duvida} em dúvida` : "",
+             x.reprovar ? `${x.reprovar} reprovar` : ""].filter(Boolean).join(", ");
+  const nota = x.nota == null ? "" : `nota média ${String(x.nota).replace(".", ",")} `;
+  return `${nota}em ${x.avaliacoes} ${x.avaliacoes === 1 ? "avaliação" : "avaliações"}${r ? `: ${r}` : ""}`;
+}
+const linksCandidato = (c: ItemResumoPS["candidato"]) =>
+  ([["Lattes", c.lattes], ["GitHub", c.github], ["LinkedIn", c.linkedin], ["Portfólio", c.portfolio]] as [string, string | null | undefined][])
+    .filter(([, u]) => u && /^https?:\/\//i.test(String(u)));
+
+export function resumoHTML(e: EnvioPS): string {
+  const d = e.dados || {}, itens = d.itens || [];
+  const cartao = (it: ItemResumoPS) => {
+    const c = it.candidato || { nome: "" };
+    const formacao = [c.curso, c.instituicao, c.periodo ? `${c.periodo} período` : ""].filter(Boolean).join(", ");
+    const links = linksCandidato(c).map(([r, u]) => `<a href="${esc(u)}" style="color:#00594F">${r}</a>`).join(" &nbsp;|&nbsp; ");
+    return `<tr><td style="padding:14px 28px 0">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e3e6e3;border-radius:12px">
+        <tr><td style="padding:14px 16px 4px">
+          <div style="font:700 13px/1.4 Helvetica,Arial,sans-serif;color:#00594F">${esc(it.hora_inicio)} às ${esc(it.hora_fim)}</div>
+          <div style="font:700 18px/1.35 Helvetica,Arial,sans-serif;color:#1d1d1f;margin-top:2px">${esc(c.nome)}</div>
+          ${formacao ? `<div style="font:400 13px/1.5 Helvetica,Arial,sans-serif;color:#4a514a">${esc(formacao)}</div>` : ""}
+        </td></tr>
+        <tr><td style="padding:4px 16px 0">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            ${linhaPS("Áreas", esc((c.areas || []).join(", ")))}
+            ${linhaPS("Cidade", esc(c.cidade || ""))}
+            ${linhaPS("Dinâmica", esc(dinamicaTexto(it.dinamica)))}
+            ${linhaPS("Motivação", esc(c.motivacao || ""))}
+            ${linhaPS("Trajetória", esc(c.background || ""))}
+            ${linhaPS("Disponibilidade", esc(c.disponibilidade || ""))}
+            ${linhaPS("Links", links)}
+            ${linhaPS("Contato", esc([c.email, c.telefone].filter(Boolean).join(", ")))}
+          </table>
+        </td></tr>
+        <tr><td style="padding:10px 16px 14px">
+          ${it.link ? botaoPS(it.link, "Entrar na chamada") : ""}
+          ${it.href ? `<a href="${esc(linkDe(it.href))}" style="font:600 13px/1 Helvetica,Arial,sans-serif;color:#00594F;text-decoration:none">Abrir a ficha no portal</a>` : ""}
+        </td></tr>
+      </table>
+    </td></tr>`;
+  };
+  const miolo = `
+        <tr><td style="padding:14px 28px 0">
+          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a">Olá, ${esc(primeiroNome(e.para_nome || ""))}.
+            ${d.atualizacao ? "A lista de amanhã mudou: este resumo substitui o anterior." : "Estas são as entrevistas que você conduz amanhã."}</div>
+          <div style="font:700 21px/1.3 Helvetica,Arial,sans-serif;color:#1d1d1f;margin-top:10px">
+            ${itens.length} ${itens.length === 1 ? "entrevista" : "entrevistas"}, ${esc(diaExtenso(d.dia))}</div>
+        </td></tr>
+        ${itens.map(cartao).join("")}
+        <tr><td style="padding:16px 28px 0;font:400 13px/1.6 Helvetica,Arial,sans-serif">
+          <a href="${esc(linkDe("#/selecao/agenda"))}" style="color:#00594F;text-decoration:none">Abrir a Agenda da Seleção</a>
+        </td></tr>`;
+  return molduraPS(e.assunto, miolo,
+    "Processo Seletivo da NeuroDynamics. Você recebe este resumo porque abriu estes horários de entrevista em Seleção › Agenda. Os dados dos candidatos são sigilosos: não encaminhe este e-mail.");
+}
+
+export function resumoTexto(e: EnvioPS): string {
+  const d = e.dados || {}, itens = d.itens || [];
+  return `Olá, ${primeiroNome(e.para_nome || "")}. `
+    + (d.atualizacao ? "A lista de amanhã mudou: este resumo substitui o anterior.\n\n" : "Estas são as entrevistas que você conduz amanhã.\n\n")
+    + `${itens.length} ${itens.length === 1 ? "entrevista" : "entrevistas"}, ${diaExtenso(d.dia)}\n`
+    + itens.map((it) => {
+      const c = it.candidato || { nome: "" };
+      return `\n${it.hora_inicio} às ${it.hora_fim}: ${c.nome}\n`
+        + [[c.curso, c.instituicao, c.periodo ? `${c.periodo} período` : ""].filter(Boolean).join(", ")].filter(Boolean).map((x) => `${x}\n`).join("")
+        + (c.areas?.length ? `Áreas: ${c.areas.join(", ")}\n` : "")
+        + `Dinâmica: ${dinamicaTexto(it.dinamica)}\n`
+        + (c.motivacao ? `Motivação: ${c.motivacao}\n` : "")
+        + linksCandidato(c).map(([r, u]) => `${r}: ${u}\n`).join("")
+        + (c.email || c.telefone ? `Contato: ${[c.email, c.telefone].filter(Boolean).join(", ")}\n` : "")
+        + (it.link ? `Chamada: ${it.link}\n` : "")
+        + (it.href ? `Ficha: ${linkDe(it.href)}\n` : "");
+    }).join("")
+    + `\nProcesso Seletivo da NeuroDynamics. Os dados dos candidatos são sigilosos: não encaminhe este e-mail.\n`;
+}
+
+/** Manda a fila das entrevistas e dá baixa. Sem a 31.0, diz isso e segue. */
+async function enviarPS(): Promise<Record<string, unknown>> {
+  let lote: EnvioPS[];
+  try {
+    lote = (await rpc("ps_envios_lote", { p_limite: LOTE })) as EnvioPS[];
+  } catch (e) {
+    return /PGRST202|404|ps_envios_lote/.test(String(e))
+      ? { ps: "sem_migracao_31" } : { ps: "erro", ps_detalhe: String(e) };
+  }
+  if (!lote?.length) return { ps: 0 };
+  const enviados: number[] = [], falhas: number[] = [];
+  let erro = "";
+  for (const e of lote) {
+    try {
+      const resumo = e.tipo === "resumo";
+      const m = await enviarUm(e.para_email, e.para_nome || "", e.assunto,
+        resumo ? resumoHTML(e) : candidatoHTML(e), resumo ? resumoTexto(e) : candidatoTexto(e), DE_PS);
+      if (m) { falhas.push(e.id); erro = m; } else { enviados.push(e.id); }
+    } catch (x) { falhas.push(e.id); erro = String(x); }
+  }
+  try {
+    await rpc("ps_envios_baixa", { p: { enviados, falhas, erro } });
+  } catch (x) {
+    return { ps: enviados.length, ps_falhas: falhas.length, ps_detalhe: "enviou, mas não deu baixa: " + String(x) };
+  }
+  return { ps: enviados.length, ps_falhas: falhas.length, ...(erro ? { ps_detalhe: erro } : {}) };
+}
+
+/* ------------------------------------------------------------
    OS E-MAILS PROGRAMADOS (30.0)
    O Full mailer grava o HTML pronto; aqui só se troca o nome de cada
    destinatário e se envia, com o remetente da área no nome de exibição.
@@ -751,7 +1011,8 @@ export async function servir(req: Request): Promise<Response> {
 
   /* as declarações e a agenda primeiro: saem mesmo que o sino não
      tenha aviso nenhum para ninguém, e o lembrete tem hora */
-  const docs = { ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()) };
+  const docs = { ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()),
+                 ...(await enviarPS()) };
 
   let destinos: Destinatario[];
   try {

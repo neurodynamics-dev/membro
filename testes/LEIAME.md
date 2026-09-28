@@ -22,6 +22,13 @@ stub, e a correção da verificação é a mesma do banco: o teste responde erra
 e certo e confere o que volta. O progresso da pessoa logada fica em
 `window.__treProg`.
 
+As da 31.0 (`ps_reagendar`, `ps_slot_editar`, `ps_slot_excluir`) movem,
+mudam e excluem o horário no stub, e devolvem quantos candidatos seriam
+avisados. Com `window.__teste.ps31` posto antes de a página carregar, a Agenda
+da Seleção ganha dois horários de entrevista online abertos pela Ana, a Lia
+agendada no primeiro e a confirmação dela já enviada; sem o flag, os testes da
+Seleção veem os dados de sempre.
+
 As da 30.0 (`email_destinatarios`, `email_programar`,
 `email_programado_cancelar`) contam quem recebe pelos grupos, com os de baixo,
 põem na fila e cancelam como o banco; `update` em `email_roteiros` muda a
@@ -83,6 +90,7 @@ e rode daqui.
 | `agenda-e-inicio.mjs` | a agenda no modelo do Google (a semana com as camadas, os atalhos M, D, J, T, criar rápido, a página do evento com predefinido e convidado, reagendar sem apagar perguntando se avisa, responder ao convite, os eventos predefinidos), a presença (quem está no LABBIO, o placar, gerar a folha de check-in: o QR desenhado no PDF é lido de volta com o jsQR e tem de ser o endereço com o token fixo; abrir esse endereço registra; folha revogada não vale), o início (a semana, o convite respondido ali, o placar, as tarefas, os links sem `javascript:`, os abertos por último), o rodapé, os atalhos e Administração › Links úteis — com asserções |
 | `treinamentos.mjs` | os treinamentos: o espaço no menu (e Meus pedidos dentro de Serviços, com `#/pedidos` ainda abrindo), o obrigatório no início e na busca, o programa, o módulo em Markdown, o vídeo no player do site, o gabarito que não desce, a verificação reprovada e aprovada, o certificado em PDF e a conferência pelo código, a gestão, o editor que grava sozinho, importar o texto de um agente (o do README e um embrulhado em ```markdown), a pré-visualização, exportar e ler de volta, publicar, atribuir, novo do zero e de um texto, o acompanhamento e o CSV, as configurações e o README (ver, salvar, baixar com as referências, voltar ao padrão), a aba da ficha, quem não gere, quem gere por grupo, e o celular — com asserções |
 | `emails.mjs` | os e-mails (v30): o Full mailer em tela inteira (o tile de Relatórios leva até ele), a prévia com o nome de quem escreve, as redes vindas de Studio › Contas (link salvo ou montado pelo usuário, e desmarcar), o botão para uma tela do portal, o rodapé sem link morto, as cores dos seis remetentes (departamentos claros e distintos, a Leadership escura; as imagens da cor nova existem), o rascunho que sobrevive, a marca do nome fora do que se copia; programar (quem recebe e quem está sem e-mail, por grupo com os de baixo, só para mim; o que vai ao banco), a fila e o histórico, reagendar, cancelar; as pílulas (quem assina, para quem, grupo extinto, a série de quatro em quatro dias sem fim de semana e sem repetir a fila, pôr na série, editar, link recusado, abrir no mailer); o link de cada rede no Studio; o Comitê de Seleção sem programar, quem só lê sem entrar, e o celular — com asserções |
+| `ps-entrevistas.mjs` | as entrevistas online do PS (v31), em Seleção › Agenda: o link da chamada no lugar do local, com "Criar no Meet"; sem link ou sem https:// não cria; quem abre fica responsável; a dinâmica continua com local; o chip online com o nome; o horário antigo tracejado; o horário com o link, quem abriu e o último e-mail; reagendar o candidato com motivo; mudar hora e link avisando; assumir o horário antigo; excluir avisando; a ficha com a chamada; o celular — com asserções |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install
@@ -104,6 +112,7 @@ node formularios.mjs
 node validacao.mjs                      # a página de ../auth/, servida pelo mesmo servidor
 node agenda-e-inicio.mjs
 node emails.mjs
+node ps-entrevistas.mjs
 ```
 
 Os testes que baixam PDF lançam o Chromium com `LANG=C.UTF-8`: o nome dos

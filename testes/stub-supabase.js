@@ -565,6 +565,27 @@
     { id:1, codigo:'K7QD-2M9X-P4TR', enviado_em:dvDia(-15), tentativas:0, erro:null },
     { id:2, codigo:'3HVN-8Z2C-QW6E', enviado_em:null, tentativas:5, erro:'550 5.1.1 mailbox unavailable' }
   ];
+  /* ---- v31: as entrevistas online ----
+     Com window.__teste.ps31 (posto antes de a página carregar), a
+     Agenda da Seleção ganha dois horários de entrevista online abertos
+     pela Ana (amanhã, 14:00 e 14:30), a Lia agendada no primeiro, e a
+     confirmação dela já enviada. Sem o flag, só a fila vazia: os testes
+     da Seleção não mudam. */
+  DADOS.ps_envios = [];
+  if ((window.__teste || {}).ps31){
+    const amanha = (() => { const x = new Date(); x.setDate(x.getDate() + 1);
+      return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; })();
+    DADOS.ps_candidatos.push({ id:'c5', edicao_id:'ed1', numero:5, protocolo:'PS26-005', nome:'Lia Moreira', email:'lia@ufmg.br',
+      telefone:'31 90000-0005', curso:'Eng. Biomédica', periodo:'5º', status:'aprovado_dinamica', criado_em:'2026-08-07T10:00:00Z' });
+    const meet = 'https://meet.google.com/abc-defg-hij';
+    const sl = (id, hi, hf) => ({ id, edicao_id:'ed1', fase:'entrevista', data:amanha, hora_inicio:hi, hora_fim:hf, capacidade:1,
+      local:null, link_reuniao:meet, criado_por:'Ana Figueiredo', criado_por_registro:4, ativo:true, codigo:null });
+    DADOS.ps_slots.push(sl('s3', '14:00:00', '14:30:00'), sl('s4', '14:30:00', '15:00:00'));
+    DADOS.ps_agendamentos.push({ id:'ag2', slot_id:'s3', candidato_id:'c5', fase:'entrevista', compareceu:null,
+      reagendado_por:null, slot:sl('s3', '14:00:00', '14:30:00') });
+    DADOS.ps_envios.push({ id:1, tipo:'confirmacao', candidato_id:'c5', slot_id:'s3', criado_em:'2026-09-27T12:00:00Z',
+      enviado_em:'2026-09-27T12:05:00Z', tentativas:0, erro:null });
+  }
   if ((window.__teste || {}).dir){
     DADOS.doc_emissores.push({ prefixo:'DIR', nome:'Diretoria', grupo_id:null, ordem:3 });
     DADOS.doc_series.push(
@@ -1688,6 +1709,34 @@
               ids.push(id);
             }
             return { data:{ status:'ok', ids }, error:null };
+          }
+          /* ---- v31: as entrevistas online ---- */
+          if (nome === 'ps_reagendar' || nome === 'ps_slot_editar' || nome === 'ps_slot_excluir'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            if (nome === 'ps_reagendar'){
+              const a = DADOS.ps_agendamentos.find(x => x.id === args.p_agendamento), s2 = DADOS.ps_slots.find(x => x.id === args.p_slot);
+              if (!a || !s2) return { data:{ status:'nao_encontrado' }, error:null };
+              if (DADOS.ps_agendamentos.some(x => x.slot_id === s2.id)) return { data:{ status:'lotado' }, error:null };
+              a.slot_id = s2.id; a.slot = { ...s2 }; a.reagendado_por = 'Ana Figueiredo';
+              return { data:{ status:'ok', email:a.fase === 'entrevista' }, error:null };
+            }
+            const s2 = DADOS.ps_slots.find(x => x.id === args.p_slot);
+            if (!s2) return { data:{ status:'nao_encontrado' }, error:null };
+            const n = DADOS.ps_agendamentos.filter(x => x.slot_id === s2.id).length;
+            if (nome === 'ps_slot_excluir'){
+              DADOS.ps_slots.splice(DADOS.ps_slots.indexOf(s2), 1);
+              DADOS.ps_agendamentos = DADOS.ps_agendamentos.filter(x => x.slot_id !== s2.id);
+              return { data:{ status:'ok', avisados:s2.fase === 'entrevista' ? n : 0 }, error:null };
+            }
+            const p = args.p || {};
+            if (p.assumir){ s2.criado_por = 'Ana Figueiredo'; s2.criado_por_registro = 4; }
+            if (p.link_reuniao !== undefined && !/^https:\/\//.test(p.link_reuniao)) return { data:{ status:'invalido', campo:'link_reuniao' }, error:null };
+            if (p.hora_inicio && p.hora_fim && p.hora_fim <= p.hora_inicio) return { data:{ status:'invalido', campo:'hora_fim' }, error:null };
+            const muda = (p.data && p.data !== s2.data) || (p.hora_inicio && p.hora_inicio !== s2.hora_inicio.slice(0, 5))
+              || (p.hora_fim && p.hora_fim !== s2.hora_fim.slice(0, 5)) || (p.link_reuniao !== undefined && p.link_reuniao !== s2.link_reuniao);
+            Object.assign(s2, p.data ? { data:p.data } : {}, p.hora_inicio ? { hora_inicio:p.hora_inicio + ':00' } : {},
+              p.hora_fim ? { hora_fim:p.hora_fim + ':00' } : {}, p.link_reuniao !== undefined ? { link_reuniao:p.link_reuniao } : {});
+            return { data:{ status:'ok', avisados:(p.avisar !== false && muda && s2.fase === 'entrevista') ? n : 0 }, error:null };
           }
           return { data: { status:'ok', codigo:'ORT-9', id:'novo' }, error: null };
         },
