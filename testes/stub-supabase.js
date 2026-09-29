@@ -777,7 +777,7 @@
     let linhas = (DADOS[tabela] || []).map(r => ({ ...r }));
     const filtros = [];
     const b = {
-      select(){ return b; },
+      select(cols){ b._cols = String(cols || ''); return b; },
       /* "slot.edicao_id": o supabase-js filtra por coluna da tabela embutida */
       eq(c, v){ filtros.push(r => c.split('.').reduce((o, k) => o?.[k], r) === v); return b; },
       neq(c, v){ filtros.push(r => r[c] !== v); return b; },
@@ -799,7 +799,12 @@
       then(ok){
         if (b._muda){ DADOS[tabela].filter(r => filtros.every(f => f(r))).forEach(r => Object.assign(r, b._muda)); b._muda = null;
           linhas = DADOS[tabela].map(r => ({ ...r })); }
-        const res = linhas.filter(r => filtros.every(f => f(r)));
+        let res = linhas.filter(r => filtros.every(f => f(r)));
+        /* os horários do PS com os agendamentos e o candidato embutidos,
+           como a agenda de quem conduz lê (2.17.1) */
+        if (tabela === 'ps_slots' && /ps_agendamentos\(/.test(b._cols || ''))
+          res = res.map(sl => ({ ...sl, ps_agendamentos: (DADOS.ps_agendamentos || []).filter(a => a.slot_id === sl.id)
+            .map(a => ({ id:a.id, candidato: (DADOS.ps_candidatos || []).find(c => c.id === a.candidato_id) || null })) }));
         return Promise.resolve(ok({ data: b._um ? (res[0] || null) : res, error: null }));
       }
     };

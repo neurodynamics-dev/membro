@@ -353,6 +353,14 @@ Quatro, sempre os mesmos, sempre com texto que diz o que fazer:
 "Nenhum resultado" nunca é uma tela vazia: é "nenhuma atividade com esse
 filtro — limpar filtros".
 
+### O que ninguém pediu não aparece sozinho
+
+Toast e faixa só respondem ao que a pessoa acabou de fazer (salvou, errou,
+copiou). Novidade de versão, convite para ativar as notificações no
+aparelho, dica de recurso: ficam onde se procura (o rodapé, *Preferências de
+avisos*, a ajuda), nunca num aviso que abre por conta própria. O que espera
+a ação da pessoa tem lugar fixo: o sino e as pendências do início (2.17.1).
+
 ---
 
 ## 7. Permissão

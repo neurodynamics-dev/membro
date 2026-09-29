@@ -4,8 +4,9 @@
      1. o sino: cada aviso tem o seu ×, "limpar as lidas" limpa, e a
         conta volta certa;
      2. o aparelho: ativar (a permissão, a inscrição com as chaves e o nome
-        do aparelho), testar, desativar; o bloqueado, o iPhone fora do app
-        e o convite no alto do sino;
+        do aparelho), testar, desativar; o bloqueado e o iPhone fora do app.
+        O sino não convida: ativar é em Preferências de avisos, para quem
+        procurar (2.17.1);
      3. sair da conta desliga o aparelho antes de sair;
      4. o empurrão: o portal pergunta à fila e, com o "sim", chama a
         função como portal; com o "não", não chama;
@@ -100,9 +101,10 @@ console.log('\nO aparelho');
 {
   const { ctx, p, erros } = await abrir();
   confere('o carteiro (sw.js) se registra ao abrir', await p.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())));
-  await p.click('#sino');
-  confere('o sino convida a receber no aparelho', (await p.textContent('#sn-aparelho')).includes('mesmo com o SOMA fechado'));
-  await p.locator('#sn-aparelho .btn').click();
+  await p.click('#sino'); await p.waitForTimeout(400);
+  confere('o sino não convida a receber no aparelho', await p.locator('#sn-aparelho, .sn-aparelho').count() === 0
+    && !(await p.textContent('#sino-painel')).includes('mesmo com o SOMA fechado'));
+  await p.locator('#sino-painel .sn-pe button', { hasText:'Preferências de avisos' }).click();
   await p.waitForSelector('#modal.open #pn-ativar');
   confere('as preferências abrem com o aparelho e o e-mail', (await p.textContent('#modal')).includes('Neste aparelho')
     && (await p.textContent('#modal')).includes('Por e-mail'));
@@ -145,20 +147,12 @@ console.log('\nO aparelho');
   confere('com o passo a passo do tour', await p.locator('#pn-push a[href="tour#celular"]').count() === 1);
   await ctx.close();
 }
-{
-  const { ctx, p } = await abrir();
-  await p.click('#sino');
-  await p.locator('#sn-aparelho [aria-label="Agora não"]').click();
-  await p.click('#sino'); await p.click('#sino');
-  confere('"agora não" guarda a escolha e o convite sai do sino', (await p.textContent('#sn-aparelho')).trim() === '');
-  await ctx.close();
-}
 
 /* os outros aparelhos da mesma conta: aparecem e saem pelo Remover */
 {
   const { ctx, p, erros } = await abrir({ teste:{ outroAparelho:true } });
   await p.click('#sino');
-  await p.locator('#sn-aparelho .btn').click();
+  await p.locator('#sino-painel .sn-pe button', { hasText:'Preferências de avisos' }).click();
   await p.waitForSelector('#modal.open #pn-ativar');
   await p.click('#pn-ativar');
   await p.waitForFunction(() => document.querySelector('#pn-aps')?.textContent.includes('Safari no iPhone'), null, { timeout:8000 });

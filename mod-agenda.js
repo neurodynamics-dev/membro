@@ -15,7 +15,8 @@
 
    Camadas, como as agendas da coluna do Google: os eventos, o
    calendário da equipe (marcos, UFMG, feriados, prazos), as ausências
-   e três que têm data sem serem da agenda: as suas tarefas com prazo
+   e as que têm data sem serem da agenda: as entrevistas do PS que você
+   conduz (Seleção, só para o comitê), as suas tarefas com prazo
    (Atividades), as suas publicações (Studio) e os seus treinamentos
    que vencem.
 
@@ -27,7 +28,7 @@
    fechaModal, ic, ibtn, confirma, falha, motivoRPC, avatarFoto, nomeDe,
    primeiroNome, hojeISO, isoDia, isoDow, dataHora, hhmmMin, minHHMM,
    fmtD, gruposEfetivos, membrosDoGrupo, gruposDaEquipe, grupoPorNome,
-   podeStudio, can, navNivel1, dica, registrarBusca, filtrarSimples,
+   podeStudio, podeSelecao, can, navNivel1, dica, registrarBusca, filtrarSimples,
    carregarItens, carregarAgendaPessoal, CAMADAS_AGENDA, AUSENCIAS_AGENDA,
    corDoItem, horaDoItem, calMesHTML, calMesLigar,
    inicioDaSemana, maiuscula, DIAS_SEMANA, MESES_LONGOS, EXPEDIENTE, DIAS_LB,
@@ -37,7 +38,7 @@
 const agenda = {
   visao:null, ref:null, itens:[], erro:null, janela:null,
   camadas:null, predef:null, espacos:null, pref:null, agendas:null,
-  ev:null, rascunho:null, arr:null, rolagem:null
+  ev:null, rascunho:null, arr:null, rolagem:null, linkEntrevista:null
 };
 const AG_CAMADAS = CAMADAS_AGENDA;
 const AG_CORES = ['#2DD4BF', '#CEDC00', '#4ADE97', '#7FA7F2', '#A78BFA', '#F5C36A', '#F1806F', '#8E8E93'];
@@ -115,7 +116,9 @@ async function agCarregar(de, ate){
   agenda.janela = { de, ate };
   return itens;
 }
-const agVisiveis = () => agenda.itens.filter(i => agCamada(i.camada) && (i.camada !== 'publicacoes' || podeStudio()));
+/* as camadas que a pessoa alcança: publicações é do Studio; entrevistas, do comitê de seleção */
+const agCamadaMinha = k => (k !== 'publicacoes' || podeStudio()) && (k !== 'entrevistas' || podeSelecao());
+const agVisiveis = () => agenda.itens.filter(i => agCamada(i.camada) && agCamadaMinha(i.camada));
 
 /* ============================================================
    A TELA — a coluna, a barra e o corpo
@@ -171,7 +174,7 @@ async function agCalendario(visao, ref){
     <aside class="agx-lado" aria-label="Agenda">
       ${agBotaoCriar()}
       <div class="agx-mini" id="agx-mini">${agMiniHTML(agenda.mini || ref)}</div>
-      <div class="agx-camadas"><h5>Agendas</h5>${AG_CAMADAS.filter(([k]) => k !== 'publicacoes' || podeStudio()).map(([k, l, c]) =>
+      <div class="agx-camadas"><h5>Agendas</h5>${AG_CAMADAS.filter(([k]) => agCamadaMinha(k)).map(([k, l, c]) =>
         `<label class="agx-camada" style="--cc:${c}"><input type="checkbox" ${agCamada(k) ? 'checked' : ''}
           onchange="agAlternarCamada('${k}', this.checked)"><span class="cx" aria-hidden="true"></span>${l}</label>`).join('')}</div>
     </aside>
@@ -374,12 +377,36 @@ function agSombra(col, m0, m1, titulo, cor){
   col.appendChild(s);
 }
 
-/* Abrir um item: o evento tem página; o resto abre onde mora. */
+/* Abrir um item: o evento tem página; a entrevista, a janela com a
+   chamada; o resto abre onde mora. */
 function agAbrirItem(k, alvo){
   const it = agenda.itens.find(x => x.k === k); if (!it) return;
+  if (it.origem === 'entrevista') return agModalEntrevista(it);
   if (it.href){ location.hash = it.href; return; }
   if (it.origem === 'marco') return agModalMarco(it);
   if (it.origem === 'ausencia') return agModalAusencia(it);
+}
+
+/* A entrevista do PS (2.17.1): quem abriu o horário em Seleção › Agenda
+   conduz. Daqui, a chamada e a ficha do candidato; mudar o horário, o
+   link ou o candidato é lá, onde o candidato é avisado por e-mail. */
+function agModalEntrevista(it){
+  const s = it.bruto || {}, cands = s.candidatos || [];
+  const link = /^https:\/\/\S+$/i.test(s.link_reuniao || '') ? s.link_reuniao : null;
+  agenda.linkEntrevista = link;
+  abreModal(`<h3>${esc(it.titulo)}</h3>
+    <p class="small muted" style="margin:2px 0 14px">${esc(agCap(agDataLonga(it.de)))}, ${minHHMM(it.hi)} – ${minHHMM(it.hf)}</p>
+    <div class="ps-slot-info">
+      <div>${ic(link ? 'video' : 'local')} ${link
+        ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(link.replace(/^https:\/\//i, ''))}</a>
+           ${ibtn('copy', 'Copiar o link', 'copiar(agenda.linkEntrevista)', 'sm')}`
+        : `<span>${esc(s.local || 'Sem link de chamada')}</span>`}</div>
+      ${cands.map(c => `<div>${ic('users')} <b>${esc(c.nome)}</b>
+        <a class="btn ghost mini" href="#/selecao/candidatos/${esc(c.id)}" onclick="fechaModal()">Ver a ficha</a></div>`).join('')}
+    </div>
+    <p class="small muted">Horário, link e candidato mudam em Seleção › Agenda, que avisa o candidato por e-mail.</p>
+    <div class="acts"><a class="btn ghost" href="#/selecao/agenda" onclick="fechaModal()">Abrir a agenda do PS</a>
+      ${link ? `<a class="btn solid" href="${esc(link)}" target="_blank" rel="noopener">${ic('video')} Entrar na chamada</a>` : ''}</div>`);
 }
 
 /* ---------- reagendar arrastando ---------- */
