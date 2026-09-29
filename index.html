@@ -380,9 +380,6 @@ body.lt-animando footer#ft{transition:margin-left .22s var(--lt-ease)}
 .sn-linha:hover .sn-x,.sn-x:focus-visible{opacity:1}
 .sn-x:hover{color:var(--bad-tx)}
 @media (hover:none){.sn-x{opacity:1}}
-.sn-aparelho{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--line);
-  background:rgba(var(--syn-rgb),.05);font-size:12px;color:var(--muted);line-height:1.45}
-.sn-aparelho .btn{flex-shrink:0}
 .sn-item{display:block;padding:12px 15px;border-bottom:1px solid var(--line);cursor:pointer;width:100%;text-align:left}
 .sn-item:hover{background:rgba(var(--tom),.04)}
 .sn-item.nova{border-left:2px solid var(--syn)}
@@ -3326,8 +3323,6 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 .toast{background:var(--toast);border:1px solid var(--line2);color:var(--ink);border-radius:12px;
   padding:12px 20px;font-size:13.5px;box-shadow:0 12px 40px rgba(var(--sombra-rgb),calc(.5 * var(--sombra-k)))}
 .toast.err{border-color:rgba(var(--bad-rgb),.4);color:var(--bad-tx)}
-.toast.novidade{display:flex;align-items:center;gap:12px;border-color:rgba(var(--syn-rgb),.45)}
-.toast.novidade a{color:var(--syn-tx);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .ok-page{max-width:520px;margin:40px auto;text-align:center}
 .ok-page .circ{width:92px;height:92px;border-radius:50%;margin:0 auto 20px;
   display:flex;align-items:center;justify-content:center;
@@ -3512,7 +3507,6 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
   <div class="sn-topo"><b>Notificações</b>
     <span class="sn-acts"><button onclick="marcarTudoLido()" id="sn-lidas">marcar todas como lidas</button>
       <button onclick="limparLidas()" id="sn-limpar">limpar as lidas</button></span></div>
-  <div id="sn-aparelho"></div>
   <div id="sn-lista"></div>
   <div class="sn-pe"><span class="sn-regra">As lidas saem sozinhas em 30 dias.</span>
     <button onclick="modalPreferenciaNotif()">Preferências de avisos</button></div>
@@ -3577,7 +3571,7 @@ const CONFIG = {
    é a 2.16.0. Acompanha a query dos módulos carregados sob demanda, para
    um deploy não deixar módulo velho em cache, e as notas de cada versão
    moram em mod-versoes.js (#/versoes). */
-const VERSAO = '2.17.0';
+const VERSAO = '2.17.1';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -3899,18 +3893,6 @@ function fotoAplicada(reg, url){
   const m = state.membros.find(x => x.registro === reg); if (m) m.foto_url = url;
   if (reg === state.perfil?.registro) desenharMeuAvatar();
   if (state.perfil) render(route());
-}
-
-/* ---------------- a versão nova ----------------
-   Uma vez por versão, por navegador: quem já usava o portal fica sabendo
-   que ele mudou, com o link para as notas. */
-function avisarVersaoNova(){
-  let vista = null;
-  try { vista = localStorage.getItem('nd.versao'); localStorage.setItem('nd.versao', VERSAO); } catch(e){ return; }
-  if (vista === VERSAO || (!vista && !lerRecentes().length)) return;
-  const t = document.createElement('div'); t.className = 'toast novidade';
-  t.innerHTML = `<b>SOMA ${esc(VERSAO)}</b> <a href="#/versoes/${esc(VERSAO)}" onclick="this.closest('.toast').remove()">Ver o que mudou</a>`;
-  $('#toast').appendChild(t); setTimeout(() => t.remove(), 12000);
 }
 
 /* ---------------- ícones de interface ---------------- */
@@ -4715,7 +4697,6 @@ async function abrirPortal(){
   $('#ft-ver').textContent = 'SOMA ' + VERSAO;
   $('#ft-foto').hidden = !state.perfil.registro;
   if (GITHUB_CTA_URL){ $('#ft-cta').hidden = false; $('#ft-cta-a').href = GITHUB_CTA_URL; }
-  avisarVersaoNova();
   /* Administração é o único espaço que some por papel — os outros
      degradam. A barreira de verdade é a RLS do banco; isto aqui é só
      não oferecer porta fechada. É o menu que decide, ao se montar. */
@@ -5547,7 +5528,6 @@ function abrirSino(e){
   if (!p.hidden){ p.hidden = true; return; }
   desenharSino();
   p.hidden = false;
-  desenharConviteAparelho();
 }
 function desenharSino(){
   const ns = state.notifs || [];
@@ -5898,7 +5878,7 @@ async function ativarPush(bt){
   } catch(e){
     falha(e, 'Não foi possível ativar');
   } finally {
-    desenharPush(); desenharConviteAparelho();
+    desenharPush();
   }
 }
 async function desativarPush(bt){
@@ -5909,7 +5889,7 @@ async function desativarPush(bt){
     aparelhoPush.sub = null;
     toast('Este aparelho deixou de receber as notificações.');
   } catch(e){ falha(e, 'Não foi possível desativar'); }
-  desenharPush(); desenharConviteAparelho();
+  desenharPush();
 }
 async function removerAparelho(id){
   const { error } = await sb.rpc('push_cancelar', { p_endpoint: null, p_id: id });
@@ -5936,17 +5916,6 @@ async function testarPush(bt){
       : r?.push_detalhe ? 'O serviço de notificação recusou: ' + r.push_detalhe : 'Notificação na fila: ela sai na próxima passada.');
   } catch(e){ falha(e, 'Não foi possível testar'); }
   finally { const x = bt; if (x){ x.disabled = false; x.textContent = 'Enviar uma notificação de teste'; } }
-}
-/* o convite, no alto do sino, para quem ainda não recebe no aparelho */
-async function desenharConviteAparelho(){
-  const el = $('#sn-aparelho'); if (!el) return;
-  let dispensou = false; try { dispensou = localStorage.getItem('nd.push.convite') === 'nao'; } catch(e){}
-  const st = dispensou ? null : await estadoPush();
-  if (st !== 'inativo' && st !== 'ios_instalar'){ el.innerHTML = ''; return; }
-  el.innerHTML = `<div class="sn-aparelho"><span>Receba estes avisos no ${ehIOS() || /Android/.test(navigator.userAgent) ? 'celular' : 'computador'}, mesmo com o SOMA fechado.</span>
-    <button class="btn solid mini" onclick="modalPreferenciaNotif()">${st === 'inativo' ? 'Ativar' : 'Como'}</button>
-    <button class="sn-x" style="opacity:1;width:24px" aria-label="Agora não" title="Agora não"
-      onclick="event.stopPropagation();try{localStorage.setItem('nd.push.convite','nao')}catch(e){};this.closest('.sn-aparelho').remove()">×</button></div>`;
 }
 /* a cada entrada no SOMA, a inscrição deste aparelho (se houver) se
    confirma no banco: a conta pode ter mudado, e o navegador pode ter
@@ -6320,9 +6289,10 @@ function passoBoard(n){ mostrarSlide(state.board.ix+n); iniciarBoard(); }
 
 /* ---------- a sua semana ----------
    Segunda a domingo, como a semana da Agenda: os eventos, o calendário
-   da equipe, as ausências e o que tem data (tarefas, publicações,
-   treinamentos). A barra de cada dia é o tempo em eventos dentro do
-   expediente. Embaixo, os convites sem resposta dos próximos 45 dias. */
+   da equipe, as ausências, as entrevistas do PS que a pessoa conduz e o
+   que tem data (tarefas, publicações, treinamentos). A barra de cada dia
+   é o tempo em eventos e entrevistas dentro do expediente. Embaixo, os
+   convites sem resposta dos próximos 45 dias. */
 async function carregarSemana(passo){
   inicio.semana = passo ? inicio.semana + passo : 0;
   const pedido = ++inicio.pedido;
@@ -6355,6 +6325,7 @@ function desenharSemana(){
   const exp = hhmmMin(EXPEDIENTE.fim) - hhmmMin(EXPEDIENTE.inicio);
   const daSemana = inicio.itens.filter(i => i.de <= ate && i.ate >= de);
   const nEv = daSemana.filter(i => i.camada === 'eventos').length;
+  const nEnt = daSemana.filter(i => i.camada === 'entrevistas').length;
   const nOutros = daSemana.filter(i => ['tarefas', 'publicacoes', 'treinamentos'].includes(i.camada)).length;
   const chip = i => {
     const cls = ['ini-ev', i.dia ? 'dia' : '', i.convidado && i.resposta === 'pendente' ? 'pend' : '', i.resposta === 'nao' ? 'nao' : ''].filter(Boolean).join(' ');
@@ -6366,12 +6337,12 @@ function desenharSemana(){
     const iso = isoDia(d);
     const doDia = daSemana.filter(i => i.de <= iso && i.ate >= iso)
       .sort((a, b) => (b.dia - a.dia) || ((a.hi ?? 0) - (b.hi ?? 0)));
-    const ocup = minutosOcupados(doDia.filter(i => i.camada === 'eventos'));
+    const ocup = minutosOcupados(doDia.filter(i => i.camada === 'eventos' || i.camada === 'entrevistas'));
     const pct = Math.min(100, Math.round(100 * ocup / exp));
     const fds = isoDow(d) > 5;
     return `<div class="ini-dia${iso === hoje ? ' hoje' : ''}${fds ? ' fds' : ''}${iso < hoje ? ' passou' : ''}">
       <a class="ini-dh" href="#/agenda/dia/${iso}"><span class="dw">${DIAS_SEMANA[isoDow(d) - 1]}</span><span class="dn">${d.getDate()}</span></a>
-      <span class="ini-carga" title="${ocup ? duracaoTexto(ocup) + ' em eventos' : 'Sem eventos no expediente'}"><i style="width:${pct}%"></i></span>
+      <span class="ini-carga" title="${ocup ? duracaoTexto(ocup) + ' em compromissos' : 'Sem compromissos no expediente'}"><i style="width:${pct}%"></i></span>
       <div class="ini-evs">${doDia.slice(0, 4).map(chip).join('')}
         ${doDia.length > 4 ? `<a class="ini-mais" href="#/agenda/dia/${iso}">mais ${doDia.length - 4}</a>` : ''}</div></div>`;
   }).join('');
@@ -6381,7 +6352,8 @@ function desenharSemana(){
     + (i.dia ? '' : ', ' + minHHMM(i.hi));
   el.innerHTML = `<div class="head ini-sem-topo">
       <h3>${inicio.semana === 0 ? 'Esta semana' : tituloSemana(dias[0], dias[6])}</h3>
-      <span class="ini-sem-res">${nEv} ${nEv === 1 ? 'evento' : 'eventos'}${nOutros ? `, ${nOutros} ${nOutros === 1 ? 'prazo' : 'prazos'}` : ''}</span>
+      <span class="ini-sem-res">${nEv} ${nEv === 1 ? 'evento' : 'eventos'}${nEnt ? `, ${nEnt} ${nEnt === 1 ? 'entrevista' : 'entrevistas'}` : ''}${
+        nOutros ? `, ${nOutros} ${nOutros === 1 ? 'prazo' : 'prazos'}` : ''}</span>
       <span class="ini-sem-nav">
         ${inicio.semana ? '<button class="btn ghost mini" onclick="carregarSemana(0)">Hoje</button>' : ''}
         ${ibtn('back', 'Semana anterior', 'carregarSemana(-1)', 'sm')}${ibtn('chevron', 'Próxima semana', 'carregarSemana(1)', 'sm')}
@@ -6517,12 +6489,14 @@ function gruposDaEquipe(){
     : [...new Set(state.membros.flatMap(m => m.grupos || []))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
 /* As camadas da agenda, como as agendas da coluna do Google Agenda: as
-   três primeiras são da agenda; as outras três têm data sem serem dela.
-   A Agenda e o início leem as mesmas. */
+   três primeiras são da agenda; as outras têm data sem serem dela. As
+   entrevistas do PS são as que a pessoa conduz (2.17.1): só o comitê de
+   seleção as vê. A Agenda e o início leem as mesmas. */
 const CAMADAS_AGENDA = [
   ['eventos', 'Eventos', '#2DD4BF'],
   ['marcos', 'Calendário da equipe', '#CEDC00'],
   ['ausencias', 'Ausências', '#4C6FBF'],
+  ['entrevistas', 'Entrevistas do PS', '#4ADE97'],
   ['tarefas', 'Minhas tarefas', '#7FA7F2'],
   ['publicacoes', 'Minhas publicações', '#A78BFA'],
   ['treinamentos', 'Treinamentos a vencer', '#F5C36A']
@@ -6538,11 +6512,17 @@ async function carregarAgendaPessoal(de, ate, espera){
   const eu = state.perfil?.registro ?? null;
   const lerTab = q => q.then(r => r.error ? [] : (r.data || []), () => []);
   let erro = null;
-  const [itens, tarefas, pubs] = await Promise.all([
+  const [itens, tarefas, pubs, ents] = await Promise.all([
     carregarItens(de, ate).catch(e => { erro = e; return []; }),
     eu ? lerTab(lerMinhasTarefas(eu, q => q.gte('prazo', de).lte('prazo', ate))) : [],
     eu && podeStudio() ? lerTab(sb.from('studio_publicacoes').select('id,codigo,titulo,status,data_publicacao,criado_por,responsavel')
       .or(`criado_por.eq.${eu},responsavel.eq.${eu}`).gte('data_publicacao', de + 'T00:00:00').lte('data_publicacao', ate + 'T23:59:59')) : [],
+    /* as entrevistas do PS que a pessoa conduz: quem abriu o horário em
+       Seleção › Agenda é o responsável (31.0). As tabelas do PS são só do
+       comitê; sem a 31.0, a leitura falha e a camada fica vazia. */
+    eu && podeSelecao() ? lerTab(sb.from('ps_slots')
+      .select('id,data,hora_inicio,hora_fim,local,link_reuniao,ps_agendamentos(id,candidato:ps_candidatos(id,nome,status))')
+      .eq('fase', 'entrevista').eq('criado_por_registro', eu).gte('data', de).lte('data', ate)) : [],
     espera
   ]);
   const out = [];
@@ -6565,6 +6545,16 @@ async function carregarAgendaPessoal(de, ate, espera){
     const d = new Date(p.data_publicacao), m = d.getHours() * 60 + d.getMinutes();
     out.push({ k:'pb:' + p.id, camada:'publicacoes', titulo: `${p.codigo} ${p.titulo}`, cor:cor('publicacoes'),
       de:isoDia(d), ate:isoDia(d), dia:false, hi:m, hf:Math.min(m + 30, 24*60), origem:'publicacao', href:'#/studio/' + p.codigo, bruto:p });
+  });
+  /* só o horário que tem candidato: o livre não é compromisso */
+  ents.forEach(s => {
+    const cands = (s.ps_agendamentos || []).map(a => a.candidato).filter(c => c && c.status !== 'desistente');
+    if (!cands.length || !s.data) return;
+    const hi = hm(s.hora_inicio), hf = hm(s.hora_fim) ?? hi + 30;
+    out.push({ k:'ps:' + s.id, camada:'entrevistas', titulo: 'Entrevista: ' + cands.map(c => c.nome).join(', '), cor:cor('entrevistas'),
+      de:s.data, ate:s.data, dia:false, hi, hf, origem:'entrevista',
+      href: cands.length === 1 ? '#/selecao/candidatos/' + cands[0].id : '#/selecao/agenda',
+      bruto:{ ...s, local: s.link_reuniao ? 'online' : s.local, candidatos: cands } });
   });
   (state.treMeus || []).filter(t => t.vence_em && t.vence_em.slice(0, 10) >= de && t.vence_em.slice(0, 10) <= ate).forEach(t =>
     out.push({ k:'tr:' + t.id, camada:'treinamentos', titulo: `Vence: ${t.titulo}`, cor:cor('treinamentos'),

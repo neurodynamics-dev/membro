@@ -12,10 +12,11 @@ SOMA · Gestão está sendo trazido, conforme o
 
 - **Início** — o quadro de avisos (quando há aviso publicado), o que espera
   a sua ação, os treinamentos obrigatórios, **a sua semana** (sete dias, com
-  a carga de eventos de cada dia no expediente, as tarefas, as publicações e
-  os treinamentos que vencem, e os convites sem resposta, respondidos ali
-  mesmo), o **placar do LABBIO** (ranking do mês, sequências em dias úteis e
-  quem está lá agora), **as suas tarefas** e, na coluna da direita, os
+  a carga de eventos e entrevistas de cada dia no expediente, as entrevistas
+  do PS que você conduz, as tarefas, as publicações e os treinamentos que
+  vencem, e os convites sem resposta, respondidos ali mesmo), o **placar do
+  LABBIO** (ranking do mês, sequências em dias úteis e quem está lá agora),
+  **as suas tarefas** e, na coluna da direita, os
   **links úteis** (Administração › Links úteis) e os **abertos por último**.
 - **Agenda** — refeita no modelo do Google Agenda (revisão 28), em
   `mod-agenda.js`: dia, semana e mês numa tela só, criar clicando ou
@@ -26,7 +27,8 @@ SOMA · Gestão está sendo trazido, conforme o
   **pelo próprio e-mail** (`rsvp.html`). Nas configurações, os **eventos
   predefinidos** (reunião geral, de gerência, com stakeholder…), com
   duração, local, convidados e notificações, ficam no banco, fora do
-  código. As camadas da coluna esquerda juntam à agenda as suas tarefas
+  código. As camadas da coluna esquerda juntam à agenda as entrevistas do
+  processo seletivo que você conduz (comitê de seleção), as suas tarefas
   com prazo, as suas publicações do Studio e os treinamentos que vencem.
   Atalhos de teclado do Google Agenda: T, D, S, M, J/K, C.
   Ver [Agenda](#agenda).
@@ -167,8 +169,9 @@ ar, é a 2.0.0; a 17.1 é a 2.1.1; a **32.0 é a 2.16.0**. O que veio antes da
 2. a entrada nova no alto de `NOTAS_VERSAO`, em `mod-versoes.js`: a versão, a
    data, um título e os itens, cada um com o tipo (*novo*, *melhoria*,
    *correção* ou *aviso*, para o que sai ou muda de sentido) e o texto em
-   Markdown. É o que aparece em `#/versoes`, e o que quem já usava o portal
-   vê no aviso de versão nova, uma vez por navegador;
+   Markdown. É o que aparece em `#/versoes`, pelo rodapé. O portal não
+   anuncia a versão nova com aviso na tela: as notas ficam para quem
+   procurar (2.17.1);
 3. se houver migração, ela leva o número da versão no nome
    (`db/2.17.0_notas_fotos_e_cartoes.sql`) e na linha de `migracoes`.
 
@@ -943,7 +946,7 @@ menu:
 | **Visão geral** | métricas, funil, pendências e os próximos horários |
 | **Candidatos** | a lista com busca e filtro, movimentação em lote, exportação CSV e a ficha (`#/selecao/candidatos/<id>`): dados, competências, avaliações, e-mail de confirmação e a integração ao quadro |
 | **Avaliação** | por fase, cada membro do comitê dá nota por critério; a nota do candidato é a média |
-| **Agenda** | as janelas de dinâmica e entrevista que o candidato escolhe no site, com presença. A entrevista é online: no lugar do local vai o link da chamada (o botão "Criar no Meet" abre uma sala, e o link é colado ali), e quem abre a janela fica registrado como responsável. A entrevista é individual: cada horário tem uma vaga, e o campo "Vagas por horário" só aparece na dinâmica. No horário: reagendar o candidato, mudar dia, hora ou link, excluir, sempre avisando por e-mail |
+| **Agenda** | as janelas de dinâmica e entrevista que o candidato escolhe no site, com presença. A entrevista é online: no lugar do local vai o link da chamada (o botão "Criar no Meet" abre uma sala, e o link é colado ali), e quem abre a janela fica registrado como responsável: as entrevistas reservadas entram na agenda dele (camada *Entrevistas do PS*). A entrevista é individual: cada horário tem uma vaga, e o campo "Vagas por horário" só aparece na dinâmica. No horário: reagendar o candidato, mudar dia, hora ou link, excluir, sempre avisando por e-mail |
 | **Dinâmica** | painel, roteiro, desafio, critérios e janelas — tudo o que as três páginas da dinâmica mostram no dia |
 | **Publicações** | edital, avisos e resultados: o site só mostra o que estiver publicado |
 | **FAQ** | as perguntas frequentes do site |
@@ -1147,6 +1150,17 @@ E a Agenda junta, por pessoa, o que tem data sem ser da agenda: as tarefas
 do quadro de Atividades com prazo, as publicações do Studio e os
 treinamentos que vencem (`carregarAgendaPessoal`, na casca — o início lê a
 mesma coisa).
+
+**As entrevistas do processo seletivo** (2.17.1) entram na agenda de quem
+as conduz, na camada *Entrevistas do PS*: o horário de entrevista aberto em
+Seleção › Agenda (`ps_slots.criado_por_registro`, 31.0) com candidato
+reservado, sem os desistentes. O horário livre não aparece. Clicar abre a
+entrevista com o candidato, a hora, o link da chamada (*Entrar na chamada*)
+e a ficha; mudar horário, link ou candidato continua em Seleção › Agenda,
+que avisa o candidato por e-mail. As tabelas do PS são do comitê (`admin`,
+`pessoal` e `selecao`), então a camada só existe para ele. As entrevistas
+não vão para o feed do Google Agenda (`agenda-ics`), como as tarefas e as
+publicações; quem conduz recebe, na véspera, o resumo por e-mail.
 
 **Visibilidade de cada evento**: `equipe` (todo mundo vê), `convidados` (o
 dono, os convidados e o Depto. de Pessoal) ou `privado`.

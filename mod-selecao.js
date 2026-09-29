@@ -683,7 +683,7 @@ function psAgenda(){
   </div>
   ${fase==='entrevista' && !PS.v31 ? `<div class="aviso-box warn">Para as entrevistas online e os e-mails ao candidato, falta aplicar a migração v31 (db/v31_ps_entrevistas.sql).</div>` : ''}
   <div class="card" style="margin-bottom:16px">
-    <h3>Abrir janela de horários ${online ? dica('A entrevista é online. Todos os horários desta janela usam o mesmo link de chamada. Quem abre a janela fica como responsável: recebe, na véspera, o resumo das entrevistas do dia seguinte, e o nome aparece para o candidato.') : ''}</h3>
+    <h3>Abrir janela de horários ${online ? dica('A entrevista é online. Todos os horários desta janela usam o mesmo link de chamada. Quem abre a janela fica como responsável: cada entrevista reservada entra na agenda dessa pessoa, o resumo das entrevistas do dia seguinte chega a ela na véspera, e o nome aparece para o candidato.') : ''}</h3>
     <p class="small muted" style="margin:4px 0 14px">Gera vários horários de uma vez. O candidato escolhe um deles no site${online ? ' e recebe o link por e-mail' : ''}.</p>
     <div class="form-grid">
       <div class="fld"><label for="ps-sl-data">Data</label><input id="ps-sl-data" type="date"></div>
@@ -696,7 +696,7 @@ function psAgenda(){
       <div class="fld"><label for="ps-sl-dur">Duração (min)</label><input id="ps-sl-dur" type="number" value="${fase==='dinamica'?'90':'30'}"></div>
       ${fase==='dinamica' ? `<div class="fld"><label for="ps-sl-cap">Vagas por horário</label><input id="ps-sl-cap" type="number" value="8"></div>` : ''}
     </div>
-    ${online ? `<p class="small muted" style="margin:0 0 12px">${eu ? `Responsável: <b>${esc(eu.nome)}</b>`
+    ${online ? `<p class="small muted" style="margin:0 0 12px">${eu ? `Responsável: <b>${esc(eu.nome)}</b>. As entrevistas reservadas entram na sua <a href="#/agenda" style="text-decoration:underline">agenda</a>.`
       : 'A sua conta não tem registro no quadro: os horários ficam sem responsável e ninguém recebe o resumo da véspera.'}</p>` : ''}
     <button class="btn solid" onclick="psCriarSlots('${fase}')">${ic('plus')} Criar horários</button>
   </div>

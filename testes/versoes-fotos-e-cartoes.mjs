@@ -2,8 +2,8 @@
    a foto enviada pelo portal, os OKRs maiores com zoom na roda e os
    cartões de Atividades mais completos. Confere, com asserção (sai com
    código 1 se algo falhar):
-     versão  — o rodapé diz SOMA 2.17.0 e leva às notas; o aviso de versão
-               nova aparece uma vez para quem já usava o portal;
+     versão  — o rodapé diz a versão no ar e leva às notas; a versão nova
+               não abre aviso sozinha, nem para quem já usava (2.17.1);
      notas   — a versão no ar em cima, o número antigo ao lado, a versão
                em foco pelo endereço, as antigas recolhidas, a busca;
      relatos — em aberto por votos, filtros, votar, a página do relato em
@@ -28,6 +28,9 @@ import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 const stubAdmin = readFileSync(new URL('./stub-supabase.js', import.meta.url), 'utf8');
 const stubDe = papel => stubAdmin.replace("papel:'admin'", `papel:'${papel}'`);
+/* a versão no ar é a da casca: o teste não quebra a cada versão nova */
+const NO_AR = readFileSync(new URL('../index.html', import.meta.url), 'utf8').match(/const VERSAO = '([^']+)'/)[1];
+const NO_AR_RE = NO_AR.replace(/\./g, '\\.');
 const nav = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium' });
 
 let falhas = 0;
@@ -59,18 +62,18 @@ const aceitar = async p => { await p.waitForSelector('#modal.open .btn.solid'); 
 /* ================= VERSÃO E NOTAS ================= */
 console.log('\nA versão e as notas de versão');
 {
-  /* quem já usava o portal (tem recentes e viu a 2.16.0) recebe o aviso */
+  /* quem já usava o portal (tem recentes e viu uma versão antiga): nada
+     abre sozinho; as notas ficam no rodapé, para quem procurar (2.17.1) */
   const { ctx, p, erros } = await abrir({ antes: () => { try {
     localStorage.setItem('nd.versao', '2.16.0');
     localStorage.setItem('nd.recentes.4', JSON.stringify([{ h:'#/agenda', t:'Agenda', s:'', i:'agenda', em:Date.now() }]));
   } catch(e){} } });
-  const aviso = await p.evaluate(() => { const t = document.querySelector('#toast .toast.novidade');
-    return t ? { txt: t.textContent.replace(/\s+/g, ' ').trim(), href: t.querySelector('a')?.getAttribute('href') } : null; });
-  confere('o aviso de versão nova aparece para quem já usava', aviso?.txt.includes('SOMA 2.17.0') && aviso.href === '#/versoes/2.17.0', aviso);
-  confere('e a versão vista fica guardada', await p.evaluate(() => localStorage.getItem('nd.versao')) === '2.17.0');
+  await p.waitForTimeout(600);
+  const toasts = await p.evaluate(() => [...document.querySelectorAll('#toast .toast')].map(t => t.textContent.replace(/\s+/g, ' ').trim()));
+  confere('a versão nova não abre aviso sozinha, nem para quem já usava', !toasts.some(t => /SOMA|mudou/.test(t)), toasts);
   const ft = await p.evaluate(() => ({ txt: document.getElementById('ft-ver').textContent, href: document.getElementById('ft-ver').getAttribute('href'),
     links: [...document.querySelectorAll('#ft nav[aria-label="Ajuda"] a')].map(a => a.getAttribute('href')) }));
-  confere('o rodapé diz SOMA 2.17.0 e leva às notas', ft.txt === 'SOMA 2.17.0' && ft.href === '#/versoes', ft);
+  confere('o rodapé diz a versão no ar e leva às notas', ft.txt === 'SOMA ' + NO_AR && ft.href === '#/versoes', ft);
   confere('a ajuda do rodapé tem as notas e os bugs e sugestões', ft.links.includes('#/versoes') && ft.links.includes('#/versoes/comentarios'), ft.links);
 
   await p.click('#ft-ver'); await p.waitForTimeout(900);
@@ -79,12 +82,15 @@ console.log('\nA versão e as notas de versão');
     primeira: document.querySelector('.vs-item .vs-num')?.textContent,
     noAr: document.querySelector('.vs-item.atual .pill')?.textContent.trim(),
     antes: [...document.querySelectorAll('.vs-item')].find(x => x.querySelector('.vs-num')?.textContent === '2.16.0')?.querySelector('.vs-antes')?.textContent,
-    tipos: [...new Set([...document.querySelectorAll('.vs-item.atual .vs-tipo')].map(x => x.textContent))],
-    md: document.querySelectorAll('.vs-item.atual .md code, .vs-item.atual .md strong').length,
+    /* os tipos e o Markdown, na 2.17.0, que tem de tudo */
+    tipos: [...new Set([...([...document.querySelectorAll('.vs-item')].find(x => x.querySelector('.vs-num')?.textContent === '2.17.0')
+      ?.querySelectorAll('.vs-tipo') || [])].map(x => x.textContent))],
+    md: [...document.querySelectorAll('.vs-item')].find(x => x.querySelector('.vs-num')?.textContent === '2.17.0')
+      ?.querySelectorAll('.md code, .md strong').length || 0,
     antigasFechadas: !document.querySelector('.vs-antigas')?.open,
     dica: !!document.querySelector('#main .dica')
   }));
-  confere('as notas abrem pela versão no ar, marcada', notas.h1 === 'Notas de versão' && notas.primeira === '2.17.0' && notas.noAr === 'No ar', notas);
+  confere('as notas abrem pela versão no ar, marcada', notas.h1 === 'Notas de versão' && notas.primeira === NO_AR && notas.noAr === 'No ar', notas);
   confere('a 2.16.0 diz o número antigo (32.0)', notas.antes === 'antes 32.0', notas.antes);
   confere('os itens dizem o tipo e se leem em Markdown', notas.tipos.includes('Novo') && notas.tipos.includes('Melhoria') && notas.md > 5, notas);
   confere('as versões antigas ficam recolhidas, e a regra da numeração num ícone', notas.antigasFechadas && notas.dica, notas);
@@ -137,8 +143,8 @@ console.log('\nBugs e sugestões');
   confere('"Feito" pede a versão', await p.isVisible('#rd-versao') && !(await p.isVisible('#rd-dup')));
   await p.fill('#rd-resp', 'Corrigido.'); await p.click('#rd-btn'); await p.waitForTimeout(800);
   const dec = (await rpcs(p, 'feedback_decidir'))[0];
-  confere('registrar o andamento vai ao banco com a versão no ar', dec?.status === 'feito' && dec?.versao_feito === '2.17.0' && dec?.resposta === 'Corrigido.', dec);
-  confere('e a página mostra a resposta', /Corrigido\./.test(await texto(p, '.fb-resposta')) && /Feito na 2\.17\.0/.test(await texto(p, '.fb-resposta .quem')), await texto(p, '.fb-resposta'));
+  confere('registrar o andamento vai ao banco com a versão no ar', dec?.status === 'feito' && dec?.versao_feito === NO_AR && dec?.resposta === 'Corrigido.', dec);
+  confere('e a página mostra a resposta', /Corrigido\./.test(await texto(p, '.fb-resposta')) && new RegExp('Feito na ' + NO_AR_RE).test(await texto(p, '.fb-resposta .quem')), await texto(p, '.fb-resposta'));
 
   /* relatar, vindo de uma tela */
   await ir(p, '#/agenda', 900);
@@ -146,14 +152,14 @@ console.log('\nBugs e sugestões');
   const form = await p.evaluate(() => ({ tela: document.getElementById('rl-tela')?.value,
     tipo: document.querySelector('#rl-tipo button.on')?.textContent.trim(), vai: document.querySelector('#main .card .small.muted')?.textContent }));
   confere('relatar leva a tela de onde se veio e o tipo do endereço', form.tela === '#/agenda' && form.tipo === 'Sugestão', form);
-  confere('e diz o que vai junto (a versão e o aparelho)', /SOMA 2\.17\.0, Chrome/.test(form.vai), form.vai);
+  confere('e diz o que vai junto (a versão e o aparelho)', new RegExp('SOMA ' + NO_AR_RE + ', Chrome').test(form.vai), form.vai);
   await p.fill('#rl-tit', 'Filtrar o quadro de atividades pela etiqueta'); await p.waitForTimeout(200);
   confere('um título parecido mostra o relato que já existe', /SUG-2/.test(await texto(p, '#rl-parecidos') || ''), await texto(p, '#rl-parecidos'));
   await p.click('#rl-tipo button:nth-child(1)');
   await p.fill('#rl-tit', 'O zoom dos OKRs pula'); await p.fill('#rl-corpo', 'Com o trackpad.');
   await p.click('#rl-btn'); await p.waitForTimeout(1000);
   const novo = (await rpcs(p, 'feedback_salvar')).at(-1);
-  confere('enviar grava tipo, versão, tela e aparelho', novo?.tipo === 'bug' && novo?.versao === '2.17.0' && novo?.tela === '#/agenda' && /Chrome/.test(novo?.aparelho), novo);
+  confere('enviar grava tipo, versão, tela e aparelho', novo?.tipo === 'bug' && novo?.versao === NO_AR && novo?.tela === '#/agenda' && /Chrome/.test(novo?.aparelho), novo);
   confere('e abre o relato novo', await hash(p) === '#/versoes/comentarios/4' && await texto(p, '#main h1') === 'O zoom dos OKRs pula', await hash(p));
   confere('sem erro de página', !erros.length, erros);
   await ctx.close();

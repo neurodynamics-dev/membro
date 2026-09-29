@@ -5,7 +5,7 @@
 
    Rotas:
      #/versoes                           as notas, da versão mais nova à mais antiga
-     #/versoes/<x.y.z>                   uma versão em foco (o aviso de versão nova leva aqui)
+     #/versoes/<x.y.z>                   uma versão em foco (a versão de um relato leva aqui)
      #/versoes/comentarios               bugs e sugestões: os relatos, com voto e andamento
      #/versoes/comentarios/bug|sugestao  relatar, com o tipo já escolhido
      #/versoes/comentarios/<n>           um relato (BUG-12, SUG-13)
@@ -31,6 +31,12 @@
 /* A entrada mais nova fica em cima. "antes" é o número da numeração
    antiga; os itens são [tipo, texto em Markdown]. */
 const NOTAS_VERSAO = [
+  { v:'2.17.1', data:'2026-09-29',
+    titulo:'As entrevistas do PS na agenda e o portal sem avisos que ninguém pediu',
+    itens:[
+      ['correcao', 'As **entrevistas do processo seletivo** entram na agenda de quem as conduz (quem abriu o horário em Seleção › Agenda), na camada *Entrevistas do PS*, e na semana do início. Cada entrevista tem o candidato, a hora e o link da chamada, com *Entrar na chamada* e a ficha do candidato a um clique. Só o horário com candidato aparece.'],
+      ['aviso', 'O portal não abre mais aviso sozinho: sai o convite para receber as notificações no aparelho, do alto do sino, e sai o aviso de versão nova. Ativar as notificações continua em *Preferências de avisos*, no sino ou no rodapé, e as notas de versão continuam no rodapé.']
+    ] },
   { v:'2.17.0', data:'2026-09-29',
     titulo:'Notas de versão, a foto enviada pelo portal, OKRs maiores e cartões de atividade mais completos',
     itens:[
