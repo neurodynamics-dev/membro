@@ -133,7 +133,7 @@ async function pageOkrs(sub){
   okrGuardarAbertos();
   const jaTinha = !!$('#okr-tela');
   if(!jaTinha){
-    $('#main').innerHTML = topo + `<div class="okr-tela" id="okr-tela" tabindex="0" aria-label="Mapa dos objetivos. Arraste para mover; Ctrl e a roda do mouse, ou os botões, para o zoom.">
+    $('#main').innerHTML = topo + `<div class="okr-tela" id="okr-tela" tabindex="0" aria-label="Mapa dos objetivos. Arraste para mover; a roda do mouse, ou os botões, para o zoom; Shift e a roda para mover.">
         <div class="okr-mundo" id="okr-mundo"></div>
         <div class="okr-ferr okr-ferr-busca">
           <div class="org-busca"><input id="okr-q" placeholder="Buscar objetivo" autocomplete="off" oninput="okrBuscar(this.value)">
@@ -165,12 +165,18 @@ function desenhaOKR(){ okrDesenharTela(); }
    A TELA — um mapa quase infinito, como um quadro do Miro. Cada
    estratégico no topo; abrir um objetivo mostra os desdobramentos dele
    embaixo, ligados por fios, e o que se abriu fica aberto. Arrastar o
-   fundo move; Ctrl e a roda (ou o pinçar) dá zoom; a roda sozinha rola.
+   fundo move; a roda do mouse (e o pinçar) dá zoom onde o cursor está;
+   Shift e a roda, ou o trackpad de lado, movem.
+
+   O cartão tem a largura fixa e a altura do texto: o título aparece
+   inteiro (2.17.0). Cada nível do desenho fica com a altura do maior
+   cartão dele, para os fios e o organograma continuarem retos; OKR_H é
+   só o mínimo.
    ============================================================ */
-const OKR_W = 272, OKR_H = 172, OKR_GX = 28, OKR_GY = 76;
+const OKR_W = 320, OKR_H = 172, OKR_GX = 28, OKR_GY = 76;
 OKR.abertos = new Set((() => { try { return JSON.parse(localStorage.getItem('nd.okr.abertos') || '[]'); } catch(e){ return []; } })());
 OKR.vista = null;           /* { x, y, k }: o deslocamento e o zoom */
-OKR.pos = {};               /* id → { x, y } no mundo */
+OKR.pos = {};               /* id → { x, y, h, nivel } no mundo */
 function okrGuardarAbertos(){ try { localStorage.setItem('nd.okr.abertos', JSON.stringify([...OKR.abertos])); } catch(e){} }
 
 /* a disposição: cada nó ocupa a largura da sua subárvore aberta, e o pai
@@ -187,7 +193,8 @@ function okrLayout(){
   const por = (o, x0, nivel, vistos) => {
     if(vistos.has(o.id)) return; vistos.add(o.id);
     const w = larg[o.id];
-    pos[o.id] = { x: x0 + (w - OKR_W) / 2, y: nivel * (OKR_H + OKR_GY) };
+    /* o y sai depois de medir os cartões (okrDesenharTela) */
+    pos[o.id] = { x: x0 + (w - OKR_W) / 2, y: nivel * (OKR_H + OKR_GY), h: OKR_H, nivel };
     let x = x0;
     const fs = filhosAbertos(o);
     const soma = fs.reduce((t, f) => t + larg[f.id], 0) + Math.max(0, fs.length - 1) * OKR_GX;
@@ -221,18 +228,32 @@ function okrDesenharTela(){
   const mundo = $('#okr-mundo'); if(!mundo) return;
   OKR.pos = okrLayout();
   const ids = Object.keys(OKR.pos);
+  mundo.innerHTML = `<svg class="okr-fios" aria-hidden="true"></svg>${ids.map(id => okrNo(okrPorId(id))).join('')}`;
+  /* mede cada cartão com o texto inteiro; cada nível fica com a altura do
+     maior cartão dele, e os níveis se empilham com o vão entre eles */
+  const nos = [...mundo.querySelectorAll('.okr-no')];
+  const linha = [];
+  nos.forEach(el => { const p = OKR.pos[el.dataset.id]; linha[p.nivel] = Math.max(linha[p.nivel] || OKR_H, el.offsetHeight || 0); });
+  const topo = [];
+  linha.reduce((y, h, n) => { topo[n] = y; return y + (h || OKR_H) + OKR_GY; }, 0);
+  nos.forEach(el => {
+    const p = OKR.pos[el.dataset.id];
+    p.y = topo[p.nivel]; p.h = linha[p.nivel] || OKR_H;
+    el.style.top = p.y + 'px'; el.style.height = p.h + 'px';
+  });
   const fios = ids.map(id => {
     const o = okrPorId(id), pai = o.pai_id && OKR.pos[o.pai_id];
     if(!pai) return '';
-    const a = { x: pai.x + OKR_W / 2, y: pai.y + OKR_H }, b = { x: OKR.pos[id].x + OKR_W / 2, y: OKR.pos[id].y };
-    const my = a.y + OKR_GY / 2, r = Math.min(10, Math.abs(b.x - a.x) / 2);
+    const a = { x: pai.x + OKR_W / 2, y: pai.y + pai.h }, b = { x: OKR.pos[id].x + OKR_W / 2, y: OKR.pos[id].y };
+    const my = b.y - OKR_GY / 2, r = Math.min(10, Math.abs(b.x - a.x) / 2);
     const d = Math.abs(b.x - a.x) < 1 ? `M${a.x},${a.y} V${b.y}`
       : `M${a.x},${a.y} V${my - r} Q${a.x},${my} ${a.x + Math.sign(b.x - a.x) * r},${my} H${b.x - Math.sign(b.x - a.x) * r} Q${b.x},${my} ${b.x},${my + r} V${b.y}`;
     return `<path d="${d}"/>`;
   }).join('');
-  const maxX = Math.max(...ids.map(id => OKR.pos[id].x)) + OKR_W, maxY = Math.max(...ids.map(id => OKR.pos[id].y)) + OKR_H;
-  mundo.innerHTML = `<svg class="okr-fios" width="${maxX + 40}" height="${maxY + 40}" aria-hidden="true">${fios}</svg>
-    ${ids.map(id => okrNo(okrPorId(id))).join('')}`;
+  const maxX = Math.max(...ids.map(id => OKR.pos[id].x)) + OKR_W, maxY = Math.max(...ids.map(id => OKR.pos[id].y + OKR.pos[id].h));
+  const svg = mundo.querySelector('.okr-fios');
+  svg.setAttribute('width', maxX + 40); svg.setAttribute('height', maxY + 40);
+  svg.innerHTML = fios;
   okrAplicarVista();
 }
 function okrAlternar(id){
@@ -260,7 +281,7 @@ function okrAplicarVista(animar){
 function okrZoom(f, cx, cy){
   const t = $('#okr-tela'); if(!t || !OKR.vista) return;
   const r = t.getBoundingClientRect(), v = OKR.vista;
-  const k = f == null ? 1 : Math.min(1.6, Math.max(.25, v.k * f));
+  const k = f == null ? 1 : Math.min(2, Math.max(.2, v.k * f));
   const px = cx ?? r.width / 2, py = cy ?? r.height / 2;
   v.x = px - (px - v.x) * (k / v.k); v.y = py - (py - v.y) * (k / v.k); v.k = k;
   okrAplicarVista(cx == null);
@@ -270,8 +291,8 @@ function okrEnquadrar(animar){
   const ids = Object.keys(OKR.pos); if(!ids.length) return;
   const r = t.getBoundingClientRect(), pad = 40;
   const minX = Math.min(...ids.map(id => OKR.pos[id].x)), minY = Math.min(...ids.map(id => OKR.pos[id].y));
-  const maxX = Math.max(...ids.map(id => OKR.pos[id].x)) + OKR_W, maxY = Math.max(...ids.map(id => OKR.pos[id].y)) + OKR_H;
-  const k = Math.min(1, Math.max(.25, Math.min((r.width - pad * 2) / (maxX - minX), (r.height - pad * 2 - 50) / (maxY - minY))));
+  const maxX = Math.max(...ids.map(id => OKR.pos[id].x)) + OKR_W, maxY = Math.max(...ids.map(id => OKR.pos[id].y + OKR.pos[id].h));
+  const k = Math.min(1, Math.max(.2, Math.min((r.width - pad * 2) / (maxX - minX), (r.height - pad * 2 - 50) / (maxY - minY))));
   OKR.vista = { k, x: (r.width - (maxX - minX) * k) / 2 - minX * k, y: pad + 50 - minY * k };
   okrAplicarVista(animar);
 }
@@ -283,7 +304,8 @@ function okrCentrar(id, animar){
   /* o objetivo no terço de cima, com os desdobramentos abaixo dele */
   const cx = fs.length ? (Math.min(p.x, ...fs.map(f => f.x)) + Math.max(p.x, ...fs.map(f => f.x)) + OKR_W) / 2 : p.x + OKR_W / 2;
   /* o pai também à vista, se couber */
-  const acima = okrPorId(id)?.pai_id && OKR.pos[okrPorId(id).pai_id] && 70 + (2 * OKR_H + OKR_GY) * k <= r.height ? (OKR_H + OKR_GY) * k : 0;
+  const pai = okrPorId(id)?.pai_id && OKR.pos[okrPorId(id).pai_id];
+  const acima = pai && 70 + (pai.h + OKR_GY + p.h) * k <= r.height ? (p.y - pai.y) * k : 0;
   OKR.vista = { k, x: r.width / 2 - cx * k, y: 70 + acima - p.y * k };
   okrAplicarVista(animar);
 }
@@ -312,12 +334,20 @@ function okrLigarTela(){
   });
   const soltar = e => { toques.delete(e.pointerId); if(toques.size < 2) pinca = null; if(!toques.size){ arr = null; t.classList.remove('arrastando'); } };
   t.addEventListener('pointerup', soltar); t.addEventListener('pointercancel', soltar);
+  /* a roda dá zoom onde o cursor está. Shift e a roda movem (o navegador
+     manda o Shift como roda de lado); o trackpad de lado também move, e o
+     pinçar chega como Ctrl e a roda, com passos miúdos. */
   t.addEventListener('wheel', e => {
     if(e.target.closest('.okr-ferr')) return;
     e.preventDefault();
     const r = t.getBoundingClientRect();
-    if(e.ctrlKey || e.metaKey) okrZoom(Math.exp(-e.deltaY * .0025), e.clientX - r.left, e.clientY - r.top);
-    else { OKR.vista.x -= e.deltaX; OKR.vista.y -= e.deltaY; okrAplicarVista(); }
+    const passo = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
+    const dx = e.deltaX * passo, dy = e.deltaY * passo;
+    if(e.shiftKey || (!e.ctrlKey && !e.metaKey && Math.abs(dx) > Math.abs(dy))){
+      OKR.vista.x -= dx || dy; OKR.vista.y -= dx ? dy : 0; okrAplicarVista(); return;
+    }
+    const pinca = (e.ctrlKey || e.metaKey) && Math.abs(dy) < 40;
+    okrZoom(Math.exp(-Math.max(-240, Math.min(240, dy)) * (pinca ? .012 : .0022)), e.clientX - r.left, e.clientY - r.top);
   }, { passive:false });
   t.addEventListener('keydown', e => {
     if(e.target.closest('input')) return;

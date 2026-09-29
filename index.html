@@ -418,7 +418,7 @@ body.lt-animando footer#ft{transition:margin-left .22s var(--lt-ease)}
   flex-wrap:wrap;margin-bottom:16px}
 .kb-linha{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .kb-linha h1{margin:0}
-.kb-acoes{display:flex;align-items:center;gap:9px}
+.kb-acoes{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .kb-selo{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;
   letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
   border:1px solid var(--line2);border-radius:9px;padding:6px 10px}
@@ -585,6 +585,140 @@ button.res-pill:hover{background:rgba(var(--tom),.05)}
 .barra.carga{grid-template-columns:150px 1fr 40px auto}
 .barra.carga .tags{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 @media (max-width:640px){.barra.carga{grid-template-columns:1fr;gap:6px}}
+
+/* ---- 2.17.0: etiquetas, outras pessoas, checklist, cópia ----
+   Componentes do design system (card Quadro e atribuição). */
+/* a etiqueta: ponto na cor que sai do nome e o texto; não tinge o
+   fundo, para ler igual nos dois temas */
+.et{display:inline-flex;align-items:center;gap:5px;max-width:100%;font-size:10.5px;line-height:1.25;
+  color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:2px 8px 2px 6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.et::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--et,var(--dim));flex:none}
+button.et:hover{border-color:var(--dim);color:var(--ink)}
+.et.on{border-color:var(--syn-borda);color:var(--ink);background:rgba(var(--syn-rgb),.08)}
+.et .x{margin-left:2px;color:var(--dim);font-size:12px;line-height:1}
+.et .x:hover{color:var(--ink)}
+.kb-ets{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 8px}
+.kb-rostos{display:inline-flex;align-items:center;min-width:0}
+.kb-rostos .avx{margin-left:-6px;box-shadow:0 0 0 2px var(--panel)}
+.kb-rostos .avx:first-child{margin-left:0}
+.kb-rostos .mais{font-family:var(--fm);font-size:10px;color:var(--dim);margin-left:5px}
+.kb-meta .ck,.kb-meta .cmt,.kb-meta .dsc{display:inline-flex;align-items:center;gap:3px}
+.kb-meta .ic{width:12px;height:12px}
+.kb-meta .ck.cheia{color:var(--ok)}
+.kb-filtros .fld.et-f{min-width:150px}
+/* o cartão aberto: pessoas, etiquetas e os seletores deles */
+.cd-linha{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cd-bloco{margin-bottom:14px}
+.cd-bloco>label{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:7px}
+.pessoa-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;border:1px solid var(--line2);border-radius:999px;
+  padding:2px 5px 2px 2px;font-size:12px;color:var(--ink)}
+.pessoa-chip .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pessoa-chip button{width:18px;height:18px;border-radius:50%;color:var(--dim);font-size:13px;line-height:1;flex:none}
+.pessoa-chip button:hover{color:var(--ink);background:rgba(var(--tom),.08)}
+.cd-add{display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--line2);border-radius:999px;
+  padding:3px 10px;font-size:12px;color:var(--dim);transition:color .15s,border-color .15s}
+.cd-add:hover{color:var(--ink);border-color:var(--dim)}
+.cd-add .ic{width:12px;height:12px}
+.sel-pop{position:absolute;z-index:45;min-width:250px;max-width:320px;background:var(--panel);border:1px solid var(--line2);
+  border-radius:13px;padding:7px;box-shadow:0 18px 40px -12px rgba(var(--sombra-rgb),calc(.7 * var(--sombra-k)))}
+.sel-pop>input{width:100%;margin-bottom:6px}
+.sel-lista{display:flex;flex-direction:column;gap:2px;max-height:280px;overflow-y:auto}
+.sel-op{display:flex;align-items:center;gap:9px;width:100%;padding:7px 8px;border-radius:9px;font-size:13px;
+  color:var(--muted);text-align:left}
+.sel-op:hover,.sel-op.ativo{background:rgba(var(--tom),.06);color:var(--ink)}
+.sel-op .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sel-op .sub{font-size:11px;color:var(--dim);white-space:nowrap}
+.sel-op .ok{width:15px;height:15px;color:var(--syn-tx);flex:none}
+.sel-grp{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:6px 8px 3px}
+.sel-vazio{font-size:12px;color:var(--dim);padding:8px}
+/* a checklist */
+.ck-lista+.ck-lista{margin-top:20px}
+.ck-topo{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.ck-topo .ic{width:16px;height:16px;color:var(--dim);flex:none}
+.ck-topo h4{font-family:var(--fd);font-size:14px;font-weight:600;flex:1;min-width:0}
+.ck-topo .n{font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.ck-barra{height:5px;border-radius:4px;background:rgba(var(--tom),.07);overflow:hidden;margin-bottom:8px}
+.ck-barra i{display:block;height:100%;background:var(--syn-borda);border-radius:4px;transition:width .2s}
+.ck-barra.cheia i{background:var(--ok)}
+.ck-item{display:flex;align-items:flex-start;gap:9px;padding:5px 6px;border-radius:9px}
+.ck-item:hover{background:rgba(var(--tom),.035)}
+.ck-item input[type=checkbox]{margin-top:3px;flex:none;width:15px;height:15px;accent-color:var(--syn-borda)}
+.ck-item .tx{flex:1;min-width:0;font-size:13px;line-height:1.5;color:var(--ink);overflow-wrap:anywhere}
+.ck-item.feito .tx{color:var(--dim);text-decoration:line-through;text-decoration-color:rgba(var(--tom),.35)}
+.ck-item .acs{display:flex;gap:2px;opacity:0;transition:opacity .15s}
+.ck-item:hover .acs,.ck-item:focus-within .acs{opacity:1}
+@media (hover:none){.ck-item .acs{opacity:1}}
+.ck-novo{display:flex;gap:8px;margin-top:6px}
+.ck-novo input{flex:1;min-width:0}
+.cd-copia{font-size:12.5px;color:var(--muted);margin-top:4px}
+.cd-copia a{color:var(--syn-tx);font-family:var(--fm);font-size:12px}
+/* os comentários: Markdown, menção e o que é seu */
+.cd-desc.md,.cm-cp.md{white-space:normal}
+.cm-tp .ed{font-family:var(--f);font-style:italic}
+.cm-acs{display:flex;gap:12px;margin-top:5px}
+.cm-acs button{font-size:11.5px;color:var(--dim)}
+.cm-acs button:hover{color:var(--ink)}
+.cm-marcou{font-size:11.5px;color:var(--dim);margin-top:4px}
+.cd-novo-pe{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.cd-novo-pe .small{margin-right:auto}
+.menc-pop{position:fixed;z-index:130;min-width:230px;max-width:300px;background:var(--panel);border:1px solid var(--line2);
+  border-radius:12px;padding:6px;box-shadow:0 18px 40px -12px rgba(var(--sombra-rgb),calc(.7 * var(--sombra-k)))}
+.menc-op{display:flex;align-items:center;gap:9px;width:100%;padding:6px 8px;border-radius:8px;font-size:13px;color:var(--muted);text-align:left}
+.menc-op.ativo,.menc-op:hover{background:rgba(var(--syn-rgb),.10);color:var(--ink)}
+.menc-op .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.menc-op .sub{font-size:11px;color:var(--dim);white-space:nowrap}
+/* o campo de Markdown: a barra e escrever/ver */
+.md-barra{display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin-bottom:6px}
+.md-bt{min-width:30px;height:28px;border-radius:8px;color:var(--muted);font-size:13px;display:inline-flex;
+  align-items:center;justify-content:center;padding:0 6px}
+.md-bt:hover{background:rgba(var(--tom),.07);color:var(--ink)}
+.md-bt .ic{width:15px;height:15px}
+.md-dica{margin-left:auto;font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.md-ver{min-height:90px;border:1px dashed var(--line2);border-radius:11px;padding:10px 12px}
+.arq-lista .arq{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--line)}
+.arq-lista .arq:first-child{border-top:none}
+.arq-lista .arq .cod{font-family:var(--fm);font-size:11px;color:var(--syn-tx);flex:none}
+.arq-lista .arq .tt{flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arq-lista .arq .q{font-size:11.5px;color:var(--dim);white-space:nowrap}
+
+/* ============ MARKDOWN (md(), na casca) ============
+   O texto de trabalho desenhado: a descrição e os comentários do cartão,
+   os relatos de bug e as notas de versão. Mais compacto que o dos
+   treinamentos (.tre-md), que é texto de ler com calma. */
+.md{font-size:13.5px;line-height:1.62;color:var(--muted);overflow-wrap:anywhere}
+.md>*+*{margin-top:8px}
+.md h3{font-size:15px;font-weight:600;color:var(--ink);margin-top:14px}
+.md h4{font-size:13.5px;font-weight:600;color:var(--ink);margin-top:12px}
+.md h5{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:12px}
+.md>h3:first-child,.md>h4:first-child,.md>h5:first-child{margin-top:0}
+.md strong{font-weight:650;color:var(--ink)}
+.md ul,.md ol{padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.md li>ul,.md li>ol{margin-top:3px}
+.md li::marker{color:var(--dim)}
+.md li.tarefa{list-style:none;margin-left:-18px}
+.md li.tarefa::before{content:'';display:inline-block;width:11px;height:11px;border:1.5px solid var(--line2);border-radius:3px;
+  margin-right:8px;vertical-align:-1px}
+.md li.tarefa.feita::before{background:var(--syn);border-color:var(--syn-borda)}
+.md code{font-family:var(--fm);font-size:.87em;background:rgba(var(--tom),.07);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+.md pre{font-family:var(--fm);font-size:12px;line-height:1.55;background:rgba(var(--tom),.04);border:1px solid var(--line);
+  border-radius:10px;padding:10px 12px;overflow-x:auto;white-space:pre;max-width:100%}
+.md pre code{background:none;border:0;padding:0;font-size:inherit}
+.md blockquote{border-left:2px solid var(--line2);padding:1px 0 1px 12px;color:var(--dim)}
+.md hr{border:0;border-top:1px solid var(--line2);margin:14px 0}
+.md a{color:var(--syn-tx);text-decoration:underline;text-decoration-color:rgba(var(--syn-rgb),.45);text-underline-offset:3px}
+.md a:hover{text-decoration-color:currentColor}
+.md a.md-cod{font-family:var(--fm);font-size:.9em;text-decoration:none;border-bottom:1px dotted rgba(var(--syn-rgb),.6)}
+.md a.mencao,a.mencao{color:var(--syn-tx);background:rgba(var(--syn-rgb),.10);border-radius:6px;padding:0 4px;
+  font-weight:600;text-decoration:none}
+.md a.mencao.eu,a.mencao.eu{background:rgba(var(--syn-rgb),.22);color:var(--ink)}
+.md-tabela{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.md-tabela table{width:100%;border-collapse:collapse;font-size:12.5px}
+.md-tabela th{font-family:var(--fm);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);
+  text-align:left;padding:8px 10px;border-bottom:1px solid var(--line2)}
+.md-tabela td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.md-tabela tr:last-child td{border-bottom:0}
 
 /* ============ LAYOUT ============ */
 /* A coluna de conteúdo começa onde o menu termina e se centraliza no
@@ -769,6 +903,27 @@ main{padding-top:24px;padding-bottom:90px}
   position:relative;overflow:hidden;flex:none;border:1px solid var(--line2)}
 .avx img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .stat-mono{font-family:var(--fm);color:var(--syn-tx);font-weight:500}
+
+/* ============ A FOTO DE PERFIL (2.17.0) ============
+   O avatar abre o envio: na linha da conta, no menu, e na ficha (o botão
+   da câmera, para a própria pessoa, admin e o Depto. de Pessoal). */
+.lt-foto{cursor:pointer;border-radius:50%;line-height:0}
+.lt-foto:hover .avx{box-shadow:0 0 0 2px var(--syn-borda)}
+.ficha-foto{position:relative;line-height:0;flex:none}
+.ficha-foto .foto-bt{position:absolute;right:-5px;bottom:-5px;width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line2);
+  color:var(--ink);transition:border-color .15s,color .15s}
+.ficha-foto .foto-bt:hover{border-color:var(--syn-borda);color:var(--syn-tx)}
+.ficha-foto .foto-bt .ic{width:14px;height:14px}
+.fto-ed{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center;margin-top:14px}
+@media (max-width:560px){.fto-ed{grid-template-columns:1fr;justify-items:center}}
+.fto-palco{width:220px;height:220px;display:flex;align-items:center;justify-content:center;border-radius:16px;
+  background:rgba(var(--tom),.03);border:1px solid var(--line)}
+.fto-palco canvas{width:220px;height:220px;border-radius:15px;touch-action:none;cursor:grab}
+.fto-palco canvas:active{cursor:grabbing}
+.fto-lado{display:flex;flex-direction:column;gap:10px;align-items:flex-start;min-width:0}
+.fto-lado .fld{width:100%;margin:0}
+.fto-lado input[type=range]{width:100%;accent-color:var(--syn-borda)}
 
 /* ============ O CALENDÁRIO DO MÊS (Agenda e Studio) ============
    Um componente: calMesHTML() na casca. Segunda a domingo, seis
@@ -1306,7 +1461,59 @@ a.ft-t .av .avx:first-child{margin-left:0}
 .ft-marca{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
 .ft-grid img{height:18px;filter:brightness(0) invert(.92)}
 [data-tema="claro"] .ft-grid img{filter:brightness(0) invert(.08)}
-.ft-ver{font-family:var(--fm);font-size:11px;letter-spacing:.1em;color:var(--dim)}
+.ft-ver{font-family:var(--fm);font-size:11px;letter-spacing:.1em;color:var(--dim);transition:color .15s}
+a.ft-ver:hover{color:var(--syn-tx)}
+
+/* ============ NOTAS DE VERSÃO E BUGS E SUGESTÕES (2.17.0) ============
+   #/versoes: cada versão com o número, a data e o que mudou; e a seção
+   dos relatos da equipe, com voto, conversa e o andamento. */
+.vs-lista{display:flex;flex-direction:column;gap:14px;max-width:880px}
+.vs-item{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:20px 22px;scroll-margin-top:20px}
+.vs-item.atual{border-color:rgba(var(--syn-rgb),.45)}
+.vs-item.foco{box-shadow:0 0 0 3px rgba(var(--syn-rgb),.18)}
+.vs-cab{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;margin-bottom:4px}
+.vs-num{font-family:var(--fm);font-size:12.5px;font-weight:500;letter-spacing:.04em;color:var(--syn-tx);
+  background:rgba(var(--syn-rgb),.10);border:1px solid rgba(var(--syn-rgb),.28);border-radius:7px;padding:2px 8px;text-decoration:none}
+.vs-antes{font-family:var(--fm);font-size:10.5px;color:var(--dim)}
+.vs-data{font-family:var(--fm);font-size:11px;color:var(--dim);margin-left:auto}
+.vs-tit{font-family:var(--fd);font-size:17px;font-weight:600;line-height:1.3;margin:6px 0 2px}
+.vs-mud{list-style:none;display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.vs-mud li{display:grid;grid-template-columns:78px minmax(0,1fr);gap:10px;align-items:start}
+.vs-mud li .md{font-size:13.5px}
+.vs-tipo{font-family:var(--fm);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;border-radius:6px;padding:2px 0;
+  border:1px solid;text-align:center;margin-top:2px}
+.vs-tipo.novo{color:var(--ok);border-color:rgba(var(--ok-rgb),.4)}
+.vs-tipo.melhoria{color:var(--info-tx);border-color:rgba(var(--info-rgb),.4)}
+.vs-tipo.correcao{color:var(--warn-tx);border-color:rgba(var(--warn-rgb),.4)}
+.vs-tipo.aviso{color:var(--bad-tx);border-color:rgba(var(--bad-rgb),.4)}
+@media (max-width:560px){.vs-mud li{grid-template-columns:1fr;gap:4px}.vs-tipo{justify-self:start;padding:2px 7px}}
+.vs-antigas{margin-top:6px}
+.vs-antigas summary{cursor:pointer;font-size:13px;color:var(--muted);padding:8px 0}
+.vs-antigas summary:hover{color:var(--ink)}
+.fb-topo{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.fb-lista{display:flex;flex-direction:column;gap:8px;max-width:980px}
+.fb-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;border:1px solid var(--line);
+  border-radius:14px;padding:12px 14px;background:var(--card);transition:border-color .15s}
+.fb-item:hover{border-color:var(--line2)}
+.fb-voto{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:46px;padding:6px 4px;border:1px solid var(--line2);
+  border-radius:10px;color:var(--muted);transition:border-color .15s,color .15s,background .15s}
+.fb-voto:hover{border-color:var(--dim);color:var(--ink)}
+.fb-voto .ic{width:14px;height:14px}
+.fb-voto b{font-family:var(--fm);font-size:12px;font-weight:500}
+.fb-voto.on{border-color:var(--syn-borda);color:var(--syn-tx);background:rgba(var(--syn-rgb),.08)}
+.fb-tx{min-width:0}
+.fb-tx .t{font-family:var(--fd);font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.35}
+.fb-tx .t:hover{color:var(--syn-tx)}
+.fb-sub{display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--dim);margin-top:4px}
+.fb-sub .ic{width:12px;height:12px;vertical-align:-2px}
+.fb-cod{font-family:var(--fm);font-size:10.5px;letter-spacing:.06em;border-radius:6px;padding:2px 7px;white-space:nowrap}
+.fb-cod.bug{color:var(--bad-tx);background:rgba(var(--bad-rgb),.10)}
+.fb-cod.sugestao{color:var(--info-tx);background:rgba(var(--info-rgb),.10)}
+@media (max-width:640px){.fb-item{grid-template-columns:auto minmax(0,1fr)}.fb-item>.pill{grid-column:2;justify-self:start}}
+.fb-det{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:920px){.fb-det{grid-template-columns:1fr}}
+.fb-resposta{border-left:2px solid var(--syn-borda);padding:4px 0 4px 14px;margin-top:14px}
+.fb-resposta .quem{font-family:var(--fm);font-size:10.5px;color:var(--dim);margin-top:6px}
 .ft-grid h4{font-family:var(--fm);font-size:10.5px;font-weight:500;letter-spacing:.2em;
   text-transform:uppercase;color:var(--dim);margin-bottom:12px}
 .ft-grid ul{list-style:none;display:flex;flex-direction:column;gap:8px}
@@ -1510,16 +1717,19 @@ dd.ficha-grupos{margin-top:2px}
 .okr-mundo.anima{transition:transform .3s ease}
 .okr-fios{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .okr-fios path{fill:none;stroke:var(--line2);stroke-width:1.6}
-.okr-no{position:absolute;width:272px;height:172px;display:flex;flex-direction:column;gap:7px;padding:12px 14px 10px;cursor:default;
+/* 2.17.0: largura fixa e altura do texto — o título aparece inteiro. A
+   altura final vem do JS: cada nível do mapa fica com a do maior cartão
+   (okrDesenharTela, em mod-okrs); a daqui é só o mínimo. */
+.okr-no{position:absolute;width:320px;min-height:172px;display:flex;flex-direction:column;gap:7px;padding:13px 15px 11px;cursor:default;
   background:var(--panel);border:1px solid var(--line2);border-top:3px solid var(--eixo,var(--line2));border-radius:14px;
   box-shadow:0 8px 22px rgba(var(--sombra-rgb),calc(.22 * var(--sombra-k)))}
 .okr-no.foco{border-color:var(--syn-borda);border-top-color:var(--eixo,var(--syn-borda));box-shadow:0 0 0 3px rgba(var(--syn-rgb),.2),0 8px 22px rgba(var(--sombra-rgb),calc(.22 * var(--sombra-k)))}
 .okr-no .ln1{display:flex;align-items:center;gap:7px}
 .okr-no .ln1 .pill{margin-left:auto}
-.okr-no .nm{font-family:var(--fd);font-weight:600;font-size:14px;line-height:1.35;text-align:left;color:var(--ink);padding:0;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.okr-no .nm{font-family:var(--fd);font-weight:600;font-size:14.5px;line-height:1.38;text-align:left;color:var(--ink);padding:0;
+  overflow-wrap:anywhere;cursor:pointer}
 .okr-no .nm:hover{color:var(--syn-tx)}
-.okr-no .mt{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px}
+.okr-no .mt{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 8px;min-height:24px}
 .okr-no .okr-prog{margin-top:0}
 .okr-no .okr-sem-prog{display:block;height:14px}
 .okr-no .pe{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:6px}
@@ -3116,6 +3326,8 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 .toast{background:var(--toast);border:1px solid var(--line2);color:var(--ink);border-radius:12px;
   padding:12px 20px;font-size:13.5px;box-shadow:0 12px 40px rgba(var(--sombra-rgb),calc(.5 * var(--sombra-k)))}
 .toast.err{border-color:rgba(var(--bad-rgb),.4);color:var(--bad-tx)}
+.toast.novidade{display:flex;align-items:center;gap:12px;border-color:rgba(var(--syn-rgb),.45)}
+.toast.novidade a{color:var(--syn-tx);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .ok-page{max-width:520px;margin:40px auto;text-align:center}
 .ok-page .circ{width:92px;height:92px;border-radius:50%;margin:0 auto 20px;
   display:flex;align-items:center;justify-content:center;
@@ -3314,13 +3526,15 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
     <div class="ft-grid">
       <div class="ft-marca">
         <img id="logo-ft" src="" alt="NeuroDynamics">
-        <span class="ft-ver" id="ft-ver"></span>
+        <a class="ft-ver" id="ft-ver" href="#/versoes" title="Notas de versão"></a>
       </div>
       <nav aria-label="Ajuda">
         <h4>Ajuda</h4>
         <ul>
           <li><a href="tour">Tour do SOMA</a></li>
           <li><button type="button" onclick="modalAtalhos()">Atalhos do teclado</button></li>
+          <li><a href="#/versoes">Notas de versão</a></li>
+          <li><a href="#/versoes/comentarios">Bugs e sugestões</a></li>
           <li><a href="#/servicos">Pedidos ao Depto. de Pessoal</a></li>
           <li><a href="#/servicos/ouvidoria">Ouvidoria anônima</a></li>
           <li id="ft-cta" hidden><a id="ft-cta-a" href="#" target="_blank" rel="noopener">GitHub</a></li>
@@ -3329,6 +3543,7 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
       <nav aria-label="Sua conta">
         <h4>Sua conta</h4>
         <ul>
+          <li id="ft-foto" hidden><button type="button" onclick="modalFoto(state.perfil?.registro)">Foto de perfil</button></li>
           <li><button type="button" onclick="modalPreferenciaNotif()">Preferências de avisos</button></li>
           <li><a href="#/agenda/config/google">Google Agenda</a></li>
           <li><button type="button" id="ft-tema" onclick="alternarTema()">Tema claro</button></li>
@@ -3356,9 +3571,13 @@ const CONFIG = {
   SUPABASE_URL: 'https://rxzmkyjttzzpwtodqkve.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_MJFR-aaQqTS1BthxYJG2kg_5XGhs9wg'
 };
-/* Versão do portal. Acompanha a query dos módulos carregados sob
-   demanda, para um deploy não deixar módulo velho em cache. */
-const VERSAO = '31.0';
+/* Versão do portal, em major.minor.patch (README, "Versões"): o minor
+   sobe quando a versão acrescenta, o patch quando só corrige, o major
+   quando algo deixa de funcionar como antes. A 32.0 da numeração antiga
+   é a 2.16.0. Acompanha a query dos módulos carregados sob demanda, para
+   um deploy não deixar módulo velho em cache, e as notas de cada versão
+   moram em mod-versoes.js (#/versoes). */
+const VERSAO = '2.17.0';
 const LOGO_URL = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
 /* Link do GitHub do CTA no rodapé. Preencha quando a organização existir;
@@ -3522,6 +3741,177 @@ function avatarFoto(m, px, fs){
   const img = u ? `<img src="${esc(u)}" alt="" loading="lazy"${cascata} onerror="fotoErro(this)">` : '';
   return `<span class="avx" style="width:${px}px;height:${px}px;font-size:${fs||12}px">${letras}${img}</span>`;
 }
+/* A mesma cascata do avatar, sem desenhar: a pessoa tem foto que carrega?
+   null quando a rede demora demais para dizer (aí ninguém é cobrado). */
+function temFoto(m){
+  const urls = m?.foto_url ? [m.foto_url] : (m?.registro != null ? FOTO_EXTS.map(e => FOTOS_BASE + m.registro + '.' + e) : []);
+  return new Promise(ok => {
+    const limite = setTimeout(() => ok(null), 8000);
+    const fim = v => { clearTimeout(limite); ok(v); };
+    const tenta = i => {
+      if (i >= urls.length) return fim(false);
+      const im = new Image(); im.onload = () => fim(true); im.onerror = () => tenta(i + 1); im.src = urls[i];
+    };
+    tenta(0);
+  });
+}
+
+/* ---------------- a foto de perfil (2.17.0) ----------------
+   Enviar a foto direto, sem publicá-la em outro lugar e colar o link.
+   A imagem é enquadrada aqui (arrastar move, a barra dá zoom), reduzida a
+   512 px em JPEG e vai para o bucket público "fotos", na pasta do
+   registro; membro_foto_definir grava o endereço na ficha e devolve a
+   foto anterior, que sai do bucket. Cada pessoa envia a sua; admin e o
+   Depto. de Pessoal, a de qualquer um. O link colado na ficha continua
+   valendo. */
+const FOTO_LADO = 512;
+const fotoEd = { img:null, x:0, y:0, k:1, reg:null };
+const podeFotoDe = reg => reg != null && (can() || reg === state.perfil?.registro);
+function desenharMeuAvatar(){
+  const eu = state.membros.find(x => x.registro === state.perfil?.registro);
+  const el = $('#lt-avatar'); if (!el) return;
+  el.innerHTML = avatarFoto(eu || { nome: state.perfil?.nome || state.perfil?.email }, 28, 10.5);
+  if (eu){ el.title = 'Foto de perfil'; el.classList.add('lt-foto'); el.onclick = () => modalFoto(eu.registro); }
+}
+function modalFoto(reg){
+  if (!podeFotoDe(reg)) return;
+  const m = state.membros.find(x => x.registro === reg) || { registro:reg, nome:'Registro ' + reg };
+  Object.assign(fotoEd, { img:null, x:0, y:0, k:1, reg });
+  abreModal(`<h3>${reg === state.perfil?.registro ? 'Sua foto' : 'Foto de ' + esc(m.nome)}</h3>
+    <div class="fto-ed">
+      <div class="fto-palco" id="fto-palco">
+        <div class="fto-atual">${avatarFoto(m, 200, 58)}</div>
+        <canvas id="fto-cv" width="400" height="400" hidden aria-label="Enquadramento: arraste para mover"></canvas>
+      </div>
+      <div class="fto-lado">
+        <label class="btn solid" for="fto-arq">${ic('camera')} ${m.foto_url ? 'Trocar a imagem' : 'Escolher imagem'}</label>
+        <input type="file" id="fto-arq" accept="image/*" hidden onchange="fotoEscolhida(this)">
+        <p class="small muted" id="fto-dica">JPG, PNG ou WebP, até 15 MB.</p>
+        <div class="fld" id="fto-zoom-fld" hidden><label for="fto-zoom">Zoom</label>
+          <input type="range" id="fto-zoom" min="1" max="4" step="0.01" value="1" oninput="fotoZoom(+this.value)"></div>
+      </div>
+    </div>
+    <p class="err-msg" id="fto-erro"></p>
+    <div class="acts" style="justify-content:space-between">
+      <span>${m.foto_url ? `<button class="btn ghost" id="fto-rem" onclick="fotoRemover(${reg})">${ic('trash')} Remover a foto</button>` : ''}</span>
+      <span style="display:flex;gap:10px"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+        <button class="btn solid" id="fto-salvar" onclick="fotoSalvar()" disabled>Salvar</button></span>
+    </div>`);
+  fotoLigarArraste();
+}
+async function fotoEscolhida(inp){
+  const f = inp.files?.[0]; $('#fto-erro').textContent = '';
+  if (!f) return;
+  if (!/^image\//.test(f.type)) return $('#fto-erro').textContent = 'O arquivo não é uma imagem.';
+  if (f.size > 15 * 1024 * 1024) return $('#fto-erro').textContent = 'Imagem acima de 15 MB.';
+  try {
+    const img = await new Promise((ok, erro) => { const im = new Image(), u = URL.createObjectURL(f);
+      im.onload = () => { URL.revokeObjectURL(u); ok(im); }; im.onerror = () => { URL.revokeObjectURL(u); erro(); }; im.src = u; });
+    Object.assign(fotoEd, { img, k:1 });
+    const L = $('#fto-cv').width, s = Math.max(L / img.width, L / img.height);
+    fotoEd.x = (L - img.width * s) / 2; fotoEd.y = (L - img.height * s) / 2;   /* começa centrada */
+    $('#fto-cv').hidden = false; document.querySelector('.fto-atual')?.remove();
+    $('#fto-zoom-fld').hidden = false; $('#fto-zoom').value = 1;
+    $('#fto-dica').textContent = 'Arraste a imagem para enquadrar.';
+    $('#fto-salvar').disabled = false;
+    fotoDesenhar();
+  } catch(e){ $('#fto-erro').textContent = 'Formato de imagem não suportado por este navegador. Envie em JPG ou PNG.'; }
+}
+/* a imagem sempre cobre o quadrado: o zoom 1 é o "cobrir", e o arraste
+   não deixa sobrar borda vazia */
+function fotoDesenhar(){
+  const cv = $('#fto-cv'), img = fotoEd.img; if (!cv || !img) return;
+  const c = cv.getContext('2d'), L = cv.width;
+  const s = Math.max(L / img.width, L / img.height) * fotoEd.k, w = img.width * s, h = img.height * s;
+  fotoEd.x = Math.min(0, Math.max(L - w, fotoEd.x)); fotoEd.y = Math.min(0, Math.max(L - h, fotoEd.y));
+  c.clearRect(0, 0, L, L); c.drawImage(img, fotoEd.x, fotoEd.y, w, h);
+  /* o que fica fora do círculo do avatar, velado */
+  c.save(); c.fillStyle = 'rgba(0,0,0,.5)'; c.beginPath(); c.rect(0, 0, L, L);
+  c.arc(L / 2, L / 2, L / 2 - 2, 0, Math.PI * 2, true); c.fill('evenodd'); c.restore();
+}
+function fotoZoom(k){
+  const L = $('#fto-cv')?.width; if (!L || !fotoEd.img) return;
+  const f = k / fotoEd.k;   /* o centro fica onde está */
+  fotoEd.x = L / 2 - (L / 2 - fotoEd.x) * f; fotoEd.y = L / 2 - (L / 2 - fotoEd.y) * f; fotoEd.k = k;
+  fotoDesenhar();
+}
+function fotoLigarArraste(){
+  const cv = $('#fto-cv'); if (!cv) return;
+  let de = null;
+  cv.addEventListener('pointerdown', e => { if (!fotoEd.img) return; cv.setPointerCapture(e.pointerId);
+    const esc = cv.width / cv.getBoundingClientRect().width;
+    de = { x:e.clientX, y:e.clientY, fx:fotoEd.x, fy:fotoEd.y, esc }; });
+  cv.addEventListener('pointermove', e => { if (!de) return;
+    fotoEd.x = de.fx + (e.clientX - de.x) * de.esc; fotoEd.y = de.fy + (e.clientY - de.y) * de.esc; fotoDesenhar(); });
+  const solta = () => { de = null; };
+  cv.addEventListener('pointerup', solta); cv.addEventListener('pointercancel', solta);
+  cv.addEventListener('wheel', e => { if (!fotoEd.img) return; e.preventDefault();
+    const k = Math.min(4, Math.max(1, fotoEd.k * Math.exp(-e.deltaY * .002)));
+    $('#fto-zoom').value = k; fotoZoom(k); }, { passive:false });
+}
+function fotoArquivo(){
+  const img = fotoEd.img, L = $('#fto-cv').width, f = FOTO_LADO / L;
+  const s = Math.max(L / img.width, L / img.height) * fotoEd.k;
+  const out = document.createElement('canvas'); out.width = out.height = FOTO_LADO;
+  const c = out.getContext('2d');
+  c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, FOTO_LADO, FOTO_LADO);   /* PNG transparente não vira preto */
+  c.imageSmoothingQuality = 'high';
+  c.drawImage(img, fotoEd.x * f, fotoEd.y * f, img.width * s * f, img.height * s * f);
+  return new Promise((ok, erro) => out.toBlob(b => b ? ok(b) : erro(new Error('não foi possível gerar a imagem')), 'image/jpeg', .9));
+}
+const fotoMotivo = (e, d) => /bucket not found|membro_foto_definir|does not exist/i.test(e?.message || '')
+  ? 'Falta aplicar a migração db/2.17.0_notas_fotos_e_cartoes.sql.'
+  : d?.status === 'sem_arquivo' ? 'A imagem não chegou ao servidor. Tente de novo.'
+  : motivoRPC(d, e, 'Não foi possível salvar a foto');
+async function fotoSalvar(){
+  const reg = fotoEd.reg, bt = $('#fto-salvar'), erro = $('#fto-erro');
+  if (!fotoEd.img || !bt) return;
+  bt.disabled = true; bt.textContent = 'Enviando…'; erro.textContent = '';
+  let caminho = null;
+  try {
+    const blob = await fotoArquivo();
+    caminho = `${reg}/${Date.now()}.jpg`;
+    const up = await sb.storage.from('fotos').upload(caminho, blob, { contentType:'image/jpeg', cacheControl:'31536000', upsert:false });
+    if (up.error){ const e = up.error; caminho = null; throw e; }
+    const { data, error } = await sb.rpc('membro_foto_definir', { p:{ registro:reg, caminho } });
+    if (error || data?.status !== 'ok'){ erro.textContent = fotoMotivo(error, data); return; }
+    caminho = null;   /* gravado: não é mais para desfazer */
+    if (data.anterior) sb.storage.from('fotos').remove([data.anterior]).catch(() => {});
+    fotoAplicada(reg, data.foto_url);
+    fechaModal(); toast('Foto atualizada.');
+  } catch(e){
+    erro.textContent = fotoMotivo(e);
+  } finally {
+    if (caminho) sb.storage.from('fotos').remove([caminho]).catch(() => {});
+    const b = $('#fto-salvar'); if (b){ b.disabled = !fotoEd.img; b.textContent = 'Salvar'; }
+  }
+}
+async function fotoRemover(reg){
+  if (!await confirma('Remover a foto? A ficha volta a mostrar o arquivo do repositório de fotos, ou as iniciais.', 'Remover')){ modalFoto(reg); return; }
+  const { data, error } = await sb.rpc('membro_foto_definir', { p:{ registro:reg, caminho:null } });
+  if (error || data?.status !== 'ok'){ toast(fotoMotivo(error, data), true); return; }
+  if (data.anterior) sb.storage.from('fotos').remove([data.anterior]).catch(() => {});
+  fotoAplicada(reg, null);
+  toast('Foto removida.');
+}
+/* a foto nova aparece na hora: no menu, na tela aberta e no início */
+function fotoAplicada(reg, url){
+  const m = state.membros.find(x => x.registro === reg); if (m) m.foto_url = url;
+  if (reg === state.perfil?.registro) desenharMeuAvatar();
+  if (state.perfil) render(route());
+}
+
+/* ---------------- a versão nova ----------------
+   Uma vez por versão, por navegador: quem já usava o portal fica sabendo
+   que ele mudou, com o link para as notas. */
+function avisarVersaoNova(){
+  let vista = null;
+  try { vista = localStorage.getItem('nd.versao'); localStorage.setItem('nd.versao', VERSAO); } catch(e){ return; }
+  if (vista === VERSAO || (!vista && !lerRecentes().length)) return;
+  const t = document.createElement('div'); t.className = 'toast novidade';
+  t.innerHTML = `<b>SOMA ${esc(VERSAO)}</b> <a href="#/versoes/${esc(VERSAO)}" onclick="this.closest('.toast').remove()">Ver o que mudou</a>`;
+  $('#toast').appendChild(t); setTimeout(() => t.remove(), 12000);
+}
 
 /* ---------------- ícones de interface ---------------- */
 /* Ficam na casca, e não num módulo, porque mais de um módulo os usa —
@@ -3600,7 +3990,14 @@ const ICONS = {
   mais_zoom:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5M8.5 11h5M11 8.5v5"/>',
   menos_zoom:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5M8.5 11h5"/>',
   externo:'<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/>',
-  enquadrar:'<path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/>'
+  enquadrar:'<path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/>',
+  camera:'<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.4-2h5.8l1.4 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.4"/>',
+  checklist:'<path d="M4 6.5 5.5 8 8 5.5M4 12.5 5.5 14 8 11.5M4 18.5 5.5 20 8 17.5"/><path d="M11 7h9M11 13h9M11 19h9"/>',
+  etiqueta:'<path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.5 1.5 0 0 1 0 2.1l-6.1 6.1a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8" cy="8" r="1.4"/>',
+  bug:'<path d="M9 7.5a3 3 0 0 1 6 0"/><rect x="7" y="7.5" width="10" height="11" rx="5"/><path d="M12 11v7.5M3.5 13H7M17 13h3.5M4.5 8.5 7.3 10M19.5 8.5 16.7 10M4.5 18.5l2.9-2M19.5 18.5l-2.9-2"/>',
+  arquivar:'<rect x="3.5" y="4.5" width="17" height="4" rx="1"/><path d="M5 8.5v10A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-10M10 12.5h4"/>',
+  votar:'<path d="M12 19.5V5M6.5 10.5 12 5l5.5 5.5"/>',
+  mencao:'<circle cx="12" cy="12" r="3.6"/><path d="M15.6 12v1.4a2.6 2.6 0 0 0 5.2 0V12a8.8 8.8 0 1 0-3.4 6.9"/>'
 };
 const ic = (n, cls) => `<svg class="ic${cls?' '+cls:''}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]||''}</svg>`;
@@ -3661,6 +4058,186 @@ document.addEventListener('click', e => {
   if (_dica.fixo) esconderDica();
 }, true);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && _dica.alvo) esconderDica(); });
+
+/* ---------------- Markdown (2.17.0) ----------------
+   O texto de trabalho (a descrição e os comentários de um cartão, um
+   relato de bug, as notas de versão) se escreve em Markdown e se lê
+   desenhado. Seguro por construção: tudo é escapado, e só vira marcação
+   o que está aqui. Os treinamentos têm o leitor deles (treMd, em
+   mod-treinamentos), porque o formato de lá tem dono próprio, com vídeo e
+   caixas de dica; este é o do dia a dia:
+     títulos (#, ##, ###) · parágrafos, em que a quebra de linha vale ·
+     **negrito** · *itálico* · ~~riscado~~ · `código` e blocos ``` ·
+     listas (-, 1.), aninhadas, e de tarefas (- [ ], - [x]) · > citação ·
+     --- · tabelas · links (https, mailto e as telas do portal, #/…) e o
+     endereço solto · os códigos do SOMA viram link (ORT-14, NRO-PES-007,
+     NRO-TRE-003, POST-14, EXT-14, BUG-12) · @Nome vira a menção, com
+     op.mencoes = [{ registro, nome }] */
+const MD_ITEM = /^(\s*)([-*+]|\d{1,3}[.)])\s+(.*)$/;
+const MD_SEP  = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
+const MD_COD  = /\b(NRO-[A-Z]{3}-\d{3}(?:-\d+)?|POST-\d+|EXT-\d+|(?:BUG|SUG)-\d+|[A-Z][A-Z0-9]{1,5}-\d+)\b/g;
+const mdIndent = l => l.match(/^\s*/)[0].replace(/\t/g, '    ').length;
+const mdInicioDeBloco = l => /^\s*(```|~~~)/.test(l) || /^\s{0,3}#{1,6}\s/.test(l) || /^\s{0,3}>/.test(l)
+  || MD_ITEM.test(l) || /^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(l);
+/* o nome curto de quem se menciona: o primeiro e o último */
+const rotuloMencao = m => { const ps = String(m?.nome || '').split(/\s+/).filter(Boolean);
+  return ps.length > 1 ? ps[0] + ' ' + ps[ps.length - 1] : (ps[0] || ''); };
+const mdHref = u => { u = String(u || '').trim();
+  return /^#\/[\w\-/.%]*$/.test(u) || /^https?:\/\/[^\s<>"]+$/i.test(u) || /^mailto:[^\s<>"]+$/i.test(u) ? u : null; };
+const mdEnfase = t => t
+  .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, '<strong>$1</strong>')
+  .replace(/__(?=\S)([\s\S]*?\S)__/g, '<strong>$1</strong>')
+  .replace(/(^|[^*\w])\*(?=[^\s*])([^*]*?[^\s*])\*(?!\*)/g, '$1<em>$2</em>')
+  .replace(/(^|[^_\w])_(?=[^\s_])([^_]*?[^\s_])_(?![\w_])/g, '$1<em>$2</em>')
+  .replace(/~~(?=\S)([\s\S]*?\S)~~/g, '<del>$1</del>');
+function mdLink(texto, url){
+  const h = mdHref(url);
+  /* link que o portal não abre (javascript:, data:…) fica como texto */
+  if (!h) return esc(texto) + (url && url !== texto ? ` (${esc(url)})` : '');
+  const fora = !h.startsWith('#/');
+  return `<a href="${esc(h)}"${fora ? ' target="_blank" rel="noopener"' : ''}>${mdEnfase(esc(texto))}</a>`;
+}
+/* os códigos que o SOMA dá às coisas (PADROES § 5), como link. Os de
+   quadro (ORT-14) só com prefixo que existe: COVID-19 continua texto. */
+function mdCodigo(x){
+  const a = (href, t) => `<a class="md-cod" href="${href}">${t || x}</a>`;
+  let m;
+  if ((m = x.match(/^NRO-TRE-(\d{3,})$/))) return a('#/treinamentos/' + x);
+  if (/^NRO-/.test(x)) return a('#/arquivos/' + x);
+  if (/^POST-/.test(x)) return a('#/studio/' + x);
+  if (/^EXT-/.test(x)) return a('#/servicos/eventos/' + x);
+  if ((m = x.match(/^(?:BUG|SUG)-(\d+)$/))) return a('#/versoes/comentarios/' + m[1]);
+  const pf = x.split('-')[0];
+  return (state.grupos || []).some(g => g.prefixo === pf) ? a('#/atividades/card/' + x) : x;
+}
+function mdMencoes(t, mencoes){
+  const lista = (mencoes || []).filter(m => m?.nome);
+  if (!lista.length) return t;
+  const eu = state.perfil?.registro;
+  const alvos = lista.flatMap(m => [...new Set([m.nome, rotuloMencao(m)])].map(r => ({ r: esc(r), m })))
+    .sort((a, b) => b.r.length - a.r.length);
+  const rx = new RegExp('@(' + alvos.map(a => a.r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?![\\p{L}\\p{N}])', 'gu');
+  return t.replace(rx, (x, nome) => {
+    const m = alvos.find(y => y.r === nome).m;
+    return `<a class="mencao${m.registro === eu ? ' eu' : ''}" href="#/equipe/${m.registro}">@${nome}</a>`;
+  });
+}
+function mdInline(s, op){
+  const ph = [], guarda = h => { ph.push(h); return `\u0000${ph.length - 1}\u0000`; };
+  let t = String(s || '');
+  t = t.replace(/``\s?(.+?)\s?``|`([^`]+)`/g, (_, d, c) => guarda(`<code>${esc(d ?? c)}</code>`));
+  t = t.replace(/\[([^\]]+)\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\s*\)/g, (_, tx, url) => guarda(mdLink(tx, url)));
+  t = t.replace(/<(https?:\/\/[^>\s]+)>/g, (_, u) => guarda(mdLink(u, u)));
+  t = t.replace(/(^|[\s(])(https?:\/\/[^\s<)]*[^\s<).,;:!?'"])/g, (_, pre, u) => pre + guarda(mdLink(u, u)));
+  t = mdMencoes(mdEnfase(esc(t)), op?.mencoes);
+  t = t.replace(MD_COD, mdCodigo);
+  return t.replace(/\u0000(\d+)\u0000/g, (_, n) => ph[+n]);
+}
+function md(src, op){
+  const L = String(src || '').replace(/\r\n?/g, '\n').split('\n');
+  const out = [];
+  let i = 0;
+  while (i < L.length){
+    const l = L[i];
+    let m;
+    if (!l.trim()){ i++; continue; }
+    if ((m = l.match(/^\s*(```+|~~~+)\s*([\w-]*)\s*$/))){
+      const cerca = m[1], corpo = [];
+      const fecha = x => { const f = x.trim().match(/^(`{3,}|~{3,})\s*$/); return f && f[1][0] === cerca[0] && f[1].length >= cerca.length; };
+      i++;
+      while (i < L.length && !fecha(L[i])){ corpo.push(L[i]); i++; }
+      i++;
+      out.push(`<pre><code>${esc(corpo.join('\n'))}</code></pre>`);
+      continue;
+    }
+    if ((m = l.match(/^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/))){
+      const n = Math.min(5, m[1].length + 2);   /* # vira h3: o h1 e o h2 são da tela */
+      out.push(`<h${n}>${mdInline(m[2], op)}</h${n}>`); i++; continue;
+    }
+    if (/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(l)){ out.push('<hr>'); i++; continue; }
+    if (/^\s{0,3}>/.test(l)){
+      const q = [];
+      while (i < L.length && /^\s{0,3}>/.test(L[i])){ q.push(L[i].replace(/^\s{0,3}>\s?/, '')); i++; }
+      out.push(`<blockquote>${md(q.join('\n'), op)}</blockquote>`);
+      continue;
+    }
+    if (l.includes('|') && L[i + 1] != null && MD_SEP.test(L[i + 1])){
+      const cel = r => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+      const cab = cel(l), alin = cel(L[i + 1]).map(c => /^:-+:$/.test(c) ? 'center' : /-:$/.test(c) ? 'right' : '');
+      i += 2;
+      const linhas = [];
+      while (i < L.length && L[i].includes('|') && L[i].trim()){ linhas.push(cel(L[i])); i++; }
+      const td = (tag, c, k) => `<${tag}${alin[k] ? ` style="text-align:${alin[k]}"` : ''}>${mdInline(c, op)}</${tag}>`;
+      out.push(`<div class="md-tabela"><table><thead><tr>${cab.map((c, k) => td('th', c, k)).join('')}</tr></thead>
+        <tbody>${linhas.map(r => `<tr>${cab.map((_, k) => td('td', r[k] || '', k)).join('')}</tr>`).join('')}</tbody></table></div>`);
+      continue;
+    }
+    if (MD_ITEM.test(l)){ const r = mdLista(L, i, op); out.push(r.html); i = r.fim; continue; }
+    const p = [];
+    while (i < L.length && L[i].trim() && (!p.length || !mdInicioDeBloco(L[i]))){ p.push(L[i]); i++; }
+    out.push(`<p>${p.map(x => mdInline(x.trim(), op)).join('<br>')}</p>`);
+  }
+  return out.join('\n');
+}
+function mdLista(L, i, op){
+  const m0 = L[i].match(MD_ITEM), ind0 = mdIndent(m0[1]), ord = /\d/.test(m0[2]);
+  const desloc = ind0 + m0[2].length + 1;
+  const itens = [];
+  let atual = null;
+  while (i < L.length){
+    const l = L[i], m = l.match(MD_ITEM);
+    if (m && mdIndent(m[1]) === ind0 && /\d/.test(m[2]) === ord){ atual = [m[3]]; itens.push(atual); i++; continue; }
+    if (!l.trim()){
+      const prox = L[i + 1], mp = prox != null ? prox.match(MD_ITEM) : null;
+      if (prox != null && prox.trim() && (mdIndent(prox) > ind0 || (mp && mdIndent(mp[1]) === ind0 && /\d/.test(mp[2]) === ord))){
+        atual.push(''); i++; continue;
+      }
+      break;
+    }
+    if (mdIndent(l) > ind0){ atual.push(l.replace(/\t/g, '    ').slice(Math.min(mdIndent(l), desloc))); i++; continue; }
+    if (!mdInicioDeBloco(l) && atual[atual.length - 1].trim()){ atual.push(l.trim()); i++; continue; }
+    break;
+  }
+  const lis = itens.map(it => {
+    let cls = '';
+    const t0 = it[0].match(/^\[( |x|X)\]\s+(.*)$/);
+    if (t0){ cls = t0[1] === ' ' ? 'tarefa' : 'tarefa feita'; it[0] = t0[2]; }
+    let h = md(it.join('\n'), op);
+    const soUm = h.match(/^<p>([\s\S]*?)<\/p>/);
+    if (soUm && !it.some(x => !x.trim())) h = soUm[1] + h.slice(soUm[0].length);
+    return `<li${cls ? ` class="${cls}"` : ''}>${h}</li>`;
+  }).join('');
+  const inicio = ord ? parseInt(m0[2], 10) : 1;
+  return { html: ord ? `<ol${inicio !== 1 ? ` start="${inicio}"` : ''}>${lis}</ol>` : `<ul>${lis}</ul>`, fim:i };
+}
+/* A barra de um campo de Markdown: negrito, itálico, lista, tarefa,
+   link e código, sobre a seleção do textarea. */
+function mdBarra(idCampo){
+  const b = (rot, titulo, antes, depois, linha) => `<button type="button" class="md-bt" title="${titulo}" aria-label="${titulo}"
+    onmousedown="event.preventDefault()" onclick="mdAplicar('${idCampo}','${antes}','${depois}',${linha ? 'true' : 'false'})">${rot}</button>`;
+  return `<div class="md-barra" role="toolbar" aria-label="Formatação">
+    ${b('<b>B</b>', 'Negrito', '**', '**')}${b('<i>I</i>', 'Itálico', '*', '*')}${b('<s>S</s>', 'Riscado', '~~', '~~')}
+    ${b(ic('texto'), 'Lista', '- ', '', true)}${b(ic('checklist'), 'Tarefa', '- [ ] ', '', true)}
+    ${b(ic('link'), 'Link', '[', '](https://)')}${b('&lt;/&gt;', 'Código', '`', '`')}
+    <span class="md-dica">Markdown</span></div>`;
+}
+function mdAplicar(id, antes, depois, linha){
+  const ta = document.getElementById(id); if (!ta) return;
+  const { selectionStart:a, selectionEnd:b, value:v } = ta;
+  if (linha){
+    /* no começo de cada linha selecionada */
+    const ini = v.lastIndexOf('\n', a - 1) + 1;
+    const bloco = v.slice(ini, b).split('\n').map(x => antes + x).join('\n');
+    ta.value = v.slice(0, ini) + bloco + v.slice(b);
+    ta.setSelectionRange(ini + bloco.length, ini + bloco.length);
+  } else {
+    const sel = v.slice(a, b);
+    ta.value = v.slice(0, a) + antes + sel + depois + v.slice(b);
+    const fim = sel ? a + antes.length + sel.length + depois.length : a + antes.length;
+    ta.setSelectionRange(sel ? fim : a + antes.length, sel ? fim : a + antes.length);
+  }
+  ta.focus(); ta.dispatchEvent(new Event('input', { bubbles:true }));
+}
 
 
 /* As categorias do catálogo de acessos: a ficha e o catálogo usam as duas. */
@@ -3895,8 +4472,15 @@ function acoesDaCasca(){
     ['Arquivos', 'Todos os arquivos: o rol de documentos e registros (NRO-PUB-001)', '#/arquivos'],
     ['Visão geral dos arquivos', 'O que aguarda você, os mexidos por último e os emissores', '#/arquivos/visao'],
     ['Para revisar', 'As versões de arquivo que aguardam revisão', '#/arquivos/revisoes'],
-    ['Templates', 'Os modelos de documento e de registro, e onde cada um é usado', '#/arquivos/templates']
+    ['Templates', 'Os modelos de documento e de registro, e onde cada um é usado', '#/arquivos/templates'],
+    ['Notas de versão', 'O que mudou em cada versão do SOMA', '#/versoes'],
+    ['Bugs e sugestões', 'Os relatos da equipe sobre o SOMA, com o andamento de cada um', '#/versoes/comentarios'],
+    ['Relatar um bug', 'Algo no SOMA não funciona como deveria', '#/versoes/comentarios/bug'],
+    ['Sugerir uma melhoria', 'Uma ideia para o SOMA', '#/versoes/comentarios/sugestao']
   ];
+  /* a ficha é da gestão; para os outros, o organograma abre no próprio cartão */
+  if (state.perfil?.registro != null)
+    a.push(['Foto de perfil', 'Enviar ou trocar a sua foto', podeQuadro() ? '#/equipe/' + state.perfil.registro : '#/equipe']);
   if (docGestor()) a.push(
     ['Novo projeto', 'Criar um projeto e a equipe dele', '#/projetos/novo'],
     ['Configurações de arquivos', 'Grupo revisor de cada série, emissores, padrão de projeto', '#/arquivos/config']);
@@ -4118,7 +4702,7 @@ async function abrirPortal(){
   $('#u-nome').textContent = nome;
   $('#u-nome-voo').textContent = nome;
   $('#u-papel').textContent = PAPEIS[state.perfil.papel] || eu?.cargo || 'Membro';
-  $('#lt-avatar').innerHTML = avatarFoto(eu || { nome }, 28, 10.5);
+  desenharMeuAvatar();
   const lf = $('#logo-ft');
   if (lf){   /* o handler de erro troca a <img> por um <span>: na segunda
                 passada ela não existe mais, e ler .onerror de null derrubava
@@ -4129,7 +4713,9 @@ async function abrirPortal(){
   }
   $('#ft-ano').textContent = new Date().getFullYear();
   $('#ft-ver').textContent = 'SOMA ' + VERSAO;
+  $('#ft-foto').hidden = !state.perfil.registro;
   if (GITHUB_CTA_URL){ $('#ft-cta').hidden = false; $('#ft-cta-a').href = GITHUB_CTA_URL; }
+  avisarVersaoNova();
   /* Administração é o único espaço que some por papel — os outros
      degradam. A barreira de verdade é a RLS do banco; isto aqui é só
      não oferecer porta fechada. É o menu que decide, ao se montar. */
@@ -4160,6 +4746,9 @@ const ROTAS = {
   equipe:      { desenha:'pageEquipe' },   /* carrega mod-gestao por dentro, conforme a aba */
   servicos:    { desenha:'pageServicos' },
   okrs:        { desenha:'pageOkrs', modulo:'okrs' },
+  /* as notas de cada versão e os bugs e sugestões da equipe: fora do
+     menu, a porta é o rodapé (e a versão escrita nele) */
+  versoes:     { desenha:'pageVersoes', modulo:'versoes' },
   projetos:    { desenha:'pageProjetos', modulo:'projetos' },
   arquivos:    { desenha:'pageArquivos', modulo:'arquivos' },
   /* todos veem; quem gere (gereTreinamentos) edita, publica e atribui —
@@ -4204,7 +4793,12 @@ function route(){
   }
   return { r: ROTAS[r] ? r : 'home', sub: sub || null, sub2: sub2 || null };
 }
-window.addEventListener('hashchange', ()=>{ if(state.perfil){ render(route()); window.scrollTo({top:0,behavior:'instant'}); } });
+window.addEventListener('hashchange', e => {
+  /* a tela de onde se veio: quem relata um bug chega das notas de versão,
+     e o relato leva junto onde a pessoa estava */
+  try { const h = new URL(e.oldURL).hash; if (h && !/^#\/versoes/.test(h)) state.telaAnterior = h; } catch(_){}
+  if(state.perfil){ render(route()); window.scrollTo({top:0,behavior:'instant'}); }
+});
 
 async function render(rt){
   pararBoard();
@@ -5476,9 +6070,17 @@ async function pageHome(){
 async function carregarPendenciasInicio(){
   if (!state.perfil?.registro) return;
   const conta = nome => sb.rpc(nome).then(r => r.error ? 0 : (Number(r.data) || 0), () => 0);
-  const [ev, cf] = await Promise.all([conta('eventos_ext_pendentes'), conta('cofre_pendencias')]);
+  const eu = state.membros.find(m => m.registro === state.perfil.registro);
+  /* sem foto (nem na ficha, nem no repositório de fotos): enviar é um
+     clique, e a equipe inteira passa a reconhecer a pessoa (2.17.0) */
+  const [ev, cf, foto] = await Promise.all([conta('eventos_ext_pendentes'), conta('cofre_pendencias'),
+    eu ? temFoto(eu) : Promise.resolve(null)]);
   const el = $('#sec-pend'); if (!el) return;
   const it = [];
+  if (foto === false) it.push(`<a class="pend-i" id="pend-foto" href="#" onclick="modalFoto(${eu.registro});return false">${ic('camera')}
+    <span class="tx"><b>Você ainda não tem foto no SOMA</b>
+    <span class="ds">Aparece no menu, nos cartões, no placar e na sua ficha</span></span>
+    <span class="go">Enviar foto →</span></a>`);
   if (ev) it.push(`<a class="pend-i" href="#/servicos/eventos/aprovar">${ic('evento')}
     <span class="tx"><b>${ev === 1 ? 'Um evento aguarda' : ev + ' eventos aguardam'} aprovação</b>
     <span class="ds">Registro de participação da equipe</span></span>
@@ -5807,14 +6409,23 @@ async function responderConvite(id, resposta, bt){
 }
 
 /* ---------- as suas tarefas ----------
-   As do quadro de Atividades em que você é o responsável e que não
-   estão concluídas: as atrasadas e as de prazo mais perto primeiro. */
+   As do quadro de Atividades em que você é o responsável, ou uma das
+   outras pessoas atribuídas (2.17.0), e que não estão concluídas: as
+   atrasadas e as de prazo mais perto primeiro. */
 const PRIORIDADE_COR = { baixa:'var(--dim)', media:'var(--info)', alta:'var(--warn)', urgente:'var(--bad)' };
 const STATUS_TAREFA = { backlog:'Backlog', a_fazer:'A fazer', fazendo:'Em andamento', revisao:'Em revisão' };
+/* as minhas tarefas abertas: responsável ou incluída. Sem a 2.17.0 não há
+   a coluna das pessoas, e a leitura volta a ser só a de responsável. */
+function lerMinhasTarefas(eu, ajusta){
+  const aj = ajusta || (q => q);
+  const base = () => sb.from('atividades').select('id,codigo,titulo,prazo,status,prioridade')
+    .neq('status', 'concluida').eq('arquivada', false).limit(200);
+  return aj(base().or(`responsavel.eq.${eu},pessoas.cs.{${eu}}`))
+    .then(r => r.error ? aj(base().eq('responsavel', eu)) : r);
+}
 async function carregarTarefasInicio(){
   const eu = state.perfil?.registro;
-  const r = eu ? await sb.from('atividades').select('id,codigo,titulo,prazo,status,prioridade')
-      .eq('responsavel', eu).neq('status', 'concluida').limit(200).then(x => x, e => ({ error:e }))
+  const r = eu ? await lerMinhasTarefas(eu).then(x => x, e => ({ error:e }))
     : { data:[] };
   const el = $('#card-tarefas'); if (!el) return;
   const head = n => `<div class="head"><h3>Suas tarefas${n ? ` <span class="n">${n}</span>` : ''}</h3><a href="#/atividades">Atividades</a></div>`;
@@ -5929,8 +6540,7 @@ async function carregarAgendaPessoal(de, ate, espera){
   let erro = null;
   const [itens, tarefas, pubs] = await Promise.all([
     carregarItens(de, ate).catch(e => { erro = e; return []; }),
-    eu ? lerTab(sb.from('atividades').select('id,codigo,titulo,prazo,status,prioridade')
-      .eq('responsavel', eu).neq('status', 'concluida').gte('prazo', de).lte('prazo', ate)) : [],
+    eu ? lerTab(lerMinhasTarefas(eu, q => q.gte('prazo', de).lte('prazo', ate))) : [],
     eu && podeStudio() ? lerTab(sb.from('studio_publicacoes').select('id,codigo,titulo,status,data_publicacao,criado_por,responsavel')
       .or(`criado_por.eq.${eu},responsavel.eq.${eu}`).gte('data_publicacao', de + 'T00:00:00').lte('data_publicacao', ate + 'T23:59:59')) : [],
     espera
@@ -6180,7 +6790,9 @@ function desenhaOrg(filtro){
     <div class="org-chain">
       ${cadeia.map(m=>cartaoOrg(m, ativos)+'<span class="org-link"></span>').join('')}
       <div class="org-card org-focus" style="cursor:default">
-        ${avatarFoto(foco, 54, 16)}
+        <span class="ficha-foto">${avatarFoto(foco, 54, 16)}${podeFotoDe(foco.registro) ? `<button class="foto-bt"
+          onclick="modalFoto(${foco.registro})" title="${foco.foto_url ? 'Trocar a foto' : 'Enviar foto'}"
+          aria-label="${foco.foto_url ? 'Trocar a foto' : 'Enviar foto'}">${ic('camera')}</button>` : ''}</span>
         <span class="tx" style="flex:1;white-space:normal">
           <span class="nm" style="font-size:15px;white-space:normal">${esc(foco.nome)}</span>
           <span class="cg" style="white-space:normal">${esc(foco.cargo||'—')}${foco.departamento?', '+esc(foco.departamento):''}</span>

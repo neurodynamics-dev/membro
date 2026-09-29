@@ -6,15 +6,23 @@ mudou na versão 14.0 é que agora isso está escrito em algum lugar.
 
 ## Como aplicar
 
-No SQL Editor do Supabase, na ordem numérica, cada arquivo uma vez. Depois da
+No SQL Editor do Supabase, na ordem das versões, cada arquivo uma vez: a
+`v14` à `v32`, e depois as de número novo, da `2.17.0` em diante. Depois da
 14.0, o banco responde sozinho o que já rodou:
 
 ```sql
-select id, aplicada_em from public.migracoes order by id;
+select id, aplicada_em from public.migracoes order by aplicada_em;
 ```
 
 Migração nova termina inserindo a própria linha em `migracoes` — siga o rodapé
 da `v14_unificacao.sql` como modelo.
+
+**O número.** Desde a 2.17.0 o SOMA se numera em major.minor.patch (README,
+"Versões"), e a migração leva no nome a versão que a traz:
+`2.17.0_notas_fotos_e_cartoes.sql`, com a linha
+`2.17.0_notas_fotos_e_cartoes` em `migracoes`. As de antes continuam com o
+nome antigo (`v14` a `v32`): são o registro do que já rodou, e a linha delas
+no banco já existe. Na regra nova, a `v32` é a 2.16.0.
 
 ## A colisão de numeração (e por que os nomes são estes)
 
@@ -43,6 +51,7 @@ congelados.
 db/
 ├── LEIAME.md                          este arquivo
 ├── v14_unificacao.sql … v32_fila_e_notificacoes.sql  as migrações, em ordem
+├── 2.17.0_notas_fotos_e_cartoes.sql   a primeira com o número novo (major.minor.patch)
 ├── testes/                            os testes, em PostgreSQL de verdade
 └── aplicadas/                         história, congelada
     ├── soma_v06_selecao.sql                 processo seletivo
@@ -81,6 +90,7 @@ db/
 | `v31_ps_entrevistas.sql` | as entrevistas do processo seletivo online: quem abriu cada janela (`ps_slots.criado_por`), o link da chamada no lugar do local (`link_reuniao`, obrigatório em entrevista nova), o reagendamento pelo comitê (`ps_reagendar`, `ps_slot_editar`, `ps_slot_excluir`) e a fila de e-mails (`ps_envios`): a reserva, o reagendamento, o link e o cancelamento ao candidato, e o resumo da véspera ao responsável; o site ganha o link em `ps_acompanhar` e o "online" em `ps_horarios` |
 | `v32_fila_e_notificacoes.sql` | a fila de envio que anda sozinha: o banco chama a Edge Function `notificar-email` a cada minuto (`soma-fila`, pelo `pg_cron` e o `pg_net`) e logo depois de cada aviso novo (o gatilho `fila_acordar`), com uma senha que a migração gera e guarda no Vault (`soma_fila_token`); uma passada de cada vez (`fila_passada_inicio`, `fila_passada_fim`) e o registro delas (`fila_passadas`, `fila_situacao`); o empurrão do portal aberto (`fila_empurrar`). O sino que não empilha: `notificacoes_limpar`, o expurgo (`notificacoes_expurgar`) e o aviso de teste que substitui o anterior. As notificações no aparelho (Web Push): `push_inscricoes`, `push_inscrever`, `push_cancelar`, `push_meus`, as chaves VAPID no Vault e a fila da Edge Function em `push_lote` e `push_baixa`. Depois dela, publique de novo a `notificar-email` e desligue nela a verificação de JWT |
 | `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
+| `2.17.0_notas_fotos_e_cartoes.sql` | a primeira com o número novo: os bugs e sugestões das notas de versão (`soma_feedback`, votos, comentários, o andamento por `admin`); a foto enviada pelo portal (o bucket público `fotos`, `membro_foto_definir`); os cartões com outras pessoas, etiquetas, checklists (`atividade_checklist`), a cópia para outro quadro (`atividade_copiar`) e o comentário que se corrige e se apaga. Passa a ser a dona de `atividade_criar`, `atividade_editar`, `atividades_quadro` e `atividades_carga` |
 
 **Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
 duplica nada.
@@ -268,6 +278,37 @@ de entrevista abertos antes dela continuam com o local e sem responsável: em
 Seleção › Agenda, "Mudar horário ou link" põe o link (e avisa quem já
 reservou), e "Assumir" põe você como responsável, para receber o resumo.
 
+A **2.17.0** (`2.17.0_notas_fotos_e_cartoes.sql`) é a primeira com o número
+novo. Precisa da 15.0, da 17.0 e da 19.0, e traz três coisas:
+
+- **os bugs e sugestões** das notas de versão: `soma_feedback` (o relato,
+  `BUG-12` ou `SUG-13`), `soma_feedback_votos`, `soma_feedback_comentarios` e
+  a view `soma_feedback_lista`; todo mundo lê, e a escrita é só pelas funções
+  (`feedback_salvar`, `feedback_votar`, `feedback_comentar`, `feedback_decidir`,
+  de `admin`, e `feedback_excluir`);
+- **a foto enviada pelo portal**: o bucket público `fotos` (5 MB, JPEG, PNG
+  ou WebP), as políticas — cada um grava na pasta do seu registro, `admin` e
+  `pessoal` em qualquer uma — e `membro_foto_definir`, que grava o endereço
+  público na ficha e devolve a foto anterior, para o portal apagar do bucket.
+  O endereço do projeto sai do Vault (`soma_url_projeto`, o mesmo da 32.0);
+  sem ele, o do projeto de sempre;
+- **os cartões**: `atividades.pessoas` (as outras pessoas atribuídas),
+  `atividades.etiquetas`, `atividades.copia_de`, as checklists
+  (`atividade_checklists`, `atividade_checklist_itens`, por
+  `atividade_checklist()`), `atividade_copiar`, o comentário que se corrige e
+  se apaga (`atividade_comentario_editar`, `atividade_comentario_excluir`,
+  `atividade_comentarios.editado_em`).
+
+**A dona de `atividade_criar`, de `atividade_editar` e das views
+`atividades_quadro` e `atividades_carga` passa a ser a 2.17.0**: a 15.0 deixa
+de redefini-las quando ela já passou (o mesmo cuidado da 15.0 com
+`sou_do_grupo`, por causa da 17.0), e rodar a 15.0 de novo não apaga as
+pessoas, as etiquetas nem a conta das checklists. O teste da 2.17.0 roda a
+15.0 no fim e confere isso. A carga da equipe passa a contar também quem está
+nas outras pessoas de um cartão. Confira:
+`select id, public from storage.buckets where id = 'fotos';` e
+`select codigo, pessoas, etiquetas, check_total, check_feitos from public.atividades_quadro limit 5;`
+
 **O que o SQL Editor responde.** O editor do Supabase mostra só o último
 resultado que tem linhas. As migrações até a 20.0 terminam em *Success. No
 rows returned*. A 21.0 termina com a tabela **"o que a 21.0 deixou"**: sete
@@ -397,6 +438,16 @@ psql -d t32 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
 psql -d t32 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
             -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f testes/esqueleto_vault.sql
 psql -d t32 -f testes/v32_fila_e_notificacoes.sql  # 113 asserções
+```
+
+```bash
+# 2.17.0: os relatos, a foto e os cartões, sobre a 15.0 à 19.0 com o Storage e o
+# Vault (o teste aplica a 2.17.0 no começo; no fim roda a 15.0 e a 2.17.0 de novo)
+createdb t217
+psql -d t217 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql -f testes/esqueleto_vault.sql
+psql -d t217 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
+             -f v18_teste_email.sql -f v19_grupos_hierarquia.sql
+psql -d t217 -f testes/2.17.0_notas_fotos_e_cartoes.sql  # 106 asserções (RLS e Storage inclusos)
 ```
 
 O `esqueleto_vault.sql` faz para o Vault o que o de Storage faz para o

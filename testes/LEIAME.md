@@ -56,6 +56,16 @@ verdade, para o Chromium aceitar a inscrição. `window.__teste.fila`
 responde. Cada chamada a uma função entra em `window.__invocacoes` como
 `{ nome, corpo }`.
 
+As da 2.17.0 também mudam o stub como o banco: `feedback_salvar`,
+`feedback_votar`, `feedback_comentar`, `feedback_decidir` e `feedback_excluir`
+sobre `soma_feedback_lista` (três relatos: o BUG-1 aberto, a SUG-2 planejada e
+o BUG-3 feito); `membro_foto_definir` põe na ficha um endereço que carrega de
+verdade (uma imagem em `data:`), para o avatar aparecer; `atividade_editar`,
+`atividade_criar`, `atividade_checklist`, `atividade_copiar` e o comentário
+que se corrige e se apaga mexem em `atividades_quadro`, na checklist do ORT-1
+e nos comentários, com a mesma regra de nível do quadro. O quadro tem o ORT-4
+arquivado, para a lista de arquivados. Cada chamada entra em `window.__rpcs`.
+
 Os PDFs são conferidos pelo texto que o modelo escreveu: `DocNRO.baixar` (e
 `DocNRO.abrir`, na prévia) deixam em `window.__docnro` o nome do arquivo, o
 número de folhas e o texto de cada uma.
@@ -101,6 +111,7 @@ e rode daqui.
 | `emails.mjs` | os e-mails (v30): o Full mailer em tela inteira (o tile de Relatórios leva até ele), a prévia com o nome de quem escreve, as redes vindas de Studio › Contas (link salvo ou montado pelo usuário, e desmarcar), o botão para uma tela do portal, o rodapé sem link morto, as cores dos seis remetentes (departamentos claros e distintos, a Leadership escura; as imagens da cor nova existem), o rascunho que sobrevive, a marca do nome fora do que se copia; programar (quem recebe e quem está sem e-mail, por grupo com os de baixo, só para mim; o que vai ao banco), a fila e o histórico, reagendar, cancelar; as pílulas (quem assina, para quem, grupo extinto, a série de quatro em quatro dias sem fim de semana e sem repetir a fila, pôr na série, editar, link recusado, abrir no mailer); o link de cada rede no Studio; o Comitê de Seleção sem programar, quem só lê sem entrar, e o celular — com asserções |
 | `notificacoes.mjs` | o sino que não empilha e o aviso no aparelho (v32): o × de cada aviso, limpar as lidas, o recado de migração que falta; ativar as notificações neste aparelho (a permissão, a inscrição com a chave do servidor, o nome do aparelho), a notificação de teste, desativar, os outros aparelhos e remover, a permissão bloqueada, o iPhone fora da tela de início, o convite do sino e o "agora não", sair da conta cancela a inscrição; o empurrão da fila (quando o banco diz que está parada, e só então); o teste de e-mail com a fila ocupada; o card "A fila de envio" em Programados (em dia, parada, sem agendamento) e o "Rodar a fila agora"; o manifesto, os ícones e o `sw.js` — com asserções |
 | `tour.mjs` | o tour do SOMA (`tour.html`), de quem ainda não tem conta a quem já entrou: as treze etapas sem erro; criar a conta (o que o formulário recusa, o e-mail em minúsculas, o link que volta para o tour, "confira o seu e-mail", reenviar com espera), entrar (senha errada, e-mail não confirmado, a conta pronta com o primeiro nome), esqueci a senha; com conta, o que é da pessoa: o menu com o que ela alcança, o perfil e os grupos, as tarefas e os quadros dela, a posição no placar, o check-in, os treinamentos, o Studio conforme o acesso (e o que muda para quem não é dos grupos dele), a agenda, a equipe, o celular (iPhone, Android, o QR para o computador, as notificações no aparelho) e a ajuda; o celular de 390 px (nada vaza, a barra de baixo, a gaveta das etapas), os links do e-mail de confirmação vencido e de nova senha, o tema e o "continuar de onde parou" — com asserções |
+| `versoes-fotos-e-cartoes.mjs` | a 2.17.0: a versão no rodapé e o aviso de versão nova; as notas (a versão no ar, o número antigo ao lado, a versão em foco pelo endereço, as antigas recolhidas, a busca); os bugs e sugestões (em aberto por votos, filtros, votar, o relato em Markdown, comentar, o andamento pela administração, relatar com a tela de onde se veio e os parecidos, quem não é admin); a foto (o aviso do início, enquadrar e enviar, o arquivo no bucket, a ficha, a câmera no organograma e na ficha só para quem pode); os OKRs (o título inteiro, a mesma altura na linha, a roda que dá zoom e o Shift que move, o fio do pé do pai); os cartões (etiquetas, pessoas e a checklist no quadro, o filtro por etiqueta, a descrição em Markdown com a barra e o Ver, a checklist, pessoas e etiquetas pelo seletor, o @ que marca, o comentário corrigido, a menção antiga, copiar arquivando o original, os arquivados, a atividade nova com pessoas e etiquetas, quem só lê); e o celular — com asserções |
 | `ps-entrevistas.mjs` | as entrevistas online do PS (v31), em Seleção › Agenda: o link da chamada no lugar do local, com "Criar no Meet"; sem link ou sem https:// não cria; quem abre fica responsável; a dinâmica continua com local; o chip online com o nome; o horário antigo tracejado; o horário com o link, quem abriu e o último e-mail; reagendar o candidato com motivo; mudar hora e link avisando; assumir o horário antigo; excluir avisando; a ficha com a chamada; o celular — com asserções |
 
 ```bash
@@ -126,6 +137,7 @@ node emails.mjs
 node ps-entrevistas.mjs
 node notificacoes.mjs
 node tour.mjs
+node versoes-fotos-e-cartoes.mjs
 ```
 
 Os testes que baixam PDF lançam o Chromium com `LANG=C.UTF-8`: o nome dos
