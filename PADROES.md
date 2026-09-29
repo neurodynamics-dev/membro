@@ -95,6 +95,7 @@ conforme quem entra é menu que ninguém aprende.
 #/agenda/novo[/<AAAA-MM-DD>[T<HH:MM>[~<HH:MM>]]]
 #/agenda/config[/predefinidos|google]
 #/atividades[/<grupo>]      o quadro
+#/atividades/<grupo>/arquivadas  os cartões arquivados do quadro, para restaurar
 #/atividades/card/<codigo>  uma atividade (ex.: #/atividades/card/ORT-14)
 #/equipe                    organograma
 #/equipe/<registro>         a ficha
@@ -138,6 +139,10 @@ conforme quem entra é menu que ninguém aprende.
 #/admin[/aba]               painéis
 #/admin/grupos/<prefixo>    a árvore de grupos, com um em foco
 #/admin/emails[/programados|pilulas]  o Full mailer, a fila e as pílulas
+#/versoes[/<x.y.z>]         as notas de versão, com uma em foco (fora do menu: a porta é o rodapé)
+#/versoes/comentarios       bugs e sugestões
+#/versoes/comentarios/bug|sugestao  relatar
+#/versoes/comentarios/<n>   um relato (BUG-12, SUG-13)
 ```
 
 **Regras:**
@@ -168,6 +173,7 @@ só a lupa, sem caixa nem legenda, no eixo dos outros ícones. Acha **quatro coi
 | **Treinamentos** | código (`NRO-TRE-003`), título |
 | **Eventos registrados** | código (`EXT-14`), nome |
 | **Cofre** | a conta (acesso e rótulo), o usuário, o endereço — nunca a senha |
+| **Notas de versão e relatos** | a versão (`2.16.0`) e o título dela; o código (`BUG-12`) e o título do relato |
 
 **O contrato.** Cada módulo registra as próprias fontes ao carregar:
 
@@ -258,6 +264,13 @@ Todo objeto que uma pessoa cita em voz alta precisa de um código curto:
 | Certificado | `CERT-3F9A-C21B` | `treinamento_conclusoes.certificado` — um por conclusão; confere-se em `#/treinamentos/certificado/<código>` |
 | Evento registrado | `EXT-14` | `eventos_ext.codigo` — sequência única; a participação da equipe num evento de fora (o `EVT-012` é um compromisso da agenda) |
 | Documento emitido | `Q8RT-5WZN-2KDH` | `doc_emitidos.codigo` — o código verificador: 12 caracteres do alfabeto de Crockford, sorteados. O documento em si é `NRO-DIR-004-17` (o PN é o registro) ou `NRO-DIR-006-14` (o PN é o evento); confere-se em `auth.neurodynamics.dev/?c=<código>` |
+| Relato (bug ou sugestão) | `BUG-12`, `SUG-13` | `soma_feedback.id` — um número só para os dois tipos; o prefixo diz o tipo, e o número não muda se a administração reclassificar |
+| Versão do SOMA | `2.17.0` | `VERSAO`, na casca — major.minor.patch (§ 10); as notas moram em `NOTAS_VERSAO` (`mod-versoes.js`) |
+
+Escrito num texto de trabalho (a descrição e os comentários de um cartão, um
+relato), o código vira link sozinho — `md()`, na casca, conhece os formatos
+desta tabela. O de quadro (`ORT-14`) só com prefixo de grupo que existe:
+`COVID-19` continua texto.
 
 Sequência por grupo, não global: `ORT-14` diz de qual quadro a atividade é.
 O prefixo mora em `grupos.prefixo` e é gerado do nome, editável depois.
@@ -581,4 +594,31 @@ O portal fala como um documento da NRO: direto, formal e curto.
 - **Erros dizem o que houve, não quem errou**: "Sem permissão para esta
   ação.", "Conta sem vínculo com um registro de membro." — os textos comuns
   moram em `MOTIVO_RPC`, na casca.
+
+### O texto de trabalho é Markdown
+
+O que a equipe escreve para a equipe ler — a descrição e os comentários de um
+cartão, um relato de bug, as notas de versão — é Markdown, desenhado por
+`md()`, na casca: seguro por construção (tudo é escapado e só vira marcação o
+que está previsto), com os códigos do SOMA como link e `@Nome` como menção
+(`op.mencoes`). O campo de escrever tem a barra (`mdBarra`) e, quando o texto
+é longo, o *Ver* antes de salvar. Marcar alguém é digitar `@`: a lista abre
+perto do cursor, e o que entra no texto é o nome e o sobrenome, que é como a
+menção aparece e como o banco sabe quem avisar.
+
+---
+
+## 10. Versões
+
+O SOMA se numera em **major.minor.patch** desde a 2.17.0. Minor quando a
+versão acrescenta sem mudar o que existia; patch quando só corrige; major
+quando algo deixa de funcionar como antes (uma tela sai, um endereço muda de
+sentido, um dado muda de forma). A numeração antiga virou `2.(N-16).p`: a 32.0
+é a 2.16.0.
+
+Subir a versão é um commit só: `VERSAO` na casca, a entrada no alto de
+`NOTAS_VERSAO` (`mod-versoes.js`, com o tipo de cada item) e, se houver, a
+migração com o número no nome (`db/2.17.0_notas_fotos_e_cartoes.sql`). Nota de
+versão diz o que muda para quem usa, no tom do § 9 — não o que mudou no
+código.
 

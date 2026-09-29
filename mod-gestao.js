@@ -240,7 +240,7 @@ const CAMPOS_MEMBRO = [
   {k:'email_nro', l:'E-mail NRO', t:'text'},
   {k:'email_pessoal', l:'E-mail pessoal', t:'text'},
   {k:'telefone', l:'Telefone', t:'text'},
-  {k:'foto_url', l:'Foto (URL; vazio usa fotos/REG.jpg do repositório)', t:'text', full:true},
+  {k:'foto_url', l:'Foto (link; vazio usa fotos/REG.jpg do repositório; a câmera no avatar envia a imagem)', t:'text', full:true},
   {k:'data_ingresso', l:'Data de ingresso', t:'date'},
   {k:'forma_ingresso', l:'Forma de ingresso', t:'datalist', list:'dl-formas'},
   {k:'data_desligamento', l:'Data de desligamento', t:'date'},
@@ -491,8 +491,10 @@ function renderFicha(){
         "gestao.ficha.editando=true;gestao.ficha.tab='dados';renderFicha()") : '')
   }) + `
     <div class="card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px">
-      <span onclick="alternarCampoFoto()" style="line-height:0;cursor:${f.editando&&f.tab==='dados'?'pointer':'default'}"
+      <span class="ficha-foto"><span onclick="alternarCampoFoto()" style="line-height:0;cursor:${f.editando&&f.tab==='dados'?'pointer':'default'}"
         title="${f.editando&&f.tab==='dados'?'Clique para alterar o link da foto':''}">${avatarFoto(m, 52, 17)}</span>
+        ${podeFotoDe(m.registro) ? `<button class="foto-bt" onclick="modalFoto(${m.registro})"
+          title="${m.foto_url ? 'Trocar a foto' : 'Enviar foto'}" aria-label="${m.foto_url ? 'Trocar a foto' : 'Enviar foto'}">${ic('camera')}</button>` : ''}</span>
       <div style="flex:1;min-width:220px">
         <div style="font-family:var(--fd);font-size:17px;font-weight:600">${esc(m.nome)}</div>
         <div class="small muted" style="margin-top:3px">
@@ -564,8 +566,8 @@ function renderTabDados(){
       <div class="acts" style="justify-content:flex-end">
         <button class="btn ghost" onclick="gestao.ficha.editando=false;renderFicha()">Cancelar</button>
         <button class="btn solid" onclick="salvarMembro()">${ic('check')} Salvar</button></div>
-      <p class="small muted" style="margin-top:14px;line-height:1.6">Para alterar o link da foto, clique no
-        avatar acima. Mudanças de status, cargo, departamento, grupos e gestor também geram ocorrências.</p></div>`;
+      <p class="small muted" style="margin-top:14px;line-height:1.6">Para enviar a foto, use a câmera no avatar;
+        para colar um link, clique no avatar. Mudanças de status, cargo, departamento, grupos e gestor também geram ocorrências.</p></div>`;
     return;
   }
   $('#ficha-body').innerHTML = `<div class="card"><div class="dl">

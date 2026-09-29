@@ -82,8 +82,15 @@ SOMA · Gestão está sendo trazido, conforme o
   ideias, aprovação e o lembrete da véspera por e-mail. Ver [Studio](#studio).
 - **Rodapé** — fora do início, o próximo compromisso, quem está no LABBIO
   e a sua sequência; e sempre a ajuda (o tour do SOMA, atalhos do teclado,
-  pedidos, ouvidoria) e a conta (preferências de avisos, Google Agenda, tema,
-  sair).
+  as notas de versão, os bugs e sugestões, pedidos, ouvidoria) e a conta
+  (a foto de perfil, preferências de avisos, Google Agenda, tema, sair). A
+  versão escrita no rodapé (`SOMA 2.17.0`) leva às notas.
+- **Notas de versão** (`#/versoes`, `mod-versoes.js`) — o que mudou em cada
+  versão, da mais nova à mais antiga, e **Bugs e sugestões**
+  (`#/versoes/comentarios`): a equipe relata um bug ou sugere uma melhoria,
+  vota no que já foi relatado e acompanha o andamento. Ver [Versões](#versões).
+- **A foto de perfil** — enviada pelo próprio portal, sem publicar a imagem
+  em outro lugar e colar o link. Ver [A foto de perfil](#a-foto-de-perfil).
 - **Tour do SOMA** (`tour.html`) — a porta de entrada de quem chega: explica
   o que é o SOMA, cria a conta ali mesmo e, depois de entrar, mostra cada
   espaço com os dados da própria pessoa. Ver [O tour do SOMA](#o-tour-do-soma).
@@ -126,6 +133,82 @@ Endereço antigo não quebra: `#/organizacao`, `#/quadro`, `#/calendario`,
 `#/equipe/presenca`), `#/agenda/agendar` (hoje `#/agenda/novo`) e
 `#/agenda/minha` (hoje `#/agenda/config/google`) continuam levando ao lugar
 certo.
+
+## Versões
+
+Desde a **2.17.0** o SOMA se numera em **major.minor.patch**:
+
+| Parte | Sobe quando | Exemplo |
+|---|---|---|
+| **patch** | a versão só corrige, sem acrescentar nada | 2.17.0 → 2.17.1 |
+| **minor** | a versão acrescenta, e o que existia continua funcionando como antes | 2.17.1 → 2.18.0 |
+| **major** | algo deixa de funcionar como antes: uma tela sai, um endereço muda de sentido, um dado muda de forma | 2.18.0 → 3.0.0 |
+
+A numeração antiga (14.0, 15.0 … 32.0) contava cada entrega como um número
+inteiro, mesmo as que só acrescentavam. As versões de antes ganharam o número
+novo pela regra **`N.p` = `2.(N-16).p`**: a 16.0, o primeiro portal único no
+ar, é a 2.0.0; a 17.1 é a 2.1.1; a **32.0 é a 2.16.0**. O que veio antes da
+16.0 (os dois apps separados) é a 1.x.
+
+| Antes | Agora | | Antes | Agora |
+|---|---|---|---|---|
+| 16.0 | 2.0.0 | | 22.0 | 2.6.0 |
+| 17.0, 17.1 | 2.1.0, 2.1.1 | | 22.1 | 2.6.1 |
+| 18.0 a 18.3 | 2.2.0 a 2.2.3 | | 23.0 | 2.7.0 |
+| 19.0 | 2.3.0 | | 24.0 | 2.8.0 |
+| 20.0 | 2.4.0 | | 27.0 (com a 25.0 e a 26.0) | 2.11.0 |
+| 21.0 | 2.5.0 | | 29.0 (com a 28.0) | 2.13.0 |
+| | | | 30.0, 31.0, 32.0 | 2.14.0, 2.15.0, 2.16.0 |
+
+**Subir a versão é um commit só**, com três coisas:
+
+1. `VERSAO`, no alto do `<script>` da casca (`index.html`) — vai também na
+   query dos módulos, para o deploy não deixar módulo velho em cache;
+2. a entrada nova no alto de `NOTAS_VERSAO`, em `mod-versoes.js`: a versão, a
+   data, um título e os itens, cada um com o tipo (*novo*, *melhoria*,
+   *correção* ou *aviso*, para o que sai ou muda de sentido) e o texto em
+   Markdown. É o que aparece em `#/versoes`, e o que quem já usava o portal
+   vê no aviso de versão nova, uma vez por navegador;
+3. se houver migração, ela leva o número da versão no nome
+   (`db/2.17.0_notas_fotos_e_cartoes.sql`) e na linha de `migracoes`.
+
+### Bugs e sugestões
+
+Em `#/versoes/comentarios` (e no rodapé, *Ajuda › Bugs e sugestões*):
+
+- **relatar** um bug ou **sugerir** uma melhoria: título e descrição em
+  Markdown; vão junto a versão aberta, a tela em que a pessoa estava antes de
+  abrir o relato e o aparelho. Enquanto se digita o título, os relatos
+  parecidos aparecem, para votar no que já existe em vez de abrir outro;
+- cada relato tem código, `BUG-12` ou `SUG-13` (um número só, o prefixo diz o
+  tipo), e página própria (`#/versoes/comentarios/12`), com os **votos**
+  (*também acontece comigo*, *também quero*), a conversa e o **andamento**:
+  aberto, em análise, planejado, feito (na versão tal), recusado ou duplicado
+  de outro;
+- todo mundo lê todos os relatos; relata, vota e comenta quem tem registro;
+  o andamento é de `admin`, que recebe o aviso de cada relato novo. Quem
+  relatou e quem votou são avisados quando o andamento muda, e quem relatou,
+  quando alguém comenta.
+
+## A foto de perfil
+
+A foto se envia pelo portal (2.17.0): escolher a imagem, enquadrar (arrastar
+move, a barra e a roda dão zoom) e salvar. O portal a reduz a 512 px, em JPEG,
+e ela vai para o bucket público `fotos` do Supabase, na pasta do registro
+(`fotos/17/1759100000000.jpg`); a ficha passa a apontar para ela, e a foto
+anterior sai do bucket. Público de propósito: a foto aparece em toda tela,
+para toda a equipe, e um link assinado venceria.
+
+- **Onde**: o avatar na linha da conta, no menu; *Sua conta › Foto de perfil*,
+  no rodapé; a câmera no cartão do organograma e na ficha; e o aviso do
+  início, para quem ainda não tem foto nenhuma (nem na ficha, nem no
+  repositório de fotos).
+- **Quem**: cada pessoa, a sua; `admin` e o Depto. de Pessoal, a de qualquer
+  um — a regra mora no banco (`membro_foto_definir` e as políticas do bucket).
+- **O link continua valendo**: colar o endereço de uma imagem na ficha (clicar
+  no avatar, editando os dados) funciona como antes, e sem nada na ficha o
+  portal continua procurando `fotos/<registro>.jpg` no repositório
+  `nro-pessoal`.
 
 ## O tour do SOMA
 
@@ -180,7 +263,29 @@ O quadro de trabalho de cada grupo, em `#/atividades`:
   gravado na criação. É por ele que a equipe se refere à atividade, e é por ele
   que a busca acha;
 - responsável, prazo, prioridade, estimativa e **comentários com menção** —
-  mencionar alguém é como se escala um problema: a pessoa é notificada;
+  mencionar alguém é como se escala um problema: a pessoa é notificada.
+  Desde a 2.17.0, marca-se **digitando @** no comentário: a lista de quem
+  pode ser marcado abre ali (num quadro reservado, só quem está no grupo), e a
+  menção aparece destacada no comentário, com link para a pessoa;
+- **outras pessoas**, além do responsável (2.17.0): são avisadas, seguem o
+  cartão, o veem em *Suas tarefas* e na agenda e entram na carga da equipe;
+- a **descrição e os comentários em Markdown** (negrito, listas, tarefas,
+  links, código), com a barra de formatação e o *Ver* antes de salvar; um
+  código do SOMA escrito no texto (`ORT-2`, `NRO-PES-007`, `BUG-12`) vira link;
+- **checklists** — uma ou mais por cartão, com a conta no quadro (`3/5`).
+  Colar uma lista cria um item por linha (`- [x]` já entra marcado), e
+  arrastar reordena, inclusive de uma lista para outra do mesmo cartão;
+- **etiquetas** — as do quadro são as opções para escolher, e uma nova se cria
+  digitando; a cor sai do nome, igual em todo quadro. O quadro filtra por
+  etiqueta, e a busca acha por ela;
+- **copiar para outro quadro** (ou duplicar no mesmo): com a descrição, as
+  checklists, as pessoas, as etiquetas e o prazo, cada um opcional, e a opção
+  de arquivar o original — é assim que se move um cartão, já que o código leva
+  o prefixo do quadro. A cópia diz de onde veio, e o original, para onde foi;
+- os **arquivados** têm lista própria (`#/atividades/ORT/arquivadas`) e voltam
+  ao quadro com *Restaurar*; o cartão arquivado continua abrindo pelo código;
+- o **próprio comentário** se corrige (a menção nova avisa quem entrou) e se
+  apaga; `admin` e o Depto. de Pessoal moderam;
 - **sinalizar** uma atividade avisa quem a segue e o gestor de quem responde
   por ela;
 - o quadro mostra de saída quantas estão **atrasadas**, **sinalizadas** e
@@ -808,8 +913,11 @@ e ao **operacional**, desenhada numa **tela infinita**, como um quadro do
 Miro: os estratégicos em cima e, abaixo de cada objetivo aberto, só os
 **desdobramentos** dele, ligados por fios como num organograma. Abrir um
 objetivo não fecha o outro; o que está aberto fica guardado no navegador.
-Arrastar o fundo move a tela; `Ctrl` e a roda (ou o pinçar) dá zoom; os
-botões no canto dão zoom, enquadram tudo e recolhem.
+Arrastar o fundo move a tela; **a roda do mouse dá zoom** onde o cursor está
+(e o pinçar também); `Shift` e a roda, ou o trackpad de lado, movem; os
+botões no canto dão zoom, enquadram tudo e recolhem. Os cartões mostram o
+**título inteiro** (2.17.0): a altura acompanha o texto, e cada nível do mapa
+fica com a altura do maior cartão dele, para os fios continuarem retos.
 
 - cada objetivo tem **código** (`OE1`, `OT1.2`, `OP1.2.1`), responsáveis,
   eixo, prazo com o trimestre, status e **comentários** — mudar status ou
@@ -886,6 +994,7 @@ navegador; o membro copia o endereço e cola na janela de horários.
 | `mod-relatorios.js` | Portaria, assinatura, e-mails, autorizados e quadro completo |
 | `mod-mailer.js` | O Full mailer em tela inteira, os envios programados e as pílulas de conhecimento (`#/admin/emails`, `/programados`, `/pilulas`) |
 | `mod-okrs.js`  | O planejamento estratégico: a árvore de objetivos numa tela infinita (`#/okrs`, `#/okrs/<codigo>`) |
+| `mod-versoes.js` | As notas de cada versão (`NOTAS_VERSAO`) e os bugs e sugestões da equipe (`#/versoes`, `#/versoes/comentarios`) |
 | `mod-selecao.js` | O processo seletivo, por dentro: as oito abas do Comitê de Seleção (`#/selecao`, `#/selecao/<aba>`) |
 | `mod-projetos.js` | Os projetos: equipe, supervisor, Pokémon e rol (`#/projetos`, `#/projetos/<código>`) |
 | `mod-arquivos.js` | O controle de arquivos: a lista de todos os arquivos (filtra por emissor), tela do arquivo, revisões, templates, visão geral e configurações (`#/arquivos`, `#/arquivos/<código>`) |
@@ -927,6 +1036,11 @@ São scripts clássicos, não módulos ES, de propósito — o código usa
 **Módulo não depende de módulo.** O que mais de um usa (`ic`, `ibtn`,
 `quemSouEu`, `CAT_LABEL`, `fmtD`, `fmtDT`, `confirma`, `copiar`) mora na
 casca — senão abrir uma tela quebraria porque outra ainda não foi carregada.
+É o caso do leitor de Markdown do texto de trabalho, `md()` (2.17.0), que o
+quadro de Atividades e as notas de versão usam, com a barra de formatação
+(`mdBarra`), e da foto de perfil (`modalFoto`), que o menu, o rodapé, o
+organograma e a ficha abrem. Os treinamentos continuam com o leitor deles
+(`treMd`): o formato de lá tem dono próprio.
 
 As bibliotecas pesadas descem com quem precisa delas: jsPDF e autotable com
 os relatórios, xlsx com a importação e com a exportação do quadro. No SOMA as
@@ -962,11 +1076,12 @@ aqui é cópia, não fonte.
 ## Pré-requisitos
 
 Aplicar as migrações de [`db/`](db/LEIAME.md) no SQL Editor do Supabase, em
-ordem numérica, com a SOMA 9.0 já aplicada. Depois da 14.0, o banco responde
+ordem de versão (a `v14` à `v32`, e depois as de número novo, `2.17.0` em
+diante), com a SOMA 9.0 já aplicada. Depois da 14.0, o banco responde
 sozinho o que já rodou:
 
 ```sql
-select id, aplicada_em from public.migracoes order by id;
+select id, aplicada_em from public.migracoes order by aplicada_em;
 ```
 
 Sem as migrações do portal o app entra, mas o que depende delas mostra o
@@ -976,7 +1091,10 @@ placar, as folhas de check-in e os links úteis, da **29.0**
 conhecimento, da **30.0** (`v30_emails.sql`); as entrevistas online do
 processo seletivo e os e-mails delas, da **31.0** (`v31_ps_entrevistas.sql`);
 a fila que anda sozinha, o sino que não empilha e as notificações no
-aparelho, da **32.0** (`v32_fila_e_notificacoes.sql`).
+aparelho, da **32.0** (`v32_fila_e_notificacoes.sql`); os bugs e sugestões,
+a foto enviada pelo portal e os cartões com outras pessoas, etiquetas,
+checklists e cópia, da **2.17.0** (`2.17.0_notas_fotos_e_cartoes.sql`, a
+primeira com o número novo). As notas de versão não dependem de migração.
 Depois da 28.0, da 30.0, da 31.0 e da 32.0,
 **publique de novo** a Edge Function `notificar-email`: é ela que manda os
 convites, as mudanças e os lembretes da agenda, os e-mails programados e as
@@ -1080,6 +1198,17 @@ remove, quando a equipe decidir.
 - **Seleção** (`#/selecao`) é de `admin`, `pessoal` e `selecao`.
 - **OKRs** (`#/okrs`) todos veem; criar e excluir é de `admin`/`pessoal`, e
   editar é deles e dos responsáveis de cada objetivo.
+- **Bugs e sugestões** (`#/versoes/comentarios`): todos leem; relata, vota e
+  comenta quem tem registro; o autor corrige e exclui o próprio relato
+  enquanto ninguém decidiu; o andamento é de `admin`. A escrita é só pelas
+  funções `feedback_*`.
+- **Foto de perfil**: cada um envia a sua; `admin` e `pessoal`, a de qualquer
+  pessoa (`membro_foto_definir` e as políticas do bucket `fotos`).
+- **Cartões de Atividades**: as outras pessoas, as etiquetas e a checklist
+  seguem a regra do quadro (edita quem tem edição no grupo). Copiar pede
+  leitura no quadro de origem e edição no de destino; arquivar o original, edição
+  nos dois. O comentário se corrige só pelo autor; apagam o autor, `admin` e
+  `pessoal`.
 - **Projetos** (`#/projetos`) todos veem; criar é do PMO e de `admin`, e
   editar e cuidar da equipe é deles e do supervisor do projeto.
 - **Arquivos** (`#/arquivos`): o rol é de todos; o conteúdo segue a classe

@@ -90,27 +90,35 @@
         status:'a_fazer', prioridade:'media', responsavel:null, responsavel_nome:null,
         criado_por:17, criado_por_nome:'Carla Mendonça', prazo:null, sinalizada:false,
         ordem:500, arquivada:false, comentarios:0, atrasada:false, criado_em:'2026-09-20T09:00:00Z',
-        origem_tipo:'solicitacao', origem_id:'s1' },
+        origem_tipo:'solicitacao', origem_id:'s1', pessoas:[], etiquetas:[], check_total:0, check_feitos:0 },
       { id:'t1', codigo:'ORT-1', grupo_id:1, grupo:'Órtese', grupo_prefixo:'ORT', seq:1,
         titulo:'Calibrar o encoder', descricao:'Bancada 2.', status:'fazendo', prioridade:'alta',
         responsavel:11, responsavel_nome:'Bruno Tavares', criado_por:4, criado_por_nome:'Ana Figueiredo',
         prazo:'2026-09-10', estimativa_h:4, sinalizada:true, sinalizada_motivo:'Bloqueada pelo fornecedor',
-        ordem:1000, arquivada:false, comentarios:2, atrasada:true, criado_em:'2026-09-01T10:00:00Z' },
+        ordem:1000, arquivada:false, comentarios:2, atrasada:true, criado_em:'2026-09-01T10:00:00Z',
+        descricao:'Bancada 2, com o **multímetro** novo.\n\n- [x] pedir o cabo\n- [ ] trocar o conector',
+        pessoas:[4], etiquetas:['Firmware', 'Bancada 2'], check_total:3, check_feitos:1 },
       { id:'t2', codigo:'ORT-2', grupo_id:1, grupo:'Órtese', grupo_prefixo:'ORT', seq:2,
         titulo:'Revisar o firmware', status:'a_fazer', prioridade:'media', responsavel:17,
         responsavel_nome:'Carla Mendonça', criado_por:4, criado_por_nome:'Ana Figueiredo',
         prazo:null, sinalizada:false, ordem:2000, arquivada:false, comentarios:0, atrasada:false,
-        criado_em:'2026-09-05T10:00:00Z' },
+        criado_em:'2026-09-05T10:00:00Z', pessoas:[], etiquetas:['Firmware'], check_total:0, check_feitos:0 },
       { id:'t3', codigo:'ORT-3', grupo_id:1, grupo:'Órtese', grupo_prefixo:'ORT', seq:3,
         titulo:'Montar a bancada', status:'concluida', prioridade:'baixa', responsavel:4,
         responsavel_nome:'Ana Figueiredo', criado_por:4, criado_por_nome:'Ana Figueiredo',
         sinalizada:false, ordem:3000, arquivada:false, comentarios:0, atrasada:false,
-        criado_em:'2026-08-20T10:00:00Z' },
+        criado_em:'2026-08-20T10:00:00Z', pessoas:[], etiquetas:[], check_total:0, check_feitos:0 },
+      /* 2.17.0: um cartão arquivado, que a lista de arquivadas mostra e restaura */
+      { id:'t5', codigo:'ORT-4', grupo_id:1, grupo:'Órtese', grupo_prefixo:'ORT', seq:4,
+        titulo:'Trocar o cabo do sensor', status:'a_fazer', prioridade:'media', responsavel:null,
+        responsavel_nome:null, criado_por:4, criado_por_nome:'Ana Figueiredo', sinalizada:false, ordem:4000,
+        arquivada:true, comentarios:0, atrasada:false, criado_em:'2026-09-02T10:00:00Z', atualizado_em:'2026-09-18T10:00:00Z',
+        pessoas:[], etiquetas:[], check_total:0, check_feitos:0 },
       { id:'t4', codigo:'SIN-1', grupo_id:2, grupo:'Sinais', grupo_prefixo:'SIN', seq:1,
         titulo:'Filtro passa-faixa', status:'backlog', prioridade:'media', responsavel:null,
         responsavel_nome:null, criado_por:11, criado_por_nome:'Bruno Tavares',
         sinalizada:false, ordem:1000, arquivada:false, comentarios:0, atrasada:false,
-        criado_em:'2026-09-08T10:00:00Z' }
+        criado_em:'2026-09-08T10:00:00Z', pessoas:[], etiquetas:[], check_total:0, check_feitos:0 }
     ],
     atividade_comentarios: [
       { id:'c1', atividade_id:'t1', registro:4, corpo:'Fornecedor respondeu?', mencionados:[11],
@@ -125,6 +133,27 @@
       { id:4, atividade_id:'t1', registro:4, tipo:'sinalizou', para:'Bloqueada pelo fornecedor', criado_em:'2026-09-16T11:00:00Z' }
     ],
     atividade_seguidores: [{ atividade_id:'t1', registro:4 }, { atividade_id:'t1', registro:11 }],
+    /* 2.17.0: a checklist do ORT-1 */
+    atividade_checklists: [{ id:'ck1', atividade_id:'t1', titulo:'Antes de ligar', ordem:1 }],
+    atividade_checklist_itens: [
+      { id:'ci1', checklist_id:'ck1', texto:'Conferir a fonte', feito:true, ordem:1, feito_por:4 },
+      { id:'ci2', checklist_id:'ck1', texto:'Aterrar a bancada', feito:false, ordem:2 },
+      { id:'ci3', checklist_id:'ck1', texto:'Medir a tensão, ver NRO-PES-007', feito:false, ordem:3 }
+    ],
+    /* 2.17.0: bugs e sugestões */
+    soma_feedback_lista: [
+      { id:1, tipo:'bug', codigo:'BUG-1', titulo:'O quadro não abre no celular', corpo:'Fica girando.\n\n1. Abrir **Atividades**\n2. Esperar',
+        versao:'2.16.0', tela:'#/atividades/ORT', aparelho:'Safari no iPhone', status:'aberto', autor:11, autor_nome:'Bruno Tavares',
+        votos:2, votei:false, comentarios:1, criado_em:'2026-09-27T10:00:00Z', atualizado_em:'2026-09-27T10:00:00Z' },
+      { id:2, tipo:'sugestao', codigo:'SUG-2', titulo:'Filtrar o quadro por etiqueta', corpo:'Para achar o que é de firmware.',
+        versao:'2.16.0', status:'planejado', autor:17, autor_nome:'Carla Mendonça', votos:5, votei:true, comentarios:0,
+        resposta:'Entra na próxima versão.', decidido_por:4, decidido_por_nome:'Ana Figueiredo', decidido_em:'2026-09-28T10:00:00Z',
+        criado_em:'2026-09-26T10:00:00Z', atualizado_em:'2026-09-28T10:00:00Z' },
+      { id:3, tipo:'bug', codigo:'BUG-3', titulo:'O placar não conta o feriado', status:'feito', versao_feito:'2.16.0',
+        autor:4, autor_nome:'Ana Figueiredo', votos:0, votei:false, comentarios:0, criado_em:'2026-09-20T10:00:00Z' }
+    ],
+    soma_feedback_comentarios: [{ id:'fc1', feedback_id:1, registro:17, corpo:'No Android também.', criado_em:'2026-09-27T12:00:00Z' }],
+    soma_feedback_votos: [{ feedback_id:1, registro:17 }, { feedback_id:1, registro:23 }, { feedback_id:2, registro:4 }],
     atividades_carga: [
       { registro:11, nome:'Bruno Tavares', abertas:3, fazendo:1, atrasadas:1, sinalizadas:1, horas_abertas:12 },
       { registro:17, nome:'Carla Mendonça', abertas:1, fazendo:0, atrasadas:0, sinalizadas:0, horas_abertas:0 }
@@ -691,8 +720,8 @@
   DADOS.calendario_itens = [{ id:'m1', titulo:'Prazo UFMG: trancamento parcial', tipo:'prazo', data_inicio:agDia(4), data_fim:agDia(4), observacao:null, registro:null }];
   DADOS.agenda_ausencias = [{ id:'au1', registro:17, tipo:'ferias', inicio:agDia(8) + 'T03:00:00Z', fim:agDia(12) + 'T03:00:00Z', dia_inteiro:true, observacao:null }];
   DADOS.atividades = [
-    { id:'a1', codigo:'ORT-14', titulo:'Calibrar o encoder da bancada 2', prazo:agDia(1), status:'fazendo', prioridade:'alta', responsavel:4 },
-    { id:'a2', codigo:'ORT-15', titulo:'Revisar o USRS', prazo:agDia(40), status:'a_fazer', prioridade:'media', responsavel:4 }
+    { id:'a1', codigo:'ORT-14', titulo:'Calibrar o encoder da bancada 2', prazo:agDia(1), status:'fazendo', prioridade:'alta', responsavel:4, arquivada:false },
+    { id:'a2', codigo:'ORT-15', titulo:'Revisar o USRS', prazo:agDia(40), status:'a_fazer', prioridade:'media', responsavel:4, arquivada:false }
   ];
   window.__agenda = DADOS;
 
@@ -857,12 +886,166 @@
             return { data:{ status:'ok', id:1, email:'ana@neurodynamics.dev',
                             modo: f.modo || 'imediato' }, error:null };
           }
+          /* ---- 2.17.0: a foto, os relatos e os cartões ---- */
+          const eAdm = () => DADOS.perfis[0].papel === 'admin';
+          const regra = (k, p) => (window.__rpcs ||= []).push({ nome:k, p });
+          if (nome === 'membro_foto_definir'){
+            const p = args?.p || {}; regra(nome, p);
+            if ((window.__teste || {}).v217 === 'falta') return { data:null, error:{ message:'function public.membro_foto_definir(jsonb) does not exist' } };
+            const reg = p.registro ?? DADOS.perfis[0].registro;
+            if (reg !== DADOS.perfis[0].registro && !['admin', 'pessoal'].includes(DADOS.perfis[0].papel)) return { data:{ status:'sem_permissao' }, error:null };
+            const m = DADOS.membros.find(x => x.registro === reg); if (!m) return { data:{ status:'nao_encontrado' }, error:null };
+            const base = '/storage/v1/object/public/fotos/', ant = m.foto_url || '';
+            m.foto_url = p.caminho ? 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#CEDC00"/></svg>') + '#' + base + p.caminho : null;
+            return { data:{ status:'ok', foto_url:m.foto_url, anterior: ant.includes(base) ? ant.split(base)[1] : null }, error:null };
+          }
+          if (nome.startsWith('feedback_')){
+            const p = args?.p || {}; regra(nome, p);
+            const L = DADOS.soma_feedback_lista, f = L.find(x => x.id === p.id);
+            const cod = (t, id) => (t === 'bug' ? 'BUG-' : 'SUG-') + id;
+            if (nome === 'feedback_salvar'){
+              if (!String(p.titulo || '').trim() || String(p.titulo).trim().length < 3) return { data:{ status:'invalido', campo:'titulo' }, error:null };
+              if (!p.id){
+                const id = Math.max(0, ...L.map(x => x.id)) + 1;
+                L.push({ id, tipo:p.tipo, codigo:cod(p.tipo, id), titulo:p.titulo.trim(), corpo:p.corpo || null, versao:p.versao, tela:p.tela || null,
+                  aparelho:p.aparelho, status:'aberto', autor:4, autor_nome:'Ana Figueiredo', votos:0, votei:false, comentarios:0,
+                  criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString() });
+                return { data:{ status:'ok', id, codigo:cod(p.tipo, id) }, error:null };
+              }
+              if (!f) return { data:{ status:'nao_encontrado' }, error:null };
+              if (f.autor !== 4 && !eAdm()) return { data:{ status:'sem_permissao' }, error:null };
+              if (f.status !== 'aberto' && !eAdm()) return { data:{ status:'fechado' }, error:null };
+              Object.assign(f, { tipo:p.tipo, codigo:cod(p.tipo, f.id), titulo:p.titulo.trim(), corpo:p.corpo });
+              return { data:{ status:'ok', id:f.id, codigo:f.codigo }, error:null };
+            }
+            if (!f) return { data:{ status:'nao_encontrado' }, error:null };
+            if (nome === 'feedback_votar'){
+              if (p.voto && !f.votei){ f.votei = true; f.votos++; DADOS.soma_feedback_votos.push({ feedback_id:f.id, registro:4 }); }
+              if (!p.voto && f.votei){ f.votei = false; f.votos--; DADOS.soma_feedback_votos = DADOS.soma_feedback_votos.filter(v => !(v.feedback_id === f.id && v.registro === 4)); }
+              return { data:{ status:'ok', votos:f.votos, votei:f.votei }, error:null };
+            }
+            if (nome === 'feedback_comentar'){
+              DADOS.soma_feedback_comentarios.push({ id:'fc' + (DADOS.soma_feedback_comentarios.length + 1), feedback_id:f.id, registro:4,
+                corpo:p.corpo, criado_em:new Date().toISOString() });
+              f.comentarios++;
+              return { data:{ status:'ok' }, error:null };
+            }
+            if (nome === 'feedback_decidir'){
+              if (!eAdm()) return { data:{ status:'sem_permissao' }, error:null };
+              if (p.status === 'duplicado' && !p.duplicado_de) return { data:{ status:'invalido', campo:'duplicado_de' }, error:null };
+              const d = p.duplicado_de ? L.find(x => x.id === +p.duplicado_de) : null;
+              Object.assign(f, { status:p.status, tipo:p.tipo || f.tipo, codigo:cod(p.tipo || f.tipo, f.id), resposta:p.resposta || null,
+                versao_feito: p.status === 'feito' ? p.versao_feito : null, duplicado_de: d?.id || null, duplicado_de_codigo: d?.codigo || null,
+                decidido_por:4, decidido_por_nome:'Ana Figueiredo', decidido_em:new Date().toISOString() });
+              return { data:{ status:'ok', codigo:f.codigo }, error:null };
+            }
+            if (nome === 'feedback_excluir'){
+              if (!eAdm() && (f.autor !== 4 || f.status !== 'aberto')) return { data:{ status:'sem_permissao' }, error:null };
+              DADOS.soma_feedback_lista = L.filter(x => x.id !== f.id);
+              return { data:{ status:'ok' }, error:null };
+            }
+          }
+          const linhaAtv = id => DADOS.atividades_quadro.find(a => a.id === id);
+          const contaChecks = aid => { const a = linhaAtv(aid); if (!a) return;
+            const ids = DADOS.atividade_checklists.filter(k => k.atividade_id === aid).map(k => k.id);
+            const it = DADOS.atividade_checklist_itens.filter(i => ids.includes(i.checklist_id));
+            a.check_total = it.length; a.check_feitos = it.filter(i => i.feito).length; };
+          if (nome === 'atividade_editar'){
+            const p = args?.p || {}; regra(nome, p);
+            const a = linhaAtv(p.id); if (!a) return { data:{ status:'nao_encontrado' }, error:null };
+            const g = DADOS.grupos_visiveis.find(x => x.id === a.grupo_id);
+            if (g && g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+            ['titulo','descricao','status','prioridade','prazo','estimativa_h','ordem','arquivada','etiquetas'].forEach(k => { if (k in p) a[k] = p[k]; });
+            if ('responsavel' in p){ a.responsavel = p.responsavel == null ? null : +p.responsavel;
+              a.responsavel_nome = DADOS.membros.find(m => m.registro === a.responsavel)?.nome || null; }
+            if ('pessoas' in p) a.pessoas = [...new Set(p.pessoas.map(Number))].filter(r => r !== a.responsavel);
+            else if (a.pessoas) a.pessoas = a.pessoas.filter(r => r !== a.responsavel);
+            return { data:{ status:'ok', codigo:a.codigo }, error:null };
+          }
+          if (nome === 'atividade_checklist'){
+            const p = args?.p || {}; regra(nome, p);
+            const K = DADOS.atividade_checklists, I = DADOS.atividade_checklist_itens;
+            const it = p.item_id ? I.find(i => i.id === p.item_id) : null;
+            const ck = p.checklist_id ? K.find(k => k.id === p.checklist_id) : it ? K.find(k => k.id === it.checklist_id) : null;
+            const aid = p.acao === 'lista_criar' ? p.atividade_id : ck?.atividade_id;
+            const a = linhaAtv(aid); if (!a) return { data:{ status:'nao_encontrado' }, error:null };
+            const g = DADOS.grupos_visiveis.find(x => x.id === a.grupo_id);
+            if (g && g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+            const linhas = (cid, t) => String(t || '').split('\n').map(l => ({ x:/^\s*([-*+]|\d+[.)])\s+\[[xX]\]\s+/.test(l),
+              t:l.replace(/^\s*(([-*+]|\d+[.)])\s+)?(\[[ xX]\]\s+)?/, '').trim() })).filter(l => l.t)
+              .map((l, n) => { const o = { id:'ci' + (I.length + 1 + n) + '-' + Date.now(), checklist_id:cid, texto:l.t, feito:l.x,
+                ordem:Math.max(0, ...I.filter(i => i.checklist_id === cid).map(i => i.ordem)) + 1 + n }; I.push(o); return o; });
+            let novo = null, n = 0;
+            if (p.acao === 'lista_criar'){ novo = 'ck' + (K.length + 1) + '-' + Date.now();
+              K.push({ id:novo, atividade_id:aid, titulo:p.titulo || 'Checklist', ordem:K.length + 1 }); n = linhas(novo, p.texto).length; }
+            else if (p.acao === 'lista_renomear') ck.titulo = p.titulo;
+            else if (p.acao === 'lista_excluir'){ DADOS.atividade_checklists = K.filter(k => k.id !== ck.id);
+              DADOS.atividade_checklist_itens = I.filter(i => i.checklist_id !== ck.id); }
+            else if (p.acao === 'item_criar'){ const ns = linhas(ck.id, p.texto); n = ns.length; novo = ns[ns.length - 1]?.id; }
+            else if (p.acao === 'item_editar') it.texto = p.texto;
+            else if (p.acao === 'item_marcar') it.feito = p.feito ?? !it.feito;
+            else if (p.acao === 'item_excluir') DADOS.atividade_checklist_itens = I.filter(i => i.id !== it.id);
+            else if (p.acao === 'item_mover'){ if (p.checklist_id) it.checklist_id = p.checklist_id; if (p.ordem != null) it.ordem = p.ordem; }
+            else return { data:{ status:'invalido', campo:'acao' }, error:null };
+            contaChecks(aid);
+            return { data:{ status:'ok', id:novo, itens:n }, error:null };
+          }
+          if (nome === 'atividade_copiar'){
+            const p = args?.p || {}; regra(nome, p);
+            const a = linhaAtv(p.id), g = DADOS.grupos_visiveis.find(x => x.id === p.grupo_id);
+            if (!a) return { data:{ status:'nao_encontrado' }, error:null };
+            if (!g || g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao', campo:'grupo' }, error:null };
+            const seq = Math.max(0, ...DADOS.atividades_quadro.filter(x => x.grupo_id === g.id).map(x => x.seq || 0)) + 1;
+            const com = { descricao:true, pessoas:true, etiquetas:true, prazo:true, checklists:true, ...(p.com || {}) };
+            const id = 'tc' + seq + g.prefixo, codigo = g.prefixo + '-' + seq;
+            DADOS.atividades_quadro.push({ ...a, id, codigo, seq, grupo_id:g.id, grupo:g.nome, grupo_prefixo:g.prefixo, titulo:p.titulo || a.titulo,
+              status:p.status || a.status, descricao: com.descricao ? a.descricao : null, responsavel: com.pessoas ? a.responsavel : null,
+              responsavel_nome: com.pessoas ? a.responsavel_nome : null, pessoas: com.pessoas ? [...(a.pessoas || [])] : [],
+              etiquetas: com.etiquetas ? [...(a.etiquetas || [])] : [], prazo: com.prazo ? a.prazo : null, copia_de:a.id,
+              copia_de_codigo:a.codigo, comentarios:0, sinalizada:false, origem_tipo:null, origem_id:null, arquivada:false,
+              criado_em:new Date().toISOString(), ordem:9e9, check_total:0, check_feitos:0 });
+            if (com.checklists) DADOS.atividade_checklists.filter(k => k.atividade_id === a.id).forEach(k => {
+              const nk = k.id + '-' + id; DADOS.atividade_checklists.push({ ...k, id:nk, atividade_id:id });
+              DADOS.atividade_checklist_itens.filter(i => i.checklist_id === k.id).forEach(i => DADOS.atividade_checklist_itens.push({ ...i, id:i.id + '-' + id, checklist_id:nk })); });
+            contaChecks(id);
+            DADOS.atividade_log.push({ id:DADOS.atividade_log.length + 1, atividade_id:a.id, registro:4, tipo:'copiou_para', para:codigo, criado_em:new Date().toISOString() });
+            if (p.arquivar) a.arquivada = true;
+            return { data:{ status:'ok', id, codigo }, error:null };
+          }
+          if (nome === 'atividade_comentario_editar' || nome === 'atividade_comentario_excluir'){
+            const p = args?.p || {}; regra(nome, p);
+            const c = DADOS.atividade_comentarios.find(x => x.id === p.id); if (!c) return { data:{ status:'nao_encontrado' }, error:null };
+            if (nome === 'atividade_comentario_editar'){
+              if (c.registro !== 4) return { data:{ status:'sem_permissao' }, error:null };
+              Object.assign(c, { corpo:p.corpo, mencionados:p.mencionados || [], editado_em:new Date().toISOString() });
+            } else {
+              if (c.registro !== 4 && !['admin', 'pessoal'].includes(DADOS.perfis[0].papel)) return { data:{ status:'sem_permissao' }, error:null };
+              DADOS.atividade_comentarios = DADOS.atividade_comentarios.filter(x => x.id !== p.id);
+            }
+            return { data:{ status:'ok' }, error:null };
+          }
+          if (nome === 'atividade_criar'){
+            const p = args?.p || {}; regra(nome, p);
+            const g = DADOS.grupos_visiveis.find(x => x.id === p.grupo_id) || { id:p.grupo_id, prefixo:'ORT', nome:'Órtese' };
+            const seq = Math.max(0, ...DADOS.atividades_quadro.filter(x => x.grupo_id === g.id).map(x => x.seq || 0)) + 1;
+            const codigo = g.prefixo + '-' + seq;
+            DADOS.atividades_quadro.push({ id:'tn' + seq, codigo, seq, grupo_id:g.id, grupo:g.nome, grupo_prefixo:g.prefixo, titulo:p.titulo,
+              descricao:p.descricao, status:p.status || 'a_fazer', prioridade:p.prioridade || 'media', responsavel:p.responsavel ? +p.responsavel : null,
+              pessoas:(p.pessoas || []).map(Number), etiquetas:p.etiquetas || [], prazo:p.prazo, arquivada:false, comentarios:0,
+              atrasada:false, sinalizada:false, ordem:9e9, criado_por:4, criado_por_nome:'Ana Figueiredo', criado_em:new Date().toISOString(),
+              check_total:0, check_feitos:0 });
+            return { data:{ status:'ok', codigo, id:'tn' + seq }, error:null };
+          }
           if (nome === 'atividade_comentar'){
             if (window.__comentarFalha === 'sem_registro')
               return { data: { status:'sem_registro' }, error: null };
             if (window.__comentarFalha === 'lanca') throw new Error('rede caiu');
             window.__comentario = args?.p;
-            return { data: { status:'ok', id:'c9' }, error: null };
+            const id = 'c' + (DADOS.atividade_comentarios.length + 9);
+            DADOS.atividade_comentarios.push({ id, atividade_id:args.p.atividade_id, registro:4, corpo:args.p.corpo,
+              mencionados:args.p.mencionados || [], criado_em:new Date().toISOString() });
+            const a = DADOS.atividades_quadro.find(x => x.id === args.p.atividade_id); if (a) a.comentarios = (a.comentarios || 0) + 1;
+            return { data: { status:'ok', id }, error: null };
           }
           if (nome === 'grupo_salvar'){
             const p = args?.p || {};

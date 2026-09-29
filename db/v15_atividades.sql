@@ -362,7 +362,18 @@ create policy atvs_select on public.atividade_seguidores
 -- 5. AS FUNÇÕES DO QUADRO
 -- ------------------------------------------------------------
 
+-- ATENÇÃO ao mexer em 5a e 5b: desde a 2.17.0, a dona de
+-- atividade_criar e de atividade_editar (e das duas views da seção 6) é
+-- ela, que acrescenta as outras pessoas, as etiquetas e as checklists. As
+-- definições abaixo só valem enquanto a 2.17.0 ainda não passou por aqui:
+-- rodar a 15.0 de novo — coisa que ela diz ser segura — voltaria as duas
+-- funções e as views para a forma antiga, em silêncio.
+
 -- 5a. Criar
+do $do$
+begin
+  if to_regclass('public.atividade_checklists') is null then
+    execute $f$
 create or replace function public.atividade_criar(p jsonb)
 returns jsonb language plpgsql volatile security definer
 set search_path = public as $$
@@ -417,6 +428,9 @@ begin
 
   return jsonb_build_object('status','ok','id',v_id,'codigo',v_cod);
 end $$;
+    $f$;
+  end if;
+end $do$;
 
 -- rótulo do status, usado nas notificações
 create or replace function public.atividade_status_rotulo(p text)
@@ -426,7 +440,11 @@ returns text language sql immutable as $$
                 when 'concluida' then 'Concluída' else p end;
 $$;
 
--- 5b. Editar (inclui mover de coluna e atribuir)
+-- 5b. Editar (inclui mover de coluna e atribuir) — a 2.17.0 é a dona
+do $do$
+begin
+  if to_regclass('public.atividade_checklists') is null then
+    execute $f$
 create or replace function public.atividade_editar(p jsonb)
 returns jsonb language plpgsql volatile security definer
 set search_path = public as $$
@@ -513,6 +531,9 @@ begin
 
   return jsonb_build_object('status','ok','codigo',v_a.codigo);
 end $$;
+    $f$;
+  end if;
+end $do$;
 
 -- 5c. Comentar (com menção, que é como se escala um problema)
 create or replace function public.atividade_comentar(p jsonb)
@@ -646,12 +667,19 @@ end $$;
 -- 6. LEITURAS PRONTAS
 -- ------------------------------------------------------------
 
--- 6a. O quadro, com o que a tela precisa junto
--- drop + create, e não "create or replace": a view lista colunas em
--- ordem fixa, e "replace" não aceita mudança de forma. Recriar é
--- barato (view não guarda dado) e deixa a migração rodar de novo
--- sem susto.
-drop view if exists public.atividades_quadro;
+-- As duas views são da 2.17.0 desde que ela passou (o aviso de 5a): as
+-- definições abaixo só valem antes dela.
+do $do$
+begin
+  if to_regclass('public.atividade_checklists') is not null then return; end if;
+
+  -- 6a. O quadro, com o que a tela precisa junto
+  -- drop + create, e não "create or replace": a view lista colunas em
+  -- ordem fixa, e "replace" não aceita mudança de forma. Recriar é
+  -- barato (view não guarda dado) e deixa a migração rodar de novo
+  -- sem susto.
+  execute 'drop view if exists public.atividades_quadro';
+  execute $f$
 create view public.atividades_quadro
   -- SEM isto a view roda como dona (postgres, que ignora RLS) e
   -- devolve TODO cartão, política nova ou não — inclusive os do
@@ -672,18 +700,21 @@ select a.id, a.codigo, a.grupo_id, a.seq, a.titulo, a.descricao, a.status,
   from atividades a
   join grupos  g  on g.id = a.grupo_id
   left join membros mr on mr.registro = a.responsavel
-  left join membros mc on mc.registro = a.criado_por;
-
+  left join membros mc on mc.registro = a.criado_por
+  $f$;
+  execute $f$
 comment on view public.atividades_quadro is
   'O que a tela do quadro precisa, já resolvido: nome do grupo, do responsável '
-  'e de quem criou, contagem de comentários e o cálculo de atrasada.';
+  'e de quem criou, contagem de comentários e o cálculo de atrasada.'
+  $f$;
 
--- 6b. Carga por membro — quantas atividades abertas cada um carrega.
---     Roda como dona de propósito: devolve CONTAGEM, não conteúdo.
---     Saber que alguém do Pessoal carrega 9 atividades abertas não
---     conta quem pediu afastamento — e tirar os cartões reservados
---     da conta faria a carga mentir.
-drop view if exists public.atividades_carga;
+  -- 6b. Carga por membro — quantas atividades abertas cada um carrega.
+  --     Roda como dona de propósito: devolve CONTAGEM, não conteúdo.
+  --     Saber que alguém do Pessoal carrega 9 atividades abertas não
+  --     conta quem pediu afastamento — e tirar os cartões reservados
+  --     da conta faria a carga mentir.
+  execute 'drop view if exists public.atividades_carga';
+  execute $f$
 create view public.atividades_carga as
 select m.registro, m.nome, m.grupos,
        count(*) filter (where a.status <> 'concluida')                      as abertas,
@@ -694,7 +725,9 @@ select m.registro, m.nome, m.grupos,
   from membros m
   left join atividades a on a.responsavel = m.registro and not a.arquivada
  where m.status in ('Ativo','Em pausa / avaliação')
- group by m.registro, m.nome, m.grupos;
+ group by m.registro, m.nome, m.grupos
+  $f$;
+end $do$;
 
 -- ============================================================
 -- 7. AGENDA: marcos e ausências deixam de ser "só back-end"
