@@ -853,7 +853,7 @@ function agAddConv(i){
 }
 
 /* ---------- disponibilidade: a ocupação de cada convidado no dia ---------- */
-const AG_D0 = 7, AG_D1 = 21;
+const AG_D0 = 0, AG_D1 = 24;
 async function agDispCarregar(){
   const ev = agenda.ev, el = $('#ev-disp'); if (!el) return;
   const regs = [...ev.conv.keys()];
@@ -896,31 +896,34 @@ function agDispClique(e){
   f.hi = minHHMM(m); f.hf = minHHMM(Math.min(m + dur, 24*60 - 1));
   $('#ev-hi').value = f.hi; $('#ev-hf').value = f.hf; agDispDesenhar();
 }
-/* O primeiro horário, a partir de agora, em que todos os obrigatórios
-   estão livres, dentro do expediente e nos próximos dez dias. */
+/* Varre a agenda: cada clique traz o próximo horário em que todos os
+   obrigatórios estão livres, depois do último sugerido, a qualquer hora
+   do dia, nos dez dias seguintes. Recomeça de agora quando mudam os
+   participantes, a duração ou a data/hora escolhida. */
 async function agProximoLivre(){
   const ev = agenda.ev, f = ev.f;
   const dur = f.dia_inteiro ? 60 : Math.max(15, hhmmMin(f.hf) - hhmmMin(f.hi));
-  const regs = [...ev.conv].filter(([, v]) => !v.opcional).map(([r]) => r);
-  const de = new Date(); const ate = new Date(de.getTime() + 10 * 864e5);
+  const regs = [...ev.conv].filter(([, v]) => !v.opcional).map(([r]) => r).sort((a, b) => a - b);
+  const s0 = ev.sug, chave = regs.join() + '|' + dur;
+  const segue = s0 && s0.chave === chave && s0.data === f.data && s0.hi === f.hi;
+  const de = segue ? new Date(s0.fim) : new Date();
+  const ate = new Date(de.getTime() + 10 * 864e5);
   const { data, error } = await sb.rpc('portal_agenda_ocupacao', { p_registros: regs, p_de: de.toISOString(), p_ate: ate.toISOString() });
   if (error) return toast('Não foi possível consultar a disponibilidade.', true);
   const blocos = (data || []).map(b => [new Date(b.inicio).getTime(), new Date(b.fim).getTime()]);
-  const ini = hhmmMin(EXPEDIENTE.inicio), fim = hhmmMin(EXPEDIENTE.fim);
-  for (let d = 0; d < 10; d++){
-    const dia = new Date(); dia.setDate(dia.getDate() + d);
-    if (!EXPEDIENTE.dias.includes(isoDow(dia))) continue;
-    const iso = isoDia(dia), base = dataHora(iso, 0).getTime();
-    for (let m = ini; m + dur <= fim; m += 15){
-      const a = base + m * 6e4, z = a + dur * 6e4;
-      if (a < Date.now()) continue;
-      if (!blocos.some(([i, fb]) => i < z && fb > a)){
-        f.data = iso; f.dia_inteiro = false; f.hi = minHHMM(m); f.hf = minHHMM(m + dur);
-        agEventoDesenhar(); toast(`Todos livres: ${fmtD(iso)}, ${f.hi}.`); return;
-      }
-    }
+  const passo = 15 * 6e4, dia0 = new Date(de); dia0.setHours(0, 0, 0, 0);
+  for (let a = dia0.getTime(); a < ate.getTime(); a += passo){
+    if (a < de.getTime() || a < Date.now()) continue;
+    const z = a + dur * 6e4;
+    if (blocos.some(([i, fb]) => i < z && fb > a)) continue;
+    const ini = new Date(a), fimD = new Date(z);
+    if (fimD.getDate() !== ini.getDate()) continue;
+    const iso = isoDia(ini), m = ini.getHours() * 60 + ini.getMinutes();
+    f.data = iso; f.dia_inteiro = false; f.hi = minHHMM(m); f.hf = minHHMM(m + dur);
+    ev.sug = { chave, data: f.data, hi: f.hi, fim: z };
+    agEventoDesenhar(); toast(`Todos livres: ${fmtD(iso)}, ${f.hi}.`); return;
   }
-  toast('Nenhum horário comum nos próximos dez dias úteis.', true);
+  toast('Nenhum horário comum nos próximos dez dias.', true);
 }
 
 /* ---------- salvar e excluir ---------- */

@@ -96,6 +96,20 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
     && [...(novo.obrigatorios || []), ...(novo.opcionais || [])].includes(17), novo);
   confere('o predefinido traz o Meet e o lembrete', novo?.meet_url === 'https://meet.google.com/ger-enc-ia' && JSON.stringify(novo.lembretes) === '[30]', novo);
 
+  /* próximo horário livre varre a agenda, a qualquer hora do dia */
+  await ir(p, `#/agenda/novo/${dia(3)}T14:00~15:00`, 1200);
+  await p.fill('#ev-busca', 'Bruno'); await p.waitForTimeout(300); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+  const lido = () => p.evaluate(() => document.querySelector('#ev-data').value + 'T' + document.querySelector('#ev-hi').value);
+  await p.click('.evp-disp-topo button'); await p.waitForTimeout(700);
+  const l1 = await lido();
+  await p.click('.evp-disp-topo button'); await p.waitForTimeout(700);
+  const l2 = await lido();
+  await p.click('.evp-disp-topo button'); await p.waitForTimeout(700);
+  const l3 = await lido();
+  confere('cada clique em "Próximo horário livre" traz um horário depois do anterior', l1 < l2 && l2 < l3, [l1, l2, l3]);
+  confere('a régua de disponibilidade cobre as 24 h', await p.evaluate(() => /^0h/.test(document.querySelector('.evd-regua span')?.textContent || '')
+    && /22h/.test(document.querySelector('.evd-regua')?.textContent || '')));
+
   /* reagendar sem apagar */
   await ir(p, '#/agenda/evento/e1', 1200);
   await p.fill('#ev-data', dia(4)); await p.dispatchEvent('#ev-data', 'change'); await p.waitForTimeout(200);
