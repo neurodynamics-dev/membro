@@ -1006,6 +1006,9 @@ function frasesLog(e){
 /* ---- edições no lugar ---- */
 function editarTitulo(){
   const a = atividades.card, el = $('#cd-titulo');
+  /* clicar dentro do campo (mover o cursor) chega aqui pelo onclick do h1:
+     o campo já existe, então não recria nem salva */
+  if ($('#cd-tit-in')) return;
   el.innerHTML = `<input id="cd-tit-in" value="${esc(a.titulo)}"
     style="width:100%;font:inherit;background:var(--campo);border:1px solid var(--line2);
     border-radius:10px;padding:4px 10px;color:inherit">`;
