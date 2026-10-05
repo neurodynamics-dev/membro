@@ -75,7 +75,7 @@ const etiquetaHTML = (e, extra, attrs) => `<span class="et" style="--et:${corEti
    que o seletor oferece */
 function etiquetasDoQuadro(grupoId){
   const n = new Map();
-  atividades.itens.filter(a => a.grupo_id === grupoId).forEach(a => (a.etiquetas || []).forEach(e => n.set(e, (n.get(e) || 0) + 1)));
+  atividades.itens.filter(a => noQuadro(a, grupoId)).forEach(a => (a.etiquetas || []).forEach(e => n.set(e, (n.get(e) || 0) + 1)));
   return [...n.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt')).map(([e]) => e);
 }
 /* todas as pessoas do cartão, o responsável primeiro */
@@ -125,6 +125,14 @@ const posso = {
   editar: g => nivelNoGrupo(g) === 'edicao'
 };
 const grupoDoCartao = a => atividades.grupos.find(g => g.id === a?.grupo_id) || null;
+/* Card espelhado (2.18.0): o mesmo cartão em mais de um quadro. O dono é
+   grupo_id (dá o código); os outros vêm em espelhos, cada um com a sua
+   ordem na coluna. Edita quem edita qualquer um deles. */
+const quadroAtv = id => atividades.grupos.find(g => g.id === id) || null;
+const noQuadro = (a, gid) => a.grupo_id === gid || (a.espelhos || []).includes(gid);
+const ordemNo = (a, gid) => a.grupo_id === gid ? a.ordem : Number((a.espelhos_ordem || {})[gid] ?? a.ordem);
+const quadrosDoCartao = a => [a.grupo_id, ...(a.espelhos || [])].map(quadroAtv).filter(Boolean);
+const editoCartao = a => quadrosDoCartao(a).some(g => posso.editar(g));
 /* A ordem é SEMPRE a configurada em Administração -> Grupos. Ela é uma
    hierarquia que a equipe decidiu — escritório, gerência, PMO, supervisão,
    e por aí — e uma lista que se reordena sozinha conforme quem está
@@ -342,7 +350,7 @@ function itensVisiveis(){
   const g = atividades.grupoAtual, f = atividades.filtro, q = norm(f.q);
   const nomes = a => pessoasDoCartao(a).map(m => m.nome).join(' ');
   return atividades.itens.filter(a =>
-    a.grupo_id === g.id &&
+    noQuadro(a, g.id) &&
     (!f.pessoa || noCartao(a, f.pessoa)) &&
     (f.so !== 'minhas'      || noCartao(a, state.perfil?.registro)) &&
     (f.so !== 'atrasadas'   || a.atrasada) &&
@@ -371,7 +379,8 @@ function desenhaColunas(){
 
   const edito = posso.editar(atividades.grupoAtual);
   $('#kanban').innerHTML = COLUNAS.map(([st, rot]) => {
-    const cards = vis.filter(a => a.status === st).sort((a,b) => a.ordem - b.ordem);
+    const gid = atividades.grupoAtual.id;
+    const cards = vis.filter(a => a.status === st).sort((a,b) => ordemNo(a, gid) - ordemNo(b, gid));
     const alvo = edito
       ? `ondragover="event.preventDefault();this.classList.add('sobre')"
          ondragleave="this.classList.remove('sobre')"
@@ -411,6 +420,8 @@ function cartaoHTML(a){
         <span class="cod">${esc(a.codigo)}</span>
         ${a.origem_tipo ? `<span class="org" title="Nasceu de uma ${esc(ROTULO_ORIGEM[a.origem_tipo] || a.origem_tipo)}"
           >${esc(ROTULO_ORIGEM[a.origem_tipo] || a.origem_tipo)}</span>` : ''}
+        ${(a.espelhos || []).length ? `<span class="org kb-esp" title="Também em: ${esc(quadrosDoCartao(a)
+          .filter(q => q.id !== atividades.grupoAtual?.id).map(q => q.nome).join(', '))}">espelho</span>` : ''}
       </span>
       <span class="pri" style="background:${corPrioridade(a.prioridade)}"
         title="Prioridade ${rotuloPrioridade(a.prioridade).toLowerCase()}"></span>
@@ -439,30 +450,34 @@ async function soltarEm(ev, status, antesDoId){
   const a = atividades.itens.find(x => x.id === id);
   if (!a) return;
 
+  /* a ordem é a do quadro aberto: no espelho, a do espelho */
+  const gid = atividades.grupoAtual.id, espelho = a.grupo_id !== gid;
+  const ord = x => ordemNo(x, gid);
   const naColuna = atividades.itens
-    .filter(x => x.grupo_id === a.grupo_id && x.status === status && x.id !== id)
-    .sort((x,y) => x.ordem - y.ordem);
+    .filter(x => noQuadro(x, gid) && x.status === status && x.id !== id)
+    .sort((x,y) => ord(x) - ord(y));
   let ordem;
   if (!antesDoId || antesDoId === id){
-    ordem = (naColuna.length ? naColuna[naColuna.length-1].ordem : 0) + 1000;
+    ordem = (naColuna.length ? ord(naColuna[naColuna.length-1]) : 0) + 1000;
   } else {
     const ix = naColuna.findIndex(x => x.id === antesDoId);
-    const antes = ix > 0 ? naColuna[ix-1].ordem : (naColuna[ix]?.ordem ?? 0) - 2000;
-    const alvo  = naColuna[ix]?.ordem ?? 0;
+    const antes = ix > 0 ? ord(naColuna[ix-1]) : (naColuna[ix] ? ord(naColuna[ix]) : 0) - 2000;
+    const alvo  = naColuna[ix] ? ord(naColuna[ix]) : 0;
     ordem = (antes + alvo) / 2;
   }
-  if (a.status === status && Math.abs(a.ordem - ordem) < 0.0001) return;
+  if (a.status === status && Math.abs(ord(a) - ordem) < 0.0001) return;
 
   /* pinta na hora e conserta se o banco recusar — arrastar precisa
      parecer instantâneo, e a RLS ainda é quem decide */
-  const antesStatus = a.status, antesOrdem = a.ordem;
-  a.status = status; a.ordem = ordem;
+  const antesStatus = a.status, antesOrdem = ord(a);
+  const porOrdem = v => { if (espelho) a.espelhos_ordem = { ...(a.espelhos_ordem || {}), [gid]: v }; else a.ordem = v; };
+  a.status = status; porOrdem(ordem);
   if (status === 'concluida' && antesStatus !== 'concluida') a.atrasada = false;
   desenhaColunas();
 
-  const { data, error } = await sb.rpc('atividade_editar', { p: { id, status, ordem } });
+  const { data, error } = await sb.rpc('atividade_editar', { p: { id, status, ordem, quadro: gid } });
   if (error || data?.status !== 'ok'){
-    a.status = antesStatus; a.ordem = antesOrdem;
+    a.status = antesStatus; porOrdem(antesOrdem);
     desenhaColunas();
     toast(data?.status === 'sem_permissao'
       ? 'Só quem está no grupo move as atividades dele.'
@@ -652,14 +667,16 @@ async function telaCard(codigo){
 
 function desenhaCard(a, comentarios, log, seguidores, origem){
   const sigo = seguidores.includes(state.perfil?.registro);
-  const g = grupoDoCartao(a), edito = posso.editar(g);
+  const g = grupoDoCartao(a), edito = editoCartao(a), editoDono = posso.editar(g);
   const pes  = pessoasDoGrupoDe(a.grupo_id, a.responsavel);
+  /* volta ao quadro de onde se veio, se o cartão está nele (espelho) */
+  const volta = atividades.grupoAtual && noQuadro(a, atividades.grupoAtual.id) ? atividades.grupoAtual.prefixo : a.grupo_prefixo;
   const copias = log.filter(e => e.tipo === 'copiou_para' && e.para).map(e => e.para);
   atividades.comentarios = comentarios;
 
   $('#main').innerHTML = `
     <div class="topo-gestao">
-      <div style="padding-top:34px"><a class="icon-btn" href="#/atividades/${esc(a.grupo_prefixo)}"
+      <div style="padding-top:34px"><a class="icon-btn" href="#/atividades/${esc(volta)}"
         title="Voltar ao quadro" aria-label="Voltar ao quadro">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
           stroke-linecap="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></a></div>
@@ -673,7 +690,7 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
       </div>
     </div>
 
-    ${a.arquivada ? `<div class="aviso-box warn"><b>Arquivada.</b> Fora do quadro${edito
+    ${a.arquivada ? `<div class="aviso-box warn"><b>Arquivada.</b> Fora do quadro${editoDono
       ? `: <button class="btn ghost mini" onclick="restaurarAtividade('${a.id}','${esc(a.codigo)}')">Restaurar</button>` : '.'}</div>` : ''}
     ${a.sinalizada ? `<div class="aviso-box warn"><b>Precisa de atenção.</b>
       ${esc(a.sinalizada_motivo || '')}</div>` : ''}
@@ -735,13 +752,14 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
             <div class="it"><dt>Criada por</dt><dd>${esc(a.criado_por_nome || '—')}</dd></div>
             <div class="it"><dt>Criada em</dt><dd>${fmtD(String(a.criado_em).slice(0,10))}</dd></div>
           </div>
+          ${quadrosHTML(a)}
           ${a.copia_de_codigo ? `<p class="cd-copia">Cópia de <a href="#/atividades/card/${esc(a.copia_de_codigo)}">${esc(a.copia_de_codigo)}</a></p>` : ''}
           ${copias.length ? `<p class="cd-copia">Cópias: ${[...new Set(copias)].map(c =>
             `<a href="#/atividades/card/${esc(c)}">${esc(c)}</a>`).join(', ')}</p>` : ''}
           <div class="acts" style="margin-top:14px">
-            ${a.pessoas !== undefined ? `<button class="btn ghost" onclick="modalCopiar()">${ic('copy')} Copiar para outro quadro</button>` : ''}
+            ${a.pessoas !== undefined && editoDono && !a.arquivada ? `<button class="btn ghost" onclick="modalOutroQuadro()">${ic('copy')} Espelhar ou mover</button>` : ''}
             <button class="btn ghost" onclick="copiarLinkCartao()">${ic('link')} Copiar link</button>
-            ${edito && !a.arquivada ? `<button class="btn ghost" onclick="arquivarAtividade()">${ic('arquivar')} Arquivar</button>` : ''}
+            ${editoDono && !a.arquivada ? `<button class="btn ghost" onclick="arquivarAtividade()">${ic('arquivar')} Arquivar</button>` : ''}
           </div>
         </div>
 
@@ -994,6 +1012,8 @@ function frasesLog(e){
     case 'concluiu_item':return `Concluiu "${e.para}"`;
     case 'copiou_de':    return `Copiada de ${e.para}`;
     case 'copiou_para':  return `Copiada para ${e.para}`;
+    case 'espelhou':     return `Espelhou no quadro ${e.para}`;
+    case 'tirou_espelho':return `Tirou o espelho do quadro ${e.para}`;
     case 'arquivou':     return e.para ? `Arquivou (a cópia seguiu em ${e.para})` : 'Arquivou';
     case 'restaurou':    return 'Restaurou ao quadro';
     case 'decidiu':      return `Decidiu a solicitação: ${e.de||'aberta'} → ${e.para}`;
@@ -1298,7 +1318,7 @@ function ckListasHTML(edito){
   }).join('');
 }
 function ckRedesenhar(focarLista){
-  const el = $('#ck-corpo'), edito = posso.editar(grupoDoCartao(atividades.card)); if (!el) return;
+  const el = $('#ck-corpo'), edito = editoCartao(atividades.card); if (!el) return;
   el.innerHTML = ckListasHTML(edito);
   ckLigarArraste(edito);
   if (focarLista) $('#ck-novo-' + focarLista)?.focus();
@@ -1428,8 +1448,8 @@ function comentarioHTML(c){
     <div class="cm-cp md" id="cm-cp-${c.id}">${md(c.corpo, { mencoes: menc })}</div>
     ${foraDoTexto.length ? `<div class="cm-marcou">Marcou: ${foraDoTexto.map(m =>
       `<a class="mencao${m.registro === state.perfil?.registro ? ' eu' : ''}" href="#/equipe/${m.registro}">@${esc(rotuloMencao(m))}</a>`).join(' ')}</div>` : ''}
-    ${(meu && posso.editar(g)) || can() ? `<div class="cm-acs">
-      ${meu && posso.editar(g) ? `<button type="button" onclick="comentarioEditar('${c.id}')">Editar</button>` : ''}
+    ${(meu && editoCartao(atividades.card)) || can() ? `<div class="cm-acs">
+      ${meu && editoCartao(atividades.card) ? `<button type="button" onclick="comentarioEditar('${c.id}')">Editar</button>` : ''}
       <button type="button" onclick="comentarioExcluir('${c.id}')">Excluir</button></div>` : ''}
     </div></div>`;
 }
@@ -1586,53 +1606,75 @@ function posicaoDoCursor(ta){
 window.addEventListener('scroll', e => { if (mencao.el && e.target !== mencao.ta) mencaoFechar(); }, true);
 
 /* ============================================================
-   COPIAR PARA OUTRO QUADRO (2.17.0)
-   Para o mesmo quadro é duplicar. Arrastar para outro quadro não
-   existe porque o código leva o prefixo do grupo: mover é copiar e
-   arquivar o original, e a cópia guarda de onde veio.
+   ESPELHAR OU MOVER PARA OUTRO QUADRO (2.18.0)
+   Espelhar põe o MESMO cartão no outro quadro: o que muda em um muda
+   no outro, e quem edita qualquer um dos quadros edita o cartão.
+   Mover cria o cartão no outro quadro, com o prefixo dele (o código
+   leva o prefixo do grupo), e arquiva este; os espelhos vão junto.
+   As duas pedem edição neste quadro e no de destino.
    ============================================================ */
-function modalCopiar(){
-  const a = atividades.card, g = grupoDoCartao(a);
-  const destinos = meusGrupos().filter(x => posso.editar(x));
-  if (!destinos.length) return toast('Você não edita nenhum quadro.', true);
-  const leva = [['descricao', 'Descrição'], ['checklists', 'Checklists'], ['pessoas', 'Responsável e outras pessoas'],
-                ['etiquetas', 'Etiquetas'], ['prazo', 'Prazo']];
-  abreModal(`<h3>Copiar ${esc(a.codigo)}</h3>
+/* Os quadros em que o cartão está: o dono e os espelhos, cada um com o
+   botão de tirar para quem edita aquele quadro (ou o dono). */
+function quadrosHTML(a){
+  const qs = quadrosDoCartao(a);
+  if (qs.length < 2) return '';
+  const tiro = q => q.id !== a.grupo_id && !a.arquivada && (posso.editar(q) || posso.editar(grupoDoCartao(a)));
+  return `<div class="cd-bloco"><label>Quadros ${dica('O mesmo cartão em todos: o que muda em um muda nos outros. O código vem do primeiro, o quadro dono.')}</label>
+    <div class="cd-linha" id="cd-quadros">${qs.map(q => `<span class="chip mini cd-quadro">
+      <a href="#/atividades/${esc(q.prefixo)}">${esc(q.prefixo)} ${esc(q.nome)}</a>${q.id === a.grupo_id ? '<span class="muted">, dono</span>' : ''}
+      ${tiro(q) ? `<button type="button" class="x" onclick="espelhoTirar(${q.id})" title="Tirar deste quadro" aria-label="Tirar de ${esc(q.nome)}">×</button>` : ''}</span>`).join(' ')}</div></div>`;
+}
+function modalOutroQuadro(){
+  const a = atividades.card;
+  const destinos = meusGrupos().filter(x => posso.editar(x) && !noQuadro(a, x.id));
+  if (!destinos.length) return toast('Nenhum outro quadro com edição.', true);
+  abreModal(`<h3>${esc(a.codigo)} em outro quadro</h3>
     <div class="form-grid" style="margin-top:14px">
-      <div class="fld"><label for="cp-grupo">Para o quadro</label>
-        <select id="cp-grupo">${destinos.map(x => `<option value="${x.id}" ${x.id === a.grupo_id ? 'selected' : ''}>${esc(x.prefixo)} ${esc(x.nome)}</option>`).join('')}</select></div>
-      <div class="fld"><label for="cp-status">Coluna</label>
-        <select id="cp-status">${COLUNAS.map(([k, l]) => `<option value="${k}" ${k === a.status ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-      <div class="fld full"><label for="cp-tit">Título</label><input id="cp-tit" value="${esc(a.titulo)}"></div>
-      <div class="fld full"><label>Levar junto ${dica('Comentários e histórico ficam no cartão de origem: são a conversa de lá.')}</label>
-        <div class="multi" style="max-height:none">${leva.map(([k, l]) =>
-          `<label class="check"><input type="checkbox" class="cp-com" value="${k}" checked> ${l}</label>`).join('')}</div></div>
-      ${posso.editar(g) && !a.arquivada ? `<div class="fld full"><label class="check"><input type="checkbox" id="cp-arq">
-        Arquivar ${esc(a.codigo)} depois de copiar (mover)</label></div>` : ''}
+      <div class="fld full"><label for="cp-grupo">Quadro</label>
+        <select id="cp-grupo">${destinos.map(x => `<option value="${x.id}">${esc(x.prefixo)} ${esc(x.nome)}</option>`).join('')}</select></div>
+      <div class="fld full"><label>Como ${dica('Espelhar: o mesmo cartão nos dois quadros, sincronizado. Mover: o cartão passa para o outro quadro com outro código, e este fica arquivado.')}</label>
+        <div class="seg" role="radiogroup" aria-label="Como">
+          <label class="check"><input type="radio" name="cp-modo" id="cp-modo-espelhar" value="espelhar" checked> Espelhar</label>
+          <label class="check"><input type="radio" name="cp-modo" id="cp-modo-mover" value="mover"> Mover</label></div></div>
     </div>
     <p class="err-msg" id="cp-erro"></p>
     <div class="acts" style="justify-content:flex-end">
       <button class="btn ghost" onclick="fechaModal()">Cancelar</button>
-      <button class="btn solid" id="cp-btn" onclick="copiarCartao()">Copiar</button></div>`, true);
+      <button class="btn solid" id="cp-btn" onclick="outroQuadroSalvar()">Confirmar</button></div>`, true);
 }
-async function copiarCartao(){
+async function outroQuadroSalvar(){
   const a = atividades.card, bt = $('#cp-btn');
-  const com = {}; document.querySelectorAll('.cp-com').forEach(x => com[x.value] = x.checked);
+  const gid = +$('#cp-grupo').value, mover = $('#cp-modo-mover')?.checked;
+  const destino = quadroAtv(gid);
   bt.disabled = true;
   try{
-    const { data, error } = await sb.rpc('atividade_copiar', { p:{ id:a.id, grupo_id:+$('#cp-grupo').value,
-      status:$('#cp-status').value, titulo:$('#cp-tit').value.trim() || null, com, arquivar: !!$('#cp-arq')?.checked } });
+    const { data, error } = await sb.rpc(mover ? 'atividade_mover' : 'atividade_espelhar', { p:{ id:a.id, grupo_id:gid } });
     if (error || data?.status !== 'ok'){
-      $('#cp-erro').textContent = semMigracao217(error) ? MIGRACAO_217
-        : data?.status === 'sem_permissao' ? 'Só quem edita o quadro de destino cria cartão nele.'
-        : motivoRPC(data, error, 'Não foi possível copiar');
+      $('#cp-erro').textContent = /does not exist|schema cache/i.test(error?.message || '')
+        ? 'O banco ainda não tem a versão 2.18.0.'
+        : data?.status === 'sem_permissao' ? 'Sem edição num dos dois quadros.'
+        : motivoRPC(data, error, mover ? 'Cartão não movido' : 'Cartão não espelhado');
       return;
     }
     fechaModal();
-    toast(`${a.codigo} copiada como ${data.codigo}.`);
     await atvCarregar(true);
-    location.hash = '#/atividades/card/' + data.codigo;
+    if (mover){
+      toast(`${a.codigo} movida para ${destino?.nome || 'o outro quadro'} como ${data.codigo}.`);
+      location.hash = '#/atividades/card/' + data.codigo;
+    } else {
+      toast(`${a.codigo} também está em ${destino?.nome || 'outro quadro'}.`);
+      telaCard(a.codigo);
+    }
   } finally { const b = $('#cp-btn'); if (b) b.disabled = false; }
+}
+async function espelhoTirar(gid){
+  const a = atividades.card, q = quadroAtv(gid);
+  if (!await confirma(`Tirar ${esc(a.codigo)} do quadro ${esc(q?.nome || '')}? O cartão continua nos outros.`, 'Tirar')) return;
+  const { data, error } = await sb.rpc('atividade_espelho_remover', { p:{ id:a.id, grupo_id:gid } });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Espelho não retirado'), true);
+  toast(`${a.codigo} saiu de ${q?.nome || 'um quadro'}.`);
+  await atvCarregar(true);
+  telaCard(a.codigo);
 }
 function copiarLinkCartao(){
   copiar(location.origin + location.pathname + '#/atividades/card/' + atividades.card.codigo);

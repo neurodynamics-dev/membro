@@ -983,11 +983,50 @@
             const ids = DADOS.atividade_checklists.filter(k => k.atividade_id === aid).map(k => k.id);
             const it = DADOS.atividade_checklist_itens.filter(i => ids.includes(i.checklist_id));
             a.check_total = it.length; a.check_feitos = it.filter(i => i.feito).length; };
-          if (nome === 'atividade_editar'){
+          /* ---- 2.18.0: o card espelhado ---- */
+          const nivelQ = id => DADOS.grupos_visiveis.find(x => x.id === id)?.meu_nivel;
+          if (nome === 'atividade_espelhar' || nome === 'atividade_espelho_remover' || nome === 'atividade_mover'){
             const p = args?.p || {}; regra(nome, p);
+            if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:`function public.${nome}(jsonb) does not exist` } };
             const a = linhaAtv(p.id); if (!a) return { data:{ status:'nao_encontrado' }, error:null };
-            const g = DADOS.grupos_visiveis.find(x => x.id === a.grupo_id);
-            if (g && g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+            const g = DADOS.grupos_visiveis.find(x => x.id === p.grupo_id);
+            if (!g) return { data:{ status:'invalido', campo:'grupo' }, error:null };
+            if (nome === 'atividade_espelho_remover'){
+              if (nivelQ(g.id) !== 'edicao' && nivelQ(a.grupo_id) !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+              a.espelhos = (a.espelhos || []).filter(x => x !== g.id);
+              const o = { ...(a.espelhos_ordem || {}) }; delete o[g.id]; a.espelhos_ordem = o;
+              DADOS.atividade_log.push({ id:DADOS.atividade_log.length + 1, atividade_id:a.id, registro:4, tipo:'tirou_espelho', para:g.nome, criado_em:new Date().toISOString() });
+              return { data:{ status:'ok' }, error:null };
+            }
+            if (nivelQ(a.grupo_id) !== 'edicao' || g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+            if (nome === 'atividade_espelhar'){
+              if (g.id === a.grupo_id) return { data:{ status:'invalido', campo:'grupo' }, error:null };
+              if (!(a.espelhos || []).includes(g.id)){
+                a.espelhos = [...(a.espelhos || []), g.id]; a.espelhos_ordem = { ...(a.espelhos_ordem || {}), [g.id]:9e9 };
+                DADOS.atividade_log.push({ id:DADOS.atividade_log.length + 1, atividade_id:a.id, registro:4, tipo:'espelhou', para:g.nome, criado_em:new Date().toISOString() });
+              }
+              return { data:{ status:'ok', codigo:a.codigo }, error:null };
+            }
+            /* mover: a cópia com tudo, o original arquivado, os espelhos vão junto */
+            const seq = Math.max(0, ...DADOS.atividades_quadro.filter(x => x.grupo_id === g.id).map(x => x.seq || 0)) + 1;
+            const id = 'tm' + seq + g.prefixo, codigo = g.prefixo + '-' + seq;
+            const esp = (a.espelhos || []).filter(x => x !== g.id);
+            DADOS.atividades_quadro.push({ ...a, id, codigo, seq, grupo_id:g.id, grupo:g.nome, grupo_prefixo:g.prefixo, copia_de:a.id,
+              copia_de_codigo:a.codigo, comentarios:0, arquivada:false, ordem:9e9, espelhos:esp,
+              espelhos_ordem:Object.fromEntries(esp.map(x => [x, (a.espelhos_ordem || {})[x] ?? 9e9])), criado_em:new Date().toISOString() });
+            a.arquivada = true; a.espelhos = []; a.espelhos_ordem = {};
+            return { data:{ status:'ok', id, codigo }, error:null };
+          }
+          if (nome === 'atividade_editar'){
+            let p = args?.p || {}; regra(nome, p);
+            const a = linhaAtv(p.id); if (!a) return { data:{ status:'nao_encontrado' }, error:null };
+            /* edita quem edita qualquer quadro ligado; arquivar é do dono */
+            const quadros = [a.grupo_id, ...(a.espelhos || [])];
+            if (quadros.every(q => nivelQ(q) !== undefined && nivelQ(q) !== 'edicao')) return { data:{ status:'sem_permissao' }, error:null };
+            if ('arquivada' in p && p.arquivada !== a.arquivada && nivelQ(a.grupo_id) !== undefined && nivelQ(a.grupo_id) !== 'edicao')
+              return { data:{ status:'sem_permissao', campo:'arquivada' }, error:null };
+            if ('ordem' in p && p.quadro != null && p.quadro !== a.grupo_id && (a.espelhos || []).includes(p.quadro)){
+              a.espelhos_ordem = { ...(a.espelhos_ordem || {}), [p.quadro]:p.ordem }; p = { ...p }; delete p.ordem; }
             ['titulo','descricao','status','prioridade','prazo','estimativa_h','ordem','arquivada','etiquetas'].forEach(k => { if (k in p) a[k] = p[k]; });
             if ('responsavel' in p){ a.responsavel = p.responsavel == null ? null : +p.responsavel;
               a.responsavel_nome = DADOS.membros.find(m => m.registro === a.responsavel)?.nome || null; }

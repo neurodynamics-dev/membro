@@ -607,6 +607,10 @@ button.et:hover{border-color:var(--dim);color:var(--ink)}
 /* o cartão aberto: pessoas, etiquetas e os seletores deles */
 .cd-linha{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .cd-bloco{margin-bottom:14px}
+/* os quadros de um cartão espelhado (2.18.0) */
+.cd-quadro{display:inline-flex;align-items:center;gap:4px}
+.cd-quadro .x{background:none;border:0;padding:0 0 0 2px;color:var(--dim);font-size:13px;line-height:1;cursor:pointer}
+.cd-quadro .x:hover{color:var(--ink)}
 .cd-bloco>label{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--dim);margin-bottom:7px}
 .pessoa-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;border:1px solid var(--line2);border-radius:999px;
