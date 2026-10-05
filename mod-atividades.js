@@ -724,7 +724,7 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
                 `<option value="${k}" ${k===a.prioridade?'selected':''}>${l}</option>`).join('')}</select></div>
             <div class="fld"><label>Estimativa (horas)</label>
               <input type="number" step="0.5" min="0" value="${a.estimativa_h ?? ''}"
-                onchange="mudarCampo('estimativa_h', this.value)"></div>
+                oninput="cdEstimativa(this)" onblur="cdEstimativa(this, true)"></div>
           </div>
           ${a.pessoas !== undefined ? `
           <div class="cd-bloco"><label>Outras pessoas</label>
@@ -1010,7 +1010,7 @@ function editarTitulo(){
     style="width:100%;font:inherit;background:var(--campo);border:1px solid var(--line2);
     border-radius:10px;padding:4px 10px;color:inherit">`;
   const i = $('#cd-tit-in'); i.focus(); i.select();
-  const fim = () => mudarCampo('titulo', i.value.trim() || a.titulo);
+  const fim = () => mudarCampo('titulo', i.value.trim() || a.titulo, { redesenha:true });
   i.onblur = fim;
   i.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); i.blur(); }
                        if (e.key === 'Escape'){ i.onblur = null; telaCard(a.codigo); } };
@@ -1033,6 +1033,12 @@ function editarDescricao(ev){
       <button class="btn ghost" id="cd-desc-alt" onclick="alternarVerDescricao()">Ver</button>
       <button class="btn ghost" onclick="telaCard('${esc(a.codigo)}')">Cancelar</button></div>`;
   $('#cd-desc-in').focus();
+  cdAutoSalvar('descricao', $('#cd-desc-in'), '#cd-desc');
+}
+function cdEstimativa(el, agora){
+  const a = atividades.card, grava = () => mudarCampo('estimativa_h', el.value, { cartao:a, quieto:true });
+  clearTimeout(cdTimers.estimativa_h);
+  if (agora) grava(); else cdTimers.estimativa_h = setTimeout(grava, 1500);
 }
 function alternarVerDescricao(){
   const ta = $('#cd-desc-in'), ver = $('#cd-desc-ver'), bt = $('#cd-desc-alt');
@@ -1043,21 +1049,42 @@ function alternarVerDescricao(){
   bt.textContent = vendo ? 'Ver' : 'Escrever';
   if (vendo) ta.focus();
 }
-function salvarDescricao(){ mudarCampo('descricao', $('#cd-desc-in').value); }
+function salvarDescricao(){ clearTimeout(cdTimers.descricao); mudarCampo('descricao', $('#cd-desc-in').value, { redesenha:true }); }
 
-async function mudarCampo(campo, valor){
-  const a = atividades.card;
-  const p = { id: a.id }; p[campo] = valor === '' ? null : valor;
+/* Salvar um campo do cartão. Não redesenha o cartão: o campo que a pessoa
+   está editando continua o mesmo elemento, com o foco. Só o título e a
+   descrição (que terminam a edição ao salvar) pedem o redesenho. */
+async function mudarCampo(campo, valor, opc = {}){
+  const a = opc.cartao || atividades.card;
+  const v = valor === '' ? null : valor;
+  if (opc.quieto && String(v ?? '') === String(a[campo] ?? '')) return;
+  const p = { id: a.id }; p[campo] = v;
   const { data, error } = await sb.rpc('atividade_editar', { p });
+  const ativo = atividades.card === a;
   if (error || data?.status !== 'ok'){
     toast(data?.status === 'sem_permissao'
       ? 'Só quem está no grupo edita as atividades dele.'
       : 'Não foi possível salvar' + (error ? ': ' + error.message : '.'), true);
-    return telaCard(a.codigo);
+    if (ativo && !opc.quieto) telaCard(a.codigo);
+    return false;
   }
+  a[campo] = ['estimativa_h','responsavel'].includes(campo) && v !== null ? Number(v) : v;
   toast('Salvo.');
   carregarNotificacoes();
-  telaCard(a.codigo);
+  if (ativo && opc.redesenha) telaCard(a.codigo);
+  return true;
+}
+/* Campo de texto do cartão: salva ~1,5 s depois da última tecla e ao sair
+   do campo (menos para um botão do próprio editor, que decide por si). */
+const cdTimers = {};
+function cdAutoSalvar(campo, el, aoSair){
+  const a = atividades.card;
+  const gravar = () => { clearTimeout(cdTimers[campo]); mudarCampo(campo, el.value, { cartao:a, quieto:true }); };
+  el.addEventListener('input', () => { clearTimeout(cdTimers[campo]); cdTimers[campo] = setTimeout(gravar, 1500); });
+  el.addEventListener('blur', ev => {
+    if (aoSair && ev.relatedTarget && ev.relatedTarget.closest(aoSair)) return;
+    gravar();
+  });
 }
 
 /* ============================================================

@@ -334,6 +334,18 @@ console.log('\nAtividades: os cartões mais completos');
   await p.click('#cd-desc .btn.solid'); await p.waitForTimeout(900);
   confere('salvar grava o Markdown', (await rpcs(p, 'atividade_editar')).at(-1)?.descricao === 'Trocar o **conector** e ver ORT-2.');
 
+  /* campos do cartão: salvam sem redesenhar, e o de texto espera ~1,5 s */
+  await p.evaluate(() => { const i = document.querySelector('.cd-campos input[type=number]'); i.dataset.marca = '1'; i.focus(); });
+  await p.keyboard.type('7');
+  const nAntes = (await rpcs(p, 'atividade_editar')).length;
+  await p.waitForTimeout(600);
+  confere('o texto não salva a cada tecla', (await rpcs(p, 'atividade_editar')).length === nAntes);
+  await p.waitForTimeout(1500);
+  confere('salva ~1,5 s após a última tecla, sem trocar o campo nem tirar o foco', (await rpcs(p, 'atividade_editar')).at(-1)?.estimativa_h === '74'
+    && await p.evaluate(() => document.activeElement?.dataset.marca === '1'));
+  await p.selectOption('.cd-campos select >> nth=2', { index: 0 }); await p.waitForTimeout(500);
+  confere('o campo de escolha salva na hora e continua o mesmo', await p.evaluate(() => document.querySelector('.cd-campos input[type=number]')?.dataset.marca === '1'));
+
   /* o @ */
   await p.click('#cd-coment'); await p.keyboard.type('Pode ver isso, @bru');
   await p.waitForSelector('.menc-pop', { timeout:3000 }).catch(() => {});
