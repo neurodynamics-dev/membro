@@ -9,7 +9,7 @@ import { nomeExibicao, assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, s
          personalizar, diaExtenso, quandoPS, linkAcompanhar, fraseCandidato, candidatoHTML, candidatoTexto,
          resumoHTML, resumoTexto, dinamicaTexto, linkGooglePS,
          b64u, deb64u, cifrarPush, jwtVapid, gerarChavesVapid, mensagemPush, paraOAparelho,
-         origemDoPapel, origemDoBanco,
+         origemDoPapel, origemDoBanco, porCategoria,
          type Destinatario, type EnvioPS, type EnvioDocumento, type EnvioAgenda } from "./index.ts";
 
 let falhas = 0;
@@ -194,7 +194,33 @@ ok("o HTML traz os dois títulos",
 ok("diz quantos avisos são", html.includes("Há 2 avisos"));
 ok("o e-mail é claro, não escuro", html.includes("#ffffff") && !html.includes("#050807"));
 ok("a logo sai por endereço absoluto", /src="https:\/\/[^"]+\/logo-00594f\.png"/.test(html));
-ok("explica como mudar a preferência", html.includes("Preferências de e-mail"));
+ok("explica como mudar a preferência", html.includes("Preferências de avisos"));
+ok("o envio na hora não agrupa por categoria", !html.includes("ATIVIDADES") && !/Atividades \(\d+\)/.test(html));
+
+/* --- os resumos (2.18.0): agrupados por categoria, na ordem da tela --- */
+{
+  const d = pessoa([
+    { categoria: "documentos", titulo: "NRO-PES-007 em revisão" },
+    { categoria: "atividades" },
+    { categoria: "atividades", titulo: "ORT-15 — Molde" },
+    { categoria: "inventada", titulo: "Algo novo" },
+  ]);
+  const sem = { ...d, modo: "semanal" as const }, dia = { ...d, modo: "diario" as const };
+  ok("o assunto do semanal diz que é resumo e conta", assuntoDe(sem) === "Resumo semanal do SOMA (4 avisos)", assuntoDe(sem));
+  ok("o do diário também", assuntoDe(dia) === "Resumo diário do SOMA (4 avisos)", assuntoDe(dia));
+  ok("um aviso só, no singular", assuntoDe({ ...dia, itens: d.itens.slice(0, 1) }) === "Resumo diário do SOMA (1 aviso)");
+  const g = porCategoria(d.itens);
+  ok("agrupa na ordem da tela, e o desconhecido vai para Sistema",
+     g.map((x) => x.nome).join("|") === "Atividades|Documentos|Sistema" && g[0].itens.length === 2, JSON.stringify(g.map((x) => x.nome)));
+  const h = corpoHTML(sem);
+  ok("o HTML do resumo tem o título de cada grupo, com a contagem",
+     h.includes("Atividades (2)") && h.includes("Documentos (1)") && h.indexOf("Atividades (2)") < h.indexOf("Documentos (1)"));
+  ok("e a abertura do semanal", h.includes("Os 4 avisos da última semana no portal."));
+  const t = corpoTexto(dia);
+  ok("o texto do resumo agrupa também", t.includes("ATIVIDADES (2)") && t.includes("Os 4 avisos do último dia no portal."), t);
+  ok("sem travessão nem ponto médio no rodapé", !/·/.test(t.split("Preferências")[1] || "x"));
+  ok("o modo antigo (imediato) segue sem grupo", !corpoHTML(pessoa([{ categoria: "atividades" }])).includes("Atividades (1)"));
+}
 
 /* --- a armadilha: conteúdo escrito por gente --- */
 const perigoso = corpoHTML(pessoa([{

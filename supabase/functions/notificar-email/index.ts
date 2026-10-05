@@ -30,6 +30,15 @@
    deixava a fila parada até alguém apertar o teste do portal. A mesma
    passada empurra os avisos do sino para os aparelhos inscritos (Web
    Push) e é uma só por vez (fila_passada_inicio).
+
+   Desde a 2.18.0, a preferência é por CATEGORIA de aviso (atividades,
+   bugs e melhorias, documentos, Studio, reporte, agenda, pessoal,
+   treinamentos, sistema): o push liga ou desliga, e o e-mail é nunca,
+   instantâneo, resumo diário (8h) ou resumo semanal (segunda, 8h). O
+   banco decide (notificacoes_email_lote e push_lote) e devolve cada
+   pessoa em até três envelopes, um por modo; aqui o resumo sai agrupado
+   por categoria. Convites de evento e pílulas não passam por aqui: as
+   filas próprias (enviarAgenda, enviarProgramados) saem sempre na hora.
    ============================================================ */
 
 const env = (nome: string): string =>
@@ -234,17 +243,44 @@ const CABECALHO = { ...CORS, "Content-Type": "application/json; charset=utf-8" }
 export interface ItemNotificacao {
   id: number;
   tipo: string;
+  /** a categoria da preferência (2.18.0): atividades, documentos… */
+  categoria?: string;
   titulo: string;
   corpo: string | null;
   href: string | null;
   criado_em: string;
 }
+/* O modo do envelope (2.18.0): o lote devolve até três por pessoa, o
+   instantâneo e os resumos devidos. "imediato" e "resumo" são os nomes
+   da 16.0, que o banco antigo ainda manda. */
 export interface Destinatario {
   registro: number;
   nome: string;
   email: string;
-  modo: "imediato" | "resumo";
+  modo: "instantaneo" | "diario" | "semanal" | "imediato" | "resumo";
   itens: ItemNotificacao[];
+}
+
+/* As categorias, na ordem da tela de preferências (notificacao_categorias(),
+   no banco). O que vier sem categoria cai em Sistema. */
+export const CATEGORIAS: Array<[string, string]> = [
+  ["atividades", "Atividades"], ["bugs_melhorias", "Bugs e melhorias"], ["documentos", "Documentos"],
+  ["studio", "Studio"], ["reporte", "Reporte"], ["agenda", "Agenda"], ["pessoal", "Pessoal"],
+  ["treinamentos", "Treinamentos"], ["sistema", "Sistema"],
+];
+
+/** É um resumo (diário ou semanal), e não o envio na hora? */
+export const ehResumo = (d: Destinatario): boolean => d.modo === "diario" || d.modo === "semanal";
+
+/** Os itens agrupados por categoria, na ordem da tela; grupo vazio não aparece. */
+export function porCategoria(itens: ItemNotificacao[]): Array<{ chave: string; nome: string; itens: ItemNotificacao[] }> {
+  const conhecida = new Set(CATEGORIAS.map(([k]) => k));
+  return CATEGORIAS
+    .map(([chave, nome]) => ({
+      chave, nome,
+      itens: itens.filter((i) => (conhecida.has(i.categoria || "") ? i.categoria : "sistema") === chave),
+    }))
+    .filter((g) => g.itens.length > 0);
 }
 
 const esc = (s: unknown): string =>
@@ -262,16 +298,32 @@ export function linkDe(href: string | null): string {
   return PORTAL + "/" + href.replace(/^\/+/, "");
 }
 
-/** O assunto: um aviso fala por si; vários viram contagem. */
+const contagem = (n: number): string => n === 1 ? "1 aviso" : `${n} avisos`;
+
+/** O assunto: um aviso fala por si; vários viram contagem; o resumo diz qual é. */
 export function assuntoDe(d: Destinatario): string {
+  if (d.modo === "diario")  return `Resumo diário do SOMA (${contagem(d.itens.length)})`;
+  if (d.modo === "semanal") return `Resumo semanal do SOMA (${contagem(d.itens.length)})`;
   if (d.itens.length === 1) return d.itens[0].titulo;
   return `${d.itens.length} avisos no portal`;
 }
 
+/** A frase de abertura, abaixo da saudação. */
+export function aberturaDe(d: Destinatario): string {
+  const n = d.itens.length;
+  if (d.modo === "diario")  return n === 1 ? "O aviso do último dia no portal." : `Os ${n} avisos do último dia no portal.`;
+  if (d.modo === "semanal") return n === 1 ? "O aviso da última semana no portal." : `Os ${n} avisos da última semana no portal.`;
+  return n === 1 ? "Há um aviso esperando por você no portal." : `Há ${n} avisos esperando por você no portal.`;
+}
+
+const RODAPE_PREF = "Para escolher o que chega por e-mail, e com que frequência, abra o sino no topo do portal e clique em";
+
 /* O e-mail é claro, e não escuro como a tela: ele vai ser lido no
-   Gmail, impresso, encaminhado. A mesma regra do Full mailer. */
+   Gmail, impresso, encaminhado. A mesma regra do Full mailer.
+   O resumo (diário ou semanal) agrupa os avisos por categoria, cada
+   grupo com o seu título; o envio na hora vai sem grupo. */
 export function corpoHTML(d: Destinatario): string {
-  const linhas = d.itens.map((it) => `
+  const cartao = (it: ItemNotificacao) => `
       <tr><td style="padding:0 0 18px">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
                style="border:1px solid #e3e6e3;border-radius:10px">
@@ -287,7 +339,13 @@ export function corpoHTML(d: Destinatario): string {
             </div>
           </td></tr>
         </table>
-      </td></tr>`).join("");
+      </td></tr>`;
+  const titulo = (nome: string, n: number) => `
+      <tr><td style="padding:4px 0 10px;font:600 11px/1.4 Helvetica,Arial,sans-serif;letter-spacing:.12em;
+                     text-transform:uppercase;color:#00594F">${esc(nome)} (${n})</td></tr>`;
+  const linhas = ehResumo(d)
+    ? porCategoria(d.itens).map((g) => titulo(g.nome, g.itens.length) + g.itens.map(cartao).join("")).join("")
+    : d.itens.map(cartao).join("");
 
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width"><title>${esc(assuntoDe(d))}</title></head>
@@ -304,9 +362,7 @@ export function corpoHTML(d: Destinatario): string {
           <div style="font:400 15px/1.6 Helvetica,Arial,sans-serif;color:#1d1d1f">
             Olá, ${esc(primeiroNome(d.nome))}.</div>
           <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:6px">
-            ${d.itens.length === 1
-              ? "Há um aviso esperando por você no portal."
-              : `Há ${d.itens.length} avisos esperando por você no portal.`}
+            ${esc(aberturaDe(d))}
           </div>
         </td></tr>
         <tr><td style="padding:22px 28px 0">
@@ -317,8 +373,7 @@ export function corpoHTML(d: Destinatario): string {
                       border-top:1px solid #e3e6e3;padding-top:16px">
             Você recebe este e-mail porque tem avisos no
             <a href="${esc(PORTAL)}" style="color:#00594F;text-decoration:none">portal</a>.
-            Para receber um resumo por dia — ou não receber —, abra o sininho
-            no topo do portal e clique em <b>Preferências de e-mail</b>.
+            ${RODAPE_PREF} <b>Preferências de avisos</b>.
           </div>
         </td></tr>
       </table>
@@ -329,13 +384,13 @@ export function corpoHTML(d: Destinatario): string {
 
 /** A versão em texto, para quem lê e-mail sem HTML. */
 export function corpoTexto(d: Destinatario): string {
-  const linhas = d.itens.map((it) =>
-    `- ${it.titulo}${it.corpo ? "\n  " + it.corpo : ""}\n  ${linkDe(it.href)}`).join("\n\n");
-  return `Olá, ${primeiroNome(d.nome)}.\n\n` +
-    (d.itens.length === 1
-      ? "Há um aviso esperando por você no portal.\n\n"
-      : `Há ${d.itens.length} avisos esperando por você no portal.\n\n`) +
-    linhas + `\n\n—\nPortal do Membro · NeuroDynamics\n${PORTAL}\n`;
+  const item = (it: ItemNotificacao) =>
+    `- ${it.titulo}${it.corpo ? "\n  " + it.corpo : ""}\n  ${linkDe(it.href)}`;
+  const linhas = ehResumo(d)
+    ? porCategoria(d.itens).map((g) => `${g.nome.toUpperCase()} (${g.itens.length})\n\n` + g.itens.map(item).join("\n\n")).join("\n\n")
+    : d.itens.map(item).join("\n\n");
+  return `Olá, ${primeiroNome(d.nome)}.\n\n${aberturaDe(d)}\n\n` + linhas +
+    `\n\n${RODAPE_PREF} Preferências de avisos.\n\nPortal do Membro, NeuroDynamics\n${PORTAL}\n`;
 }
 
 /* ============================================================
