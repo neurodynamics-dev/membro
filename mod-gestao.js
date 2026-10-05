@@ -134,7 +134,7 @@ function renderQuadro(){
 
   renderTabelaMembros();
   carregarPendencias();
-  if (podeQuadro()) carregarOcorrenciasRecentes();
+  if (can()) carregarOcorrenciasRecentes();
 }
 
 function opcoesDe(campo){ return [...new Set(state.membros.map(m=>m[campo]).filter(Boolean))].sort(); }
@@ -424,16 +424,17 @@ async function carregarFicha(){
     const ix = state.membros.findIndex(m => m.registro === reg);
     if (ix >= 0) Object.assign(state.membros[ix], linha.data); else state.membros.push(linha.data);
   }
-  /* Consultas por chave: ocorrências e dados pessoais só para quem tem
-     o quadro. Assim o papel de consulta nem chega a pedi-los. */
+  /* Consultas por chave: a ficha (dados pessoais, avaliações, acessos)
+     é de quem tem o quadro, liderança inclusive; ocorrências, só de
+     admin e pessoal. Assim o papel de consulta nem chega a pedi-las. */
   const q = {
     acessos: sb.from('acessos_concedidos').select('*').eq('registro', reg),
     avals:   sb.from('avaliacoes').select('*').eq('registro', reg).order('data',{ascending:false}),
     aponts:  sb.from('apontamento_itens').select('*').eq('registro', reg).order('data',{ascending:false}).limit(12)
   };
-  if (podeQuadro()) q.ocorr = sb.from('ocorrencias').select('*').eq('registro', reg)
+  if (can()) q.ocorr = sb.from('ocorrencias').select('*').eq('registro', reg)
     .order('data',{ascending:false}).order('criado_em',{ascending:false});
-  if (can()) q.pess = sb.from('dados_pessoais').select('*').eq('registro', reg).maybeSingle();
+  if (podeVerFicha()) q.pess = sb.from('dados_pessoais').select('*').eq('registro', reg).maybeSingle();
 
   const chaves = Object.keys(q);
   const res = await Promise.all(chaves.map(k => q[k]));
@@ -477,10 +478,10 @@ function renderFicha(){
   const f = gestao.ficha;
   const gestor = m.gestor_registro ? nomeDe(m.gestor_registro) : null;
   const abas = [['dados','Dados']];
-  if (podeQuadro()) abas.push(['ocorr', `Ocorrências (${f.ocorr.length})`]);
+  if (can()) abas.push(['ocorr', `Ocorrências (${f.ocorr.length})`]);
   abas.push(['acessos','Acessos'], ['avals', `Avaliações (${f.avals.length})`]);
   if (f.treinos) abas.push(['treinos', `Treinamentos (${f.concl.length})`]);
-  if (can()) abas.push(['pess','Dados pessoais']);
+  if (podeVerFicha()) abas.push(['pess','Dados pessoais']);
 
   $('#main').innerHTML = topoGestao({
     olho: 'Ficha do membro',
@@ -770,7 +771,7 @@ function renderTabAvals(){
   $('#ficha-body').innerHTML = `<div class="card" style="margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px">
       <div><h3>Avaliações periódicas</h3><p class="sub">Um registro por ciclo</p></div>
-      ${ibtn('plus','Nova avaliação', `modalAval(${f.reg})`, 'primary sm')}
+      ${can() ? ibtn('plus','Nova avaliação', `modalAval(${f.reg})`, 'primary sm') : ''}
     </div>
     ${f.avals.length ? f.avals.map(a => `
       <div class="aval-card"><div class="hd">
@@ -844,8 +845,8 @@ function renderTabPess(){
   $('#ficha-body').innerHTML = `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px">
       <div><h3>Dados pessoais</h3><p class="sub">Sob a LGPD</p></div>
-      ${ibtn('pencil','Editar dados pessoais', "gestao.ficha.editando=true;renderFicha()", 'sm')}</div>
-    <div class="aviso-box warn">Dados sensíveis (LGPD), visíveis apenas para a Diretoria e o Depto. de Pessoal.
+      ${can() ? ibtn('pencil','Editar dados pessoais', "gestao.ficha.editando=true;renderFicha()", 'sm') : ''}</div>
+    <div class="aviso-box warn">Dados sensíveis (LGPD), visíveis apenas para a Diretoria, o Depto. de Pessoal e a liderança.
       Não inclua estes campos em relatórios ou comunicações.</div>
     ${p ? `<div class="dl">${CAMPOS_PESS.map(c => {
         let v = p[c.k];
@@ -1065,9 +1066,15 @@ async function salvarApontamento(){
       assiduidade:it.assiduidade, entregas:it.entregas, sinalizado:it.sinalizado, justificativa:it.justificativa}));
     const r = await sb.from('apontamento_itens').insert(itens);
     if(r.error) throw r.error;
-    const ocs = a.itens.filter(it=>it.abrirOcorrencia).map(it=>({registro:it.registro,
-      tipo:'Sinalização reincidente', descricao:it.justificativa, responsavel:quemSouEu(), data:hojeISO()}));
-    if(ocs.length){ const r2 = await sb.from('ocorrencias').insert(ocs); if(r2.error) throw r2.error; }
+    /* a ocorrência da sinalização reincidente: quem aponta não escreve em
+       ocorrências, então a porta é a função do banco, que só abre para
+       os itens sinalizados deste apontamento (2.18.0) */
+    const ocs = a.itens.filter(it=>it.abrirOcorrencia).map(it=>it.registro);
+    if(ocs.length){
+      const r2 = await sb.rpc('apontamento_ocorrencias', { p_apontamento:cab.id, p_registros:ocs });
+      if(r2.error) throw r2.error;
+      if(r2.data?.status !== 'ok') throw new Error(motivoRPC(r2.data, null, 'Ocorrência não aberta'));
+    }
     const nSin = a.itens.filter(x=>x.sinalizado).length;
     gestao.apont = null;
     const topo = topoGestao({ olho:'Equipe', titulo:'Apontamento semanal' }) + abasEquipe('apontamento');

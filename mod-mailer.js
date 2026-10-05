@@ -199,7 +199,7 @@ function mlDoRoteiro(rt){
    ============================================================ */
 async function pageMailer(sub){
   const el = $('#sec-emails'); if (!el) return;
-  const gestao = can();
+  const gestao = podeGerir();
   const aba = gestao && ['programados', 'pilulas'].includes(sub) ? sub : 'escrever';
   const fila = (ML.programados || []).filter(p => p.status === 'programado').length;
   el.innerHTML = (gestao ? navNivel1([
@@ -262,7 +262,7 @@ function mlEscrever(){
           <span class="ml-bts">
             ${ibtn('externo', 'Abrir em nova aba', 'mlAbrir()')}${ibtn('down', 'Baixar .html', 'mlBaixar()')}${ibtn('copy', 'Copiar código', 'mlCopiarCodigo()')}
             <button class="btn ghost mini" onclick="mlCopiar()">${ic('mail')} Copiar e-mail</button>
-            ${can() ? `<button class="btn solid mini" onclick="mlProgramarRascunho()">${ic('relogio')} Programar envio</button>` : ''}
+            ${podeGerir() ? `<button class="btn solid mini" onclick="mlProgramarRascunho()">${ic('relogio')} Programar envio</button>` : ''}
           </span></div>
         <iframe id="ml-prev" class="${ML.celular ? 'cel' : ''}" title="Prévia do e-mail"></iframe>
       </div>

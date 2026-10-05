@@ -213,7 +213,7 @@ function agBotaoCriar(){
     <div class="agx-criar-pop" id="agx-criar-pop" hidden>
       <button onclick="agNovoEvento()">Evento</button>
       <button onclick="agModalAusencia()">Ausência</button>
-      ${can() ? '<button onclick="agModalMarco()">Marco da equipe</button>' : ''}</div></div>`;
+      ${podeGerir() ? '<button onclick="agModalMarco()">Marco da equipe</button>' : ''}</div></div>`;
 }
 function agMenuCriar(e){
   e.stopPropagation();
@@ -1043,19 +1043,19 @@ function agCfgPredefinidos(){
   const grupos = ids => (ids || []).map(id => grupoPorId(id)?.nome).filter(Boolean);
   $('#agc-corpo').innerHTML = `<div class="filtros" style="justify-content:space-between;align-items:center">
       <p class="small muted" style="margin:0">Usados ao criar um evento: preenchem duração, local, convidados e notificações.</p>
-      ${can() ? `<button class="btn solid mini" onclick="agPdEditar()">${ic('plus')} Novo</button>` : ''}</div>
+      ${podeGerir() ? `<button class="btn solid mini" onclick="agPdEditar()">${ic('plus')} Novo</button>` : ''}</div>
     ${lista.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th>Nome</th><th>Duração</th><th>Convidados</th><th>Notificações</th><th>Local</th><th></th></tr></thead>
-      <tbody>${lista.map(p => `<tr class="${can() ? 'click' : ''}" ${can() ? `tabindex="0" onclick="agPdEditar('${p.id}')" onkeydown="if(event.key==='Enter')this.click()"` : ''}>
+      <tbody>${lista.map(p => `<tr class="${podeGerir() ? 'click' : ''}" ${podeGerir() ? `tabindex="0" onclick="agPdEditar('${p.id}')" onkeydown="if(event.key==='Enter')this.click()"` : ''}>
         <td class="nome"><span class="agc-pt" style="--cc:${esc(p.cor)}"></span>${esc(p.nome)}</td>
         <td>${p.dia_inteiro ? 'Dia inteiro' : (p.duracao_min >= 60 && p.duracao_min % 60 === 0 ? p.duracao_min / 60 + ' h' : p.duracao_min + ' min')}${p.hora_inicio ? ', ' + p.hora_inicio.slice(0, 5) : ''}</td>
         <td style="white-space:normal">${p.todos ? 'Toda a equipe' : [...grupos(p.grupos), ...(p.convidados || []).map(r => primeiroNome(nomeDe(r)))].map(esc).join(', ') || '<span class="dim">—</span>'}</td>
         <td>${(p.lembretes || []).map(agRotuloLembrete).join(', ') || '<span class="dim">nenhuma</span>'}</td>
         <td>${esc((agenda.espacos || []).find(e => e.id === p.espaco_id)?.nome || p.local || '—')}</td>
-        <td>${can() ? ic('chevron') : ''}</td></tr>`).join('')}</tbody></table></div>`
-      : `<div class="vazio"><h3>Nenhum evento predefinido</h3>${can() ? `<button class="btn solid" onclick="agPdEditar()">Criar o primeiro</button>` : ''}</div>`}`;
+        <td>${podeGerir() ? ic('chevron') : ''}</td></tr>`).join('')}</tbody></table></div>`
+      : `<div class="vazio"><h3>Nenhum evento predefinido</h3>${podeGerir() ? `<button class="btn solid" onclick="agPdEditar()">Criar o primeiro</button>` : ''}</div>`}`;
 }
 function agPdEditar(id){
-  if (!can()) return;
+  if (!podeGerir()) return;
   const p = (agenda.predef || []).find(x => x.id === id) || { nome:'', titulo:'', duracao_min:60, dia_inteiro:false, hora_inicio:null, local:'',
     espaco_id:null, meet_url:'', descricao:'', visibilidade:'convidados', cor:'#2DD4BF', todos:false, grupos:[], convidados:[], lembretes:[30], recorrencia:'Única', ordem:100 };
   agenda.pd = { id: p.id || null, grupos:new Set(p.grupos || []), pessoas:new Set(p.convidados || []), lembretes:[...(p.lembretes || [])], cor:p.cor };

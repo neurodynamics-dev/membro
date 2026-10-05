@@ -4229,10 +4229,21 @@ const CAT_LABEL = {documento:'Termos e documentos', local:'Acessos físicos', si
 /* A mesma semântica do SOMA · Gestão, palavra por palavra: a Diretoria
    e o Depto. de Pessoal editam; consulta e comitê de seleção chegam às
    fichas pelo organograma, nunca pela lista direta do quadro. */
-const can         = () => ['admin','pessoal'].includes(state.perfil?.papel);
-const podeQuadro  = () => can();
-const podeSelecao = () => ['admin','pessoal','selecao'].includes(state.perfil?.papel);
-const PAPEIS = {admin:'Administração', pessoal:'Depto. de Pessoal',
+/* Desde a 2.18.0 o papel sai dos grupos (Administração › Grupos): o
+   banco devolve a lista em papeis_atuais(), do mais forte ao mais
+   fraco, e state.perfil.papeis guarda. admin continua sendo da conta.
+   Liderança vê a ficha e escreve nos módulos da lista (gestão); só
+   admin e pessoal mexem em pessoas, contas e grupos. */
+const papeisDaConta = () => state.perfil?.papeis || [state.perfil?.papel || 'leitura'];
+const tenhoPapel  = p => papeisDaConta().includes(p) || papeisDaConta().includes('admin');
+const souAdmin    = () => papeisDaConta().includes('admin');
+const can         = () => tenhoPapel('pessoal');                 /* pessoas, contas, grupos */
+const podeEditarPessoas = can;
+const podeVerFicha = () => can() || tenhoPapel('lideranca');      /* a ficha, menos ocorrências */
+const podeGerir   = () => podeVerFicha();                        /* a lista de escrita da liderança */
+const podeQuadro  = () => podeVerFicha();                        /* o quadro de pessoal e as fichas */
+const podeSelecao = () => can() || tenhoPapel('selecao') || tenhoPapel('lideranca');
+const PAPEIS = {admin:'Administração', pessoal:'Depto. de Pessoal', lideranca:'Liderança',
                 selecao:'Comitê de Seleção', leitura:'Consulta'};
 
 /* ---------------- grupos: a árvore (v19) ----------------
@@ -4282,8 +4293,8 @@ function viaDoGrupo(m, nome){
    candidatos e o Full mailer; programar envio é só da gestão, e a tela
    esconde). A galeria, as rotas e o menu leem daqui. */
 const PAINEIS = [
-  ['avisos',       'Quadro de avisos',    'Portal',   'O banner rotativo da home, com layout e ordem', can],
-  ['links',        'Links úteis',         'Portal',   'Os links da coluna direita do início', can],
+  ['avisos',       'Quadro de avisos',    'Portal',   'O banner rotativo da home, com layout e ordem', podeGerir],
+  ['links',        'Links úteis',         'Portal',   'Os links da coluna direita do início', podeGerir],
   ['solicitacoes', 'Solicitações',        'Portal',   'Triagem dos pedidos ao Depto. de Pessoal', can],
   ['ouvidoria',    'Ouvidoria',           'Portal',   'As mensagens anônimas, para ler e tratar', can],
   ['agendas',      'Agendas',             'Portal',   'Quem conectou o Google Agenda e como está a sincronização', can],
@@ -4296,7 +4307,7 @@ const PAINEIS = [
   ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
                                                        () => can() || podeSelecao()],
   ['auditoria',    'Auditoria',           'Registro', 'Quem mudou o quê, quando', can],
-  ['site',         'Site institucional',  'Conteúdo', 'Os projetos que aparecem em neurodynamics.dev', can]
+  ['site',         'Site institucional',  'Conteúdo', 'Os projetos que aparecem em neurodynamics.dev', podeGerir]
 ];
 const painelPermitido = (p) => !p[4] || p[4]();
 const GRUPOS_PAINEL = ['Portal','Pessoas','Registro','Conteúdo'];
@@ -4485,9 +4496,10 @@ function acoesDaCasca(){
     ['Dinâmica em grupo', 'Painel, roteiro, desafio, critérios e janelas', '#/selecao/dinamica'],
     ['Publicações do processo seletivo', 'Edital, avisos e resultados no site', '#/selecao/publicacoes']);
   if (can() || podeSelecao()) a.push(['Administração', 'Os painéis da gestão', '#/admin']);
-  if (can()) a.push(
+  if (podeQuadro()) a.push(
     ['Quadro de pessoal', 'A lista inteira, com filtros', '#/equipe/quadro'],
-    ['Relatórios', 'Portaria, e-mails, autorizados, quadro completo', '#/admin/relatorios'],
+    ['Relatórios', 'Portaria, e-mails, autorizados, quadro completo', '#/admin/relatorios']);
+  if (can()) a.push(
     ['Importar planilha', 'Atualizar o quadro em massa', '#/admin/importar'],
     ['Contas e perfis', 'Papéis de acesso e vínculo com o quadro', '#/admin/contas'],
     ['Catálogo de acessos', 'Sistemas, locais e documentos', '#/admin/acessos'],
@@ -4658,17 +4670,34 @@ document.addEventListener('keydown', e=>{
   }
 });
 
+/* Conta de membro Desligado, Egresso ou Sob demanda (2.18.0): a sessão
+   termina e o login diz por quê. */
+async function acessoEncerrado(){
+  try { await sb.auth.signOut(); } catch(e){ /* a tela sai do mesmo jeito */ }
+  state.perfil = null;
+  mostrarCasca(false);
+  $('#v-login').hidden = false;
+  lgOk('Acesso encerrado.', 'A conta está ligada a um membro sem vínculo ativo com a NRO.');
+}
 async function abrirPortal(){
   const { data:{ user } } = await sb.auth.getUser();
+  /* conta de membro Desligado, Egresso ou Sob demanda: o banco já nega
+     tudo; aqui só não se abre a casca */
+  const [ativa, papeis] = await Promise.all([sb.rpc('conta_ativa'), sb.rpc('papeis_atuais')]);
+  if (ativa.data === false){ return acessoEncerrado(); }
   const [p, m] = await Promise.all([
     sb.from('perfis').select('id,nome,email,papel,registro').eq('id', user.id).single(),
     sb.from('membros').select('registro,nome,cargo,departamento,status,grupos,gestor_registro,foto_url,email_nro,email_pessoal,telefone').order('nome')
   ]);
   if (p.error){ toast('Não foi possível carregar seu perfil: '+p.error.message, true); return; }
   state.perfil = p.data;
+  /* sem a 2.18.0 no banco, a função não existe: vale o papel da conta */
+  state.perfil.papeis = !papeis.error && Array.isArray(papeis.data) && papeis.data.length
+    ? papeis.data : [...new Set([p.data.papel || 'leitura', 'leitura'])];
   state.membros = m.data || [];
   sb.from('itens_de_acesso').select('*').order('ordem')
     .then(r => { state.itensAcesso = (r.data||[]).filter(i=>i.ativo!==false); });
+  carregarGrupoPapeis();
   const grupos = carregarGrupos();   /* os quadros de Atividades são os grupos da pessoa */
   carregarOKRsDoMenu();
   carregarProjetosEArquivos();
@@ -4683,7 +4712,7 @@ async function abrirPortal(){
   const eu = state.membros.find(x => x.registro === state.perfil.registro);
   $('#u-nome').textContent = nome;
   $('#u-nome-voo').textContent = nome;
-  $('#u-papel').textContent = PAPEIS[state.perfil.papel] || eu?.cargo || 'Membro';
+  $('#u-papel').textContent = PAPEIS[state.perfil.papeis[0]] || eu?.cargo || 'Membro';
   desenharMeuAvatar();
   const lf = $('#logo-ft');
   if (lf){   /* o handler de erro troca a <img> por um <span>: na segunda
@@ -4974,11 +5003,11 @@ function meusProjetos(){
   const meus = gruposEfetivos(eu);
   return (state.projetos || []).filter(p => p.status !== 'encerrado' && meus.has(grupoPorId(p.grupo_id)?.nome));
 }
-/* Quem administra a documentação: admin e quem está no grupo do PMO
+/* Quem administra a documentação: admin, liderança e quem está no grupo do PMO
    (grupos.chave = 'pmo'). É a mesma regra de doc_gestor() no banco —
    aqui só decide que botão aparece. */
 function docGestor(){
-  if (state.perfil?.papel === 'admin') return true;
+  if (souAdmin() || tenhoPapel('lideranca')) return true;
   const pmo = (state.grupos || []).find(g => g.chave === 'pmo');
   const eu = state.membros.find(m => m.registro === state.perfil?.registro);
   return !!pmo && gruposEfetivos(eu).has(pmo.nome);
@@ -5021,11 +5050,11 @@ function estouEmAlgum(ids){
   const meus = gruposEfetivos(eu);
   return (ids || []).some(id => meus.has(grupoPorId(id)?.nome));
 }
-const podeAprovarStudio = () => state.perfil?.papel === 'admin' || estouEmAlgum(state.studioCfg?.grupos_aprovadores);
+const podeAprovarStudio = () => souAdmin() || tenhoPapel('lideranca') || estouEmAlgum(state.studioCfg?.grupos_aprovadores);
 const podeStudio = () => podeAprovarStudio() || estouEmAlgum(state.studioCfg?.grupos_acesso);
 
 /* Os treinamentos (v24). Todo mundo faz; gere quem é admin, do Depto.
-   de Pessoal ou de um dos grupos gestores (contando subgrupos). É a
+   de Pessoal, da liderança ou de um dos grupos gestores (contando subgrupos). É a
    mesma regra de treinamento_gestor() no banco — aqui só decide o que
    o menu e os botões mostram. */
 function carregarTreinamentoConfig(){
@@ -5033,7 +5062,7 @@ function carregarTreinamentoConfig(){
     .then(r => { state.treCfg = r.error ? null : (r.data || null); desenharMenu(); },
           () => { state.treCfg = null; });
 }
-const gereTreinamentos = () => can() || estouEmAlgum(state.treCfg?.grupos_gestores);
+const gereTreinamentos = () => podeGerir() || estouEmAlgum(state.treCfg?.grupos_gestores);
 
 /* ---------------- o Pokémon de cada projeto ----------------
    Cada projeto tem um Pokémon, escolhido na criação. A lista é por
@@ -6109,7 +6138,7 @@ async function carregarLinksInicio(){
   const links = (r.error ? LINKS_PADRAO : (r.data || [])).filter(l => linkSeguro(l.url));
   const grupos = [];
   links.forEach(l => { const g = l.grupo || ''; let x = grupos.find(y => y[0] === g); if (!x) grupos.push(x = [g, []]); x[1].push(l); });
-  el.innerHTML = `<div class="head"><h3>Links úteis</h3>${can() ? `<a class="ini-cfg" href="#/admin/links" title="Editar os links" aria-label="Editar os links">${ic('engrenagem')}</a>` : ''}</div>
+  el.innerHTML = `<div class="head"><h3>Links úteis</h3>${podeGerir() ? `<a class="ini-cfg" href="#/admin/links" title="Editar os links" aria-label="Editar os links">${ic('engrenagem')}</a>` : ''}</div>
     ${links.length ? grupos.map(([g, ls]) => `${g ? `<div class="ini-grp">${esc(g)}</div>` : ''}${ls.map(l => {
       const ext = !/^#\//.test(l.url);
       return `<a class="ini-lk" href="${esc(l.url.trim())}"${ext ? ' target="_blank" rel="noopener"' : ''}>
@@ -6479,6 +6508,16 @@ function horaDoItem(it){
   if (it.dia_inteiro || !it.hora_inicio) return 'dia inteiro';
   return it.hora_inicio.slice(0,5) + (it.hora_fim ? '–' + it.hora_fim.slice(0,5) : '');
 }
+/* O papel que cada grupo dá (2.18.0, Administração › Grupos). Sem a
+   tabela no banco, a lista fica vazia e nada muda na tela. */
+function carregarGrupoPapeis(){
+  state.grupoPapeis = state.grupoPapeis || [];
+  return sb.from('grupo_papeis').select('grupo_id,papel')
+    .then(r => { state.grupoPapeis = r.error ? [] : (r.data || []); }, () => { state.grupoPapeis = []; });
+}
+const papelDoGrupo = id => (state.grupoPapeis || []).find(x => x.grupo_id === id)?.papel || null;
+const gruposComPapel = p => (state.grupoPapeis || []).filter(x => x.papel === p)
+  .map(x => grupoPorId(x.grupo_id)).filter(Boolean);
 /* Quem está num grupo, contando quem está num grupo abaixo dele. */
 function membrosDoGrupo(g){
   return state.membros.filter(m => ['Ativo','Em pausa / avaliação'].includes(m.status) && gruposEfetivos(m).has(g));
@@ -6536,7 +6575,7 @@ async function carregarAgendaPessoal(de, ate, espera){
       de: it.data_inicio, ate: it.data_fim || it.data_inicio, hi: it.dia_inteiro ? null : hm(it.hora_inicio),
       hf: it.dia_inteiro ? null : (hm(it.hora_fim) ?? (hm(it.hora_inicio) + 60)), dia: !!it.dia_inteiro || !it.hora_inicio,
       ref: it.ref, origem: it.origem, href: it.origem === 'evento' ? '#/agenda/evento/' + it.ref : null,
-      editavel: it.origem === 'evento' ? (it.sou_dono || can()) : it.origem === 'marco' ? (can() || it.sou_dono) : (it.registro === eu || can()),
+      editavel: it.origem === 'evento' ? (it.sou_dono || podeGerir()) : it.origem === 'marco' ? (podeGerir() || it.sou_dono) : (it.registro === eu || can()),
       serie: it.serie_id && it.recorrencia !== 'Única', resposta: it.minha_resposta, convidado: it.sou_convidado, bruto: it });
   }
   tarefas.filter(t => t.prazo).forEach(t => out.push({ k:'at:' + t.id, camada:'tarefas', titulo: `${t.codigo} ${t.titulo}`, cor:cor('tarefas'),

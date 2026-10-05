@@ -272,8 +272,11 @@ console.log('\nSeleção por papel e no celular');
 {
   const { ctx, p, erros } = await abrir({ hash:'#/selecao/config', stub: stubDe('selecao') });
   confere('o Comitê (papel selecao) entra', await hash(p) === '#/selecao/config' && await p.locator('#ps-ed-nome').count() === 1);
-  confere('e não vê a lista de perfis, que é de admin/pessoal',
-    /visível apenas para admin\/pessoal/.test(await p.locator('#sel-corpo').textContent()));
+  /* o comitê vem dos grupos (2.18.0); as contas com o papel legado são
+     de admin e pessoal */
+  const corpoSel = await p.locator('#sel-corpo').textContent();
+  confere('e vê o comitê pelos grupos, sem a lista de contas (de admin e pessoal)',
+    /Comitê de Seleção/.test(corpoSel) && !/Papel na conta/.test(corpoSel), corpoSel.slice(-300));
   confere('sem erro de página', erros.length === 0, erros);
   await ctx.close();
 }

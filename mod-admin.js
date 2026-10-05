@@ -880,16 +880,37 @@ function porContas(html){
 }
 async function pageContas(){
   try{
-    const {data, error} = await sb.from('perfis').select('id,email,nome,papel,registro').order('email');
+    const [{data, error}, ef] = await Promise.all([
+      sb.from('perfis').select('id,email,nome,papel,registro').order('email'),
+      sb.rpc('contas_papeis')]);
     if(error) throw error;
+    /* o papel efetivo e a origem de cada um (2.18.0); sem a migração, a
+       coluna não aparece */
+    _contasPapeis = !ef.error && ef.data?.status === 'ok'
+      ? new Map((ef.data.contas || []).map(c => [c.id, c])) : null;
     _contas = data||[];
     renderContas(_contas);
   }catch(e){ const el = $('#sec-contas');
     if (el) el.innerHTML = `<div class="aviso-box err">Erro ao carregar as contas: ${esc(e.message)}</div>`;
     else falha(e,'Erro ao carregar as contas'); }
 }
+let _contasPapeis = null;
+/* "Liderança (via NRO_LEADERSHIP)", "Administração (na conta)" */
+function contaPapeisHTML(id){
+  const c = _contasPapeis?.get(id);
+  if (!c) return '—';
+  if (c.bloqueada) return '<span class="pill p-bad"><span class="dt dt-bad"></span>Acesso encerrado</span>';
+  const fortes = (c.papeis || []).filter(x => x.papel !== 'leitura');
+  if (!fortes.length) return `<span class="small">${esc(PAPEIS.leitura)}</span>`;
+  return fortes.map(x => `<span class="small" style="display:block">${esc(PAPEIS[x.papel] || x.papel)}
+    <span class="muted">(${x.via === 'conta' ? 'na conta' : x.via === 'legado' ? 'na conta, legado' : 'via ' + esc(x.via)})</span></span>`).join('');
+}
 function renderContas(perfis){
   const souAdmin = state.perfil.papel==='admin';
+  /* na conta, só admin ou consulta: os outros papéis vêm dos grupos.
+     O legado (pessoal, seleção gravado na conta) aparece enquanto existir. */
+  const opcoesPapel = p => ['admin', 'leitura', ...(['pessoal','selecao'].includes(p.papel) ? [p.papel] : [])]
+    .map(k => `<option value="${k}" ${p.papel===k?'selected':''}>${PAPEIS[k]}${['pessoal','selecao'].includes(k) ? ' (legado)' : ''}</option>`).join('');
   const emailsComConta = new Set(perfis.map(p=>norm(p.email)));
   const semConta = state.membros.filter(m=> m.status==='Ativo'
     && ![m.email_nro, m.email_pessoal].some(e=> e && emailsComConta.has(norm(e))));
@@ -900,13 +921,14 @@ function renderContas(perfis){
     <p class="small muted" style="line-height:1.6;margin-bottom:12px">Papel inicial: <b>Consulta</b>, com vínculo pelo e-mail do cadastro.${souAdmin?'':' Somente administradores alteram papéis.'}
     ${dica('O botão da coluna Senha envia o link de redefinição ao e-mail da conta.')}</p>
     <div style="overflow:auto;max-height:56vh">
-    <table class="tabela trabalho"><thead><tr><th>Conta</th><th>Membro vinculado</th><th>Papel</th><th style="text-align:right">Senha</th></tr></thead>
+    <table class="tabela trabalho"><thead><tr><th>Conta</th><th>Membro vinculado</th><th>Papel na conta</th>${_contasPapeis ? `<th>Papel efetivo ${dica('O que a conta pode, somando o papel da conta e o dos grupos da pessoa (Administração › Grupos), com a origem de cada um.')}</th>` : ''}<th style="text-align:right">Senha</th></tr></thead>
     <tbody>${perfis.map(p=>`<tr>
       <td><b>${esc(p.nome||p.email)}</b><br><span class="small muted">${esc(p.email)}</span></td>
       <td><select onchange="ctVincular('${p.id}', this.value)" ${souAdmin?'':'disabled'} style="min-width:170px">${regOpts(p.registro)}</select></td>
       <td><select onchange="ctPapel('${p.id}', this.value)" ${souAdmin && p.id!==state.perfil.id?'':'disabled'}
           title="${p.id===state.perfil.id?'Seu próprio papel não pode ser alterado por aqui':''}">
-        ${Object.entries(PAPEIS).map(([k,l])=>`<option value="${k}" ${p.papel===k?'selected':''}>${l}</option>`).join('')}</select></td>
+        ${opcoesPapel(p)}</select></td>
+      ${_contasPapeis ? `<td>${contaPapeisHTML(p.id)}</td>` : ''}
       <td style="text-align:right">${ibtn('key','Enviar link de redefinição de senha',`ctReset('${p.id}')`,'sm ghost')}</td>
     </tr>`).join('')}</tbody></table></div>
     ${semConta.length?`<div class="aviso-box info" style="margin-top:14px"><b>${semConta.length} membro(s) ativo(s) ainda sem conta.</b>
@@ -923,6 +945,7 @@ async function ctPapel(id, papel){
     const {error} = await sb.from('perfis').update({papel}).eq('id', id);
     if(error) throw error;
     toast('Papel atualizado para '+(PAPEIS[papel]||papel)+'.');
+    pageContas();
   }catch(e){ falha(e,'Erro ao mudar o papel'); pageContas(); }
 }
 async function ctVincular(id, reg){
@@ -1161,9 +1184,10 @@ async function admCarregarGrupos(prefixo, forcar){
   if (forcar || !admGrupos.pronto || velho){
     if (!admGrupos.pronto)
       alvo.innerHTML = '<div class="carregando"><span class="spin"></span> Carregando os grupos…</div>';
-    const [g, a] = await Promise.all([
+    const [g, a, pp] = await Promise.all([
       sb.from('grupos').select('*').order('ordem').order('nome'),
-      sb.from('grupo_acessos').select('*')
+      sb.from('grupo_acessos').select('*'),
+      sb.from('grupo_papeis').select('grupo_id,papel')
     ]);
     if (g.error){
       alvo.innerHTML = `<div class="aviso-box err"><b>Não foi possível listar os grupos.</b>
@@ -1173,6 +1197,9 @@ async function admCarregarGrupos(prefixo, forcar){
     }
     admGrupos.lista   = g.data || [];
     admGrupos.acessos = a.data || [];
+    /* sem a 2.18.0, a tabela não existe: a seção do papel não aparece */
+    admGrupos.temPapeis = !pp.error;
+    if (!pp.error) state.grupoPapeis = pp.data || [];
     admGrupos.pronto  = true;
     admGrupos.carregadoEm = Date.now();
   }
@@ -1326,6 +1353,7 @@ function admDetalheHTML(){
           ? '<span class="pill p-warn"><span class="dt dt-warn"></span>Quadro fechado</span>'
           : '<span class="pill"><span class="dt dt-ok"></span>Quadro aberto</span>'}
       ${g.ativo === false ? '<span class="pill p-bad"><span class="dt dt-bad"></span>Inativo</span>' : ''}
+      ${papelDoGrupo(g.id) ? `<span class="pill"><span class="dt dt-ok"></span>${esc(PAPEIS[papelDoGrupo(g.id)])}</span>` : ''}
     </div>
     ${g.descricao ? `<p class="gr-desc">${esc(g.descricao)}</p>` : ''}
     <div class="acts" style="margin-top:14px">
@@ -1356,6 +1384,8 @@ function admDetalheHTML(){
       <p class="muted small" style="margin-top:8px">Põem e tiram gente deste grupo e dos que estão abaixo dele.</p>`
       : `<p class="muted small">Só admin e Depto de Pessoal mexem em quem está aqui. Responsáveis se escolhem em Editar.</p>`}` : ''}
 
+    ${admGrupos.temPapeis ? admPapelHTML(g) : ''}
+
     <div class="adm-grupo">Pessoas</div>
     ${temArvore && herdados.length ? `<div class="seg" role="group" aria-label="Quais pessoas" style="margin-bottom:10px">
       ${[['todas', 'Todas', pessoas.length], ['ficha', 'Pela ficha', diretos.length], ['sub', 'Por subgrupo', herdados.length]]
@@ -1376,6 +1406,33 @@ function admDetalheHTML(){
   </div>`;
 }
 const grupoPrefixoDe = nome => admGrupos.lista.find(x => x.nome === nome)?.prefixo || '';
+
+/* O papel do grupo (2.18.0): quem está nele, ou num grupo abaixo dele,
+   recebe o papel. Só admin define; pessoal vê. */
+const PAPEIS_DE_GRUPO = ['pessoal', 'lideranca', 'selecao'];
+function admPapelHTML(g){
+  const atual = papelDoGrupo(g.id);
+  const deCima = admCaminho(g).slice(0, -1).reverse().find(x => papelDoGrupo(x.id));
+  return `<div class="adm-grupo">Papel ${dica('Quem está neste grupo, ou num grupo abaixo dele, recebe o papel. Depto. de Pessoal: pessoas, contas e grupos. Liderança: todos os módulos, escrita na maioria, e a ficha sem as ocorrências. Comitê de Seleção: o módulo Seleção. Só admin define.')}</div>
+    ${souAdmin()
+      ? `<select id="gr-papel" aria-label="Papel do grupo" onchange="admPapelGrupo(${g.id}, this.value)" style="max-width:260px">
+          <option value="">Nenhum (consulta)</option>
+          ${PAPEIS_DE_GRUPO.map(k => `<option value="${k}" ${atual === k ? 'selected' : ''}>${esc(PAPEIS[k])}</option>`).join('')}</select>`
+      : `<p class="small">${atual ? esc(PAPEIS[atual]) : 'Nenhum (consulta)'}</p>`}
+    ${deCima ? `<p class="muted small" style="margin-top:8px">Por estar abaixo de ${esc(deCima.nome)}, quem está aqui também é ${esc(PAPEIS[papelDoGrupo(deCima.id)])}.</p>` : ''}`;
+}
+async function admPapelGrupo(id, papel){
+  const { data, error } = await sb.rpc('grupo_papel_definir', { p:{ grupo_id:id, papel: papel || null } });
+  if (error || data?.status !== 'ok'){
+    toast(motivoRPC(data, error, 'Papel não alterado'), true);
+    const d = $('#gr-detalhe'); if (d) d.innerHTML = admDetalheHTML();
+    return;
+  }
+  state.grupoPapeis = (state.grupoPapeis || []).filter(x => x.grupo_id !== id);
+  if (papel) state.grupoPapeis.push({ grupo_id:id, papel });
+  toast(papel ? `Papel do grupo: ${PAPEIS[papel]}.` : 'O grupo ficou sem papel.');
+  const d = $('#gr-detalhe'); if (d) d.innerHTML = admDetalheHTML();
+}
 function admVerPessoas(k){ admGrupos.ver = k; const d = $('#gr-detalhe'); if (d) d.innerHTML = admDetalheHTML(); }
 
 /* A lista de quem pode entrar: ativos e em pausa que ainda não estão no

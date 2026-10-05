@@ -45,7 +45,7 @@ const okrBarra = (pr, texto)=> `<span class="okr-prog"><span class="trilho"><spa
   <span class="pc">${texto || pr.pct + '%'}</span></span>`;
 
 function okrPodeEditar(o){
-  if(can()) return true;
+  if(podeGerir()) return true;
   const reg = state.perfil?.registro;
   return reg!=null && (o.responsaveis||[]).includes(reg);
 }
@@ -104,7 +104,7 @@ async function okrCarregar(){
 async function pageOkrs(sub){
   const topo = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Planejamento estratégico</span>
       <h1>OKRs</h1></div>
-    ${can() ? `<div class="acoes"><button class="btn solid" onclick="modalOKREditar(null,null)">${ic('plus')}
+    ${podeGerir() ? `<div class="acoes"><button class="btn solid" onclick="modalOKREditar(null,null)">${ic('plus')}
       Novo objetivo estratégico</button></div>` : ''}</div>`;
   if(!OKR.pronto){
     $('#main').innerHTML = topo + '<div class="carregando"><span class="spin"></span> Carregando…</div>';
@@ -220,7 +220,7 @@ function okrNo(o){
       ${nf ? `<button class="okr-abre" onclick="okrAlternar('${o.id}')" aria-expanded="${ab}">
           ${ab ? 'Recolher' : 'Desdobramentos'} <span class="n">${nf}</span>${ic('chevron', ab ? 'cima' : 'baixo')}</button>`
         : '<span class="okr-folha">Sem desdobramento</span>'}
-      ${can() ? ibtn('plus', 'Desdobrar', `modalOKREditar(null,'${o.id}')`, 'sm') : ''}
+      ${podeGerir() ? ibtn('plus', 'Desdobrar', `modalOKREditar(null,'${o.id}')`, 'sm') : ''}
     </div>
   </div>`;
 }
@@ -403,7 +403,7 @@ function modalOKRDetalhe(id){
     <div class="fld" style="margin-top:12px"><label>Novo comentário</label>
       <textarea id="okr-novo-com" rows="3" placeholder="Registro de acompanhamento, decisões, bloqueios…"></textarea></div>
     <div class="acts" style="justify-content:space-between">
-      <span>${can()?`<button class="btn perigo" onclick="okrExcluir('${o.id}')">${ic('trash')} Excluir</button>`:''}</span>
+      <span>${podeGerir()?`<button class="btn perigo" onclick="okrExcluir('${o.id}')">${ic('trash')} Excluir</button>`:''}</span>
       <span style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn ghost" onclick="fechaModal()">Fechar</button>
         ${podeEd?`<button class="btn ghost" onclick="modalOKREditar('${o.id}',null)">${ic('pencil')} Editar</button>`:''}

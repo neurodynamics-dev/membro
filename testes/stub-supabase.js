@@ -84,6 +84,8 @@
         chave:null, meu_nivel:'edicao',  pessoas:2 }
     ],
     grupo_acessos: [{ grupo_id:4, registro:11, nivel:'leitura', concedido_por:4 }],
+    /* o papel de cada grupo (2.18.0) */
+    grupo_papeis: [{ grupo_id:3, papel:'pessoal' }],
     atividades_quadro: [
       { id:'t9', codigo:'DEP-1', grupo_id:3, grupo:'Depto de Pessoal', grupo_prefixo:'DEP', seq:1,
         titulo:'SOL26-0001 — Acesso ao LABBIO', descricao:'Carla Mendonça abriu uma solicitação de acesso.',
@@ -894,6 +896,32 @@
           /* ---- 2.17.0: a foto, os relatos e os cartões ---- */
           const eAdm = () => DADOS.perfis[0].papel === 'admin';
           const regra = (k, p) => (window.__rpcs ||= []).push({ nome:k, p });
+          /* ---- 2.18.0: os papéis por grupo ---- */
+          const papeisStub = () => { const pf = DADOS.perfis[0];
+            return pf.papeis || ['admin','pessoal','lideranca','selecao','leitura'].filter(k => k === (pf.papel || 'leitura') || k === 'leitura'); };
+          if (nome === 'conta_ativa') return { data: !(window.__teste || {}).bloqueada, error:null };
+          if (nome === 'papeis_atuais'){
+            if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:'function public.papeis_atuais() does not exist' } };
+            return { data: (window.__teste || {}).bloqueada ? [] : papeisStub(), error:null };
+          }
+          if (nome === 'contas_papeis'){
+            regra(nome, {});
+            if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:'function public.contas_papeis() does not exist' } };
+            return { data:{ status:'ok', contas: DADOS.perfis.map(pf => ({ id:pf.id, bloqueada:false,
+              papeis: (pf.papeis || [pf.papel || 'leitura', 'leitura']).filter((x, i, l) => l.indexOf(x) === i)
+                .map(x => ({ papel:x, via: x === 'admin' ? 'conta' : x === 'leitura' ? null : (pf.via || 'legado') })) })) }, error:null };
+          }
+          if (nome === 'grupo_papel_definir'){
+            const p = args?.p || {}; regra(nome, p);
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
+            DADOS.grupo_papeis = (DADOS.grupo_papeis || []).filter(x => x.grupo_id !== p.grupo_id);
+            if (p.papel) DADOS.grupo_papeis.push({ grupo_id:p.grupo_id, papel:p.papel });
+            return { data:{ status:'ok' }, error:null };
+          }
+          if (nome === 'apontamento_ocorrencias'){
+            regra(nome, args);
+            return { data:{ status:'ok', abertas:(args?.p_registros || []).length }, error:null };
+          }
           if (nome === 'membro_foto_definir'){
             const p = args?.p || {}; regra(nome, p);
             if ((window.__teste || {}).v217 === 'falta') return { data:null, error:{ message:'function public.membro_foto_definir(jsonb) does not exist' } };

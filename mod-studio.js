@@ -788,7 +788,7 @@ async function stCfgSalvarAcesso(){
   if (!dados.grupos_aprovadores.length && !await confirma('Sem grupo aprovador, só admin aprova. Continuar?', 'Continuar')) return;
   const eu = (state.membros || []).find(m => m.registro === stEu());
   const nomes = new Set(dados.grupos_aprovadores.map(i => grupoPorId(i)?.nome));
-  if (state.perfil?.papel !== 'admin' && ![...gruposEfetivos(eu)].some(n => nomes.has(n))
+  if (!souAdmin() && !tenhoPapel('lideranca') && ![...gruposEfetivos(eu)].some(n => nomes.has(n))
       && !await confirma('Você não está em nenhum dos grupos aprovadores escolhidos: depois de salvar, não poderá mais mexer aqui. Continuar?', 'Continuar')) return;
   const { data, error } = await sb.from('studio_config').update(dados).eq('id', true).select();
   if (error || (Array.isArray(data) && !data.length)) return toast('Não deu para salvar' + (error ? ': ' + error.message : ' — sem permissão.'), true);
