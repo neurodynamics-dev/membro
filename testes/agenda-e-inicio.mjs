@@ -159,7 +159,10 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
     const Espiao = function(...a){ const d = new J(...a), rect = d.rect.bind(d);
       d.rect = (x, y, w, h, st) => { if (st === 'F') window.__rects.push([x, y, w, h]); return rect(x, y, w, h, st); }; return d; };
     Object.assign(Espiao, J); Espiao.API = J.API; window.jspdf.jsPDF = Espiao; });
-  await p.click('button:has-text("Gerar folha")'); await p.waitForTimeout(300);
+  confere('a folha ativa não tem botão de baixar o PDF de novo', await p.locator('#pres-folhas button:has-text("PDF")').count() === 0);
+  await p.click('button:has-text("Gerar nova folha")'); await p.waitForTimeout(300);
+  confere('antes de gerar, avisa que a folha anterior deixa de valer', /CHK-001 deixa de valer/.test(await texto(p, '#modal.open')));
+  await p.click('#modal.open .acts .btn.solid'); await p.waitForTimeout(300);
   await p.fill('#fl-rot', 'Recepção');
   const [d] = await Promise.all([p.waitForEvent('download', { timeout:15000 }), p.click('#fl-ok')]);
   confere('gerar a folha grava quem e onde', JSON.stringify((await rpcs(p, 'checkin_folha_criar')).pop()) === '{"p_rotulo":"Recepção"}');
@@ -183,9 +186,12 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   confere('o QR desenhado na folha lê o endereço com o token fixo', lido.texto === doc.url
     && /^http:\/\/localhost:8765\/(index\.html)?\?t=F-0c9d8e7f-6a5b-4c3d-8e2f-1a0b9c8d7e6f$/.test(lido.texto), { lido, url: doc.url });
 
-  await p.click('#pres-folhas .pres-folha:has-text("CHK-001") button:has-text("Revogar")'); await p.waitForTimeout(300);
+  confere('gerar invalida a anterior: só a nova fica ativa, sem botão de PDF', await p.evaluate(() => {
+    const fs = [...document.querySelectorAll('#pres-folhas .pres-folha')];
+    return fs.length === 2 && fs.filter(f => !f.classList.contains('off')).length === 1 && !document.querySelector('#pres-folhas button:not(.perigo)'); }));
+  await p.click('#pres-folhas .pres-folha:has-text("CHK-002") button:has-text("Revogar")'); await p.waitForTimeout(300);
   await p.click('#modal.open .acts .btn.solid'); await p.waitForTimeout(500);
-  confere('revogar a folha', JSON.stringify((await rpcs(p, 'checkin_folha_revogar')).pop()) === '{"p_id":"f1"}');
+  confere('revogar a folha', JSON.stringify((await rpcs(p, 'checkin_folha_revogar')).pop()) === '{"p_id":"f2"}');
   confere('nenhum erro de página (presença)', !erros.length, erros);
   await ctx.close();
 }

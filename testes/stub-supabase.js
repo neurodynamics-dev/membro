@@ -1909,7 +1909,8 @@
           if (nome === 'labbio_placar'){ (window.__rpcs ||= []).push({ nome, p:args }); return { data:DADOS.placar, error:null }; }
           if (nome === 'checkin_folha_criar'){
             (window.__rpcs ||= []).push({ nome, p:args });
-            if (!agGestor()) return { data:{ status:'sem_permissao' }, error:null };
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
+            DADOS.checkin_folhas.forEach(x => { if (!x.revogada_em){ x.revogada_em = new Date().toISOString(); x.revogada_motivo = 'substituída'; } });
             const f = { id:'f' + (DADOS.checkin_folhas.length + 1), numero:DADOS.checkin_folhas.length + 1, token:'0c9d8e7f-6a5b-4c3d-8e2f-1a0b9c8d7e6f',
               rotulo:args.p_rotulo || null, criada_em:new Date().toISOString(), criada_por:'Ana Figueiredo', revogada_em:null, usos:0, ultimo_uso:null };
             DADOS.checkin_folhas.unshift(f);
@@ -1917,6 +1918,7 @@
           }
           if (nome === 'checkin_folha_revogar'){
             (window.__rpcs ||= []).push({ nome, p:args });
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
             const f = DADOS.checkin_folhas.find(x => x.id === args.p_id); if (!f) return { data:{ status:'nao_encontrado' }, error:null };
             f.revogada_em = new Date().toISOString(); return { data:{ status:'ok' }, error:null };
           }
