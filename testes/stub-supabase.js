@@ -1184,6 +1184,24 @@
             return { data: { status:'ok', decisao:args?.p?.decisao,
                              concedidos:(args?.p?.conceder||[]).length, codigo:'DEP-1' }, error:null };
           }
+          /* 2.18.0: as preferências por categoria; Ana escolheu atividades na hora e o Studio sem e-mail */
+          if (nome === 'notificacao_canais_meus'){
+            const CATS = [['atividades','Atividades'],['bugs_melhorias','Bugs e melhorias'],['documentos','Documentos'],
+              ['studio','Studio'],['reporte','Reporte'],['agenda','Agenda'],['pessoal','Pessoal'],
+              ['treinamentos','Treinamentos'],['sistema','Sistema']];
+            DADOS.notificacao_canais ||= [{ registro:4, categoria:'atividades', push:true, email:'instantaneo' },
+                                          { registro:4, categoria:'studio', push:false, email:'nunca' }];
+            return { data: { status:'ok', categorias: CATS.map(([chave, nome]) => {
+              const l = DADOS.notificacao_canais.find(x => x.registro === 4 && x.categoria === chave);
+              return { chave, nome, push: l ? l.push : true, email: l ? l.email : 'semanal' };
+            }) }, error:null };
+          }
+          if (nome === 'notificacao_canais_salvar'){
+            window.__canais = args?.p;
+            DADOS.notificacao_canais = (args?.p?.canais || []).filter(c => !(c.push && c.email === 'semanal'))
+              .map(c => ({ registro:4, ...c }));
+            return { data: { status:'ok', categorias:(args?.p?.canais || []).length }, error:null };
+          }
           if (nome === 'notificacao_preferencia_salvar'){
             window.__preferencia = args?.p;
             return { data: { status:'ok', email_modo:args?.p?.email_modo }, error:null };

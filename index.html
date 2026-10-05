@@ -3303,6 +3303,17 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 #modal.open{display:block}
 #modal h3{font-size:17px;margin-bottom:12px}
 .pn-teste:empty{display:none}
+.pn-tabela td{padding:7px 8px}
+.pn-tabela th{padding:6px 8px}
+.pn-tabela .pn-c{text-align:center;width:56px}
+.pn-tabela .pn-c input{width:16px;height:16px;accent-color:var(--syn-borda);cursor:pointer}
+.pn-tabela select{width:100%;min-width:0}
+.pn-nota{margin-top:12px}
+@media (max-width:560px){
+  .pn-tabela td,.pn-tabela th{padding:6px 4px}
+  .pn-tabela .pn-c{width:40px}
+  .pn-tabela select{font-size:12px;padding-left:6px;padding-right:20px}
+}
 /* as preferências de avisos: o aparelho e o e-mail, cada um com o seu título */
 .pn-sec{font-family:var(--fm);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
   margin:16px 0 8px;display:flex;align-items:center;gap:10px}
@@ -5605,46 +5616,58 @@ async function irNotificacao(id, href){
   if (href) location.hash = href.replace(/^#/,'');
 }
 /* ============================================================
-   PREFERÊNCIA DE E-MAIL
-   O sininho só avisa quem está com o portal aberto. Quem entra uma
-   vez por semana precisa do e-mail — e quem entra toda hora precisa
-   poder desligá-lo. As três opções são o contrato inteiro.
+   PREFERÊNCIAS DE AVISOS (2.18.0)
+   O sino recebe tudo. Fora dele, cada categoria de aviso tem o seu
+   push (liga ou desliga, só na hora) e o seu e-mail (desligado,
+   instantâneo, resumo diário, resumo semanal). Sem escolha, vale o
+   padrão: push ligado e resumo semanal. Quem decide é o banco
+   (notificacao_canais); a tela lê e grava pelas duas funções.
+   Convites de evento e pílulas não são configuráveis: saem sempre
+   por e-mail, na hora, por filas próprias.
    ============================================================ */
-const MODOS_NOTIF = [
-  ['imediato', 'A cada aviso',
-   'Um e-mail por aviso; avisos da mesma hora são agrupados.'],
-  ['resumo',   'Um resumo por dia',
-   'Um e-mail diário com as pendências.'],
-  ['nunca',    'Só no portal',
-   'Sem e-mail. Os avisos ficam nas notificações.']
+const FREQ_EMAIL = [
+  ['nunca', 'Desligado'], ['instantaneo', 'Instantâneo'], ['diario', 'Resumo diário'], ['semanal', 'Resumo semanal']
 ];
+
+function canaisNotifHTML(cats){
+  return `<table class="tabela pn-tabela"><thead><tr><th>Tipo</th><th class="pn-c">Push</th><th>E-mail</th></tr></thead>
+    <tbody>${cats.map(c => `<tr data-cat="${esc(c.chave)}">
+      <td>${esc(c.nome)}</td>
+      <td class="pn-c"><input type="checkbox" class="pn-pu" ${c.push ? 'checked' : ''} aria-label="Push: ${esc(c.nome)}"></td>
+      <td><select class="pn-em" aria-label="E-mail: ${esc(c.nome)}">
+        ${FREQ_EMAIL.map(([k, t]) => `<option value="${k}" ${k === c.email ? 'selected' : ''}>${t}</option>`).join('')}
+      </select></td></tr>`).join('')}</tbody></table>`;
+}
 
 async function modalPreferenciaNotif(){
   fecharSino();
-  let atual = 'imediato';
-  try{
-    const { data } = await sb.from('notificacao_preferencias')
-      .select('email_modo').eq('registro', state.perfil?.registro).maybeSingle();
-    if (data?.email_modo) atual = data.email_modo;
-  }catch(e){ /* sem a migração, fica no padrão — a tela ainda serve */ }
-
   abreModal(`<h3>Avisos</h3>
     <div class="pn-sec">Neste aparelho</div>
     <div id="pn-push" class="pn-push"><div class="carregando" style="padding:6px 0"><span class="spin"></span></div></div>
-    <div class="pn-sec">Por e-mail</div>
-    <div class="multi" style="max-height:none">
-      ${MODOS_NOTIF.map(([k, t, d]) => `<label class="check">
-        <input type="radio" name="pn-modo" value="${k}" ${k===atual?'checked':''}>
-        <span><b style="color:var(--ink)">${t}</b><br>${d}</span></label>`).join('')}
-    </div>
-    <p class="small muted" style="margin-top:14px">Destino: e-mail NRO ou, na falta dele, o pessoal.</p>
+    <div class="pn-sec">Por tipo de aviso</div>
+    <div id="pn-canais"><div class="carregando" style="padding:6px 0"><span class="spin"></span></div></div>
+    <p class="small muted pn-nota">Convites de eventos e pílulas de conhecimento chegam sempre por e-mail, na hora.
+      ${dica('O sino do portal recebe todos os avisos, qualquer que seja a escolha. O push vale para os aparelhos ativados acima. Resumo diário: às 8h. Resumo semanal: segunda-feira, às 8h. Destino: e-mail NRO ou, na falta dele, o pessoal.')}</p>
     <div id="pn-teste" class="pn-teste"></div>
     <div class="acts" style="justify-content:space-between">
       <button class="btn ghost" id="pn-tbtn" onclick="testarEmail()">Enviar um e-mail de teste</button>
       <span><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
-      <button class="btn solid" id="pn-btn" onclick="salvarPreferenciaNotif()">Salvar</button></span></div>`,
+      <button class="btn solid" id="pn-btn" onclick="salvarPreferenciaNotif()" disabled>Salvar</button></span></div>`,
     null, true);
   desenharPush();
+  let r = null;
+  try{
+    const { data, error } = await sb.rpc('notificacao_canais_meus');
+    if (!error) r = data;
+  }catch(e){ /* sem a 2.18.0: a tela diz que não carregou */ }
+  const cx = $('#pn-canais');
+  if (!cx) return;
+  if (r?.status === 'sem_registro'){ cx.innerHTML = `<p class="small muted">${MOTIVO_RPC.sem_registro}</p>`; return; }
+  if (r?.status !== 'ok' || !Array.isArray(r.categorias)){
+    cx.innerHTML = '<p class="small muted">Não foi possível carregar as preferências.</p>'; return;
+  }
+  cx.innerHTML = canaisNotifHTML(r.categorias);
+  const b = $('#pn-btn'); if (b) b.disabled = false;
 }
 
 /* ============================================================
@@ -5763,10 +5786,7 @@ async function testarEmail(){
        ${r.de ? `<br><span class="small">Remetente: <b>${esc(r.de)}</b>. Se todos os envios falham, verifique o remetente.</span>` : ''}`, 'err');
 
     diz(`<b>Enviado.</b> Um e-mail acabou de sair para <b>${esc(t.email)}</b>.
-      Se não chegar em um minuto, verifique a caixa de spam e o endereço.${t.modo !== 'imediato'
-        ? `<br><span class="small">A sua preferência é
-           <b>${t.modo === 'resumo' ? 'um resumo por dia' : 'só no portal'}</b>.
-           O teste ignora a preferência.</span>` : ''}`);
+      Se não chegar em um minuto, verifique a caixa de spam e o endereço.`);
   }catch(e){
     diz('Não foi possível testar: ' + esc(e?.message || e), 'err');
   }finally{
@@ -5775,18 +5795,19 @@ async function testarEmail(){
 }
 
 async function salvarPreferenciaNotif(){
-  const el = document.querySelector('input[name="pn-modo"]:checked');
-  if (!el) return;
+  const canais = [...document.querySelectorAll('#pn-canais tr[data-cat]')].map(tr => ({
+    categoria: tr.dataset.cat,
+    push: tr.querySelector('.pn-pu').checked,
+    email: tr.querySelector('.pn-em').value
+  }));
+  if (!canais.length) return;
   const b = $('#pn-btn'); if (b){ b.disabled = true; b.textContent = 'Salvando…'; }
   try{
-    const { data, error } = await sb.rpc('notificacao_preferencia_salvar', { p: { email_modo: el.value } });
+    const { data, error } = await sb.rpc('notificacao_canais_salvar', { p: { canais } });
     if (error) throw error;
-    if (data?.status === 'sem_registro')
-      return toast('Conta sem vínculo com um registro de membro.', true);
-    if (data?.status !== 'ok') return toast('Não foi possível salvar.', true);
+    if (data?.status !== 'ok') return toast(motivoRPC(data, null, 'Não foi possível salvar'), true);
     fechaModal();
-    toast(el.value === 'nunca' ? 'Avisos apenas no portal.'
-                               : 'Preferência salva.');
+    toast('Preferências salvas.');
   }catch(e){
     toast('Não foi possível salvar: ' + (e.message || e), true);
   }finally{
