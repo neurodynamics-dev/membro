@@ -309,7 +309,7 @@ function psLinhaCand(c){
   return `<tr class="click" tabindex="0" onclick="psAbrirFicha('${c.id}')" onkeydown="if(event.key==='Enter')psAbrirFicha('${c.id}')">
     <td onclick="event.stopPropagation()"><input type="checkbox" aria-label="Selecionar ${esc(c.nome)}" ${PS.selecionados.has(c.id)?'checked':''} onchange="psSelUm('${c.id}',this.checked)"></td>
     <td class="reg">${esc(c.protocolo||'—')}</td>
-    <td><span class="nome">${esc(c.nome)}</span><br><span class="small dim">${esc(c.email)}</span></td>
+    <td><span class="nome">${esc(c.nome)}</span><br><span class="small dim">${esc(c.email)}</span>${c.email?' '+psCopiarEmail(c.email):''}</td>
     <td class="small">${esc(c.curso||'—')}${c.periodo?`, ${esc(c.periodo)}`:''}</td>
     <td>${psPill(c.status)}</td>
     <td class="small">${agTxt(ad)}</td>
@@ -417,6 +417,8 @@ function psEmailAbrir(via){
 }
 
 /* ---------- a ficha do candidato ---------- */
+/* botão utilitário discreto; o clique não abre a ficha da linha */
+const psCopiarEmail = em => `<button type="button" class="icon-btn sm ps-copiar-email" title="Copiar o e-mail" aria-label="Copiar o e-mail ${esc(em)}" data-em="${esc(em)}" onclick="event.stopPropagation();copiar(this.dataset.em)">${ic('copy')}</button>`;
 function psAbrirFicha(id){
   const c = psCand(id); if(!c) return;
   const grupos = {};
@@ -450,7 +452,7 @@ function psAbrirFicha(id){
            ['Acessibilidade',c.acessibilidade],['Instituição',c.instituicao],['Curso',c.curso],
            ['Matrícula',c.matricula],['Período',c.periodo],['Disponibilidade',c.disponibilidade],
            ['Como soube',c.como_soube],['Autorização de imagem',c.autorizacao_imagem?'Sim':'Não']]
-          .map(([l,vl])=>`<div class="it"><dt>${l}</dt><dd>${esc(vl||'—')}</dd></div>`).join('')}
+          .map(([l,vl])=>`<div class="it"><dt>${l}</dt><dd>${esc(vl||'—')}${l==='E-mail'&&vl?' '+psCopiarEmail(vl):''}</dd></div>`).join('')}
         <div class="it full"><dt>Áreas de interesse</dt>
           <dd>${(c.areas_interesse||[]).map(a=>`<span class="chip mini">${esc(a)}</span>`).join(' ')||'—'}</dd></div>
         <div class="it full"><dt>Links</dt><dd>${linksRow}</dd></div>

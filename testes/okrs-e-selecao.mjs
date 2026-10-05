@@ -204,6 +204,9 @@ console.log('\nSeleção (admin)');
   const ficha = await p.evaluate(() => ({ aberto: document.getElementById('modal').classList.contains('open'),
     nome: document.querySelector('#modal [style*="font-size:17px"]')?.textContent }));
   confere('#/selecao/candidatos/c1 abre a ficha por cima da lista', ficha.aberto && ficha.nome === 'Joana Ribeiro', ficha);
+  await p.click('#pstab-dados .ps-copiar-email'); await p.waitForTimeout(200);
+  confere('a ficha tem o botão de copiar ao lado do e-mail e ele copia', await p.evaluate(() => document.getElementById('modal').classList.contains('open')
+    && !!document.querySelector('#pstab-dados dd .ps-copiar-email') && /Copiado/.test(document.body.innerText)));
   await p.click('#modal .nav1 button:text-is("Ações")'); await p.waitForTimeout(200);
   confere('as abas da ficha trocam de conteúdo',
     await p.evaluate(() => !document.getElementById('pstab-acoes').hidden && document.getElementById('pstab-dados').hidden));
