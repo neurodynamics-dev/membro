@@ -955,7 +955,7 @@ function pageApontamento(){
     lead:'Avaliação rápida de assiduidade e entregas do seu grupo, com sinalização ao Depto. de Pessoal.'
   }) + abasEquipe('apontamento');
   if(!gestao.apont){
-    const gs = todosGrupos();
+    const gs = gruposApontaveis();
     $('#main').innerHTML = topo + `<div class="card" style="max-width:560px">
       <h3>Iniciar apontamento</h3>
       <p class="small muted" style="line-height:1.6;margin-bottom:14px">Selecione o grupo sob a sua liderança.
@@ -968,6 +968,13 @@ function pageApontamento(){
     return;
   }
   renderApontamentoLista();
+}
+/* quem tem acesso ao quadro de pessoal aponta qualquer grupo; os demais,
+   só os grupos em que estão (a ficha e os de cima na árvore) */
+function gruposApontaveis(){
+  if (podeQuadro()) return todosGrupos();
+  const eu = state.membros.find(m => m.registro === state.perfil?.registro);
+  return [...gruposEfetivos(eu)].sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
 function iniciarApontamento(){
   const g = $('#ap-grupo').value;
@@ -997,7 +1004,7 @@ function renderApontamentoLista(){
     <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <div style="flex:1;min-width:220px"><b>Grupo:</b> ${esc(a.grupo)}<span class="muted small">, ${a.itens.length} membro(s), ${fmtD(hojeISO())}</span></div>
       <button class="btn" onclick="gestao.apont=null;pageApontamento()">Trocar grupo</button>
-      <button class="btn solid" onclick="salvarApontamento()">${ic('check')} Registrar apontamento</button>
+      <button class="btn solid" id="ap-salvar" onclick="salvarApontamento()">${ic('check')} Registrar apontamento</button>
     </div>
     ${nSin?`<div class="aviso-box warn">${nSin} membro(s) sinalizado(s). O Depto. de Pessoal será notificado.</div>`:''}
     <div class="card" style="padding:6px 14px">
@@ -1042,12 +1049,18 @@ function confirmarSinalizacao(i, reinc){
   fechaModal(); renderApontamentoLista();
 }
 async function salvarApontamento(){
-  const a = gestao.apont; if(!a) return;
+  const a = gestao.apont; if(!a || a.enviando) return;
+  a.enviando = true;
+  const bt = $('#ap-salvar'); if(bt) bt.disabled = true;
   try{
-    const {data:cab, error} = await sb.from('apontamentos')
-      .insert({grupo:a.grupo, data:hojeISO(), responsavel:quemSouEu(), responsavel_id:state.perfil.id})
-      .select('id').single();
-    if(error) throw error;
+    if(!a.cabId){
+      const {data:cab, error} = await sb.from('apontamentos')
+        .insert({grupo:a.grupo, data:hojeISO(), responsavel:quemSouEu(), responsavel_id:state.perfil.id})
+        .select('id').single();
+      if(error) throw error;
+      a.cabId = cab.id;
+    }
+    const cab = {id:a.cabId};
     const itens = a.itens.map(it=>({apontamento_id:cab.id, registro:it.registro, data:hojeISO(),
       assiduidade:it.assiduidade, entregas:it.entregas, sinalizado:it.sinalizado, justificativa:it.justificativa}));
     const r = await sb.from('apontamento_itens').insert(itens);
@@ -1057,6 +1070,7 @@ async function salvarApontamento(){
     if(ocs.length){ const r2 = await sb.from('ocorrencias').insert(ocs); if(r2.error) throw r2.error; }
     const nSin = a.itens.filter(x=>x.sinalizado).length;
     gestao.apont = null;
+    const topo = topoGestao({ olho:'Equipe', titulo:'Apontamento semanal' }) + abasEquipe('apontamento');
     $('#main').innerHTML = topo + `<div class="card" style="max-width:560px;text-align:center;padding:36px">
       <div class="sq" style="width:52px;height:52px;border-radius:16px;background:var(--soft);color:var(--green);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">${ic('check')}</div>
       <h3 style="margin-bottom:8px">Apontamento registrado</h3>
@@ -1067,7 +1081,10 @@ async function salvarApontamento(){
         <a class="btn solid" href="#/equipe">Voltar à equipe</a></div>
     </div>`;
     toast('Apontamento registrado.');
-  }catch(e){ falha(e,'Erro ao registrar o apontamento'); }
+  }catch(e){
+    a.enviando = false; if(bt) bt.disabled = false;
+    falha(e,'Erro ao registrar o apontamento');
+  }
 }
 
 /* O relatório em PDF mora no módulo de relatórios, que é quem carrega o
