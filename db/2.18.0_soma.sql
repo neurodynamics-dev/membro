@@ -24,8 +24,14 @@
 --     (atividade_quadros). Espelha quem escreve nos dois quadros; edita
 --     quem escreve em qualquer um deles.
 --
+--   Notificações por tipo: preferência por categoria de aviso
+--     (notificacao_canais) para o push (liga ou desliga) e o e-mail
+--     (nunca, instantâneo, resumo diário às 8h, resumo semanal na
+--     segunda às 8h). Padrão: push ligado e e-mail semanal. O lote de
+--     e-mail e o de push passam a respeitar a escolha.
+--
 -- Pré-requisitos: a 29.0 (checkin_folhas), a 19.0 (grupos dentro de
--- grupos) e a 2.17.0 (cartões).
+-- grupos), a 2.17.0 (cartões) e a 32.0 (fila e push).
 -- Idempotente.
 -- COMO USAR: cole o arquivo INTEIRO no SQL Editor e Run.
 -- ============================================================
@@ -968,3 +974,279 @@ end $$;
 grant select on public.atividades_quadro to authenticated;
 
 do $$ begin raise notice 'Conta bloqueada: % tabelas com a trava.', public.conta_ativa_travar(); end $$;
+
+-- ============================================================
+-- Notificações por tipo
+--   Cada aviso do sino pertence a uma categoria (notificacao_categoria):
+--   atividades, bugs e melhorias, documentos, Studio, reporte, agenda,
+--   pessoal, treinamentos e sistema. Para cada categoria, a pessoa
+--   escolhe o push (liga ou desliga) e o e-mail (nunca, instantâneo,
+--   resumo diário, resumo semanal). Sem linha em notificacao_canais
+--   vale o padrão: push ligado e e-mail em resumo semanal.
+--   O resumo diário sai às 8h (America/Sao_Paulo); o semanal, na
+--   segunda às 8h. Não há relógio a guardar: um resumo é devido quando
+--   há aviso pendente daquele modo criado antes do último marco, e
+--   leva tudo o que estiver pendente do modo. O agendamento da fila
+--   (soma-fila, a cada minuto, 32.0) basta.
+--   Fora da preferência, de propósito: os convites de evento
+--   (agenda_envios) e as pílulas e e-mails programados
+--   (email_programados) correm por filas próprias e saem sempre por
+--   e-mail na hora; o teste de e-mail e o de push também. O lembrete do
+--   Studio (studio_lembrete) sai na hora, a não ser que o e-mail do
+--   Studio esteja desligado. O sino recebe tudo, sempre.
+--   Conta bloqueada (Desligado, Egresso, Sob demanda) não recebe e-mail
+--   nem push.
+-- ============================================================
+do $$
+begin
+  if to_regclass('public.notificacao_preferencias') is null or to_regprocedure('public.push_lote(integer)') is null then
+    raise exception using message = 'Faltam a 16.0 e a 32.0 (preferências de e-mail e push).',
+      detail = 'Aplique db/v16_pessoal.sql e db/v32_fila_e_notificacoes.sql antes desta migração.';
+  end if;
+end $$;
+
+create or replace function public.notificacao_categorias()
+returns jsonb language sql immutable as $$
+  select '[{"chave":"atividades","nome":"Atividades"},
+           {"chave":"bugs_melhorias","nome":"Bugs e melhorias"},
+           {"chave":"documentos","nome":"Documentos"},
+           {"chave":"studio","nome":"Studio"},
+           {"chave":"reporte","nome":"Reporte"},
+           {"chave":"agenda","nome":"Agenda"},
+           {"chave":"pessoal","nome":"Pessoal"},
+           {"chave":"treinamentos","nome":"Treinamentos"},
+           {"chave":"sistema","nome":"Sistema"}]'::jsonb;
+$$;
+
+-- o tipo gravado em notificacoes.tipo -> a categoria; nulo para o que não
+-- é configurável (os testes de envio)
+create or replace function public.notificacao_categoria(p_tipo text)
+returns text language sql immutable as $$
+  select case
+    when p_tipo in ('teste_email','teste_push') then null
+    when p_tipo like 'atividade\_%' or p_tipo in ('quadro_liberado','projeto_equipe') then 'atividades'
+    when p_tipo like 'feedback\_%' then 'bugs_melhorias'
+    when p_tipo like 'doc\_%' then 'documentos'
+    when p_tipo like 'studio\_%' then 'studio'
+    when p_tipo like 'reporte\_%' or p_tipo like 'newsletter%' then 'reporte'
+    when p_tipo like 'agenda\_%' or p_tipo like 'evento\_%' then 'agenda'
+    when p_tipo like 'pessoal\_%' or p_tipo = 'solicitacao_respondida' then 'pessoal'
+    when p_tipo like 'treinamento%' then 'treinamentos'
+    else 'sistema' end;
+$$;
+
+create table if not exists public.notificacao_canais (
+  registro      integer not null references public.membros(registro) on delete cascade,
+  categoria     text not null,
+  push          boolean not null default true,
+  email         text not null default 'semanal' check (email in ('nunca','instantaneo','diario','semanal')),
+  atualizado_em timestamptz not null default now(),
+  primary key (registro, categoria)
+);
+comment on table public.notificacao_canais is
+  'Como cada pessoa recebe cada categoria de aviso fora do sino. Sem linha vale o padrão: '
+  'push ligado e e-mail em resumo semanal. Escrita só por notificacao_canais_salvar.';
+
+alter table public.notificacao_canais enable row level security;
+drop policy if exists notifc_select on public.notificacao_canais;
+create policy notifc_select on public.notificacao_canais for select to authenticated
+  using (registro = public.portal_registro_atual() or public.papel_atual() in ('admin','pessoal'));
+grant select on public.notificacao_canais to authenticated;
+
+-- a preferência antiga (um modo para tudo) vira a de cada categoria. Só de
+-- quem escolheu: 'imediato' era também o padrão, e a linha que a baixa do
+-- e-mail criou sozinha (ultimo_email = atualizado_em, mesmo instante) não é
+-- escolha de ninguém; essa pessoa fica no padrão novo (semanal).
+alter table public.notificacao_preferencias add column if not exists canais_migrados_em timestamptz;
+insert into public.notificacao_canais (registro, categoria, email)
+select p.registro, c->>'chave',
+       case p.email_modo when 'resumo' then 'diario' when 'nunca' then 'nunca' else 'instantaneo' end
+  from public.notificacao_preferencias p
+ cross join jsonb_array_elements(public.notificacao_categorias()) c
+ where p.canais_migrados_em is null
+   and (p.email_modo <> 'imediato' or p.ultimo_email is distinct from p.atualizado_em)
+on conflict (registro, categoria) do nothing;
+update public.notificacao_preferencias set canais_migrados_em = now() where canais_migrados_em is null;
+
+-- o que a fila usa para decidir
+create or replace function public.notificacao_canal_email(p_registro integer, p_tipo text)
+returns text language sql stable security definer set search_path = public as $$
+  select case when public.notificacao_categoria(p_tipo) is null then 'instantaneo'
+              else coalesce((select c.email from notificacao_canais c
+                              where c.registro = p_registro and c.categoria = public.notificacao_categoria(p_tipo)),
+                            'semanal') end;
+$$;
+create or replace function public.notificacao_canal_push(p_registro integer, p_tipo text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select case when public.notificacao_categoria(p_tipo) is null then true
+              else coalesce((select c.push from notificacao_canais c
+                              where c.registro = p_registro and c.categoria = public.notificacao_categoria(p_tipo)),
+                            true) end;
+$$;
+-- o marco do resumo: o último 8h (diário) ou a última segunda às 8h
+-- (semanal), no horário de Brasília, antes de p_agora
+create or replace function public.notificacao_resumo_marco(p_modo text, p_agora timestamptz default now())
+returns timestamptz language sql stable as $$
+  with l as (select (p_agora at time zone 'America/Sao_Paulo') as agora),
+       m as (select case p_modo when 'semanal' then date_trunc('week', agora) else date_trunc('day', agora) end
+                    + interval '8 hours' as marco, agora from l)
+  select (case when agora < marco
+               then marco - case p_modo when 'semanal' then interval '7 days' else interval '1 day' end
+               else marco end) at time zone 'America/Sao_Paulo'
+    from m;
+$$;
+
+-- a tela: as categorias com a escolha da pessoa (ou o padrão)
+create or replace function public.notificacao_canais_meus()
+returns jsonb language sql stable security definer set search_path = public as $$
+  select case when public.portal_registro_atual() is null then jsonb_build_object('status','sem_registro')
+  else jsonb_build_object('status','ok','categorias', (
+    select jsonb_agg(jsonb_build_object('chave', c->>'chave', 'nome', c->>'nome',
+                                        'push', coalesce(n.push, true), 'email', coalesce(n.email, 'semanal'))
+                     order by o)
+      from jsonb_array_elements(public.notificacao_categorias()) with ordinality as x(c, o)
+      left join notificacao_canais n on n.registro = public.portal_registro_atual() and n.categoria = c->>'chave'))
+  end;
+$$;
+
+-- p = {canais: [{categoria, push, email}]}; o que fica igual ao padrão sai da tabela
+create or replace function public.notificacao_canais_salvar(p jsonb)
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+declare v_reg integer := public.portal_registro_atual(); x jsonb; v_cat text; v_email text; v_push boolean; n integer := 0;
+begin
+  if v_reg is null then return jsonb_build_object('status','sem_registro'); end if;
+  if jsonb_typeof(p->'canais') is distinct from 'array' then
+    return jsonb_build_object('status','invalido','campo','canais'); end if;
+  for x in select * from jsonb_array_elements(p->'canais') loop
+    v_cat := x->>'categoria';
+    v_email := coalesce(nullif(x->>'email',''), 'semanal');
+    v_push := coalesce((x->>'push')::boolean, true);
+    if not exists (select 1 from jsonb_array_elements(public.notificacao_categorias()) c where c->>'chave' = v_cat) then
+      return jsonb_build_object('status','invalido','campo','categoria'); end if;
+    if v_email not in ('nunca','instantaneo','diario','semanal') then
+      return jsonb_build_object('status','invalido','campo','email'); end if;
+    if v_push and v_email = 'semanal' then
+      delete from notificacao_canais where registro = v_reg and categoria = v_cat;
+    else
+      insert into notificacao_canais (registro, categoria, push, email) values (v_reg, v_cat, v_push, v_email)
+      on conflict (registro, categoria) do update set push = excluded.push, email = excluded.email, atualizado_em = now();
+    end if;
+    n := n + 1;
+  end loop;
+  return jsonb_build_object('status','ok','categorias',n);
+end $$;
+
+-- a função antiga (um modo para tudo) segue valendo para a tela em cache:
+-- grava o modo antigo e o aplica a todas as categorias
+create or replace function public.notificacao_preferencia_salvar(p jsonb)
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+declare v_reg integer := public.portal_registro_atual(); v_m text := nullif(p->>'email_modo','');
+begin
+  if v_reg is null then return jsonb_build_object('status','sem_registro'); end if;
+  if v_m not in ('imediato','resumo','nunca') then
+    return jsonb_build_object('status','invalido','campo','email_modo');
+  end if;
+  insert into notificacao_preferencias (registro, email_modo, canais_migrados_em) values (v_reg, v_m, now())
+  on conflict (registro) do update set email_modo = excluded.email_modo, atualizado_em = now(),
+                                       canais_migrados_em = coalesce(notificacao_preferencias.canais_migrados_em, now());
+  insert into notificacao_canais (registro, categoria, email)
+  select v_reg, c->>'chave', case v_m when 'resumo' then 'diario' when 'nunca' then 'nunca' else 'instantaneo' end
+    from jsonb_array_elements(public.notificacao_categorias()) c
+  on conflict (registro, categoria) do update set email = excluded.email, atualizado_em = now();
+  return jsonb_build_object('status','ok','email_modo',v_m);
+end $$;
+
+-- O lote de e-mail. Cada pessoa pode ter até três envelopes por passada:
+-- o instantâneo, o resumo diário e o semanal (modo). Janela: o instantâneo
+-- leva os avisos dos últimos 3 dias; o diário, de 2; o semanal, de 8 (quem
+-- religa o e-mail não recebe o acumulado de meses).
+create or replace function public.notificacoes_email_lote(p_limite integer default 200)
+returns jsonb language sql stable security definer
+set search_path = public as $$
+  with pend as (
+    select n.id, n.registro, n.tipo, n.titulo, n.corpo, n.href, n.criado_em, m.nome,
+           coalesce(nullif(m.email_nro,''), nullif(m.email_pessoal,'')) as email,
+           coalesce(public.notificacao_categoria(n.tipo), 'sistema') as categoria,
+           public.notificacao_canal_email(n.registro, n.tipo) as modo0
+      from notificacoes n
+      join membros m on m.registro = n.registro
+     where n.email_em is null
+       and n.email_tentativas < 5
+       and m.status in ('Ativo','Em pausa / avaliação')
+       and not public.status_bloqueado(m.status)
+       and coalesce(nullif(m.email_nro,''), nullif(m.email_pessoal,'')) is not null
+       and n.criado_em > now() - interval '8 days'
+  ), classe as (
+    select p.*, case when p.tipo = 'studio_lembrete' and p.modo0 <> 'nunca' then 'instantaneo' else p.modo0 end as modo
+      from pend p
+  ), janela as (
+    select c.* from classe c
+     where c.criado_em > now() - case c.modo when 'instantaneo' then interval '3 days'
+                                             when 'diario' then interval '2 days' else interval '8 days' end
+  ), alvo as (
+    select j.* from janela j
+     where j.modo = 'instantaneo'
+        or (j.modo in ('diario','semanal')
+            and exists (select 1 from janela o where o.registro = j.registro and o.modo = j.modo
+                           and o.criado_em < public.notificacao_resumo_marco(j.modo)))
+     order by j.criado_em
+     limit greatest(coalesce(p_limite,200), 1)
+  )
+  select coalesce(jsonb_agg(p order by p->>'nome', p->>'modo'), '[]'::jsonb) from (
+    select jsonb_build_object(
+             'registro', registro, 'nome', nome, 'email', email, 'modo', modo,
+             'itens', jsonb_agg(jsonb_build_object(
+               'id', id, 'tipo', tipo, 'categoria', categoria, 'titulo', titulo,
+               'corpo', corpo, 'href', href, 'criado_em', criado_em)
+               order by criado_em)) as p
+      from alvo group by registro, nome, email, modo
+  ) q;
+$$;
+
+-- O push: só as categorias com push ligado, e nada para conta bloqueada.
+create or replace function public.push_lote(p_limite integer default 300)
+returns jsonb language sql stable security definer
+set search_path = public as $$
+  with pend as (
+    select n.id, n.registro, n.tipo, n.titulo, n.corpo, n.href, n.criado_em
+      from notificacoes n
+     where n.push_em is null
+       and n.criado_em > now() - interval '1 day'
+       and exists (select 1 from push_inscricoes i where i.registro = n.registro)
+       and not exists (select 1 from membros m where m.registro = n.registro and public.status_bloqueado(m.status))
+       and public.notificacao_canal_push(n.registro, n.tipo)
+     order by n.criado_em
+     limit greatest(coalesce(p_limite, 300), 1)
+  )
+  select coalesce(jsonb_agg(jsonb_build_object('registro', q.registro, 'itens', q.itens, 'inscricoes', q.inscricoes)), '[]'::jsonb)
+    from (select p.registro,
+                 jsonb_agg(jsonb_build_object('id', p.id, 'tipo', p.tipo, 'titulo', p.titulo, 'corpo', p.corpo,
+                                              'href', p.href, 'criado_em', p.criado_em) order by p.criado_em) as itens,
+                 (select jsonb_agg(jsonb_build_object('id', i.id, 'endpoint', i.endpoint, 'p256dh', i.p256dh,
+                                                      'auth', i.auth, 'criado_em', i.criado_em))
+                    from push_inscricoes i where i.registro = p.registro) as inscricoes
+            from pend p group by p.registro) q;
+$$;
+
+do $$
+declare f text;
+begin
+  foreach f in array array['notificacao_canal_email(integer,text)','notificacao_canal_push(integer,text)',
+                           'notificacoes_email_lote(integer)','push_lote(integer)'] loop
+    execute format('revoke execute on function public.%s from public', f);
+    if exists (select 1 from pg_roles where rolname = 'anon') then
+      execute format('revoke execute on function public.%s from anon', f); end if;
+    if exists (select 1 from pg_roles where rolname = 'authenticated') then
+      execute format('revoke execute on function public.%s from authenticated', f); end if;
+    if exists (select 1 from pg_roles where rolname = 'service_role') then
+      execute format('grant execute on function public.%s to service_role', f); end if;
+  end loop;
+  foreach f in array array['notificacao_canais_meus()','notificacao_canais_salvar(jsonb)','notificacao_preferencia_salvar(jsonb)'] loop
+    execute format('revoke execute on function public.%s from public', f);
+    if exists (select 1 from pg_roles where rolname = 'anon') then
+      execute format('revoke execute on function public.%s from anon', f); end if;
+    execute format('grant execute on function public.%s to authenticated', f);
+  end loop;
+end $$;
+
+select public.conta_ativa_travar();

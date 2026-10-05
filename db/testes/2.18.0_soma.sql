@@ -2,7 +2,8 @@
 \pset pager off
 -- ============================================================
 -- Teste da 2.18.0: a folha única de check-in, os papéis por grupo
--- (com a ficha e a conta bloqueada) e o card espelhado.
+-- (com a ficha e a conta bloqueada), o card espelhado e as
+-- notificações por tipo.
 -- Rode num banco feito do tbase do LEIAME (esqueleto, Storage e a
 -- 15.0 à 24.0): o teste aplica o resto (Vault, 25.0 à 32.0, 2.17.0),
 -- recria as políticas de produção da ficha, aplica a 2.18.0 e, no fim,
@@ -206,6 +207,17 @@ insert into acessos_concedidos (registro, item_id) select 11, id from itens_de_a
 -- duas folhas ativas, como a 29.0 permitia
 select eu(4, 'admin');
 insert into checkin_folhas (rotulo, criada_por) values ('Porta', 'x'), ('Recepção', 'x');
+
+-- as preferências de e-mail como estavam (16.0): Bruno escolheu resumo,
+-- Diego nunca, Mateus escolheu imediato (salvou depois da baixa); Fábio
+-- só tem a linha que a baixa criou (imediato, sem escolha); Hugo, nada
+insert into notificacao_preferencias (registro, email_modo, ultimo_email, atualizado_em) values
+  (11, 'resumo',   null, now() - interval '9 days'),
+  (23, 'nunca',    now() - interval '3 days', now() - interval '2 days'),
+  (47, 'imediato', now() - interval '5 days', now() - interval '1 day'),
+  (40, 'imediato', now() - interval '4 days', now() - interval '4 days')
+on conflict (registro) do nothing;
+update membros set email_nro = lower(split_part(nome, ' ', 1)) || '@nro.dev' where email_nro is null;
 
 \ir ../2.18.0_soma.sql
 
@@ -582,6 +594,149 @@ end $$;
 reset role;
 
 -- ------------------------------------------------------------
+-- Notificações por tipo
+-- ------------------------------------------------------------
+do $$
+declare r jsonb; n integer;
+begin
+  raise notice 'Notificações por tipo: categorias e migração';
+  perform ok(jsonb_array_length(notificacao_categorias()) = 9, 'nove categorias');
+  perform ok(notificacao_categoria('atividade_atribuida') = 'atividades' and notificacao_categoria('quadro_liberado') = 'atividades'
+             and notificacao_categoria('projeto_equipe') = 'atividades', 'atividades: atividade_*, quadro_liberado, projeto_equipe');
+  perform ok(notificacao_categoria('feedback_novo') = 'bugs_melhorias' and notificacao_categoria('doc_revisao') = 'documentos'
+             and notificacao_categoria('studio_decisao') = 'studio' and notificacao_categoria('reporte_prazo') = 'reporte'
+             and notificacao_categoria('agenda_convite') = 'agenda' and notificacao_categoria('evento_ext') = 'agenda'
+             and notificacao_categoria('pessoal_ocorrencia') = 'pessoal' and notificacao_categoria('solicitacao_respondida') = 'pessoal'
+             and notificacao_categoria('treinamento') = 'treinamentos' and notificacao_categoria('cofre_troca') = 'sistema',
+             'os demais tipos nas suas categorias');
+  perform ok(notificacao_categoria('teste_email') is null and notificacao_categoria('teste_push') is null, 'os testes de envio ficam fora');
+  perform ok((select count(*) from notificacao_canais where registro = 11 and email = 'diario' and push) = 9, 'resumo vira diário em todas');
+  perform ok((select count(*) from notificacao_canais where registro = 23 and email = 'nunca') = 9, 'nunca continua nunca');
+  perform ok((select count(*) from notificacao_canais where registro = 47 and email = 'instantaneo') = 9, 'imediato escolhido vira instantâneo');
+  perform ok(not exists (select 1 from notificacao_canais where registro in (40, 42)), 'a linha da baixa e quem não tinha nada ficam no padrão');
+  perform ok(notificacao_canal_email(40, 'doc_revisao') = 'semanal' and notificacao_canal_push(40, 'doc_revisao'), 'padrão: semanal e push');
+  perform ok(notificacao_canal_email(23, 'teste_email') = 'instantaneo', 'o teste de e-mail sai na hora mesmo com nunca');
+  perform ok(notificacao_resumo_marco('diario', '2026-10-07 10:00-03') = '2026-10-07 08:00-03'
+             and notificacao_resumo_marco('diario', '2026-10-07 07:00-03') = '2026-10-06 08:00-03', 'o marco diário: o último 8h');
+  perform ok(notificacao_resumo_marco('semanal', '2026-10-07 10:00-03') = '2026-10-05 08:00-03'
+             and notificacao_resumo_marco('semanal', '2026-10-05 07:59-03') = '2026-09-28 08:00-03', 'o semanal: a última segunda às 8h');
+
+  raise notice 'Notificações por tipo: a tela';
+  perform eu(42, 'x');
+  r := notificacao_canais_meus();
+  perform ok(r->>'status' = 'ok' and jsonb_array_length(r->'categorias') = 9
+             and (select bool_and((c->>'push')::boolean and c->>'email' = 'semanal') from jsonb_array_elements(r->'categorias') c),
+             'sem linha, a tela mostra o padrão');
+  perform ok(r->'categorias'->0->>'chave' = 'atividades' and r->'categorias'->0->>'nome' = 'Atividades', 'na ordem, com o nome');
+  r := notificacao_canais_salvar('{"canais":[{"categoria":"atividades","push":false,"email":"instantaneo"},
+                                             {"categoria":"studio","push":true,"email":"nunca"},
+                                             {"categoria":"documentos","push":true,"email":"semanal"}]}');
+  perform ok(r->>'status' = 'ok', 'salvar');
+  perform ok((select count(*) from notificacao_canais where registro = 42) = 2, 'o que é igual ao padrão não vira linha');
+  perform ok(notificacao_canal_email(42, 'atividade_mencao') = 'instantaneo' and not notificacao_canal_push(42, 'atividade_mencao')
+             and notificacao_canal_email(42, 'studio_decisao') = 'nunca', 'e vale para os tipos da categoria');
+  r := notificacao_canais_salvar('{"canais":[{"categoria":"atividades","email":"hora_em_hora"}]}');
+  perform ok(r->>'status' = 'invalido' and r->>'campo' = 'email', 'frequência desconhecida é recusada');
+  r := notificacao_canais_salvar('{"canais":[{"categoria":"convites","email":"nunca"}]}');
+  perform ok(r->>'status' = 'invalido' and r->>'campo' = 'categoria', 'categoria desconhecida também (convites e pílulas não são configuráveis)');
+  perform eu(null, 'admin');
+  perform ok(notificacao_canais_salvar('{"canais":[]}')->>'status' = 'sem_registro', 'conta sem registro: sem_registro');
+  perform eu(46, 'x');
+  perform ok(notificacao_canais_meus()->>'status' = 'sem_registro', 'conta bloqueada não tem preferência a mexer');
+  perform eu(40, 'x');
+  r := notificacao_preferencia_salvar('{"email_modo":"resumo"}');
+  perform ok(r->>'status' = 'ok'
+             and (select count(*) from notificacao_canais where registro = 40 and email = 'diario') = 9,
+             'a função antiga (tela em cache) aplica o modo a todas as categorias');
+  r := notificacao_canais_salvar(jsonb_build_object('canais', (select jsonb_agg(jsonb_build_object('categoria', c->>'chave'))
+             from jsonb_array_elements(notificacao_categorias()) c)));
+  perform ok(r->>'status' = 'ok'
+             and not exists (select 1 from notificacao_canais where registro = 40), 'voltar ao padrão apaga as linhas');
+end $$;
+
+-- os avisos: um pouco antes do marco e agora
+delete from notificacoes;
+insert into notificacao_canais (registro, categoria, email) values (46, 'atividades', 'instantaneo') on conflict do nothing;
+insert into notificacoes (registro, tipo, titulo, criado_em) values
+  (42, 'atividade_atribuida', 'H1 atribuída',  now()),
+  (42, 'studio_decisao',      'H2 studio',     now()),
+  (42, 'doc_revisao',         'H3 doc antigo', notificacao_resumo_marco('semanal') - interval '1 hour'),
+  (42, 'feedback_novo',       'H4 bug',        now()),
+  (11, 'feedback_novo',       'B1 bug ontem',  notificacao_resumo_marco('diario') - interval '1 hour'),
+  (11, 'doc_aprovada',        'B2 doc agora',  now()),
+  (11, 'atividade_prazo',     'B3 velho',      now() - interval '3 days'),
+  (23, 'atividade_mencao',    'D1 nunca',      now()),
+  (23, 'teste_email',         'D2 teste',      now()),
+  (40, 'studio_lembrete',     'F1 lembrete',   now()),
+  (40, 'doc_revisao',         'F2 doc agora',  now()),
+  (47, 'cofre_troca',         'M1 cofre',      now() - interval '4 days'),
+  (46, 'atividade_atribuida', 'L1 bloqueada',  now()),
+  (45, 'atividade_atribuida', 'K1 egressa',    now());
+insert into push_inscricoes (registro, endpoint, p256dh, auth) values
+  (42, 'https://push.exemplo/hugo', repeat('a', 87), repeat('b', 22)),
+  (46, 'https://push.exemplo/lia',  repeat('a', 87), repeat('c', 22))
+on conflict (endpoint) do nothing;
+update push_inscricoes set criado_em = now() - interval '2 days';
+
+do $$
+declare l jsonb; t text[]; ids bigint[]; pu jsonb;
+begin
+  raise notice 'Notificações por tipo: o lote de e-mail';
+  l := notificacoes_email_lote(200);
+  select array_agg(i->>'titulo' order by i->>'titulo') into t
+    from jsonb_array_elements(l) d, jsonb_array_elements(d->'itens') i;
+  perform ok('H1 atribuída' = any(t), 'instantâneo sai na hora');
+  perform ok(not ('H2 studio' = any(t)), 'categoria com e-mail desligado não sai');
+  perform ok('H3 doc antigo' = any(t) and 'H4 bug' = any(t), 'o semanal sai quando há aviso de antes da segunda às 8h, e leva o resto');
+  perform ok(exists (select 1 from jsonb_array_elements(l) d where (d->>'registro')::int = 42 and d->>'modo' = 'semanal'
+                       and jsonb_array_length(d->'itens') = 2)
+             and exists (select 1 from jsonb_array_elements(l) d where (d->>'registro')::int = 42 and d->>'modo' = 'instantaneo'),
+             'um envelope por modo');
+  perform ok((select d->'itens'->0->>'categoria' from jsonb_array_elements(l) d
+               where (d->>'registro')::int = 42 and d->>'modo' = 'semanal') = 'documentos', 'cada item leva a categoria');
+  perform ok('B1 bug ontem' = any(t) and 'B2 doc agora' = any(t), 'o diário sai depois das 8h, com o que há');
+  perform ok(not ('B3 velho' = any(t)), 'fora da janela do diário (2 dias) não entra');
+  perform ok(not ('D1 nunca' = any(t)) and 'D2 teste' = any(t), 'nunca não sai; o teste de e-mail sai');
+  perform ok('F1 lembrete' = any(t) and not ('F2 doc agora' = any(t)), 'o lembrete do Studio sai na hora; o semanal novo espera a segunda');
+  perform ok(not ('M1 cofre' = any(t)), 'instantâneo com mais de 3 dias não entra');
+  perform ok(not ('L1 bloqueada' = any(t)) and not ('K1 egressa' = any(t)), 'conta bloqueada não recebe e-mail');
+
+  select array_agg((i->>'id')::bigint) into ids
+    from jsonb_array_elements(l) d, jsonb_array_elements(d->'itens') i;
+  perform notificacoes_email_baixa(jsonb_build_object('enviadas', to_jsonb(ids)));
+end $$;
+do $$
+declare t text[]; pu jsonb;
+begin
+  perform ok(notificacoes_email_lote(200) = '[]'::jsonb, 'depois da baixa, nada repete');
+
+  raise notice 'Notificações por tipo: o push';
+  pu := push_lote(300);
+  select array_agg(i->>'titulo') into t from jsonb_array_elements(pu) d, jsonb_array_elements(d->'itens') i;
+  perform ok(not ('H1 atribuída' = any(t)), 'categoria com push desligado não vai ao aparelho');
+  perform ok('H2 studio' = any(t) and 'H4 bug' = any(t), 'as outras vão (o push não depende do e-mail)');
+  perform ok(not ('L1 bloqueada' = any(t)), 'conta bloqueada não recebe push');
+end $$;
+
+set role authenticated;
+do $$
+declare pegou boolean := false; n integer;
+begin
+  raise notice 'Notificações por tipo: RLS';
+  perform eu(11, 'x');
+  perform ok((select count(*) from notificacao_canais) = 9 and (select count(distinct registro) from notificacao_canais) = 1,
+             'cada um lê só as suas');
+  begin insert into notificacao_canais (registro, categoria) values (11, 'agenda');
+  exception when insufficient_privilege then pegou := true; end;
+  perform ok(pegou, 'e não escreve direto');
+  perform eu(4, 'admin');
+  perform ok((select count(distinct registro) from notificacao_canais) >= 3, 'admin lê todas');
+  perform eu(46, 'x');
+  perform ok((select count(*) from notificacao_canais) = 0, 'a conta bloqueada não lê nem as suas');
+end $$;
+reset role;
+
+-- ------------------------------------------------------------
 -- Idempotência
 -- ------------------------------------------------------------
 \ir ../2.18.0_soma.sql
@@ -610,6 +765,9 @@ begin
                 and coalesce(with_check, '') !~ 'papel_atual') = 16, 'as 16 políticas da lista, sem sobra de papel_atual');
   perform ok((select qual from pg_policies where policyname = 'pavisos_select') ~ 'publicado', 'e o resto da condição continua lá');
   perform ok((select count(*) from atividade_quadros) >= 1, 'os espelhos ficam');
+  perform ok((select count(*) from notificacao_canais where registro = 11) = 9
+             and (select count(*) from notificacao_canais where registro = 42) = 2
+             and not exists (select 1 from notificacao_canais where registro = 40), 'as preferências não são migradas de novo');
   perform eu(42, 'x');
   perform ok(meu_nivel_no_grupo(gid('Gestão')) = 'leitura' and eh_comite(), 'e as regras continuam');
 end $$;
