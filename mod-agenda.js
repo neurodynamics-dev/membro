@@ -213,7 +213,7 @@ function agBotaoCriar(){
     <div class="agx-criar-pop" id="agx-criar-pop" hidden>
       <button onclick="agNovoEvento()">Evento</button>
       <button onclick="agModalAusencia()">Ausência</button>
-      ${can() ? '<button onclick="agModalMarco()">Marco da equipe</button>' : ''}</div></div>`;
+      ${podeGerir() ? '<button onclick="agModalMarco()">Marco da equipe</button>' : ''}</div></div>`;
 }
 function agMenuCriar(e){
   e.stopPropagation();
@@ -853,7 +853,7 @@ function agAddConv(i){
 }
 
 /* ---------- disponibilidade: a ocupação de cada convidado no dia ---------- */
-const AG_D0 = 7, AG_D1 = 21;
+const AG_D0 = 0, AG_D1 = 24;
 async function agDispCarregar(){
   const ev = agenda.ev, el = $('#ev-disp'); if (!el) return;
   const regs = [...ev.conv.keys()];
@@ -896,31 +896,34 @@ function agDispClique(e){
   f.hi = minHHMM(m); f.hf = minHHMM(Math.min(m + dur, 24*60 - 1));
   $('#ev-hi').value = f.hi; $('#ev-hf').value = f.hf; agDispDesenhar();
 }
-/* O primeiro horário, a partir de agora, em que todos os obrigatórios
-   estão livres, dentro do expediente e nos próximos dez dias. */
+/* Varre a agenda: cada clique traz o próximo horário em que todos os
+   obrigatórios estão livres, depois do último sugerido, a qualquer hora
+   do dia, nos dez dias seguintes. Recomeça de agora quando mudam os
+   participantes, a duração ou a data/hora escolhida. */
 async function agProximoLivre(){
   const ev = agenda.ev, f = ev.f;
   const dur = f.dia_inteiro ? 60 : Math.max(15, hhmmMin(f.hf) - hhmmMin(f.hi));
-  const regs = [...ev.conv].filter(([, v]) => !v.opcional).map(([r]) => r);
-  const de = new Date(); const ate = new Date(de.getTime() + 10 * 864e5);
+  const regs = [...ev.conv].filter(([, v]) => !v.opcional).map(([r]) => r).sort((a, b) => a - b);
+  const s0 = ev.sug, chave = regs.join() + '|' + dur;
+  const segue = s0 && s0.chave === chave && s0.data === f.data && s0.hi === f.hi;
+  const de = segue ? new Date(s0.fim) : new Date();
+  const ate = new Date(de.getTime() + 10 * 864e5);
   const { data, error } = await sb.rpc('portal_agenda_ocupacao', { p_registros: regs, p_de: de.toISOString(), p_ate: ate.toISOString() });
   if (error) return toast('Não foi possível consultar a disponibilidade.', true);
   const blocos = (data || []).map(b => [new Date(b.inicio).getTime(), new Date(b.fim).getTime()]);
-  const ini = hhmmMin(EXPEDIENTE.inicio), fim = hhmmMin(EXPEDIENTE.fim);
-  for (let d = 0; d < 10; d++){
-    const dia = new Date(); dia.setDate(dia.getDate() + d);
-    if (!EXPEDIENTE.dias.includes(isoDow(dia))) continue;
-    const iso = isoDia(dia), base = dataHora(iso, 0).getTime();
-    for (let m = ini; m + dur <= fim; m += 15){
-      const a = base + m * 6e4, z = a + dur * 6e4;
-      if (a < Date.now()) continue;
-      if (!blocos.some(([i, fb]) => i < z && fb > a)){
-        f.data = iso; f.dia_inteiro = false; f.hi = minHHMM(m); f.hf = minHHMM(m + dur);
-        agEventoDesenhar(); toast(`Todos livres: ${fmtD(iso)}, ${f.hi}.`); return;
-      }
-    }
+  const passo = 15 * 6e4, dia0 = new Date(de); dia0.setHours(0, 0, 0, 0);
+  for (let a = dia0.getTime(); a < ate.getTime(); a += passo){
+    if (a < de.getTime() || a < Date.now()) continue;
+    const z = a + dur * 6e4;
+    if (blocos.some(([i, fb]) => i < z && fb > a)) continue;
+    const ini = new Date(a), fimD = new Date(z);
+    if (fimD.getDate() !== ini.getDate()) continue;
+    const iso = isoDia(ini), m = ini.getHours() * 60 + ini.getMinutes();
+    f.data = iso; f.dia_inteiro = false; f.hi = minHHMM(m); f.hf = minHHMM(m + dur);
+    ev.sug = { chave, data: f.data, hi: f.hi, fim: z };
+    agEventoDesenhar(); toast(`Todos livres: ${fmtD(iso)}, ${f.hi}.`); return;
   }
-  toast('Nenhum horário comum nos próximos dez dias úteis.', true);
+  toast('Nenhum horário comum nos próximos dez dias.', true);
 }
 
 /* ---------- salvar e excluir ---------- */
@@ -1040,19 +1043,19 @@ function agCfgPredefinidos(){
   const grupos = ids => (ids || []).map(id => grupoPorId(id)?.nome).filter(Boolean);
   $('#agc-corpo').innerHTML = `<div class="filtros" style="justify-content:space-between;align-items:center">
       <p class="small muted" style="margin:0">Usados ao criar um evento: preenchem duração, local, convidados e notificações.</p>
-      ${can() ? `<button class="btn solid mini" onclick="agPdEditar()">${ic('plus')} Novo</button>` : ''}</div>
+      ${podeGerir() ? `<button class="btn solid mini" onclick="agPdEditar()">${ic('plus')} Novo</button>` : ''}</div>
     ${lista.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th>Nome</th><th>Duração</th><th>Convidados</th><th>Notificações</th><th>Local</th><th></th></tr></thead>
-      <tbody>${lista.map(p => `<tr class="${can() ? 'click' : ''}" ${can() ? `tabindex="0" onclick="agPdEditar('${p.id}')" onkeydown="if(event.key==='Enter')this.click()"` : ''}>
+      <tbody>${lista.map(p => `<tr class="${podeGerir() ? 'click' : ''}" ${podeGerir() ? `tabindex="0" onclick="agPdEditar('${p.id}')" onkeydown="if(event.key==='Enter')this.click()"` : ''}>
         <td class="nome"><span class="agc-pt" style="--cc:${esc(p.cor)}"></span>${esc(p.nome)}</td>
         <td>${p.dia_inteiro ? 'Dia inteiro' : (p.duracao_min >= 60 && p.duracao_min % 60 === 0 ? p.duracao_min / 60 + ' h' : p.duracao_min + ' min')}${p.hora_inicio ? ', ' + p.hora_inicio.slice(0, 5) : ''}</td>
         <td style="white-space:normal">${p.todos ? 'Toda a equipe' : [...grupos(p.grupos), ...(p.convidados || []).map(r => primeiroNome(nomeDe(r)))].map(esc).join(', ') || '<span class="dim">—</span>'}</td>
         <td>${(p.lembretes || []).map(agRotuloLembrete).join(', ') || '<span class="dim">nenhuma</span>'}</td>
         <td>${esc((agenda.espacos || []).find(e => e.id === p.espaco_id)?.nome || p.local || '—')}</td>
-        <td>${can() ? ic('chevron') : ''}</td></tr>`).join('')}</tbody></table></div>`
-      : `<div class="vazio"><h3>Nenhum evento predefinido</h3>${can() ? `<button class="btn solid" onclick="agPdEditar()">Criar o primeiro</button>` : ''}</div>`}`;
+        <td>${podeGerir() ? ic('chevron') : ''}</td></tr>`).join('')}</tbody></table></div>`
+      : `<div class="vazio"><h3>Nenhum evento predefinido</h3>${podeGerir() ? `<button class="btn solid" onclick="agPdEditar()">Criar o primeiro</button>` : ''}</div>`}`;
 }
 function agPdEditar(id){
-  if (!can()) return;
+  if (!podeGerir()) return;
   const p = (agenda.predef || []).find(x => x.id === id) || { nome:'', titulo:'', duracao_min:60, dia_inteiro:false, hora_inicio:null, local:'',
     espaco_id:null, meet_url:'', descricao:'', visibilidade:'convidados', cor:'#2DD4BF', todos:false, grupos:[], convidados:[], lembretes:[30], recorrencia:'Única', ordem:100 };
   agenda.pd = { id: p.id || null, grupos:new Set(p.grupos || []), pessoas:new Set(p.convidados || []), lembretes:[...(p.lembretes || [])], cor:p.cor };

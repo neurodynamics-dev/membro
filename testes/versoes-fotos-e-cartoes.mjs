@@ -19,7 +19,7 @@
                a barra e o "Ver"), a checklist (marcar, somar, colar uma
                lista, lista nova), as outras pessoas e as etiquetas pelo
                seletor (criar uma), o @ que marca e avisa, corrigir o
-               próprio comentário, a menção antiga, copiar para outro
+               próprio comentário, a menção antiga, espelhar ou mover para outro
                quadro arquivando o original, os arquivados e restaurar,
                a atividade nova com pessoas e etiquetas;
      e o celular, sem rolagem lateral, e nenhum erro de página.
@@ -334,6 +334,18 @@ console.log('\nAtividades: os cartões mais completos');
   await p.click('#cd-desc .btn.solid'); await p.waitForTimeout(900);
   confere('salvar grava o Markdown', (await rpcs(p, 'atividade_editar')).at(-1)?.descricao === 'Trocar o **conector** e ver ORT-2.');
 
+  /* campos do cartão: salvam sem redesenhar, e o de texto espera ~1,5 s */
+  await p.evaluate(() => { const i = document.querySelector('.cd-campos input[type=number]'); i.dataset.marca = '1'; i.focus(); });
+  await p.keyboard.type('7');
+  const nAntes = (await rpcs(p, 'atividade_editar')).length;
+  await p.waitForTimeout(600);
+  confere('o texto não salva a cada tecla', (await rpcs(p, 'atividade_editar')).length === nAntes);
+  await p.waitForTimeout(1500);
+  confere('salva ~1,5 s após a última tecla, sem trocar o campo nem tirar o foco', (await rpcs(p, 'atividade_editar')).at(-1)?.estimativa_h === '74'
+    && await p.evaluate(() => document.activeElement?.dataset.marca === '1'));
+  await p.selectOption('.cd-campos select >> nth=2', { index: 0 }); await p.waitForTimeout(500);
+  confere('o campo de escolha salva na hora e continua o mesmo', await p.evaluate(() => document.querySelector('.cd-campos input[type=number]')?.dataset.marca === '1'));
+
   /* o @ */
   await p.click('#cd-coment'); await p.keyboard.type('Pode ver isso, @bru');
   await p.waitForSelector('.menc-pop', { timeout:3000 }).catch(() => {});
@@ -358,21 +370,36 @@ console.log('\nAtividades: os cartões mais completos');
   confere('corrigir o comentário grava o texto e as menções novas', ed?.corpo === 'Pode ver isso, @Carla Mendonça?' && JSON.stringify(ed?.mencionados) === '[17]', ed);
   confere('e ele fica marcado como editado', /editado/.test(await texto(p, '.cd-coments .cm:last-child .cm-tp')));
 
-  /* copiar para outro quadro */
-  await p.click('.acts .btn:has-text("Copiar para outro quadro")'); await p.waitForTimeout(300);
+  /* espelhar em outro quadro (2.18.0): o mesmo cartão nos dois */
+  await p.click('.acts .btn:has-text("Espelhar ou mover")'); await p.waitForTimeout(300);
   const destinos = await p.evaluate(() => [...document.querySelectorAll('#cp-grupo option')].map(o => o.textContent.trim()));
-  confere('o destino é um quadro que você edita', destinos.includes('DEP Depto de Pessoal') && !destinos.some(d => /Sinais|Gerência/.test(d)), destinos);
+  confere('o destino é um quadro que você edita, fora os do cartão', destinos.join() === 'DEP Depto de Pessoal', destinos);
   await p.selectOption('#cp-grupo', '3');
-  await p.uncheck('.cp-com[value="checklists"]'); await p.check('#cp-arq');
   await p.click('#cp-btn'); await p.waitForTimeout(1500);
-  const cp = (await rpcs(p, 'atividade_copiar'))[0];
-  confere('copiar manda o destino, o que vai junto e o arquivar', cp?.grupo_id === 3 && cp?.com?.checklists === false && cp?.com?.pessoas === true && cp?.arquivar === true, cp);
-  confere('e abre a cópia, que diz de onde veio', await hash(p) === '#/atividades/card/DEP-2' && /Cópia de ORT-1/.test(await texto(p, '.cd-copia') || ''), [await hash(p), await texto(p, '.cd-copia')]);
+  const es = (await rpcs(p, 'atividade_espelhar'))[0];
+  confere('espelhar é a opção padrão e manda o cartão e o quadro', es?.grupo_id === 3 && !!es?.id && !(await rpcs(p, 'atividade_mover')).length, es);
+  const qds = await p.evaluate(() => [...document.querySelectorAll('#cd-quadros .cd-quadro')].map(x => x.textContent.replace(/\s+/g, ' ').trim()));
+  confere('o cartão mostra os quadros, o dono primeiro', qds.length === 2 && /ORT Órtese, dono/.test(qds[0]) && /DEP Depto de Pessoal/.test(qds[1]), qds);
+  await ir(p, '#/atividades/DEP', 1100);
+  confere('e aparece no quadro do espelho, marcado', await p.locator('.kb-card:has(.cod:text("ORT-1")) .kb-esp').count() === 1);
+  await ir(p, '#/atividades/card/ORT-1', 1100);
+  await p.click('#cd-quadros .cd-quadro .x'); await p.waitForTimeout(300);
+  await p.click('#modal .btn.solid'); await p.waitForTimeout(1200);
+  const tira = (await rpcs(p, 'atividade_espelho_remover'))[0];
+  confere('tirar o espelho manda o quadro', tira?.grupo_id === 3 && await p.locator('#cd-quadros').count() === 0, tira);
+
+  /* mover: o cartão passa para o outro quadro e este fica arquivado */
+  await p.click('.acts .btn:has-text("Espelhar ou mover")'); await p.waitForTimeout(300);
+  await p.selectOption('#cp-grupo', '3'); await p.check('#cp-modo-mover');
+  await p.click('#cp-btn'); await p.waitForTimeout(1500);
+  const mv = (await rpcs(p, 'atividade_mover'))[0];
+  confere('mover manda o destino', mv?.grupo_id === 3, mv);
+  confere('e abre o cartão novo, que diz de onde veio', await hash(p) === '#/atividades/card/DEP-2' && /Cópia de ORT-1/.test(await texto(p, '.cd-copia') || ''), [await hash(p), await texto(p, '.cd-copia')]);
 
   /* os arquivados */
   await ir(p, '#/atividades/ORT/arquivadas', 1100);
   const arq = await p.evaluate(() => [...document.querySelectorAll('.arq-lista .arq .cod')].map(x => x.textContent));
-  confere('o ORT-1 (copiado e arquivado) e o ORT-4 estão nos arquivados', arq.sort().join() === 'ORT-1,ORT-4', arq);
+  confere('o ORT-1 (movido, arquivado) e o ORT-4 estão nos arquivados', arq.sort().join() === 'ORT-1,ORT-4', arq);
   await p.click('.arq:has(.cod:text("ORT-4")) .btn'); await p.waitForTimeout(900);
   confere('restaurar devolve ao quadro', JSON.stringify((await rpcs(p, 'atividade_editar')).at(-1)) === '{"id":"t5","arquivada":false}'
     && !(await p.evaluate(() => [...document.querySelectorAll('.arq-lista .arq .cod')].map(x => x.textContent))).includes('ORT-4'));

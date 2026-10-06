@@ -93,7 +93,7 @@ async function docSegundaVia(codigo){
    A DECLARAÇÃO DE VÍNCULO
    ============================================================ */
 async function pageDeclaracao(sub2){
-  const reg = can() && /^\d+$/.test(String(sub2 || '')) ? Number(sub2) : state.perfil?.registro;
+  const reg = podeGerir() && /^\d+$/.test(String(sub2 || '')) ? Number(sub2) : state.perfil?.registro;
   docs.alvo = reg;
   if (!reg){
     $('#main').innerHTML = `${docTopo('Declaração de vínculo', '')}<div class="aviso-box warn">A sua conta ainda não está ligada a
@@ -122,7 +122,7 @@ function dclDesenhar(){
   const vinc = d.vigente === false
     ? (d.desde && d.ate ? `de ${DocNRO_mesAno(d.desde)} a ${DocNRO_mesAno(d.ate)}` : d.ate ? `até ${DocNRO_mesAno(d.ate)}` : 'encerrado')
     : (d.desde ? `desde ${DocNRO_mesAno(d.desde)}` : 'vigente');
-  const outros = can() ? `<div class="fld dcl-quem"><label for="dcl-quem">Emitir para</label>
+  const outros = podeGerir() ? `<div class="fld dcl-quem"><label for="dcl-quem">Emitir para</label>
       <select id="dcl-quem" onchange="location.hash = '#/servicos/declaracao/' + this.value">${[...state.membros]
         .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'))
         .map(m => `<option value="${m.registro}" ${m.registro === docs.alvo ? 'selected' : ''}>${esc(m.nome)}${
@@ -149,7 +149,7 @@ function dclDesenhar(){
           <div><dt>Segunda folha</dt><dd>${nT} ${nT === 1 ? 'treinamento' : 'treinamentos'}, ${nE} ${nE === 1 ? 'evento' : 'eventos'}</dd></div>
         </dl>
         ${(p.faltam || []).length ? `<div class="aviso-box warn" style="margin:14px 0 0">${(p.faltam || []).map(f => esc(DOC_FALTA[f] || f)).join('<br>')}
-          <br><span class="small">A ficha é atualizada pelo Depto. de Pessoal.${can() ? ` <a href="#/equipe/${docs.alvo}" style="text-decoration:underline">Abrir a ficha</a>` : ''}</span></div>` : ''}
+          <br><span class="small">A ficha é atualizada pelo Depto. de Pessoal.${podeVerFicha() ? ` <a href="#/equipe/${docs.alvo}" style="text-decoration:underline">Abrir a ficha</a>` : ''}</span></div>` : ''}
         <div class="acts" style="margin-top:18px">
           <button class="btn solid" id="dcl-btn" onclick="dclEmitir()">${ic('selo')} Emitir a declaração</button>
           <span class="small muted">Dispensa assinatura.</span>
@@ -223,12 +223,12 @@ async function dclRevogarConfirma(codigo){
 /* ============================================================
    OS EVENTOS
    ============================================================ */
-const evxPodeConfigurar = () => can();
+const evxPodeConfigurar = () => podeGerir();
 async function pageEventosExt(sub2){
   const s = String(sub2 || '');
   const extra = String(location.hash.split('/')[4] || '');
   if (s === 'novo') return evxFormulario(null);
-  if (s === 'config') return can() ? evxConfig() : (location.hash = '#/servicos/eventos');
+  if (s === 'config') return podeGerir() ? evxConfig() : (location.hash = '#/servicos/eventos');
   if (/^ext-\d+$/i.test(s)) return extra === 'editar' ? evxFormulario(s.toUpperCase()) : evxPagina(s.toUpperCase());
   return evxLista(['aprovar', 'todos'].includes(s) ? s : 'meus');
 }

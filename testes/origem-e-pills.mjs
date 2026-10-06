@@ -89,13 +89,13 @@ await p.waitForTimeout(300);
 await p.click('#sino');
 await p.waitForSelector('.sn-pe button', { timeout:5000 });
 await p.click('.sn-pe button');
-await p.waitForSelector('input[name="pn-modo"]', { timeout:5000 });
-out.modos = await p.locator('input[name="pn-modo"]').count();
-out.modoAtual = await p.locator('input[name="pn-modo"]:checked').getAttribute('value');
-await p.click('input[name="pn-modo"][value="nunca"]');
+await p.waitForSelector('#pn-canais table', { timeout:5000 });
+out.tiposDeAviso = await p.locator('#pn-canais tbody tr').count();
+out.emailAtividades = await p.inputValue('#pn-canais tr[data-cat="atividades"] .pn-em');
+await p.selectOption('#pn-canais tr[data-cat="atividades"] .pn-em', 'nunca');
 await p.click('#pn-btn');
 await p.waitForTimeout(400);
-out.preferenciaSalva = await p.evaluate(() => window.__preferencia ?? null);
+out.preferenciaSalva = await p.evaluate(() => window.__canais?.canais?.find(c => c.categoria === 'atividades') ?? null);
 await p.screenshot({ path:new URL('./f4-preferencia.png', import.meta.url).pathname, fullPage:false });
 
 out.erros = erros;

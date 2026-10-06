@@ -204,6 +204,9 @@ console.log('\nSeleção (admin)');
   const ficha = await p.evaluate(() => ({ aberto: document.getElementById('modal').classList.contains('open'),
     nome: document.querySelector('#modal [style*="font-size:17px"]')?.textContent }));
   confere('#/selecao/candidatos/c1 abre a ficha por cima da lista', ficha.aberto && ficha.nome === 'Joana Ribeiro', ficha);
+  await p.click('#pstab-dados .ps-copiar-email'); await p.waitForTimeout(200);
+  confere('a ficha tem o botão de copiar ao lado do e-mail e ele copia', await p.evaluate(() => document.getElementById('modal').classList.contains('open')
+    && !!document.querySelector('#pstab-dados dd .ps-copiar-email') && /Copiado/.test(document.body.innerText)));
   await p.click('#modal .nav1 button:text-is("Ações")'); await p.waitForTimeout(200);
   confere('as abas da ficha trocam de conteúdo',
     await p.evaluate(() => !document.getElementById('pstab-acoes').hidden && document.getElementById('pstab-dados').hidden));
@@ -269,8 +272,11 @@ console.log('\nSeleção por papel e no celular');
 {
   const { ctx, p, erros } = await abrir({ hash:'#/selecao/config', stub: stubDe('selecao') });
   confere('o Comitê (papel selecao) entra', await hash(p) === '#/selecao/config' && await p.locator('#ps-ed-nome').count() === 1);
-  confere('e não vê a lista de perfis, que é de admin/pessoal',
-    /visível apenas para admin\/pessoal/.test(await p.locator('#sel-corpo').textContent()));
+  /* o comitê vem dos grupos (2.18.0); as contas com o papel legado são
+     de admin e pessoal */
+  const corpoSel = await p.locator('#sel-corpo').textContent();
+  confere('e vê o comitê pelos grupos, sem a lista de contas (de admin e pessoal)',
+    /Comitê de Seleção/.test(corpoSel) && !/Papel na conta/.test(corpoSel), corpoSel.slice(-300));
   confere('sem erro de página', erros.length === 0, erros);
   await ctx.close();
 }

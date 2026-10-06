@@ -106,8 +106,8 @@ console.log('\nO aparelho');
     && !(await p.textContent('#sino-painel')).includes('mesmo com o SOMA fechado'));
   await p.locator('#sino-painel .sn-pe button', { hasText:'Preferências de avisos' }).click();
   await p.waitForSelector('#modal.open #pn-ativar');
-  confere('as preferências abrem com o aparelho e o e-mail', (await p.textContent('#modal')).includes('Neste aparelho')
-    && (await p.textContent('#modal')).includes('Por e-mail'));
+  confere('as preferências abrem com o aparelho e os tipos de aviso', (await p.textContent('#modal')).includes('Neste aparelho')
+    && (await p.textContent('#modal')).includes('Por tipo de aviso'));
   await p.click('#pn-ativar');
   await p.waitForFunction(() => document.querySelector('#pn-push')?.textContent.includes('Ativadas neste aparelho'), null, { timeout:8000 });
   confere('ativar pede a permissão do navegador', await p.evaluate(() => window.__pediu === true));
@@ -145,6 +145,50 @@ console.log('\nO aparelho');
   await p.waitForFunction(() => /tela de início/.test(document.querySelector('#pn-push')?.textContent || ''), null, { timeout:5000 });
   confere('no Safari do iPhone, a tela manda instalar o SOMA primeiro', (await p.textContent('#pn-push')).includes('Adicionar à Tela de Início'));
   confere('com o passo a passo do tour', await p.locator('#pn-push a[href="tour#celular"]').count() === 1);
+  await ctx.close();
+}
+
+/* as preferências por tipo (2.18.0): tipo × (push, e-mail) */
+console.log('\nPor tipo de aviso');
+{
+  const { ctx, p, erros } = await abrir();
+  await p.click('#sino');
+  await p.locator('#sino-painel .sn-pe button', { hasText:'Preferências de avisos' }).click();
+  await p.waitForSelector('#modal.open #pn-canais table');
+  const linhas = await p.$$eval('#pn-canais tbody tr', trs => trs.map(tr => ({
+    tipo: tr.cells[0].textContent.trim(), push: tr.querySelector('.pn-pu').checked, email: tr.querySelector('.pn-em').value })));
+  confere('uma linha por tipo, na ordem', linhas.map(l => l.tipo).join('|')
+    === 'Atividades|Bugs e melhorias|Documentos|Studio|Reporte|Agenda|Pessoal|Treinamentos|Sistema', linhas.map(l => l.tipo));
+  confere('as colunas: tipo, push e e-mail', (await p.$$eval('#pn-canais thead th', ths => ths.map(t => t.textContent.trim()))).join('|') === 'Tipo|Push|E-mail');
+  confere('sem escolha, push ligado e resumo semanal', linhas.filter(l => !['Atividades','Studio'].includes(l.tipo)).every(l => l.push && l.email === 'semanal'), linhas);
+  confere('a escolha salva aparece', linhas[0].email === 'instantaneo' && linhas[3].email === 'nunca' && !linhas[3].push, linhas);
+  confere('o e-mail tem as quatro frequências', (await p.$$eval('#pn-canais tbody tr:first-child option', os => os.map(o => o.textContent))).join('|')
+    === 'Desligado|Instantâneo|Resumo diário|Resumo semanal');
+  const t = await p.textContent('#modal');
+  confere('convites e pílulas não são configuráveis: só uma linha informa', !/Convites|Pílulas/.test(linhas.map(l => l.tipo).join(' '))
+    && t.includes('Convites de eventos e pílulas de conhecimento chegam sempre por e-mail, na hora.'));
+  confere('o resto vai para a dica', await p.locator('#modal .pn-nota .dica').count() === 1);
+  confere('sem travessão nem ponto médio no texto', !/ — |·/.test(t), t);
+  await p.selectOption('#pn-canais tr[data-cat="documentos"] .pn-em', 'diario');
+  await p.uncheck('#pn-canais tr[data-cat="agenda"] .pn-pu');
+  await p.click('#pn-btn');
+  await p.waitForFunction(() => !document.querySelector('#modal.open'), null, { timeout:5000 });
+  const salvo = await p.evaluate(() => window.__canais);
+  const por = Object.fromEntries((salvo?.canais || []).map(c => [c.categoria, c]));
+  confere('salvar manda os nove tipos por RPC', salvo?.canais?.length === 9, salvo);
+  confere('com a frequência e o push escolhidos', por.documentos?.email === 'diario' && por.agenda?.push === false
+    && por.atividades?.email === 'instantaneo' && por.sistema?.email === 'semanal' && por.sistema?.push === true, por);
+  confere('e diz que salvou', (await toasts(p)).some(x => /Preferências salvas/.test(x)), await toasts(p));
+  await p.evaluate(() => modalPreferenciaNotif());
+  await p.waitForSelector('#modal.open #pn-canais table');
+  confere('ao reabrir, a escolha nova está lá', await p.inputValue('#pn-canais tr[data-cat="documentos"] .pn-em') === 'diario'
+    && !(await p.isChecked('#pn-canais tr[data-cat="agenda"] .pn-pu')));
+  await p.setViewportSize({ width:390, height:844 });
+  await p.waitForTimeout(200);
+  confere('no celular, a tabela cabe sem rolar de lado', await p.evaluate(() => {
+    const m = document.querySelector('#modal'); return m.scrollWidth <= m.clientWidth + 1; }));
+  await p.screenshot({ path:new URL('./notif-preferencias.png', import.meta.url).pathname });
+  confere('sem erro na página', erros.length === 0, erros);
   await ctx.close();
 }
 

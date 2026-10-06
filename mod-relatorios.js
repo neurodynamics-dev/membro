@@ -67,7 +67,7 @@ const LOCAIS_PORTARIA = ['PORTARIA PRINCIPAL (HALL)','PORTARIA DO GALPÃO DA MEC
 function pageRelatorios(){
   const tiles = [];
   const t = (i,tt,td,fn) => tiles.push([i,tt,td,fn]);
-  if (can()){
+  if (podeVerFicha()){
     t('door','Lista para a portaria','Autorização de entrada na Escola de Engenharia, com espaço para assinatura e envio à SLOG.','modalPortaria()');
     t('clip','Lista de assinatura em evento','Presença dos ativos para imprimir, com nome do evento e data.','modalAssinatura()');
   }
@@ -78,9 +78,9 @@ function pageRelatorios(){
      pílulas de conhecimento: o tile leva até lá */
   t('mailer','Full mailer','E-mail no padrão NeuroDynamics, com a cor da área que assina. Abre em E-mails.',"location.hash='#/admin/emails'");
   /* Estes dois expõem o quadro inteiro — quem tem acesso a quê e a
-     exportação geral. Ficam com can(): a Comissão de Seleção precisa
+     exportação geral. Ficam com podeVerFicha() (admin, pessoal, liderança): a Comissão de Seleção precisa
      dos e-mails dos candidatos, não do efetivo. */
-  if (can()){
+  if (podeVerFicha()){
     t('key','Lista de autorizados','Quem tem acesso ativo a um sistema, local ou documento, em PDF.','modalAutorizados()');
     t('down','Quadro completo','Exportação geral do quadro em Excel ou PDF, com filtros.','modalQuadro()');
   }
@@ -215,7 +215,7 @@ async function gerarRelatorioMembro(){
   try{
     const m = membroAtual(); if(!m) return;
     const f = gestao.ficha;
-    const temPess = can() && !!f.pess;
+    const temPess = podeVerFicha() && !!f.pess;
     const doc = pdfNovo();
     let y = pdfCabecalho(doc, 'FICHA DO MEMBRO: '+m.nome.toUpperCase(),
       `Registro ${pad3(m.registro)}, ${m.status}, Emitida em ${new Date().toLocaleDateString('pt-BR')}`
@@ -517,7 +517,7 @@ function relEmlCandsEnviar(via){
 }
 /* --- 4. lista de autorizados --- */
 function modalAutorizados(){
-  if (!can()) return toast('Este relatório é da administração.', true);
+  if (!podeVerFicha()) return toast('Este relatório é da administração.', true);
   abreModal(`<h3>Lista de autorizados</h3>
     <div class="form-grid">
       <div class="fld full"><label>Sistema, local ou documento</label>
@@ -554,7 +554,7 @@ async function gerarAutorizados(){
 }
 /* --- 5. quadro completo --- */
 function modalQuadro(){
-  if (!can()) return toast('Este relatório é da administração.', true);
+  if (!podeVerFicha()) return toast('Este relatório é da administração.', true);
   abreModal(`<h3>Exportar quadro completo</h3>
     <div class="form-grid">
       <div class="fld full"><label>Grupos (vazio = todos)</label>${grupoCheckboxes('g-qd')}</div>
@@ -616,7 +616,7 @@ function exportarPDFQuadro(){
 registrarBusca({
   fonte:'relatorios', rotulo:'Relatórios',
   buscar: (t) => {
-    if (!can() && !podeSelecao()) return [];
+    if (!podeVerFicha() && !podeSelecao()) return [];
     /* a busca não pode achar o que a galeria esconde */
     const itens = [
       { titulo:'Lista de e-mails', sub:'Por grupo e status', href:'#/admin/relatorios' },
@@ -624,7 +624,7 @@ registrarBusca({
     ];
     if (podeSelecao())
       itens.push({ titulo:'E-mails dos candidatos', sub:'Por status da fase', href:'#/admin/relatorios' });
-    if (can()) itens.push(
+    if (podeVerFicha()) itens.push(
       { titulo:'Lista para a portaria', sub:'Autorização de entrada', href:'#/admin/relatorios' },
       { titulo:'Lista de assinatura em evento', sub:'Presença para imprimir', href:'#/admin/relatorios' },
       { titulo:'Lista de autorizados', sub:'Quem tem acesso a quê', href:'#/admin/relatorios' },

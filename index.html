@@ -607,6 +607,10 @@ button.et:hover{border-color:var(--dim);color:var(--ink)}
 /* o cartão aberto: pessoas, etiquetas e os seletores deles */
 .cd-linha{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .cd-bloco{margin-bottom:14px}
+/* os quadros de um cartão espelhado (2.18.0) */
+.cd-quadro{display:inline-flex;align-items:center;gap:4px}
+.cd-quadro .x{background:none;border:0;padding:0 0 0 2px;color:var(--dim);font-size:13px;line-height:1;cursor:pointer}
+.cd-quadro .x:hover{color:var(--ink)}
 .cd-bloco>label{display:block;font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
   color:var(--dim);margin-bottom:7px}
 .pessoa-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;border:1px solid var(--line2);border-radius:999px;
@@ -3299,6 +3303,17 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 #modal.open{display:block}
 #modal h3{font-size:17px;margin-bottom:12px}
 .pn-teste:empty{display:none}
+.pn-tabela td{padding:7px 8px}
+.pn-tabela th{padding:6px 8px}
+.pn-tabela .pn-c{text-align:center;width:56px}
+.pn-tabela .pn-c input{width:16px;height:16px;accent-color:var(--syn-borda);cursor:pointer}
+.pn-tabela select{width:100%;min-width:0}
+.pn-nota{margin-top:12px}
+@media (max-width:560px){
+  .pn-tabela td,.pn-tabela th{padding:6px 4px}
+  .pn-tabela .pn-c{width:40px}
+  .pn-tabela select{font-size:12px;padding-left:6px;padding-right:20px}
+}
 /* as preferências de avisos: o aparelho e o e-mail, cada um com o seu título */
 .pn-sec{font-family:var(--fm);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
   margin:16px 0 8px;display:flex;align-items:center;gap:10px}
@@ -4229,10 +4244,21 @@ const CAT_LABEL = {documento:'Termos e documentos', local:'Acessos físicos', si
 /* A mesma semântica do SOMA · Gestão, palavra por palavra: a Diretoria
    e o Depto. de Pessoal editam; consulta e comitê de seleção chegam às
    fichas pelo organograma, nunca pela lista direta do quadro. */
-const can         = () => ['admin','pessoal'].includes(state.perfil?.papel);
-const podeQuadro  = () => can();
-const podeSelecao = () => ['admin','pessoal','selecao'].includes(state.perfil?.papel);
-const PAPEIS = {admin:'Administração', pessoal:'Depto. de Pessoal',
+/* Desde a 2.18.0 o papel sai dos grupos (Administração › Grupos): o
+   banco devolve a lista em papeis_atuais(), do mais forte ao mais
+   fraco, e state.perfil.papeis guarda. admin continua sendo da conta.
+   Liderança vê a ficha e escreve nos módulos da lista (gestão); só
+   admin e pessoal mexem em pessoas, contas e grupos. */
+const papeisDaConta = () => state.perfil?.papeis || [state.perfil?.papel || 'leitura'];
+const tenhoPapel  = p => papeisDaConta().includes(p) || papeisDaConta().includes('admin');
+const souAdmin    = () => papeisDaConta().includes('admin');
+const can         = () => tenhoPapel('pessoal');                 /* pessoas, contas, grupos */
+const podeEditarPessoas = can;
+const podeVerFicha = () => can() || tenhoPapel('lideranca');      /* a ficha, menos ocorrências */
+const podeGerir   = () => podeVerFicha();                        /* a lista de escrita da liderança */
+const podeQuadro  = () => podeVerFicha();                        /* o quadro de pessoal e as fichas */
+const podeSelecao = () => can() || tenhoPapel('selecao') || tenhoPapel('lideranca');
+const PAPEIS = {admin:'Administração', pessoal:'Depto. de Pessoal', lideranca:'Liderança',
                 selecao:'Comitê de Seleção', leitura:'Consulta'};
 
 /* ---------------- grupos: a árvore (v19) ----------------
@@ -4282,8 +4308,8 @@ function viaDoGrupo(m, nome){
    candidatos e o Full mailer; programar envio é só da gestão, e a tela
    esconde). A galeria, as rotas e o menu leem daqui. */
 const PAINEIS = [
-  ['avisos',       'Quadro de avisos',    'Portal',   'O banner rotativo da home, com layout e ordem', can],
-  ['links',        'Links úteis',         'Portal',   'Os links da coluna direita do início', can],
+  ['avisos',       'Quadro de avisos',    'Portal',   'O banner rotativo da home, com layout e ordem', podeGerir],
+  ['links',        'Links úteis',         'Portal',   'Os links da coluna direita do início', podeGerir],
   ['solicitacoes', 'Solicitações',        'Portal',   'Triagem dos pedidos ao Depto. de Pessoal', can],
   ['ouvidoria',    'Ouvidoria',           'Portal',   'As mensagens anônimas, para ler e tratar', can],
   ['agendas',      'Agendas',             'Portal',   'Quem conectou o Google Agenda e como está a sincronização', can],
@@ -4296,7 +4322,7 @@ const PAINEIS = [
   ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
                                                        () => can() || podeSelecao()],
   ['auditoria',    'Auditoria',           'Registro', 'Quem mudou o quê, quando', can],
-  ['site',         'Site institucional',  'Conteúdo', 'Os projetos que aparecem em neurodynamics.dev', can]
+  ['site',         'Site institucional',  'Conteúdo', 'Os projetos que aparecem em neurodynamics.dev', podeGerir]
 ];
 const painelPermitido = (p) => !p[4] || p[4]();
 const GRUPOS_PAINEL = ['Portal','Pessoas','Registro','Conteúdo'];
@@ -4485,9 +4511,10 @@ function acoesDaCasca(){
     ['Dinâmica em grupo', 'Painel, roteiro, desafio, critérios e janelas', '#/selecao/dinamica'],
     ['Publicações do processo seletivo', 'Edital, avisos e resultados no site', '#/selecao/publicacoes']);
   if (can() || podeSelecao()) a.push(['Administração', 'Os painéis da gestão', '#/admin']);
-  if (can()) a.push(
+  if (podeQuadro()) a.push(
     ['Quadro de pessoal', 'A lista inteira, com filtros', '#/equipe/quadro'],
-    ['Relatórios', 'Portaria, e-mails, autorizados, quadro completo', '#/admin/relatorios'],
+    ['Relatórios', 'Portaria, e-mails, autorizados, quadro completo', '#/admin/relatorios']);
+  if (can()) a.push(
     ['Importar planilha', 'Atualizar o quadro em massa', '#/admin/importar'],
     ['Contas e perfis', 'Papéis de acesso e vínculo com o quadro', '#/admin/contas'],
     ['Catálogo de acessos', 'Sistemas, locais e documentos', '#/admin/acessos'],
@@ -4658,17 +4685,34 @@ document.addEventListener('keydown', e=>{
   }
 });
 
+/* Conta de membro Desligado, Egresso ou Sob demanda (2.18.0): a sessão
+   termina e o login diz por quê. */
+async function acessoEncerrado(){
+  try { await sb.auth.signOut(); } catch(e){ /* a tela sai do mesmo jeito */ }
+  state.perfil = null;
+  mostrarCasca(false);
+  $('#v-login').hidden = false;
+  lgOk('Acesso encerrado.', 'A conta está ligada a um membro sem vínculo ativo com a NRO.');
+}
 async function abrirPortal(){
   const { data:{ user } } = await sb.auth.getUser();
+  /* conta de membro Desligado, Egresso ou Sob demanda: o banco já nega
+     tudo; aqui só não se abre a casca */
+  const [ativa, papeis] = await Promise.all([sb.rpc('conta_ativa'), sb.rpc('papeis_atuais')]);
+  if (ativa.data === false){ return acessoEncerrado(); }
   const [p, m] = await Promise.all([
     sb.from('perfis').select('id,nome,email,papel,registro').eq('id', user.id).single(),
     sb.from('membros').select('registro,nome,cargo,departamento,status,grupos,gestor_registro,foto_url,email_nro,email_pessoal,telefone').order('nome')
   ]);
   if (p.error){ toast('Não foi possível carregar seu perfil: '+p.error.message, true); return; }
   state.perfil = p.data;
+  /* sem a 2.18.0 no banco, a função não existe: vale o papel da conta */
+  state.perfil.papeis = !papeis.error && Array.isArray(papeis.data) && papeis.data.length
+    ? papeis.data : [...new Set([p.data.papel || 'leitura', 'leitura'])];
   state.membros = m.data || [];
   sb.from('itens_de_acesso').select('*').order('ordem')
     .then(r => { state.itensAcesso = (r.data||[]).filter(i=>i.ativo!==false); });
+  carregarGrupoPapeis();
   const grupos = carregarGrupos();   /* os quadros de Atividades são os grupos da pessoa */
   carregarOKRsDoMenu();
   carregarProjetosEArquivos();
@@ -4683,7 +4727,7 @@ async function abrirPortal(){
   const eu = state.membros.find(x => x.registro === state.perfil.registro);
   $('#u-nome').textContent = nome;
   $('#u-nome-voo').textContent = nome;
-  $('#u-papel').textContent = PAPEIS[state.perfil.papel] || eu?.cargo || 'Membro';
+  $('#u-papel').textContent = PAPEIS[state.perfil.papeis[0]] || eu?.cargo || 'Membro';
   desenharMeuAvatar();
   const lf = $('#logo-ft');
   if (lf){   /* o handler de erro troca a <img> por um <span>: na segunda
@@ -4974,11 +5018,11 @@ function meusProjetos(){
   const meus = gruposEfetivos(eu);
   return (state.projetos || []).filter(p => p.status !== 'encerrado' && meus.has(grupoPorId(p.grupo_id)?.nome));
 }
-/* Quem administra a documentação: admin e quem está no grupo do PMO
+/* Quem administra a documentação: admin, liderança e quem está no grupo do PMO
    (grupos.chave = 'pmo'). É a mesma regra de doc_gestor() no banco —
    aqui só decide que botão aparece. */
 function docGestor(){
-  if (state.perfil?.papel === 'admin') return true;
+  if (souAdmin() || tenhoPapel('lideranca')) return true;
   const pmo = (state.grupos || []).find(g => g.chave === 'pmo');
   const eu = state.membros.find(m => m.registro === state.perfil?.registro);
   return !!pmo && gruposEfetivos(eu).has(pmo.nome);
@@ -5021,11 +5065,11 @@ function estouEmAlgum(ids){
   const meus = gruposEfetivos(eu);
   return (ids || []).some(id => meus.has(grupoPorId(id)?.nome));
 }
-const podeAprovarStudio = () => state.perfil?.papel === 'admin' || estouEmAlgum(state.studioCfg?.grupos_aprovadores);
+const podeAprovarStudio = () => souAdmin() || tenhoPapel('lideranca') || estouEmAlgum(state.studioCfg?.grupos_aprovadores);
 const podeStudio = () => podeAprovarStudio() || estouEmAlgum(state.studioCfg?.grupos_acesso);
 
 /* Os treinamentos (v24). Todo mundo faz; gere quem é admin, do Depto.
-   de Pessoal ou de um dos grupos gestores (contando subgrupos). É a
+   de Pessoal, da liderança ou de um dos grupos gestores (contando subgrupos). É a
    mesma regra de treinamento_gestor() no banco — aqui só decide o que
    o menu e os botões mostram. */
 function carregarTreinamentoConfig(){
@@ -5033,7 +5077,7 @@ function carregarTreinamentoConfig(){
     .then(r => { state.treCfg = r.error ? null : (r.data || null); desenharMenu(); },
           () => { state.treCfg = null; });
 }
-const gereTreinamentos = () => can() || estouEmAlgum(state.treCfg?.grupos_gestores);
+const gereTreinamentos = () => podeGerir() || estouEmAlgum(state.treCfg?.grupos_gestores);
 
 /* ---------------- o Pokémon de cada projeto ----------------
    Cada projeto tem um Pokémon, escolhido na criação. A lista é por
@@ -5572,46 +5616,58 @@ async function irNotificacao(id, href){
   if (href) location.hash = href.replace(/^#/,'');
 }
 /* ============================================================
-   PREFERÊNCIA DE E-MAIL
-   O sininho só avisa quem está com o portal aberto. Quem entra uma
-   vez por semana precisa do e-mail — e quem entra toda hora precisa
-   poder desligá-lo. As três opções são o contrato inteiro.
+   PREFERÊNCIAS DE AVISOS (2.18.0)
+   O sino recebe tudo. Fora dele, cada categoria de aviso tem o seu
+   push (liga ou desliga, só na hora) e o seu e-mail (desligado,
+   instantâneo, resumo diário, resumo semanal). Sem escolha, vale o
+   padrão: push ligado e resumo semanal. Quem decide é o banco
+   (notificacao_canais); a tela lê e grava pelas duas funções.
+   Convites de evento e pílulas não são configuráveis: saem sempre
+   por e-mail, na hora, por filas próprias.
    ============================================================ */
-const MODOS_NOTIF = [
-  ['imediato', 'A cada aviso',
-   'Um e-mail por aviso; avisos da mesma hora são agrupados.'],
-  ['resumo',   'Um resumo por dia',
-   'Um e-mail diário com as pendências.'],
-  ['nunca',    'Só no portal',
-   'Sem e-mail. Os avisos ficam nas notificações.']
+const FREQ_EMAIL = [
+  ['nunca', 'Desligado'], ['instantaneo', 'Instantâneo'], ['diario', 'Resumo diário'], ['semanal', 'Resumo semanal']
 ];
+
+function canaisNotifHTML(cats){
+  return `<table class="tabela pn-tabela"><thead><tr><th>Tipo</th><th class="pn-c">Push</th><th>E-mail</th></tr></thead>
+    <tbody>${cats.map(c => `<tr data-cat="${esc(c.chave)}">
+      <td>${esc(c.nome)}</td>
+      <td class="pn-c"><input type="checkbox" class="pn-pu" ${c.push ? 'checked' : ''} aria-label="Push: ${esc(c.nome)}"></td>
+      <td><select class="pn-em" aria-label="E-mail: ${esc(c.nome)}">
+        ${FREQ_EMAIL.map(([k, t]) => `<option value="${k}" ${k === c.email ? 'selected' : ''}>${t}</option>`).join('')}
+      </select></td></tr>`).join('')}</tbody></table>`;
+}
 
 async function modalPreferenciaNotif(){
   fecharSino();
-  let atual = 'imediato';
-  try{
-    const { data } = await sb.from('notificacao_preferencias')
-      .select('email_modo').eq('registro', state.perfil?.registro).maybeSingle();
-    if (data?.email_modo) atual = data.email_modo;
-  }catch(e){ /* sem a migração, fica no padrão — a tela ainda serve */ }
-
   abreModal(`<h3>Avisos</h3>
     <div class="pn-sec">Neste aparelho</div>
     <div id="pn-push" class="pn-push"><div class="carregando" style="padding:6px 0"><span class="spin"></span></div></div>
-    <div class="pn-sec">Por e-mail</div>
-    <div class="multi" style="max-height:none">
-      ${MODOS_NOTIF.map(([k, t, d]) => `<label class="check">
-        <input type="radio" name="pn-modo" value="${k}" ${k===atual?'checked':''}>
-        <span><b style="color:var(--ink)">${t}</b><br>${d}</span></label>`).join('')}
-    </div>
-    <p class="small muted" style="margin-top:14px">Destino: e-mail NRO ou, na falta dele, o pessoal.</p>
+    <div class="pn-sec">Por tipo de aviso</div>
+    <div id="pn-canais"><div class="carregando" style="padding:6px 0"><span class="spin"></span></div></div>
+    <p class="small muted pn-nota">Convites de eventos e pílulas de conhecimento chegam sempre por e-mail, na hora.
+      ${dica('O sino do portal recebe todos os avisos, qualquer que seja a escolha. O push vale para os aparelhos ativados acima. Resumo diário: às 8h. Resumo semanal: segunda-feira, às 8h. Destino: e-mail NRO ou, na falta dele, o pessoal.')}</p>
     <div id="pn-teste" class="pn-teste"></div>
     <div class="acts" style="justify-content:space-between">
       <button class="btn ghost" id="pn-tbtn" onclick="testarEmail()">Enviar um e-mail de teste</button>
       <span><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
-      <button class="btn solid" id="pn-btn" onclick="salvarPreferenciaNotif()">Salvar</button></span></div>`,
+      <button class="btn solid" id="pn-btn" onclick="salvarPreferenciaNotif()" disabled>Salvar</button></span></div>`,
     null, true);
   desenharPush();
+  let r = null;
+  try{
+    const { data, error } = await sb.rpc('notificacao_canais_meus');
+    if (!error) r = data;
+  }catch(e){ /* sem a 2.18.0: a tela diz que não carregou */ }
+  const cx = $('#pn-canais');
+  if (!cx) return;
+  if (r?.status === 'sem_registro'){ cx.innerHTML = `<p class="small muted">${MOTIVO_RPC.sem_registro}</p>`; return; }
+  if (r?.status !== 'ok' || !Array.isArray(r.categorias)){
+    cx.innerHTML = '<p class="small muted">Não foi possível carregar as preferências.</p>'; return;
+  }
+  cx.innerHTML = canaisNotifHTML(r.categorias);
+  const b = $('#pn-btn'); if (b) b.disabled = false;
 }
 
 /* ============================================================
@@ -5730,10 +5786,7 @@ async function testarEmail(){
        ${r.de ? `<br><span class="small">Remetente: <b>${esc(r.de)}</b>. Se todos os envios falham, verifique o remetente.</span>` : ''}`, 'err');
 
     diz(`<b>Enviado.</b> Um e-mail acabou de sair para <b>${esc(t.email)}</b>.
-      Se não chegar em um minuto, verifique a caixa de spam e o endereço.${t.modo !== 'imediato'
-        ? `<br><span class="small">A sua preferência é
-           <b>${t.modo === 'resumo' ? 'um resumo por dia' : 'só no portal'}</b>.
-           O teste ignora a preferência.</span>` : ''}`);
+      Se não chegar em um minuto, verifique a caixa de spam e o endereço.`);
   }catch(e){
     diz('Não foi possível testar: ' + esc(e?.message || e), 'err');
   }finally{
@@ -5742,18 +5795,19 @@ async function testarEmail(){
 }
 
 async function salvarPreferenciaNotif(){
-  const el = document.querySelector('input[name="pn-modo"]:checked');
-  if (!el) return;
+  const canais = [...document.querySelectorAll('#pn-canais tr[data-cat]')].map(tr => ({
+    categoria: tr.dataset.cat,
+    push: tr.querySelector('.pn-pu').checked,
+    email: tr.querySelector('.pn-em').value
+  }));
+  if (!canais.length) return;
   const b = $('#pn-btn'); if (b){ b.disabled = true; b.textContent = 'Salvando…'; }
   try{
-    const { data, error } = await sb.rpc('notificacao_preferencia_salvar', { p: { email_modo: el.value } });
+    const { data, error } = await sb.rpc('notificacao_canais_salvar', { p: { canais } });
     if (error) throw error;
-    if (data?.status === 'sem_registro')
-      return toast('Conta sem vínculo com um registro de membro.', true);
-    if (data?.status !== 'ok') return toast('Não foi possível salvar.', true);
+    if (data?.status !== 'ok') return toast(motivoRPC(data, null, 'Não foi possível salvar'), true);
     fechaModal();
-    toast(el.value === 'nunca' ? 'Avisos apenas no portal.'
-                               : 'Preferência salva.');
+    toast('Preferências salvas.');
   }catch(e){
     toast('Não foi possível salvar: ' + (e.message || e), true);
   }finally{
@@ -6109,7 +6163,7 @@ async function carregarLinksInicio(){
   const links = (r.error ? LINKS_PADRAO : (r.data || [])).filter(l => linkSeguro(l.url));
   const grupos = [];
   links.forEach(l => { const g = l.grupo || ''; let x = grupos.find(y => y[0] === g); if (!x) grupos.push(x = [g, []]); x[1].push(l); });
-  el.innerHTML = `<div class="head"><h3>Links úteis</h3>${can() ? `<a class="ini-cfg" href="#/admin/links" title="Editar os links" aria-label="Editar os links">${ic('engrenagem')}</a>` : ''}</div>
+  el.innerHTML = `<div class="head"><h3>Links úteis</h3>${podeGerir() ? `<a class="ini-cfg" href="#/admin/links" title="Editar os links" aria-label="Editar os links">${ic('engrenagem')}</a>` : ''}</div>
     ${links.length ? grupos.map(([g, ls]) => `${g ? `<div class="ini-grp">${esc(g)}</div>` : ''}${ls.map(l => {
       const ext = !/^#\//.test(l.url);
       return `<a class="ini-lk" href="${esc(l.url.trim())}"${ext ? ' target="_blank" rel="noopener"' : ''}>
@@ -6479,6 +6533,16 @@ function horaDoItem(it){
   if (it.dia_inteiro || !it.hora_inicio) return 'dia inteiro';
   return it.hora_inicio.slice(0,5) + (it.hora_fim ? '–' + it.hora_fim.slice(0,5) : '');
 }
+/* O papel que cada grupo dá (2.18.0, Administração › Grupos). Sem a
+   tabela no banco, a lista fica vazia e nada muda na tela. */
+function carregarGrupoPapeis(){
+  state.grupoPapeis = state.grupoPapeis || [];
+  return sb.from('grupo_papeis').select('grupo_id,papel')
+    .then(r => { state.grupoPapeis = r.error ? [] : (r.data || []); }, () => { state.grupoPapeis = []; });
+}
+const papelDoGrupo = id => (state.grupoPapeis || []).find(x => x.grupo_id === id)?.papel || null;
+const gruposComPapel = p => (state.grupoPapeis || []).filter(x => x.papel === p)
+  .map(x => grupoPorId(x.grupo_id)).filter(Boolean);
 /* Quem está num grupo, contando quem está num grupo abaixo dele. */
 function membrosDoGrupo(g){
   return state.membros.filter(m => ['Ativo','Em pausa / avaliação'].includes(m.status) && gruposEfetivos(m).has(g));
@@ -6536,7 +6600,7 @@ async function carregarAgendaPessoal(de, ate, espera){
       de: it.data_inicio, ate: it.data_fim || it.data_inicio, hi: it.dia_inteiro ? null : hm(it.hora_inicio),
       hf: it.dia_inteiro ? null : (hm(it.hora_fim) ?? (hm(it.hora_inicio) + 60)), dia: !!it.dia_inteiro || !it.hora_inicio,
       ref: it.ref, origem: it.origem, href: it.origem === 'evento' ? '#/agenda/evento/' + it.ref : null,
-      editavel: it.origem === 'evento' ? (it.sou_dono || can()) : it.origem === 'marco' ? (can() || it.sou_dono) : (it.registro === eu || can()),
+      editavel: it.origem === 'evento' ? (it.sou_dono || podeGerir()) : it.origem === 'marco' ? (podeGerir() || it.sou_dono) : (it.registro === eu || can()),
       serie: it.serie_id && it.recorrencia !== 'Única', resposta: it.minha_resposta, convidado: it.sou_convidado, bruto: it });
   }
   tarefas.filter(t => t.prazo).forEach(t => out.push({ k:'at:' + t.id, camada:'tarefas', titulo: `${t.codigo} ${t.titulo}`, cor:cor('tarefas'),

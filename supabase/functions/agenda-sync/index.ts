@@ -15,6 +15,11 @@
      { "todos": true }       todas as agendas conectadas
                              (admin/pessoal ou service role/cron)
 
+   Os papéis vêm de papeis_atuais() (2.18.0), com o token de quem
+   chama: admin, ou pessoal pela conta ou pelo grupo. Conta bloqueada
+   (Desligado, Egresso, Sob demanda) recebe 403 e não sincroniza nem
+   a própria agenda.
+
    Variáveis de ambiente (o Supabase já injeta as três):
      SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 
@@ -526,14 +531,44 @@ async function consultar<T>(caminho: string): Promise<T[]> {
 
 /* ---------------- quem está chamando ---------------- */
 
-interface Chamador { registro: number | null; papel: string; servico: boolean; }
+export interface Chamador { registro: number | null; papel: string; gestor: boolean; servico: boolean; bloqueado?: boolean; }
+
+/* Os papéis vêm do banco (2.18.0): papeis_atuais(), perguntado COM O TOKEN
+   DA PESSOA, que é como o banco sabe quem é. Assim o pessoal por grupo
+   (NRO_PESSOAL) conta, e a conta bloqueada (Desligado, Egresso, Sob
+   demanda) recebe a lista vazia e fica de fora. Sem a 2.18.0 no banco
+   (a função não existe), vale o papel da conta, como antes. */
+export function decidirAcesso(papeis: string[] | null, papelConta: string | null,
+                              registro: number | null): Chamador {
+  if (papeis === null) {
+    const papel = papelConta ?? "leitura";
+    return { registro, papel, gestor: ["admin", "pessoal"].includes(papel), servico: false };
+  }
+  if (!papeis.length) return { registro: null, papel: "nenhum", gestor: false, servico: false, bloqueado: true };
+  return { registro, papel: papeis[0], gestor: papeis.includes("admin") || papeis.includes("pessoal"), servico: false };
+}
+
+async function papeisDaPessoa(token: string): Promise<string[] | null> {
+  const r = await fetch(`${URL_BASE}/rest/v1/rpc/papeis_atuais`, {
+    method: "POST",
+    headers: { apikey: CHAVE_ANON || CHAVE_SERVICO, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  const corpo = await r.text();
+  if (!r.ok) {
+    if (r.status === 404 || /PGRST202/.test(corpo)) return null;
+    throw new Error(`banco (${r.status}): ${corpo.slice(0, 200)}`);
+  }
+  const v = JSON.parse(corpo || "[]");
+  return Array.isArray(v) ? v.map(String) : [];
+}
 
 async function identificar(req: Request): Promise<Chamador | null> {
   const cabecalho = req.headers.get("Authorization") ?? "";
   const token = cabecalho.replace(/^Bearer\s+/i, "").trim();
   if (!token) return null;
   if (CHAVE_SERVICO && token === CHAVE_SERVICO) {
-    return { registro: null, papel: "servico", servico: true };
+    return { registro: null, papel: "servico", gestor: true, servico: true };
   }
   const r = await fetch(`${URL_BASE}/auth/v1/user`, {
     headers: { apikey: CHAVE_ANON || CHAVE_SERVICO, Authorization: `Bearer ${token}` },
@@ -544,11 +579,7 @@ async function identificar(req: Request): Promise<Chamador | null> {
   const perfis = await consultar<{ registro: number | null; papel: string | null }>(
     `perfis?id=eq.${encodeURIComponent(usuario.id)}&select=registro,papel&limit=1`);
   if (!perfis.length) return null;
-  return {
-    registro: perfis[0].registro ?? null,
-    papel: perfis[0].papel ?? "leitura",
-    servico: false,
-  };
+  return decidirAcesso(await papeisDaPessoa(token), perfis[0].papel, perfis[0].registro ?? null);
 }
 
 /* ---------------- sincronização de uma agenda ---------------- */
@@ -622,7 +653,7 @@ async function anotar(registro: number, blocos: number | null, erro: string | nu
 
 /* ---------------- entrada ---------------- */
 
-async function servir(req: Request): Promise<Response> {
+export async function servir(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return resposta({ erro: "Use POST." }, 405);
   if (!URL_BASE || !CHAVE_SERVICO) {
@@ -631,11 +662,12 @@ async function servir(req: Request): Promise<Response> {
 
   const quem = await identificar(req);
   if (!quem) return resposta({ erro: "Sessão inválida." }, 401);
+  if (quem.bloqueado) return resposta({ erro: "Conta sem acesso ao portal." }, 403);
 
   let pedido: { registro?: number; todos?: boolean } = {};
   try { pedido = await req.json(); } catch { /* corpo vazio = sincroniza a própria */ }
 
-  const gestor = quem.servico || ["admin", "pessoal"].includes(quem.papel);
+  const gestor = quem.servico || quem.gestor;
   let filtro: string;
   if (pedido.todos) {
     if (!gestor) return resposta({ erro: "Só o Depto. de Pessoal sincroniza todas as agendas." }, 403);

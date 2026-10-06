@@ -84,8 +84,8 @@ async function pagePresenca(){
         `<button class="chip" onclick="presIntervalo('${k}')">${esc(t.l)}</button>`).join('')}</div>
       ${meus.length ? meus.map(a => linhaInt(a, false)).join('') : '<p class="small muted">Nenhum intervalo marcado.</p>'}
       <p class="small muted" style="margin-top:10px">Férias e afastamento: <a href="#/agenda" style="text-decoration:underline">Agenda</a> › Criar › Ausência.</p>`}</div>
-    ${can() ? `<div class="card"><div class="head"><h3>Folhas de check-in ${dica('O QR Code fixo, impresso em A4, vale como o do quiosque quando ele está desligado. Guarde a folha e revogue-a se ela se perder.')}</h3>
-      <button class="btn solid mini" onclick="presNovaFolha()">${ic('qr')} Gerar folha</button></div><div id="pres-folhas"></div></div>` : ''}
+    ${can() ? `<div class="card"><div class="head"><h3>Folhas de check-in ${dica('O QR Code fixo, impresso em A4, vale como o do quiosque quando ele está desligado. Só existe uma folha ativa: gerar outra invalida a anterior, e o PDF só pode ser baixado na hora de gerar.')}</h3>
+      ${state.perfil?.papel === 'admin' ? `<button class="btn solid mini" onclick="presNovaFolha()">${ic('qr')} Gerar nova folha</button>` : ''}</div><div id="pres-folhas"></div></div>` : ''}
   </div>`;
   if (can()) presFolhas();
 }
@@ -132,7 +132,7 @@ async function presRemover(id){
 /* ---------- as folhas de check-in (gestão) ---------- */
 async function presFolhas(){
   const el = $('#pres-folhas'); if (!el) return;
-  const { data, error } = await sb.from('checkin_folhas').select('*').order('criada_em', { ascending:false });
+  const { data, error } = await sb.from('checkin_folhas').select('id,numero,rotulo,criada_em,criada_por,revogada_em,revogada_por,usos,ultimo_uso').order('criada_em', { ascending:false });
   if (error){ el.innerHTML = `<p class="small muted">${/checkin_folhas/.test(error.message) ? 'Falta aplicar a migração db/v29_presenca_e_inicio.sql.' : esc(error.message)}</p>`; return; }
   presenca.folhas = data || [];
   el.innerHTML = presenca.folhas.length ? `<div class="pres-folhas">${presenca.folhas.map(f => `<div class="pres-folha${f.revogada_em ? ' off' : ''}">
@@ -140,11 +140,12 @@ async function presFolhas(){
       <span class="tx"><b>${esc(f.rotulo || 'Folha de check-in')}</b>
         <span>Gerada em ${fmtD(f.criada_em.slice(0, 10))}${f.criada_por ? ' por ' + esc(f.criada_por) : ''}. ${f.usos} ${f.usos === 1 ? 'uso' : 'usos'}${f.ultimo_uso ? ', o último em ' + fmtD(f.ultimo_uso.slice(0, 10)) : ''}.</span></span>
       ${f.revogada_em ? `<span class="pill"><span class="dt dt-gray"></span>Revogada em ${fmtD(f.revogada_em.slice(0, 10))}</span>`
-        : `<button class="btn ghost mini" onclick="presBaixarFolha('${f.id}', this)">${ic('down')} PDF</button>
-           <button class="btn ghost mini perigo" onclick="presRevogar('${f.id}')">Revogar</button>`}</div>`).join('')}</div>`
+        : (state.perfil?.papel === 'admin' ? `<button class="btn ghost mini perigo" onclick="presRevogar('${f.id}')">Revogar</button>` : '<span class="pill"><span class="dt dt-ok"></span>Ativa</span>')}</div>`).join('')}</div>`
     : '<p class="small muted">Nenhuma folha gerada.</p>';
 }
-function presNovaFolha(){
+async function presNovaFolha(){
+  const ativa = (presenca.folhas || []).find(f => !f.revogada_em);
+  if (ativa && !await confirma(`A folha CHK-${String(ativa.numero).padStart(3, '0')} deixa de valer: o QR dela passa a ser recusado no check-in. Gerar uma nova?`, 'Gerar nova')) return;
   abreModal(`<h3>Gerar folha de check-in</h3>
     <div class="fld"><label for="fl-rot">Onde vai ficar</label><input id="fl-rot" maxlength="80" placeholder="Porta do LABBIO"></div>
     <p class="err-msg" id="fl-erro"></p>
@@ -160,18 +161,13 @@ async function presCriarFolha(){
   await presPdf({ ...data, rotulo: $('#fl-rot')?.value.trim() || data.rotulo });
   presFolhas();
 }
-async function presBaixarFolha(id, bt){
-  const f = (presenca.folhas || []).find(x => x.id === id); if (!f) return;
-  if (bt) bt.disabled = true;
-  try { await presPdf(f); } finally { if (bt) bt.disabled = false; }
-}
 async function presPdf(f){
   try{
     await precisaDocNRO();
     const doc = DocNRO.folhaCheckin({ ...f, url: location.origin + location.pathname });
     DocNRO.baixar(doc);
     toast(`Folha CHK-${String(f.numero).padStart(3, '0')} baixada.`);
-  }catch(e){ falha(e, 'Não foi possível gerar o PDF'); }
+  }catch(e){ falha(e, 'Não foi possível gerar o PDF da folha (gere outra folha)'); }
 }
 async function presRevogar(id){
   const f = (presenca.folhas || []).find(x => x.id === id);

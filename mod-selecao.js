@@ -173,7 +173,7 @@ async function desenhaSelecao(){
     ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
   if(!podeSelecao()){
     m.innerHTML = topo() + `<div class="aviso-box warn"><b>Acesso restrito.</b> Esta página é do Comitê de
-      Seleção. Peça a um administrador para atribuir o papel <b>selecao</b> ao seu perfil.</div>`;
+      Seleção: quem está num grupo com o papel Seleção, definido em Administração › Grupos.</div>`;
     return;
   }
   if(!PS.pronto && !PS.erro){
@@ -309,7 +309,7 @@ function psLinhaCand(c){
   return `<tr class="click" tabindex="0" onclick="psAbrirFicha('${c.id}')" onkeydown="if(event.key==='Enter')psAbrirFicha('${c.id}')">
     <td onclick="event.stopPropagation()"><input type="checkbox" aria-label="Selecionar ${esc(c.nome)}" ${PS.selecionados.has(c.id)?'checked':''} onchange="psSelUm('${c.id}',this.checked)"></td>
     <td class="reg">${esc(c.protocolo||'—')}</td>
-    <td><span class="nome">${esc(c.nome)}</span><br><span class="small dim">${esc(c.email)}</span></td>
+    <td><span class="nome">${esc(c.nome)}</span><br><span class="small dim">${esc(c.email)}</span>${c.email?' '+psCopiarEmail(c.email):''}</td>
     <td class="small">${esc(c.curso||'—')}${c.periodo?`, ${esc(c.periodo)}`:''}</td>
     <td>${psPill(c.status)}</td>
     <td class="small">${agTxt(ad)}</td>
@@ -417,6 +417,8 @@ function psEmailAbrir(via){
 }
 
 /* ---------- a ficha do candidato ---------- */
+/* botão utilitário discreto; o clique não abre a ficha da linha */
+const psCopiarEmail = em => `<button type="button" class="icon-btn sm ps-copiar-email" title="Copiar o e-mail" aria-label="Copiar o e-mail ${esc(em)}" data-em="${esc(em)}" onclick="event.stopPropagation();copiar(this.dataset.em)">${ic('copy')}</button>`;
 function psAbrirFicha(id){
   const c = psCand(id); if(!c) return;
   const grupos = {};
@@ -450,7 +452,7 @@ function psAbrirFicha(id){
            ['Acessibilidade',c.acessibilidade],['Instituição',c.instituicao],['Curso',c.curso],
            ['Matrícula',c.matricula],['Período',c.periodo],['Disponibilidade',c.disponibilidade],
            ['Como soube',c.como_soube],['Autorização de imagem',c.autorizacao_imagem?'Sim':'Não']]
-          .map(([l,vl])=>`<div class="it"><dt>${l}</dt><dd>${esc(vl||'—')}</dd></div>`).join('')}
+          .map(([l,vl])=>`<div class="it"><dt>${l}</dt><dd>${esc(vl||'—')}${l==='E-mail'&&vl?' '+psCopiarEmail(vl):''}</dd></div>`).join('')}
         <div class="it full"><dt>Áreas de interesse</dt>
           <dd>${(c.areas_interesse||[]).map(a=>`<span class="chip mini">${esc(a)}</span>`).join(' ')||'—'}</dd></div>
         <div class="it full"><dt>Links</dt><dd>${linksRow}</dd></div>
@@ -1285,10 +1287,10 @@ function psDinFoto(m){
   });
 }
 
-/* O curso mora em dados_pessoais, que só admin/pessoal lê. Quem prepara
-   a mesa com papel "selecao" recebe o campo vazio e preenche à mão. */
+/* O curso mora em dados_pessoais, que só admin, pessoal e liderança leem.
+   Quem prepara a mesa com papel "selecao" recebe o campo vazio e preenche à mão. */
 async function psDinCursos(regs){
-  if(!can() || !regs.length) return {};
+  if(!podeVerFicha() || !regs.length) return {};
   try{
     const {data, error} = await sb.from('dados_pessoais').select('registro,curso').in('registro', regs);
     if(error) throw error;
@@ -1659,9 +1661,6 @@ async function psExcluirPub(id){
    ============================================================ */
 function psConfig(){
   const e = PS.ed;
-  const souAdmin = state.perfil.papel==='admin';
-  const comite = PS.perfis.filter(p=>p.papel==='selecao');
-  const promoviveis = PS.perfis.filter(p=>p.papel==='leitura');
   $('#sel-corpo').innerHTML = `
   <div class="card" style="margin-bottom:16px">
     <h3 style="margin-bottom:14px">Edição</h3>
@@ -1697,24 +1696,28 @@ function psConfig(){
     <div style="margin-top:12px"><button class="btn ghost" onclick="psEditarEtapa()">${ic('plus')} Adicionar marco</button></div>
   </div>
   <div class="card">
-    <h3>Acesso ao módulo (Comitê de Seleção)</h3>
-    <p class="small muted" style="margin:4px 0 14px">Quem tiver o papel <b>selecao</b> acessa esta página por completo,
-      mantendo apenas consulta no restante do portal. Administração e Depto. de Pessoal sempre têm acesso.${souAdmin?'':' <b>Somente administradores alteram papéis.</b>'}</p>
-    ${can() ? (comite.map(p=>`<div class="ps-linha">
-        ${avatarFoto({nome:p.nome||p.email}, 28, 10)}
-        <span style="flex:1"><b>${esc(p.nome||p.email)}</b> <span class="dim small">${esc(p.email)}</span></span>
-        ${souAdmin?ibtn('x','Remover do comitê',`psTirarAcesso('${p.id}')`,'sm'):''}</div>`).join('')
-      || '<div class="empty">Ninguém com o papel selecao. Acesso atual: admin e pessoal.</div>')
-    : '<div class="empty">A lista de perfis é visível apenas para admin/pessoal.</div>'}
-    ${souAdmin?`<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-      <select id="ps-com-add" style="flex:1;min-width:240px">
-        <option value="">Escolher perfil…</option>
-        ${promoviveis.map(p=>`<option value="${p.id}">${esc(p.nome||p.email)} (${esc(p.email)})</option>`).join('')}
-      </select>
-      <button class="btn solid" onclick="psDarAcesso()">${ic('plus')} Incluir no comitê</button></div>
-      <p class="small dim" style="margin-top:8px">Requer conta no portal. Admin e pessoal já têm acesso. Papéis:
-        <a href="#/admin/contas" style="text-decoration:underline">Administração › Contas e perfis</a>.</p>`:''}
+    <h3>Comitê de Seleção ${dica('Acessa este módulo quem está num grupo com o papel Seleção (e nos grupos abaixo dele). Admin, Depto. de Pessoal e liderança também acessam. O papel de cada grupo é definido em Administração › Grupos.')}</h3>
+    ${psComiteHTML()}
   </div>`;
+}
+/* O comitê vem dos grupos (2.18.0). As contas com o papel "selecao"
+   gravado nelas ainda valem nesta versão (legado): admin as tira daqui. */
+function psComiteHTML(){
+  const admin = souAdmin();
+  const grupos = gruposComPapel('selecao');
+  const pessoas = [...new Map(grupos.flatMap(g => membrosDoGrupo(g.nome).map(m => [m.registro, { m, via:g.nome }]))).values()]
+    .sort((a, b) => a.m.nome.localeCompare(b.m.nome, 'pt-BR'));
+  const legado = (PS.perfis || []).filter(p => p.papel === 'selecao');
+  return `${grupos.length ? '' : `<div class="empty">Nenhum grupo com o papel Seleção.${admin ? ' <a href="#/admin/grupos" style="text-decoration:underline">Definir em Grupos</a>' : ''}</div>`}
+    ${pessoas.map(({ m, via }) => `<div class="ps-linha">
+        ${avatarFoto(m, 28, 10)}
+        <span style="flex:1"><b>${esc(m.nome)}</b> <span class="dim small">via ${esc(via)}</span></span></div>`).join('')}
+    ${grupos.length && !pessoas.length ? '<div class="empty">Ninguém nos grupos com o papel Seleção.</div>' : ''}
+    ${legado.length ? `<h4 style="margin:16px 0 8px">Papel na conta (legado) ${dica('Contas com o papel Seleção gravado na própria conta, de antes dos papéis por grupo. Valem até a próxima versão; o caminho é incluir a pessoa num grupo com o papel.')}</h4>
+      ${legado.map(p => `<div class="ps-linha">
+        ${avatarFoto({ nome:p.nome || p.email }, 28, 10)}
+        <span style="flex:1"><b>${esc(p.nome || p.email)}</b> <span class="dim small">${esc(p.email)}</span></span>
+        ${admin ? ibtn('x', 'Tirar o papel da conta', `psTirarAcesso('${p.id}')`, 'sm') : ''}</div>`).join('')}` : ''}`;
 }
 async function psSalvarEdicao(){
   const linha = { nome:$('#ps-ed-nome').value.trim(), descricao:$('#ps-ed-desc').value.trim()||null,
@@ -1793,22 +1796,12 @@ async function psExcluirEtapa(id){
     PS.pronto=false; desenhaSelecao();
   }catch(e){ falha(e,'Falha ao excluir'); }
 }
-async function psDarAcesso(){
-  const uid = $('#ps-com-add').value;
-  if(!uid){ toast('Escolha um perfil.', true); return; }
-  try{
-    const {error} = await sb.from('perfis').update({papel:'selecao'}).eq('id', uid);
-    if(error) throw error;
-    toast('Acesso concedido ao comitê.');
-    PS.pronto=false; desenhaSelecao();
-  }catch(e){ falha(e,'Falha ao conceder acesso'); }
-}
 async function psTirarAcesso(uid){
-  if(!await confirma('Remover esta pessoa do comitê? O perfil volta ao papel de consulta.','Remover')) return;
+  if(!await confirma('Tirar o papel Seleção da conta? A pessoa continua no comitê se estiver num grupo com o papel.','Tirar')) return;
   try{
     const {error} = await sb.from('perfis').update({papel:'leitura'}).eq('id', uid);
     if(error) throw error;
-    toast('Removido do comitê.');
+    toast('Papel retirado da conta.');
     PS.pronto=false; desenhaSelecao();
   }catch(e){ falha(e,'Falha ao remover'); }
 }

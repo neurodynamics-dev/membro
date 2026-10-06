@@ -84,6 +84,8 @@
         chave:null, meu_nivel:'edicao',  pessoas:2 }
     ],
     grupo_acessos: [{ grupo_id:4, registro:11, nivel:'leitura', concedido_por:4 }],
+    /* o papel de cada grupo (2.18.0) */
+    grupo_papeis: [{ grupo_id:3, papel:'pessoal' }],
     atividades_quadro: [
       { id:'t9', codigo:'DEP-1', grupo_id:3, grupo:'Depto de Pessoal', grupo_prefixo:'DEP', seq:1,
         titulo:'SOL26-0001 — Acesso ao LABBIO', descricao:'Carla Mendonça abriu uma solicitação de acesso.',
@@ -894,6 +896,32 @@
           /* ---- 2.17.0: a foto, os relatos e os cartões ---- */
           const eAdm = () => DADOS.perfis[0].papel === 'admin';
           const regra = (k, p) => (window.__rpcs ||= []).push({ nome:k, p });
+          /* ---- 2.18.0: os papéis por grupo ---- */
+          const papeisStub = () => { const pf = DADOS.perfis[0];
+            return pf.papeis || ['admin','pessoal','lideranca','selecao','leitura'].filter(k => k === (pf.papel || 'leitura') || k === 'leitura'); };
+          if (nome === 'conta_ativa') return { data: !(window.__teste || {}).bloqueada, error:null };
+          if (nome === 'papeis_atuais'){
+            if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:'function public.papeis_atuais() does not exist' } };
+            return { data: (window.__teste || {}).bloqueada ? [] : papeisStub(), error:null };
+          }
+          if (nome === 'contas_papeis'){
+            regra(nome, {});
+            if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:'function public.contas_papeis() does not exist' } };
+            return { data:{ status:'ok', contas: DADOS.perfis.map(pf => ({ id:pf.id, bloqueada:false,
+              papeis: (pf.papeis || [pf.papel || 'leitura', 'leitura']).filter((x, i, l) => l.indexOf(x) === i)
+                .map(x => ({ papel:x, via: x === 'admin' ? 'conta' : x === 'leitura' ? null : (pf.via || 'legado') })) })) }, error:null };
+          }
+          if (nome === 'grupo_papel_definir'){
+            const p = args?.p || {}; regra(nome, p);
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
+            DADOS.grupo_papeis = (DADOS.grupo_papeis || []).filter(x => x.grupo_id !== p.grupo_id);
+            if (p.papel) DADOS.grupo_papeis.push({ grupo_id:p.grupo_id, papel:p.papel });
+            return { data:{ status:'ok' }, error:null };
+          }
+          if (nome === 'apontamento_ocorrencias'){
+            regra(nome, args);
+            return { data:{ status:'ok', abertas:(args?.p_registros || []).length }, error:null };
+          }
           if (nome === 'membro_foto_definir'){
             const p = args?.p || {}; regra(nome, p);
             if ((window.__teste || {}).v217 === 'falta') return { data:null, error:{ message:'function public.membro_foto_definir(jsonb) does not exist' } };
@@ -955,11 +983,50 @@
             const ids = DADOS.atividade_checklists.filter(k => k.atividade_id === aid).map(k => k.id);
             const it = DADOS.atividade_checklist_itens.filter(i => ids.includes(i.checklist_id));
             a.check_total = it.length; a.check_feitos = it.filter(i => i.feito).length; };
-          if (nome === 'atividade_editar'){
+          /* ---- 2.18.0: o card espelhado ---- */
+          const nivelQ = id => DADOS.grupos_visiveis.find(x => x.id === id)?.meu_nivel;
+          if (nome === 'atividade_espelhar' || nome === 'atividade_espelho_remover' || nome === 'atividade_mover'){
             const p = args?.p || {}; regra(nome, p);
+            if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:`function public.${nome}(jsonb) does not exist` } };
             const a = linhaAtv(p.id); if (!a) return { data:{ status:'nao_encontrado' }, error:null };
-            const g = DADOS.grupos_visiveis.find(x => x.id === a.grupo_id);
-            if (g && g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+            const g = DADOS.grupos_visiveis.find(x => x.id === p.grupo_id);
+            if (!g) return { data:{ status:'invalido', campo:'grupo' }, error:null };
+            if (nome === 'atividade_espelho_remover'){
+              if (nivelQ(g.id) !== 'edicao' && nivelQ(a.grupo_id) !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+              a.espelhos = (a.espelhos || []).filter(x => x !== g.id);
+              const o = { ...(a.espelhos_ordem || {}) }; delete o[g.id]; a.espelhos_ordem = o;
+              DADOS.atividade_log.push({ id:DADOS.atividade_log.length + 1, atividade_id:a.id, registro:4, tipo:'tirou_espelho', para:g.nome, criado_em:new Date().toISOString() });
+              return { data:{ status:'ok' }, error:null };
+            }
+            if (nivelQ(a.grupo_id) !== 'edicao' || g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+            if (nome === 'atividade_espelhar'){
+              if (g.id === a.grupo_id) return { data:{ status:'invalido', campo:'grupo' }, error:null };
+              if (!(a.espelhos || []).includes(g.id)){
+                a.espelhos = [...(a.espelhos || []), g.id]; a.espelhos_ordem = { ...(a.espelhos_ordem || {}), [g.id]:9e9 };
+                DADOS.atividade_log.push({ id:DADOS.atividade_log.length + 1, atividade_id:a.id, registro:4, tipo:'espelhou', para:g.nome, criado_em:new Date().toISOString() });
+              }
+              return { data:{ status:'ok', codigo:a.codigo }, error:null };
+            }
+            /* mover: a cópia com tudo, o original arquivado, os espelhos vão junto */
+            const seq = Math.max(0, ...DADOS.atividades_quadro.filter(x => x.grupo_id === g.id).map(x => x.seq || 0)) + 1;
+            const id = 'tm' + seq + g.prefixo, codigo = g.prefixo + '-' + seq;
+            const esp = (a.espelhos || []).filter(x => x !== g.id);
+            DADOS.atividades_quadro.push({ ...a, id, codigo, seq, grupo_id:g.id, grupo:g.nome, grupo_prefixo:g.prefixo, copia_de:a.id,
+              copia_de_codigo:a.codigo, comentarios:0, arquivada:false, ordem:9e9, espelhos:esp,
+              espelhos_ordem:Object.fromEntries(esp.map(x => [x, (a.espelhos_ordem || {})[x] ?? 9e9])), criado_em:new Date().toISOString() });
+            a.arquivada = true; a.espelhos = []; a.espelhos_ordem = {};
+            return { data:{ status:'ok', id, codigo }, error:null };
+          }
+          if (nome === 'atividade_editar'){
+            let p = args?.p || {}; regra(nome, p);
+            const a = linhaAtv(p.id); if (!a) return { data:{ status:'nao_encontrado' }, error:null };
+            /* edita quem edita qualquer quadro ligado; arquivar é do dono */
+            const quadros = [a.grupo_id, ...(a.espelhos || [])];
+            if (quadros.every(q => nivelQ(q) !== undefined && nivelQ(q) !== 'edicao')) return { data:{ status:'sem_permissao' }, error:null };
+            if ('arquivada' in p && p.arquivada !== a.arquivada && nivelQ(a.grupo_id) !== undefined && nivelQ(a.grupo_id) !== 'edicao')
+              return { data:{ status:'sem_permissao', campo:'arquivada' }, error:null };
+            if ('ordem' in p && p.quadro != null && p.quadro !== a.grupo_id && (a.espelhos || []).includes(p.quadro)){
+              a.espelhos_ordem = { ...(a.espelhos_ordem || {}), [p.quadro]:p.ordem }; p = { ...p }; delete p.ordem; }
             ['titulo','descricao','status','prioridade','prazo','estimativa_h','ordem','arquivada','etiquetas'].forEach(k => { if (k in p) a[k] = p[k]; });
             if ('responsavel' in p){ a.responsavel = p.responsavel == null ? null : +p.responsavel;
               a.responsavel_nome = DADOS.membros.find(m => m.registro === a.responsavel)?.nome || null; }
@@ -1116,6 +1183,24 @@
             window.__decisao = args?.p;
             return { data: { status:'ok', decisao:args?.p?.decisao,
                              concedidos:(args?.p?.conceder||[]).length, codigo:'DEP-1' }, error:null };
+          }
+          /* 2.18.0: as preferências por categoria; Ana escolheu atividades na hora e o Studio sem e-mail */
+          if (nome === 'notificacao_canais_meus'){
+            const CATS = [['atividades','Atividades'],['bugs_melhorias','Bugs e melhorias'],['documentos','Documentos'],
+              ['studio','Studio'],['reporte','Reporte'],['agenda','Agenda'],['pessoal','Pessoal'],
+              ['treinamentos','Treinamentos'],['sistema','Sistema']];
+            DADOS.notificacao_canais ||= [{ registro:4, categoria:'atividades', push:true, email:'instantaneo' },
+                                          { registro:4, categoria:'studio', push:false, email:'nunca' }];
+            return { data: { status:'ok', categorias: CATS.map(([chave, nome]) => {
+              const l = DADOS.notificacao_canais.find(x => x.registro === 4 && x.categoria === chave);
+              return { chave, nome, push: l ? l.push : true, email: l ? l.email : 'semanal' };
+            }) }, error:null };
+          }
+          if (nome === 'notificacao_canais_salvar'){
+            window.__canais = args?.p;
+            DADOS.notificacao_canais = (args?.p?.canais || []).filter(c => !(c.push && c.email === 'semanal'))
+              .map(c => ({ registro:4, ...c }));
+            return { data: { status:'ok', categorias:(args?.p?.canais || []).length }, error:null };
           }
           if (nome === 'notificacao_preferencia_salvar'){
             window.__preferencia = args?.p;
@@ -1909,7 +1994,8 @@
           if (nome === 'labbio_placar'){ (window.__rpcs ||= []).push({ nome, p:args }); return { data:DADOS.placar, error:null }; }
           if (nome === 'checkin_folha_criar'){
             (window.__rpcs ||= []).push({ nome, p:args });
-            if (!agGestor()) return { data:{ status:'sem_permissao' }, error:null };
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
+            DADOS.checkin_folhas.forEach(x => { if (!x.revogada_em){ x.revogada_em = new Date().toISOString(); x.revogada_motivo = 'substituída'; } });
             const f = { id:'f' + (DADOS.checkin_folhas.length + 1), numero:DADOS.checkin_folhas.length + 1, token:'0c9d8e7f-6a5b-4c3d-8e2f-1a0b9c8d7e6f',
               rotulo:args.p_rotulo || null, criada_em:new Date().toISOString(), criada_por:'Ana Figueiredo', revogada_em:null, usos:0, ultimo_uso:null };
             DADOS.checkin_folhas.unshift(f);
@@ -1917,6 +2003,7 @@
           }
           if (nome === 'checkin_folha_revogar'){
             (window.__rpcs ||= []).push({ nome, p:args });
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
             const f = DADOS.checkin_folhas.find(x => x.id === args.p_id); if (!f) return { data:{ status:'nao_encontrado' }, error:null };
             f.revogada_em = new Date().toISOString(); return { data:{ status:'ok' }, error:null };
           }

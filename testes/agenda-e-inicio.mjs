@@ -96,6 +96,20 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
     && [...(novo.obrigatorios || []), ...(novo.opcionais || [])].includes(17), novo);
   confere('o predefinido traz o Meet e o lembrete', novo?.meet_url === 'https://meet.google.com/ger-enc-ia' && JSON.stringify(novo.lembretes) === '[30]', novo);
 
+  /* próximo horário livre varre a agenda, a qualquer hora do dia */
+  await ir(p, `#/agenda/novo/${dia(3)}T14:00~15:00`, 1200);
+  await p.fill('#ev-busca', 'Bruno'); await p.waitForTimeout(300); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+  const lido = () => p.evaluate(() => document.querySelector('#ev-data').value + 'T' + document.querySelector('#ev-hi').value);
+  await p.click('.evp-disp-topo button'); await p.waitForTimeout(700);
+  const l1 = await lido();
+  await p.click('.evp-disp-topo button'); await p.waitForTimeout(700);
+  const l2 = await lido();
+  await p.click('.evp-disp-topo button'); await p.waitForTimeout(700);
+  const l3 = await lido();
+  confere('cada clique em "Próximo horário livre" traz um horário depois do anterior', l1 < l2 && l2 < l3, [l1, l2, l3]);
+  confere('a régua de disponibilidade cobre as 24 h', await p.evaluate(() => /^0h/.test(document.querySelector('.evd-regua span')?.textContent || '')
+    && /22h/.test(document.querySelector('.evd-regua')?.textContent || '')));
+
   /* reagendar sem apagar */
   await ir(p, '#/agenda/evento/e1', 1200);
   await p.fill('#ev-data', dia(4)); await p.dispatchEvent('#ev-data', 'change'); await p.waitForTimeout(200);
@@ -145,7 +159,10 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
     const Espiao = function(...a){ const d = new J(...a), rect = d.rect.bind(d);
       d.rect = (x, y, w, h, st) => { if (st === 'F') window.__rects.push([x, y, w, h]); return rect(x, y, w, h, st); }; return d; };
     Object.assign(Espiao, J); Espiao.API = J.API; window.jspdf.jsPDF = Espiao; });
-  await p.click('button:has-text("Gerar folha")'); await p.waitForTimeout(300);
+  confere('a folha ativa não tem botão de baixar o PDF de novo', await p.locator('#pres-folhas button:has-text("PDF")').count() === 0);
+  await p.click('button:has-text("Gerar nova folha")'); await p.waitForTimeout(300);
+  confere('antes de gerar, avisa que a folha anterior deixa de valer', /CHK-001 deixa de valer/.test(await texto(p, '#modal.open')));
+  await p.click('#modal.open .acts .btn.solid'); await p.waitForTimeout(300);
   await p.fill('#fl-rot', 'Recepção');
   const [d] = await Promise.all([p.waitForEvent('download', { timeout:15000 }), p.click('#fl-ok')]);
   confere('gerar a folha grava quem e onde', JSON.stringify((await rpcs(p, 'checkin_folha_criar')).pop()) === '{"p_rotulo":"Recepção"}');
@@ -169,9 +186,12 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   confere('o QR desenhado na folha lê o endereço com o token fixo', lido.texto === doc.url
     && /^http:\/\/localhost:8765\/(index\.html)?\?t=F-0c9d8e7f-6a5b-4c3d-8e2f-1a0b9c8d7e6f$/.test(lido.texto), { lido, url: doc.url });
 
-  await p.click('#pres-folhas .pres-folha:has-text("CHK-001") button:has-text("Revogar")'); await p.waitForTimeout(300);
+  confere('gerar invalida a anterior: só a nova fica ativa, sem botão de PDF', await p.evaluate(() => {
+    const fs = [...document.querySelectorAll('#pres-folhas .pres-folha')];
+    return fs.length === 2 && fs.filter(f => !f.classList.contains('off')).length === 1 && !document.querySelector('#pres-folhas button:not(.perigo)'); }));
+  await p.click('#pres-folhas .pres-folha:has-text("CHK-002") button:has-text("Revogar")'); await p.waitForTimeout(300);
   await p.click('#modal.open .acts .btn.solid'); await p.waitForTimeout(500);
-  confere('revogar a folha', JSON.stringify((await rpcs(p, 'checkin_folha_revogar')).pop()) === '{"p_id":"f1"}');
+  confere('revogar a folha', JSON.stringify((await rpcs(p, 'checkin_folha_revogar')).pop()) === '{"p_id":"f2"}');
   confere('nenhum erro de página (presença)', !erros.length, erros);
   await ctx.close();
 }
