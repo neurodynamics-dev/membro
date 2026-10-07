@@ -51,6 +51,7 @@ const CHAVE_SERVICO = env("SUPABASE_SERVICE_ROLE_KEY");
 /* O endereço do portal nos links do e-mail. Sai daqui na
    renomeação para soma.neurodynamics.dev — e é só isto, porque o
    e-mail não tem nada de congelado como o UID do iCal. */
+import { esc, moldura, esp, titulo, texto, botao, MONO } from "./marca.ts";
 const PORTAL = env("PORTAL_URL") || "https://membro.neurodynamics.dev";
 /* As imagens continuam sendo servidas por endereço absoluto: e-mail
    já enviado não se reescreve, então o caminho tem de seguir no ar. */
@@ -283,9 +284,6 @@ export function porCategoria(itens: ItemNotificacao[]): Array<{ chave: string; n
     .filter((g) => g.itens.length > 0);
 }
 
-const esc = (s: unknown): string =>
-  String(s ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
 /** O primeiro nome, que é como as pessoas se chamam por aqui. */
 export const primeiroNome = (nome: string): string =>
@@ -1024,12 +1022,20 @@ async function enviarProgramados(): Promise<Record<string, unknown>> {
   return { programados: total, programados_falhas: totalFalhas, ...(erroGeral ? { programados_detalhe: erroGeral } : {}) };
 }
 
-export interface BoletimItem { titulo: string; subtitulo: string; texto: string; }
+export interface BoletimItem { titulo: string; subtitulo: string; texto: string; imagem?: string | null; }
 export function montarBoletim(assunto: string, itens: BoletimItem[], descadastro = "") {
-  const e = (t: string) => String(t || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
-  const rodape = descadastro ? `<a href="${e(descadastro)}" style="color:#00594F">Descadastrar da comunidade</a>` : `<a href="${PORTAL}/#/feed" style="color:#00594F">Feed da equipe</a>`;
+  const par = (t: string) => String(t || "").split(/\n{2,}/).map((p) => esc(p.trim()).replace(/\n/g, "<br>")).filter(Boolean);
+  const item = (i: BoletimItem) => {
+    const img = /^https:\/\//i.test(String(i.imagem || ""))
+      ? `<tr><td><img src="${esc(i.imagem)}" width="510" alt="" style="display:block;width:100%;border:0;border-radius:16px"></td></tr>${esp(20)}` : "";
+    return `${img}${titulo(esc(i.titulo), 22)}${i.subtitulo ? esp(8) + texto(esc(i.subtitulo), "#616C68", 13) : ""}${esp(12)}${par(i.texto).map((p) => texto(p) + esp(10)).join("")}${esp(26)}`;
+  };
+  const rodape = descadastro
+    ? "Você recebe este e-mail por fazer parte da comunidade NeuroDynamics."
+    : `Boletim da equipe. Leia também o <a href="${esc(PORTAL)}/#/feed" style="color:#616C68">feed no portal</a>.`;
   return {
-    html: `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#F7F4EE"><table role="presentation" width="100%"><tr><td align="center"><table role="presentation" width="600" style="max-width:100%;font:15px Arial,sans-serif;color:#1D1D1F;background:white"><tr><td style="padding:32px;background:#00352F;color:white"><img src="https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png" width="150" alt="NeuroDynamics"><h1 style="font-size:28px">${e(assunto)}</h1></td></tr>${itens.map(i=>`<tr><td style="padding:24px 32px;border-bottom:1px solid #C4CCC9"><h2 style="color:#00352F">${e(i.titulo)}</h2><p style="color:#616C68">${e(i.subtitulo)}</p><p style="white-space:pre-line;line-height:1.65">${e(i.texto)}</p></td></tr>`).join('')}<tr><td style="padding:24px 32px">${rodape}</td></tr></table></td></tr></table></body></html>`,
+    html: moldura({ assunto, categoria: "Boletim", preheader: itens[0]?.titulo || assunto, descadastro,
+      miolo: titulo(esc(assunto), 28) + esp(24) + itens.map(item).join(""), rodape }),
     texto: assunto+"\n\n"+itens.map(i=>i.titulo+"\n"+i.subtitulo+"\n"+i.texto).join("\n\n")+(descadastro?"\nDescadastrar: "+descadastro:"")
   };
 }
