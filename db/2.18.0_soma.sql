@@ -964,7 +964,7 @@ begin
   end loop;
   return n;
 end $$;
-revoke execute on function public.conta_ativa_travar() from public;
+revoke execute on function public.conta_ativa_travar() from public, anon, authenticated;
 
 -- as funções novas: só para quem entrou
 do $$
@@ -1417,7 +1417,8 @@ begin
  then return jsonb_build_object('status','encerrado'); end if;
  if (p->>'versao')::integer is distinct from r.versao then return jsonb_build_object('status','conflito'); end if;
  if jsonb_typeof(p->'apontamentos') is distinct from 'array' or jsonb_typeof(p->'escalonamentos') is distinct from 'array'
- or jsonb_typeof(p->'feed') is distinct from 'array' then return jsonb_build_object('status','invalido'); end if;
+ or jsonb_typeof(p->'feed') is distinct from 'array'
+ or (p->>'etapa') is null or (p->>'etapa')::integer not between 1 and 3 then return jsonb_build_object('status','invalido'); end if;
  select grupo_id into g from reporte_frentes where id=r.frente_id;
  for x in select * from jsonb_array_elements(p->'apontamentos') loop
   if not exists(select 1 from membros where registro=(x->>'registro')::integer and status in ('Ativo','Em pausa / avaliação'))
