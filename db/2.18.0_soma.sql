@@ -1549,18 +1549,28 @@ create or replace function public.newsletter_criar(p_tipo text,p_inicio date,p_f
 language plpgsql security definer set search_path=public as $$
 declare v uuid; g integer; seq0 integer; card uuid; titulo0 text; itens0 jsonb;
 begin
- select id into v from newsletters where tipo=p_tipo and periodo_ini=p_inicio;
- if v is not null then return v; end if;
- select coalesce(jsonb_agg(jsonb_build_object('titulo',titulo,'subtitulo',subtitulo,'texto',texto,'id',id)
- order by publicado_em),'[]') into itens0 from feed_itens where publicado_em is not null and not oculto
- and (publicado_em at time zone 'America/Sao_Paulo')::date between p_inicio and p_fim;
- if itens0='[]'::jsonb then return null; end if;
- titulo0:='Boletim '||p_tipo||': '||to_char(p_inicio,'DD/MM/YYYY');
- insert into newsletters(tipo,periodo_ini,periodo_fim,assunto,itens) values(p_tipo,p_inicio,p_fim,titulo0,itens0)
- on conflict(tipo,periodo_ini) do nothing returning id into v;
- if v is null then select id into v from newsletters where tipo=p_tipo and periodo_ini=p_inicio;return v;end if;
- select gp.grupo_id into g from grupo_papeis gp join grupos g0 on g0.id=gp.grupo_id where gp.papel='lideranca' and g0.ativo order by g0.id limit 1;
- if g is null then raise exception 'Grupo de liderança não configurado.';end if;
+ select id,card_id,assunto into v,card,titulo0 from newsletters where tipo=p_tipo and periodo_ini=p_inicio;
+ if v is null then
+  select coalesce(jsonb_agg(jsonb_build_object('titulo',titulo,'subtitulo',subtitulo,'texto',texto,'id',id)
+  order by publicado_em),'[]') into itens0 from feed_itens where publicado_em is not null and not oculto
+  and (publicado_em at time zone 'America/Sao_Paulo')::date between p_inicio and p_fim;
+  if itens0='[]'::jsonb then return null; end if;
+  titulo0:='Boletim '||p_tipo||': '||to_char(p_inicio,'DD/MM/YYYY');
+  insert into newsletters(tipo,periodo_ini,periodo_fim,assunto,itens) values(p_tipo,p_inicio,p_fim,titulo0,itens0)
+  on conflict(tipo,periodo_ini) do nothing returning id into v;
+  if v is null then select id into v from newsletters where tipo=p_tipo and periodo_ini=p_inicio;return v;end if;
+  select gp.grupo_id into g from grupo_papeis gp join grupos g0 on g0.id=gp.grupo_id where gp.papel='lideranca' and g0.ativo order by g0.id limit 1;
+  if g is null then
+   -- sem grupo de liderança não há onde abrir o cartão de revisão: não é erro; avisa uma vez (o boletim fica
+   -- criado e a próxima passada só cria o cartão quando o grupo existir)
+   raise warning 'Boletim % %: sem grupo de liderança em Administração › Grupos; cartão de revisão não criado.',p_tipo,p_inicio;
+   return v;
+  end if;
+ else
+  if card is not null then return v; end if;
+  select gp.grupo_id into g from grupo_papeis gp join grupos g0 on g0.id=gp.grupo_id where gp.papel='lideranca' and g0.ativo order by g0.id limit 1;
+  if g is null then return v; end if;
+ end if;
  perform pg_advisory_xact_lock(hashtext('atividade_seq'),g);
  select coalesce(max(seq),0)+1 into seq0 from atividades where grupo_id=g;
  insert into atividades(codigo,grupo_id,seq,titulo,descricao,origem_tipo,origem_id)
