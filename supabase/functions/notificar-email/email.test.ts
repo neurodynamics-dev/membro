@@ -192,8 +192,8 @@ const html = corpoHTML(pessoa([{}, { titulo: "DEP-3 — SOL26-0001", href: null 
 ok("o HTML traz os dois títulos",
    html.includes("ORT-14: Revisar a bancada") && html.includes("DEP-3: SOL26-0001"));
 ok("diz quantos avisos são", html.includes("Há 2 avisos"));
-ok("o e-mail é claro, não escuro", html.includes("#ffffff") && !html.includes("#050807"));
-ok("a logo sai por endereço absoluto", /src="https:\/\/[^"]+\/logo-1d1d1f\.png"/.test(html));
+ok("o e-mail é claro, não escuro", html.includes("#FFFFFF") && !html.includes("#050807"));
+ok("a logo sai por endereço absoluto", /src="https:\/\/brand\.neurodynamics\.dev\/assets\/logo-imagotipo-cortex-dark\.png"/.test(html));
 ok("explica como mudar a preferência", html.includes("Preferências de avisos"));
 ok("o envio na hora não agrupa por categoria", !html.includes("ATIVIDADES") && !/Atividades \(\d+\)/.test(html));
 
@@ -269,7 +269,8 @@ const envio = (d: Partial<EnvioDocumento["dados"]> = {}, o: Partial<EnvioDocumen
   ok("e diz onde se confere", h.includes(">auth.neurodynamics.dev</a>"));
   ok("o externo não recebe link do portal, que ele não tem", !h.includes("#/servicos/eventos/EXT-1"));
   ok("e é tratado pelo primeiro nome", h.includes("Olá, Helena."));
-  ok("o e-mail é claro, como os outros", h.includes("#ffffff"));
+  ok("o código verificador sai em IBM Plex Mono, com Courier New de reserva", /IBM Plex Mono','Courier New',monospace/.test(h));
+  ok("o e-mail é claro, como os outros", h.includes("#FFFFFF"));
 }
 {
   const h = declaracaoHTML(envio({ membro: true }, { para_nome: "Ana Figueiredo" }));
@@ -316,7 +317,7 @@ const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {
   ok("cancelamento risca o título e não pergunta se vai", c.includes("line-through") && !c.includes("rsvp"));
   ok("lembrete: quanto falta", agendaFrase(convite("lembrete", { minutos: 1440 })) === "Começa em 1 dia."
      && antecedenciaTexto(90) === "1 hora e 30 minutos");
-  ok("a resposta dada fica marcada", agendaHTML(convite("lembrete", {}, { resposta: "vou" })).includes("background:#00594F;color:#ffffff;border:1px solid #00594F\">\n      Vou"));
+  ok("a resposta dada fica marcada", agendaHTML(convite("lembrete", {}, { resposta: "vou" })).includes("background:#00352F;color:#FFFFFF;border:1px solid #00352F\">Vou"));
 }
 {
   const h = agendaHTML(convite("convite", { titulo: 'Reunião <img src=x onerror=alert(1)> & "cia"', descricao: "<b>oi</b>" }));
