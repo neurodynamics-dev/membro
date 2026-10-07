@@ -87,11 +87,11 @@ Rode cada consulta no SQL Editor e guarde o resultado.
    select tipo, periodo_ini, status from newsletters order by criado_em desc limit 5;
    select chave, serie_id from marca_vinculos order by chave;
    ```
-4. **Republicar as Edge Functions** `notificar-email` (verificação de JWT continua desligada, autorização interna da fila) e `agenda-sync`. Não alterar os segredos. Conferir que a passada seguinte termina `ok` e sem `newsletters: erro`:
+4. **Republicar as Edge Functions** `notificar-email` (todos os e-mails passaram para os templates do brand; o arquivo novo `marca.ts` vai junto no deploy) (verificação de JWT continua desligada, autorização interna da fila) e `agenda-sync`. Não alterar os segredos. Conferir que a passada seguinte termina `ok` e sem `newsletters: erro`:
    ```sql
    select inicio, origem, resultado from fila_passadas order by id desc limit 3;
    ```
-5. **Templates de Auth**: colar o conteúdo de `supabase/templates/*.html` em Authentication › Email Templates, no template correspondente, e enviar um e-mail de teste.
+5. **Templates de Auth** (o layout mudou para o Comunicado do brand, logo Cortex hospedado em brand.neurodynamics.dev): colar o conteúdo de `supabase/templates/*.html` em Authentication › Email Templates, no template correspondente, e enviar um e-mail de teste.
 6. **Mergear o #36** (o brand `main` já tem os assets usados; não há o que publicar nele). O Pages publica. Conferir `/rsvp?t=…`, `/descadastrar?t=…`, `/quiosque` e o carregamento de Reporte, Feed, Newsletters, Marca e Ata.
 7. **Teste controlado** com destinatário autorizado: preferências, aprovação do boletim, envio, baixa e descadastro. Conferir no provedor antes de repetir um envio cuja baixa falhou. Depois, uma conta ativa, uma liderança, um admin e uma conta bloqueada. Gerar a folha única de check-in somente quando o QR anterior puder ser substituído.
 8. Conferir configuração de prazo/reunião do reporte (só admin altera), responsáveis dos grupos, vínculos de Marca e tipos de evento com ata.

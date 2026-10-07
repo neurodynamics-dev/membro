@@ -6,9 +6,9 @@
    cadastro, convite, link de acesso, troca de e-mail, redefinição de
    senha e o código de reautenticação. Por padrão saem em inglês, com
    o layout dele. Estes modelos trocam isso pelo mesmo desenho dos
-   avisos do portal: o corpoHTML de functions/notificar-email/index.ts
-   (fundo cinza-claro, cartão branco de 560px, logo teal, "Olá", um
-   bloco com borda e o rodapé cinza). Mudou lá, mude aqui.
+   avisos do portal: a moldura de functions/notificar-email/marca.ts
+   (Comunicado do brand: cartão de 600px, cabeçalho Cortex com logo,
+   Archivo e Instrument Sans, endereço e rodapé). Mudou lá, mude aqui.
 
    Os seis nascem de um layout só, para não divergirem entre si. O
    que vai para o painel do Supabase são os .html desta pasta — ver
@@ -24,81 +24,51 @@ import { fileURLToPath } from 'node:url';
 const pasta = dirname(fileURLToPath(import.meta.url));
 const soConfere = process.argv.includes('--check');
 
-/* os mesmos endereços e cores do corpoHTML */
+/* os mesmos endereços, cores e fontes do Comunicado do brand (Cortex),
+   como em functions/notificar-email/marca.ts */
 const PORTAL = 'https://membro.neurodynamics.dev';
-const LOGO = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
-const F = 'Helvetica,Arial,sans-serif';
-const COR = { fundo:'#E8EDEB', borda:'#C4CCC9', tinta:'#1d1d1f', apoio:'#2E3533', nota:'#616C68', acento:'#00594F' };
+const LOGO = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-cortex-dark.png';
+const SANS = "'Instrument Sans',Helvetica,Arial,sans-serif";
+const SERIF = "Archivo,Arial,Helvetica,sans-serif";
+const MONO = "'IBM Plex Mono','Courier New',monospace";
+const COR = { fundo:'#E8EDEB', caixa:'#E3EFEC', tinta:'#2E3533', nota:'#616C68', acento:'#00594F', escuro:'#00352F' };
 
-/* O botão é o do Full mailer, na cor dos links dos avisos. Tabela,
-   e não só <a>, para o Outlook respeitar o fundo. */
-const botao = (rotulo) => `<table role="presentation" cellpadding="0" cellspacing="0"><tr>
-                    <td style="border-radius:11px;background:${COR.acento}">
-                      <a href="{{ .ConfirmationURL }}" target="_blank"
-                         style="display:inline-block;padding:12px 22px;font:600 14px/1 ${F};
-                                color:#ffffff;text-decoration:none;border-radius:11px">${rotulo}</a>
-                    </td></tr></table>`;
+const esp = (h) => `<tr><td height="${h}" style="height:${h}px;font-size:0;line-height:0;mso-line-height-rule:exactly">&nbsp;</td></tr>`;
+const fio = (cor) => `<tr><td height="1" style="height:1px;font-size:0;line-height:0;background:${cor};mso-line-height-rule:exactly">&nbsp;</td></tr>`;
+
+/* O botão do Comunicado. Tabela, e não só <a>, para o Outlook respeitar o fundo. */
+const botao = (rotulo) => `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${COR.escuro}" style="background:${COR.escuro};border-radius:8px"><a href="{{ .ConfirmationURL }}" target="_blank" style="display:block;padding:13px 24px;font-family:${SANS};font-weight:500;font-size:14px;line-height:18px;color:#FFFFFF;text-decoration:none">${rotulo}</a></td></tr></table>`;
 
 /* Sob o botão: quanto o link vale e o endereço por extenso, para o
    cliente de e-mail que não abre botão. */
-const reserva = (validade) => `<div style="font:400 12px/1.6 ${F};color:${COR.nota};margin-top:14px">
-                    ${validade} Se o botão não abrir, copie este endereço no navegador:<br>
-                    <a href="{{ .ConfirmationURL }}" style="color:${COR.acento};text-decoration:none;word-break:break-all">{{ .ConfirmationURL }}</a>
-                  </div>`;
+const reserva = (validade) => `<div style="font-family:${SANS};font-size:12px;line-height:18px;color:${COR.nota};margin-top:14px">${validade} Se o botão não abrir, copie este endereço no navegador:<br><a href="{{ .ConfirmationURL }}" style="color:${COR.acento};text-decoration:none;word-break:break-all">{{ .ConfirmationURL }}</a></div>`;
 
-const codigo = `<div style="margin-top:12px;display:inline-block;padding:12px 18px;border:1px solid ${COR.borda};
-                              border-radius:11px;background:${COR.fundo};
-                              font:600 26px/1 Menlo,Consolas,'Courier New',monospace;
-                              letter-spacing:6px;color:#00352F">{{ .Token }}</div>`;
+const codigo = `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${COR.caixa}" style="background:${COR.caixa};border-radius:12px;padding:16px 22px;font-family:${MONO};font-size:26px;line-height:30px;letter-spacing:6px;color:${COR.escuro}">{{ .Token }}</td></tr></table>`;
 
-const linkPortal = `<a href="${PORTAL}" style="color:${COR.acento};text-decoration:none">Portal do Membro</a>`;
+const linkPortal = `<a href="${PORTAL}" style="color:${COR.nota}">Portal do Membro</a>`;
 
 function layout(m){
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width"><title>${m.assunto}</title></head>
-<body style="margin:0;padding:0;background:${COR.fundo}">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${m.previa}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COR.fundo}">
-    <tr><td align="center" style="padding:32px 16px">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-             style="max-width:560px;background:#ffffff;border:1px solid ${COR.borda};border-radius:0px">
-        <tr><td style="padding:28px 28px 8px">
-          <img src="${LOGO}" width="188" alt="NeuroDynamics"
-               style="display:block;border:0;outline:none">
-        </td></tr>
-        <tr><td style="padding:14px 28px 0">
-          <div style="font:400 15px/1.6 ${F};color:${COR.tinta}">Olá.</div>
-          <div style="font:400 14px/1.6 ${F};color:${COR.apoio};margin-top:6px">
-            ${m.abertura}</div>
-        </td></tr>
-        <tr><td style="padding:22px 28px 0">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr><td style="padding:0 0 18px">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                     style="border:1px solid ${COR.borda};border-radius:11px">
-                <tr><td style="padding:16px 18px">
-                  <div style="font:600 15px/1.45 ${F};color:${COR.tinta}">${m.titulo}</div>
-                  <div style="font:400 14px/1.6 ${F};color:${COR.apoio};margin-top:6px">
-                    ${m.texto}</div>
-                  <div style="margin-top:14px">
-                  ${m.acao}
-                  </div>
-                  ${m.depois || ''}
-                </td></tr>
-              </table>
-            </td></tr>
-          </table>
-        </td></tr>
-        <tr><td style="padding:4px 28px 28px">
-          <div style="font:400 12px/1.6 ${F};color:${COR.nota};
-                      border-top:1px solid ${COR.borda};padding-top:16px">
-            ${m.rodape}
-          </div>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>
+  const t = (tam, cor, h) => `<tr><td style="font-family:${SANS};font-weight:400;font-size:${tam}px;line-height:${Math.round(tam*1.53)}px;mso-line-height-rule:exactly;color:${cor}">${h}</td></tr>`;
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${m.assunto}</title><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400&family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono&display=swap" rel="stylesheet"><!--[if mso]><style>td,a,span{font-family:Arial,sans-serif!important}</style><![endif]--><style>a{color:${COR.acento}}@media (max-width:620px){.wrap{width:100%!important}}</style></head>
+<body style="margin:0;padding:0;background:${COR.fundo}"><span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all">${m.previa}</span>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="${COR.fundo}" style="background:${COR.fundo}"><tr><td align="center" style="padding:24px 0">
+<table role="presentation" class="wrap" cellpadding="0" cellspacing="0" border="0" width="600" bgcolor="#FFFFFF" style="width:600px;max-width:600px;background:#FFFFFF"><tr><td style="padding:45px 28px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate">
+<tr><td bgcolor="${COR.caixa}" style="background:${COR.caixa};border-radius:16px;padding:30px"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate">
+<tr><td><img src="${LOGO}" width="152" height="26" alt="NeuroDynamics" style="display:block;width:152px;height:26px;border:0"></td></tr>
+${esp(32)}${fio(COR.escuro)}${esp(14)}
+${t(19, COR.escuro, 'Conta')}
+</table></td></tr>
+${esp(30)}
+<tr><td style="font-family:${SERIF};font-weight:400;letter-spacing:-.3px;font-size:26px;line-height:32px;mso-line-height-rule:exactly;color:${COR.tinta}">${m.titulo}</td></tr>${esp(14)}
+${t(15, COR.tinta, 'Olá. ' + m.abertura)}${esp(14)}
+${t(15, COR.tinta, m.texto)}${esp(24)}
+<tr><td>${m.acao}${m.depois || ''}</td></tr>
+${esp(46)}${fio(COR.tinta)}${esp(14)}
+${t(13, COR.tinta, '<a href="https://neurodynamics.dev" style="color:#2E3533;text-decoration:none">neurodynamics.dev</a>')}${esp(14)}${fio(COR.tinta)}${esp(18)}
+${t(13, COR.tinta, 'NeuroDynamics, Laboratório de Neuroengenharia<br>Av. Antônio Carlos, 6627, Pampulha, Belo Horizonte, MG, 31270-901<br><a href="mailto:contato@neurodynamics.dev" style="color:#2E3533">contato@neurodynamics.dev</a>')}${esp(18)}${fio(COR.tinta)}${esp(14)}
+${t(11, COR.nota, m.rodape)}
+</table></td></tr></table></td></tr></table></body></html>
 `;
 }
 
@@ -171,7 +141,7 @@ const MODELOS = [
     titulo:'Seu código de confirmação',
     texto:'Digite este código onde ele foi pedido:',
     acao:codigo,
-    depois:`<div style="font:400 12px/1.6 ${F};color:${COR.nota};margin-top:14px">O código vale por 1 hora e só pode ser usado uma vez.</div>`,
+    depois:`<div style="font-family:${SANS};font-size:12px;line-height:18px;color:${COR.nota};margin-top:14px">O código vale por 1 hora e só pode ser usado uma vez.</div>`,
     rodape:`Você recebe este e-mail porque alguém conectado à sua conta no ${linkPortal} pediu uma alteração que exige confirmação. Se não foi você, não passe o código a ninguém e troque a sua senha.` },
 ];
 
