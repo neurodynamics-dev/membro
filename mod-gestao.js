@@ -90,7 +90,7 @@ async function pageQuadro(sub){
   catch(e){
     $('#main').innerHTML = topoGestao({titulo:'Quadro indisponível'})
       + `<div class="aviso-box err">Não foi possível carregar o quadro de pessoal:
-         ${esc(e.message)}. Se o erro fala de permissão, o seu papel não dá acesso a esta tela.</div>`;
+         ${esc(e.message)}. Se o erro fala de permissão, Sem permissão para esta tela..</div>`;
     return;
   }
   const reg = sub != null ? parseInt(sub, 10) : null;
@@ -276,7 +276,7 @@ function campoInput(c, val, regAtual){
   if (c.t === 'gestor'){
     const opts = state.membros.filter(m => m.status==='Ativo' && m.registro !== regAtual)
       .map(m => `<option value="${m.registro}" ${m.registro===val?'selected':''}>${esc(m.nome)}</option>`).join('');
-    return `<select id="f-${c.k}"><option value="">— sem gestor —</option>${opts}</select>`;
+    return `<select id="f-${c.k}"><option value="">Sem gestor</option>${opts}</select>`;
   }
   if (c.t === 'grupos') return pillsGrupos(val);
   const v = val == null ? '' : val;

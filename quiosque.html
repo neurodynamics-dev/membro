@@ -3,29 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SOMA · Painel | NeuroDynamics</title>
+<title>SOMA, Painel | NeuroDynamics</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root{
   --deepwave:#00352F; --axon:#00594F; --synapse:#CEDC00;
-  --crystal:#F8F7FF; --blackout:#1D1D1F;
-  --glass:rgba(248,247,255,.055); --glass-2:rgba(248,247,255,.09);
-  --stroke:rgba(248,247,255,.12);
+  --crystal:#E8EDEB; --blackout:#1D1D1F;
+  --glass:rgba(232,237,235,.055); --glass-2:rgba(232,237,235,.09);
+  --stroke:rgba(232,237,235,.12);
   --txt:#f2f7f5; --dim:rgba(242,247,245,.62); --faint:rgba(242,247,245,.38);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{
-  font-family:'Inter',system-ui,sans-serif;color:var(--txt);cursor:default;
-  background:
-    radial-gradient(1400px 900px at 8% -12%, #0e5a4c 0%, transparent 55%),
-    radial-gradient(1100px 700px at 105% 8%, #083f36 0%, transparent 52%),
-    radial-gradient(900px 700px at 55% 115%, #062e28 0%, transparent 60%),
-    linear-gradient(165deg, #0b332c 0%, #05201b 55%, #02110e 100%);
+  font-family:'Instrument Sans',system-ui,sans-serif;color:var(--txt);cursor:default;
+  background:linear-gradient(rgba(0,89,79,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(0,89,79,.14) 1px,transparent 1px),radial-gradient(ellipse at 8% 0%,#00594F,transparent 60%),radial-gradient(ellipse at 100% 100%,var(--hora-cor,#594A00),transparent 55%),#00352F;
+  background-size:48px 48px,48px 48px,auto,auto,auto;
 }
 body.nocursor{cursor:none}
 .clock,.weather .temp,.aev .hora,.ckrow .h,.solar .ends b{
@@ -37,30 +34,30 @@ body.nocursor{cursor:none}
   grid-template-rows:auto 1fr;
 }
 .brandline{grid-column:1/-1;display:flex;align-items:baseline;gap:14px}
-.brandline .lab{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;letter-spacing:.02em}
+.brandline .lab{font-family:'Archivo',sans-serif;font-weight:700;font-size:19px;letter-spacing:.02em}
 .brandline .by{font-size:11.5px;color:var(--faint);letter-spacing:.16em;text-transform:uppercase}
 .brandline .live{margin-left:auto;display:flex;align-items:center;gap:8px;
   font-size:11px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase}
-.pulse{width:8px;height:8px;border-radius:50%;background:var(--synapse)}
+.pulse{width:8px;height:8px;border-radius:4px;background:var(--synapse)}
 @media(prefers-reduced-motion:no-preference){
   .pulse{animation:pl 2.4s ease-in-out infinite}
   @keyframes pl{0%,100%{opacity:1}50%{opacity:.25}}
 }
 .col{display:flex;flex-direction:column;gap:22px;min-height:0}
 .glass{background:var(--glass);border:1px solid var(--stroke);
-  border-radius:26px;backdrop-filter:blur(18px);padding:22px 24px;min-height:0}
+  border-radius:20px;backdrop-filter:blur(18px);padding:22px 24px;min-height:0}
 .card-title{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
   color:var(--faint);margin-bottom:14px;display:flex;justify-content:space-between}
 
 /* ---------- hero ---------- */
 .hero{flex:none}
-.clock{font-family:'Space Grotesk',sans-serif;font-weight:300;
+.clock{font-family:'Archivo',sans-serif;font-weight:300;
   font-size:clamp(64px, 7.4vw, 118px);line-height:.95;letter-spacing:-.02em}
 .clock .sec{font-size:.32em;font-weight:400;color:var(--dim);margin-left:6px;display:inline-block;width:2.4ch}
 .dateline{font-size:15px;color:var(--dim);margin-top:8px;text-transform:capitalize}
 .weather{display:flex;align-items:center;gap:20px;margin-top:26px}
 .weather .wicon svg{width:64px;height:64px;stroke:var(--crystal);fill:none;stroke-width:1.4}
-.weather .temp{font-family:'Space Grotesk',sans-serif;font-weight:300;
+.weather .temp{font-family:'Archivo',sans-serif;font-weight:300;
   font-size:58px;line-height:1;letter-spacing:-.02em}
 .weather .wmeta{font-size:14px;color:var(--dim);line-height:1.55;white-space:nowrap}
 .weather .wmeta b{color:var(--txt);font-weight:500}
@@ -70,7 +67,7 @@ body.nocursor{cursor:none}
 .solar{flex:1;display:flex;flex-direction:column}
 .solar svg{width:100%;flex:1;min-height:0}
 .solar .ends{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-top:2px}
-.solar .ends b{display:block;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--txt);font-weight:500}
+.solar .ends b{display:block;font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--txt);font-weight:500}
 .solar .ends .lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
 
 /* ---------- agenda ---------- */
@@ -79,11 +76,11 @@ body.nocursor{cursor:none}
 .aev{display:flex;gap:14px;align-items:stretch;
   background:var(--glass-2);border-radius:18px;padding:14px 16px;flex:none}
 .aev .bar{width:4px;border-radius:4px;flex:none}
-.aev .hora{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500;
+.aev .hora{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;
   color:var(--dim);padding-top:1px;text-align:right;flex:none}
 .aev .hora b{color:var(--txt);font-weight:600}
 .aev .info{min-width:0}
-.aev .t{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;
+.aev .t{font-family:'Archivo',sans-serif;font-weight:600;font-size:17px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .aev .m{font-size:12.5px;color:var(--faint);margin-top:3px}
 .aev .m b{color:var(--dim);font-weight:500}
@@ -97,34 +94,34 @@ body.nocursor{cursor:none}
 .qrbox{background:#fff;border-radius:20px;padding:16px;display:inline-block;
   line-height:0;box-shadow:0 18px 50px rgba(0,0,0,.35)}
 .qrbox img,.qrbox canvas{width:min(15.5vw,214px)!important;height:auto!important}
-.qr-cta{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16.5px;margin-top:16px}
+.qr-cta{font-family:'Archivo',sans-serif;font-weight:600;font-size:16.5px;margin-top:16px}
 .qr-sub{font-size:12px;color:var(--faint);margin-top:4px}
-.qr-track{height:3px;background:rgba(248,247,255,.12);border-radius:3px;margin-top:14px;overflow:hidden}
+.qr-track{height:3px;background:rgba(232,237,235,.12);border-radius:3px;margin-top:14px;overflow:hidden}
 .qr-fill{height:100%;background:var(--synapse);width:100%;transition:width 1s linear;border-radius:3px}
 .qr-off{display:none;padding:34px 10px;color:var(--dim);font-size:14px;line-height:1.7}
-.qr-off b{color:#FBBF24}
+.qr-off b{color:#FFD470}
 
 /* ---------- check-ins ---------- */
 .checks{flex:1;overflow:hidden;display:flex;flex-direction:column}
 .presnum{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
-.presnum .n{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:40px;color:var(--synapse);line-height:1}
+.presnum .n{font-family:'Archivo',sans-serif;font-weight:600;font-size:40px;color:var(--synapse);line-height:1}
 .presnum .l{font-size:12.5px;color:var(--dim);line-height:1.35}
 .ck-list{flex:1;overflow:hidden}
 .ckrow{display:flex;justify-content:space-between;align-items:center;
-  padding:9px 2px;border-bottom:1px solid rgba(248,247,255,.07);font-size:14.5px}
+  padding:9px 2px;border-bottom:1px solid rgba(232,237,235,.07);font-size:14.5px}
 .ckrow:last-child{border-bottom:none}
-.ckrow .h{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--faint)}
+.ckrow .h{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--faint)}
 .ckempty{color:var(--faint);font-size:13.5px;padding:14px 2px}
 .avk{border-radius:50%;background:var(--glass-2);color:var(--synapse);display:inline-flex;
-  align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;
+  align-items:center;justify-content:center;font-family:'Archivo',sans-serif;
   font-weight:600;position:relative;overflow:hidden;flex:none}
 .avk img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ckrow{gap:11px}
 .ckrow .cinfo{flex:1;min-width:0}
 .ckrow .cn{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ckrow .cs{font-size:11px;color:var(--faint);margin-top:1px}
-.ckrow .cs .fma{color:#7DD3FC}
-.ckrow .cs .ndp{color:#FDA4AF}
+.ckrow .cs .fma{color:#7FE0FF}
+.ckrow .cs .ndp{color:#FF948C}
 
 /* ---------- boas-vindas ---------- */
 .welcome{
@@ -137,10 +134,11 @@ body.nocursor{cursor:none}
 .welcome.vis{opacity:1}
 .welcome .wav{width:180px;height:180px;font-size:52px;border:4px solid var(--synapse);
   box-shadow:0 0 90px rgba(206,220,0,.28);margin-bottom:30px}
-.welcome .wt{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:52px;letter-spacing:-.01em}
+.welcome .wt{font-family:'Archivo',sans-serif;font-weight:700;font-size:52px;letter-spacing:-.01em}
 .welcome .wa{font-size:15px;color:var(--dim);margin-top:10px;letter-spacing:.08em;text-transform:uppercase}
 .welcome .wi{font-size:17px;color:var(--dim);margin-top:20px;line-height:1.7}
 .welcome .wi b{color:var(--synapse);font-weight:600}
+.tag-live{border-radius:5px;background:rgba(232,237,235,.09);color:#E8EDEB}.cknum,.check-count{color:#FFD91A}
 </style>
 </head>
 <body>
@@ -150,7 +148,7 @@ body.nocursor{cursor:none}
     <img src="labbio-branco.png" alt="LABBIO" style="height:26px;display:block;align-self:center"
       onerror="this.remove();document.getElementById('lab-txt').style.display='inline'">
     <span class="lab" id="lab-txt" style="display:none">LABBIO</span>
-    <span class="by">SOMA · Painel de entrada</span>
+    <span class="by">SOMA, Painel de entrada</span>
     <span class="live" id="livewrap"><span class="pulse"></span><span id="livetxt">ao vivo</span></span>
   </div>
 
@@ -163,8 +161,8 @@ body.nocursor{cursor:none}
         <div class="temp" id="wtemp">--°</div>
         <div class="wmeta">
           <b id="wdesc">—</b><br>
-          Sensação <span id="wfeel">--°</span> · Precip. <span id="wprec">--</span>
-          <div class="hilo">máx <b id="wmax">--°</b> &nbsp; mín <b id="wmin">--°</b> &nbsp; · Campus UFMG</div>
+          Sensação <span id="wfeel">--°</span>, Precip. <span id="wprec">--</span>
+          <div class="hilo">máx <b id="wmax">--°</b> &nbsp; mín <b id="wmin">--°</b> &nbsp;, Campus UFMG</div>
         </div>
       </div>
     </div>
@@ -220,7 +218,7 @@ body.nocursor{cursor:none}
 <script>
 /* ============================================================
    CONFIG DO PAINEL
-   - SUPABASE: mesmos dados do SOMA · Gestão
+   - SUPABASE: mesmos dados do SOMA, Gestão
    - SEGREDO_QUIOSQUE: o MESMO valor gravado em config_sistema
    - APP_URL: endereço do Portal do Membro (onde o QR leva)
    ============================================================ */
@@ -291,7 +289,7 @@ function online(ok){
   $('qrwrap').style.display = ok ? '' : 'none';
   $('qroff').style.display = ok ? 'none' : 'block';
   $('livetxt').textContent = ok ? 'ao vivo' : 'offline';
-  document.querySelector('.pulse').style.background = ok ? 'var(--synapse)' : '#FB7185';
+  document.querySelector('.pulse').style.background = ok ? 'var(--synapse)' : '#FF2D20';
   if (!ok) tokenAtual = null;
 }
 
@@ -305,11 +303,11 @@ function renderAgenda(evs){
   }
   el.innerHTML = evs.map(e=>`
     <div class="aev">
-      <div class="bar" style="background:${e.cor||'#94A3B8'}"></div>
+      <div class="bar" style="background:${e.cor||'#B8BDCC'}"></div>
       <div class="hora"><b>${esc(e.inicio||'—')}</b><br>${esc(e.fim||'')}</div>
       <div class="info">
         <div class="t">${esc(e.titulo)}${e.em_andamento?'<span class="tag-live">agora</span>':''}</div>
-        <div class="m"><b>${esc(e.espaco||'')}</b> · ${e.confirmados} confirmado${e.confirmados===1?'':'s'}</div>
+        <div class="m"><b>${esc(e.espaco||'')}</b>, ${e.confirmados} confirmado${e.confirmados===1?'':'s'}</div>
       </div>
     </div>`).join('');
 }
@@ -351,7 +349,7 @@ function renderChecks(presentes, ultimos){
     return;
   }
   el.innerHTML = ultimos.map(c=>{
-    const sub = [abreviaArea(c.departamento), statusK(c.status)].filter(Boolean).join(' · ');
+    const sub = [abreviaArea(c.departamento), statusK(c.status)].filter(Boolean).join(', ');
     return `<div class="ckrow">${avatarK(c, 30, 11)}
       <span class="cinfo"><span class="cn">${esc(c.nome)}</span>
         ${sub?`<span class="cs" style="display:block">${sub}</span>`:''}</span>
@@ -457,13 +455,13 @@ function desenharSol(){
       const resta = Math.max(0, sunset - agora), h = Math.floor(resta/3.6e6), m = Math.round((resta%3.6e6)/6e4);
       msg = `o sol se põe em ${h>0? h+'h ':''}${m}min`;
     } else {
-      msg = agora < sunrise ? 'noite — o sol ainda não nasceu' : 'noite — o sol já se pôs';
+      msg = agora < sunrise ? 'noite, antes do nascer do sol' : 'noite, depois do pôr do sol';
     }
   }
   $('sunmsg').textContent = msg;
   svg.innerHTML =
-    `<line x1="14" y1="118" x2="386" y2="118" stroke="rgba(248,247,255,.16)" stroke-width="1"/>
-     <path d="${arco}" fill="none" stroke="rgba(248,247,255,.22)" stroke-width="1.6"
+    `<line x1="14" y1="118" x2="386" y2="118" stroke="rgba(232,237,235,.16)" stroke-width="1"/>
+     <path d="${arco}" fill="none" stroke="rgba(232,237,235,.22)" stroke-width="1.6"
        stroke-dasharray="3 6" stroke-linecap="round"/>
      ${trilha}${sol}`;
 }
@@ -481,5 +479,6 @@ document.addEventListener('dblclick', ()=>{
     : document.documentElement.requestFullscreen().catch(()=>{});
 });
 </script>
+<script>const horaVisual=new Date().getHours();document.documentElement.style.setProperty('--hora-cor',horaVisual<10?'#594A00':horaVisual<16?'rgba(206,220,0,.05)':horaVisual<19?'#6B2E08':'#142A75');</script>
 </body>
 </html>

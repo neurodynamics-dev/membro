@@ -304,7 +304,7 @@ const contagem = (n: number): string => n === 1 ? "1 aviso" : `${n} avisos`;
 export function assuntoDe(d: Destinatario): string {
   if (d.modo === "diario")  return `Resumo diário do SOMA (${contagem(d.itens.length)})`;
   if (d.modo === "semanal") return `Resumo semanal do SOMA (${contagem(d.itens.length)})`;
-  if (d.itens.length === 1) return d.itens[0].titulo;
+  if (d.itens.length === 1) return d.itens[0].titulo.replace(/ — /g, ": ");
   return `${d.itens.length} avisos no portal`;
 }
 
@@ -329,7 +329,7 @@ export function corpoHTML(d: Destinatario): string {
                style="border:1px solid #e3e6e3;border-radius:10px">
           <tr><td style="padding:16px 18px">
             <div style="font:600 15px/1.45 Helvetica,Arial,sans-serif;color:#1d1d1f">
-              ${esc(it.titulo)}</div>
+              ${esc(it.titulo.replace(/ — /g, ": "))}</div>
             ${it.corpo ? `<div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;
               color:#4a514a;margin-top:6px">${esc(it.corpo)}</div>` : ""}
             <div style="margin-top:12px">
@@ -355,7 +355,7 @@ export function corpoHTML(d: Destinatario): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
              style="max-width:560px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
         <tr><td style="padding:28px 28px 8px">
-          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics"
+          <img src="${esc(IMG)}/logo-1d1d1f.png" width="188" alt="NeuroDynamics"
                style="display:block;border:0;outline:none">
         </td></tr>
         <tr><td style="padding:14px 28px 0">
@@ -385,7 +385,7 @@ export function corpoHTML(d: Destinatario): string {
 /** A versão em texto, para quem lê e-mail sem HTML. */
 export function corpoTexto(d: Destinatario): string {
   const item = (it: ItemNotificacao) =>
-    `- ${it.titulo}${it.corpo ? "\n  " + it.corpo : ""}\n  ${linkDe(it.href)}`;
+    `- ${it.titulo.replace(/ — /g, ": ")}${it.corpo ? "\n  " + it.corpo : ""}\n  ${linkDe(it.href)}`;
   const linhas = ehResumo(d)
     ? porCategoria(d.itens).map((g) => `${g.nome.toUpperCase()} (${g.itens.length})\n\n` + g.itens.map(item).join("\n\n")).join("\n\n")
     : d.itens.map(item).join("\n\n");
@@ -461,7 +461,7 @@ export function declaracaoHTML(e: EnvioDocumento): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
              style="max-width:560px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
         <tr><td style="padding:28px 28px 8px">
-          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics"
+          <img src="${esc(IMG)}/logo-1d1d1f.png" width="188" alt="NeuroDynamics"
                style="display:block;border:0;outline:none">
         </td></tr>
         <tr><td style="padding:14px 28px 0">
@@ -548,7 +548,7 @@ const RESPOSTAS: Record<string, string> = { vou: "Vou", talvez: "Talvez", nao: "
 
 /** O link que responde pelo e-mail. */
 export function linkResposta(token: string | null | undefined, r: string): string {
-  return `${PORTAL}/rsvp.html?t=${encodeURIComponent(String(token || ""))}&r=${r}`;
+  return `${PORTAL}/rsvp?t=${encodeURIComponent(String(token || ""))}&r=${r}`;
 }
 
 /** "30 minutos", "1 hora", "1 dia", "2 dias e 3 horas" */
@@ -608,7 +608,7 @@ export function agendaHTML(e: EnvioAgenda): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
              style="max-width:560px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
         <tr><td style="padding:28px 28px 8px">
-          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics" style="display:block;border:0;outline:none">
+          <img src="${esc(IMG)}/logo-1d1d1f.png" width="188" alt="NeuroDynamics" style="display:block;border:0;outline:none">
         </td></tr>
         <tr><td style="padding:14px 28px 0">
           <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a">Olá, ${esc(primeiroNome(e.para_nome || ""))}. ${esc(agendaFrase(e))}</div>
@@ -792,7 +792,7 @@ const molduraPS = (titulo: string, miolo: string, rodape: string) => `<!doctype 
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
              style="max-width:600px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
         <tr><td style="padding:28px 28px 8px">
-          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics" style="display:block;border:0;outline:none">
+          <img src="${esc(IMG)}/logo-1d1d1f.png" width="188" alt="NeuroDynamics" style="display:block;border:0;outline:none">
         </td></tr>
         ${miolo}
         <tr><td style="padding:18px 28px 28px">
@@ -1022,6 +1022,40 @@ async function enviarProgramados(): Promise<Record<string, unknown>> {
     }
   }
   return { programados: total, programados_falhas: totalFalhas, ...(erroGeral ? { programados_detalhe: erroGeral } : {}) };
+}
+
+export interface BoletimItem { titulo: string; subtitulo: string; texto: string; }
+export function montarBoletim(assunto: string, itens: BoletimItem[], descadastro = "") {
+  const e = (t: string) => String(t || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]!));
+  const rodape = descadastro ? `<a href="${e(descadastro)}" style="color:#00594F">Descadastrar da comunidade</a>` : `<a href="${PORTAL}/#/feed" style="color:#00594F">Feed da equipe</a>`;
+  return {
+    html: `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#F7F4EE"><table role="presentation" width="100%"><tr><td align="center"><table role="presentation" width="600" style="max-width:100%;font:15px Arial,sans-serif;color:#1D1D1F;background:white"><tr><td style="padding:32px;background:#00352F;color:white"><img src="https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png" width="150" alt="NeuroDynamics"><h1 style="font-size:28px">${e(assunto)}</h1></td></tr>${itens.map(i=>`<tr><td style="padding:24px 32px;border-bottom:1px solid #C4CCC9"><h2 style="color:#00352F">${e(i.titulo)}</h2><p style="color:#616C68">${e(i.subtitulo)}</p><p style="white-space:pre-line;line-height:1.65">${e(i.texto)}</p></td></tr>`).join('')}<tr><td style="padding:24px 32px">${rodape}</td></tr></table></td></tr></table></body></html>`,
+    texto: assunto+"\n\n"+itens.map(i=>i.titulo+"\n"+i.subtitulo+"\n"+i.texto).join("\n\n")+(descadastro?"\nDescadastrar: "+descadastro:"")
+  };
+}
+async function enviarNewsletters(): Promise<Record<string, unknown>> {
+  let lote: {id:string;email:string;nome:string;assunto:string;itens:BoletimItem[];token:string|null}[];
+  try { lote=await rpc("newsletter_lote",{p_limite:50}) as typeof lote; }
+  catch(e){return {newsletters:"erro",newsletters_detalhe:String(e)};}
+  let enviadas=0, falhas=0;
+  for(const d of lote){
+    const url=d.token?`${PORTAL}/descadastrar?t=${encodeURIComponent(d.token)}`:"";
+    const conteudo=montarBoletim(d.assunto,d.itens,url);
+    let erro="";
+    try{
+      const pedido=montarEnvio(PROVEDOR,DE,DE_NOME,d.email,d.nome,d.assunto,conteudo.html,conteudo.texto);
+      // RFC 8058: o POST usa a Edge Function; a página exige confirmação humana.
+      if(d.token && PROVEDOR === "resend"){
+        const endpoint=`${URL_BASE}/functions/v1/notificar-email?descadastrar=${encodeURIComponent(d.token)}`;
+        (pedido.corpo as Record<string,unknown>).headers={"List-Unsubscribe":`<${endpoint}>`,"List-Unsubscribe-Post":"List-Unsubscribe=One-Click"};
+      }
+      const resposta=await fetch(pedido.url,{method:"POST",headers:pedido.headers,body:JSON.stringify(pedido.corpo)});
+      erro=lerResposta(PROVEDOR,resposta.status,await resposta.text());
+    }catch(e){erro=String(e);}
+    if(erro)falhas++;else enviadas++;
+    await rpc("newsletter_baixa",{p_id:d.id,p_erro:erro||null});
+  }
+  return {newsletters:enviadas,newsletters_falhas:falhas};
 }
 
 async function rpc(nome: string, corpo: unknown): Promise<unknown> {
@@ -1317,6 +1351,17 @@ export async function servir(req: Request): Promise<Response> {
     }), { status: 500, headers: cabecalho });
   }
 
+  const descadastro=new URL(req.url).searchParams.get("descadastrar");
+  if(descadastro!==null){
+    if(req.method!=="POST" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(descadastro))
+      return new Response(JSON.stringify({status:"invalido"}),{status:400,headers:cabecalho});
+    const corpo=await req.text();
+    if(new URLSearchParams(corpo).get("List-Unsubscribe")!=="One-Click")
+      return new Response(JSON.stringify({status:"invalido"}),{status:400,headers:cabecalho});
+    await rpc("comunidade_descadastrar",{p_token:descadastro});
+    return new Response(JSON.stringify({status:"ok"}),{headers:cabecalho});
+  }
+
   let pedido: { origem?: string } = {};
   try { pedido = req.method === "POST" ? JSON.parse((await req.text()) || "{}") : {}; } catch { pedido = {}; }
   const quem = await quemChama(req, String(pedido?.origem || ""));
@@ -1361,7 +1406,7 @@ async function passada(): Promise<[Record<string, unknown>, number]> {
   /* as declarações e a agenda primeiro: saem mesmo que o sino não
      tenha aviso nenhum para ninguém, e o lembrete tem hora */
   const docs = { ...push, ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()),
-                 ...(await enviarPS()) };
+                 ...(await enviarPS()), ...(await enviarNewsletters()) };
 
   let destinos: Destinatario[];
   try {

@@ -15,17 +15,17 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
 <meta name="apple-mobile-web-app-title" content="SOMA">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
 /* ============ TEMAS ============
    Os mesmos tokens da casca (index.html), com os mesmos nomes: o escuro
    é o padrão; o claro é a escolha que a pessoa fez no SOMA (nd.tema). */
 :root{
   color-scheme:dark;
-  --bg:#050807; --panel:#0B1210; --ink:#F5F5F7; --muted:#9AA5A1; --dim:#616C68;
+  --bg:#050807; --panel:#0B1210; --ink:#E8EDEB; --muted:#9AA5A1; --dim:#616C68;
   --line:rgba(var(--ink-rgb),.08); --line2:rgba(var(--ink-rgb),.16);
-  --deep:#00352F; --green:#00594F; --green2:#0B7D6E; --teal:#2DD4BF; --syn:#CEDC00;
-  --bad:#F1806F; --ok:#4ADE97; --warn:#F5C36A; --info:#7FA7F2; --roxo:#A78BFA;
+  --deep:#00352F; --green:#00594F; --green2:#00594F; --teal:#2DD4BF; --syn:#CEDC00;
+  --bad:#FF2D20; --ok:#00F59B; --warn:#FFAA00; --info:#00C8FF; --roxo:#A78BFA;
   --card:rgba(var(--tom),.03); --glass:rgba(var(--fundo-rgb),.78);
   --tom:255,255,255; --ink-rgb:245,245,247; --syn-rgb:206,220,0; --bad-rgb:241,128,111;
   --ok-rgb:74,222,151; --warn-rgb:245,195,106; --info-rgb:127,167,242; --teal-rgb:45,212,191;
@@ -36,12 +36,12 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
   --r:18px; --max:1240px;
   --fd:'Archivo',-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
   --fm:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
-  --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
+  --f:'Instrument Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
 }
 :root[data-tema="claro"]{
   color-scheme:light;
   --bg:#F2F5F1; --panel:#FFFFFF; --ink:#0F1714; --muted:#48554F; --dim:#66726D;
-  --teal:#0A776B; --bad:#C2412D; --ok:#12804F; --warn:#9A5B00; --info:#2D5BC4; --roxo:#6D4AC8;
+  --teal:#00594F; --bad:#C2412D; --ok:#12804F; --warn:#9A5B00; --info:#2D5BC4; --roxo:#6D4AC8;
   --card:rgba(255,255,255,.74); --glass:rgba(255,255,255,.84);
   --tom:15,23,20; --ink-rgb:15,23,20; --syn-rgb:124,135,0; --bad-rgb:194,65,45;
   --ok-rgb:18,128,79; --warn-rgb:154,91,0; --info-rgb:45,91,196; --teal-rgb:10,119,107;
@@ -86,7 +86,7 @@ kbd{font-family:var(--fm);font-size:11.5px;border:1px solid var(--line2);border-
 .b1{width:56vmax;height:56vmax;left:-18vmax;top:-24vmax;
   background:radial-gradient(circle,#00594F 0%,rgba(0,89,79,0) 70%);animation:fl1 38s ease-in-out infinite alternate}
 .b2{width:42vmax;height:42vmax;right:-16vmax;top:8vmax;opacity:.18;
-  background:radial-gradient(circle,#0B7D6E 0%,rgba(11,125,110,0) 70%);animation:fl2 32s ease-in-out infinite alternate}
+  background:radial-gradient(circle,#00594F 0%,rgba(11,125,110,0) 70%);animation:fl2 32s ease-in-out infinite alternate}
 .b3{width:30vmax;height:30vmax;left:36vw;bottom:-18vmax;opacity:.06;
   background:radial-gradient(circle,#CEDC00 0%,rgba(206,220,0,0) 70%);animation:fl3 44s ease-in-out infinite alternate}
 [data-tema="claro"] .b1{opacity:.16} [data-tema="claro"] .b2{opacity:.12} [data-tema="claro"] .b3{opacity:.14}
@@ -127,7 +127,7 @@ kbd{font-family:var(--fm);font-size:11.5px;border:1px solid var(--line2);border-
 [data-tema="claro"] .hd-marca img{filter:brightness(0) invert(.08)}
 .hd-marca .simb{display:none;width:28px;height:28px;border-radius:8px}
 .logotype{font-family:var(--fd);font-weight:700;font-size:16px;letter-spacing:-.02em;white-space:nowrap}
-.hd-tag{font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--syn-tx);
+.hd-tag{font-family:var(--fd);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--syn-tx);
   border:1px solid rgba(var(--syn-rgb),.4);border-radius:999px;padding:3px 9px;white-space:nowrap}
 .hd-bt{height:38px;min-width:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
   padding:0 10px;color:var(--muted);border:1px solid var(--line);background:rgba(var(--tom),.03);font-size:13px;
@@ -193,14 +193,14 @@ kbd{font-family:var(--fm);font-size:11.5px;border:1px solid var(--line2);border-
 
 /* ============ A ETAPA ============ */
 .et{max-width:820px;min-width:0}
-.eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:var(--fm);font-size:11px;
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:var(--fd);font-size:11px;
   letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
 .eyebrow::before{content:'';width:7px;height:7px;background:var(--syn);flex-shrink:0}
 .et h1{font-size:clamp(30px,4.8vw,50px);font-weight:600;letter-spacing:-.028em;line-height:1.04;margin:14px 0 16px}
 .et h1:focus{outline:none}
-.et h1 em{font-style:normal;background:linear-gradient(94deg,var(--syn) 10%,#7BE8C4 90%);
+.et h1 em{font-style:normal;background:linear-gradient(94deg,var(--syn) 10%,#A9CCC4 90%);
   -webkit-background-clip:text;background-clip:text;color:transparent}
-[data-tema="claro"] .et h1 em{background:linear-gradient(94deg,#5B6600 10%,#0A776B 90%);-webkit-background-clip:text;background-clip:text}
+[data-tema="claro"] .et h1 em{background:linear-gradient(94deg,#5B6600 10%,#00594F 90%);-webkit-background-clip:text;background-clip:text}
 .lead{color:var(--muted);font-size:16.5px;max-width:690px;line-height:1.6}
 .lead b{color:var(--ink);font-weight:600}
 .bl{margin-top:40px}
@@ -208,7 +208,7 @@ kbd{font-family:var(--fm);font-size:11.5px;border:1px solid var(--line2);border-
 .bl > h2 .ic{width:20px;height:20px;color:var(--syn-tx)}
 .bl > p, .bl .p{color:var(--muted);margin-bottom:12px;max-width:720px}
 .bl p b, .bl li b, .nota b, .tile b{color:var(--ink);font-weight:600}
-.sub-h{font-family:var(--fm);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:22px 0 10px}
+.sub-h{font-family:var(--fd);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:22px 0 10px}
 
 /* passo a passo numerado */
 ol.passos{list-style:none;counter-reset:p;display:flex;flex-direction:column;gap:14px;max-width:720px}
@@ -239,7 +239,7 @@ a.tile:hover{border-color:var(--line2);background:rgba(var(--tom),.05);transform
 .tile .ti .ic{width:18px;height:18px}
 .tile h3{font-size:15px;font-weight:600}
 .tile p{font-size:13px;color:var(--muted);line-height:1.5}
-.tile .ir{margin-top:auto;padding-top:6px;font-family:var(--fm);font-size:11px;letter-spacing:.08em;color:var(--syn-tx);text-transform:uppercase}
+.tile .ir{margin-top:auto;padding-top:6px;font-family:var(--fd);font-size:11px;letter-spacing:.08em;color:var(--syn-tx);text-transform:uppercase}
 .tile.fora{opacity:.62}
 .tile.fora .ti{background:rgba(var(--tom),.05);color:var(--dim)}
 
@@ -247,7 +247,7 @@ a.tile:hover{border-color:var(--line2);background:rgba(var(--tom),.05);transform
 .vivo{margin-top:34px;border:1px solid rgba(var(--syn-rgb),.34);border-radius:20px;padding:20px 20px 22px;
   background:linear-gradient(160deg,rgba(var(--syn-rgb),.07),transparent 55%), var(--card);max-width:820px}
 .vivo-cab{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.vivo-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;letter-spacing:.14em;
+.vivo-tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--fd);font-size:10px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--deep);background:var(--syn);border-radius:999px;padding:3px 10px 3px 8px;font-weight:500}
 .vivo-tag .ic{width:12px;height:12px}
 .vivo h2{font-size:17px;font-weight:600}
@@ -302,7 +302,7 @@ a.chip:hover{border-color:var(--syn-borda)}
 .perfil .ds{color:var(--muted);font-size:13.5px}
 .perfil .chips{margin-top:8px}
 .dl{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:8px 16px;margin-top:16px;font-size:14px}
-.dl dt{color:var(--dim);font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding-top:3px}
+.dl dt{color:var(--dim);font-family:var(--fd);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding-top:3px}
 .dl dd{color:var(--ink);min-width:0}
 .dl dd small{display:block;color:var(--muted);font-size:12.5px}
 @media (max-width:520px){ .dl{grid-template-columns:1fr;gap:2px} .dl dd{margin-bottom:10px} }
@@ -315,7 +315,7 @@ a.chip:hover{border-color:var(--syn-borda)}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .seg button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
 .fld{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.fld label{font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fld label{font-family:var(--fd);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .fld label small{text-transform:none;letter-spacing:0;font-family:var(--f);color:var(--dim)}
 .senha{position:relative}
 .senha input{padding-right:46px}
@@ -406,7 +406,7 @@ a.chip:hover{border-color:var(--syn-borda)}
 /* o quadro de atividades */
 .mk-kb{display:grid;grid-template-columns:repeat(5,minmax(132px,1fr));gap:8px;padding:12px;min-width:700px}
 .kb-col{border:1px solid var(--line);border-radius:12px;padding:9px;background:rgba(var(--tom),.02);min-height:180px;display:flex;flex-direction:column;gap:7px}
-.kb-col .h{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between}
+.kb-col .h{font-family:var(--fd);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between}
 .kb-col .ex{font-size:11.5px;color:var(--muted);line-height:1.4;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
 .kc{border:1px solid var(--line2);border-radius:10px;padding:8px 9px;background:var(--panel);position:relative;overflow:hidden;
   box-shadow:0 6px 16px rgba(var(--sombra-rgb),calc(.3 * var(--sombra-k)))}
@@ -449,8 +449,8 @@ a.chip:hover{border-color:var(--syn-borda)}
 /* o quiosque e o celular do check-in */
 .mk-ck{display:flex;gap:18px;align-items:center;justify-content:center;flex-wrap:wrap;padding:20px}
 .mk-quiosque{width:210px;border-radius:16px;padding:14px;background:linear-gradient(160deg,#0B1A16,#050807);border:1px solid rgba(255,255,255,.12);
-  color:#F5F5F7;text-align:center}
-.mk-quiosque .t{font-family:var(--fm);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#9AA5A1}
+  color:#E8EDEB;text-align:center}
+.mk-quiosque .t{font-family:var(--fd);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#9AA5A1}
 .mk-quiosque .qr{background:#fff;border-radius:10px;padding:8px;margin:10px auto 8px;width:132px}
 .mk-quiosque .qr svg{display:block;width:100%;height:auto}
 .mk-quiosque .barra{height:3px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;margin:0 14px 10px}
@@ -462,15 +462,15 @@ a.chip:hover{border-color:var(--syn-borda)}
 .seta-ck .ic{width:26px;height:26px}
 .mk-fone{width:186px;border-radius:30px;padding:9px;background:#0E1311;border:1px solid rgba(255,255,255,.14);
   box-shadow:0 20px 50px rgba(var(--sombra-rgb),calc(.4 * var(--sombra-k)));flex-shrink:0}
-.mk-fone .tela{border-radius:22px;background:#050807;color:#F5F5F7;min-height:330px;padding:28px 12px 14px;position:relative;overflow:hidden;
+.mk-fone .tela{border-radius:22px;background:#050807;color:#E8EDEB;min-height:330px;padding:28px 12px 14px;position:relative;overflow:hidden;
   display:flex;flex-direction:column;font-size:11.5px}
 .mk-fone .tela::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:54px;height:15px;border-radius:10px;background:#000}
 .mk-fone .ok-ck{margin:auto 0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
-.mk-fone .ok-ck .c{width:58px;height:58px;border-radius:50%;border:2px solid #4ADE97;display:grid;place-items:center;background:rgba(74,222,151,.1);color:#4ADE97}
+.mk-fone .ok-ck .c{width:58px;height:58px;border-radius:50%;border:2px solid #00F59B;display:grid;place-items:center;background:rgba(74,222,151,.1);color:#00F59B}
 .mk-fone .ok-ck .c .ic{width:28px;height:28px}
 .mk-fone .ok-ck b{font-family:var(--fd);font-size:15px}
 .mk-fone .ok-ck span{color:#9AA5A1;line-height:1.45}
-.mk-fone .ok-ck span b{font-size:11.5px;color:#F5F5F7}
+.mk-fone .ok-ck span b{font-size:11.5px;color:#E8EDEB}
 
 /* a semana da agenda */
 .mk-sem{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:6px;padding:12px;min-width:600px}
@@ -484,7 +484,7 @@ a.chip:hover{border-color:var(--syn-borda)}
 .ev.pend{border:1px dashed var(--roxo);border-left:3px solid var(--roxo)}
 .ev.dia{background:rgba(var(--info-rgb),.14)}
 .mk-rsvp{padding:16px;max-width:420px}
-.mk-rsvp .tp{font-family:var(--fm);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.mk-rsvp .tp{font-family:var(--fd);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .mk-rsvp h4{font-size:16px;margin:4px 0 2px}
 .mk-rsvp .q{font-size:13px;color:var(--muted)}
 .mk-rsvp .bts{display:flex;gap:6px;margin-top:12px}
@@ -499,8 +499,8 @@ a.chip:hover{border-color:var(--syn-borda)}
 .barra-p{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin:10px 0}
 .barra-p i{display:block;height:100%;background:var(--syn)}
 .mk-tre .go{font-family:var(--fd);font-weight:600;font-size:13px;color:var(--syn-tx)}
-.mk-cert{margin-top:12px;border-radius:12px;padding:14px;background:linear-gradient(118deg,var(--deep),var(--green) 70%);color:#F5F5F7;max-width:360px}
-.mk-cert .t{font-family:var(--fm);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(245,245,247,.7)}
+.mk-cert{margin-top:12px;border-radius:12px;padding:14px;background:linear-gradient(118deg,var(--deep),var(--green) 70%);color:#E8EDEB;max-width:360px}
+.mk-cert .t{font-family:var(--fd);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:rgba(232,237,235,.7)}
 .mk-cert b{display:block;font-family:var(--fd);font-size:15px;margin:4px 0}
 .mk-cert .c{font-family:var(--fm);font-size:11px;color:#CEDC00}
 
@@ -511,20 +511,20 @@ a.chip:hover{border-color:var(--syn-borda)}
 .fluxo .f span{font-size:12px;color:var(--muted);line-height:1.4;display:block;margin-top:3px}
 .mk-cr{display:grid;grid-template-columns:150px minmax(0,1fr) 130px;gap:10px;padding:12px;min-width:560px}
 .cr-p{border:1px solid var(--line);border-radius:10px;padding:9px;display:flex;flex-direction:column;gap:7px;font-size:11px;color:var(--muted)}
-.cr-p .rt{font-family:var(--fm);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.cr-p .rt{font-family:var(--fd);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
 .cr-p .v{color:var(--ink);font-weight:600;font-size:12.5px}
 .cr-chips{display:flex;gap:4px;flex-wrap:wrap}
 .cr-chips span{border:1px solid var(--line2);border-radius:999px;padding:1px 7px;font-size:10px}
 .cr-chips span.on{background:var(--syn);color:var(--deep);border-color:var(--syn)}
 .cr-arte{border-radius:10px;aspect-ratio:4/5;max-height:300px;margin:0 auto;width:100%;max-width:240px;
-  background:radial-gradient(120% 80% at 20% 0%,#0B7D6E,#00352F 70%);color:#F5F5F7;display:flex;flex-direction:column;
+  background:radial-gradient(120% 80% at 20% 0%,#00594F,#00352F 70%);color:#E8EDEB;display:flex;flex-direction:column;
   align-items:center;justify-content:flex-end;padding:14px;text-align:center;position:relative;overflow:hidden}
 .cr-arte .fr{position:absolute;top:18%;width:44%;aspect-ratio:1/1.12;border:2px solid #CEDC00;border-radius:999px 999px 10px 10px;
   display:grid;place-items:center;background:rgba(255,255,255,.06)}
 .cr-arte .fr img{width:58%;opacity:.8}
 .cr-arte .o{font-family:var(--fm);font-size:8.5px;letter-spacing:.2em;color:#CEDC00}
 .cr-arte b{font-family:var(--fd);font-size:18px;line-height:1.1;margin:3px 0}
-.cr-arte .c{font-family:var(--fm);font-size:8px;letter-spacing:.14em;color:rgba(245,245,247,.75)}
+.cr-arte .c{font-family:var(--fm);font-size:8px;letter-spacing:.14em;color:rgba(232,237,235,.75)}
 .cr-arte .lg{position:absolute;top:10px;left:12px;font-family:var(--fd);font-weight:700;font-size:9.5px}
 .temas{display:grid;grid-template-columns:1fr 1fr;gap:4px}
 .temas span{height:22px;border-radius:5px;border:1px solid var(--line2)}
@@ -551,7 +551,7 @@ a.chip:hover{border-color:var(--syn-borda)}
 .fone-l{display:flex;justify-content:center}
 .mk-fone.inst .tela{padding:30px 0 0;min-height:390px;background:#0B0F0E}
 .nav-ios{display:flex;align-items:center;justify-content:space-around;padding:10px 6px 14px;background:#161B19;margin-top:auto;border-top:1px solid rgba(255,255,255,.08)}
-.nav-ios .ic{width:17px;height:17px;color:#7FA7F2}
+.nav-ios .ic{width:17px;height:17px;color:#00C8FF}
 .nav-ios .url{font-size:9.5px;color:#C7CCCA;background:#262C2A;border-radius:8px;padding:4px 10px}
 .alvo-f{position:relative;border-radius:8px;outline:2px solid #CEDC00;outline-offset:3px;animation:pulsa 1.6s ease-in-out infinite}
 @keyframes pulsa{50%{outline-color:rgba(206,220,0,.25)}}
@@ -571,7 +571,7 @@ a.chip:hover{border-color:var(--syn-borda)}
 .menu-and div.alvo-f{background:#34403A;color:#fff;border-radius:6px;margin:2px 4px;outline-offset:1px}
 .tela-fundo{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:8px}
 .tela-fundo i{display:block;height:8px;border-radius:4px;background:rgba(255,255,255,.08)}
-.icone-app{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:#F5F5F7;font-family:var(--f)}
+.icone-app{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:#E8EDEB;font-family:var(--f)}
 .icone-app img{width:44px;height:44px;border-radius:11px;box-shadow:0 0 0 2px rgba(206,220,0,.8)}
 .qr-cx{display:flex;gap:18px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--card);max-width:620px}
 .qr-cx .qr{width:150px;height:150px;background:#fff;border-radius:12px;padding:8px;flex-shrink:0;display:grid;place-items:center}
@@ -601,16 +601,16 @@ a.chip:hover{border-color:var(--syn-borda)}
 .eco .d{font-family:var(--fm);font-size:11.5px;color:var(--teal)}
 .eco b{font-family:var(--fd);font-size:15px}
 .eco span{font-size:13px;color:var(--muted);line-height:1.5}
-.eco .tag{align-self:flex-start;font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--line2);border-radius:3px;padding:2px 7px;color:var(--muted)}
+.eco .tag{align-self:flex-start;font-family:var(--fd);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--line2);border-radius:3px;padding:2px 7px;color:var(--muted)}
 .band{margin-top:44px;background:linear-gradient(118deg,var(--deep) 0%,var(--green) 62%,#0A6F62 100%);border-radius:22px;
-  padding:clamp(26px,5vw,48px);position:relative;overflow:hidden;border:1px solid rgba(206,220,0,.18);color:#F5F5F7;max-width:820px}
+  padding:clamp(26px,5vw,48px);position:relative;overflow:hidden;border:1px solid rgba(206,220,0,.18);color:#E8EDEB;max-width:820px}
 .band::after{content:'';position:absolute;right:-90px;top:-90px;width:300px;height:300px;border-radius:50%;
   background:radial-gradient(circle,rgba(206,220,0,.22),transparent 70%);filter:blur(34px);pointer-events:none}
 .band h2{font-size:clamp(24px,4vw,38px);font-weight:600;line-height:1.08;margin:8px 0 10px;max-width:560px}
-.band p{color:rgba(245,245,247,.8);max-width:540px;margin-bottom:22px}
-.band .eyebrow{color:rgba(245,245,247,.6)}
-.band .btn.ghost{color:#F5F5F7;border-color:rgba(245,245,247,.3);background:rgba(255,255,255,.06)}
-.band .btn.claro{background:#F5F5F7;color:#0A0F0E}
+.band p{color:rgba(232,237,235,.8);max-width:540px;margin-bottom:22px}
+.band .eyebrow{color:rgba(232,237,235,.6)}
+.band .btn.ghost{color:#E8EDEB;border-color:rgba(232,237,235,.3);background:rgba(255,255,255,.06)}
+.band .btn.claro{background:#E8EDEB;color:#0A0F0E}
 .retomar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid rgba(var(--syn-rgb),.35);border-radius:14px;padding:12px 16px;
   background:rgba(var(--syn-rgb),.05);margin-top:22px;max-width:720px;font-size:14px;color:var(--muted)}
 .retomar b{color:var(--ink)}
@@ -648,7 +648,7 @@ a.chip:hover{border-color:var(--syn-borda)}
 
 footer{border-top:1px solid var(--line)}
 .ft-in{max-width:var(--max);margin:0 auto;padding:26px 24px calc(26px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
-.ft-in span{font-family:var(--fm);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.ft-in span{font-family:var(--fd);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
 .ft-in nav{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
 .ft-in nav a:hover{color:var(--ink)}
 @media (max-width:900px){ footer{padding-bottom:78px} }
@@ -1071,6 +1071,7 @@ function etBemVindo(){
     ['agenda', 'Agenda', 'Reuniões, convites e prazos, ligados ao Google Agenda.', 'agenda'],
     ['capelo', 'Treinamentos', 'Os cursos que o seu grupo pede, com certificado.', 'treinamentos'],
     ['servicos', 'Serviços', 'Declaração de vínculo na hora e pedidos ao Depto. de Pessoal.', 'servicos'],
+    ['imagem', 'Marca', 'Assinaturas, modelos e manual da marca no SOMA.', 'studio'],
     ['users', 'Equipe', 'Quem é quem, quem é o seu gestor e quem está no LABBIO.', 'equipe'],
     ['pasta', 'Arquivos e projetos', 'Os documentos oficiais e o rol de cada projeto.', 'equipe'],
     ['studio', 'Studio', 'As peças e o calendário das redes, para quem é da comunicação.', 'studio']
@@ -1140,7 +1141,7 @@ function authHTML(){
       <p>A confirmação foi para <b>${esc(conta.email)}</b>. Abra a mensagem e toque em <b>Confirmar meu e-mail</b>.</p>
       <ul class="pontos">
         <li><span>O remetente é <b>Portal do Membro</b>, e o assunto começa com <b>Confirme o seu e-mail</b>.</span></li>
-        <li><span>Não chegou em alguns minutos? Procure no spam e nas abas Promoções e Atualizações.</span></li>
+        <li><span>Sem e-mail em alguns minutos: confira o spam e nas abas Promoções e Atualizações.</span></li>
         <li><span>O link abre este tour já com a sua conta aberta. Se ele abrir em outro navegador, volte aqui e entre com o e-mail e a senha.</span></li>
       </ul>
       <div class="acts"><button class="btn solid" type="button" data-modo="entrar">Já confirmei: entrar</button>
@@ -1218,7 +1219,7 @@ function etConta(){
   conta.modo ||= modoInicial();
   return {
     titulo: 'Crie a sua <em>conta</em>.',
-    lead: 'Uma conta só abre o SOMA inteiro, o check-in do LABBIO e a assinatura de e-mail do brand. Criar leva dois minutos, e é aqui mesmo.',
+    lead: 'Uma conta só abre o SOMA inteiro, o check-in do LABBIO e a assinatura de e-mail do brand. Crie sua conta.',
     corpo: `
       <div class="linha-passos" style="margin-top:26px">
         <div class="${conta.modo === 'espera' ? 'feito' : ''}"><b>PASSO 1 ${conta.modo === 'espera' ? ic('check') : ''}</b><span>Preencha e-mail e senha</span></div>
@@ -1364,7 +1365,8 @@ function espacos(){
     { rot:'Arquivos', ic:'pasta', tem:true, rota:'#/arquivos', ds:'Documentos e registros oficiais, com código e revisão.' },
     { rot:'Studio', ic:'studio', tem: log ? podeStudio() : null, rota:'#/studio', ds:'As peças e o planejamento das redes.',
       porque:'Aparece para quem está nos grupos do Studio (a comunicação). Precisa? Peça em Serviços, Solicitação de acesso.' },
-    { rot:'Equipe', ic:'users', tem:true, rota:'#/equipe', ds:'Organograma, presença no LABBIO e apontamento semanal.' },
+    { rot:'Marca', ic:'imagem', tem:true, rota:'#/marca', ds:'Assinaturas, modelos, interfaces e manual da marca.' },
+    { rot:'Equipe', ic:'users', tem:true, rota:'#/equipe', ds:'Organograma, presença no LABBIO e reporte semanal.' },
     { rot:'Treinamentos', ic:'capelo', tem:true, rota:'#/treinamentos', ds:'O que os seus grupos pedem, e os seus certificados.' },
     { rot:'Serviços', ic:'servicos', tem:true, rota:'#/servicos', ds:'Declaração de vínculo, cofre de senhas e pedidos ao Depto. de Pessoal.' },
     { rot:'Seleção', ic:'bandeira', gestao:true, tem: log ? podeSelecao() : null, rota:'#/selecao', ds:'Os bastidores do processo seletivo.',
@@ -1564,11 +1566,11 @@ function etTarefas(){
       <section class="bl"><h2>O dia a dia de uma tarefa</h2>
         <ol class="passos">
           <li><b>Abra o cartão</b> (toque nele): a descrição, a situação, os comentários e o histórico de tudo o que aconteceu.</li>
-          <li><b>Começou?</b> Arraste o cartão para Em andamento. No celular, abra o cartão e troque a <b>Coluna</b>, em Situação.</li>
+          <li><b>Ao começar:</b> Arraste o cartão para Em andamento. No celular, abra o cartão e troque a <b>Coluna</b>, em Situação.</li>
           <li><b>Tem novidade ou dúvida?</b> Escreva um comentário. Para chamar alguém, toque no nome da pessoa em <b>Marcar</b> antes de
             comentar: ela recebe o aviso.</li>
-          <li><b>Travou?</b> Toque em <b>Sinalizar</b> e diga o motivo. Quem segue a tarefa e o gestor do responsável são avisados.</li>
-          <li><b>Terminou?</b> Mova para Em revisão, se alguém precisa conferir, ou para Concluída.</li>
+          <li><b>Impedimento:</b> Toque em <b>Sinalizar</b> e diga o motivo. Quem segue a tarefa e o gestor do responsável são avisados.</li>
+          <li><b>Ao terminar:</b> Mova para Em revisão, se alguém precisa conferir, ou para Concluída.</li>
           <li><b>Quer acompanhar uma tarefa que não é sua?</b> Toque em <b>Seguir</b>: os avisos dela passam a chegar para você.</li>
         </ol></section>
       <section class="bl"><h2>Criar uma tarefa</h2>
@@ -1653,7 +1655,7 @@ function etPlacar(){
         <ol class="passos" style="margin-top:18px">
           <li><b>Na entrada do LABBIO, a tela do quiosque mostra um QR Code.</b> Ele muda a cada 40 segundos: use o que está na tela na hora.</li>
           <li><b>Aponte a câmera do celular para o QR</b> e toque no link que aparecer.</li>
-          <li><b>O SOMA abre e registra:</b> "Bem-vindo! Check-in registrado no LABBIO", com a sua visita do mês.</li>
+          <li><b>O SOMA abre e registra:</b> "Check-in registrado no LABBIO", com a sua visita do mês.</li>
           <li><b>Se a sua conta não estiver aberta nesse navegador</b>, o SOMA pede para entrar e registra logo depois.</li>
         </ol></section>
       <section class="bl"><h2>Situações do dia a dia</h2>
@@ -1661,7 +1663,7 @@ function etPlacar(){
           <details><summary>O quiosque está desligado</summary><div class="r">Use a <b>folha de check-in</b> impressa, afixada no laboratório.
             O QR dela é fixo e vale do mesmo jeito.</div></details>
           <details><summary>Apareceu "QR expirado"</summary><div class="r">O código da tela já tinha girado. Leia de novo o que está na tela agora.</div></details>
-          <details><summary>Apareceu "Você já está aqui"</summary><div class="r">O check-in daquela chegada já estava registrado. Nada conta duas vezes.</div></details>
+          <details><summary>Apareceu "Check-in já registrado"</summary><div class="r">O check-in daquela chegada já estava registrado. Nada conta duas vezes.</div></details>
           <details><summary>Apareceu "Folha sem validade"</summary><div class="r">Aquela folha foi revogada. Use o QR da tela da entrada e avise o Depto. de Pessoal.</div></details>
           <details><summary>Apareceu "Conta sem vínculo"</summary><div class="r">A conta não está ligada ao quadro de pessoal. Veja como resolver na etapa <a class="lk" href="#conta">Sua conta</a>.</div></details>
           <details><summary>No iPhone, o QR pede para entrar de novo</summary><div class="r">A câmera do iPhone abre o QR no Safari, e o ícone
@@ -1845,9 +1847,9 @@ function etStudio(){
         <div class="cr-arte"><span class="lg">NeuroDynamics</span><span class="fr"><img src="icone-180.png" alt=""></span>
           <span class="o">FELIZ ANIVERSÁRIO</span><b>${esc(log ? nomeCurto(eu()?.nome || T.perfil?.nome) || 'Ana Figueiredo' : 'Ana Figueiredo')}</b><span class="c">${esc((log ? eu()?.cargo : '') || 'Gerente de projeto').toUpperCase()}</span></div>
         <div class="cr-p"><span class="rt">Tema</span><div class="temas"><span style="background:#050807"></span><span class="on" style="background:#00352F"></span>
-            <span style="background:#0B7D6E"></span><span style="background:#CEDC00"></span><span style="background:#F2F5F1"></span><span style="background:#F5E6CC"></span></div>
-          <span class="rt">Acento</span><div class="acentos"><span style="background:#CEDC00"></span><span style="background:#2DD4BF"></span><span style="background:#4ADE97"></span>
-            <span style="background:#F5C36A"></span><span style="background:#F1806F"></span><span style="background:#7FA7F2"></span></div>
+            <span style="background:#00594F"></span><span style="background:#CEDC00"></span><span style="background:#F2F5F1"></span><span style="background:#F5E6CC"></span></div>
+          <span class="rt">Acento</span><div class="acentos"><span style="background:#CEDC00"></span><span style="background:#2DD4BF"></span><span style="background:#00F59B"></span>
+            <span style="background:#FFAA00"></span><span style="background:#FF2D20"></span><span style="background:#00C8FF"></span></div>
           <span class="rt">Decoração</span><span>Confete</span></div></div></div></div>`;
   return {
     titulo: tem ? 'Studio: você cria <em>as peças da equipe</em>.' : 'Studio: as peças e as <em>publicações</em>.',
@@ -2180,7 +2182,7 @@ function etAjuda(){
     ['Criar um post para as redes', 'Studio, Criar publicação (para os grupos do Studio)', '#/studio/criar'],
     ['Receber os avisos no celular', 'Sino, Preferências de avisos, Ativar neste aparelho', '#/'],
     ['Limpar o sino', 'Sino, limpar as lidas (ou o × de cada aviso)', '#/'],
-    ['Montar a minha assinatura de e-mail', 'brand.neurodynamics.dev, Assinaturas', 'https://brand.neurodynamics.dev/#assinaturas']
+    ['Montar a minha assinatura de e-mail', 'brand.neurodynamics.dev, Assinaturas', 'https://membro.neurodynamics.dev/#/marca/assinaturas']
   ];
   const eco = [
     ['https://neurodynamics.dev', 'neurodynamics.dev', 'Site institucional', 'A vitrine da NeuroDynamics, em vários idiomas. É o endereço para mostrar a equipe a quem é de fora.', 'Pública'],

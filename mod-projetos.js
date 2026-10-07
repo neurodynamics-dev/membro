@@ -209,7 +209,7 @@ function pjModalNovo(){
         style="text-transform:uppercase;font-family:var(--fm)" oninput="projetosM.novo.mexeuCodigo=true;pjNovoLogo()"></div>
       <div class="fld full"><label>Pokémon</label><div id="pn-pkm"></div></div>
       <div class="fld full"><label for="pn-desc">Descrição</label><textarea id="pn-desc" rows="2" placeholder="Para que serve o projeto"></textarea></div>
-      <div class="fld full"><label for="pn-sup">Supervisor</label><select id="pn-sup"><option value="">— escolha —</option>
+      <div class="fld full"><label for="pn-sup">Supervisor</label><select id="pn-sup"><option value="">Escolha</option>
         ${(state.membros || []).filter(m => ATIVOS_PJ.includes(m.status)).map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</select>
         <span class="mailer-sub tight">Entra na equipe e passa a cuidar dela: põe e tira gente sem precisar da administração.</span></div>
       <div class="fld full"><label>Equipe</label>
@@ -352,7 +352,7 @@ function pjModalEditar(id){
       <div class="fld full"><label>Pokémon</label><div id="pe-pkm"></div></div>
       <div class="fld full"><label for="pe-desc">Descrição</label><textarea id="pe-desc" rows="3">${esc(p.descricao || '')}</textarea></div>
       <div class="fld full"><label for="pe-sup">Supervisor</label><select id="pe-sup" ${docGestor() ? '' : 'disabled'}>
-        <option value="">— sem supervisor —</option>
+        <option value="">Sem supervisor</option>
         <optgroup label="Da equipe">${eq.map(m => `<option value="${m.registro}" ${m.registro === p.supervisor ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</optgroup>
         <optgroup label="Fora da equipe (será incluído)">${outros.map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</optgroup></select>
         ${docGestor() ? '' : '<span class="mailer-sub tight">Trocar o supervisor é do PMO.</span>'}</div>

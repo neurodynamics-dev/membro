@@ -643,6 +643,7 @@ function agEventoDesenhar(){
       <a class="icon-btn" href="${volta}" title="Voltar à agenda" aria-label="Voltar à agenda">${ic('x')}</a>
       <input id="ev-tit" class="evp-tit" placeholder="Adicionar título" maxlength="160" value="${esc(f.titulo)}" oninput="agenda.ev.f.titulo=this.value" aria-label="Título">
       <span class="evp-acoes">
+        ${agAtaBotao()}
         ${ev.novo ? '' : `<button class="btn ghost mini" onclick="agEventoExcluir()">Excluir</button>`}
         <button class="btn solid" id="ev-salvar" onclick="agEventoSalvar()">Salvar</button></span>
     </div>
@@ -706,6 +707,7 @@ function agEventoLeitura(volta){
     <div class="evp-topo"><a class="icon-btn" href="${volta}" title="Voltar à agenda" aria-label="Voltar à agenda">${ic('x')}</a>
       <span class="evp-cor" style="--cc:${esc(ev.corEvento || '#2DD4BF')}"></span>
       <h1 class="evp-tit ${ev.cancelado ? 'riscado' : ''}">${esc(f.titulo || '(sem título)')}</h1></div>
+    ${agAtaBotao()}
     ${ev.cancelado ? '<div class="aviso-box err">Evento cancelado.</div>' : ''}
     <div class="evp-cols"><div class="evp-det">
       <div class="evp-lin">${ic('relogio')}<span>${esc(quando)}${f.recorrencia !== 'Única' ? `<span class="evp-sub">${esc(AG_REPETE.find(r => r[0] === f.recorrencia)?.[1] || f.recorrencia)}</span>` : ''}</span></div>
@@ -1085,6 +1087,7 @@ function agPdEditar(id){
         <select id="pd-pessoas" multiple size="5" style="margin-top:8px;width:100%" aria-label="Pessoas">${ativos.map(m =>
           `<option value="${m.registro}" ${agenda.pd.pessoas.has(m.registro) ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</select>
         <p class="mini">Grupos incluem quem está nos grupos abaixo deles. Ctrl/⌘ para marcar várias pessoas.</p></div>
+      <div class="fld full"><label class="check"><input type="checkbox" id="pd-ata" ${p.gera_ata ? 'checked' : ''}> Gerar ata na série NRO-PUB-003</label></div>
       <div class="fld full"><label for="pd-desc">Descrição</label><textarea id="pd-desc" rows="3">${esc(p.descricao || '')}</textarea></div>
       <div class="fld"><label for="pd-ordem">Ordem na lista</label><input id="pd-ordem" type="number" value="${p.ordem ?? 100}"></div>
     </div>
@@ -1102,7 +1105,7 @@ function agPdLembHTML(){
 async function agPdSalvar(){
   const x = agenda.pd, nome = $('#pd-nome').value.trim();
   if (!nome) return $('#pd-erro').textContent = 'O nome é obrigatório.';
-  const d = { nome, titulo: $('#pd-tit').value.trim() || null, duracao_min: Math.max(5, Math.min(1440, +$('#pd-dur').value || 60)),
+  const d = { nome, gera_ata: $('#pd-ata').checked, titulo: $('#pd-tit').value.trim() || null, duracao_min: Math.max(5, Math.min(1440, +$('#pd-dur').value || 60)),
     hora_inicio: $('#pd-hora').value || null, dia_inteiro: $('#pd-dia').checked, espaco_id: $('#pd-esp').value ? +$('#pd-esp').value : null,
     local: $('#pd-local').value.trim() || null, meet_url: $('#pd-meet').value.trim() || null, visibilidade: $('#pd-vis').value,
     recorrencia: $('#pd-rep').value, cor: x.cor, lembretes: [...new Set(x.lembretes)], todos: $('#pd-todos').checked,
@@ -1216,3 +1219,14 @@ registrarBusca({
   buscar: (t) => filtrarSimples(agenda.itens.filter(i => i.origem === 'evento').map(i => ({
     titulo: i.titulo, sub: `${fmtD(i.de)}${i.dia ? '' : ', ' + minHHMM(i.hi)}`, href: i.href })), t, 6)
 });
+
+function agAtaBotao(){
+ const e=agenda.ev,p=(agenda.predef||[]).find(x=>x.id===e.f.predefinido_id);
+ return !e.novo&&!e.cancelado&&p?.gera_ata&&(e.dono===agEu()||e.conv.has(agEu()))
+ ? '<button class="btn ghost mini" onclick="agAbrirAta()">Gerar ata</button>' : '';
+}
+async function agAbrirAta(){
+ const {data,error}=await sb.rpc('evento_ata_abrir',{p_evento:agenda.ev.id});
+ if(error||data?.status!=='ok')return toast(motivoRPC(data,error,'Não foi possível abrir a ata'),true);
+ location.hash='#/arquivos/'+data.codigo+'/escrever';
+}

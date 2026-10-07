@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {montarBoletim} from './index.ts';
+const b=montarBoletim('Boletim <teste>',[{titulo:'<script>alert(1)</script>',subtitulo:'Pesquisa & equipe',texto:'Linha 1\nLinha 2'}],'https://example.test/descadastrar?t=123');
+assert.ok(!b.html.includes('<script>'));
+assert.ok(b.html.includes('&lt;script&gt;'));
+assert.ok(b.html.includes('Pesquisa &amp; equipe'));
+assert.ok(b.html.includes('Descadastrar da comunidade'));
+assert.ok(b.texto.includes('https://example.test/descadastrar?t=123'));
+assert.ok(!montarBoletim('Interno',[]).html.includes('Descadastrar da comunidade'));
+console.log('6 verificações de newsletter passaram.');

@@ -1,5 +1,5 @@
 /* ============================================================
-   MÓDULO · CRIADOR — o criador de conteúdo do Studio
+   MÓDULO, CRIADOR — o criador de conteúdo do Studio
    A arte das publicações, desenhada no navegador, em canvas, no
    tamanho exato de cada rede: nenhuma imagem sai daqui até alguém
    salvar no quadro. É o mesmo caminho do gerador de assets do
@@ -54,31 +54,308 @@ const CR_ESCALAS = [[1, 'Padrão'], [4/3, 'Alta'], [2, 'Máxima']];
    claros, o acento de TEXTO escurece — lima não se lê no branco —, e o
    de FORMA (barra, marca-texto, anel) continua vivo. */
 const CR_TEMAS = {
-  void:     { l:'Void',     escuro:true,  fundo:['#050807','#0B1210','#081511'], fg:'#F5F5F7', fg2:'#A9B4B0', halo:'#00594F', acento:'synapse', base:'3,6,5' },
-  cortex:   { l:'Cortex',   escuro:true,  fundo:['#00352F','#00594F','#0A6F62'], fg:'#F5F5F7', fg2:'#C3D3CE', halo:'#CEDC00', acento:'synapse', base:'2,24,21' },
-  soma:     { l:'Soma',     escuro:true,  fundo:['#052B26','#0B7D6E','#0F9A88'], fg:'#F5F5F7', fg2:'#CDE3DE', halo:'#2DD4BF', acento:'synapse', base:'3,26,23' },
-  ion:      { l:'Íon',      escuro:true,  fundo:['#03110F','#062D28','#041A17'], fg:'#F5F5F7', fg2:'#A8C9C3', halo:'#2DD4BF', acento:'ion',     base:'2,12,11' },
-  plasma:   { l:'Plasma',   escuro:true,  fundo:['#060B17','#101E3C','#0A1429'], fg:'#F5F5F7', fg2:'#B6C2DA', halo:'#7FA7F2', acento:'plasma',  base:'5,9,20' },
-  dendrito: { l:'Dendrito', escuro:true,  fundo:['#0B0815','#22163F','#140D27'], fg:'#F5F5F7', fg2:'#C3B9DD', halo:'#A78BFA', acento:'dendrito',base:'10,7,20' },
-  synapse:  { l:'Synapse',  escuro:false, fundo:['#CEDC00','#C3D200','#DAE54A'], fg:'#00352F', fg2:'#2F5A45', halo:'#00594F', acento:'cortex',  base:'0,40,34' },
-  aura:     { l:'Aura',     escuro:false, fundo:['#F5F5F7','#E8EEEB','#F8F7FF'], fg:'#101614', fg2:'#4B5854', halo:'#00594F', acento:'synapse', base:'8,14,12' },
-  papel:    { l:'Papel',    escuro:false, fundo:['#FFFFFF','#F1F5F3','#FFFFFF'], fg:'#00352F', fg2:'#45625B', halo:'#CEDC00', acento:'synapse', base:'0,30,26' },
-  mielina:  { l:'Mielina',  escuro:false, fundo:['#FBF4E3','#F3E4C1','#FFF9EB'], fg:'#1F1A0E', fg2:'#5F5540', halo:'#F5C36A', acento:'mielina', base:'30,24,10' }
+  "cortex": {
+    "l": "Cortex",
+    "familia": "cortex",
+    "escuro": true,
+    "fundo": [
+      "#00352F",
+      "#00594F",
+      "#00352F"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#A9CCC4",
+    "halo": "#00594F",
+    "acento": "synapse",
+    "base": "0,53,47"
+  },
+  "ion": {
+    "l": "Ion",
+    "familia": "ion",
+    "escuro": true,
+    "fundo": [
+      "#0B4F48",
+      "#0B4F48",
+      "#0B4F48"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#93E8DB",
+    "halo": "#5BBFB0",
+    "acento": "ion",
+    "base": "11,79,72"
+  },
+  "neuron": {
+    "l": "Neuron",
+    "familia": "neuron",
+    "escuro": true,
+    "fundo": [
+      "#1F4A22",
+      "#1F4A22",
+      "#1F4A22"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#B3D9B0",
+    "halo": "#5AA65E",
+    "acento": "neuron",
+    "base": "31,74,34"
+  },
+  "glia": {
+    "l": "Glia",
+    "familia": "glia",
+    "escuro": true,
+    "fundo": [
+      "#2E4636",
+      "#2E4636",
+      "#2E4636"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#C3D3C7",
+    "halo": "#8AA894",
+    "acento": "glia",
+    "base": "46,70,54"
+  },
+  "retina": {
+    "l": "Retina",
+    "familia": "retina",
+    "escuro": true,
+    "fundo": [
+      "#142A75",
+      "#142A75",
+      "#142A75"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#A9B9F6",
+    "halo": "#3456E3",
+    "acento": "retina",
+    "base": "20,42,117"
+  },
+  "nexo": {
+    "l": "Nexo",
+    "familia": "nexo",
+    "escuro": true,
+    "fundo": [
+      "#251C66",
+      "#251C66",
+      "#251C66"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#BAB4F0",
+    "halo": "#5A4ED4",
+    "acento": "nexo",
+    "base": "37,28,102"
+  },
+  "dendrito": {
+    "l": "Dendrito",
+    "familia": "dendrito",
+    "escuro": true,
+    "fundo": [
+      "#3B2378",
+      "#3B2378",
+      "#3B2378"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#CDBEFC",
+    "halo": "#A78BFA",
+    "acento": "dendrito",
+    "base": "59,35,120"
+  },
+  "lumen": {
+    "l": "Lúmen",
+    "familia": "lumen",
+    "escuro": true,
+    "fundo": [
+      "#594A00",
+      "#594A00",
+      "#594A00"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#FFEE8A",
+    "halo": "#FFD91A",
+    "acento": "lumen",
+    "base": "89,74,0"
+  },
+  "ritmo": {
+    "l": "Ritmo",
+    "familia": "ritmo",
+    "escuro": true,
+    "fundo": [
+      "#6B2E08",
+      "#6B2E08",
+      "#6B2E08"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#FFCBA6",
+    "halo": "#FF9B5E",
+    "acento": "ritmo",
+    "base": "107,46,8"
+  },
+  "impulso": {
+    "l": "Impulso",
+    "familia": "impulso",
+    "escuro": true,
+    "fundo": [
+      "#6E0A1A",
+      "#6E0A1A",
+      "#6E0A1A"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#FFAEB5",
+    "halo": "#FF4F61",
+    "acento": "impulso",
+    "base": "110,10,26"
+  },
+  "plexo": {
+    "l": "Plexo",
+    "familia": "plexo",
+    "escuro": true,
+    "fundo": [
+      "#6B0F38",
+      "#6B0F38",
+      "#6B0F38"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#FFB9D3",
+    "halo": "#FF70A6",
+    "acento": "plexo",
+    "base": "107,15,56"
+  },
+  "iris": {
+    "l": "Íris",
+    "familia": "iris",
+    "escuro": true,
+    "fundo": [
+      "#4E0F5E",
+      "#4E0F5E",
+      "#4E0F5E"
+    ],
+    "fg": "#FFFFFF",
+    "fg2": "#EBBAF5",
+    "halo": "#D676EB",
+    "acento": "iris",
+    "base": "78,15,94"
+  },
+  "void": {
+    "l": "Void",
+    "familia": "cortex",
+    "escuro": true,
+    "fundo": [
+      "#050807",
+      "#050807",
+      "#050807"
+    ],
+    "fg": "#E8EDEB",
+    "fg2": "#9AA5A1",
+    "halo": "#00594F",
+    "acento": "synapse",
+    "base": "0,53,47"
+  },
+  "pia": {
+    "l": "Pia",
+    "familia": "cortex",
+    "escuro": false,
+    "fundo": [
+      "#E8EDEB",
+      "#E8EDEB",
+      "#E8EDEB"
+    ],
+    "fg": "#1D1D1F",
+    "fg2": "#616C68",
+    "halo": "#00594F",
+    "acento": "cortex",
+    "base": "0,53,47"
+  },
+  "papel": {
+    "l": "Papel",
+    "familia": "cortex",
+    "escuro": false,
+    "fundo": [
+      "#FFFFFF",
+      "#FFFFFF",
+      "#FFFFFF"
+    ],
+    "fg": "#00352F",
+    "fg2": "#616C68",
+    "halo": "#00594F",
+    "acento": "cortex",
+    "base": "0,53,47"
+  }
 };
+const CR_TEMA_ALIAS = {soma:"cortex",plasma:"retina",mielina:"lumen",pulso:"impulso",aura:"pia",synapse:"cortex"};
 const CR_ACENTOS = {
-  synapse:  { l:'Synapse',  c:'#CEDC00', tx:'#5B6600' },
-  ion:      { l:'Íon',      c:'#2DD4BF', tx:'#0A776B' },
-  vital:    { l:'Vital',    c:'#4ADE97', tx:'#12804F' },
-  mielina:  { l:'Mielina',  c:'#F5C36A', tx:'#8A5A00' },
-  pulso:    { l:'Pulso',    c:'#F1806F', tx:'#B23A26' },
-  plasma:   { l:'Plasma',   c:'#7FA7F2', tx:'#2D5BC4' },
-  dendrito: { l:'Dendrito', c:'#A78BFA', tx:'#6D4AC8' },
-  cortex:   { l:'Cortex',   c:'#00594F', tx:'#00352F' },
-  ink:      { l:'Branco',   c:'#F5F5F7', tx:'#1D1D1F' }
+  "cortex": {
+    "l": "Cortex",
+    "c": "#A9CCC4",
+    "tx": "#00352F"
+  },
+  "ion": {
+    "l": "Ion",
+    "c": "#93E8DB",
+    "tx": "#0B4F48"
+  },
+  "neuron": {
+    "l": "Neuron",
+    "c": "#B3D9B0",
+    "tx": "#1F4A22"
+  },
+  "glia": {
+    "l": "Glia",
+    "c": "#C3D3C7",
+    "tx": "#2E4636"
+  },
+  "retina": {
+    "l": "Retina",
+    "c": "#A9B9F6",
+    "tx": "#142A75"
+  },
+  "nexo": {
+    "l": "Nexo",
+    "c": "#BAB4F0",
+    "tx": "#251C66"
+  },
+  "dendrito": {
+    "l": "Dendrito",
+    "c": "#CDBEFC",
+    "tx": "#3B2378"
+  },
+  "lumen": {
+    "l": "Lúmen",
+    "c": "#FFEE8A",
+    "tx": "#594A00"
+  },
+  "ritmo": {
+    "l": "Ritmo",
+    "c": "#FFCBA6",
+    "tx": "#6B2E08"
+  },
+  "impulso": {
+    "l": "Impulso",
+    "c": "#FFAEB5",
+    "tx": "#6E0A1A"
+  },
+  "plexo": {
+    "l": "Plexo",
+    "c": "#FFB9D3",
+    "tx": "#6B0F38"
+  },
+  "iris": {
+    "l": "Íris",
+    "c": "#EBBAF5",
+    "tx": "#4E0F5E"
+  },
+  "synapse": {
+    "l": "Synapse",
+    "c": "#CEDC00",
+    "tx": "#00594F"
+  },
+  "ink": {
+    "l": "Branco",
+    "c": "#FFFFFF",
+    "tx": "#1D1D1F"
+  }
 };
 const CR_DECORACOES = { nenhuma:'Nenhuma', rede:'Rede neural', ondas:'Ondas', formas:'Formas', confete:'Confete' };
 const CR_DESTAQUES  = { cor:'Cor', marca:'Marca-texto', sublinhado:'Sublinhado' };
-const CR_FILTROS    = { natural:'Natural', pb:'Preto e branco', duotone:'Duotone da marca', verde:'Véu verde' };
+const CR_FILTROS = {natural:'Natural'};
 const CR_BARRAS     = { solida:'Sólida', vidro:'Vidro', clara:'Clara', linha:'Só a linha' };
 
 /* o estilo que toda peça tem, antes do que o modelo muda */
@@ -94,15 +371,15 @@ function crHex(h){ const n = parseInt(String(h).replace('#','').padEnd(6,'0').sl
 function crLum(h){ const [r, g, b] = crHex(h).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
   return .2126 * r + .7152 * g + .0722 * b; }
 const crRgba = (h, a) => `rgba(${crHex(h).join(',')},${a})`;
-const crSobre = h => crLum(h) > .32 ? '#0C1512' : '#F5F5F7';
+const crSobre = h => crLum(h) > .32 ? '#0C1512' : '#E8EDEB';
 function crMistura(h1, h2, t){ const a = crHex(h1), b = crHex(h2);
   return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
 
 /* as cores resolvidas de uma peça: tema + acento (+ o livre) */
 function crCores(estilo){
-  const t = CR_TEMAS[estilo.tema] || CR_TEMAS.void;
-  let a = CR_ACENTOS[estilo.acento || t.acento] || CR_ACENTOS.synapse;
-  if (estilo.acentoLivre && /^#[0-9a-f]{6}$/i.test(estilo.acentoLivre))
+  const t = CR_TEMAS[CR_TEMA_ALIAS[estilo.tema] || estilo.tema] || CR_TEMAS.void;
+  let a = CR_ACENTOS[t.familia === 'cortex' ? (estilo.acento || t.acento) : t.acento] || CR_ACENTOS[t.acento];
+  if (t.familia === 'cortex' && estilo.acentoLivre && /^#[0-9a-f]{6}$/i.test(estilo.acentoLivre))
     a = { l:'Livre', c:estilo.acentoLivre, tx: crLum(estilo.acentoLivre) > .25 ? crMistura(estilo.acentoLivre, '#000000', .55) : estilo.acentoLivre };
   const acT = t.escuro ? (crLum(a.c) < .06 ? crMistura(a.c, '#FFFFFF', .55) : a.c) : a.tx;
   return { t, a, fg:t.fg, fg2:t.fg2, ac:a.c, acT, sobreAc: crSobre(a.c), escuro:t.escuro };
@@ -112,7 +389,7 @@ function crCores(estilo){
    Servidas deste repositório (studio/), para o canvas não ficar
    "sujo" e a exportação funcionar. O imagotipo e a logo do LABBIO
    são silhuetas: pintadas com source-in, saem na cor de cada tema. */
-const CR_MARCAS = { nro:'studio/nro-imagotipo.png', labbio:'studio/labbio.png', simbolo:'studio/nro-simbolo.png' };
+const CR_MARCAS = { branco:'studio/nro-imagotipo-branco.png', nro:'studio/nro-imagotipo.png', labbio:'studio/labbio.png', simbolo:'studio/nro-simbolo.png' };
 const crMarca = {};
 /* recorta a área com tinta — a logo do LABBIO vem com muita margem */
 function crApara(img){
@@ -143,6 +420,7 @@ function crCarregarMarcas(){
 }
 const _crTinta = new Map();
 function crPintada(k, cor){
+  if(k==='nro' && crLum(cor)>.7)k='branco';
   const src = crMarca[k]; if (!src) return null;
   const chave = k + cor;
   if (_crTinta.has(chave)) return _crTinta.get(chave);
@@ -154,10 +432,11 @@ function crPintada(k, cor){
 }
 /* desenha a logo pela ALTURA e devolve a largura usada */
 function crLogo(ctx, k, x, y, alt, cor){
+  if(String(cor).toUpperCase()==='#CEDC00')cor='#FFFFFF';
   const c = cor ? crPintada(k, cor) : crMarca[k];
   if (!c){
     if (k !== 'nro') return 0;
-    ctx.save(); ctx.fillStyle = cor || '#F5F5F7'; ctx.font = crFonte(700, alt * .78);
+    ctx.save(); ctx.fillStyle = cor || '#E8EDEB'; ctx.font = crFonte(700, alt * .78);
     ctx.textBaseline = 'middle'; ctx.fillText('NeuroDynamics', x, y + alt / 2);
     const w = ctx.measureText('NeuroDynamics').width; ctx.restore(); return w;
   }
@@ -278,7 +557,7 @@ function crCorpoQueCabe(ctx, txt, largura, peso, maximo, fam){
 }
 /* o olho: rótulo curto em mono, caixa alta, espaçado */
 function crOlho(ctx, g, txt, x, y, o = {}){
-  return crEscreve(ctx, txt, { fonte: crMono(500, g.u * (o.tam || 23)), lh: g.u * (o.tam || 23) * 1.42,
+  return crEscreve(ctx, txt, { fonte: crFonte(500, g.u * (o.tam || 23)), lh: g.u * (o.tam || 23) * 1.42,
     cor: o.cor || g.acT, maxL: o.maxL || g.larg, x, y, esp: g.u * 4.2, caixaAlta: true, alinhar: o.alinhar || g.alinhar });
 }
 /* a régua de acento sob um título */
@@ -324,6 +603,7 @@ function crData(iso){
    FUNDO, FOTO E DECORAÇÃO
    ============================================================ */
 function crFundo(ctx, g){
+  if(g.t.familia!=='cortex'){ctx.fillStyle=g.t.fundo[0];ctx.fillRect(0,0,g.W,g.H);return;}
   const [a, b, c] = g.t.fundo;
   const lg = ctx.createLinearGradient(0, 0, g.W * .6, g.H);
   lg.addColorStop(0, a); lg.addColorStop(.62, b); lg.addColorStop(1, c);
@@ -340,6 +620,7 @@ function crHalo(ctx, cx, cy, r, cor, alfa){
 /* o fundo quadriculado da prévia da barra de nome — só na tela; o PNG
    sai transparente */
 function crFundoPrevia(ctx, g){
+  if(g.t.familia!=='cortex'){ctx.fillStyle=g.t.fundo[0];ctx.fillRect(0,0,g.W,g.H);return;}
   const lg = ctx.createLinearGradient(0, 0, g.W, g.H);
   lg.addColorStop(0, '#39443F'); lg.addColorStop(.5, '#59625D'); lg.addColorStop(1, '#2B3230');
   ctx.fillStyle = lg; ctx.fillRect(0, 0, g.W, g.H);
@@ -351,7 +632,7 @@ function crFundoPrevia(ctx, g){
 function crGrade(ctx, g){
   const passo = Math.round(g.W / 9);
   ctx.save();
-  ctx.strokeStyle = g.escuro || g.sobreFoto ? 'rgba(245,245,247,.052)' : crRgba(g.t.fg, .07);
+  ctx.strokeStyle = g.escuro || g.sobreFoto ? 'rgba(232,237,235,.052)' : crRgba(g.t.fg, .07);
   ctx.lineWidth = Math.max(1, Math.round(g.W / 1000));
   ctx.beginPath();
   for (let x = passo; x < g.W; x += passo){ ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, g.H); }
@@ -385,7 +666,7 @@ function crRede(ctx, g, semente){
     });
     ctx.save();
     ctx.lineCap = 'round';
-    ctx.strokeStyle = crRgba(g.sobreFoto ? '#F5F5F7' : g.fg, alfa * .55); ctx.lineWidth = Math.max(1.5, u * 2.4);
+    ctx.strokeStyle = crRgba(g.sobreFoto ? '#E8EDEB' : g.fg, alfa * .55); ctx.lineWidth = Math.max(1.5, u * 2.4);
     ligs.forEach(([i, j]) => {
       const a = pts[i], b = pts[j];
       ctx.beginPath(); ctx.moveTo(a.x, a.y);
@@ -395,7 +676,7 @@ function crRede(ctx, g, semente){
     pts.forEach((p, i) => {
       const r = u * (p.v <= 1 ? 7 : 4.6) * (.8 + sorte() * .5);
       const acende = i < disparos;
-      ctx.fillStyle = acende ? g.ac : crRgba(g.sobreFoto ? '#F5F5F7' : g.fg, alfa);
+      ctx.fillStyle = acende ? g.ac : crRgba(g.sobreFoto ? '#E8EDEB' : g.fg, alfa);
       ctx.beginPath(); ctx.arc(p.x, p.y, acende ? r * 1.35 : r, 0, 7); ctx.fill();
       if (acende){ ctx.strokeStyle = crRgba(g.ac, .35); ctx.lineWidth = u * 2.2;
         ctx.beginPath(); ctx.arc(p.x, p.y, r * 3.1, 0, 7); ctx.stroke(); }
@@ -419,11 +700,11 @@ function crOndas(ctx, g, semente){
   };
   ctx.save(); ctx.lineCap = 'round';
   onda(0, crRgba(g.ac, g.escuro || g.sobreFoto ? .55 : .8), Math.max(2, g.u * 3.4));
-  onda(g.u * 30, crRgba(g.sobreFoto ? '#F5F5F7' : g.fg, .16), Math.max(1.5, g.u * 2));
+  onda(g.u * 30, crRgba(g.sobreFoto ? '#E8EDEB' : g.fg, .16), Math.max(1.5, g.u * 2));
   ctx.restore();
 }
 function crFormas(ctx, g){
-  const M = Math.min(g.W, g.H), u = g.u, fg = g.sobreFoto ? '#F5F5F7' : g.fg;
+  const M = Math.min(g.W, g.H), u = g.u, fg = g.sobreFoto ? '#E8EDEB' : g.fg;
   ctx.save();
   ctx.strokeStyle = crRgba(g.ac, g.escuro || g.sobreFoto ? .7 : .9); ctx.lineWidth = Math.max(2, u * 5);
   ctx.beginPath(); ctx.arc(g.W * .98, g.H * .03, M * .36, 0, 7); ctx.stroke();
@@ -436,8 +717,8 @@ function crFormas(ctx, g){
   ctx.restore();
 }
 function crConfete(ctx, g, semente){
-  const sorte = crSorte(semente + 'c'), u = g.u, fg = g.sobreFoto ? '#F5F5F7' : g.fg;
-  const cores = [g.ac, g.ac, crRgba(fg, .85), g.t.halo === g.ac ? '#2DD4BF' : g.t.halo, crRgba(g.ac, .6)];
+  const sorte = crSorte(semente + 'c'), u = g.u, fg = g.sobreFoto ? '#E8EDEB' : g.fg;
+  const cores = [g.ac, g.ac, crRgba(fg, .85), g.t.halo, crRgba(g.ac, .6)];
   ctx.save(); ctx.lineCap = 'round';
   let n = 0;
   for (let tent = 0; tent < 260 && n < 46; tent++){
@@ -485,16 +766,6 @@ function crFotoEm(ctx, g, foto, x, y, w, h, forma){
   const k = Math.max(w / iw, h / ih) * Math.max(1, f.zoom || 1);
   const dw = iw * k, dh = ih * k;
   ctx.drawImage(foto.img, x + (w - dw) * ((f.x ?? 50) / 100), y + (h - dh) * ((f.y ?? 50) / 100), dw, dh);
-  const fl = g.estilo.filtro;
-  if (fl === 'pb' || fl === 'duotone'){
-    ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = '#808080'; ctx.fillRect(x, y, w, h);
-  }
-  if (fl === 'duotone'){
-    ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = crMistura(g.ac, '#FFFFFF', .28); ctx.fillRect(x, y, w, h);
-    ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = crMistura(g.t.fundo[0], '#00352F', g.escuro ? .5 : .85); ctx.fillRect(x, y, w, h);
-  } else if (fl === 'verde'){
-    ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = .38; ctx.fillStyle = '#0B7D6E'; ctx.fillRect(x, y, w, h);
-  }
   ctx.restore();
 }
 /* o espaço de uma foto que ainda não veio: tracejado e o símbolo */
@@ -507,7 +778,7 @@ function crSemFoto(ctx, g, x, y, w, h, forma, rotulo){
   const lado = Math.min(w, h) * .34;
   if (crMarca.simbolo){ ctx.globalAlpha = .55; ctx.drawImage(crMarca.simbolo, x + (w - lado) / 2, y + (h - lado) / 2 - (rotulo ? g.u * 14 : 0), lado, lado); ctx.globalAlpha = 1; }
   if (rotulo){
-    ctx.font = crMono(500, g.u * 17); ctx.fillStyle = crRgba(g.fg, .55); ctx.textAlign = 'center';
+    ctx.font = crFonte(500, g.u * 17); ctx.fillStyle = crRgba(g.fg, .55); ctx.textAlign = 'center';
     ctx.fillText(rotulo.toUpperCase(), x + w / 2, y + (h + lado) / 2 + g.u * 18);
   }
   ctx.restore();
@@ -527,7 +798,7 @@ function crFotoFundo(ctx, g, foto){
 /* sobre foto, o texto é claro — em qualquer tema */
 function crSobreFoto(g){
   g.sobreFoto = true;
-  g.fg = '#F5F5F7'; g.fg2 = 'rgba(245,245,247,.86)'; g.corLogo = '#F5F5F7';
+  g.fg = '#E8EDEB'; g.fg2 = 'rgba(232,237,235,.86)'; g.corLogo = '#E8EDEB';
   g.acT = crLum(g.ac) < .08 ? crMistura(g.ac, '#FFFFFF', .6) : g.ac;
 }
 
@@ -563,7 +834,7 @@ function crCabecalho(ctx, g, lam, i, total){
   const selo = lam.campos?.selo;
   if ((selo || multi) && pos !== 'topo-centro'){
     ctx.save();
-    ctx.font = crMono(500, g.u * 21); ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.font = crFonte(500, g.u * 21); ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     if ('letterSpacing' in ctx) ctx.letterSpacing = g.u * 2 + 'px';
     ctx.fillStyle = selo ? g.acT : g.fg2;
     ctx.fillText(selo ? String(selo).toUpperCase() : `${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`,
@@ -580,16 +851,16 @@ function crRodape(ctx, g, i, total){
   if (pos === 'rodape'){
     const alt = crAltLogo(g);
     crMarcas(ctx, g, g.x0, y - alt, alt, g.corLogo || g.fg);
-    if (texto){ ctx.font = crMono(500, g.u * 21); ctx.fillStyle = g.fg2; ctx.textAlign = 'right';
+    if (texto){ ctx.font = crFonte(500, g.u * 21); ctx.fillStyle = g.fg2; ctx.textAlign = 'right';
       if ('letterSpacing' in ctx) ctx.letterSpacing = g.u * 1.5 + 'px';
       ctx.fillText(texto, g.x1, y - alt * .22); }
   } else {
-    if (texto){ ctx.font = crMono(500, g.u * 21); ctx.fillStyle = g.fg2;
+    if (texto){ ctx.font = crFonte(500, g.u * 21); ctx.fillStyle = g.fg2;
       if ('letterSpacing' in ctx) ctx.letterSpacing = g.u * 1.5 + 'px';
       ctx.textAlign = g.alinhar === 'centro' && !(total > 1 && i === 0) ? 'center' : 'left';
       ctx.fillText(texto, ctx.textAlign === 'center' ? g.W / 2 : g.x0, y); }
     if (total > 1 && i === 0 && g.estilo.contador){
-      ctx.font = crMono(500, g.u * 21); ctx.textAlign = 'right'; ctx.fillStyle = g.acT;
+      ctx.font = crFonte(500, g.u * 21); ctx.textAlign = 'right'; ctx.fillStyle = g.acT;
       ctx.fillText('arraste →', g.x1, y);
     }
   }
@@ -598,7 +869,7 @@ function crRodape(ctx, g, i, total){
 function crCredito(ctx, g, credito){
   const t = String(credito || '').trim(); if (!t) return;
   ctx.save();
-  ctx.font = crMono(400, g.u * 14); ctx.fillStyle = g.sobreFoto ? 'rgba(245,245,247,.62)' : crRgba(g.fg, .5);
+  ctx.font = crFonte(400, g.u * 14); ctx.fillStyle = g.sobreFoto ? 'rgba(232,237,235,.62)' : crRgba(g.fg, .5);
   ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
   ctx.fillText(/^foto/i.test(t) ? t : 'Foto: ' + t, g.W - g.m * .5, g.H - g.m * .32);
@@ -640,7 +911,7 @@ function crAncora(g, altura, pref, y0, y1){
   const f = crVertical(g) && pref > .5 ? .55 : pref;
   return Math.max(y0, y0 + (y1 - y0 - altura) * f);
 }
-const crApoioOp = (g, extra = {}) => ({ fonte: crFonte(500, g.u * (extra.tam || 33)), lh: g.u * (extra.tam || 33) * 1.42,
+const crApoioOp = (g, extra = {}) => ({ fonte: crFonte(400, g.u * (extra.tam || 33), '"Instrument Sans"'), lh: g.u * (extra.tam || 33) * 1.42,
   cor: extra.cor || g.fg2, maxL: extra.maxL || g.larg, x: extra.x ?? g.x0, alinhar: extra.alinhar || g.alinhar,
   corD: g.acT, fundoD: g.ac, sobreD: g.sobreAc, destaque: g.estilo.destaque });
 const crItens = v => (Array.isArray(v) ? v : String(v || '').split('\n')).map(s => String(s).trim()).filter(Boolean);
@@ -665,7 +936,7 @@ function crLCapa(ctx, g, c, lam){
     tg.addColorStop(0, 'rgba(4,10,9,.55)'); tg.addColorStop(1, 'rgba(4,10,9,0)');
     ctx.fillStyle = tg; ctx.fillRect(0, 0, g.W, g.topo * 2.6);
     ctx.fillStyle = g.ac; ctx.fillRect(0, hF - Math.max(3, u * 6), g.W * .22, Math.max(3, u * 6));
-    g.corLogo = '#F5F5F7'; g.corSelo = '#F5F5F7';
+    g.corLogo = '#E8EDEB'; g.corSelo = '#E8EDEB';
     y0 = hF + u * 58; pref = .2;
   }
   const olhoH = c.olho ? g.u * 23 * 1.42 + u * 26 : 0;
@@ -782,7 +1053,7 @@ function crLCitacao(ctx, g, c, lam){
   let x = g.x0;
   const blocoW = (foto ? d + u * 22 : 0) + Math.max(
     crLarguraTexto(ctx, c.autor || '', { fonte: crFonte(700, u * 32), maxL: g.larg }),
-    crLarguraTexto(ctx, c.cargo || '', { fonte: crMono(500, u * 19), maxL: g.larg, esp: u * 2, caixaAlta: true }));
+    crLarguraTexto(ctx, c.cargo || '', { fonte: crFonte(500, u * 19), maxL: g.larg, esp: u * 2, caixaAlta: true }));
   if (g.alinhar === 'centro') x = (g.W - blocoW) / 2;
   if (foto){
     crFotoEm(ctx, g, foto, x, y, d, d, cc => { cc.beginPath(); cc.arc(x + d / 2, y + d / 2, d / 2, 0, 7); });
@@ -795,7 +1066,7 @@ function crLCitacao(ctx, g, c, lam){
   }
   const yT = y + (foto ? d / 2 - u * 34 : 0);
   crEscreve(ctx, c.autor, { fonte: crFonte(700, u * 32), lh: u * 40, cor: g.fg, maxL: g.larg, x, y: yT, alinhar:'esquerda' });
-  crEscreve(ctx, c.cargo, { fonte: crMono(500, u * 19), lh: u * 28, cor: g.fg2, maxL: g.larg, x, y: yT + u * 44, esp: u * 2, caixaAlta: true, alinhar:'esquerda' });
+  crEscreve(ctx, c.cargo, { fonte: crFonte(500, u * 19), lh: u * 28, cor: g.fg2, maxL: g.larg, x, y: yT + u * 44, esp: u * 2, caixaAlta: true, alinhar:'esquerda' });
 }
 
 /* a pessoa: foto em arco, círculo ou quadro, com o anel de acento */
@@ -810,7 +1081,7 @@ function crLPessoa(ctx, g, c, lam){
   const tx = largo ? g.x0 + D + u * 64 : g.x0, tw = largo ? g.x1 - tx : g.larg;
   const al = largo ? 'esquerda' : g.alinhar;
   const nomeOp = crTituloOp(g, u * 96, 0, { maxL: tw, x: tx, alinhar: al });
-  const sub = { fonte: crMono(500, u * 22), lh: u * 32, cor: g.fg2, maxL: tw, x: tx, esp: u * 2.8, caixaAlta: true, alinhar: al };
+  const sub = { fonte: crFonte(500, u * 22), lh: u * 32, cor: g.fg2, maxL: tw, x: tx, esp: u * 2.8, caixaAlta: true, alinhar: al };
   const corpo = crApoioOp(g, { tam: 30, maxL: tw, x: tx, alinhar: al });
   const olhoH = c.olho ? g.u * 23 * 1.42 + u * 22 : 0;
   const hSub = c.sub ? crAltura(ctx, c.sub, sub) + u * 14 : 0;
@@ -838,12 +1109,12 @@ function crLPessoa(ctx, g, c, lam){
   else crSemFoto(ctx, g, fx, fy, D, hFoto, forma, 'foto');
   /* a data, num selo sobre a foto */
   if (c.data){
-    const dd = crData(c.data), txt = dd ? `${String(dd.getDate()).padStart(2, '0')} · ${CR_MESES[dd.getMonth()].slice(0, 3).toUpperCase()}` : String(c.data).toUpperCase();
-    ctx.save(); ctx.font = crMono(600, u * 22);
+    const dd = crData(c.data), txt = dd ? `${String(dd.getDate()).padStart(2, '0')}, ${CR_MESES[dd.getMonth()].slice(0, 3).toUpperCase()}` : String(c.data).toUpperCase();
+    ctx.save(); ctx.font = crFonte(600, u * 22);
     if ('letterSpacing' in ctx) ctx.letterSpacing = u * 2 + 'px';
     const w = ctx.measureText(txt).width + u * 36, h = u * 50;
     const sx = modo === 'circulo' ? cx + D * .3 : fx + D - w * .6, sy = fy + hFoto - h * (modo === 'circulo' ? 1.2 : .6);
-    crRetArred(ctx, sx, sy, w, h, h / 2); ctx.fillStyle = g.ac; ctx.fill();
+    crRetArred(ctx, sx, sy, w, h, u * 12); ctx.fillStyle = g.ac; ctx.fill();
     ctx.fillStyle = g.sobreAc; ctx.textBaseline = 'middle'; ctx.fillText(txt, sx + u * 18, sy + h / 2 + u * 1);
     ctx.restore();
   }
@@ -874,7 +1145,7 @@ function crLEvento(ctx, g, c, lam){
     const tg = ctx.createLinearGradient(0, 0, 0, g.topo * 2.6);
     tg.addColorStop(0, 'rgba(4,10,9,.55)'); tg.addColorStop(1, 'rgba(4,10,9,0)');
     ctx.fillStyle = tg; ctx.fillRect(0, 0, g.W, g.topo * 2.6);
-    g.corLogo = '#F5F5F7'; y0 = hF + u * 50;
+    g.corLogo = '#E8EDEB'; y0 = hF + u * 50;
   }
   const d = crData(c.data);
   const dia = d ? String(d.getDate()).padStart(2, '0') : String(c.data || '—').split(/[\/\s]/)[0];
@@ -898,8 +1169,8 @@ function crLEvento(ctx, g, c, lam){
   const xm = g.x0 + wDia + u * 30;
   ctx.fillStyle = g.ac; ctx.fillRect(xm, y + tamDia * .1, Math.max(3, u * 6), tamDia * .66);
   if (mes){
-    crEscreve(ctx, mes, { fonte: crMono(600, u * 34), lh: u * 44, cor: g.acT, maxL: g.x1 - xm - u * 30, x: xm + u * 30, y: y + tamDia * .16, esp: u * 4, caixaAlta: true, alinhar:'esquerda' });
-    crEscreve(ctx, sem + (d ? ' · ' + d.getFullYear() : ''), { fonte: crMono(500, u * 24), lh: u * 34, cor: g.fg2, maxL: g.x1 - xm - u * 30, x: xm + u * 30, y: y + tamDia * .16 + u * 52, esp: u * 2, caixaAlta: true, alinhar:'esquerda' });
+    crEscreve(ctx, mes, { fonte: crFonte(600, u * 34), lh: u * 44, cor: g.acT, maxL: g.x1 - xm - u * 30, x: xm + u * 30, y: y + tamDia * .16, esp: u * 4, caixaAlta: true, alinhar:'esquerda' });
+    crEscreve(ctx, sem + (d ? ', ' + d.getFullYear() : ''), { fonte: crFonte(500, u * 24), lh: u * 34, cor: g.fg2, maxL: g.x1 - xm - u * 30, x: xm + u * 30, y: y + tamDia * .16 + u * 52, esp: u * 2, caixaAlta: true, alinhar:'esquerda' });
   }
   y += tamDia * .86 + u * 40;
   y = crEscreve(ctx, c.titulo, { ...tit, y }) + u * 38;
@@ -912,7 +1183,7 @@ function crLEvento(ctx, g, c, lam){
     y += u * 36;
     ctx.save(); ctx.font = crFonte(700, u * 28);
     const w = Math.min(g.larg, ctx.measureText(c.cta).width + u * 64);
-    crRetArred(ctx, g.x0, y, w, u * 76, u * 38); ctx.fillStyle = g.ac; ctx.fill();
+    crRetArred(ctx, g.x0, y, w, u * 76, u * 12); ctx.fillStyle = g.ac; ctx.fill();
     ctx.fillStyle = g.sobreAc; ctx.textBaseline = 'middle'; ctx.fillText(c.cta, g.x0 + u * 32, y + u * 39); ctx.restore();
   }
 }
@@ -951,7 +1222,7 @@ function crLMidia(ctx, g, c, lam){
   else {
     ctx.save(); crRetArred(ctx, telaX, telaY, telaW, telaH, r); ctx.clip();
     const lg = ctx.createLinearGradient(telaX, telaY, telaX + telaW, telaY + telaH);
-    lg.addColorStop(0, '#0B7D6E'); lg.addColorStop(1, '#00352F'); ctx.fillStyle = lg; ctx.fillRect(telaX, telaY, telaW, telaH);
+    lg.addColorStop(0, '#00594F'); lg.addColorStop(1, '#00352F'); ctx.fillStyle = lg; ctx.fillRect(telaX, telaY, telaW, telaH);
     crHalo(ctx, telaX + telaW * .8, telaY, telaW * .6, g.ac, .35); ctx.restore();
   }
   ctx.save(); ctx.strokeStyle = crRgba(g.fg, .22); ctx.lineWidth = Math.max(1.5, u * 2.5);
@@ -969,7 +1240,7 @@ function crLMidia(ctx, g, c, lam){
     ctx.fillText('“', tx - u * 2, y + u * 58); ctx.restore();
     y = crEscreve(ctx, c.titulo, { ...man, y }) + u * 30;
   }
-  if (c.sub) y = crEscreve(ctx, c.sub, { fonte: crMono(500, u * 20), lh: u * 30, cor: g.fg2, maxL: tw, x: tx, y, esp: u * 2.2, caixaAlta: true, alinhar:'esquerda' }) + u * 10;
+  if (c.sub) y = crEscreve(ctx, c.sub, { fonte: crFonte(500, u * 20), lh: u * 30, cor: g.fg2, maxL: tw, x: tx, y, esp: u * 2.2, caixaAlta: true, alinhar:'esquerda' }) + u * 10;
   if (c.cta) crEscreve(ctx, c.cta + ' →', { fonte: crFonte(700, u * 27), lh: u * 36, cor: g.acT, maxL: tw, x: tx, y, alinhar:'esquerda' });
 }
 
@@ -1001,7 +1272,7 @@ function crLParceiro(ctx, g, c, lam){
   crRetArred(ctx, px, y, wP, lado, u * 26); ctx.fillStyle = '#FFFFFF'; ctx.fill();
   if (logo) crContem(ctx, logo.img, px + lado * .16, y + lado * .16, wP - lado * .32, lado * .68);
   else if (nome){ ctx.font = crFonte(800, u * 34); ctx.fillStyle = '#00352F'; ctx.fillText(nome, px + wP / 2, y + lado / 2); }
-  else { ctx.font = crMono(500, u * 16); ctx.fillStyle = '#6B7A75'; ctx.fillText('LOGO', px + wP / 2, y + lado / 2); }
+  else { ctx.font = crFonte(500, u * 16); ctx.fillStyle = '#6B7A75'; ctx.fillText('LOGO', px + wP / 2, y + lado / 2); }
   ctx.restore();
   y += lado + u * 80;
   if (c.olho) y = crOlho(ctx, g, c.olho, g.x0, y) + u * 24;
@@ -1029,7 +1300,7 @@ function crIconesAcao(ctx, g, x, y, lado, cor){
     const cx = x + n * passo + r, cy = y + r;
     ctx.strokeStyle = crRgba(cor, .28); ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke();
     ctx.strokeStyle = n === 3 ? g.acT : cor; desenha(cx, cy);
-    ctx.font = crMono(500, u * 15); ctx.fillStyle = g.fg2; ctx.textAlign = 'center';
+    ctx.font = crFonte(500, u * 15); ctx.fillStyle = g.fg2; ctx.textAlign = 'center';
     if ('letterSpacing' in ctx) ctx.letterSpacing = u * 1.4 + 'px';
     ctx.fillText(rot.toUpperCase(), cx, cy + r + u * 34);
     if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
@@ -1069,7 +1340,7 @@ function crLFoto(ctx, g, c, lam){
   const hTag = c.olho ? u * 62 + u * 30 : 0;
   let y = crAncora(g, hTag + hTit + hLeg, 1);
   if (c.olho){
-    ctx.save(); ctx.font = crMono(600, u * 21);
+    ctx.save(); ctx.font = crFonte(600, u * 21);
     if ('letterSpacing' in ctx) ctx.letterSpacing = u * 3 + 'px';
     const t = String(c.olho).toUpperCase(), w = ctx.measureText(t).width + u * 40;
     const x = g.alinhar === 'centro' ? (g.W - w) / 2 : g.x0;
@@ -1094,14 +1365,14 @@ function crLArtigo(ctx, g, c){
   ctx.save();
   ctx.translate(cx + cw / 2, y + ch / 2); ctx.rotate(-.025); ctx.translate(-(cx + cw / 2), -(y + ch / 2));
   ctx.fillStyle = crRgba(g.ac, .9); crRetArred(ctx, cx + u * 16, y + u * 16, cw, ch, u * 18); ctx.fill();
-  ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = u * 40; ctx.shadowOffsetY = u * 14;
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
   ctx.fillStyle = '#FBFBF8'; crRetArred(ctx, cx, y, cw, ch, u * 18); ctx.fill();
   ctx.shadowColor = 'transparent';
   let yy = y + pad;
   const iw = cw - pad * 2;
-  yy = crEscreve(ctx, c.revista || 'Periódico', { fonte: crMono(600, u * 19), lh: u * 28, cor: '#0B7D6E', maxL: iw, x: cx + pad, y: yy, esp: u * 2.2, caixaAlta: true, alinhar:'esquerda' }) + u * 10;
+  yy = crEscreve(ctx, c.revista || 'Periódico', { fonte: crFonte(600, u * 19), lh: u * 28, cor: '#00594F', maxL: iw, x: cx + pad, y: yy, esp: u * 2.2, caixaAlta: true, alinhar:'esquerda' }) + u * 10;
   ctx.fillStyle = 'rgba(0,53,47,.18)'; ctx.fillRect(cx + pad, yy, iw, Math.max(1, u * 2)); yy += u * 30;
-  const ano = [c.ano, c.doi].filter(Boolean).join(' · ');
+  const ano = [c.ano, c.doi].filter(Boolean).join(', ');
   const hAut = c.autores ? u * 30 * 1.4 * 2 : 0;
   const top = crEncaixa(ctx, c.titulo, u * 50, { peso:700, lhF:1.14, maxL: iw, maxA: ch - (yy - y) - hAut - pad * 2 - u * 120, x: cx + pad, cor:'#101614', alinhar:'esquerda', espF:-.01 });
   yy = crEscreve(ctx, c.titulo, { ...top, y: yy }) + u * 22;
@@ -1112,7 +1383,7 @@ function crLArtigo(ctx, g, c){
     ctx.fillStyle = 'rgba(16,22,20,.09)';
     ctx.fillRect(cx + pad, yy, iw * (.62 + s() * .38), u * 11); yy += u * 24;
   }
-  if (ano) crEscreve(ctx, ano, { fonte: crMono(500, u * 17), lh: u * 26, cor:'#4B5854', maxL: iw, x: cx + pad, y: y + ch - pad - u * 20, alinhar:'esquerda' });
+  if (ano) crEscreve(ctx, ano, { fonte: crFonte(500, u * 17), lh: u * 26, cor:'#4B5854', maxL: iw, x: cx + pad, y: y + ch - pad - u * 20, alinhar:'esquerda' });
   ctx.restore();
   y += ch + u * 40;
   if (c.cta) crEscreve(ctx, c.cta + ' →', { fonte: crFonte(700, u * 28), lh: u * 38, cor: g.acT, maxL: g.larg, x: g.x0, y, alinhar: g.alinhar });
@@ -1162,7 +1433,7 @@ function crLThumb(ctx, g, c, lam){
   const tw = largo ? g.W * .5 - m : g.W - m * 2;
   let y = largo ? m : g.H * .56 + u * 30;
   if (c.selo){
-    ctx.save(); ctx.font = crMono(600, u * (largo ? 30 : 28));
+    ctx.save(); ctx.font = crFonte(600, u * (largo ? 30 : 28));
     if ('letterSpacing' in ctx) ctx.letterSpacing = u * 3 + 'px';
     const t = String(c.selo).toUpperCase(), w = ctx.measureText(t).width + u * 44, h = u * (largo ? 70 : 64);
     const sy = largo ? y : g.topo;
@@ -1191,7 +1462,7 @@ function crLEncerramento(ctx, g, c, lam, peca, i, total, opt){
     ctx.save(); crRetArred(ctx, x, y, w, h, u * 16);
     ctx.fillStyle = crRgba(g.fg, .06); ctx.fill();
     ctx.strokeStyle = crRgba(g.fg, .24); ctx.lineWidth = Math.max(1.5, u * 2); ctx.stroke();
-    if (opt?.previa){ ctx.font = crMono(500, u * 16); ctx.fillStyle = crRgba(g.fg, .5); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (opt?.previa){ ctx.font = crFonte(500, u * 16); ctx.fillStyle = crRgba(g.fg, .5); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(rot, x + w / 2, y + h / 2); }
     ctx.restore();
   };
@@ -1207,7 +1478,7 @@ function crLEncerramento(ctx, g, c, lam, peca, i, total, opt){
   const colW = tw / 2;
   redes.forEach(([k, v], n) => {
     const x = m + (n % 2) * colW, yy = y + Math.floor(n / 2) * u * 84;
-    crEscreve(ctx, (STUDIO_REDES[k]?.l || k), { fonte: crMono(500, u * 17), lh: u * 26, cor: g.acT, maxL: colW - u * 20, x, y: yy, esp: u * 2.4, caixaAlta: true, alinhar:'esquerda' });
+    crEscreve(ctx, (STUDIO_REDES[k]?.l || k), { fonte: crFonte(500, u * 17), lh: u * 26, cor: g.acT, maxL: colW - u * 20, x, y: yy, esp: u * 2.4, caixaAlta: true, alinhar:'esquerda' });
     crEscreve(ctx, v, { fonte: crFonte(600, u * 27), lh: u * 36, cor: g.fg, maxL: colW - u * 20, x, y: yy + u * 28, alinhar:'esquerda', maxLinhas:1 });
   });
   if (largo){
@@ -1217,7 +1488,7 @@ function crLEncerramento(ctx, g, c, lam, peca, i, total, opt){
     const r = g.H * .1;
     ctx.save(); ctx.strokeStyle = crRgba(g.ac, .8); ctx.lineWidth = Math.max(2, u * 4);
     ctx.beginPath(); ctx.arc(sx - r - u * 60, g.H * .16 + sh * 2 + u * 36 - r, r, 0, 7); ctx.stroke(); ctx.restore();
-    if (opt?.previa){ ctx.font = crMono(500, u * 15); ctx.fillStyle = crRgba(g.fg, .5); ctx.textAlign = 'center';
+    if (opt?.previa){ ctx.font = crFonte(500, u * 15); ctx.fillStyle = crRgba(g.fg, .5); ctx.textAlign = 'center';
       ctx.fillText('INSCREVA-SE', sx - r - u * 60, g.H * .16 + sh * 2 + u * 36 - r + u * 5); ctx.textAlign = 'left'; }
   } else {
     const sw = g.larg, sh = sw * 9 / 16;
@@ -1231,7 +1502,7 @@ function crLBarra(ctx, g, c){
   const u = g.u, largo = g.W > g.H, est = g.estilo.barra;
   const x = largo ? g.W * .065 : g.W * .07, yb = largo ? g.H * .8 : g.H * .7;
   const nome = String(c.titulo || 'Nome').trim(), cargo = String(c.sub || '').trim();
-  const nF = crFonte(700, u * (largo ? 46 : 52)), cF = crMono(500, u * (largo ? 19 : 22));
+  const nF = crFonte(700, u * (largo ? 46 : 52)), cF = crFonte(500, u * (largo ? 19 : 22));
   ctx.save();
   ctx.font = nF; const wN = ctx.measureText(nome).width;
   ctx.font = cF; if ('letterSpacing' in ctx) ctx.letterSpacing = u * 2.4 + 'px';
@@ -1242,27 +1513,27 @@ function crLBarra(ctx, g, c){
   const hBox = pad * 2 + hN + hC, lTile = tile ? hBox - pad * 1.2 : 0;
   const wBox = pad * 2 + Math.max(wN, wC) + (tile ? lTile + pad * .9 : 0) + u * 10;
   const y = yb - hBox;
-  const corTexto = est === 'clara' ? '#101614' : '#F5F5F7', corCargo = est === 'clara' ? '#45625B' : 'rgba(245,245,247,.82)';
+  const corTexto = est === 'clara' ? '#101614' : '#E8EDEB', corCargo = est === 'clara' ? '#45625B' : 'rgba(232,237,235,.82)';
   if (est === 'solida'){
     ctx.fillStyle = g.t.escuro ? g.t.fundo[0] : '#00352F'; ctx.fillRect(x, y, wBox, hBox);
     ctx.fillStyle = g.ac; ctx.fillRect(x - u * 10, y, u * 10, hBox);
   } else if (est === 'vidro'){
     crRetArred(ctx, x, y, wBox, hBox, u * 16); ctx.fillStyle = 'rgba(5,10,9,.62)'; ctx.fill();
-    ctx.strokeStyle = 'rgba(245,245,247,.2)'; ctx.lineWidth = Math.max(1, u * 1.6); ctx.stroke();
+    ctx.strokeStyle = 'rgba(232,237,235,.2)'; ctx.lineWidth = Math.max(1, u * 1.6); ctx.stroke();
     ctx.fillStyle = g.ac; ctx.fillRect(x + pad * .5, y + hBox - u * 8, u * 70, u * 4);
   } else if (est === 'clara'){
-    ctx.fillStyle = '#F5F5F7'; ctx.fillRect(x, y, wBox, hBox);
+    ctx.fillStyle = '#E8EDEB'; ctx.fillRect(x, y, wBox, hBox);
     ctx.fillStyle = g.ac; ctx.fillRect(x - u * 10, y, u * 10, hBox);
   } else {
-    ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = u * 18;
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
   }
   let tx = x + pad;
-  if (tile){ crTile(ctx, tx, y + pad * .6, lTile, est === 'clara' ? '#00352F' : '#F5F5F7'); tx += lTile + pad * .9; }
+  if (tile){ crTile(ctx, tx, y + pad * .6, lTile, est === 'clara' ? '#00352F' : '#E8EDEB'); tx += lTile + pad * .9; }
   if (est === 'linha') tx = x;
   ctx.font = nF; ctx.fillStyle = corTexto; ctx.textBaseline = 'alphabetic';
   ctx.fillText(nome, tx, y + pad + hN * .8);
   if (cargo){
-    ctx.font = cF; ctx.fillStyle = est === 'linha' ? '#F5F5F7' : corCargo;
+    ctx.font = cF; ctx.fillStyle = est === 'linha' ? '#E8EDEB' : corCargo;
     if ('letterSpacing' in ctx) ctx.letterSpacing = u * 2.4 + 'px';
     ctx.fillText(cargo.toUpperCase(), tx, y + pad + hN + hC * .72);
   }
@@ -1361,32 +1632,32 @@ const crL = (layout, campos, fotos) => ({ layout, campos, fotos: fotos || {} });
 const CR_MODELOS = {
   na_midia: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'ondas' },
     laminas:[ crL('midia', { olho:'Na mídia', veiculo:'Jornal Nacional', titulo:'Tecnologia criada na UFMG leva atleta paraplégico a competir na Suíça',
-      sub:'TV Globo · outubro de 2024', cta:'Assista no link da bio', tipo:'video' }, { foto:{ modo:'tela' } }) ],
-    legenda: c => `Saímos no ${c.veiculo || 'jornal'}! 📺\n\n${String(c.titulo || '').replace(/[“”"]/g, '')}\n\nA reportagem completa está no link da bio.\n\n${CR_HASH} #NaMídia` },
+      sub:'TV Globo, outubro de 2024', cta:'Assista no link da bio', tipo:'video' }, { foto:{ modo:'tela' } }) ],
+    legenda: c => `Saímos no ${c.veiculo || 'jornal'}! \n\n${String(c.titulo || '').replace(/[“”"]/g, '')}\n\nA reportagem completa está no link da bio.\n\n${CR_HASH} #NaMídia` },
   projeto: { tamanhos:['feed','quadrado','documento','stories'], estilo:{ tema:'cortex', decoracao:'rede' },
     laminas:[
       crL('capa', { olho:'Projeto em foco', titulo:'Órion: *instrumentação* sem concessões', sub:'Hardware, firmware e software projetados como um sistema só.' }, { foto:{ modo:'fundo' } }),
-      crL('texto', { olho:'01 · O problema', titulo:'Em procedimentos críticos, precisão não é negociável', corpo:'Equipamentos genéricos resolvem o caso médio. O caso que importa quase nunca é o médio.' }),
-      crL('texto', { olho:'02 · A solução', titulo:'Um sistema pensado de ponta a ponta', itens:'Sensores e eletrônica projetados aqui\nFirmware em tempo real\nSoftware que o clínico entende' }),
-      crL('numero', { olho:'03 · Onde estamos', valor:'0,1 mm', titulo:'de resolução nos testes de bancada', corpo:'Próximo passo: validação com a equipe clínica parceira.' }),
-      crL('lista', { olho:'04 · Quem faz', titulo:'Três frentes, uma equipe', itens:'Hardware — projeto e montagem das placas\nFirmware — controle em tempo real\nSoftware — interface e dados' }),
+      crL('texto', { olho:'01, O problema', titulo:'Em procedimentos críticos, precisão não é negociável', corpo:'Equipamentos genéricos resolvem o caso médio. O caso que importa quase nunca é o médio.' }),
+      crL('texto', { olho:'02, A solução', titulo:'Um sistema pensado de ponta a ponta', itens:'Sensores e eletrônica projetados aqui\nFirmware em tempo real\nSoftware que o clínico entende' }),
+      crL('numero', { olho:'03, Onde estamos', valor:'0,1 mm', titulo:'de resolução nos testes de bancada', corpo:'Próximo passo: validação com a equipe clínica parceira.' }),
+      crL('lista', { olho:'04, Quem faz', titulo:'Três frentes, uma equipe', itens:'Hardware — projeto e montagem das placas\nFirmware — controle em tempo real\nSoftware — interface e dados' }),
       crL('cta', { titulo:'Quer saber mais?', sub:'Todos os nossos projetos, em detalhe:', site:'neurodynamics.dev' }) ],
-    legenda: c => `${String(c.titulo || 'Projeto em foco').replace(/\*/g, '')}\n\n${c.sub || ''}\n\nArraste para ver como ele funciona — e salve para mostrar para alguém. 🧠⚙️\n\n${CR_HASH} #Pesquisa #Engenharia` },
+    legenda: c => `${String(c.titulo || 'Projeto em foco').replace(/\*/g, '')}\n\n${c.sub || ''}\n\nArraste para ver como ele funciona — e salve para mostrar para alguém. \n\n${CR_HASH} #Pesquisa #Engenharia` },
   aniversario: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'cortex', decoracao:'confete', alinhar:'centro', grade:false },
     laminas:[ crL('pessoa', { olho:'Feliz aniversário', titulo:'Ana Figueiredo', sub:'Gerente de projeto', corpo:'Que o novo ano venha com muitos testes que passam de primeira. Parabéns!', data:'' }, { foto:{ modo:'arco' } }) ],
-    legenda: c => `Hoje é dia de celebrar ${c.titulo || 'uma pessoa especial'}! 🎉\n\n${c.corpo || ''}\n\nDeixe aqui o seu parabéns 👇\n\n#NeuroDynamics #Aniversário` },
+    legenda: c => `Hoje é dia de celebrar ${c.titulo || 'uma pessoa especial'}! \n\n${c.corpo || ''}\n\nDeixe aqui o seu parabéns \n\n#NeuroDynamics #Aniversário` },
   parabens: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'confete', alinhar:'centro', grade:false },
     laminas:[ crL('parceiro', { olho:'Parabéns', titulo:'Parabéns, equipe *Bem-te-vi*!', corpo:'Pelo 1º lugar na competição. Orgulho de caminhar junto com vocês.', parceiro:'Bem-te-vi' }, { foto2:{ modo:'logo' } }) ],
-    legenda: c => `${String(c.titulo || 'Parabéns!').replace(/\*/g, '')} 👏\n\n${c.corpo || ''}\n\n#NeuroDynamics #Parceria` },
+    legenda: c => `${String(c.titulo || 'Parabéns!').replace(/\*/g, '')} \n\n${c.corpo || ''}\n\n#NeuroDynamics #Parceria` },
   boas_vindas: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'void', decoracao:'rede', alinhar:'centro' },
-    laminas:[ crL('pessoa', { olho:'Boas-vindas', titulo:'Nome da pessoa', sub:'Engenharia de Software · Firmware', corpo:'Chega para somar ao time de firmware. Seja muito bem-vinda!' }, { foto:{ modo:'circulo' } }) ],
-    legenda: c => `Boas-vindas, ${c.titulo || ''}! 👋\n\n${c.corpo || ''}\n\n#NeuroDynamics #NovoMembro` },
+    laminas:[ crL('pessoa', { olho:'Boas-vindas', titulo:'Nome da pessoa', sub:'Engenharia de Software, Firmware', corpo:'Chega para somar ao time de firmware. Seja muito bem-vinda!' }, { foto:{ modo:'circulo' } }) ],
+    legenda: c => `Boas-vindas, ${c.titulo || ''}! \n\n${c.corpo || ''}\n\n#NeuroDynamics #NovoMembro` },
   conquista: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'cortex', decoracao:'formas' },
     laminas:[ crL('numero', { olho:'Conquista', valor:'1º lugar', titulo:'no Cybathlon Challenges 2024', corpo:'Na categoria de estimulação elétrica funcional, em Zurique, com a bicicleta desenvolvida no LABBIO.' }, { foto:{ modo:'nenhuma' } }) ],
-    legenda: c => `${c.valor || ''} ${c.titulo || ''}! 🏆\n\n${c.corpo || ''}\n\nObrigado a quem fez isso acontecer.\n\n${CR_HASH}` },
+    legenda: c => `${c.valor || ''} ${c.titulo || ''}! \n\n${c.corpo || ''}\n\nObrigado a quem fez isso acontecer.\n\n${CR_HASH}` },
   evento: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'rede' },
-    laminas:[ crL('evento', { olho:'Save the date', titulo:'Demo Day NeuroDynamics', data:'', hora:'14h às 17h', local:'LABBIO · Escola de Engenharia da UFMG', cta:'Inscrições no link da bio' }, { foto:{ modo:'nenhuma' } }) ],
-    legenda: c => `📅 ${c.titulo || 'Evento'}\n\n🕑 ${c.hora || ''}\n📍 ${c.local || ''}\n\n${c.cta || ''}\n\n${CR_HASH}` },
+    laminas:[ crL('evento', { olho:'Save the date', titulo:'Demo Day NeuroDynamics', data:'', hora:'14h às 17h', local:'LABBIO, Escola de Engenharia da UFMG', cta:'Inscrições no link da bio' }, { foto:{ modo:'nenhuma' } }) ],
+    legenda: c => ` ${c.titulo || 'Evento'}\n\n ${c.hora || ''}\n ${c.local || ''}\n\n${c.cta || ''}\n\n${CR_HASH}` },
   aviso: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'aura', decoracao:'nenhuma' },
     laminas:[ crL('texto', { olho:'Aviso', titulo:'O LABBIO fecha no feriado de 12 de outubro', corpo:'Voltamos na terça, 13, no horário de sempre. Bom descanso!' }) ],
     legenda: c => `${c.titulo || ''}\n\n${c.corpo || ''}\n\n#NeuroDynamics` },
@@ -1398,7 +1669,7 @@ const CR_MODELOS = {
     legenda: c => `${c.valor || ''} ${c.titulo || ''}.\n\n${c.corpo || ''}\n\n${CR_HASH}` },
   bastidores: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'void', decoracao:'nenhuma', grade:false, escurecer:48 },
     laminas:[ crL('foto', { olho:'Bastidores', titulo:'Sexta-feira no LABBIO: calibração do encoder da órtese', sub:'' }, { foto:{ modo:'fundo' } }) ],
-    legenda: c => `${c.titulo || 'Bastidores'} 🔧\n\n${c.sub || ''}\n\n#NeuroDynamics #Bastidores #LABBIO` },
+    legenda: c => `${c.titulo || 'Bastidores'} \n\n${c.sub || ''}\n\n#NeuroDynamics #Bastidores #LABBIO` },
   dicas: { tamanhos:['feed','quadrado','documento'], estilo:{ tema:'void', decoracao:'rede' },
     laminas:[
       crL('capa', { olho:'Guia rápido', titulo:'5 coisas que ninguém te conta sobre *prototipar* hardware', sub:'Aprendidas do jeito difícil, no LABBIO.' }, { foto:{ modo:'nenhuma' } }),
@@ -1408,21 +1679,21 @@ const CR_MODELOS = {
       crL('texto', { olho:'04', titulo:'Tenha um plano B para cada peça importada', corpo:'O prazo do fornecedor não é o seu prazo.' }),
       crL('texto', { olho:'05', titulo:'Mostre cedo para quem vai usar', corpo:'A pessoa que usa enxerga o que a bancada não mostra.' }),
       crL('cta', { titulo:'Salve para consultar depois', sub:'E mande para quem está no primeiro protótipo.', site:'' }) ],
-    legenda: c => `${String(c.titulo || '').replace(/\*/g, '')} 👇\n\nSalve para consultar depois.\n\n${CR_HASH} #Engenharia #Dicas` },
+    legenda: c => `${String(c.titulo || '').replace(/\*/g, '')} \n\nSalve para consultar depois.\n\n${CR_HASH} #Engenharia #Dicas` },
   vaga: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'cortex', decoracao:'rede' },
     laminas:[
       crL('capa', { olho:'Processo seletivo', titulo:'Venha construir *tecnologia* que devolve movimento', sub:'Inscrições abertas até 15 de outubro.' }, { foto:{ modo:'fundo' } }),
       crL('texto', { olho:'Quem procuramos', titulo:'Estudantes de qualquer curso da UFMG', itens:'Engenharias, computação e design\nVontade de aprender fazendo\n8 horas por semana' }),
       crL('lista', { olho:'Como funciona', titulo:'As etapas', itens:'Inscrição — pelo site, em 5 minutos\nDinâmica em grupo — um desafio de verdade\nEntrevista — uma conversa com a equipe' }),
       crL('cta', { titulo:'Inscreva-se', sub:'Edital, cronograma e perguntas frequentes:', site:'selecao.neurodynamics.dev' }) ],
-    legenda: c => `${String(c.titulo || '').replace(/\*/g, '')} 🚀\n\n${c.sub || ''}\n\nTudo sobre o processo em selecao.neurodynamics.dev (link na bio).\n\n${CR_HASH} #ProcessoSeletivo` },
+    legenda: c => `${String(c.titulo || '').replace(/\*/g, '')} \n\n${c.sub || ''}\n\nTudo sobre o processo em selecao.neurodynamics.dev (link na bio).\n\n${CR_HASH} #ProcessoSeletivo` },
   artigo: { tamanhos:['feed','quadrado','paisagem'], estilo:{ tema:'cortex', decoracao:'rede' },
     laminas:[ crL('artigo', { olho:'Artigo publicado', revista:'Journal of NeuroEngineering and Rehabilitation', titulo:'Functional electrical stimulation cycling for people with spinal cord injury: a field study',
-      autores:'A. Figueiredo, B. Tavares, C. Mendonça et al.', ano:'2026', doi:'doi.org/10.0000/jner.2026', cta:'Leia o artigo · link na bio' }) ],
-    legenda: c => `Artigo publicado! 📄\n\n“${c.titulo || ''}”\n\n${c.revista || ''}${c.ano ? ', ' + c.ano : ''}.\n\nO texto completo está no link da bio.\n\n${CR_HASH} #Ciência` },
+      autores:'A. Figueiredo, B. Tavares, C. Mendonça et al.', ano:'2026', doi:'doi.org/10.0000/jner.2026', cta:'Leia o artigo, link na bio' }) ],
+    legenda: c => `Artigo publicado! \n\n“${c.titulo || ''}”\n\n${c.revista || ''}${c.ano ? ', ' + c.ano : ''}.\n\nO texto completo está no link da bio.\n\n${CR_HASH} #Ciência` },
   agradecimento: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'ondas' },
     laminas:[ crL('texto', { olho:'Obrigado', titulo:'Nada disso seria possível sem quem caminha com a gente', itens:'LABBIO — Laboratório de Bioengenharia\nEscola de Engenharia da UFMG\nCNPq\nAs famílias e os atletas parceiros' }) ],
-    legenda: c => `${c.titulo || 'Obrigado!'} 💚\n\n${crItens(c.itens).join('\n')}\n\n#NeuroDynamics #Gratidão` },
+    legenda: c => `${c.titulo || 'Obrigado!'} \n\n${crItens(c.itens).join('\n')}\n\n#NeuroDynamics #Gratidão` },
   data: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'dendrito', decoracao:'ondas' },
     laminas:[ crL('capa', { olho:'8 de março', titulo:'Dia Internacional da *Mulher*', sub:'Às engenheiras, pesquisadoras e estudantes que constroem a NeuroDynamics todos os dias.' }, { foto:{ modo:'nenhuma' } }) ],
     legenda: c => `${String(c.titulo || '').replace(/\*/g, '')}.\n\n${c.sub || ''}\n\n#NeuroDynamics` },
@@ -1431,14 +1702,14 @@ const CR_MODELOS = {
     legenda: c => `“${String(c.titulo || '').replace(/\*/g, '')}”\n\n— ${c.autor || ''}, ${c.cargo || ''}\n\n${CR_HASH}` },
   enquete: { tamanhos:['stories','feed','quadrado'], estilo:{ tema:'void', decoracao:'formas' },
     laminas:[ crL('enquete', { olho:'Enquete', titulo:'Qual projeto você quer ver nos próximos stories?', itens:'Órion\nDeriva\nCalima' }) ],
-    legenda: c => `${c.titulo || ''}\n\nResponda nos stories! 👆` },
+    legenda: c => `${c.titulo || ''}\n\nResponda nos stories! ` },
   thumbnail: { tamanhos:['thumb','reels'], estilo:{ tema:'void', decoracao:'nenhuma', grade:false, destaque:'marca', caixaAlta:true },
     laminas:[ crL('thumb', { selo:'Ep. 03', titulo:'Como construímos um *triciclo* adaptado' }, { foto:{ modo:'lado' } }) ],
     legenda: c => `${String(c.titulo || '').replace(/\*/g, '')}\n\n${CR_HASH}` },
   encerramento: { tamanhos:['video','video_v'], estilo:{ tema:'void', decoracao:'nenhuma' },
     laminas:[ crL('encerramento', { titulo:'Obrigado por assistir!', sub:'Inscreva-se para acompanhar os próximos episódios.' }) ] },
   barra_nome: { tamanhos:['video','video_v'], estilo:{ tema:'cortex', barra:'solida' },
-    laminas:[ crL('barra', { titulo:'Ana Figueiredo', sub:'Gerente de projeto · NeuroDynamics' }) ] },
+    laminas:[ crL('barra', { titulo:'Ana Figueiredo', sub:'Gerente de projeto, NeuroDynamics' }) ] },
   cartela: { tamanhos:['video','video_v','thumb'], estilo:{ tema:'cortex', decoracao:'ondas' },
     laminas:[ crL('cartela', { olho:'Episódio 03', titulo:'Do protótipo à pista', sub:'Uma série sobre o caminho até o Cybathlon' }) ] },
   livre: { tamanhos:Object.keys(CR_TAMANHOS), estilo:{},
@@ -1677,8 +1948,8 @@ async function crEquipeUsa(reg){
   const m = (state.membros || []).find(x => x.registro === reg); if (!m) return;
   const lam = crLamina(), c = lam.campos = lam.campos || {};
   if (lam.layout === 'citacao'){ c.autor = m.nome; c.cargo = m.cargo || c.cargo; }
-  else if (lam.layout === 'barra'){ c.titulo = m.nome; c.sub = [m.cargo, 'NeuroDynamics'].filter(Boolean).join(' · '); }
-  else { c.titulo = m.nome; if ('sub' in c || lam.layout === 'pessoa') c.sub = [m.cargo, m.departamento].filter(Boolean).join(' · '); }
+  else if (lam.layout === 'barra'){ c.titulo = m.nome; c.sub = [m.cargo, 'NeuroDynamics'].filter(Boolean).join(', '); }
+  else { c.titulo = m.nome; if ('sub' in c || lam.layout === 'pessoa') c.sub = [m.cargo, m.departamento].filter(Boolean).join(', '); }
   fechaModal();
   const fontes = m.foto_url ? [m.foto_url] : ['jpg', 'jpeg', 'png', 'webp'].map(x => FOTOS_BASE + m.registro + '.' + x);
   if (CR_LAYOUTS[lam.layout].fotos?.some(f => f[0] === criador.equipeChave)){
@@ -1740,7 +2011,7 @@ async function crPaginaCriar(modelo){
   const rasc = crLeRascunho();
   criador.pub = null; criador.imgs = {}; criador.atual = 0; criador.sujo = false;
   criador.peca = crPecaNova(CR_MODELOS[modelo] ? modelo : (modelo ? 'livre' : 'livre'));
-  criador.titulo = '';
+  criador.titulo = ''; criador.legendaIA='';
   await crMonta();
   if (rasc?.peca && !modelo && Date.now() - rasc.quando < 14 * 864e5){
     $('#cr-rasc').innerHTML = `<div class="aviso-box info cr-rasc">Há uma peça que você começou em ${fmtDT(new Date(rasc.quando).toISOString())}
@@ -1777,6 +2048,7 @@ async function crMonta(){
       <a class="btn ghost mini" href="${pub ? '#/studio/' + esc(pub.codigo) : '#/studio'}">${ic('back')} ${pub ? esc(pub.codigo) : 'Studio'}</a>
       <input id="cr-nome" class="cr-nome" value="${esc(criador.titulo)}" placeholder="Nome da publicação — ex.: ${esc(nome)} de outubro"
         oninput="criador.titulo=this.value;criador.sujo=true;crGuardaRascunho()" aria-label="Nome da publicação">
+      <button class="btn mini" onclick="crBaixarREADME()">README para IA</button><label class="btn mini">Importar publicação<input type="file" accept=".json,.md" hidden onchange="crImportarIA(this.files[0])"></label>
       <span class="cr-meta">${pub ? `${esc(pub.codigo)}, versão ${pub.versao || 1}, ${esc(STUDIO_STATUS.find(s => s[0] === pub.status)?.[1] || '')}` : 'Peça nova'}</span>
       <div class="cr-acoes">
         <button class="btn ghost mini" onclick="crModalBaixar()">${ic('down')} Baixar</button>
@@ -1809,7 +2081,7 @@ let _crFontes = null;
 function crFontes(){
   if (_crFontes) return _crFontes;
   _crFontes = Promise.all(['800 100px Archivo', '700 100px Archivo', '600 100px Archivo', '500 100px Archivo',
-    '500 30px "IBM Plex Mono"', '600 30px "IBM Plex Mono"', '400 30px "IBM Plex Mono"'].map(f => document.fonts.load(f))).catch(() => {});
+    '400 30px "Instrument Sans"', '500 30px "Instrument Sans"', '500 30px "IBM Plex Mono"', '600 30px "IBM Plex Mono"', '400 30px "IBM Plex Mono"'].map(f => document.fonts.load(f))).catch(() => {});
   return _crFontes;
 }
 
@@ -2139,7 +2411,7 @@ async function crBaixar(qual){
       pdf.save(crNomeBase() + '.pdf');
     }
     fechaModal();
-  } catch(e){ msg(''); falha(e, 'Não deu para baixar'); }
+  } catch(e){ msg(''); falha(e, 'Não foi possível baixar'); }
 }
 
 /* ============================================================
@@ -2188,7 +2460,7 @@ async function crModalSalvar(){
   }
   await carregarModulo('studio');
   const c0 = crCamposJuntos();
-  let sug = ''; try { sug = crModelo(criador.peca.modelo).legenda?.(c0) || ''; } catch(e){}
+  let sug = criador.legendaIA || ''; try { sug = criador.legendaIA || crModelo(criador.peca.modelo).legenda?.(c0) || ''; } catch(e){}
   const tipo = studioTipo(criador.peca.modelo);
   const nome = criador.titulo || [crNomeModelo(criador.peca.modelo), String(c0.titulo || c0.veiculo || '').replace(/\*/g, '').split('\n')[0]].filter(Boolean).join(': ').slice(0, 80);
   abreModal(`<h3>${ic('check')} Salvar no quadro</h3>
@@ -2259,7 +2531,7 @@ async function crSalvar(mandar){
     location.hash = '#/studio/' + codigo;
   } catch(e){
     prog(''); libera();
-    toast('Não deu para salvar: ' + e.message + (/bucket|not found/i.test(e.message) ? ' — falta aplicar a migração v23?' : ''), true);
+    toast('Não foi possível salvar: ' + e.message + (/bucket|not found/i.test(e.message) ? ' — falta aplicar a migração v23?' : ''), true);
   }
 }
 
@@ -2307,3 +2579,41 @@ registrarBusca({
   buscar: (t) => filtrarSimples(STUDIO_TIPOS.filter(x => CR_MODELOS[x[0]]).map(x => ({
     titulo: 'Criar: ' + x[1], sub: STUDIO_PILARES[x[2]]?.[0] || 'Modelo', href: '#/studio/criar/' + x[0] })), t, 5)
 });
+
+/* Contrato de importação do Studio. JSON não executa código e não aceita URLs de fotos. */
+function crLerIA(texto){
+ if(typeof texto!=='string'||texto.length>2*1024*1024)throw new Error('Arquivo acima de 2 MB.');
+ const bloco=texto.match(/```json\s*([\s\S]*?)```/i);const d=JSON.parse(bloco?bloco[1]:texto);
+ if(!d||d.versao!==1||!Object.hasOwn(CR_MODELOS,d.modelo)||!Object.hasOwn(CR_TAMANHOS,d.tamanho)
+ ||!Object.hasOwn(CR_TEMAS,d.tema)||!Array.isArray(d.laminas)||d.laminas.length<1||d.laminas.length>20)
+ throw new Error('Modelo, tamanho, tema ou sequência inválidos.');
+ if(typeof d.titulo!=='string'||!d.titulo.trim()||d.titulo.length>200)throw new Error('Informe um título de até 200 caracteres.');
+ const p=crPecaNova(d.modelo,d.tamanho);p.tamanho=d.tamanho;p.estilo.tema=d.tema;
+ p.laminas=d.laminas.map(l=>{
+  if(!l||!Object.hasOwn(CR_LAYOUTS,l.layout)||!l.campos||typeof l.campos!=='object'||Array.isArray(l.campos))throw new Error('Leiaute inválido.');
+  const permitidos=new Set(CR_LAYOUTS[l.layout].campos.map(c=>c[0]));const campos={};
+  for(const [k,v] of Object.entries(l.campos)){
+   if(!permitidos.has(k)||typeof v!=='string'||v.length>10000)throw new Error('Campo inválido: '+k);
+   campos[k]=v;
+  }
+  return crL(l.layout,campos);
+ });
+ return {titulo:d.titulo.trim(),legenda:typeof d.legenda==='string'?d.legenda.slice(0,10000):'',peca:p};
+}
+async function crImportarIA(file){
+ try{if(!file)return;const d=crLerIA(await file.text());
+ if(criador.sujo&&!await confirma('Substituir a peça em edição pelo arquivo importado?','Importar'))return;
+ criador.pub=null;criador.legendaIA=d.legenda;criador.peca=d.peca;criador.titulo=d.titulo;criador.atual=0;criador.imgs={};criador.sujo=true;
+ await crMonta();toast('Publicação importada. Revise antes de salvar.');
+ }catch(e){falha(e,'Não foi possível importar a publicação');}
+}
+function crREADME(){
+ return '# Studio: publicações por IA\n\nProduza JSON ou Markdown com um bloco ```json. Não inclua URLs, scripts ou fotos. O arquivo é importado como rascunho para revisão.\n\n'+
+ 'Formato: {"versao":1,"titulo":"Título da publicação","modelo":"livre","tamanho":"feed","tema":"cortex","legenda":"Texto","laminas":[{"layout":"capa","campos":{"titulo":"Título","sub":"Subtítulo"}}]}.\n\n'+
+ 'Modelos: '+Object.keys(CR_MODELOS).join(', ')+'.\nTamanhos: '+Object.entries(CR_TAMANHOS).map(([k,t])=>`${k} (${t.w} × ${t.h})`).join(', ')+'.\nTemas: '+Object.keys(CR_TEMAS).join(', ')+'.\n\n'+
+ 'Leiautes e campos:\n'+Object.entries(CR_LAYOUTS).map(([k,l])=>'- '+k+': '+l.campos.map(c=>c[0]).join(', ')).join('\n')+
+ '\n\nLimites: 2 MB, de 1 a 20 lâminas, título de até 200 caracteres e campos de até 10.000 caracteres. Campos não listados são recusados.\n\n'+
+ 'Marca: uma família por peça; Synapse só como acento curto, nunca logo ou fundo. Gradientes e brilho apenas em Cortex. Archivo em títulos e rótulos, Instrument Sans no corpo; Plex Mono apenas para códigos e dados. Sem pílulas, emojis ou texto justificado. Use os arquivos branco e preto próprios do imagotipo.\n\n'+
+ 'Linguagem: português brasileiro, frases diretas e formais, caixa de frase, sem travessão nem ponto médio como separador. Não explique o óbvio. Nomes fictícios: Lucas Andrade, Beatriz Lacerda e Renata Brandão.\n';
+}
+function crBaixarREADME(){const blob=new Blob([crREADME()],{type:'text/markdown;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='studio-ia.md';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}

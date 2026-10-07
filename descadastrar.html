@@ -1,0 +1,9 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Descadastro | NeuroDynamics</title>
+<link rel="stylesheet" href="https://brand.neurodynamics.dev/design-system/tokens.css"><link rel="stylesheet" href="https://brand.neurodynamics.dev/design-system/neuro.css">
+<style>body{padding:24px;font:16px Arial,sans-serif;background:#050807;color:#E8EDEB}main{max-width:600px;margin:15vh auto}button{padding:12px;border-radius:11px;background:#CEDC00;color:#00352F;border:0;cursor:pointer}</style>
+<main><h1>Descadastro da newsletter</h1><p id="status">Confirme para interromper os boletins da comunidade.</p><button id="confirmar">Confirmar descadastro</button></main>
+<script>
+const token=new URLSearchParams(location.search).get('t'), status=document.getElementById('status'),botao=document.getElementById('confirmar');
+if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token||'')){status.textContent='Link inválido.';botao.hidden=true;}
+botao.onclick=async()=>{botao.disabled=true;try{const r=await fetch('https://rxzmkyjttzzpwtodqkve.supabase.co/rest/v1/rpc/comunidade_descadastrar',{method:'POST',headers:{'Content-Type':'application/json',apikey:'sb_publishable_MJFR-aaQqTS1BthxYJG2kg_5XGhs9wg'},body:JSON.stringify({p_token:token})});if(!r.ok)throw Error('Tente novamente.');status.textContent='Descadastro concluído.';botao.hidden=true;}catch(e){status.textContent='Não foi possível concluir o descadastro: '+e.message;botao.disabled=false;}};
+</script></html>

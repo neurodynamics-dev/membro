@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Validação de documentos · NeuroDynamics PD&amp;I</title>
+<title>Validação de documentos, NeuroDynamics PD&amp;I</title>
 <meta name="description" content="Conferência da autenticidade dos documentos emitidos eletronicamente pelo SOMA, o sistema de gestão da NeuroDynamics PD&amp;I.">
 <meta name="referrer" content="no-referrer">
 <meta name="color-scheme" content="light">
@@ -22,14 +22,14 @@
 -->
 <style>
 :root{
-  --tinta:#1d1d1f; --texto:#303034; --cinza:#5e5e63; --claro:#8a8a8f;
-  --linha:#b9b9be; --linha2:#d6d6da; --cab:#d9d9d9; --fundo:#f4f4f5; --papel:#ffffff;
+  --tinta:#1d1d1f; --texto:#2E3533; --cinza:#616C68; --claro:#616C68;
+  --linha:#C4CCC9; --linha2:#C4CCC9; --cab:#E8EDEB; --fundo:#E8EDEB; --papel:#ffffff;
   --ok:#1f5a34; --ok-f:#e9f2ec; --ok-b:#8fb59c;
   --bad:#8b1d1d; --bad-f:#f7eaea; --bad-b:#c99a9a;
   --warn:#6a4b00; --warn-f:#f7f1df; --warn-b:#cdb77a;
-  --foco:#1f4fa3;
-  --f:Arial, "Helvetica Neue", Helvetica, "Liberation Sans", sans-serif;
-  --fm:"Courier New", Courier, "Liberation Mono", monospace;
+  --foco:#00594F;
+  --fd:'Archivo',sans-serif; --f:'Instrument Sans', "Helvetica Neue", Helvetica, "Liberation Sans", sans-serif;
+  --fm:'IBM Plex Mono',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -61,7 +61,7 @@ main.w{flex:1;padding-top:26px;padding-bottom:40px}
 @media (max-width:640px){.form{grid-template-columns:1fr}}
 .campo label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cinza);margin-bottom:5px}
 .campo label span{font-weight:400;text-transform:none;letter-spacing:0}
-.campo input{width:100%;font-family:var(--fm);font-size:18px;font-weight:700;letter-spacing:.08em;color:var(--tinta);
+.campo input{width:100%;font-family:var(--fd);font-size:18px;font-weight:700;letter-spacing:.08em;color:var(--tinta);
   background:#fff;border:1px solid var(--linha);border-radius:0;padding:9px 10px;text-transform:uppercase}
 .campo input::placeholder{color:#b0b0b4;font-weight:400;letter-spacing:.04em}
 .campo input:focus{border-color:var(--foco);outline:1px solid var(--foco)}
@@ -91,7 +91,7 @@ button.sec:hover,.botao.sec:hover{background:var(--fundo)}
 @media (max-width:560px){.ficha th,.ficha td{display:block;width:100%;border-top:0}.ficha tr:first-child th{border-top:1px solid var(--linha)}}
 .declarado{margin-top:16px}
 .declarado h4,.tabela-t{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cinza);margin:16px 0 6px}
-.declarado blockquote{border-left:3px solid var(--linha);padding:4px 0 4px 14px;font-size:15px;line-height:1.65;text-align:justify;color:var(--tinta)}
+.declarado blockquote{border-left:3px solid var(--linha);padding:4px 0 4px 14px;font-size:15px;line-height:1.65;text-align:left;color:var(--tinta)}
 .tabela{width:100%;border-collapse:collapse;font-size:13px}
 .tabela th{background:var(--cab);font-weight:700;text-align:left;padding:6px 8px;border:1px solid var(--linha)}
 .tabela td{padding:6px 8px;border:1px solid var(--linha);vertical-align:top}
@@ -114,10 +114,12 @@ footer b{color:var(--tinta)}
   main{padding:10px 0}
   a{color:inherit;text-decoration:none}
 }
+input,button{border-radius:11px}h1,h2,h3,label,dt{font-family:var(--fd)}
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="faixa"><div class="w"><span>NeuroDynamics PD&amp;I · Instituição de Ciência e Tecnologia · UFMG</span>
+<div class="faixa"><div class="w"><span>NeuroDynamics PD&amp;I, Instituição de Ciência e Tecnologia, UFMG</span>
   <a href="https://neurodynamics.dev" rel="noopener">neurodynamics.dev</a></div></div>
 <header class="topo"><div class="w">
   <img class="logo" id="logo" alt="NeuroDynamics" src="https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png"
@@ -131,7 +133,7 @@ footer b{color:var(--tinta)}
   <section class="bloco" id="f-bloco">
     <h2>1. Consultar documento</h2>
     <div class="corpo">
-      <p>Informe o <b>código verificador</b> impresso no rodapé do documento — ou leia o QR Code com a câmera do celular, que
+      <p>Informe o <b>código verificador</b> impresso no rodapé do documento, ou leia o QR Code com a câmera do celular, que
         abre esta página com o código já preenchido. Para a conferência completa, informe também o <b>código de controle</b>.</p>
       <form class="form" id="f" autocomplete="off" novalidate>
         <div class="campo"><label for="c">Código verificador</label>
@@ -159,7 +161,7 @@ footer b{color:var(--tinta)}
         <li>Esta página mostra o que foi impresso no documento na data da emissão. Qualquer diferença entre o papel e a tela indica
           que o documento foi alterado depois de emitido.</li>
         <li>O código de controle é calculado sobre o conteúdo do documento: se o informado não confere, o documento não é o que foi emitido.</li>
-        <li>Um documento pode ser revogado depois de emitido — por exemplo, quando o registro que o originou é corrigido. A consulta
+        <li>Um documento pode ser revogado depois de emitido, por exemplo quando o registro que o originou é corrigido. A consulta
           informa a revogação e o motivo.</li>
       </ol>
       <p class="pq">Por proteção de dados pessoais (Lei nº 13.709/2018), o CPF aparece parcialmente mascarado.
@@ -170,8 +172,8 @@ footer b{color:var(--tinta)}
 </main>
 
 <footer><div class="w">
-  <span><b>NeuroDynamics PD&amp;I</b> · Laboratório de Engenharia Biomédica e Laboratório de Bioengenharia · Escola de Engenharia da
-    Universidade Federal de Minas Gerais · Belo Horizonte, MG</span>
+  <span><b>NeuroDynamics PD&amp;I</b>, Laboratório de Engenharia Biomédica e Laboratório de Bioengenharia, Escola de Engenharia da
+    Universidade Federal de Minas Gerais, Belo Horizonte, MG</span>
   <span class="links">Dúvidas sobre um documento: procure quem o apresentou, ou a NeuroDynamics PD&amp;I em
     <a href="https://neurodynamics.dev" rel="noopener">neurodynamics.dev</a>.</span>
 </div></footer>
@@ -271,7 +273,7 @@ function desenhar(d, cod, k){
     return;
   }
   if (d.status === 'nao_encontrado'){
-    box.innerHTML = `<div class="selo bad"><span class="marca" aria-hidden="true">✕</span><div><h3>Nenhum documento com este código</h3>
+    box.innerHTML = `<div class="selo bad"><span class="marca" aria-hidden="true">×</span><div><h3>Nenhum documento com este código</h3>
       <p>O SOMA não emitiu documento com o código verificador <b>${esc(cod)}</b>. Confira a digitação — as letras I, L, O e U não são
         usadas. Se o código está correto, o documento apresentado não é autêntico.</p></div></div>`;
     impresso(cod, 'nenhum documento encontrado');
@@ -282,20 +284,20 @@ function desenhar(d, cod, k){
   const confere = k ? (k === String(d.controle || '').toUpperCase()) : null;
   const dd = d.dados || {}, ev = dd.evento || {};
   const selo = rev
-    ? `<div class="selo bad"><span class="marca" aria-hidden="true">✕</span><div><h3>Documento revogado</h3>
+    ? `<div class="selo bad"><span class="marca" aria-hidden="true">×</span><div><h3>Documento revogado</h3>
         <p>Este documento foi emitido pelo SOMA, mas foi <b>revogado</b> em ${esc(momento(d.revogado_em))}${d.revogado_motivo
           ? `. Motivo: ${esc(d.revogado_motivo)}` : ''}. Ele não vale mais.</p></div></div>`
     : confere === false
-      ? `<div class="selo bad"><span class="marca" aria-hidden="true">✕</span><div><h3>O código de controle não confere</h3>
+      ? `<div class="selo bad"><span class="marca" aria-hidden="true">×</span><div><h3>O código de controle não confere</h3>
           <p>Existe um documento emitido com este código verificador, mas o código de controle informado (<b>${esc(k)}</b>) não é o
-            dele. O documento apresentado foi alterado — compare-o com os dados abaixo.</p></div></div>`
+            dele. O documento apresentado foi alterado. Compare-o com os dados abaixo.</p></div></div>`
       : `<div class="selo ok"><span class="marca" aria-hidden="true">✓</span><div><h3>Documento autêntico</h3>
           <p>Documento emitido pelo SOMA e válido${confere ? ', com o código de controle conferido' : ''}. Confira se o que está
             impresso corresponde ao que se vê abaixo.</p></div></div>`;
   const linhas = [
-    ['Documento', `<span class="mono">${esc(d.documento)}</span>${d.revisao ? ' · Rev. ' + esc(d.revisao) : ''}`],
+    ['Documento', `<span class="mono">${esc(d.documento)}</span>${d.revisao ? ' Rev. ' + esc(d.revisao) : ''}`],
     ['Espécie', esc(d.titulo || '')],
-    ['Emitente', `NeuroDynamics PD&amp;I${d.emissor ? ' — ' + esc(d.emissor) : ''}`],
+    ['Emitente', `NeuroDynamics PD&amp;I${d.emissor ? ', ' + esc(d.emissor) : ''}`],
     [d.tipo === 'participacao' ? 'Participante' : 'Titular', esc(String(d.titular || dd.nome || '').toUpperCase())],
     ...(d.tipo === 'vinculo' && dd.cpf ? [['CPF', `<span class="mono">${esc(dd.cpf)}</span>`]] : []),
     ...(d.tipo === 'participacao' ? [['Evento', `${esc(ev.nome || '')}${ev.codigo ? ` <span class="mono">(${esc(ev.codigo)})</span>` : ''}`],
@@ -303,7 +305,7 @@ function desenhar(d, cod, k){
     ['Emitido em', esc(momento(d.emitido_em))],
     ['Código verificador', `<span class="mono">${esc(d.codigo)}</span>`],
     ['Código de controle', `<span class="mono">${esc(d.controle)}</span>${confere === true ? '<span class="confere ok">✓ confere com o informado</span>'
-      : confere === false ? `<span class="confere bad">✕ não confere com o informado (${esc(k)})</span>` : ''}`],
+      : confere === false ? `<span class="confere bad">× não confere com o informado (${esc(k)})</span>` : ''}`],
     ['Situação', rev ? `<b style="color:var(--bad)">Revogado</b> em ${esc(momento(d.revogado_em))}` : '<b style="color:var(--ok)">Válido</b>']
   ];
   box.innerHTML = `${selo}

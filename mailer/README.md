@@ -36,3 +36,7 @@ gere as variantes que faltam (senão a imagem quebra no e-mail):
    repositório com `fill` na nova cor, em 63×63;
 3. salvar aqui seguindo a nomenclatura acima e fazer o merge — o GitHub Pages
    publica junto com o site.
+
+## 2.18.0
+
+Os remetentes agora usam as famílias Cortex, Ion, Lúmen, Retina e Neuron. Leadership usa Cortex escuro. As imagens oficiais branca e preta foram atualizadas; ícones sociais são neutros. Os arquivos de cores anteriores permanecem para mensagens já emitidas. Não usar logo Synapse em novas peças.

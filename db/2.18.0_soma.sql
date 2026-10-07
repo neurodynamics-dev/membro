@@ -1250,3 +1250,549 @@ begin
 end $$;
 
 select public.conta_ativa_travar();
+
+-- Convites e lembretes só saem para membros ativos; externos continuam válidos.
+create or replace function public.agenda_envios_lote(p_limite integer default 100)
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+begin
+  insert into agenda_envios (evento_id, tipo, chave, para_registro, para_email, para_nome, token, resposta, assunto, dados)
+  select e.id, 'lembrete', l.m || '@' || e.data, p.registro,
+         coalesce(nullif(mb.email_nro,''), nullif(mb.email_pessoal,'')), mb.nome, p.token, p.resposta,
+         'Lembrete: ' || e.titulo || ' · ' || public.agenda_quando(e.data, e.data_fim, e.hora_inicio, e.hora_fim),
+         public.agenda_dados(e.id) || jsonb_build_object('minutos', l.m)
+    from eventos e
+    cross join lateral unnest(e.lembretes) l(m)
+    join evento_participantes p on p.evento_id = e.id and coalesce(p.resposta,'pendente') <> 'nao'
+    join membros mb on mb.registro = p.registro
+    left join agenda_preferencias ap on ap.registro = p.registro
+   where coalesce(e.status,'') <> 'Cancelado'
+     and e.data between current_date - 1 and current_date + 30
+     and public.agenda_inicio(e.data, e.hora_inicio) - make_interval(mins => l.m) <= now()
+     and public.agenda_inicio(e.data, e.hora_inicio) > now()
+     and public.agenda_inicio(e.data, e.hora_inicio) - make_interval(mins => l.m) >= coalesce(p.convidado_em, '-infinity')
+     and coalesce(ap.emails, true)
+     and mb.status in ('Ativo','Em pausa / avaliação')
+     and coalesce(nullif(mb.email_nro,''), nullif(mb.email_pessoal,'')) is not null
+  on conflict do nothing;
+
+  insert into agenda_envios (evento_id, tipo, chave, para_email, para_nome, token, resposta, assunto, dados)
+  select e.id, 'lembrete', l.m || '@' || e.data, x.email, x.nome, x.token, x.resposta,
+         'Lembrete: ' || e.titulo || ' · ' || public.agenda_quando(e.data, e.data_fim, e.hora_inicio, e.hora_fim),
+         public.agenda_dados(e.id) || jsonb_build_object('minutos', l.m)
+    from eventos e
+    cross join lateral unnest(e.lembretes) l(m)
+    join evento_externos x on x.evento_id = e.id and x.resposta <> 'nao'
+   where coalesce(e.status,'') <> 'Cancelado'
+     and e.data between current_date - 1 and current_date + 30
+     and public.agenda_inicio(e.data, e.hora_inicio) - make_interval(mins => l.m) <= now()
+     and public.agenda_inicio(e.data, e.hora_inicio) > now()
+     and public.agenda_inicio(e.data, e.hora_inicio) - make_interval(mins => l.m) >= x.convidado_em
+  on conflict do nothing;
+
+  return coalesce((select jsonb_agg(jsonb_build_object(
+      'id', v.id, 'tipo', v.tipo, 'para_nome', v.para_nome, 'para_email', v.para_email,
+      'token', v.token, 'resposta', v.resposta, 'membro', v.para_registro is not null,
+      'assunto', v.assunto, 'dados', v.dados) order by v.id)
+    from (select * from agenda_envios a where enviado_em is null and tentativas < 5
+             and (a.para_registro is null or exists (select 1 from membros m
+               where m.registro = a.para_registro and m.status in ('Ativo','Em pausa / avaliação')))
+           order by id limit greatest(coalesce(p_limite,100),1)) v), '[]'::jsonb);
+end $$;
+
+
+-- Reporte semanal. Rascunhos privados por frente; feed publicado para a equipe.
+create table if not exists public.reporte_frentes (
+ id uuid primary key default gen_random_uuid(), grupo_id integer not null references grupos(id),
+ responsavel integer not null references membros(registro), ativo boolean not null default true,
+ unique(grupo_id,responsavel));
+create table if not exists public.reporte_config (
+ id boolean primary key default true check(id), dia_prazo integer not null default 5 check(dia_prazo between 0 and 6),
+ hora_prazo time not null default '18:00', dia_reuniao integer not null default 0 check(dia_reuniao between 0 and 6),
+ hora_reuniao time not null default '09:00');
+insert into reporte_config(id) values(true) on conflict do nothing;
+create table if not exists public.reporte_ciclos (
+ id uuid primary key default gen_random_uuid(), semana date unique not null,
+ prazo timestamptz not null, reuniao_em timestamptz not null, fechado boolean not null default false);
+create table if not exists public.reportes (
+ id uuid primary key default gen_random_uuid(), ciclo_id uuid not null references reporte_ciclos(id),
+ frente_id uuid not null references reporte_frentes(id), autor integer not null references membros(registro),
+ apontamentos jsonb not null default '[]', escalonamentos jsonb not null default '[]',
+ etapa integer not null default 1 check(etapa between 1 and 3), versao integer not null default 1,
+ enviado_em timestamptz, atualizado_em timestamptz not null default now(), unique(ciclo_id,frente_id));
+create table if not exists public.feed_itens (
+ id uuid primary key default gen_random_uuid(), reporte_id uuid references reportes(id),
+ autor integer not null references membros(registro), titulo text not null check(length(trim(titulo)) between 1 and 200),
+ subtitulo text not null check(length(trim(subtitulo)) between 1 and 400), texto text not null default '',
+ imagem_path text, publicado_em timestamptz, oculto boolean not null default false);
+create index if not exists feed_publicado on feed_itens(publicado_em desc) where not oculto;
+create or replace function public.reporte_gestor() returns boolean language sql stable security definer
+set search_path=public as $$ select conta_ativa() and (tenho_papel('lideranca') or papel_atual()='admin') $$;
+create or replace function public.reporte_pode(p_frente uuid) returns boolean language sql stable security definer
+set search_path=public as $$ select reporte_gestor() and exists(select 1 from reporte_frentes f join grupos g on g.id=f.grupo_id
+ where f.id=p_frente and f.ativo and g.ativo and f.responsavel=any(g.responsaveis) and (f.responsavel=portal_registro_atual() or papel_atual()='admin')) $$;
+
+-- Ciclos são materializados na abertura do painel e também podem ser chamados pelo cron.
+create or replace function public.reporte_ciclo_materializar() returns uuid language plpgsql volatile security definer
+set search_path=public as $$
+declare d date := date_trunc('week', now() at time zone 'America/Sao_Paulo')::date;
+ c reporte_config; v uuid; novo boolean;
+begin
+ select * into c from reporte_config where id;
+ insert into reporte_ciclos(semana,prazo,reuniao_em)
+ values(d, (d+c.dia_prazo+c.hora_prazo) at time zone 'America/Sao_Paulo',
+ ((d+7)+c.dia_reuniao+c.hora_reuniao) at time zone 'America/Sao_Paulo') on conflict do nothing;
+ novo:=found;
+ select id into v from reporte_ciclos where semana=d;
+ insert into reporte_frentes(grupo_id,responsavel)
+ select g.id,r from grupos g cross join lateral unnest(g.responsaveis) r
+ join membros m on m.registro=r where g.ativo and m.status in ('Ativo','Em pausa / avaliação')
+ and exists(select 1 from grupo_papeis gp join grupos gl on gl.id=gp.grupo_id where gp.papel='lideranca' and gl.ativo and esta_no_grupo(gl.id,r))
+ on conflict do nothing;
+ if novo then perform notificar(array(select distinct responsavel from reporte_frentes f join grupos g on g.id=f.grupo_id where f.ativo and g.ativo and f.responsavel=any(g.responsaveis)), 'reporte_aberto','Reporte semanal disponível','Preencha as três etapas até o prazo do ciclo.','#/equipe/reporte');end if;
+ return v;
+end $$;
+revoke execute on function reporte_ciclo_materializar() from public,anon,authenticated;
+create or replace function public.reporte_ciclo_atual() returns uuid language plpgsql security definer set search_path=public as $$begin
+ if not reporte_gestor() then return null;end if;return reporte_ciclo_materializar();end $$;
+create or replace function public.reporte_painel(p_ciclo uuid default null) returns jsonb language plpgsql security definer
+set search_path=public as $$
+declare v uuid;
+begin
+ if not reporte_gestor() then return jsonb_build_object('status','sem_permissao'); end if;
+ v:=coalesce(p_ciclo,reporte_ciclo_atual());
+ return jsonb_build_object('status','ok','ciclo',(select to_jsonb(c) from reporte_ciclos c where id=v),
+ 'config',(select to_jsonb(c) from reporte_config c where id),
+ 'frentes',coalesce((select jsonb_agg(jsonb_build_object('id',f.id,'grupo_id',g.id,'nome',g.nome,
+ 'responsavel',f.responsavel,'responsavel_nome',m.nome,'reporte_id',r.id,'enviado_em',r.enviado_em))
+ from reporte_frentes f join grupos g on g.id=f.grupo_id join membros m on m.registro=f.responsavel
+ left join reportes r on r.frente_id=f.id and r.ciclo_id=v
+ where reporte_pode(f.id)
+ and m.status in ('Ativo','Em pausa / avaliação')), '[]'));
+end $$;
+create or replace function public.reporte_configurar(p jsonb) returns jsonb language plpgsql security definer
+set search_path=public as $$
+begin
+ if not reporte_gestor() then return jsonb_build_object('status','sem_permissao'); end if;
+ update reporte_config set dia_prazo=(p->>'dia_prazo')::integer,hora_prazo=(p->>'hora_prazo')::time,
+ dia_reuniao=(p->>'dia_reuniao')::integer,hora_reuniao=(p->>'hora_reuniao')::time where id;
+ return jsonb_build_object('status','ok');
+end $$;
+create or replace function public.reporte_abrir(p_ciclo uuid,p_frente uuid) returns jsonb language plpgsql security definer
+set search_path=public as $$
+declare r reportes; g grupos; c reporte_ciclos;
+begin
+ if not reporte_pode(p_frente) then return jsonb_build_object('status','sem_permissao'); end if;
+ select * into c from reporte_ciclos where id=p_ciclo;
+ if not found then return jsonb_build_object('status','nao_encontrado'); end if;
+ select g0.* into g from grupos g0 join reporte_frentes f on f.grupo_id=g0.id where f.id=p_frente;
+ insert into reportes(ciclo_id,frente_id,autor,apontamentos)
+ select p_ciclo,p_frente,portal_registro_atual(),coalesce(jsonb_agg(jsonb_build_object('registro',m.registro,
+ 'assiduidade','SUFICIENTE','entregas','SUFICIENTE','sinalizado',false,'justificativa','')), '[]')
+ from membros m where m.status in ('Ativo','Em pausa / avaliação') and esta_no_grupo(g.id,m.registro)
+ and m.registro<>(select responsavel from reporte_frentes where id=p_frente)
+ on conflict(ciclo_id,frente_id) do nothing;
+ select * into r from reportes where ciclo_id=p_ciclo and frente_id=p_frente;
+ return jsonb_build_object('status','ok','reporte',to_jsonb(r),'ciclo',to_jsonb(c),'grupo',to_jsonb(g),
+ 'feed',coalesce((select jsonb_agg(to_jsonb(f)) from feed_itens f where reporte_id=r.id),'[]'));
+end $$;
+create or replace function public.reporte_salvar(p jsonb) returns jsonb language plpgsql security definer
+set search_path=public as $$
+declare r reportes; x jsonb; f uuid; g integer; n integer;
+begin
+ select * into r from reportes where id=(p->>'id')::uuid for update;
+ if not found or not reporte_pode(r.frente_id) then return jsonb_build_object('status','sem_permissao'); end if;
+ if r.enviado_em is not null or exists(select 1 from reporte_ciclos where id=r.ciclo_id and (fechado or prazo<now()))
+ then return jsonb_build_object('status','encerrado'); end if;
+ if (p->>'versao')::integer is distinct from r.versao then return jsonb_build_object('status','conflito'); end if;
+ if jsonb_typeof(p->'apontamentos') is distinct from 'array' or jsonb_typeof(p->'escalonamentos') is distinct from 'array'
+ or jsonb_typeof(p->'feed') is distinct from 'array' then return jsonb_build_object('status','invalido'); end if;
+ select grupo_id into g from reporte_frentes where id=r.frente_id;
+ for x in select * from jsonb_array_elements(p->'apontamentos') loop
+  if not exists(select 1 from membros where registro=(x->>'registro')::integer and status in ('Ativo','Em pausa / avaliação'))
+   or not esta_no_grupo(g,(x->>'registro')::integer)
+   or coalesce(x->>'assiduidade','') not in ('SUFICIENTE','INSUFICIENTE') or coalesce(x->>'entregas','') not in ('SUFICIENTE','INSUFICIENTE')
+   or (coalesce((x->>'sinalizado')::boolean,false) and length(trim(coalesce(x->>'justificativa','')))=0)
+   then return jsonb_build_object('status','invalido'); end if;
+ end loop;
+ if (select count(*)<>count(distinct elemento->>'registro') from jsonb_array_elements(p->'apontamentos') elemento)
+ then return jsonb_build_object('status','invalido'); end if;
+ for x in select * from jsonb_array_elements(p->'escalonamentos') loop
+  if length(trim(coalesce(x->>'texto','')))=0 then return jsonb_build_object('status','invalido'); end if;
+  if nullif(x->>'atividade_id','') is not null and not exists(select 1 from atividades a
+   where a.id=(x->>'atividade_id')::uuid and public.posso_ver_grupo(a.grupo_id))
+   then return jsonb_build_object('status','sem_permissao'); end if;
+ end loop;
+ for x in select * from jsonb_array_elements(p->'feed') loop
+  if length(trim(coalesce(x->>'titulo',''))) not between 1 and 200 or length(trim(coalesce(x->>'subtitulo',''))) not between 1 and 400
+   then return jsonb_build_object('status','invalido'); end if;
+  if nullif(x->>'imagem_path','') is not null and split_part(x->>'imagem_path','/',1)<>r.id::text
+   then return jsonb_build_object('status','invalido'); end if;
+ end loop;
+ update reportes set apontamentos=p->'apontamentos',escalonamentos=p->'escalonamentos',etapa=(p->>'etapa')::integer,
+ versao=versao+1,atualizado_em=now() where id=r.id returning versao into n;
+ delete from feed_itens where reporte_id=r.id and publicado_em is null;
+ for x in select * from jsonb_array_elements(p->'feed') loop
+  insert into feed_itens(reporte_id,autor,titulo,subtitulo,texto,imagem_path) values(r.id,r.autor,
+   trim(x->>'titulo'),trim(x->>'subtitulo'),coalesce(x->>'texto',''),nullif(x->>'imagem_path',''));
+ end loop;
+ return jsonb_build_object('status','ok','versao',n);
+end $$;
+alter table atividades drop constraint if exists atividades_origem_tipo_check;
+alter table atividades add constraint atividades_origem_tipo_check
+ check(origem_tipo is null or origem_tipo in ('solicitacao','apontamento','ocorrencia','reporte','newsletter'));
+create or replace function public.reporte_enviar(p_id uuid,p_versao integer) returns jsonb language plpgsql security definer
+set search_path=public as $$
+declare r reportes; x jsonb; g text;
+begin
+ select * into r from reportes where id=p_id for update;
+ if not found or not reporte_pode(r.frente_id) then return jsonb_build_object('status','sem_permissao'); end if;
+ if r.enviado_em is not null then return jsonb_build_object('status','ok'); end if;
+ if r.versao<>p_versao then return jsonb_build_object('status','conflito'); end if;
+ if r.etapa<>3 or exists(select 1 from reporte_ciclos where id=r.ciclo_id and (fechado or prazo<now()))
+ then return jsonb_build_object('status','encerrado'); end if;
+ if exists(select 1 from membros m join reporte_frentes f on f.id=r.frente_id
+ where m.status in ('Ativo','Em pausa / avaliação') and m.registro<>f.responsavel and esta_no_grupo(f.grupo_id,m.registro)
+ and not exists(select 1 from jsonb_array_elements(r.apontamentos) a where (a->>'registro')::integer=m.registro))
+ then return jsonb_build_object('status','incompleto');end if;
+ select g0.nome into g from grupos g0 join reporte_frentes f on f.grupo_id=g0.id where f.id=r.frente_id;
+ for x in select * from jsonb_array_elements(r.apontamentos) loop
+  if (x->>'sinalizado')::boolean then
+   perform atividade_de_origem('reporte',r.id::text||':'||(x->>'registro'),
+   'Reporte: '||(select nome from membros where registro=(x->>'registro')::integer),
+   g||E'\n'||(x->>'justificativa'),'media',true);
+  end if;
+ end loop;
+ update reportes set enviado_em=now(),versao=versao+1 where id=r.id;
+ update feed_itens set publicado_em=now() where reporte_id=r.id and publicado_em is null;
+ return jsonb_build_object('status','ok');
+end $$;
+drop function if exists public.feed_lista(timestamptz,integer);
+create or replace function public.feed_lista(p_antes timestamptz default null,p_limite integer default 20,p_id uuid default null)
+returns jsonb language sql stable security definer set search_path=public as $$
+ select case when not conta_ativa() then '[]'::jsonb else coalesce((select jsonb_agg(to_jsonb(x)) from
+ (select f.id,f.titulo,f.subtitulo,f.texto,f.imagem_path,f.publicado_em,m.nome as autor
+ from feed_itens f join membros m on m.registro=f.autor where not f.oculto and f.publicado_em is not null
+ and (p_antes is null or f.publicado_em<p_antes or (p_id is not null and f.publicado_em=p_antes and f.id<p_id)) order by f.publicado_em desc,f.id desc limit least(greatest(p_limite,1),50)) x),'[]') end $$;
+create or replace function public.feed_ocultar(p_id uuid) returns jsonb language plpgsql security definer
+set search_path=public as $$ begin
+ if not conta_ativa() or not (papel_atual()='admin' or tenho_papel('pessoal')) then return jsonb_build_object('status','sem_permissao'); end if;
+ update feed_itens set oculto=true where id=p_id; return jsonb_build_object('status','ok'); end $$;
+create or replace function public.reporte_unificado(p_ciclo uuid) returns jsonb language plpgsql security definer
+set search_path=public as $$ begin
+ if papel_atual()<>'admin' then return jsonb_build_object('status','sem_permissao'); end if;
+ return jsonb_build_object('status','ok','painel',reporte_painel(p_ciclo),
+ 'reportes',coalesce((select jsonb_agg(to_jsonb(r)) from reportes r where ciclo_id=p_ciclo),'[]'),
+ 'atrasados',coalesce((select jsonb_agg(to_jsonb(a)) from atividades a where not arquivada and status<>'concluida' and prazo<current_date),'[]'),
+ 'replanejados',coalesce((select jsonb_agg(to_jsonb(a)) from atividades a where not arquivada and
+ (select count(*) from atividade_log l where l.atividade_id=a.id and l.tipo='prazo' and l.de is not null)>2),'[]'),
+ 'ocorrencias',coalesce((select jsonb_agg(to_jsonb(o)) from ocorrencias o join reporte_ciclos c on c.id=p_ciclo
+ where o.data between c.semana and c.semana+6),'[]'));
+end $$;
+-- Tabelas sem escrita direta. Rascunhos e avaliações não são dados do feed.
+do $$ declare t text; f text; begin
+ foreach t in array array['reporte_frentes','reporte_config','reporte_ciclos','reportes','feed_itens'] loop
+ execute format('alter table %I enable row level security',t);
+ execute format('revoke all on %I from anon, authenticated',t);
+ end loop;
+ foreach f in array array['reporte_gestor()','reporte_pode(uuid)','reporte_ciclo_atual()',
+ 'reporte_painel(uuid)','reporte_configurar(jsonb)','reporte_abrir(uuid,uuid)','reporte_salvar(jsonb)',
+ 'reporte_enviar(uuid,integer)','feed_lista(timestamptz,integer,uuid)','feed_ocultar(uuid)','reporte_unificado(uuid)'] loop
+ execute 'revoke execute on function public.'||f||' from public, anon';
+ execute 'grant execute on function public.'||f||' to authenticated';
+ end loop;
+end $$;
+insert into storage.buckets(id,name,public) values('feed','feed',false) on conflict(id) do nothing;
+create or replace function public.feed_imagem_pode(p_name text,p_escrita boolean default false) returns boolean
+language sql stable security definer set search_path=public as $$
+ select conta_ativa() and exists(select 1 from reportes r where r.id::text=split_part(p_name,'/',1)
+ and ((reporte_pode(r.frente_id) and r.enviado_em is null)
+ or (not p_escrita and exists(select 1 from feed_itens f where f.reporte_id=r.id and f.imagem_path=p_name and f.publicado_em is not null and not f.oculto)))) $$;
+revoke execute on function feed_imagem_pode(text,boolean) from public,anon;
+grant execute on function feed_imagem_pode(text,boolean) to authenticated;
+drop policy if exists feed_ler on storage.objects;
+create policy feed_ler on storage.objects for select to authenticated using(bucket_id='feed' and feed_imagem_pode(name));
+drop policy if exists feed_inserir on storage.objects;
+create policy feed_inserir on storage.objects for insert to authenticated with check(bucket_id='feed' and feed_imagem_pode(name,true));
+select public.conta_ativa_travar();
+
+-- Newsletter: conteúdo imutável após aprovação, três votos distintos da liderança.
+create table if not exists public.newsletters (
+ id uuid primary key default gen_random_uuid(), tipo text not null check(tipo in ('semanal','mensal')),
+ periodo_ini date not null, periodo_fim date not null check(periodo_fim>=periodo_ini),
+ assunto text not null, itens jsonb not null default '[]', status text not null default 'em_aprovacao'
+ check(status in ('em_aprovacao','aprovada','enviada','cancelada')), versao integer not null default 1,
+ card_id uuid references atividades(id), criado_em timestamptz not null default now(), unique(tipo,periodo_ini));
+create table if not exists public.newsletter_aprovacoes (
+ newsletter_id uuid not null references newsletters(id), registro integer not null references membros(registro),
+ versao integer not null, decisao boolean not null, comentario text, em timestamptz not null default now(),
+ primary key(newsletter_id,registro));
+create table if not exists public.comunidade_inscritos (
+ id uuid primary key default gen_random_uuid(), email text unique not null check(email=lower(trim(email)) and email ~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'),
+ nome text not null, origem text not null, token uuid unique not null default gen_random_uuid(),
+ inscrito_em timestamptz not null default now(), descadastrado_em timestamptz);
+create table if not exists public.newsletter_envios (
+ id uuid primary key default gen_random_uuid(), newsletter_id uuid not null references newsletters(id),
+ registro integer references membros(registro), comunidade_id uuid references comunidade_inscritos(id),
+ email text not null, nome text not null, enviado_em timestamptz, tentativas integer not null default 0,
+ erro text, unique(newsletter_id,email), check((registro is null)<>(comunidade_id is null)));
+create or replace function public.newsletter_lider(p_reg integer) returns boolean language sql stable security definer
+set search_path=public as $$ select exists(select 1 from membros m where m.registro=p_reg
+ and m.status in ('Ativo','Em pausa / avaliação') and exists(select 1 from grupo_papeis gp join grupos g on g.id=gp.grupo_id
+ where gp.papel='lideranca' and g.ativo and esta_no_grupo(g.id,m.registro))) $$;
+create or replace function public.newsletter_criar(p_tipo text,p_inicio date,p_fim date) returns uuid
+language plpgsql security definer set search_path=public as $$
+declare v uuid; g integer; seq0 integer; card uuid; titulo0 text; itens0 jsonb;
+begin
+ select id into v from newsletters where tipo=p_tipo and periodo_ini=p_inicio;
+ if v is not null then return v; end if;
+ select coalesce(jsonb_agg(jsonb_build_object('titulo',titulo,'subtitulo',subtitulo,'texto',texto,'id',id)
+ order by publicado_em),'[]') into itens0 from feed_itens where publicado_em is not null and not oculto
+ and (publicado_em at time zone 'America/Sao_Paulo')::date between p_inicio and p_fim;
+ if itens0='[]'::jsonb then return null; end if;
+ titulo0:='Boletim '||p_tipo||': '||to_char(p_inicio,'DD/MM/YYYY');
+ insert into newsletters(tipo,periodo_ini,periodo_fim,assunto,itens) values(p_tipo,p_inicio,p_fim,titulo0,itens0)
+ on conflict(tipo,periodo_ini) do nothing returning id into v;
+ if v is null then select id into v from newsletters where tipo=p_tipo and periodo_ini=p_inicio;return v;end if;
+ select gp.grupo_id into g from grupo_papeis gp join grupos g0 on g0.id=gp.grupo_id where gp.papel='lideranca' and g0.ativo order by g0.id limit 1;
+ if g is null then raise exception 'Grupo de liderança não configurado.';end if;
+ perform pg_advisory_xact_lock(hashtext('atividade_seq'),g);
+ select coalesce(max(seq),0)+1 into seq0 from atividades where grupo_id=g;
+ insert into atividades(codigo,grupo_id,seq,titulo,descricao,origem_tipo,origem_id)
+ select prefixo||'-'||seq0,g,seq0,titulo0,'Revisar o boletim: #/equipe/newsletter/'||v::text,'newsletter',v::text from grupos where id=g returning id into card;
+ update newsletters set card_id=card where id=v;
+ perform notificar(array(select m.registro from membros m where newsletter_lider(m.registro)),
+ 'newsletter_aprovacao',titulo0,'O boletim aguarda três aprovações da liderança.','#/equipe/newsletter/'||v::text);
+ return v;
+end $$;
+create or replace function public.newsletter_gerar(p_tipo text) returns jsonb language plpgsql security definer
+set search_path=public as $$ declare d date:=(now() at time zone 'America/Sao_Paulo')::date; i date; f date; v uuid;
+begin
+ if not reporte_gestor() then return jsonb_build_object('status','sem_permissao');end if;
+ if p_tipo='semanal' then f:=date_trunc('week',d)::date-1;i:=f-6;
+ elsif p_tipo='mensal' then f:=date_trunc('month',d)::date-1;i:=date_trunc('month',f)::date;
+ else return jsonb_build_object('status','invalido');end if;
+ v:=newsletter_criar(p_tipo,i,f);return jsonb_build_object('status','ok','id',v);
+end $$;
+create or replace function public.newsletter_lista() returns jsonb language sql stable security definer set search_path=public as $$
+ select case when not reporte_gestor() then '[]'::jsonb else coalesce((select jsonb_agg(to_jsonb(x)) from
+ (select n.*, (select count(*) from newsletter_aprovacoes a where a.newsletter_id=n.id and a.versao=n.versao and a.decisao) as aprovacoes
+ from newsletters n order by criado_em desc limit 50) x),'[]') end $$;
+create or replace function public.newsletter_revisar(p_id uuid,p_assunto text,p_itens jsonb) returns jsonb
+language plpgsql security definer set search_path=public as $$ declare n newsletters; x jsonb;
+begin
+ if not reporte_gestor() then return jsonb_build_object('status','sem_permissao');end if;
+ select * into n from newsletters where id=p_id for update;
+ if not found or n.status<>'em_aprovacao' then return jsonb_build_object('status','encerrado');end if;
+ if length(trim(p_assunto)) not between 1 and 200 or jsonb_typeof(p_itens)<>'array' or jsonb_array_length(p_itens)=0
+ then return jsonb_build_object('status','invalido');end if;
+ for x in select * from jsonb_array_elements(p_itens) loop
+ if length(trim(coalesce(x->>'titulo','')))=0 or length(trim(coalesce(x->>'subtitulo','')))=0
+ then return jsonb_build_object('status','invalido');end if;end loop;
+ update newsletters set assunto=trim(p_assunto),itens=p_itens,versao=versao+1 where id=p_id;
+ delete from newsletter_aprovacoes where newsletter_id=p_id;
+ return jsonb_build_object('status','ok');
+end $$;
+create or replace function public.newsletter_decidir(p_id uuid,p_versao integer,p_aprova boolean,p_comentario text default null)
+returns jsonb language plpgsql security definer set search_path=public as $$ declare n newsletters; r integer:=portal_registro_atual();
+begin
+ if not newsletter_lider(r) then return jsonb_build_object('status','sem_permissao');end if;
+ select * into n from newsletters where id=p_id for update;
+ if not found or n.status<>'em_aprovacao' then return jsonb_build_object('status','encerrado');end if;
+ if n.versao<>p_versao then return jsonb_build_object('status','conflito');end if;
+ insert into newsletter_aprovacoes(newsletter_id,registro,versao,decisao,comentario) values(p_id,r,n.versao,p_aprova,p_comentario)
+ on conflict(newsletter_id,registro) do update set versao=excluded.versao,decisao=excluded.decisao,comentario=excluded.comentario,em=now();
+ if (select count(*) from newsletter_aprovacoes where newsletter_id=p_id and versao=n.versao and decisao and newsletter_lider(registro))>=3
+ and not exists(select 1 from newsletter_aprovacoes where newsletter_id=p_id and versao=n.versao and not decisao) then
+  update newsletters set status='aprovada' where id=p_id;
+  if n.tipo='semanal' then
+   insert into newsletter_envios(newsletter_id,registro,email,nome)
+   select p_id,m.registro,lower(coalesce(nullif(m.email_nro,''),m.email_pessoal)),m.nome from membros m
+   where m.status in ('Ativo','Em pausa / avaliação') and coalesce(nullif(m.email_nro,''),nullif(m.email_pessoal,'')) is not null
+   and not exists(select 1 from notificacao_canais c where c.registro=m.registro and c.categoria='reporte' and c.email='nunca') on conflict do nothing;
+  else
+   insert into newsletter_envios(newsletter_id,comunidade_id,email,nome)
+   select p_id,id,email,nome from comunidade_inscritos where descadastrado_em is null on conflict do nothing;
+  end if;
+  update atividades set status='concluida',concluida_em=now() where id=n.card_id;
+ end if;
+ return jsonb_build_object('status','ok');
+end $$;
+create or replace function public.comunidade_importar(p_itens jsonb) returns jsonb language plpgsql security definer
+set search_path=public as $$ declare x jsonb; n integer:=0;
+begin
+ if papel_atual()<>'admin' then return jsonb_build_object('status','sem_permissao');end if;
+ if jsonb_typeof(p_itens)<>'array' or jsonb_array_length(p_itens)>5000 then return jsonb_build_object('status','invalido');end if;
+ for x in select * from jsonb_array_elements(p_itens) loop
+ if coalesce(x->>'email','') !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' or length(trim(coalesce(x->>'nome','')))=0
+ then return jsonb_build_object('status','invalido');end if;end loop;
+ for x in select * from jsonb_array_elements(p_itens) loop
+ insert into comunidade_inscritos(email,nome,origem) values(lower(trim(x->>'email')),trim(x->>'nome'),coalesce(nullif(x->>'origem',''),'Importação'))
+ on conflict(email) do update set nome=excluded.nome;
+ n:=n+1;end loop;
+ return jsonb_build_object('status','ok','processados',n);
+end $$;
+create or replace function public.comunidade_descadastrar(p_token uuid) returns jsonb language plpgsql security definer
+set search_path=public as $$ begin
+ update comunidade_inscritos set descadastrado_em=coalesce(descadastrado_em,now()) where token=p_token;
+ return jsonb_build_object('status','ok');end $$;
+create or replace function public.newsletter_lote(p_limite integer default 50) returns jsonb
+language plpgsql security definer set search_path=public as $$ declare d date:=(now() at time zone 'America/Sao_Paulo')::date;
+begin
+ perform reporte_ciclo_materializar();
+ -- A passada da fila materializa o período anterior; a chave única evita duplicação.
+ perform newsletter_criar('semanal',date_trunc('week',d)::date-7,date_trunc('week',d)::date-1);
+ perform newsletter_criar('mensal',date_trunc('month',d- extract(day from d)::integer)::date,date_trunc('month',d)::date-1);
+ return coalesce((select jsonb_agg(to_jsonb(x)) from (select e.id,e.email,e.nome,n.assunto,n.itens,c.token,
+ n.tipo,n.id as newsletter_id from newsletter_envios e join newsletters n on n.id=e.newsletter_id
+ left join comunidade_inscritos c on c.id=e.comunidade_id left join membros m on m.registro=e.registro
+ where n.status='aprovada' and e.enviado_em is null and e.tentativas<5
+ and ((c.id is not null and c.descadastrado_em is null) or (m.registro is not null and m.status in ('Ativo','Em pausa / avaliação')
+ and not exists(select 1 from notificacao_canais p where p.registro=m.registro and p.categoria='reporte' and p.email='nunca')))
+ order by e.id limit least(greatest(p_limite,1),200)) x),'[]');
+end $$;
+create or replace function public.newsletter_baixa(p_id uuid,p_erro text default null) returns void
+language plpgsql security definer set search_path=public as $$ declare v uuid;begin
+ update newsletter_envios set tentativas=tentativas+1,erro=left(p_erro,500),enviado_em=case when p_erro is null then now() else enviado_em end
+ where id=p_id and enviado_em is null returning newsletter_id into v;
+ if v is not null and not exists(select 1 from newsletter_envios e where newsletter_id=v and enviado_em is null)
+ then update newsletters set status='enviada' where id=v;end if;
+end $$;
+do $$ declare t text;f text;begin
+ foreach t in array array['newsletters','newsletter_aprovacoes','comunidade_inscritos','newsletter_envios'] loop
+ execute format('alter table %I enable row level security',t);execute format('revoke all on %I from anon,authenticated',t);end loop;
+ foreach f in array array['newsletter_criar(text,date,date)','newsletter_lote(integer)','newsletter_baixa(uuid,text)'] loop
+ execute 'revoke execute on function '||f||' from public,anon,authenticated';
+ if exists(select 1 from pg_roles where rolname='service_role') then execute 'grant execute on function '||f||' to service_role';end if;end loop;
+ foreach f in array array['newsletter_lider(integer)','newsletter_gerar(text)','newsletter_lista()',
+ 'newsletter_revisar(uuid,text,jsonb)','newsletter_decidir(uuid,integer,boolean,text)','comunidade_importar(jsonb)'] loop
+ execute 'revoke execute on function '||f||' from public,anon';execute 'grant execute on function '||f||' to authenticated';end loop;
+end $$;
+revoke execute on function comunidade_descadastrar(uuid) from public;
+grant execute on function comunidade_descadastrar(uuid) to anon,authenticated;
+select public.conta_ativa_travar();
+do $$ begin
+ if exists(select 1 from pg_roles where rolname='service_role') then grant execute on function comunidade_descadastrar(uuid) to service_role;end if;
+end $$;
+
+-- Ata da agenda: um PN por evento, rascunho salvo antes de abrir o editor.
+alter table agenda_predefinidos add column if not exists gera_ata boolean not null default false;
+alter table agenda_predefinidos add column if not exists ata_serie_id uuid references doc_series(id);
+alter table eventos add column if not exists ata_arquivo_id uuid references doc_arquivos(id);
+create or replace function public.evento_ata_abrir(p_evento uuid) returns jsonb language plpgsql security definer
+set search_path=public as $$ declare e eventos; pd agenda_predefinidos; serie uuid; resultado jsonb; dados jsonb;
+ campos jsonb; presentes jsonb; codigo0 text;begin
+ if not conta_ativa() then return jsonb_build_object('status','sem_permissao');end if;
+ select * into e from eventos where id=p_evento for update;
+ if not found then return jsonb_build_object('status','nao_encontrado');end if;
+ if e.status='Cancelado' then return jsonb_build_object('status','encerrado');end if;
+ if e.owner_registro is distinct from portal_registro_atual() and not exists(select 1 from evento_participantes
+ where evento_id=e.id and registro=portal_registro_atual()) then return jsonb_build_object('status','sem_permissao');end if;
+ if e.ata_arquivo_id is not null then
+ if not doc_pode_editar(e.ata_arquivo_id) then return jsonb_build_object('status','sem_permissao');end if;
+ return jsonb_build_object('status','ok','codigo',(select codigo from doc_arquivos where id=e.ata_arquivo_id));end if;
+ select * into pd from agenda_predefinidos where id=e.predefinido_id;
+ if not found or not pd.gera_ata then return jsonb_build_object('status','sem_ata');end if;
+ serie:=coalesce(pd.ata_serie_id,(select id from doc_series where prefixo='PUB' and sn=3));
+ select formulario->'campos' into campos from doc_series where id=serie and formulario is not null;
+ if campos is null then return jsonb_build_object('status','sem_formulario');end if;
+ if not doc_pode_criar(serie,null) then return jsonb_build_object('status','sem_permissao');end if;
+ resultado:=doc_arquivo_criar(jsonb_build_object('serie_id',serie,'titulo',e.titulo));
+ if resultado->>'status'<>'ok' then return resultado;end if;
+ select coalesce(jsonb_agg(jsonb_build_object('nome',m.nome,'nota',case p.resposta when 'vou' then 'Confirmado' else 'Convidado' end)),'[]')
+ into presentes from evento_participantes p join membros m on m.registro=p.registro where p.evento_id=e.id and p.resposta<>'nao';
+ dados:=jsonb_build_object('assunto',e.titulo,'data',e.data,'hora',e.hora_inicio,'local',coalesce(nullif(e.local,''),(select nome from espacos where id=e.espaco_id),nullif(e.meet_url,''),''),
+ 'presentes',presentes,'pauta',jsonb_build_array(e.titulo),'data_redacao',current_date,'hora_redacao',to_char(now() at time zone 'America/Sao_Paulo','HH24:MI'));
+ select coalesce(jsonb_object_agg(k,v),'{}') into dados from jsonb_each(dados) x(k,v)
+ where exists(select 1 from jsonb_array_elements(campos) c where c->>'id'=x.k);
+ codigo0:=resultado->>'codigo';
+ resultado:=doc_formulario_salvar((resultado->>'id')::uuid,dados);
+ if resultado->>'status'<>'ok' then raise exception 'Não foi possível salvar o rascunho: %',resultado->>'status';end if;
+ update eventos set ata_arquivo_id=(select id from doc_arquivos where codigo=codigo0) where id=e.id;
+ return jsonb_build_object('status','ok','codigo',codigo0);
+end $$;
+revoke execute on function evento_ata_abrir(uuid) from public,anon;
+grant execute on function evento_ata_abrir(uuid) to authenticated;
+
+-- Marca: metadados públicos para membros; o conteúdo continua sob doc_pode_ler.
+create table if not exists marca_vinculos(chave text primary key,serie_id uuid references doc_series(id) on delete set null,
+ atualizado_em timestamptz not null default now(),atualizado_por text);
+alter table marca_vinculos enable row level security;
+drop policy if exists marca_ler on marca_vinculos;
+create policy marca_ler on marca_vinculos for select to authenticated using(true);
+drop policy if exists marca_gerir on marca_vinculos;
+create policy marca_gerir on marca_vinculos for all to authenticated using(doc_gestor()) with check(doc_gestor());
+grant select,insert,update,delete on marca_vinculos to authenticated;
+insert into marca_vinculos(chave) select unnest(array['relatorio','apresentacao-formal','apresentacao-marca','carta','memorando',
+ 'documentos-e-registros','boletim','comunicado','certificado','certificado-marca','convite','selo','cracha','cartao']) on conflict do nothing;
+update marca_vinculos set serie_id=(select id from doc_series where prefixo='PUB' and sn=2)
+ where chave='documentos-e-registros' and serie_id is null;
+create or replace function marca_carimbar() returns trigger language plpgsql set search_path=public as $$begin
+ new.atualizado_em:=now();new.atualizado_por:=doc_meu_nome();return new;end $$;
+drop trigger if exists marca_carimbo on marca_vinculos;
+create trigger marca_carimbo before insert or update on marca_vinculos for each row execute function marca_carimbar();
+update portal_links set titulo='Manual da marca' where url ilike 'https://brand.neurodynamics.dev%' and titulo='Brand guidelines';
+alter table agenda_predefinidos alter column cor set default '#5BBFB0';
+select public.conta_ativa_travar();
+
+-- O painel conta somente avisos cujo horário de envio chegou.
+create or replace function public.fila_situacao()
+returns jsonb language plpgsql stable security definer
+set search_path = public as $$
+declare
+  e public.fila_estado; v_agendada boolean := false; v_pend jsonb := '{}'::jsonb; n bigint;
+begin
+  if not (public.eh_gestao() or public.tenho_papel('selecao')) then
+    return jsonb_build_object('status', 'sem_permissao');
+  end if;
+  select * into e from fila_estado where id;
+  if to_regnamespace('cron') is not null then
+    begin execute 'select exists (select 1 from cron.job where jobname = ''soma-fila'' and active)' into v_agendada;
+    exception when others then v_agendada := false; end;
+  end if;
+  select coalesce(sum(jsonb_array_length(x->'itens')),0) into n from jsonb_array_elements(notificacoes_email_lote(1000000)) x;
+  v_pend := v_pend || jsonb_build_object('avisos', n);
+  if to_regclass('public.agenda_envios') is not null then
+    execute 'select count(*) from agenda_envios where enviado_em is null and tentativas < 5' into n;
+    v_pend := v_pend || jsonb_build_object('agenda', n);
+  end if;
+  if to_regclass('public.doc_envios') is not null then
+    execute 'select count(*) from doc_envios where enviado_em is null and tentativas < 5' into n;
+    v_pend := v_pend || jsonb_build_object('declaracoes', n);
+  end if;
+  if to_regclass('public.ps_envios') is not null then
+    execute 'select count(*) from ps_envios where enviado_em is null and tentativas < 5' into n;
+    v_pend := v_pend || jsonb_build_object('selecao', n);
+  end if;
+  if to_regclass('public.email_programados') is not null then
+    execute 'select count(*) from email_programados where status = ''programado'' and enviar_em <= now()' into n;
+    v_pend := v_pend || jsonb_build_object('programados', n);
+  end if;
+  return jsonb_build_object(
+    'status', 'ok',
+    'agendada', v_agendada,
+    'em_curso_desde', e.em_curso_desde, 'em_curso_origem', e.em_curso_origem,
+    'ultima_inicio', e.ultima_inicio, 'ultima_fim', e.ultima_fim,
+    'ultimo_chamado', e.ultimo_chamado, 'ultimo_empurrao', e.ultimo_empurrao,
+    'por_origem', coalesce((select jsonb_object_agg(origem, ultima)
+                              from (select origem, max(inicio) as ultima from fila_passadas group by origem) x), '{}'::jsonb),
+    'ultimo_erro', (select jsonb_build_object('quando', inicio, 'origem', origem, 'resultado', resultado)
+                      from fila_passadas
+                     where resultado is not null and coalesce(resultado->>'status', '') not in ('ok', 'ocupada')
+                     order by id desc limit 1),
+    'pendentes', v_pend);
+end $$;
+select public.conta_ativa_travar();
+
+-- Registro somente depois de todas as seções terem sido aplicadas.
+insert into public.migracoes(id,descricao) values('2.18.0_soma',
+ 'SOMA 2.18.0: papéis por grupo, folha única de check-in, cartões espelhados, avisos por categoria, reporte semanal, feed, newsletters, atas de evento e Marca')
+on conflict(id) do nothing;
+
+-- CONFERIR (somente leitura)
+-- select id, aplicada_em from public.migracoes where id='2.18.0_soma';
+-- select gp.papel,g.nome,g.ativo from public.grupo_papeis gp join public.grupos g on g.id=gp.grupo_id;
+-- select count(*) as folhas_ativas from public.checkin_folhas where revogada_em is null;
+-- select id,public from storage.buckets where id='feed';
+-- select semana,prazo,reuniao_em from public.reporte_ciclos order by semana desc limit 4;
+-- select tipo,periodo_ini,status,versao from public.newsletters order by criado_em desc limit 10;
+-- select chave,serie_id from public.marca_vinculos order by chave;

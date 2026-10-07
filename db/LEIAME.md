@@ -481,3 +481,23 @@ corte da unificação** — os READMEs de lá ainda os citam, e quebrar aquelas
 referências no meio da migração não ajudaria ninguém. Como são arquivos
 congelados, não há risco de divergirem. Quando o `nro-pessoal` virar repositório
 de redirecionamento, ficam só estes aqui.
+
+## 2.18.0: acesso, comunicação e marca
+
+| Migração | Conteúdo |
+|---|---|
+| `2.18.0_soma.sql` | Papéis por grupo, bloqueio de contas, folha única, cartões espelhados, preferências por categoria, reporte/feed, newsletter com três aprovações, ata de evento e vínculos da Marca |
+
+Aplicar depois da 2.17.0 e das migrações anteriores. Registro: `2.18.0_soma`. É idempotente. O checklist de produção está em [`../PUBLICACAO-2.18.md`](../PUBLICACAO-2.18.md).
+
+Testes em banco novo com a base 15.0–24.0 descrita acima:
+
+```sh
+createdb -T tbase t218
+psql -X -v ON_ERROR_STOP=1 -d t218 -f testes/2.18.0_soma.sql
+psql -X -v ON_ERROR_STOP=1 -d t218 -f testes/2.18.0_reporte.sql -f testes/2.18.0_newsletter.sql -f testes/2.18.0_ata.sql -f testes/2.18.0_marca_feed.sql
+```
+
+O teste principal tem 193 asserções e reaplica a migração. Os complementos verificam isolamento de rascunhos, sinalização idempotente, votos/versionamento, descadastro, ata com PN reutilizado, permissões da Marca e paginação com datas empatadas. Todos usam fixtures locais; não executar os testes no Supabase de produção.
+
+Nos testes históricos de Agenda, use `PGOPTIONS='-c timezone=America/Sao_Paulo'`: os lembretes têm hora local. `v29_presenca.sql` valida o contrato da versão 29.0 (Pessoal ainda podia gerar a folha); `2.18.0_soma.sql` valida a restrição nova a admin. Os testes históricos não devem ser executados sobre um banco já migrado para a 2.18.0.

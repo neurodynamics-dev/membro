@@ -26,17 +26,17 @@ const soConfere = process.argv.includes('--check');
 
 /* os mesmos endereços e cores do corpoHTML */
 const PORTAL = 'https://membro.neurodynamics.dev';
-const LOGO = PORTAL + '/mailer/logo-00594f.png';
+const LOGO = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
 const F = 'Helvetica,Arial,sans-serif';
-const COR = { fundo:'#f4f6f4', borda:'#e3e6e3', tinta:'#1d1d1f', apoio:'#4a514a', nota:'#8a908a', acento:'#00594F' };
+const COR = { fundo:'#E8EDEB', borda:'#C4CCC9', tinta:'#1d1d1f', apoio:'#2E3533', nota:'#616C68', acento:'#00594F' };
 
 /* O botão é o do Full mailer, na cor dos links dos avisos. Tabela,
    e não só <a>, para o Outlook respeitar o fundo. */
 const botao = (rotulo) => `<table role="presentation" cellpadding="0" cellspacing="0"><tr>
-                    <td style="border-radius:10px;background:${COR.acento}">
+                    <td style="border-radius:11px;background:${COR.acento}">
                       <a href="{{ .ConfirmationURL }}" target="_blank"
                          style="display:inline-block;padding:12px 22px;font:600 14px/1 ${F};
-                                color:#ffffff;text-decoration:none;border-radius:10px">${rotulo}</a>
+                                color:#ffffff;text-decoration:none;border-radius:11px">${rotulo}</a>
                     </td></tr></table>`;
 
 /* Sob o botão: quanto o link vale e o endereço por extenso, para o
@@ -47,7 +47,7 @@ const reserva = (validade) => `<div style="font:400 12px/1.6 ${F};color:${COR.no
                   </div>`;
 
 const codigo = `<div style="margin-top:12px;display:inline-block;padding:12px 18px;border:1px solid ${COR.borda};
-                              border-radius:10px;background:${COR.fundo};
+                              border-radius:11px;background:${COR.fundo};
                               font:600 26px/1 Menlo,Consolas,'Courier New',monospace;
                               letter-spacing:6px;color:#00352F">{{ .Token }}</div>`;
 
@@ -61,7 +61,7 @@ function layout(m){
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COR.fundo}">
     <tr><td align="center" style="padding:32px 16px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-             style="max-width:560px;background:#ffffff;border:1px solid ${COR.borda};border-radius:14px">
+             style="max-width:560px;background:#ffffff;border:1px solid ${COR.borda};border-radius:0px">
         <tr><td style="padding:28px 28px 8px">
           <img src="${LOGO}" width="188" alt="NeuroDynamics"
                style="display:block;border:0;outline:none">
@@ -75,7 +75,7 @@ function layout(m){
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr><td style="padding:0 0 18px">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-                     style="border:1px solid ${COR.borda};border-radius:10px">
+                     style="border:1px solid ${COR.borda};border-radius:11px">
                 <tr><td style="padding:16px 18px">
                   <div style="font:600 15px/1.45 ${F};color:${COR.tinta}">${m.titulo}</div>
                   <div style="font:400 14px/1.6 ${F};color:${COR.apoio};margin-top:6px">
@@ -110,11 +110,11 @@ const MODELOS = [
   { arquivo:'confirmar-cadastro.html', supabase:'Confirm signup',
     quando:'Criar conta, na tela de entrada',
     precisa:['{{ .ConfirmationURL }}', '{{ .Email }}'],
-    assunto:'Confirme o seu e-mail · Portal do Membro',
+    assunto:'Confirme o seu e-mail | Portal do Membro',
     previa:'Falta um clique para a sua conta no portal ficar pronta.',
     abertura:'Falta um passo para a sua conta no Portal do Membro ficar pronta.',
     titulo:'Confirme o seu e-mail',
-    texto:'Clique no botão para confirmar que <b>{{ .Email }}</b> é seu. Depois é só entrar com esse e-mail e a senha que você escolheu.',
+    texto:'Clique no botão para confirmar que <b>{{ .Email }}</b> é seu. Depois, entre com esse e-mail e a senha escolhida.',
     acao:botao('Confirmar meu e-mail'), depois:reserva(UMA_HORA),
     rodape:`Você recebe este e-mail porque alguém criou uma conta no ${linkPortal} com este endereço. Se não foi você, ignore: sem a confirmação, a conta não é ativada.` },
 
@@ -143,7 +143,7 @@ const MODELOS = [
   { arquivo:'trocar-email.html', supabase:'Change Email Address',
     quando:'troca do e-mail da conta — o portal não oferece hoje',
     precisa:['{{ .ConfirmationURL }}', '{{ .Email }}', '{{ .NewEmail }}'],
-    assunto:'Confirme a troca de e-mail · Portal do Membro',
+    assunto:'Confirme a troca de e-mail | Portal do Membro',
     previa:'A troca só vale depois de confirmada.',
     abertura:'Recebemos um pedido para trocar o e-mail da sua conta no Portal do Membro.',
     titulo:'Confirme a troca de e-mail',
@@ -154,18 +154,18 @@ const MODELOS = [
   { arquivo:'redefinir-senha.html', supabase:'Reset Password',
     quando:'Esqueci minha senha, e a chavinha de Administração › Contas',
     precisa:['{{ .ConfirmationURL }}', '{{ .Email }}'],
-    assunto:'Redefina a sua senha · Portal do Membro',
+    assunto:'Redefina a sua senha | Portal do Membro',
     previa:'O link abre o portal direto na tela de nova senha.',
     abertura:'Recebemos um pedido para redefinir a senha da sua conta no Portal do Membro.',
     titulo:'Defina uma nova senha',
-    texto:'A conta é <b>{{ .Email }}</b>. O botão abre o portal direto na tela de nova senha — escolha uma com pelo menos 8 caracteres.',
+    texto:'A conta é <b>{{ .Email }}</b>. O botão abre o portal direto na tela de nova senha. Mínimo de 8 caracteres.',
     acao:botao('Definir nova senha'), depois:reserva(UMA_HORA),
     rodape:`Você recebe este e-mail porque alguém pediu para redefinir a senha desta conta no ${linkPortal}. Se não foi você, ignore: a sua senha continua a mesma.` },
 
   { arquivo:'reautenticacao.html', supabase:'Reauthentication',
     quando:'confirmação de alteração sensível — o portal não pede hoje',
     precisa:['{{ .Token }}'], proibido:['{{ .ConfirmationURL }}'],
-    assunto:'Seu código de confirmação · Portal do Membro',
+    assunto:'Seu código de confirmação | Portal do Membro',
     previa:'Use o código para confirmar que é você.',
     abertura:'Para concluir uma alteração na sua conta do Portal do Membro, confirme que é você.',
     titulo:'Seu código de confirmação',

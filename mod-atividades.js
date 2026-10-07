@@ -53,7 +53,7 @@ const PRIORIDADES = [
   ['urgente','Urgente',  'var(--bad)']
 ];
 /* de onde o cartão veio, para o selo do quadro */
-const ROTULO_ORIGEM = { solicitacao:'solicitação', apontamento:'apontamento', ocorrencia:'ocorrência' };
+const ROTULO_ORIGEM = { reporte:'reporte', newsletter:'newsletter', solicitacao:'solicitação', apontamento:'apontamento', ocorrencia:'ocorrência' };
 const rotuloStatus = s => (COLUNAS.find(c => c[0] === s) || [,s])[1];
 const corPrioridade = p => (PRIORIDADES.find(x => x[0] === p) || [,,'var(--dim)'])[2];
 const rotuloPrioridade = p => (PRIORIDADES.find(x => x[0] === p) || [,p])[1];
@@ -801,6 +801,8 @@ const ROTULO_DADOS = {
 };
 
 function blocoOrigem(a, o){
+  if(a.origem_tipo==='newsletter')return `<div class="card"><h3>Newsletter</h3><a class="btn" href="#/equipe/newsletter/${esc(a.origem_id)}">Revisar newsletter</a></div>`;
+  if(a.origem_tipo==='reporte')return `<div class="card"><h3>Sinalização do reporte semanal</h3><p class="small muted">Acompanhe o caso neste cartão. Registre ocorrências na ficha do membro.</p></div>`;
   if (!a.origem_tipo) return '';
   if (!o) return `<div class="card" style="margin-bottom:16px"><h3>De onde veio</h3>
     <p class="sub">Este cartão nasceu de ${esc(a.origem_tipo)}, mas o registro de

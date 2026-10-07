@@ -30,6 +30,8 @@ async function abrir(q = '', vp = { width:1280, height:900 }){
   const erros = []; p.on('pageerror', e => erros.push(e.message));
   p.on('request', r => pedidos.push(r.url()));
   await p.route('**/*supabase*.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:stub }));
+  await p.route('https://membro.neurodynamics.dev/fontes-pdf.js', r => r.fulfill({contentType:'application/javascript',body:readFileSync(new URL('../fontes-pdf.js',import.meta.url))}));
+  await p.route('https://membro.neurodynamics.dev/fontes/**', r => r.fulfill({headers:{'Access-Control-Allow-Origin':'*'},body:readFileSync(new URL('../fontes/'+new URL(r.request().url()).pathname.split('/').pop(),import.meta.url))}));
   await p.route('https://membro.neurodynamics.dev/doc-nro.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:DOCNRO }));
   await p.route('**/cdnjs.cloudflare.com/**/jspdf.umd.min.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:JSPDF }));
   await p.route('**/cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:QR }));
@@ -60,8 +62,8 @@ async function consultar(p, c, k = ''){
   await consultar(p, 'Q8RT-5WZN-2KDH', '4f1a9c2e');
   const f = await ficha(p);
   confere('autêntico, com o controle conferido', /Documento autêntico/i.test(await texto(p, '.selo.ok')) && /controle conferido/.test(await texto(p, '.selo')));
-  confere('a ficha do que foi impresso', f['Documento'] === 'NRO-DIR-004-4 · Rev. B' && f['Espécie'] === 'Declaração de vínculo'
-    && f['Titular'] === 'ANA FIGUEIREDO' && f['Emitente'] === 'NeuroDynamics PD&I — Diretoria', f);
+  confere('a ficha do que foi impresso', f['Documento'] === 'NRO-DIR-004-4 Rev. B' && f['Espécie'] === 'Declaração de vínculo'
+    && f['Titular'] === 'ANA FIGUEIREDO' && f['Emitente'] === 'NeuroDynamics PD&I, Diretoria', f);
   confere('o CPF mascarado', f['CPF'] === '***.000.000-**', f['CPF']);
   confere('a data da emissão no horário de Brasília', /^\d{2}\/\d{2}\/\d{4}, às \d{2}h\d{2} \(horário de Brasília\)$/.test(f['Emitido em']), f['Emitido em']);
   confere('o controle diz que confere', /^4F1A9C2E\s*✓ confere/.test(f['Código de controle']), f['Código de controle']);
@@ -75,7 +77,7 @@ async function consultar(p, c, k = ''){
   confere('a consulta foi ao banco com o código normalizado', (await rpcs(p, 'doc_validar')).map(x => x.p_codigo).join() === 'Q8RT-5WZN-2KDH');
 
   await consultar(p, 'Q8RT-5WZN-2KDH', '00000000');
-  confere('controle que não confere acusa alteração', /não confere/.test(await texto(p, '.selo.bad')) && /✕ não confere com o informado/.test((await ficha(p))['Código de controle']));
+  confere('controle que não confere acusa alteração', /não confere/.test(await texto(p, '.selo.bad')) && /× não confere com o informado/.test((await ficha(p))['Código de controle']));
 
   await consultar(p, 'M4TX-7RPD-9KCE');
   confere('revogado, com a data e o motivo', /Documento revogado/i.test(await texto(p, '.selo.bad')) && /Emitida antes de a ficha ser atualizada/.test(await texto(p, '.selo'))

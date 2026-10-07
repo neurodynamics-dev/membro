@@ -188,3 +188,15 @@ regras que saíram daí:
 
 - `../db/testes/` — as migrações rodando em PostgreSQL de verdade;
 - `../supabase/functions/*/`, cada função com o seu `*.test.ts`.
+
+## Complementos da 2.18.0
+
+- `papeis-por-grupo.mjs`: papéis efetivos, bloqueio, grupos e cartões espelhados.
+- `reporte.mjs`: preenchimento, conflito de versão, envio e publicação do feed com RPCs estritas.
+- `marca.mjs`: catálogo, assinatura, interfaces, acesso à configuração e celular.
+- `select-e-studio-ia.mjs`: teclado, seleção programática, fieldset desabilitado e validação da importação por IA.
+- `supabase/functions/notificar-email/newsletter.test.ts`: escaping e rodapé de descadastro.
+
+Na nuvem deste projeto, Chromium está em `/usr/bin/chromium`; o preload externo `/workspace/cloud-setup/chromium.mjs` adapta o caminho antigo dos testes. Exemplo: `node --import /workspace/cloud-setup/chromium.mjs testes/marca.mjs`, a partir da raiz. O servidor local deve estar na porta 8765. Os testes da validação pública interceptam também o carregamento de fontes locais de PDF.
+
+As mudanças da 2.18.0 foram conferidas no PostgreSQL 16 local e nos testes de navegador com Supabase simulado. Entrega real de e-mail/push, sincronização com Google e publicação do Supabase exigem a conferência de produção descrita em `PUBLICACAO-2.18.md`.

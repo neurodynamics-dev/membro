@@ -31,6 +31,16 @@
 /* A entrada mais nova fica em cima. "antes" é o número da numeração
    antiga; os itens são [tipo, texto em Markdown]. */
 const NOTAS_VERSAO = [
+  { v:'2.18.0', data:'2026-10-07', titulo:'Reporte semanal, Marca e novos controles de acesso', itens:[
+    ['novo', '**Reporte semanal** em três etapas: apontamento, escalonamento e publicações no **Feed da equipe**. A liderança preenche suas frentes; o admin acompanha o ciclo e baixa o reporte unificado.'],
+    ['novo', '**Newsletters** semanais para membros e mensais para a comunidade, com três aprovações distintas da liderança. A comunidade é importada em Administração › E-mails e pode se descadastrar pelo rodapé.'],
+    ['novo', '**Marca** reúne materiais, assinaturas de e-mail e referências de interfaces. Arquivos controlados continuam exigindo a permissão da série. O **Studio** recebe os temas v2 e importa publicações estruturadas por IA como rascunho.'],
+    ['novo', 'Tipos de evento podem gerar **ata** em Arquivos, com rascunho preenchido a partir do evento.'],
+    ['melhoria', '**Papéis por grupo** para Pessoal, Seleção e Liderança. Admin permanece individual; contas vinculadas a membros Desligados, Egressos ou Sob demanda ficam bloqueadas. Os cartões podem aparecer em mais de um quadro.'],
+    ['melhoria', '**Avisos por categoria**: push e frequência de e-mail configuráveis. Quem estava em imediato sem ter escolhido passa ao **resumo semanal**. Convites e pílulas continuam com suas próprias filas.'],
+    ['correcao', 'A semana do Início considera eventos nas 24 horas do dia. Contas bloqueadas deixam de receber convites internos; a fila mostra apenas os avisos já devidos. A folha de check-in é única e sua geração fica restrita a admin.'],
+    ['melhoria', 'Design system v2 nos temas claro e escuro, seleção por teclado, documentos com fontes locais, páginas públicas e novo manual da marca.']
+  ] },
   { v:'2.17.1', data:'2026-09-29',
     titulo:'As entrevistas do PS na agenda e o portal sem avisos que ninguém pediu',
     itens:[

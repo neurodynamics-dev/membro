@@ -72,7 +72,7 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   const { ctx, p, erros } = await abrir();
   const espacos = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec > .lt-linha .lt-rot')].map(e => e.textContent));
   confere('Treinamentos entre Equipe e Serviços, e Meus pedidos saiu do primeiro nível',
-    espacos.join('|') === 'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Treinamentos|Serviços|Seleção|Administração', espacos);
+    espacos.join('|') === 'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Marca|Equipe|Treinamentos|Serviços|Seleção|Administração', espacos);
   const filhos = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec[data-r="treinamentos"] .lt-filho .nm')].map(e => e.textContent));
   confere('os subitens de Treinamentos, com Configurações para quem gere',
     filhos.join('|') === 'Para você|Todos os treinamentos|Meus certificados|Configurações', filhos);

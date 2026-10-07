@@ -79,7 +79,7 @@ console.log('\nAberto (admin, 1440px)');
      tomaram o lugar de Meus pedidos, que virou subitem de Serviços */
   confere('os espaços, na ordem (admin vê também Studio, Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Treinamentos|Serviços|Seleção|Administração',
+      'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Marca|Equipe|Treinamentos|Serviços|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
   confere('Seleção e Administração vêm depois do divisor "Gestão"',
@@ -360,8 +360,8 @@ console.log('\nTema');
     fundo: getComputedStyle(document.body).backgroundColor, rot: document.getElementById('lt-tema').getAttribute('aria-label'),
     meta: document.querySelector('meta[name="theme-color"]').content }));
   confere('o seletor troca para o claro e guarda a escolha',
-    t1.tema === 'claro' && t1.salvo === 'claro' && t1.fundo === 'rgb(242, 245, 241)' && t1.rot === 'Usar o tema escuro'
-    && t1.meta === '#F2F5F1', t1);
+    t1.tema === 'claro' && t1.salvo === 'claro' && t1.fundo === 'rgb(232, 237, 235)' && t1.rot === 'Usar o tema escuro'
+    && t1.meta === '#E8EDEB', t1);
   /* legível: o texto de cada token, sobre o fundo que ele tem de fato.
      Trocar o tema dispara as transições de cor (o item do menu tem
      color .15s): medir no meio delas leria o texto do escuro, #9AA5A1,
@@ -403,16 +403,16 @@ console.log('\nTema');
     return { n: nomes.length, cor, dif };
   });
   confere(`no claro, a banda de destaque volta os ${ilha.n} tokens de tema aos do escuro`,
-    ilha.n > 40 && !ilha.dif.length && ilha.cor === 'rgb(245, 245, 247)', ilha);
+    ilha.n > 40 && !ilha.dif.length && ilha.cor === 'rgb(232, 237, 235)', ilha);
   /* logo em <img> é pintada de branco no escuro — no papel, some; no claro vira tinta */
   const logos = await p.evaluate(() => {
     const d = document.createElement('div');
-    d.innerHTML = '<div class="login"><div class="lg"><img alt=""></div></div><div class="ft-grid"><img alt=""></div>';
+    d.innerHTML = '<div class="login"><div class="lg"><img class="lt-imagotipo" alt=""></div></div><div class="ft-grid"><img class="lt-imagotipo" alt=""></div>';
     document.body.append(d);
-    const f = [...d.querySelectorAll('img')].map(i => getComputedStyle(i).filter); d.remove(); return f;
+    aplicarTema('claro'); const f = [...d.querySelectorAll('img')].map(i => ({filtro:getComputedStyle(i).filter,src:i.src})); d.remove(); return f;
   });
-  confere('as logos do login e do rodapé ficam de tinta no claro',
-    logos.every(f => /^brightness\(0\) invert\(0\.0\d\)$/.test(f)), logos);
+  confere('as logos usam o desenho preto no claro, sem inversão',
+    logos.every(x => x.filtro==='none' && x.src.endsWith('/logo-imagotipo-black.png')), logos);
   await p.reload({ waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])'); await p.waitForTimeout(500);
   confere('recarregar mantém o claro — e o <head> o aplica antes de a página aparecer',
