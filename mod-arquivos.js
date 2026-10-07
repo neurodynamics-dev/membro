@@ -1009,7 +1009,7 @@ function arqModalEditar(){
         <input id="aed-tit" value="${esc(r.complemento || '')}" placeholder="${esc(r.projeto_nome || 'bancada 2')}">
         <span class="mailer-sub tight">Aparece depois do título da série: ${esc(r.serie_titulo)}, …</span></div>` : ''}
       <div class="fld full"><label for="aed-tpl">Feito sobre o template</label>
-        <select id="aed-tpl"><option value="">— nenhum —</option>${tpls.map(x =>
+        <select id="aed-tpl"><option value="">Nenhum</option>${tpls.map(x =>
           `<option value="${x.id}" ${x.id === r.template_id ? 'selected' : ''}>${esc(x.codigo)} ${esc(x.titulo)}</option>`).join('')}</select></div>
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
@@ -1125,7 +1125,7 @@ function arqModalNovoPN(serieId, projetoId){
       <div class="fld full"><label for="apn-tit">Complemento do título (opcional)</label>
         <input id="apn-tit" placeholder="bancada 2, reunião geral de setembro…"></div>
       <div class="fld full"><label for="apn-pj">Projeto</label>
-        <select id="apn-pj" ${projetoId ? 'disabled' : ''}><option value="">— nenhum —</option>${projs.map(p =>
+        <select id="apn-pj" ${projetoId ? 'disabled' : ''}><option value="">Nenhum</option>${projs.map(p =>
           `<option value="${p.id}" ${p.id === projetoId ? 'selected' : ''}>${esc(p.nome)} (${esc(p.codigo)})</option>`).join('')}</select></div>
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
@@ -1265,7 +1265,7 @@ function arqModalSerie(id, prefixo, estrutura){
       <div class="fld full"><label>Classe</label><div class="multi" style="max-height:none">${Object.entries(ARQ_CLASSES).map(([k, [l, d]]) =>
         `<label class="check"><input type="radio" name="as-cls" value="${k}" ${(s?.classe || 'controlado') === k ? 'checked' : ''}>
           <span><b style="color:var(--ink)">${l}</b>: ${d}</span></label>`).join('')}</div></div>
-      <div class="fld full"><label for="as-rev">Grupo revisor</label><select id="as-rev"><option value="">— o PMO —</option>${opG(s?.grupo_revisor)}</select>
+      <div class="fld full"><label for="as-rev">Grupo revisor</label><select id="as-rev"><option value="">PMO</option>${opG(s?.grupo_revisor)}</select>
         <span class="mailer-sub tight">Aprova as versões novas da série e recebe o aviso por e-mail. Quem envia não aprova a própria versão.</span></div>
       <div class="fld full"><label>Grupos que também leem</label><div class="multi" id="as-leit">${grupos.map(g =>
         `<label class="check"><input type="checkbox" value="${g.id}" ${(s?.grupos_leitura || []).includes(g.id) ? 'checked' : ''}> ${esc(g.nome)}</label>`).join('')}</div>
@@ -1315,7 +1315,7 @@ function arqCfgEmissores(){
         <span class="cod-pf">${esc(e.prefixo)}</span>
         <input class="nm" value="${esc(e.nome)}" aria-label="Nome do emissor ${esc(e.prefixo)}" id="em-n-${e.prefixo}" style="height:34px">
         <select id="em-g-${e.prefixo}" aria-label="Grupo do emissor ${esc(e.prefixo)}" style="height:34px;max-width:240px">
-          <option value="">— sem grupo —</option>${grupos.map(g => `<option value="${g.id}" ${g.id === e.grupo_id ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}</select>
+          <option value="">Sem grupo</option>${grupos.map(g => `<option value="${g.id}" ${g.id === e.grupo_id ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}</select>
         <button class="btn ghost mini" onclick="arqSalvarEmissor('${e.prefixo}')">Salvar</button></div>`).join('')}
       <div class="acc-row"><input id="em-novo-p" maxlength="3" placeholder="XXX" style="width:70px;height:34px;text-transform:uppercase;font-family:var(--fm)">
         <input id="em-novo-n" class="nm" placeholder="Departamento Clínico" style="height:34px">
@@ -1383,7 +1383,7 @@ function arqCfgChaves(){
   const atual = k => grupos.find(g => g.chave === k)?.id;
   const admin = state.perfil?.papel === 'admin';
   const sel = (k, rot, ajuda) => `<div class="fld"><label for="ch-${k}">${rot}</label>
-    <select id="ch-${k}" ${admin ? '' : 'disabled'}><option value="">— nenhum —</option>${grupos.map(g =>
+    <select id="ch-${k}" ${admin ? '' : 'disabled'}><option value="">Nenhum</option>${grupos.map(g =>
       `<option value="${g.id}" ${g.id === atual(k) ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}</select>
     <span class="mailer-sub tight">${ajuda}</span></div>`;
   $('#cfg-corpo').innerHTML = `<div class="card" style="max-width:640px">

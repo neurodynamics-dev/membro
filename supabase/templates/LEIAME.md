@@ -12,12 +12,12 @@ botão e o rodapé cinza. O texto é em português.
 
 | Modelo no Supabase | Arquivo | Assunto | Quando sai |
 |---|---|---|---|
-| **Confirm signup** | `confirmar-cadastro.html` | Confirme o seu e-mail · Portal do Membro | *Criar conta*, na tela de entrada |
+| **Confirm signup** | `confirmar-cadastro.html` | Confirme o seu e-mail | Portal do Membro | *Criar conta*, na tela de entrada |
 | **Invite user** | `convite.html` | Você foi convidado para o Portal do Membro | *Invite user*, no painel do Supabase (o portal não convida) |
 | **Magic Link** | `link-de-acesso.html` | Seu link de acesso ao Portal do Membro | entrar sem senha — o portal não oferece hoje |
-| **Change Email Address** | `trocar-email.html` | Confirme a troca de e-mail · Portal do Membro | troca do e-mail da conta — o portal não oferece hoje |
-| **Reset Password** | `redefinir-senha.html` | Redefina a sua senha · Portal do Membro | *Esqueci minha senha*, e a chavinha de *Administração › Contas* |
-| **Reauthentication** | `reautenticacao.html` | Seu código de confirmação · Portal do Membro | confirmação de alteração sensível — o portal não pede hoje |
+| **Change Email Address** | `trocar-email.html` | Confirme a troca de e-mail | Portal do Membro | troca do e-mail da conta — o portal não oferece hoje |
+| **Reset Password** | `redefinir-senha.html` | Redefina a sua senha | Portal do Membro | *Esqueci minha senha*, e a chavinha de *Administração › Contas* |
+| **Reauthentication** | `reautenticacao.html` | Seu código de confirmação | Portal do Membro | confirmação de alteração sensível — o portal não pede hoje |
 
 Os três que o portal não usa hoje também estão aqui. Assim, se um dia
 saírem, já saem no mesmo padrão.

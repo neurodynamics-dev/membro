@@ -25,9 +25,8 @@
    qrcode-generator 1.4.4 do jsDelivr, que só diz quais módulos do QR
    são escuros: o desenho é vetorial, nítido em qualquer impressão.
 
-   A fonte é a Helvetica do PDF, a mesma métrica da Arial dos
-   templates. Ela só escreve o que existe no Windows-1252; limpa()
-   troca o resto (setas, emojis) antes de desenhar.
+   Archivo é embutida com licença OFL. A medição e o desenho usam
+   o mesmo arquivo local; limpa() mantém a compatibilidade dos registros.
    ============================================================ */
 (function(){
   'use strict';
@@ -35,15 +34,15 @@
 
   const CDN_JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
   const CDN_QR    = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
-  const LOGO_URL  = 'https://raw.githubusercontent.com/matheusmarcondes1/nro/refs/heads/main/imagotipo%20preto.png';
+  const LOGO_URL  = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
   const URL_VALIDACAO = 'https://auth.neurodynamics.dev';
 
   /* A página: A4, com as margens do template (a de cima deixa o
      cabeçalho respirar; a de baixo é a do rodapé). */
-  const PAG = { w:210, h:297, esq:15, dir:12.5, topo:32.5 };
+  const PAG = { w:210, h:297, esq:22, dir:22, topo:36 };
   const LARG = PAG.w - PAG.esq - PAG.dir;                      /* 182,5 mm */
-  const TINTA = [29, 29, 31], CINZA = [96, 96, 99], CLARO = [138, 138, 143];
-  const LINHA = [150, 150, 155], FUNDO = [217, 217, 217], FUNDO_CLARO = [242, 242, 242];
+  const TINTA = [29, 29, 31], CINZA = [97, 108, 104], CLARO = [97, 108, 104];
+  const LINHA = [196, 204, 201], FUNDO = [255, 255, 255], FUNDO_CLARO = [242, 242, 242];
 
   /* ---------------- carregar ---------------- */
   const _scripts = new Map();
@@ -73,7 +72,11 @@
     }catch(e){ LOGO = false; }
   }
   /* Tudo o que um documento precisa, na primeira vez. */
+  const BASE_FONTES = new URL('fontes-pdf.js', document.currentScript.src).href;
+  let fontesDados, docAtual;
   async function precisa(){
+    if (!window.FontesPDF) await carregar(BASE_FONTES);
+    fontesDados = await window.FontesPDF.carregar();
     if (!window.jspdf) await carregar(CDN_JSPDF);
     if (typeof window.qrcode !== 'function') await carregar(CDN_QR);
     await carregarLogo();
@@ -92,26 +95,17 @@
         : c.length > 1 ? '' : '?');
   }
 
-  /* As larguras da Helvetica e da Helvetica-Bold, em milésimos do corpo
-     (as da tabela AFM, as que o leitor de PDF usa para desenhar), na
-     ordem de ALFA: ASCII, Latin-1 e os extras do Windows-1252. O
-     getTextWidth do jsPDF não serve para diagramar: arredonda as
-     larguras e aplica kerning na medida — "Ta" mede menos do que o PDF
-     desenha —, e texto justificado palavra a palavra sai encavalado. */
-  const ALFA = (() => { let a = ''; for (let c = 32; c < 127; c++) a += String.fromCharCode(c);
-    for (let c = 160; c < 256; c++) a += String.fromCharCode(c); return a + EXTRAS; })();
-  const W_HELV = '278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500,556,222,556,333,1000,556,556,333,1000,667,333,1000,611,222,222,333,333,350,556,1000,333,1000,500,333,944,500,667'.split(',').map(Number);
-  const W_HEBO = '278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556,556,278,556,500,1000,556,556,333,1000,667,333,1000,611,278,278,500,500,350,556,1000,333,1000,556,333,944,500,667'.split(',').map(Number);
-  const POS = new Map([...ALFA].map((c, i) => [c, i]));
-  let FONTE = { estilo:'normal', tam:10, familia:'helvetica' };
+  /* A largura usa as métricas da Archivo embutida no PDF. */
+  let FONTE = { estilo:'normal', tam:10, familia:'Archivo' };
   /* a largura, em mm, na fonte corrente (ou na que se pedir) */
   function mede(t, estilo, tam){
     estilo = estilo || FONTE.estilo; tam = tam || FONTE.tam;
-    let u = 0;
-    if (FONTE.familia === 'courier' && !arguments[1]) u = [...String(t)].length * 600;
-    else { const W = /bold/.test(estilo) ? W_HEBO : W_HELV;
-      for (const c of String(t)){ const i = POS.get(c); u += i == null ? 556 : W[i]; } }
-    return u / 1000 * tam * 25.4 / 72;
+    if (!docAtual) return String(t).length * tam * .18;
+    const atual = docAtual.getFont(), corpo = docAtual.getFontSize();
+    docAtual.setFont('Archivo', estilo); docAtual.setFontSize(tam);
+    const largura = docAtual.getTextWidth(String(t));
+    docAtual.setFont(atual.fontName, atual.fontStyle); docAtual.setFontSize(corpo);
+    return largura;
   }
   /* quebra um texto em linhas que cabem em larg (mm), na fonte corrente;
      palavra maior que a linha se parte */
@@ -193,13 +187,15 @@
   function novo(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
+    window.FontesPDF.registrar(doc, fontesDados);
+    docAtual = doc;
     doc.__textos = [[]];           /* o que foi escrito, por página — os testes leem */
     return doc;
   }
   const cor = (doc, c) => doc.setTextColor(c[0], c[1], c[2]);
   function fonte(doc, estilo, tamanho){
-    doc.setFont('helvetica', estilo || 'normal'); if (tamanho) doc.setFontSize(tamanho);
-    FONTE = { estilo: estilo || 'normal', tam: tamanho || FONTE.tam, familia:'helvetica' };
+    doc.setFont('Archivo', estilo || 'normal'); if (tamanho) doc.setFontSize(tamanho);
+    FONTE = { estilo: estilo || 'normal', tam: tamanho || FONTE.tam, familia:'Archivo' };
   }
   /* escreve e anota: a camada de texto do PDF é esta mesma */
   function escreve(doc, txt, x, y, op){
@@ -240,9 +236,9 @@
     cor(doc, TINTA);
     const cortar = (t, max) => { let s = limpa(t); while (s.length > 8 && mede(s) > max) s = s.slice(0, -2);
       return s === limpa(t) ? s : s.trim() + '…'; };
-    fonte(doc, 'bold', 9.5);  escreve(doc, cortar(c.departamento || 'NeuroDynamics', 100), x1, 12.6, { align:'right' });
-    fonte(doc, 'normal', 9.5); escreve(doc, cortar(c.titulo || '', 100), x1, 16.8, { align:'right' });
-    escreve(doc, (c.codigo || '') + (c.rev ? ' Rev. ' + c.rev : ''), x1, 21, { align:'right' });
+    fonte(doc, 'normal', 9.5); escreve(doc, cortar(c.titulo || '', 100), x1, 12.6, { align:'right' });
+    escreve(doc, (c.codigo || '') + (c.rev ? ' Rev. ' + c.rev : ''), x1, 16.8, { align:'right' });
+    cor(doc, CINZA); fonte(doc, 'normal', 8); escreve(doc, cortar(c.departamento || 'NeuroDynamics', 100), x1, 21, { align:'right' });
   }
 
   /* ============================================================
@@ -277,7 +273,7 @@
        espaço da justificação só entra onde o texto tem espaço. */
     e.rico = (trechos, o = {}) => {
       const tam = o.tamanho || e.corpo, lh = o.entrelinha || tam * .52, larg = o.largura || (e.larg - (o.recuo || 0));
-      const x0 = e.x0 + (o.recuo || 0), alinhar = o.alinhar || 'justify';
+      const x0 = e.x0 + (o.recuo || 0), alinhar = o.alinhar || 'left';
       const est = t => t.b && t.i ? 'bolditalic' : t.b ? 'bold' : t.i ? 'italic' : 'normal';
       /* as unidades: pedaços colados, cada pedaço com o seu estilo */
       const unidades = [];
@@ -415,7 +411,7 @@
         const h = Math.max(...cels.map(l => l.length)) * 6.8 * .45 + pad * 2;
         colunas.forEach((c, i) => {
           doc.setFillColor(FUNDO[0], FUNDO[1], FUNDO[2]); doc.setDrawColor(LINHA[0], LINHA[1], LINHA[2]); doc.setLineWidth(.25);
-          doc.rect(xs[i], e.y, ws[i], h, 'FD');
+          doc.line(xs[i], e.y + h, xs[i] + ws[i], e.y + h);
           cor(doc, TINTA); fonte(doc, 'bold', 6.8);
           cels[i].forEach((l, k) => escreve(doc, l, xs[i] + pad, e.y + pad + 6.8 * .45 * (k + .8)));
         });
@@ -429,8 +425,8 @@
         const h = Math.max(o.alturaMin || 0, ...cels.map(c => c.ls ? c.ls.length * lh : lh)) + pad * 2;
         if (e.y + h > e.base){ e.novaPagina(); if (o.cabecalho !== false) cabec(); }
         cels.forEach((c, i) => {
-          if (o.zebra && r % 2) { doc.setFillColor(FUNDO_CLARO[0], FUNDO_CLARO[1], FUNDO_CLARO[2]); doc.rect(xs[i], e.y, ws[i], h, 'F'); }
-          doc.setDrawColor(LINHA[0], LINHA[1], LINHA[2]); doc.setLineWidth(.25); doc.rect(xs[i], e.y, ws[i], h);
+
+          doc.setDrawColor(LINHA[0], LINHA[1], LINHA[2]); doc.setLineWidth(.25); doc.line(xs[i], e.y + h, xs[i] + ws[i], e.y + h);
           cor(doc, TINTA); fonte(doc, colunas[i].negrito ? 'bold' : 'normal', tam);
           if (c.sim){ glifo(doc, c.sim, xs[i] + ws[i] / 2, e.y + pad + lh * .45, lh * .95); }
           else c.ls.forEach((l, k) => escreve(doc, l, colunas[i].alinhar === 'center' ? xs[i] + ws[i] / 2
@@ -589,7 +585,7 @@
       qr(doc, link, PAG.esq + 2.6, top + (h - lado) / 2, lado);
       const tx = PAG.esq + lado + 6.2, tw = LARG - lado - 9.5;
       cor(doc, TINTA); fonte(doc, 'bold', 7.2);
-      escreve(doc, 'DOCUMENTO EMITIDO ELETRONICAMENTE · AUTENTICIDADE VERIFICÁVEL', tx, top + 5.1);
+      escreve(doc, 'DOCUMENTO EMITIDO ELETRONICAMENTE, AUTENTICIDADE VERIFICÁVEL', tx, top + 5.1);
       fonte(doc, 'normal', 7.1); cor(doc, [60, 60, 64]);
       const corpo = `Documento emitido pelo SOMA, o sistema de gestão da NeuroDynamics PD&I, em ${momento(a.emitido_em)} `
         + `(horário oficial de Brasília), com a informação registrada no sistema nessa data. Dispensa assinatura. `
@@ -598,10 +594,10 @@
       const ls = quebra(limpa(corpo), tw);
       ls.forEach((l, k) => escreve(doc, l, tx, top + 9.2 + k * 3.05));
       /* o código em destaque, como se lê em voz alta */
-      cor(doc, TINTA); doc.setFont('courier', 'bold'); doc.setFontSize(8.4); FONTE = { estilo:'bold', tam:8.4, familia:'courier' };
-      escreve(doc, `CÓDIGO VERIFICADOR ${a.codigo}   ·   CONTROLE ${a.controle}`, tx, top + h - 2.6);
+      cor(doc, TINTA); doc.setFont('Archivo', 'normal'); doc.setFontSize(8.4); FONTE = { estilo:'bold', tam:8.4, familia:'Archivo' };
+      escreve(doc, `CÓDIGO VERIFICADOR ${a.codigo}  ,   CONTROLE ${a.controle}`, tx, top + h - 2.6);
       cor(doc, CLARO); fonte(doc, 'normal', 7.2);
-      escreve(doc, `${a.documento}${a.revisao ? ' Rev. ' + a.revisao : ''} · ${host}`, PAG.esq, PAG.h - 7);
+      escreve(doc, `${a.documento}${a.revisao ? ' Rev. ' + a.revisao : ''}, ${host}`, PAG.esq, PAG.h - 7);
       escreve(doc, `Página ${i} de ${total}`, PAG.w - PAG.dir, PAG.h - 7, { align:'right' });
     }
   }
@@ -643,7 +639,7 @@
     const cab = { departamento:e.emissor || 'Diretoria', titulo:e.titulo || 'Declaração de vínculo', codigo:e.documento, rev:e.revisao };
     const w = escritor(doc, cab, { rodape:40 });
     doc.setProperties({ title:`${e.documento} ${cab.titulo} — ${d.nome || ''}`, subject:`Código verificador ${e.codigo}`,
-      author:'NeuroDynamics PD&I', creator:'SOMA · NeuroDynamics' });
+      author:'NeuroDynamics PD&I', creator:'SOMA, NeuroDynamics' });
     w.paragrafo(`${d.cidade || 'Belo Horizonte'}, ${dataExtenso(d.data)}`, { alinhar:'left', cru:true, depois:9 });
     w.rico(textoVinculo(d), { depois:3.4 });
     w.paragrafo(d.texto_instituicao || INSTITUICAO, { cru:true, depois:3.4 });
@@ -657,7 +653,7 @@
     /* a segunda folha: o breve registro */
     w.novaPagina();
     w.titulo('Registro de formação e de participação em eventos', { antes:0, tamanho:13 });
-    w.paragrafo(`${String(d.nome || '').toUpperCase()} · registros do SOMA em ${dataExtenso(d.data)}.`, { cru:true, tamanho:9, cor:CINZA, alinhar:'left', depois:4 });
+    w.paragrafo(`${String(d.nome || '').toUpperCase()}, registros do SOMA em ${dataExtenso(d.data)}.`, { cru:true, tamanho:9, cor:CINZA, alinhar:'left', depois:4 });
     w.subtitulo('Treinamentos concluídos');
     if (nT){
       w.tabela([{ rotulo:'Código', largura:1.35 }, { rotulo:'Treinamento', largura:3.6 }, { rotulo:'Rev.', largura:.55, alinhar:'center' },
@@ -704,7 +700,7 @@
     const cab = { departamento:e.emissor || 'Diretoria', titulo:e.titulo || 'Declaração de participação', codigo:e.documento, rev:e.revisao };
     const w = escritor(doc, cab, { rodape:40 });
     doc.setProperties({ title:`${e.documento} ${cab.titulo} — ${d.nome || ''}`, subject:`Código verificador ${e.codigo}`,
-      author:'NeuroDynamics PD&I', creator:'SOMA · NeuroDynamics' });
+      author:'NeuroDynamics PD&I', creator:'SOMA, NeuroDynamics' });
     w.paragrafo(`${d.cidade || 'Belo Horizonte'}, ${dataExtenso(d.data)}`, { alinhar:'left', cru:true, depois:9 });
     w.rico(textoParticipacao(d), { depois:3.4 });
     if (ev.descricao) w.rico([{ t:'Descrição da participação: ', i:true }, { t:String(ev.descricao).trim() }], { depois:3.4 });
@@ -773,7 +769,7 @@
     const cab = { departamento: def.cabecalho ? (preencher(def.cabecalho, def, dados) || m.emissor) : m.emissor,
                   titulo: def.titulo || tituloFrase(m.titulo), codigo:m.codigo, rev:m.rev };
     const w = escritor(doc, cab, { numerar: !!def.numerar_linhas, rodape: 28 });
-    doc.setProperties({ title:`${m.codigo} ${cab.titulo}`, author:'NeuroDynamics PD&I', creator:'SOMA · NeuroDynamics' });
+    doc.setProperties({ title:`${m.codigo} ${cab.titulo}`, author:'NeuroDynamics PD&I', creator:'SOMA, NeuroDynamics' });
     const campo = id => (def.campos || []).find(c => c.id === id);
 
     const imprimeCampo = (c, b = {}) => {
@@ -850,7 +846,7 @@
     });
 
     rodape(doc, { nota: notaDaClasse(m.classe, m.emissor, m.natureza),
-      texto: `${m.codigo}${m.rev ? ' Rev. ' + m.rev : ''} · escrito no SOMA${m.autor ? ' por ' + m.autor : ''}${m.em ? ' em ' + dataCurta(m.em) : ''}` });
+      texto: `${m.codigo}${m.rev ? ' Rev. ' + m.rev : ''}, escrito no SOMA${m.autor ? ' por ' + m.autor : ''}${m.em ? ' em ' + dataCurta(m.em) : ''}` });
     doc.__nome = `${m.codigo} ${String(tituloFrase(m.titulo || cab.titulo)).toUpperCase()}${m.natureza !== 'registro' && m.rev ? ' REV. ' + m.rev : ''}.pdf`;
     return doc;
   }
@@ -864,7 +860,7 @@
     const doc = novo();
     const cab = { departamento:m.emissor || 'Diretoria', titulo:'Registro de contas digitais', codigo:m.codigo || 'Cofre do SOMA', rev:m.rev };
     const w = escritor(doc, cab, { rodape:28 });
-    doc.setProperties({ title:`${cab.codigo} ${cab.titulo}`, author:'NeuroDynamics PD&I', creator:'SOMA · NeuroDynamics' });
+    doc.setProperties({ title:`${cab.codigo} ${cab.titulo}`, author:'NeuroDynamics PD&I', creator:'SOMA, NeuroDynamics' });
     w.titulo('Registro de contas digitais', { antes:0, tamanho:13 });
     w.paragrafo(`As contas guardadas no cofre do SOMA em ${dataExtenso(m.data)}. As senhas, os códigos de duas etapas e as notas `
       + 'secretas não saem do cofre e não constam deste registro.', { cru:true, tamanho:9, cor:CINZA, alinhar:'left', depois:4 });
@@ -877,7 +873,7 @@
         c.quem_usa || '—', (c.responsaveis_nomes || []).join(', ') || 'Gestão do cofre', c.trocada_em ? dataCurta(String(c.trocada_em).slice(0, 10)) : '—',
         sit[c.situacao] || c.situacao || '']), { tamanho:7.8 });
     rodape(doc, { nota: notaDaClasse('confidencial', m.emissor || 'Diretoria', 'documento'),
-      texto: `${cab.codigo}${m.rev ? ' Rev. ' + m.rev : ''} · exportado do cofre do SOMA${m.autor ? ' por ' + m.autor : ''} em ${dataCurta(m.data)}` });
+      texto: `${cab.codigo}${m.rev ? ' Rev. ' + m.rev : ''}, exportado do cofre do SOMA${m.autor ? ' por ' + m.autor : ''} em ${dataCurta(m.data)}` });
     doc.__nome = `${cab.codigo} REGISTRO DE CONTAS DIGITAIS ${dataCurta(m.data).split('/').reverse().join('-')}.pdf`;
     return doc;
   }
@@ -895,7 +891,7 @@
     const codigo = `CHK-${String(f.numero || 0).padStart(3, '0')}`;
     const cab = { departamento:'Departamento de Pessoal', titulo:'Folha de check-in do LABBIO', codigo };
     cabecalho(doc, cab);
-    doc.setProperties({ title:`${codigo} Folha de check-in do LABBIO`, author:'NeuroDynamics PD&I', creator:'SOMA · NeuroDynamics' });
+    doc.setProperties({ title:`${codigo} Folha de check-in do LABBIO`, author:'NeuroDynamics PD&I', creator:'SOMA, NeuroDynamics' });
     /* o endereço do portal (com ou sem index.html) e o token da folha */
     const u = new URL(f.url || 'https://membro.neurodynamics.dev/');
     u.search = '?t=F-' + f.token; u.hash = '';
@@ -918,7 +914,7 @@
     fonte(doc, 'normal', 9.5);
     escreve(doc, 'Vale como o QR do quiosque até ser revogada em Equipe > Presença. Não copie nem fotografe esta folha.', cx, y + lado + 36, { align:'center' });
     rodape(doc, { nota: notaDaClasse('controlado', 'Departamento de Pessoal', 'documento'),
-      texto: `${codigo} · folha controlada do SOMA` });
+      texto: `${codigo}, folha controlada do SOMA` });
     doc.__nome = `${codigo} FOLHA DE CHECK-IN DO LABBIO.pdf`;
     doc.__url = url;
     return doc;
@@ -945,8 +941,24 @@
     return n;
   }
 
+  function reporteUnificado(d){
+    const doc=novo(), w=escritor(doc,{departamento:'Diretoria',titulo:'Reporte semanal',codigo:'',rev:''});
+    w.titulo('Semana de '+dataCurta(d.painel.ciclo.semana));
+    for(const f of d.painel.frentes){
+      w.subtitulo(f.nome);w.paragrafo(f.responsavel_nome+': '+(f.enviado_em?'Enviado':'Pendente'));
+      const r=d.reportes.find(x=>x.frente_id===f.id);if(!r)continue;
+      for(const x of r.escalonamentos)w.paragrafo((x.codigo?x.codigo+' ':'')+x.texto);
+      for(const x of r.apontamentos.filter(x=>x.sinalizado))w.paragrafo('Registro '+x.registro+': '+x.justificativa);
+    }
+    for(const [chave,titulo] of [['atrasados','Atividades atrasadas'],['replanejados','Mais de dois replanejamentos'],['ocorrencias','Ocorrências do período']]){
+      w.subtitulo(titulo);for(const x of d[chave])w.paragrafo((x.codigo||x.registro||'')+' '+(x.titulo||x.descricao||''));
+      if(!d[chave].length)w.paragrafo('Nenhum registro.');
+    }
+    rodape(doc,{texto:'Reporte semanal'});return doc;
+  }
+
   window.DocNRO = {
-    versao: '1', URL_VALIDACAO, precisa, novo, escritor, cabecalho, rodape, rodapeAutenticado, qr,
+    reporteUnificado, versao: '1', URL_VALIDACAO, precisa, novo, escritor, cabecalho, rodape, rodapeAutenticado, qr,
     declaracaoVinculo, declaracaoParticipacao, registro, registroContas, folhaCheckin, baixar, blob, abrir,
     textoVinculo, textoParticipacao, preencher, valorTexto, impressaoPadrao, notaDaClasse,
     limpa, dataExtenso, dataCurta, mesAno, horaExtenso, horasExtenso, periodo, momento, tituloFrase

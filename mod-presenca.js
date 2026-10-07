@@ -147,7 +147,7 @@ async function presNovaFolha(){
   const ativa = (presenca.folhas || []).find(f => !f.revogada_em);
   if (ativa && !await confirma(`A folha CHK-${String(ativa.numero).padStart(3, '0')} deixa de valer: o QR dela passa a ser recusado no check-in. Gerar uma nova?`, 'Gerar nova')) return;
   abreModal(`<h3>Gerar folha de check-in</h3>
-    <div class="fld"><label for="fl-rot">Onde vai ficar</label><input id="fl-rot" maxlength="80" placeholder="Porta do LABBIO"></div>
+    <div class="fld"><label for="fl-rot">Local</label><input id="fl-rot" maxlength="80" placeholder="Porta do LABBIO"></div>
     <p class="err-msg" id="fl-erro"></p>
     <div class="acts"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" id="fl-ok" onclick="presCriarFolha()">Gerar e baixar</button></div>`);

@@ -113,7 +113,7 @@ async function previa(p, ctx){
 
   const t = await previa(p, ctx);
   confere('a prévia no modelo da NRO: quem se reuniu no cabeçalho, o título, o código e a revisão do template',
-    /NeuroDynamics Gerência Ata de reunião NRO-PUB-003-2 Rev\. A/.test(t), t.slice(0, 160));
+    /NeuroDynamics Ata de reunião NRO-PUB-003-2 Rev\. A Gerência/.test(t), t.slice(0, 160));
   confere('a frase da ata, com a data e a hora por extenso', /Às 16 horas do dia 24 de setembro de 2026, reuniram-se na Sala de Reuniões do LABBIO/.test(t), t.slice(0, 400));
   confere('os presentes numerados e a pauta com letras, com a pontuação do template',
     /1\. \d* ?Ana Figueiredo; 2\. \d* ?Bruno Tavares \(online\),/.test(t) && /A\. \d* ?Definir o horário recorrente; B\. \d* ?Revisar o cronograma do Nebula\./.test(t), t.slice(0, 700));

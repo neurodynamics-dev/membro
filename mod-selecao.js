@@ -1203,7 +1203,7 @@ function psDinJanelas(){
       <div class="tt">${fmtD(s.data)}, ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</div>
       <div class="mt">${esc(s.local||'sem local')}, ${ocup(s)}/${s.capacidade} agendados${s.ativo?'':', inativa'}</div>
     </div>
-    <span class="pill mono" style="letter-spacing:.16em">${s.codigo ? esc(s.codigo) : '— sem código —'}</span>
+    <span class="pill mono" style="letter-spacing:.16em">${s.codigo ? esc(s.codigo) : 'Sem código'}</span>
     <button class="btn ghost mini" onclick="PS.dinJanela='${s.id}';psDinamica()">Preparar</button>
   </div>`).join('') || '<div class="empty">Nenhuma janela de dinâmica na agenda. Crie em Seleção › Agenda.</div>'}
   <p class="small muted" style="margin-top:12px;line-height:1.7">
@@ -1547,7 +1547,7 @@ function psCompsCorpo(){
   };
   return grupos.map(([g,itens])=>`<div class="comp-bloco"><h5>${esc(g)}</h5>
     <div class="comp-sel">${itens.map(chip).join('')}</div></div>`).join('')
-    || '<p class="small muted">Catálogo vazio — use o campo abaixo para incluir etiquetas.</p>';
+    || '<p class="small muted">Catálogo vazio.</p>';
 }
 
 function psCompCicla(btn, i){

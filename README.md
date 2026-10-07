@@ -103,7 +103,7 @@ SOMA · Gestão está sendo trazido, conforme o
 ## Como o sistema se organiza
 
 A navegação é por **espaços** — o que você está fazendo —, não por qual app
-a tela veio: **Agenda · Atividades · OKRs · Projetos · Arquivos · Studio ·
+a tela veio: **Agenda · Atividades · OKRs · Projetos · Arquivos · Studio · Marca ·
 Equipe · Treinamentos · Serviços** (o Studio, para quem está
 nos grupos dele), e, para quem tem o papel, **Seleção** e **Administração**. Eles ficam num **menu lateral** à esquerda,
 cada um com ícone e com os seus subitens logo abaixo — o calendário e as
@@ -1335,3 +1335,23 @@ as próprias solicitações; a escrita passa pelas funções
 `portal_abrir_solicitacao` / `portal_cancelar_solicitacao` (validação e
 protocolo no banco); a ouvidoria só é lida por `admin`/`pessoal`. O
 A tela de Administração é só interface — a regra mora no banco.
+
+## SOMA 2.18.0
+
+A migração única é [`db/2.18.0_soma.sql`](db/2.18.0_soma.sql), depois da 2.17.0. Leia o [checklist de publicação](PUBLICACAO-2.18.md) antes de aplicar em produção.
+
+| Arquivo | Responsabilidade |
+|---|---|
+| `mod-reporte.js` | Reporte semanal, feed paginado, painel/PDF, aprovação de newsletters e importação da comunidade |
+| `mod-marca.js` | Materiais, assinatura, guias de interfaces e vínculos com séries controladas |
+| `select-nro.js`, `select-nro.css` | Select progressivo com teclado e sincronização do elemento nativo |
+| `fontes-pdf.js`, `fontes/` | Fontes Archivo locais, métricas e licença OFL para PDFs |
+| `descadastrar.html` | Confirmação pública de descadastro da comunidade |
+
+Reporte fica em `#/equipe/reporte`, feed em `#/feed` e newsletters em `#/equipe/newsletter`. O ciclo usa America/Sao_Paulo; a configuração afeta os próximos ciclos. A passagem da fila materializa o ciclo e os boletins dos períodos anteriores. Rascunhos usam controle de versão; envio de reporte é idempotente. Cada sinalização abre um card para o Pessoal, sem gravar ocorrência diretamente.
+
+O envio de newsletter exige três votos distintos de integrantes ativos da liderança sobre a mesma versão. Editar o conteúdo zera os votos. A fila só inclui membros elegíveis e inscritos não descadastrados. Importar de novo não reativa descadastros. Entrega depende da fila/provedor; como nos demais e-mails, uma falha entre envio e baixa exige conferir o provedor antes de repetir manualmente.
+
+Tipos de evento com ata usam a série NRO-PUB-003 por padrão. O botão cria e salva o rascunho antes de abrir Arquivos, respeitando a permissão de criação da série. Reabrir o evento reutiliza o PN.
+
+Marca usa os assets públicos de `brand.neurodynamics.dev`, mas resolve documentos controlados pelo rol e por `doc_pode_ler`. Configure a série de cada peça em `#/marca/config`. O importador do Studio aceita JSON ou Markdown com bloco JSON, validado contra o README gerado no próprio editor; fotos são adicionadas na interface.

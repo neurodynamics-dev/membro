@@ -325,7 +325,7 @@ async function novoAviso(){
       ordem: 100 + adminP.avisos.length * 10, criado_por: quemSouEu() })
     .select().single();
   if (error){ toast('Erro ao criar: ' + error.message, true); return; }
-  toast('Aviso criado. Começa oculto: publique quando estiver pronto.');
+  toast('Aviso criado, oculto.');
   adminP.sel = data.id;
   await admCarregarAvisos();
 }

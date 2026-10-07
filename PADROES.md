@@ -24,7 +24,8 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **Projetos** | cada projeto: equipe, supervisor e o rol de arquivos | todos (criar: PMO e `admin`; editar: eles e o supervisor) |
 | **Arquivos** | documentos e registros controlados — código, revisão, status | todos no rol; o conteúdo segue a classe de cada série |
 | **Studio** | comunicação — criar as peças, planejar e aprovar as publicações | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
-| **Equipe** | pessoas — organograma, fichas, presença no LABBIO e apontamento | todos (a profundidade varia) |
+| **Marca** | materiais, assinaturas, interfaces e manual da marca | todos; vínculos geridos por quem administra Arquivos |
+| **Equipe** | pessoas — organograma, fichas, presença, reporte e feed | todos (a profundidade varia) |
 | **Treinamentos** | formação — o que os seus grupos pedem, fazer, os certificados | todos (gerir: `admin`, `pessoal` e os grupos gestores) |
 | **Serviços** | pedidos ao Depto. de Pessoal — e, em *Meus pedidos*, o andamento deles | todos |
 | **Seleção** | os bastidores do processo seletivo | `admin`, `pessoal`, `selecao` |
@@ -37,14 +38,12 @@ casinha menor, ao lado dela, diz que leva. No trilho a casinha sai; a logo
 basta. Um item "Início" repetiria o caminho da logo e empurraria os espaços
 para baixo.
 
-Até dez destinos no primeiro nível para toda a equipe (mais Seleção e
-Administração, para quem tem o papel), cada um com ícone, no **menu lateral**
-à esquerda. Com o Studio eram dez: **o próximo precisa caber dentro de um que
-já existe, ou tomar o lugar dele**. Os Treinamentos foram o próximo, e tomaram
-o lugar de Meus pedidos, que coube dentro de Serviços — o andamento do que se
-pediu é parte de pedir, e `#/pedidos` continua abrindo pelo `ALIAS`. O Studio é o único espaço do primeiro nível
-que some para quem não é dos grupos dele — é uma ferramenta de trabalho de uma
-equipe, como Seleção, e não um lugar da equipe inteira. O segundo nível são os subitens de cada espaço — o calendário e
+A ordem do primeiro nível é Agenda, Atividades, OKRs, Projetos, Arquivos,
+Studio, Marca, Equipe, Treinamentos, Serviços, Seleção e Administração.
+Studio, Seleção e Administração aparecem conforme as permissões. Marca
+fica disponível para toda a equipe, entre Studio e Equipe. Novos destinos
+precisam de revisão da arquitetura de navegação.
+O segundo nível são os subitens de cada espaço — o calendário e
 as configurações da Agenda, os quadros dos grupos da pessoa, cada serviço,
 cada painel —, pendurados numa linha-guia debaixo do espaço, como
 no painel da Cloudflare. Tudo o que tem endereço próprio vira subitem; o que
@@ -99,7 +98,12 @@ conforme quem entra é menu que ninguém aprende.
 #/atividades/card/<codigo>  uma atividade (ex.: #/atividades/card/ORT-14)
 #/equipe                    organograma
 #/equipe/<registro>         a ficha
-#/equipe/quadro|presenca|apontamento
+#/marca
+#/marca/assinatura|interfaces|config
+#/feed
+#/equipe/quadro|presenca|reporte|feed|newsletter
+#/admin/emails/comunidade
+# /equipe/apontamento é alias compatível de /equipe/reporte
 #/okrs[/<codigo>]           a árvore de objetivos, com um em foco (OE1, OT1.2…)
 #/projetos[/novo]           os projetos
 #/projetos/<CÓDIGO>         um projeto (ex.: #/projetos/NEBULA)
@@ -597,8 +601,8 @@ O portal fala como um documento da NRO: direto, formal e curto.
 - **Sem travessão nem ponto médio em frase e rótulo.** Vírgula, dois-pontos
   ou parênteses. Contagem no título vai entre parênteses ("Equipe (4)");
   código e título, lado a lado ("ORT-14 Calibrar o encoder"). O travessão
-  fica como marca de campo vazio (`—`); o ponto médio, só na tipografia dos
-  documentos em PDF e nas artes do Studio.
+  fica como marca de campo vazio (`—`). Documentos e artes também usam
+  vírgula ou dois-pontos, sem ponto médio como separador.
 - **Erros dizem o que houve, não quem errou**: "Sem permissão para esta
   ação.", "Conta sem vínculo com um registro de membro." — os textos comuns
   moram em `MOTIVO_RPC`, na casca.

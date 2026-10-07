@@ -183,7 +183,7 @@ function frmCampoHTML(c){
     }
     case 'membro': return caixa(`<input id="${id}" list="frm-membros" value="${esc(v?.nome || '')}" placeholder="Nome"
       oninput="frmSetPessoa('${c.id}', this.value)">`);
-    case 'projeto': return caixa(`<select id="${id}" onchange="frmSetProjeto('${c.id}', this.value)"><option value="">— nenhum —</option>${
+    case 'projeto': return caixa(`<select id="${id}" onchange="frmSetProjeto('${c.id}', this.value)"><option value="">Nenhum</option>${
       (state.projetos || []).filter(p => p.status !== 'encerrado' || p.id === v?.id).map(p =>
         `<option value="${esc(p.id)}" ${p.id === v?.id ? 'selected' : ''}>${esc(p.nome)} (${esc(p.codigo)})</option>`).join('')}</select>`);
     case 'redacao': return caixa(`<div class="frm-redacao">

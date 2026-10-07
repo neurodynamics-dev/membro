@@ -225,6 +225,8 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   confere('a semana: sete dias, com hoje marcado', await p.locator('#card-semana .ini-dia').count() === 7
     && await p.locator('#card-semana .ini-dia.hoje').count() === 1);
   confere('a carga de cada dia', await p.locator('#card-semana .ini-carga').count() === 7);
+  confere('a carga inclui madrugada e noite sem duplicar sobreposição', await p.evaluate(() => minutosOcupados([{hi:60,hf:120},{hi:90,hf:150},{hi:1260,hf:1380}])) === 210);
+  confere('um dia cheio tem 1440 minutos', await p.evaluate(() => minutosOcupados([{hi:0,hf:1440}])) === 1440);
   confere('o convite sem resposta aparece tracejado na semana', await p.locator('#card-semana .ini-ev.pend:has-text("Revisão da órtese")').count() === 1);
   await p.click('#card-semana .ini-conv:has-text("Revisão da órtese") button:has-text("Sim")'); await p.waitForTimeout(500);
   const r = (await rpcs(p, 'agenda_responder')).pop();

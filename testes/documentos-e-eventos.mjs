@@ -98,7 +98,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   confere('emitir baixa o PDF com o nome do NRO-PUB-002', nome === 'NRO-DIR-004-4 DECLARAÇÃO DE VÍNCULO - Ana Figueiredo.pdf', nome);
   confere('duas folhas', d?.paginas === 2, d?.paginas);
   confere('o cabeçalho do modelo: Diretoria, o título, o código e a revisão',
-    /^NeuroDynamics Diretoria Declaração de vínculo NRO-DIR-004-4 Rev\. B/.test(d.textos[0]), d.textos[0].slice(0, 120));
+    /^NeuroDynamics Declaração de vínculo NRO-DIR-004-4 Rev\. B Diretoria/.test(d.textos[0]), d.textos[0].slice(0, 120));
   confere('a frase, com o CPF inteiro no papel',
     d.textos[0].includes('Declaramos, para os devidos fins, que ANA FIGUEIREDO, CPF nº 000.000.000-00, atua como GERENTE DE PROJETO da NeuroDynamics PD&I desde março de 2024.'),
     d.textos[0].slice(0, 400));

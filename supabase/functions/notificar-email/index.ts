@@ -51,6 +51,7 @@ const CHAVE_SERVICO = env("SUPABASE_SERVICE_ROLE_KEY");
 /* O endereço do portal nos links do e-mail. Sai daqui na
    renomeação para soma.neurodynamics.dev — e é só isto, porque o
    e-mail não tem nada de congelado como o UID do iCal. */
+import { esc, moldura, esp, titulo, texto, botao, MONO } from "./marca.ts";
 const PORTAL = env("PORTAL_URL") || "https://membro.neurodynamics.dev";
 /* As imagens continuam sendo servidas por endereço absoluto: e-mail
    já enviado não se reescreve, então o caminho tem de seguir no ar. */
@@ -283,9 +284,14 @@ export function porCategoria(itens: ItemNotificacao[]): Array<{ chave: string; n
     .filter((g) => g.itens.length > 0);
 }
 
-const esc = (s: unknown): string =>
-  String(s ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+
+/* Peças comuns dos e-mails automáticos (Comunicado do brand, em Cortex). */
+const caixa = (linhas: string) => `<tr><td><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate"><tr><td bgcolor="#E3EFEC" style="background:#E3EFEC;border-radius:12px;padding:20px 22px"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${linhas}</table></td></tr></table></td></tr>`;
+const par = (rot: string, val: string, larg = 104) => val ? `<tr><td style="padding:4px 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+<td width="${larg}" valign="top" style="width:${larg}px;font-family:'Instrument Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#616C68">${rot}</td>
+<td valign="top" style="font-family:'Instrument Sans',Helvetica,Arial,sans-serif;font-weight:500;font-size:14px;line-height:20px;color:#2E3533">${val}</td></tr></table></td></tr>` : "";
+const lnk = (href: string, rot: string) => `<a href="${esc(href)}" style="color:#00594F;text-decoration:none">${rot}</a>`;
+const links = (...ls: string[]) => ls.filter(Boolean).join("<br>");
 
 /** O primeiro nome, que é como as pessoas se chamam por aqui. */
 export const primeiroNome = (nome: string): string =>
@@ -304,7 +310,7 @@ const contagem = (n: number): string => n === 1 ? "1 aviso" : `${n} avisos`;
 export function assuntoDe(d: Destinatario): string {
   if (d.modo === "diario")  return `Resumo diário do SOMA (${contagem(d.itens.length)})`;
   if (d.modo === "semanal") return `Resumo semanal do SOMA (${contagem(d.itens.length)})`;
-  if (d.itens.length === 1) return d.itens[0].titulo;
+  if (d.itens.length === 1) return d.itens[0].titulo.replace(/ — /g, ": ");
   return `${d.itens.length} avisos no portal`;
 }
 
@@ -323,69 +329,26 @@ const RODAPE_PREF = "Para escolher o que chega por e-mail, e com que frequência
    O resumo (diário ou semanal) agrupa os avisos por categoria, cada
    grupo com o seu título; o envio na hora vai sem grupo. */
 export function corpoHTML(d: Destinatario): string {
-  const cartao = (it: ItemNotificacao) => `
-      <tr><td style="padding:0 0 18px">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-               style="border:1px solid #e3e6e3;border-radius:10px">
-          <tr><td style="padding:16px 18px">
-            <div style="font:600 15px/1.45 Helvetica,Arial,sans-serif;color:#1d1d1f">
-              ${esc(it.titulo)}</div>
-            ${it.corpo ? `<div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;
-              color:#4a514a;margin-top:6px">${esc(it.corpo)}</div>` : ""}
-            <div style="margin-top:12px">
-              <a href="${esc(linkDe(it.href))}"
-                 style="font:600 13px/1 Helvetica,Arial,sans-serif;color:#00594F;
-                        text-decoration:none">Abrir no portal &rarr;</a>
-            </div>
-          </td></tr>
-        </table>
-      </td></tr>`;
-  const titulo = (nome: string, n: number) => `
-      <tr><td style="padding:4px 0 10px;font:600 11px/1.4 Helvetica,Arial,sans-serif;letter-spacing:.12em;
-                     text-transform:uppercase;color:#00594F">${esc(nome)} (${n})</td></tr>`;
+  const cartao = (it: ItemNotificacao) => caixa(
+    texto(`<b style="font-weight:500">${esc(it.titulo.replace(/ — /g, ": "))}</b>`) +
+    (it.corpo ? esp(6) + texto(esc(it.corpo), "#2E3533", 14) : "") + esp(10) +
+    texto(lnk(linkDe(it.href), "Abrir no portal"), "#00594F", 13)) + esp(14);
+  const grupo = (nome: string, n: number) =>
+    `<tr><td style="font-family:'Instrument Sans',Helvetica,Arial,sans-serif;font-weight:500;font-size:13px;line-height:18px;color:#00352F;letter-spacing:1.5px;text-transform:uppercase">${esc(nome)} (${n})</td></tr>${esp(8)}`;
   const linhas = ehResumo(d)
-    ? porCategoria(d.itens).map((g) => titulo(g.nome, g.itens.length) + g.itens.map(cartao).join("")).join("")
+    ? porCategoria(d.itens).map((g) => grupo(g.nome, g.itens.length) + g.itens.map(cartao).join("")).join("")
     : d.itens.map(cartao).join("");
-
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width"><title>${esc(assuntoDe(d))}</title></head>
-<body style="margin:0;padding:0;background:#f4f6f4">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4">
-    <tr><td align="center" style="padding:32px 16px">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-             style="max-width:560px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
-        <tr><td style="padding:28px 28px 8px">
-          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics"
-               style="display:block;border:0;outline:none">
-        </td></tr>
-        <tr><td style="padding:14px 28px 0">
-          <div style="font:400 15px/1.6 Helvetica,Arial,sans-serif;color:#1d1d1f">
-            Olá, ${esc(primeiroNome(d.nome))}.</div>
-          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:6px">
-            ${esc(aberturaDe(d))}
-          </div>
-        </td></tr>
-        <tr><td style="padding:22px 28px 0">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${linhas}</table>
-        </td></tr>
-        <tr><td style="padding:4px 28px 28px">
-          <div style="font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#8a908a;
-                      border-top:1px solid #e3e6e3;padding-top:16px">
-            Você recebe este e-mail porque tem avisos no
-            <a href="${esc(PORTAL)}" style="color:#00594F;text-decoration:none">portal</a>.
-            ${RODAPE_PREF} <b>Preferências de avisos</b>.
-          </div>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+  return moldura({
+    assunto: assuntoDe(d), categoria: ehResumo(d) ? "Resumo de avisos" : "Avisos",
+    miolo: titulo(`Olá, ${esc(primeiroNome(d.nome))}.`) + esp(14) + texto(esc(aberturaDe(d))) + esp(24) + linhas,
+    rodape: `Você recebe este e-mail porque tem avisos no ${lnk(PORTAL, "portal")}. ${RODAPE_PREF} <b>Preferências de avisos</b>.`,
+  });
 }
 
 /** A versão em texto, para quem lê e-mail sem HTML. */
 export function corpoTexto(d: Destinatario): string {
   const item = (it: ItemNotificacao) =>
-    `- ${it.titulo}${it.corpo ? "\n  " + it.corpo : ""}\n  ${linkDe(it.href)}`;
+    `- ${it.titulo.replace(/ — /g, ": ")}${it.corpo ? "\n  " + it.corpo : ""}\n  ${linkDe(it.href)}`;
   const linhas = ehResumo(d)
     ? porCategoria(d.itens).map((g) => `${g.nome.toUpperCase()} (${g.itens.length})\n\n` + g.itens.map(item).join("\n\n")).join("\n\n")
     : d.itens.map(item).join("\n\n");
@@ -449,59 +412,20 @@ const hostDe = (url?: string) => String(url || "https://auth.neurodynamics.dev")
 export function declaracaoHTML(e: EnvioDocumento): string {
   const d = e.dados || {};
   const onde = ondeTexto(d);
-  const linha = (rot: string, val: string) => val ? `<tr>
-      <td style="padding:7px 12px;border-top:1px solid #d6d6da;font:700 11px/1.4 Helvetica,Arial,sans-serif;
-                 letter-spacing:.05em;text-transform:uppercase;color:#5e5e63;width:40%">${rot}</td>
-      <td style="padding:7px 12px;border-top:1px solid #d6d6da;font:400 14px/1.45 Helvetica,Arial,sans-serif;color:#1d1d1f">${val}</td></tr>` : "";
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width"><title>${esc(e.assunto)}</title></head>
-<body style="margin:0;padding:0;background:#f4f6f4">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4">
-    <tr><td align="center" style="padding:32px 16px">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-             style="max-width:560px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
-        <tr><td style="padding:28px 28px 8px">
-          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics"
-               style="display:block;border:0;outline:none">
-        </td></tr>
-        <tr><td style="padding:14px 28px 0">
-          <div style="font:400 15px/1.6 Helvetica,Arial,sans-serif;color:#1d1d1f">Olá, ${esc(primeiroNome(e.para_nome))}.</div>
-          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:6px">
-            A NeuroDynamics PD&amp;I emitiu a sua <b style="color:#1d1d1f">declaração de participação</b> no evento
-            <b style="color:#1d1d1f">${esc(d.evento || "")}</b>${d.data_inicio ? ", " + esc(periodoTexto(d.data_inicio, d.data_fim)) : ""}${onde ? ", " + esc(onde) : ""}.
-          </div>
-        </td></tr>
-        <tr><td style="padding:20px 28px 0">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #b9b9be;border-top:0">
-            <tr><td colspan="2" style="padding:8px 12px;background:#d9d9d9;border-top:1px solid #b9b9be;
-                font:700 11px/1.4 Helvetica,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#1d1d1f">
-              Declaração de participação</td></tr>
-            ${linha("Documento", esc(d.documento || ""))}
-            ${linha("Código verificador", `<span style="font-family:'Courier New',monospace;font-weight:700;letter-spacing:.06em">${esc(d.codigo || "")}</span>`)}
-            ${linha("Função", esc(d.papel || "Participante"))}
-            ${linha("Horas dedicadas", esc(horasTexto(d.horas)))}
-          </table>
-        </td></tr>
-        <tr><td style="padding:22px 28px 0">
-          <a href="${esc(d.url || "")}" style="display:inline-block;background:#00594F;color:#ffffff;
-             font:600 14px/1 Helvetica,Arial,sans-serif;text-decoration:none;padding:13px 20px;border-radius:9px">
-            Ver e baixar a declaração</a>
-          ${d.membro && d.href ? `<div style="font:400 13px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:12px">
-            Ela também fica no portal, em <a href="${esc(linkDe(d.href))}" style="color:#00594F;text-decoration:none">Serviços ›
-            Eventos e participações</a>.</div>` : ""}
-        </td></tr>
-        <tr><td style="padding:22px 28px 28px">
-          <div style="font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#8a908a;border-top:1px solid #e3e6e3;padding-top:16px">
-            A declaração dispensa assinatura. Quem a receber confere a autenticidade em
-            <a href="${esc(d.url || "")}" style="color:#00594F;text-decoration:none">${esc(hostDe(d.url))}</a>,
-            pelo código verificador — ou pela leitura do QR Code impresso no documento.
-            Você recebe este e-mail porque participou do evento${d.membro ? "" : " junto à equipe"} da NeuroDynamics PD&amp;I.
-          </div>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+  const miolo = titulo(`Olá, ${esc(primeiroNome(e.para_nome))}.`) + esp(14) + texto(
+    `A NeuroDynamics PD&amp;I emitiu a sua <b style="font-weight:500">declaração de participação</b> no evento
+    <b style="font-weight:500">${esc(d.evento || "")}</b>${d.data_inicio ? ", " + esc(periodoTexto(d.data_inicio, d.data_fim)) : ""}${onde ? ", " + esc(onde) : ""}.`) + esp(24) +
+    caixa(`<tr><td style="font-family:'Instrument Sans',Helvetica,Arial,sans-serif;font-weight:500;font-size:13px;line-height:18px;color:#00352F;letter-spacing:1.5px;text-transform:uppercase">Declaração de participação</td></tr>${esp(8)}` +
+      par("Documento", esc(d.documento || ""), 130) +
+      par("Código verificador", `<span style="font-family:${MONO};font-weight:400;letter-spacing:.06em">${esc(d.codigo || "")}</span>`, 130) +
+      par("Função", esc(d.papel || "Participante"), 130) +
+      par("Horas dedicadas", esc(horasTexto(d.horas)), 130)) + esp(24) +
+    botao(d.url || "", "Ver e baixar a declaração") +
+    (d.membro && d.href ? esp(14) + texto(`Ela também fica no portal, em ${lnk(linkDe(d.href), "Serviços › Eventos e participações")}.`, "#2E3533", 14) : "");
+  return moldura({
+    assunto: e.assunto, categoria: "Declaração", miolo,
+    rodape: `A declaração dispensa assinatura. Quem a receber confere a autenticidade em ${lnk(d.url || "", esc(hostDe(d.url)))}, pelo código verificador ou pela leitura do QR Code impresso no documento. Você recebe este e-mail porque participou do evento${d.membro ? "" : " junto à equipe"} da NeuroDynamics PD&amp;I.`,
+  });
 }
 
 export function declaracaoTexto(e: EnvioDocumento): string {
@@ -548,7 +472,7 @@ const RESPOSTAS: Record<string, string> = { vou: "Vou", talvez: "Talvez", nao: "
 
 /** O link que responde pelo e-mail. */
 export function linkResposta(token: string | null | undefined, r: string): string {
-  return `${PORTAL}/rsvp.html?t=${encodeURIComponent(String(token || ""))}&r=${r}`;
+  return `${PORTAL}/rsvp?t=${encodeURIComponent(String(token || ""))}&r=${r}`;
 }
 
 /** "30 minutos", "1 hora", "1 dia", "2 dias e 3 horas" */
@@ -590,59 +514,28 @@ export function agendaFrase(e: EnvioAgenda): string {
 export function agendaHTML(e: EnvioAgenda): string {
   const d = e.dados || {};
   const cancelado = e.tipo === "cancelamento";
-  const linha = (rot: string, val: string) => val ? `<tr>
-      <td style="padding:6px 0;font:600 12px/1.5 Helvetica,Arial,sans-serif;color:#8a908a;width:92px;vertical-align:top">${rot}</td>
-      <td style="padding:6px 0;font:400 14px/1.5 Helvetica,Arial,sans-serif;color:#1d1d1f">${val}</td></tr>` : "";
-  const botao = (r: string) => {
+  const resp = (r: string) => {
     const on = e.resposta === r;
-    return `<a href="${esc(linkResposta(e.token, r))}" style="display:inline-block;margin:0 6px 6px 0;
-      padding:11px 18px;border-radius:9px;font:600 14px/1 Helvetica,Arial,sans-serif;text-decoration:none;
-      ${on ? "background:#00594F;color:#ffffff;border:1px solid #00594F" : "background:#ffffff;color:#00594F;border:1px solid #b9c7c2"}">
-      ${RESPOSTAS[r]}</a>`;
+    return `<a href="${esc(linkResposta(e.token, r))}" style="display:inline-block;margin:0 6px 6px 0;padding:11px 18px;border-radius:8px;font-family:'Instrument Sans',Helvetica,Arial,sans-serif;font-weight:500;font-size:14px;line-height:18px;text-decoration:none;${on ? "background:#00352F;color:#FFFFFF;border:1px solid #00352F" : "background:#FFFFFF;color:#00352F;border:1px solid #00352F"}">${RESPOSTAS[r]}</a>`;
   };
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width"><title>${esc(e.assunto)}</title></head>
-<body style="margin:0;padding:0;background:#f4f6f4">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4">
-    <tr><td align="center" style="padding:32px 16px">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-             style="max-width:560px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
-        <tr><td style="padding:28px 28px 8px">
-          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics" style="display:block;border:0;outline:none">
-        </td></tr>
-        <tr><td style="padding:14px 28px 0">
-          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a">Olá, ${esc(primeiroNome(e.para_nome || ""))}. ${esc(agendaFrase(e))}</div>
-          <div style="font:700 21px/1.3 Helvetica,Arial,sans-serif;color:#1d1d1f;margin-top:10px;
-            ${cancelado ? "text-decoration:line-through;color:#8a908a" : ""}">${esc(d.titulo || "")}</div>
-        </td></tr>
-        <tr><td style="padding:12px 28px 0">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            ${linha("Quando", esc(d.quando || ""))}
-            ${linha("Repete", d.recorrencia && d.recorrencia !== "Única" ? esc(d.recorrencia) : "")}
-            ${linha("Onde", esc(d.local || ""))}
-            ${linha("Chamada", d.meet_url ? `<a href="${esc(d.meet_url)}" style="color:#00594F">${esc(d.meet_url)}</a>` : "")}
-            ${linha("Organiza", esc(d.organizador || ""))}
-          </table>
-          ${d.descricao && !cancelado ? `<div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;
-            margin-top:10px;white-space:pre-wrap;border-top:1px solid #e3e6e3;padding-top:12px">${esc(d.descricao)}</div>` : ""}
-        </td></tr>
-        ${cancelado || !e.token ? "" : `<tr><td style="padding:20px 28px 0">
-          <div style="font:600 12px/1.5 Helvetica,Arial,sans-serif;color:#8a908a;margin-bottom:8px">Você vai?</div>
-          ${botao("vou")}${botao("talvez")}${botao("nao")}
-        </td></tr>`}
-        <tr><td style="padding:14px 28px 0;font:400 13px/1.6 Helvetica,Arial,sans-serif">
-          ${cancelado ? "" : `<a href="${esc(linkGoogle(d))}" style="color:#00594F;text-decoration:none">Adicionar ao Google Agenda</a>`}
-          ${e.membro && d.href && !cancelado ? ` &nbsp;·&nbsp; <a href="${esc(linkDe(d.href))}" style="color:#00594F;text-decoration:none">Abrir no portal</a>` : ""}
-        </td></tr>
-        <tr><td style="padding:18px 28px 28px">
-          <div style="font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#8a908a;border-top:1px solid #e3e6e3;padding-top:14px">
-            Agenda da NeuroDynamics.${e.membro ? " Os e-mails da agenda se desligam em Agenda › Configurações." : ""}
-          </div>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+  const tit = esc(d.titulo || "");
+  const miolo = texto(`Olá, ${esc(primeiroNome(e.para_nome || ""))}. ${esc(agendaFrase(e))}`) + esp(14) +
+    titulo(cancelado ? `<span style="text-decoration:line-through;color:#616C68">${tit}</span>` : tit) + esp(18) +
+    caixa(
+      par("Quando", esc(d.quando || ""), 90) +
+      par("Repete", d.recorrencia && d.recorrencia !== "Única" ? esc(d.recorrencia) : "", 90) +
+      par("Onde", esc(d.local || ""), 90) +
+      par("Chamada", d.meet_url ? lnk(d.meet_url, esc(d.meet_url)) : "", 90) +
+      par("Organiza", esc(d.organizador || ""), 90)) +
+    (d.descricao && !cancelado ? esp(14) + `<tr><td style="font-family:'Instrument Sans',Helvetica,Arial,sans-serif;font-size:15px;line-height:23px;color:#2E3533;white-space:pre-wrap">${esc(d.descricao)}</td></tr>` : "") +
+    (cancelado || !e.token ? "" : esp(20) + texto("Você vai?", "#616C68", 13) + esp(8) + `<tr><td>${resp("vou")}${resp("talvez")}${resp("nao")}</td></tr>`) +
+    esp(14) + texto(links(
+      cancelado ? "" : lnk(linkGoogle(d), "Adicionar ao Google Agenda"),
+      e.membro && d.href && !cancelado ? lnk(linkDe(d.href), "Abrir no portal") : ""), "#00594F", 13);
+  return moldura({
+    assunto: e.assunto, categoria: "Agenda", miolo,
+    rodape: `Agenda da NeuroDynamics.${e.membro ? " Os e-mails da agenda se desligam em Agenda › Configurações." : ""}`,
+  });
 }
 
 export function agendaTexto(e: EnvioAgenda): string {
@@ -778,30 +671,10 @@ export function fraseCandidato(e: EnvioPS): string {
   return "A equipe precisou cancelar o horário da sua entrevista. Escolha um novo horário na página de acompanhamento.";
 }
 
-const linhaPS = (rot: string, val: string) => val ? `<tr>
-      <td style="padding:6px 0;font:600 12px/1.5 Helvetica,Arial,sans-serif;color:#8a908a;width:104px;vertical-align:top">${rot}</td>
-      <td style="padding:6px 0;font:400 14px/1.5 Helvetica,Arial,sans-serif;color:#1d1d1f">${val}</td></tr>` : "";
-const botaoPS = (href: string, rot: string) => `<a href="${esc(href)}" style="display:inline-block;margin:0 6px 6px 0;
-      padding:12px 20px;border-radius:9px;font:600 14px/1 Helvetica,Arial,sans-serif;text-decoration:none;
-      background:#00594F;color:#ffffff;border:1px solid #00594F">${esc(rot)}</a>`;
-const molduraPS = (titulo: string, miolo: string, rodape: string) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width"><title>${esc(titulo)}</title></head>
-<body style="margin:0;padding:0;background:#f4f6f4">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4">
-    <tr><td align="center" style="padding:32px 16px">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-             style="max-width:600px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
-        <tr><td style="padding:28px 28px 8px">
-          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics" style="display:block;border:0;outline:none">
-        </td></tr>
-        ${miolo}
-        <tr><td style="padding:18px 28px 28px">
-          <div style="font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#8a908a;border-top:1px solid #e3e6e3;padding-top:14px">${rodape}</div>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+const linhaPS = (rot: string, val: string) => par(rot, val, 120);
+const botaoPS = (href: string, rot: string) => botao(href, rot) + esp(10);
+const molduraPS = (assunto: string, miolo: string, rodape: string) =>
+  moldura({ assunto, categoria: "Processo Seletivo", miolo, rodape });
 
 /** o evento da entrevista no Google Agenda */
 export function linkGooglePS(d: HorarioPS): string {
@@ -816,35 +689,20 @@ export function candidatoHTML(e: EnvioPS): string {
   const chamada = d.link ? `<a href="${esc(d.link)}" style="color:#00594F">${esc(d.link)}</a>` : "";
   const antes = d.antes && e.tipo === "reagendamento"
     ? `<span style="text-decoration:line-through;color:#8a908a">${esc(quandoPS(d.antes))}</span>` : "";
-  const miolo = `
-        <tr><td style="padding:14px 28px 0">
-          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a">Olá, ${esc(primeiroNome(e.para_nome || ""))}. ${esc(fraseCandidato(e))}</div>
-          <div style="font:700 21px/1.3 Helvetica,Arial,sans-serif;color:#1d1d1f;margin-top:10px;
-            ${cancelado ? "text-decoration:line-through;color:#8a908a" : ""}">Entrevista individual</div>
-        </td></tr>
-        <tr><td style="padding:12px 28px 0">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            ${linhaPS(cancelado ? "Era" : "Quando", esc(quandoPS(d)))}
-            ${linhaPS("Antes", antes)}
-            ${cancelado ? "" : linhaPS("Chamada", chamada)}
-            ${cancelado || d.link ? "" : linhaPS("Onde", esc(d.local || ""))}
-            ${cancelado ? "" : linhaPS("Entrevista com", esc(d.responsavel || ""))}
-            ${linhaPS("Motivo", esc(d.motivo || ""))}
-            ${linhaPS("Protocolo", esc(d.protocolo || ""))}
-          </table>
-        </td></tr>
-        <tr><td style="padding:18px 28px 0">
-          ${cancelado ? botaoPS(linkAcompanhar(d), "Escolher novo horário") : d.link ? botaoPS(d.link, "Entrar na chamada") : ""}
-        </td></tr>
-        ${cancelado ? "" : `<tr><td style="padding:8px 28px 0;font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a">
-          ${d.link ? "A entrevista é online, pelo Google Meet. Entre alguns minutos antes, com câmera e microfone testados, de um lugar tranquilo."
-            : "Chegue com alguns minutos de antecedência."}
-          Se precisar de outro horário, reagende pela página de acompanhamento.
-        </td></tr>`}
-        <tr><td style="padding:14px 28px 0;font:400 13px/1.6 Helvetica,Arial,sans-serif">
-          ${cancelado ? "" : `<a href="${esc(linkGooglePS(d))}" style="color:#00594F;text-decoration:none">Adicionar ao Google Agenda</a> &nbsp;|&nbsp; `}
-          <a href="${esc(linkAcompanhar(d))}" style="color:#00594F;text-decoration:none">Página de acompanhamento</a>
-        </td></tr>`;
+  const miolo = texto(`Olá, ${esc(primeiroNome(e.para_nome || ""))}. ${esc(fraseCandidato(e))}`) + esp(14) +
+    titulo(cancelado ? `<span style="text-decoration:line-through;color:#616C68">Entrevista individual</span>` : "Entrevista individual") + esp(18) +
+    caixa(
+      linhaPS(cancelado ? "Era" : "Quando", esc(quandoPS(d))) +
+      linhaPS("Antes", antes) +
+      (cancelado ? "" : linhaPS("Chamada", chamada)) +
+      (cancelado || d.link ? "" : linhaPS("Onde", esc(d.local || ""))) +
+      (cancelado ? "" : linhaPS("Entrevista com", esc(d.responsavel || ""))) +
+      linhaPS("Motivo", esc(d.motivo || "")) +
+      linhaPS("Protocolo", esc(d.protocolo || ""))) + esp(20) +
+    (cancelado ? botaoPS(linkAcompanhar(d), "Escolher novo horário") : d.link ? botaoPS(d.link, "Entrar na chamada") : "") +
+    (cancelado ? "" : texto(`${d.link ? "A entrevista é online, pelo Google Meet. Entre alguns minutos antes, com câmera e microfone testados, de um lugar tranquilo."
+            : "Chegue com alguns minutos de antecedência."} Se precisar de outro horário, reagende pela página de acompanhamento.`, "#2E3533", 14) + esp(14)) +
+    texto(links(cancelado ? "" : lnk(linkGooglePS(d), "Adicionar ao Google Agenda"), lnk(linkAcompanhar(d), "Página de acompanhamento")), "#00594F", 13);
   return molduraPS(e.assunto, miolo,
     "Processo Seletivo da NeuroDynamics. Você recebeu este e-mail porque se inscreveu no processo seletivo.");
 }
@@ -884,48 +742,28 @@ export function resumoHTML(e: EnvioPS): string {
   const cartao = (it: ItemResumoPS) => {
     const c = it.candidato || { nome: "" };
     const formacao = [c.curso, c.instituicao, c.periodo ? `${c.periodo} período` : ""].filter(Boolean).join(", ");
-    const links = linksCandidato(c).map(([r, u]) => `<a href="${esc(u)}" style="color:#00594F">${r}</a>`).join(" &nbsp;|&nbsp; ");
-    return `<tr><td style="padding:14px 28px 0">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e3e6e3;border-radius:12px">
-        <tr><td style="padding:14px 16px 4px">
-          <div style="font:700 13px/1.4 Helvetica,Arial,sans-serif;color:#00594F">${esc(it.hora_inicio)} às ${esc(it.hora_fim)}</div>
-          <div style="font:700 18px/1.35 Helvetica,Arial,sans-serif;color:#1d1d1f;margin-top:2px">${esc(c.nome)}</div>
-          ${formacao ? `<div style="font:400 13px/1.5 Helvetica,Arial,sans-serif;color:#4a514a">${esc(formacao)}</div>` : ""}
-        </td></tr>
-        <tr><td style="padding:4px 16px 0">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            ${linhaPS("Áreas", esc((c.areas || []).join(", ")))}
-            ${linhaPS("Cidade", esc(c.cidade || ""))}
-            ${linhaPS("Dinâmica", esc(dinamicaTexto(it.dinamica)))}
-            ${linhaPS("Motivação", esc(c.motivacao || ""))}
-            ${linhaPS("Trajetória", esc(c.background || ""))}
-            ${linhaPS("Disponibilidade", esc(c.disponibilidade || ""))}
-            ${linhaPS("Links", links)}
-            ${linhaPS("Contato", esc([c.email, c.telefone].filter(Boolean).join(", ")))}
-          </table>
-        </td></tr>
-        <tr><td style="padding:10px 16px 14px">
-          ${it.link ? botaoPS(it.link, "Entrar na chamada") : ""}
-          ${it.href ? `<a href="${esc(linkDe(it.href))}" style="font:600 13px/1 Helvetica,Arial,sans-serif;color:#00594F;text-decoration:none">Abrir a ficha no portal</a>` : ""}
-        </td></tr>
-      </table>
-    </td></tr>`;
+    const ls = linksCandidato(c).map(([r, u]) => lnk(u, r)).join("<br>");
+    return caixa(
+      texto(`<b style="font-weight:500">${esc(it.hora_inicio)} às ${esc(it.hora_fim)}</b>`, "#00594F", 13) +
+      texto(`<b style="font-weight:500">${esc(c.nome)}</b>`, "#2E3533", 18) +
+      (formacao ? texto(esc(formacao), "#616C68", 13) : "") + esp(8) +
+      linhaPS("Áreas", esc((c.areas || []).join(", "))) +
+      linhaPS("Cidade", esc(c.cidade || "")) +
+      linhaPS("Dinâmica", esc(dinamicaTexto(it.dinamica))) +
+      linhaPS("Motivação", esc(c.motivacao || "")) +
+      linhaPS("Trajetória", esc(c.background || "")) +
+      linhaPS("Disponibilidade", esc(c.disponibilidade || "")) +
+      linhaPS("Links", ls) +
+      linhaPS("Contato", esc([c.email, c.telefone].filter(Boolean).join(", "))) + esp(10) +
+      texto(links(it.link ? lnk(it.link, "Entrar na chamada") : "", it.href ? lnk(linkDe(it.href), "Abrir a ficha no portal") : ""), "#00594F", 13)) + esp(14);
   };
-  const miolo = `
-        <tr><td style="padding:14px 28px 0">
-          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a">Olá, ${esc(primeiroNome(e.para_nome || ""))}.
-            ${d.atualizacao ? "A lista de amanhã mudou: este resumo substitui o anterior." : "Estas são as entrevistas que você conduz amanhã."}</div>
-          <div style="font:700 21px/1.3 Helvetica,Arial,sans-serif;color:#1d1d1f;margin-top:10px">
-            ${itens.length} ${itens.length === 1 ? "entrevista" : "entrevistas"}, ${esc(diaExtenso(d.dia))}</div>
-        </td></tr>
-        ${itens.map(cartao).join("")}
-        <tr><td style="padding:16px 28px 0;font:400 13px/1.6 Helvetica,Arial,sans-serif">
-          <a href="${esc(linkDe("#/selecao/agenda"))}" style="color:#00594F;text-decoration:none">Abrir a Agenda da Seleção</a>
-        </td></tr>`;
+  const miolo = texto(`Olá, ${esc(primeiroNome(e.para_nome || ""))}. ${d.atualizacao ? "A lista de amanhã mudou: este resumo substitui o anterior." : "Estas são as entrevistas que você conduz amanhã."}`) + esp(14) +
+    titulo(`${itens.length} ${itens.length === 1 ? "entrevista" : "entrevistas"}, ${esc(diaExtenso(d.dia))}`) + esp(18) +
+    itens.map(cartao).join("") +
+    texto(lnk(linkDe("#/selecao/agenda"), "Abrir a Agenda da Seleção"), "#00594F", 13);
   return molduraPS(e.assunto, miolo,
     "Processo Seletivo da NeuroDynamics. Você recebe este resumo porque abriu estes horários de entrevista em Seleção › Agenda. Os dados dos candidatos são sigilosos: não encaminhe este e-mail.");
 }
-
 export function resumoTexto(e: EnvioPS): string {
   const d = e.dados || {}, itens = d.itens || [];
   return `Olá, ${primeiroNome(e.para_nome || "")}. `
@@ -1022,6 +860,48 @@ async function enviarProgramados(): Promise<Record<string, unknown>> {
     }
   }
   return { programados: total, programados_falhas: totalFalhas, ...(erroGeral ? { programados_detalhe: erroGeral } : {}) };
+}
+
+export interface BoletimItem { titulo: string; subtitulo: string; texto: string; imagem?: string | null; }
+export function montarBoletim(assunto: string, itens: BoletimItem[], descadastro = "") {
+  const par = (t: string) => String(t || "").split(/\n{2,}/).map((p) => esc(p.trim()).replace(/\n/g, "<br>")).filter(Boolean);
+  const item = (i: BoletimItem) => {
+    const img = /^https:\/\//i.test(String(i.imagem || ""))
+      ? `<tr><td><img src="${esc(i.imagem)}" width="510" alt="" style="display:block;width:100%;border:0;border-radius:16px"></td></tr>${esp(20)}` : "";
+    return `${img}${titulo(esc(i.titulo), 22)}${i.subtitulo ? esp(8) + texto(esc(i.subtitulo), "#616C68", 13) : ""}${esp(12)}${par(i.texto).map((p) => texto(p) + esp(10)).join("")}${esp(26)}`;
+  };
+  const rodape = descadastro
+    ? "Você recebe este e-mail por fazer parte da comunidade NeuroDynamics."
+    : `Boletim da equipe. Leia também o <a href="${esc(PORTAL)}/#/feed" style="color:#616C68">feed no portal</a>.`;
+  return {
+    html: moldura({ assunto, categoria: "Boletim", preheader: itens[0]?.titulo || assunto, descadastro,
+      miolo: titulo(esc(assunto), 28) + esp(24) + itens.map(item).join(""), rodape }),
+    texto: assunto+"\n\n"+itens.map(i=>i.titulo+"\n"+i.subtitulo+"\n"+i.texto).join("\n\n")+(descadastro?"\nDescadastrar: "+descadastro:"")
+  };
+}
+async function enviarNewsletters(): Promise<Record<string, unknown>> {
+  let lote: {id:string;email:string;nome:string;assunto:string;itens:BoletimItem[];token:string|null}[];
+  try { lote=await rpc("newsletter_lote",{p_limite:50}) as typeof lote; }
+  catch(e){return {newsletters:"erro",newsletters_detalhe:String(e)};}
+  let enviadas=0, falhas=0;
+  for(const d of lote){
+    const url=d.token?`${PORTAL}/descadastrar?t=${encodeURIComponent(d.token)}`:"";
+    const conteudo=montarBoletim(d.assunto,d.itens,url);
+    let erro="";
+    try{
+      const pedido=montarEnvio(PROVEDOR,DE,DE_NOME,d.email,d.nome,d.assunto,conteudo.html,conteudo.texto);
+      // RFC 8058: o POST usa a Edge Function; a página exige confirmação humana.
+      if(d.token && PROVEDOR === "resend"){
+        const endpoint=`${URL_BASE}/functions/v1/notificar-email?descadastrar=${encodeURIComponent(d.token)}`;
+        (pedido.corpo as Record<string,unknown>).headers={"List-Unsubscribe":`<${endpoint}>`,"List-Unsubscribe-Post":"List-Unsubscribe=One-Click"};
+      }
+      const resposta=await fetch(pedido.url,{method:"POST",headers:pedido.headers,body:JSON.stringify(pedido.corpo)});
+      erro=lerResposta(PROVEDOR,resposta.status,await resposta.text());
+    }catch(e){erro=String(e);}
+    if(erro)falhas++;else enviadas++;
+    await rpc("newsletter_baixa",{p_id:d.id,p_erro:erro||null});
+  }
+  return {newsletters:enviadas,newsletters_falhas:falhas};
 }
 
 async function rpc(nome: string, corpo: unknown): Promise<unknown> {
@@ -1317,6 +1197,17 @@ export async function servir(req: Request): Promise<Response> {
     }), { status: 500, headers: cabecalho });
   }
 
+  const descadastro=new URL(req.url).searchParams.get("descadastrar");
+  if(descadastro!==null){
+    if(req.method!=="POST" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(descadastro))
+      return new Response(JSON.stringify({status:"invalido"}),{status:400,headers:cabecalho});
+    const corpo=await req.text();
+    if(new URLSearchParams(corpo).get("List-Unsubscribe")!=="One-Click")
+      return new Response(JSON.stringify({status:"invalido"}),{status:400,headers:cabecalho});
+    await rpc("comunidade_descadastrar",{p_token:descadastro});
+    return new Response(JSON.stringify({status:"ok"}),{headers:cabecalho});
+  }
+
   let pedido: { origem?: string } = {};
   try { pedido = req.method === "POST" ? JSON.parse((await req.text()) || "{}") : {}; } catch { pedido = {}; }
   const quem = await quemChama(req, String(pedido?.origem || ""));
@@ -1361,7 +1252,7 @@ async function passada(): Promise<[Record<string, unknown>, number]> {
   /* as declarações e a agenda primeiro: saem mesmo que o sino não
      tenha aviso nenhum para ninguém, e o lembrete tem hora */
   const docs = { ...push, ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()),
-                 ...(await enviarPS()) };
+                 ...(await enviarPS()), ...(await enviarNewsletters()) };
 
   let destinos: Destinatario[];
   try {
