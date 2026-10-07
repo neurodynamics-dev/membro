@@ -163,6 +163,7 @@ const THEMES_MAILER = {
     "btnInk": "#FFFFFF"
   }
 };
+for (const [k,v] of Object.entries(THEMES_MAILER)) v.familia = k;
 THEMES_MAILER['cortex-escuro']={...THEMES_MAILER.cortex,nome:'Cortex escuro',band:'#00352F',onBand:'#E8EDEB',logo:'#FFFFFF',bandRule:'#CEDC00',dark:true};
 /* Apelidos preservam mensagens e configurações anteriores. */
 for (const [antigo,novo] of Object.entries({teal:"cortex",clinica:"ion",pessoal:"lumen",ri:"retina",marketing:"neuron",leadership:"cortex-escuro",sinapse:"cortex",deep:"cortex-escuro",grafite:"glia"})) Object.defineProperty(THEMES_MAILER,antigo,{value:THEMES_MAILER[novo],enumerable:false});
@@ -186,26 +187,29 @@ const PORTAL_MAILER = 'https://membro.neurodynamics.dev/';
 const mlLink = (u) => { const t = String(u || '').trim(); return t.startsWith('#/') ? PORTAL_MAILER + t : t; };
 
 const _hexArq = (hex) => String(hex).replace('#', '').toLowerCase();
-const mailerLogoURL = (hex) => `${MAILER_IMG_BASE}logo-${String(hex).toUpperCase()==='#FFFFFF'?'ffffff':'1d1d1f'}.png`;
-function _socialImg(k, cor){
+/* o logo da família, hospedado no brand: -dark sobre fundo claro, -light sobre o escuro */
+const BRAND_ASSETS = 'https://brand.neurodynamics.dev/assets/';
+const mailerLogoURL = (th) => `${BRAND_ASSETS}logo-imagotipo-${th.familia || 'cortex'}-${th.dark ? 'light' : 'dark'}.png`;
+const _MESES_ML = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const mlDataHoje = () => { const d = new Date(Date.now() - 3*3600e3); return `${d.getUTCDate()} de ${_MESES_ML[d.getUTCMonth()]} de ${d.getUTCFullYear()}`; };
+function _socialImg(k){
   const alt = (SOCIAIS_MAILER.find(s => s.k === k) || {}).l || k;
   return `<img src="${MAILER_IMG_BASE}ico-${k}-1d1d1f.png" width="21" height="21" alt="${alt}"
     style="display:block;border:0;outline:none;width:21px;height:21px">`;
 }
 const _escBr = (s) => esc(s).replace(/\n/g, '<br>');
+const _ML_SANS = "'Instrument Sans',Helvetica,Arial,sans-serif", _ML_SERIF = "Archivo,Arial,Helvetica,sans-serif";
+const _mlEsp = (h) => `<tr><td height="${h}" style="height:${h}px;font-size:0;line-height:0;mso-line-height-rule:exactly">&nbsp;</td></tr>`;
+const _mlFio = (cor) => `<tr><td height="1" style="height:1px;font-size:0;line-height:0;background:${cor};mso-line-height-rule:exactly">&nbsp;</td></tr>`;
 function _mailerParas(txt){
   return String(txt || '').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
-    .map(p => `<p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#2E3533">${_escBr(p)}</p>`).join('');
+    .map(p => `<tr><td style="font-family:${_ML_SANS};font-weight:400;font-size:15px;line-height:23px;mso-line-height-rule:exactly;color:#2E3533">${_escBr(p)}</td></tr>${_mlEsp(14)}`).join('');
 }
-function _mailerSocial(social, cor){
+function _mailerSocial(social){
   const items = SOCIAIS_MAILER.filter(s => social[s.k]).map(s =>
-    `<a href="${esc(social[s.k])}" target="_blank" style="text-decoration:none;display:inline-block;margin:0 8px;vertical-align:middle">${_socialImg(s.k, cor)}</a>`).join('');
+    `<td style="padding-right:14px"><a href="${esc(social[s.k])}" target="_blank" style="text-decoration:none">${_socialImg(s.k)}</a></td>`).join('');
   if (!items) return '';
-  return `<tr><td style="padding:24px 12px 4px">
-    <div style="border-top:2px solid ${cor};font-size:0;line-height:0">&nbsp;</div>
-    <div style="padding:15px 0">${items}</div>
-    <div style="border-top:2px solid ${cor};font-size:0;line-height:0">&nbsp;</div>
-  </td></tr>`;
+  return `${_mlEsp(14)}<tr><td><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${items}</tr></table></td></tr>`;
 }
 /* "Portal do membro https://…": o último pedaço, se for endereço, vira o
    link do rótulo; item sem endereço sai como texto, não como link morto */
@@ -216,50 +220,38 @@ function _mailerLinksRodape(txt){
   });
 }
 function construirMailerHTML(cfg){
-  const th = cfg.tema, logo = cfg.logoUrl || mailerLogoURL(th.logo);
+  const th = cfg.tema, logo = cfg.logoUrl || mailerLogoURL(th);
   const paras = _mailerParas(cfg.corpo);
   const cta = (cfg.ctaLabel && cfg.ctaUrl)
-    ? `<div style="height:10px;line-height:10px">&nbsp;</div>
-       <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-         <td style="border-radius:10px;background:${th.btnBg}">
-           <a href="${esc(cfg.ctaUrl)}" target="_blank" style="display:inline-block;padding:12px 26px;font-size:14px;font-weight:600;color:${th.btnInk};text-decoration:none;border-radius:10px">${esc(cfg.ctaLabel)}</a>
-         </td></tr></table><div style="height:6px;line-height:6px">&nbsp;</div>`
+    ? `${_mlEsp(10)}<tr><td><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${th.btnBg}" style="background:${th.btnBg};border-radius:8px"><a href="${esc(cfg.ctaUrl)}" target="_blank" style="display:block;padding:13px 24px;font-family:${_ML_SANS};font-weight:500;font-size:14px;line-height:18px;color:${th.btnInk};text-decoration:none">${esc(cfg.ctaLabel)}</a></td></tr></table></td></tr>`
     : '';
-  const social = _mailerSocial(cfg.social || {}, th.bodyAccent);
+  const social = _mailerSocial(cfg.social || {});
   const links = _mailerLinksRodape(cfg.footLinks).map(l => l.href
-      ? `<a href="${esc(l.href)}" target="_blank" style="color:${th.bodyAccent};text-decoration:none">${esc(l.t)}</a>`
-      : `<span style="color:${th.bodyAccent}">${esc(l.t)}</span>`)
-    .join('<span style="color:#B5B5BA"> | </span>');
-  const fine = String(cfg.fine || '').split(/\n/).map(s => s.trim()).filter(Boolean)
-    .map(p => `<p style="margin:0 0 8px;font-size:11px;line-height:1.6;color:#9A9AA0">${esc(p)}</p>`).join('');
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="x-apple-disable-message-reformatting">
-<title>${esc(cfg.assunto || cfg.titulo || 'NeuroDynamics')}</title></head>
+      ? `<a href="${esc(l.href)}" target="_blank" style="color:#2E3533;text-decoration:none">${esc(l.t)}</a>`
+      : esc(l.t))
+    .join('<br>');
+  const fine = String(cfg.fine || '').split(/\n/).map(s => s.trim()).filter(Boolean).map(esc).join('<br>');
+  const f = (tam, cor, t) => `<tr><td style="font-family:${_ML_SANS};font-weight:400;font-size:${tam}px;line-height:${tam + 7}px;mso-line-height-rule:exactly;color:${cor}">${t}</td></tr>`;
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><meta name="x-apple-disable-message-reformatting">
+<title>${esc(cfg.assunto || cfg.titulo || 'NeuroDynamics')}</title><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400&family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono&display=swap" rel="stylesheet"><!--[if mso]><style>td,a,span{font-family:Arial,sans-serif!important}</style><![endif]--><style>a{color:${th.bodyAccent}}@media (max-width:620px){.wrap{width:100%!important}}</style></head>
 <body style="margin:0;padding:0;background:#E8EDEB;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(cfg.preheader || '')}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#E8EDEB">
-<tr><td align="center" style="padding:26px 14px">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-  <tr><td style="background:${th.band};border-radius:16px;padding:30px 34px 26px">
-    <img src="${logo}" width="188" alt="NeuroDynamics" style="display:block;width:188px;max-width:62%;height:auto;border:0;outline:none;text-decoration:none">
-    <div style="height:22px;line-height:22px">&nbsp;</div>
-    <div style="border-top:1.5px solid ${th.bandRule};font-size:0;line-height:0">&nbsp;</div>
-    <div style="height:16px;line-height:16px">&nbsp;</div>
-    <div style="font-size:20px;font-weight:300;letter-spacing:.2px;line-height:1.35;color:${th.onBand}">${esc(cfg.titulo || '')}</div>
-  </td></tr>
-  <tr><td style="padding:32px 12px 6px">
-    ${cfg.chamada ? `<h1 style="margin:0 0 18px;font-size:23px;font-weight:400;line-height:1.28;color:${th.bodyAccent}">${esc(cfg.chamada)}</h1>` : ''}
-    ${paras}
-    ${cta}
-  </td></tr>
-  ${social}
-  ${cfg.footText ? `<tr><td style="padding:10px 12px 4px"><p style="margin:0;font-size:12.5px;line-height:1.6;color:#616C68">${_escBr(cfg.footText)}</p></td></tr>` : ''}
-  <tr><td style="padding:16px 12px 0"><div style="border-top:1px solid #C4CCC9;font-size:0;line-height:0">&nbsp;</div></td></tr>
-  ${links ? `<tr><td style="padding:12px 12px 4px;font-size:12.5px;color:${th.bodyAccent}">${links}</td></tr>` : ''}
-  ${fine ? `<tr><td style="padding:8px 12px 26px">${fine}</td></tr>` : ''}
-</table>
-</td></tr></table></body></html>`;
+<span style="display:none!important;visibility:hidden;opacity:0;color:transparent;height:0;width:0;overflow:hidden;mso-hide:all">${esc(cfg.preheader || '')}</span>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#E8EDEB" style="background:#E8EDEB"><tr><td align="center" style="padding:24px 0">
+<table role="presentation" class="wrap" cellpadding="0" cellspacing="0" border="0" width="600" bgcolor="#FFFFFF" style="width:600px;max-width:600px;background:#FFFFFF"><tr><td style="padding:45px 28px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate">
+<tr><td bgcolor="${th.band}" style="background:${th.band};border-radius:16px;padding:30px"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:separate">
+  <tr><td><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td width="50%" valign="middle"><img src="${logo}" width="152" height="26" alt="NeuroDynamics" style="display:block;width:152px;height:26px;border:0"></td><td width="50%" align="right" valign="middle" style="font-family:${_ML_SANS};font-size:13px;line-height:18px;color:${th.onBand}">${esc(cfg.data || mlDataHoje())}</td></tr></table></td></tr>
+  ${_mlEsp(32)}${_mlFio(th.bandRule)}${_mlEsp(14)}
+  <tr><td style="font-family:${_ML_SANS};font-weight:400;font-size:19px;line-height:24px;mso-line-height-rule:exactly;color:${th.onBand}">${esc(cfg.titulo || '')}</td></tr>
+</table></td></tr>
+${_mlEsp(30)}
+${cfg.chamada ? `<tr><td style="font-family:${_ML_SERIF};font-weight:400;letter-spacing:-.3px;font-size:26px;line-height:32px;mso-line-height-rule:exactly;color:#2E3533">${esc(cfg.chamada)}</td></tr>${_mlEsp(14)}` : ''}
+${paras}${cta}${social}
+${_mlEsp(46)}${_mlFio('#2E3533')}${_mlEsp(14)}
+${links ? f(13, '#2E3533', links) + _mlEsp(14) + _mlFio('#2E3533') + _mlEsp(18) : ''}
+${cfg.footText ? f(13, '#2E3533', _escBr(cfg.footText)) + _mlEsp(18) + _mlFio('#2E3533') + _mlEsp(14) : ''}
+${fine ? f(11, '#616C68', fine) : ''}
+</table></td></tr></table></td></tr></table></body></html>`;
 }
 /* a versão em texto, para quem lê sem HTML */
 function mlTexto(cfg){

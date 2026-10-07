@@ -94,7 +94,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   await p.fill('#ml-links', 'Portal do membro https://membro.neurodynamics.dev | Sem link'); await p.waitForTimeout(300);
   h = await previa(p);
   confere('o rodapé: item com endereço vira link; sem endereço, texto (nada de href="#")',
-    h.includes('href="https://membro.neurodynamics.dev" target="_blank"') && h.includes('>Sem link</span>') && !h.includes('href="#"'));
+    h.includes('href="https://membro.neurodynamics.dev" target="_blank"') && h.includes('<br>Sem link') && !h.includes('href="#"'));
 
   const cores = await p.evaluate(() => {
     const lum = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
@@ -110,18 +110,18 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   await p.selectOption('#ml-rem', 'ri'); await p.waitForTimeout(300);
   h = await previa(p);
   confere('Relações Institucionais: fundo claro, marca e ícones neutros sobre Retina claro',
-    h.includes('background:#E0E6FC') && h.includes('logo-1d1d1f.png') && h.includes('ico-linkedin-1d1d1f.png')
+    h.includes('background:#E0E6FC') && h.includes('logo-imagotipo-retina-dark.png') && h.includes('ico-linkedin-1d1d1f.png')
     && (await p.inputValue('#ml-titulo')) === 'Relações Institucionais e Parcerias');
   const imgs = await p.evaluate(async () => {
     const d = document.getElementById('ml-prev').contentDocument;
     await new Promise(r => setTimeout(r, 300));
-    return [...d.images].map(i => ({ src:i.src.split('/').pop(), ok:i.complete && i.naturalWidth > 0 }));
+    return [...d.images].filter(i => !i.src.includes('brand.neurodynamics.dev')).map(i => ({ src:i.src.split('/').pop(), ok:i.complete && i.naturalWidth > 0 }));
   });
-  confere('as imagens da cor nova existem na pasta /mailer', imgs.length >= 2 && imgs.every(i => i.ok), imgs);
+  confere('as imagens da cor nova existem na pasta /mailer', imgs.length >= 1 && imgs.every(i => i.ok), imgs);
   await p.selectOption('#ml-rem', 'leadership'); await p.waitForTimeout(300);
   h = await previa(p);
   confere('Leadership: o título e o verde profundo com a logo branca',
-    h.includes('background:#00352F') && h.includes('logo-ffffff.png') && (await p.inputValue('#ml-titulo')) === 'Leadership');
+    h.includes('background:#00352F') && h.includes('logo-imagotipo-cortex-light.png') && (await p.inputValue('#ml-titulo')) === 'Leadership');
 
   await p.fill('#ml-assunto', 'Rascunho que não pode sumir'); await p.waitForTimeout(250);
   await ir(p, '#/admin/emails/pilulas', 900); await ir(p, '#/admin/emails', 900);
