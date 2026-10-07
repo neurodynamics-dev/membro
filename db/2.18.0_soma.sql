@@ -1372,7 +1372,10 @@ end $$;
 create or replace function public.reporte_configurar(p jsonb) returns jsonb language plpgsql security definer
 set search_path=public as $$
 begin
- if not reporte_gestor() then return jsonb_build_object('status','sem_permissao'); end if;
+ if not (conta_ativa() and papel_atual()='admin') then return jsonb_build_object('status','sem_permissao'); end if;
+ if p is null or (p->>'dia_prazo') is null or (p->>'hora_prazo') is null or (p->>'dia_reuniao') is null or (p->>'hora_reuniao') is null
+ or (p->>'dia_prazo')::integer not between 0 and 6 or (p->>'dia_reuniao')::integer not between 0 and 6
+ then return jsonb_build_object('status','invalido'); end if;
  update reporte_config set dia_prazo=(p->>'dia_prazo')::integer,hora_prazo=(p->>'hora_prazo')::time,
  dia_reuniao=(p->>'dia_reuniao')::integer,hora_reuniao=(p->>'hora_reuniao')::time where id;
  return jsonb_build_object('status','ok');

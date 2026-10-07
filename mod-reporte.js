@@ -15,7 +15,7 @@ async function pageReporte(){
   reporte.painel=await repRPC('reporte_painel'); const d=reporte.painel;
   $('#main').innerHTML=repTopo('Reporte semanal')+`<div class="card"><h3>Semana de ${fmtD(d.ciclo.semana)}</h3>
    <p class="small muted">Prazo: ${fmtDT(d.ciclo.prazo)}. Reunião: ${fmtDT(d.ciclo.reuniao_em)}.</p>
-   <div class="acts"><button class="btn" onclick="repConfig()">Configurar ciclo</button>
+   <div class="acts">${souAdmin()?'<button class="btn" onclick="repConfig()">Configurar ciclo</button>':''}
    ${souAdmin()?'<button class="btn" onclick="repPDF()">Baixar reporte unificado</button>':''}</div></div>
    ${d.frentes.length?d.frentes.map(f=>`<div class="card"><h3>${esc(f.nome)}</h3><p>${esc(f.responsavel_nome)}</p>
    <p class="small muted">${f.enviado_em?'Enviado em '+fmtDT(f.enviado_em):'Pendente'}</p>
