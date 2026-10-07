@@ -2,7 +2,32 @@
 
 Este checklist não foi executado contra produção. As validações de desenvolvimento usam PostgreSQL local e Supabase simulado.
 
-### O que um admin confere em produção ANTES de aplicar
+## Estado real e regra de ouro
+
+- **Produção já tem a migração do #35 aplicada** (papéis por grupo, folha única, espelhos, avisos por categoria). Aquela versão **não registrou** linha em `migracoes`. O #36 acrescenta reporte, feed, newsletters, ata e Marca ao mesmo arquivo `db/2.18.0_soma.sql`, que é idempotente: aplicá-la por cima não perde nada do #35 e a semente de papéis por grupo não roda de novo (a tabela já existe).
+- **Mergear o PR #36 é publicar o portal.** O GitHub Pages publica no instante do merge. Por isso a migração vem **antes** do merge. Com o front novo sobre o banco só do #35, Reporte, Feed, Newsletters, Marca e Ata falham e salvar um evento predefinido é recusado (`gera_ata` não existe).
+- **Não mergear** `revert-35-claude/soma-2.18` (membro) nem `revert-12-claude/manual-paginas` (brand): o primeiro põe o front 2.17.1 sobre um banco 2.18 (presença, apontamentos e preferências quebram) e o segundo remove arquivos que o #36 usa. Fechar os PRs e apagar os branches.
+
+## Passo 0. Confirmar o estado (somente leitura)
+
+Esperado no cenário real: `0, t, t, t, >0, f, f, f, f`. Se vier diferente, parar e reavaliar. Com o #36 já aplicado viria `1, t, t, t, 89, t, t, t, t`; reaplicar é inofensivo, siga do passo 3.
+
+```sql
+select
+  (select count(*) from public.migracoes where id = '2.18.0_soma')                    as linha_migracoes,
+  to_regclass('public.grupo_papeis') is not null                                      as tem_35_papeis,
+  to_regclass('public.notificacao_canais') is not null                                as tem_35_canais,
+  to_regprocedure('public.atividade_espelhar(jsonb)') is not null                     as tem_35_espelho,
+  (select count(*) from pg_policies where schemaname='public' and policyname='conta_ativa') as tabelas_com_trava,
+  to_regclass('public.reporte_ciclos') is not null                                    as tem_36_reporte,
+  to_regclass('public.newsletters') is not null                                       as tem_36_newsletter,
+  to_regclass('public.marca_vinculos') is not null                                    as tem_36_marca,
+  exists (select 1 from storage.buckets where id = 'feed')                            as tem_36_bucket_feed;
+```
+
+Guarde também o estado de segurança atual (as consultas abaixo; no cenário real servem de auditoria, não de pré-condição):
+
+### Conferências guardadas
 
 Rode cada consulta no SQL Editor e guarde o resultado.
 
@@ -52,24 +77,44 @@ Rode cada consulta no SQL Editor e guarde o resultado.
 
 ## Ordem de publicação
 
-1. Guardar backup e os resultados das consultas acima. Confirmar que existe admin ativo e que os grupos/responsáveis estão corretos.
-2. Aplicar `db/2.18.0_soma.sql` inteiro, após a 2.17.0. Conferir todos os avisos “não reconheci” e as consultas CONFERIR no rodapé. A migração não corrige automaticamente políticas de produção com nomes desconhecidos.
-3. Publicar o `brand` com os downloads e assets novos; publicar o portal e a página pública de validação junto com `fontes-pdf.js` e `fontes/`. Confirmar `/rsvp`, `/quiosque` e `/descadastrar` no host estático.
-4. Republicar `notificar-email` e `agenda-sync`. A primeira continua com verificação automática de JWT desligada e autorização interna da fila. Não alterar os segredos existentes.
-5. Conferir o cron `soma-fila` e a configuração do provedor. A mesma passagem cria o ciclo semanal e os boletins dos períodos anteriores, mas não envia boletim sem três aprovações. Conferir configuração de prazo/reunião, responsáveis dos grupos, vínculos de Marca e tipos de evento com ata.
-6. Fazer um teste controlado com destinatário autorizado: preferências, aprovação do boletim, envio, baixa e descadastro. Conferir no provedor antes de repetir um envio cuja baixa falhou. O link público de descadastro exige confirmação; o cabeçalho de descadastro de um clique é enviado quando o provedor suporta esse contrato.
-7. Conferir uma conta ativa, uma liderança, um admin e uma conta bloqueada. Gerar a folha única de check-in somente quando o QR anterior puder ser substituído.
+1. **Fechar** os PRs de revert (`revert-35-claude/soma-2.18` no membro e `revert-12-claude/manual-paginas` no brand) e apagar os branches. Não mergear.
+2. **Backup**: Database › Backups, ou `pg_dump` pelo connection string; guardar também a saída do passo 0 e das conferências acima, e `select gp.papel, g.nome from grupo_papeis gp join grupos g on g.id = gp.grupo_id;`.
+3. **Aplicar `db/2.18.0_soma.sql`** (a do #36) inteira no SQL Editor. Esperado: sem erro, nenhum aviso "não reconheci", o aviso "semente não aplicada (já existia)" e uma linha nova em `migracoes`. O limite do bucket `feed` (5 MB, PNG/JPEG/WebP) já vem na própria migração. Reconferir:
+   ```sql
+   select id, aplicada_em from migracoes where id = '2.18.0_soma';
+   select gp.papel, g.nome from grupo_papeis gp join grupos g on g.id = gp.grupo_id;   -- igual ao de antes
+   select id, public, file_size_limit, allowed_mime_types from storage.buckets where id = 'feed';
+   select tipo, periodo_ini, status from newsletters order by criado_em desc limit 5;
+   select chave, serie_id from marca_vinculos order by chave;
+   ```
+4. **Republicar as Edge Functions** `notificar-email` (verificação de JWT continua desligada, autorização interna da fila) e `agenda-sync`. Não alterar os segredos. Conferir que a passada seguinte termina `ok` e sem `newsletters: erro`:
+   ```sql
+   select inicio, origem, resultado from fila_passadas order by id desc limit 3;
+   ```
+5. **Templates de Auth**: colar o conteúdo de `supabase/templates/*.html` em Authentication › Email Templates, no template correspondente, e enviar um e-mail de teste.
+6. **Mergear o #36** (o brand `main` já tem os assets usados; não há o que publicar nele). O Pages publica. Conferir `/rsvp?t=…`, `/descadastrar?t=…`, `/quiosque` e o carregamento de Reporte, Feed, Newsletters, Marca e Ata.
+7. **Teste controlado** com destinatário autorizado: preferências, aprovação do boletim, envio, baixa e descadastro. Conferir no provedor antes de repetir um envio cuja baixa falhou. Depois, uma conta ativa, uma liderança, um admin e uma conta bloqueada. Gerar a folha única de check-in somente quando o QR anterior puder ser substituído.
+8. Conferir configuração de prazo/reunião do reporte (só admin altera), responsáveis dos grupos, vínculos de Marca e tipos de evento com ata.
+
+Conferências finais (somente leitura):
 
 ```sql
 select count(*),count(distinct registro) from notificacao_canais;
 select email_modo,count(*) from notificacao_preferencias group by 1;
-select notificacoes_email_lote(500);
+select jsonb_array_length(notificacoes_email_lote(500));
 select jobname,schedule,active from cron.job where jobname='soma-fila';
 select chave,serie_id from marca_vinculos order by chave;
 select nome,responsaveis from grupos where ativo and cardinality(responsaveis)>0;
 ```
 
-Quem estava em “imediato” sem escolha explícita passa ao resumo semanal; isso está nas notas da versão. Os papéis legados de Pessoal e Seleção ainda funcionam nesta versão, mas devem ser transferidos para os grupos.
+Quem estava em "imediato" sem escolha explícita passa ao resumo semanal; isso está nas notas da versão. Os papéis legados de Pessoal e Seleção ainda funcionam nesta versão, mas devem ser transferidos para os grupos.
+
+## Plano de volta
+
+- **Não reverta o front do #36 para o 2.17.1** (nem o #35) com o banco em 2.18: o banco 2.18 é incompatível com o front antigo.
+- Se o problema estiver só no #36: reverta **somente o merge do #36** no membro. O front volta ao do #35, que funciona com o banco 2.18 (o banco do #36 é superconjunto e não muda assinaturas que o #35 usa). Não é preciso desfazer a migração; as tabelas novas ficam sem uso.
+- Se houver defeito no banco: corrija com uma migração nova (2.18.1) para frente, ou, em último caso, restaure o backup do passo 2 **junto** com o front compatível com aquele estado, sabendo que dados gravados depois do backup se perdem.
+- Edge Functions: republicar a versão anterior; com o banco 2.18 ela funciona (só os boletins deixam de sair e os resumos mostram o texto antigo).
 
 ## Limites da validação local
 
