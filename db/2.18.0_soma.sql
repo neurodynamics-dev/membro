@@ -117,6 +117,11 @@ end $$;
 -- 1. O papel de cada grupo. Quem está no grupo, direto ou por um
 --    subgrupo (grupos_de), tem o papel. Só admin muda.
 -- ------------------------------------------------------------
+-- Marca da primeira aplicação: só nela a semente abaixo roda. Se a tabela já existe
+-- (o #35 já foi aplicado) ou a migração já está em migracoes, o que admin tirou fica tirado.
+select set_config('soma.semear_papeis',
+  (to_regclass('public.grupo_papeis') is null
+   and not exists (select 1 from public.migracoes where id = '2.18.0_soma'))::text, false);
 create table if not exists public.grupo_papeis (
   grupo_id     integer primary key references public.grupos(id) on delete cascade,
   papel        text not null check (papel in ('pessoal','selecao','lideranca')),
@@ -139,6 +144,10 @@ grant select on public.grupo_papeis to authenticated;
 do $$
 declare v_id integer; r record;
 begin
+  if coalesce(current_setting('soma.semear_papeis', true), 'false') <> 'true' then
+    raise notice 'Papéis por grupo: semente não aplicada (já existia); os vínculos atuais foram mantidos.';
+    return;
+  end if;
   for r in select * from (values ('pessoal','NRO_PESSOAL','pessoal'), ('selecao','NRO_PS',null),
                                  ('lideranca','NRO_LEADERSHIP',null)) v(papel, nome, chave) loop
     if exists (select 1 from grupo_papeis where papel = r.papel) then continue; end if;
