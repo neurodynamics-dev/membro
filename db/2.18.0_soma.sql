@@ -1502,6 +1502,9 @@ do $$ declare t text; f text; begin
  end loop;
 end $$;
 insert into storage.buckets(id,name,public) values('feed','feed',false) on conflict(id) do nothing;
+-- limite de 5 MB e só imagem, também na API (não só no front); idempotente
+update storage.buckets set file_size_limit=5242880,
+ allowed_mime_types=array['image/png','image/jpeg','image/webp'] where id='feed';
 create or replace function public.feed_imagem_pode(p_name text,p_escrita boolean default false) returns boolean
 language sql stable security definer set search_path=public as $$
  select conta_ativa() and exists(select 1 from reportes r where r.id::text=split_part(p_name,'/',1)
