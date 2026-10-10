@@ -18,7 +18,8 @@ seção correspondente.
 | 3 | Feita (membro): quiosque novo (layouts A e B, widgets, chegada, hora do dia) e conta de serviço. `db/2.19.0_quiosque.sql` **ainda não aplicada**: depende de conferir `quiosque_estado` e `config_sistema` no banco (ver `PUBLICACAO-2.19.md`) |
 | 4 | Feita (membro): todos os espaços no `cabecalho()` único; testes ajustados |
 | 5 | Feita (brand): manual refeito por tarefa (Fundamentos, Aplicações, Interface, Imprensa, Downloads), gerado por `scripts/montar.mjs`. Pendentes do responsável pela marca: CMYK/Pantone, tamanho mínimo e área livre do logo, co-branding, fluxo de aprovação, conjunto de ícones |
-| 6 e 7 | A fazer |
+| 6 | Feita (website, selecao): tokens do DS, sem pontos médios nem travessões, rótulos em Archivo, chips com raio do DS, seleção quieta, hero curto, `admin.html` no DS; auditor zerado nos dois (restam 4 avisos de sombra em diálogo e toast, permitidos) |
+| 7 | Parcial: aliases de token removidos (`--soma`, `--vital`, `--mielina`, `--pulso`, `--plasma`, `--r-pill`); `.aviso-box` e `.empty` ficam como variantes compactas do SOMA (a tabela 2.3 as liga a `.alerta` e `.vazio`). **Dívida no membro:** cerca de 360 achados do auditor, quase todos hex em dados de JS (cores de rede social, status, canvas) e em `tour.html`, `auth/`, `rsvp.html`, `admin.html`, `descadastrar.html`. `mod-criador` e `mod-mailer` são isentos (montam peças e e-mails) |
 
 ## 0. Decisões tomadas
 

@@ -25,7 +25,7 @@ body.cursor{cursor:default}
 .topo .marca{font-family:var(--fd);font-weight:700;font-size:1.5rem;letter-spacing:-.02em}
 .topo .sub{font-family:var(--fd);font-weight:600;font-size:.69rem;letter-spacing:var(--tr-label);text-transform:uppercase;color:var(--muted)}
 .vivo{margin-left:auto;display:inline-flex;align-items:center;gap:.5rem;padding:.2rem .6rem;border:1px solid color-mix(in srgb,var(--fn-signal-primary) 45%,transparent);border-radius:var(--r-tag);
-  font-family:var(--fm);font-size:.69rem;letter-spacing:.06em;text-transform:uppercase;color:var(--fn-signal-medium)}
+  font-family:var(--fd);font-weight:600;font-size:.69rem;letter-spacing:.06em;text-transform:uppercase;color:var(--fn-signal-medium)}
 .vivo i{width:.4rem;height:.4rem;background:var(--fn-signal-primary)}
 .vivo.off{border-color:color-mix(in srgb,var(--fn-idle-primary) 55%,transparent);color:var(--fn-idle-medium)}
 .vivo.off i{background:var(--fn-idle-primary)}
@@ -84,7 +84,7 @@ body.cursor{cursor:default}
 .ag-i .mm{font-size:.85rem;color:var(--muted)}
 .ag-i.passou{opacity:.45}
 .pill-agora{display:inline-flex;align-items:center;gap:.4rem;padding:.12rem .5rem;border:1px solid color-mix(in srgb,var(--fn-nominal-primary) 45%,transparent);border-radius:var(--r-tag);
-  font-family:var(--fm);font-size:.69rem;letter-spacing:.06em;text-transform:uppercase;color:var(--fn-nominal-medium)}
+  font-family:var(--fd);font-weight:600;font-size:.69rem;letter-spacing:.06em;text-transform:uppercase;color:var(--fn-nominal-medium)}
 .pill-agora i{width:.4rem;height:.4rem;background:var(--fn-nominal-primary)}
 .destaque{margin:auto 0;display:flex;flex-direction:column;gap:1rem}
 .destaque h3{margin:0;font-family:var(--fd);font-weight:600;font-size:2.6rem;line-height:1.08;letter-spacing:var(--tr-heading);text-wrap:balance;max-width:80%}

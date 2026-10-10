@@ -208,15 +208,7 @@
   --shadow-cta:0 8px 26px rgba(206,220,0,.22);
   --blur-glass:blur(18px) saturate(1.5);
 
-  /* ---- legado: não use em código novo ----------------------- */
-  /* Obsoletos: saem quando auditar.mjs não encontrar mais uso. */
-  --r-pill:7px;                       /* pílulas aposentadas */
-  --soma:var(--cortex-primary);
   --ion:var(--ion-primary);
-  --vital:var(--fn-nominal-primary);
-  --mielina:var(--fn-caution-primary);
-  --pulso:var(--fn-critical-primary);
-  --plasma:var(--fn-signal-primary);
   --dendrito:var(--dendrito-primary);
 }
 
