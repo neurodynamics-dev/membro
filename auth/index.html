@@ -20,14 +20,15 @@
   membro.neurodynamics.dev, e nunca há duas cópias dele. O passo a passo
   para publicar está no README desta pasta.
 -->
+<link rel="stylesheet" href="../ds/tokens.css">
 <style>
 :root{
-  --tinta:#1d1d1f; --texto:#2E3533; --cinza:#616C68; --claro:#616C68;
-  --linha:#C4CCC9; --linha2:#C4CCC9; --cab:#E8EDEB; --fundo:#E8EDEB; --papel:#ffffff;
-  --ok:#1f5a34; --ok-f:#e9f2ec; --ok-b:#8fb59c;
-  --bad:#8b1d1d; --bad-f:#f7eaea; --bad-b:#c99a9a;
-  --warn:#6a4b00; --warn-f:#f7f1df; --warn-b:#cdb77a;
-  --foco:#00594F;
+  --tinta:var(--sulco-medium); --texto:var(--pia-dark); --cinza:var(--sulco-light); --claro:var(--sulco-light);
+  --linha:var(--pia-medium); --linha2:var(--pia-medium); --cab:var(--pia-light); --fundo:var(--pia-light); --papel:var(--paper);
+  --ok:#1f5a34; --ok-f:#e9f2ec; --ok-b:#8fb59c; /* auditar: ok, paleta do registro formal (documento), sem token no DS */
+  --bad:#8b1d1d; --bad-f:#f7eaea; --bad-b:#c99a9a; /* auditar: ok, paleta do registro formal (documento), sem token no DS */
+  --warn:#6a4b00; --warn-f:#f7f1df; --warn-b:#cdb77a; /* auditar: ok, paleta do registro formal (documento), sem token no DS */
+  --foco:var(--cortex-primary);
   --fd:'Archivo',sans-serif; --f:'Instrument Sans', "Helvetica Neue", Helvetica, "Liberation Sans", sans-serif;
   --fm:'IBM Plex Mono',monospace;
 }
@@ -39,9 +40,9 @@ a{color:var(--foco)}
 :focus-visible{outline:2px solid var(--foco);outline-offset:2px}
 .w{width:100%;max-width:860px;margin:0 auto;padding:0 16px}
 /* a faixa institucional, como nos portais de governo */
-.faixa{background:var(--tinta);color:#e6e6e8;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase}
+.faixa{background:var(--tinta);color:#e6e6e8;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase} /* auditar: ok, paleta do registro formal (documento), sem token no DS */
 .faixa .w{display:flex;justify-content:space-between;gap:12px;padding-top:7px;padding-bottom:7px;flex-wrap:wrap}
-.faixa a{color:#e6e6e8;text-decoration:none}
+.faixa a{color:#e6e6e8;text-decoration:none} /* auditar: ok, paleta do registro formal (documento), sem token no DS */
 .faixa a:hover{text-decoration:underline}
 .topo{background:var(--papel);border-bottom:3px double var(--linha)}
 .topo .w{display:flex;align-items:center;gap:18px;padding-top:22px;padding-bottom:20px}
@@ -62,14 +63,14 @@ main.w{flex:1;padding-top:26px;padding-bottom:40px}
 .campo label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cinza);margin-bottom:5px}
 .campo label span{font-weight:400;text-transform:none;letter-spacing:0}
 .campo input{width:100%;font-family:var(--fd);font-size:18px;font-weight:700;letter-spacing:.08em;color:var(--tinta);
-  background:#fff;border:1px solid var(--linha);border-radius:0;padding:9px 10px;text-transform:uppercase}
-.campo input::placeholder{color:#b0b0b4;font-weight:400;letter-spacing:.04em}
+  background:var(--paper);border:1px solid var(--linha);border-radius:0;padding:9px 10px;text-transform:uppercase}
+.campo input::placeholder{color:#b0b0b4;font-weight:400;letter-spacing:.04em} /* auditar: ok, paleta do registro formal (documento), sem token no DS */
 .campo input:focus{border-color:var(--foco);outline:1px solid var(--foco)}
-button,.botao{font-family:var(--f);font-size:14px;font-weight:700;color:#fff;background:var(--tinta);border:1px solid var(--tinta);
+button,.botao{font-family:var(--f);font-size:14px;font-weight:700;color:var(--paper);background:var(--tinta);border:1px solid var(--tinta);
   border-radius:0;padding:11px 22px;cursor:pointer;text-decoration:none;display:inline-block;line-height:1.3}
-button:hover,.botao:hover{background:#000}
+button:hover,.botao:hover{background:var(--void)}
 button:disabled{opacity:.55;cursor:default}
-button.sec,.botao.sec{background:#fff;color:var(--tinta)}
+button.sec,.botao.sec{background:var(--paper);color:var(--tinta)}
 button.sec:hover,.botao.sec:hover{background:var(--fundo)}
 .dica{font-size:12.5px;color:var(--cinza);margin-top:10px}
 .erro-campo{font-size:13px;color:var(--bad);margin-top:8px;min-height:1px}
@@ -107,9 +108,9 @@ footer .w{padding-top:16px;padding-bottom:20px;display:flex;flex-direction:colum
 footer b{color:var(--tinta)}
 .so-impresso{display:none}
 @media print{
-  body{background:#fff;font-size:12px}
+  body{background:var(--paper);font-size:12px}
   .faixa,.no-print,#f-bloco,.sobre,footer .links{display:none!important}
-  .bloco{border-color:#999;break-inside:avoid}
+  .bloco{border-color:#999;break-inside:avoid} /* auditar: ok, paleta do registro formal (documento), sem token no DS */
   .so-impresso{display:block}
   main{padding:10px 0}
   a{color:inherit;text-decoration:none}
@@ -362,7 +363,7 @@ function novaConsulta(){
   history.replaceState(null, '', location.pathname); $('#c').focus();
 }
 function impresso(cod, resultado){
-  $('#impresso').textContent = `Comprovante de consulta: código verificador ${cod} — ${resultado}. Consulta em auth.neurodynamics.dev, `
+  $('#impresso').textContent = `Comprovante de consulta: código verificador ${cod}: ${resultado}. Consulta em auth.neurodynamics.dev, `
     + `em ${momento(new Date().toISOString())}.`;
 }
 

@@ -376,7 +376,7 @@ console.log('\nTema');
       for (let e = el; e; e = e.parentElement){ const c = rgb(getComputedStyle(e).backgroundColor);
         if (c.length === 3 || c[3] > 0){ camadas.push(c); if (c.length === 3 || c[3] >= 1) break; } }
       return camadas.reverse().reduce((b, c) => sobre(c, b), rgb(getComputedStyle(document.body).backgroundColor).slice(0, 3)); };
-    const amostras = { 'título': 'main h1', 'texto de apoio': '.topo-gestao .lead', 'rótulo (dim)': '.topo-gestao .eyebrow',
+    const amostras = { 'título': 'main h1', 'texto de apoio': '.cab .cab-lead', 'rótulo (dim)': '.cab .eyebrow',
       'item do menu': '#lt-nav .lt-item .lt-rot', 'código': '.arq-tab .cod', 'subtítulo da linha': '.arq-tab .sub',
       'quem mexeu': '.arq-tab .arq-quem', 'classe controlado': '.arq-cls.controlado', 'status ativo': '.pill.p-ok',
       'link secundário': '.nav1 a:not(.on)', 'selo Synapse': '.hd-tag', 'frase da estrutura': '.arq-leg .fr',

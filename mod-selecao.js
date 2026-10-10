@@ -167,10 +167,8 @@ async function pageSelecao(sub, sub2){
 
 async function desenhaSelecao(){
   const m = $('#main');
-  const topo = (acoes) => `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Comitê de Seleção</span>
-      <h1>Processo seletivo</h1><p class="lead">Os bastidores do processo: candidatos, avaliação, agenda,
-      a dinâmica em grupo e o que vai para o site.</p></div>
-    ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+  const topo = (acoes) => cabecalho({ espaco:'Seleção', titulo:'Processo seletivo',
+    lead:'Os bastidores do processo: candidatos, avaliação, agenda, a dinâmica em grupo e o que vai para o site.', acoes:[].concat(acoes || '') });
   if(!podeSelecao()){
     m.innerHTML = topo() + `<div class="aviso-box warn"><b>Acesso restrito.</b> Esta página é do Comitê de
       Seleção: quem está num grupo com o papel Seleção, definido em Administração › Grupos.</div>`;
@@ -314,7 +312,7 @@ function psLinhaCand(c){
     <td>${psPill(c.status)}</td>
     <td class="small">${agTxt(ad)}</td>
     <td class="small">${agTxt(ae)}</td>
-    <td>${md!=null?`<span class="nota-badge">★ ${md.toFixed(1)}</span>`:'<span class="dim small">—</span>'}</td>
+    <td>${md!=null?`<span class="nota-badge">Nota ${md.toFixed(1)}</span>`:'<span class="dim small">—</span>'}</td>
     <td onclick="event.stopPropagation()">${ibtn('mail','E-mail de confirmação da inscrição',`psEmailConfirmacao('${c.id}')`,'sm')}</td>
   </tr>`;
 }
@@ -389,7 +387,7 @@ function psEmailConfirmacao(id, voltaFicha){
   abreModal(`
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
       <div><h3 style="margin:0">Confirmação da inscrição</h3>
-        <div class="small muted" style="margin-top:4px"><b>${esc(c.nome)}</b> ·
+        <div class="small muted" style="margin-top:4px"><b>${esc(c.nome)}</b>,
           <span class="mono">${esc(c.protocolo||'sem protocolo')}</span></div></div>
       <div style="display:flex;gap:8px;align-items:center">${psPill(c.status)}${ibtn('x','Fechar',fechar,'sm')}</div>
     </div>
@@ -477,7 +475,7 @@ function psAbrirFicha(id){
         const l = grupos[f]||[]; if(!l.length) return '';
         const md = psMedia(l);
         return `<div class="aval-card">
-          <div class="hd"><b>${PS_FASES_AVAL[f].lbl}</b>${md!=null?`<span class="nota-badge">★ ${md.toFixed(1)}, ${l.length} avaliação${l.length>1?'ões':''}</span>`:''}</div>
+          <div class="hd"><b>${PS_FASES_AVAL[f].lbl}</b>${md!=null?`<span class="nota-badge">Nota ${md.toFixed(1)}, ${l.length} avaliação${l.length>1?'ões':''}</span>`:''}</div>
           ${l.map(a=>`<div class="small" style="border-top:1px solid var(--line);padding:8px 0">
             <b>${esc(a.avaliador||'—')}</b>: nota ${a.nota??'—'}
             ${a.recomendacao?` <span class="chip mini">${PS_REC[a.recomendacao]||a.recomendacao}</span>`:''}
@@ -584,7 +582,7 @@ function psAvaliacao(){
             ${Object.keys(recs).length?', '+Object.entries(recs).map(([r,q])=>`${q}× ${PS_REC[r]}`).join(', '):''}
           </div>
         </div>
-        ${media!=null?`<span class="nota-badge">★ ${media.toFixed(1)}</span>`:''}
+        ${media!=null?`<span class="nota-badge">Nota ${media.toFixed(1)}</span>`:''}
         <button class="btn ${minha?'ghost':'solid'} mini" onclick="psAbrirAval('${c.id}','${fase}')">
           ${ic('pencil')} ${minha?'Editar minha avaliação':'Avaliar'}</button>
       </div>`; }).join('')
@@ -1221,7 +1219,7 @@ function psDinJanela(s){
 
   <div class="card" style="margin-bottom:16px">
     <h3>${fmtD(s.data)}, ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</h3>
-    <p class="small muted" style="margin:4px 0 16px">${esc(s.local||'sem local definido')} ·
+    <p class="small muted" style="margin:4px 0 16px">${esc(s.local||'sem local definido')},
       ${ags.length} de ${s.capacidade} lugares ocupados</p>
 
     ${cod ? `<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:16px">

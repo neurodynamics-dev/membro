@@ -64,9 +64,8 @@ const MOTIVO_DOC = {
 };
 const docMotivo = (data, error, padrao) => error ? motivoRPC(null, error, padrao)
   : MOTIVO_DOC[data?.status] || motivoRPC(data, null, padrao);
-const docTopo = (titulo, lead, acoes, olho) => `<div class="topo-gestao"><div class="tx">
-  <span class="eyebrow">${esc(olho || 'Serviços › Documentos')}</span><h1>${titulo}</h1>
-  ${lead ? `<p class="lead">${lead}</p>` : ''}</div>${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+/* o eyebrow é sempre o espaço (Serviços); o 4º argumento fica só por compatibilidade */
+const docTopo = (titulo, lead, acoes, _olho) => cabecalho({ espaco:'Serviços', titulo:desesc(titulo), lead, acoes:[].concat(acoes || '') });
 const docFaltaBanco = (erro, titulo) => `${docTopo(titulo, '')}<div class="aviso-box err"><b>Isto ainda não está no banco.</b>
   ${esc(erro?.message || '')}<br><span class="small">Falta aplicar a migração <code>db/v25_documentos_eventos.sql</code>.</span></div>`;
 const docCarregando = t => `<div class="carregando"><span class="spin"></span> ${t || 'Carregando…'}</div>`;
@@ -269,7 +268,7 @@ async function evxLista(filtro){
       `<a class="btn solid" href="#/servicos/eventos/novo">${ic('plus')} Registrar evento</a>`)}
     ${evxNav(filtro)}
     ${lista.length ? `<div class="evx-lista">${lista.map(evxCartao).join('')}</div>`
-      : `<div class="vazio"><div class="glyph">${filtro === 'aprovar' ? '✓' : '·'}</div>
+      : `<div class="vazio"><div class="glyph">${filtro === 'aprovar' ? '✓' : '-'}</div>
           <h3>${filtro === 'aprovar' ? 'Nada aguardando aprovação' : filtro === 'todos' ? 'Nenhum evento aprovado'
             : 'Nenhum evento registrado'}</h3>
           ${filtro !== 'aprovar' ? `<a class="btn ghost" href="#/servicos/eventos/novo">Registrar evento</a>` : ''}</div>`}`;

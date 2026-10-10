@@ -515,7 +515,7 @@ function treEscreverTexto(meta, conteudo){
     const b = [`# ${m.titulo || ''}`, '', String(m.corpo || '').trim()];
     if ((m.links || []).length){
       b.push('', '## Links relacionados', '');
-      m.links.forEach(k => b.push(`- [${k.titulo || k.url}](${k.url})${k.descricao ? ' — ' + k.descricao : ''}`));
+      m.links.forEach(k => b.push(`- [${k.titulo || k.url}](${k.url})${k.descricao ? ': ' + k.descricao : ''}`));
     }
     const qs = m.verificacao?.questoes || [];
     if (qs.length){
@@ -649,11 +649,11 @@ carga_horaria: 30
 
 O código (NRO-TRE-XXX) e a revisão (Rev. A, B…) quem dá é o portal, não o texto.
 
-**Os módulos.** Cada módulo começa com um título de nível 1 (\`# \`) e vai até o próximo. O portal numera os módulos — não escreva "Módulo 1" no título.
+**Os módulos.** Cada módulo começa com um título de nível 1 (\`# \`) e vai até o próximo. O portal numera os módulos: não escreva "Módulo 1" no título.
 
 - de **3 a 7 módulos**; cada um com **3 a 8 minutos** de leitura (300 a 900 palavras), fora os vídeos;
 - o módulo abre com **uma frase** dizendo o que a pessoa vai conseguir fazer ao fim dele;
-- dentro do módulo, subtítulos com \`##\` e \`###\` — nunca \`#\`, que abre outro módulo;
+- dentro do módulo, subtítulos com \`##\` e \`###\`: nunca \`#\`, que abre outro módulo;
 - procedimento é **lista numerada**, um passo por item, começando pelo verbo;
 - o módulo termina no último passo ou na última ideia. Sem resumo do que acabou de ser dito.
 
@@ -889,9 +889,9 @@ function treNavConfig(atual){
   return navNivel2([['', 'Treinamentos', '#/treinamentos/config'], ['geral', 'Geral', '#/treinamentos/config/geral'],
     ['readme', 'README de conteúdo', '#/treinamentos/config/readme']], atual, 'Configurações');
 }
-function treTopo(titulo, lead, acoes, olho){
-  return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">${esc(olho || 'Treinamentos')}</span><h1>${titulo}</h1>
-    ${lead ? `<p class="lead">${lead}</p>` : ''}</div>${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+/* o eyebrow é sempre o espaço (Treinamentos); o 4º argumento fica só por compatibilidade */
+function treTopo(titulo, lead, acoes, _olho){
+  return cabecalho({ espaco:'Treinamentos', titulo, lead, acoes:[].concat(acoes || '') });
 }
 async function treCarregarLista(){
   const { data, error } = await sb.rpc('treinamentos_meus');
@@ -1068,11 +1068,8 @@ async function treTreinamento(cod){
       ${t.notas_revisao ? esc(t.notas_revisao) : ''} O certificado da Rev. ${esc(a.conclusao?.revisao || '')} continua no seu perfil.</div></div>`;
   $('#main').innerHTML = `<div class="tre-hero">
       <div class="tre-hero-tx">
-        <a class="tre-voltar" href="#/treinamentos">${ic('back')} Treinamentos</a>
-        <span class="eyebrow">${esc(t.codigo)}, Rev. ${esc(t.revisao)}${t.categoria ? ', ' + esc(t.categoria) : ''}</span>
-        <h1>${esc(t.titulo)}</h1>
-        ${t.resumo ? `<p class="lead">${esc(t.resumo)}</p>` : ''}
-        <div class="tre-hero-tags">${trePill(s)} ${treObrig(a.obrigatorio)}</div>
+        ${cabecalho({ espaco:'Treinamentos', titulo:t.titulo, codigo:t.codigo, voltar:['Treinamentos', '#/treinamentos'],
+          lead:t.resumo ? esc(t.resumo) : '', meta:['Rev. ' + esc(t.revisao) + (t.categoria ? ', ' + esc(t.categoria) : ''), trePill(s), treObrig(a.obrigatorio)] })}
       </div>
       <dl class="tre-ficha">
         <div><dt>Módulos</dt><dd>${mods.length}</dd></div>
@@ -1141,8 +1138,8 @@ async function treModulo(cod, n){
     <article class="tre-conteudo">
       ${a.situacao === 'vencido' ? `<div class="aviso-box warn">Este treinamento venceu: o que você fizer agora não renova o certificado.
         Para ficar em dia, <button class="tre-a" style="font:inherit" onclick="treRecomecar()">recomece do zero</button>.</div>` : ''}
-      <span class="eyebrow">Módulo ${String(n).padStart(2, '0')} de ${String(mods.length).padStart(2, '0')}${feito ? ', concluído' : ''}</span>
-      <h1>${esc(m.titulo)}</h1>
+      ${cabecalho({ espaco:'Treinamentos', titulo:m.titulo, voltar:[t.titulo, '#/treinamentos/' + t.codigo],
+        meta:['Módulo ' + String(n).padStart(2, '0') + ' de ' + String(mods.length).padStart(2, '0') + (feito ? ', concluído' : '')] })}
       <div class="tre-md">${treMd(m.corpo, ctx)}</div>
       ${(m.links || []).length ? `<section class="tre-links"><h2>Links relacionados</h2><div class="doc-grid">${m.links.map(treLinkCartao).join('')}</div></section>` : ''}
       ${qs.length ? treVerificacaoHTML(m, qs, res, t) : `<div class="tre-concluir">
@@ -1468,13 +1465,12 @@ function treEdDesenhar(){
     ? (t.revisao_atual ? `Rascunho da Rev. ${letra}. Quem faz o treinamento continua vendo a Rev. ${esc(t.revisao_atual)} até você publicar.`
                        : 'Rascunho, não publicado.')
     : `Rev. ${esc(t.revisao_atual)} publicada${t.status === 'arquivado' ? ' e arquivada' : ''}. Mudar o conteúdo abre o rascunho da Rev. ${letra}.`;
-  $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Editor de ${esc(t.codigo)}</span>
-      <h1 id="tre-ed-h1">${esc(ed.meta.titulo || 'Sem título')}</h1><p class="lead">${estado}</p></div>
-      <div class="acoes">
-        <button class="btn ghost mini" onclick="trePrevia(0)">${ic('eye')} Pré-visualizar</button>
-        <button class="btn ghost mini" onclick="treImportarModal()">${ic('subir')} Importar texto</button>
-        <button class="btn ghost mini" onclick="treExportar()">${ic('down')} Exportar</button>
-        <button class="btn solid mini" onclick="treEdPublicarModal()">${ic('enviar')} Publicar a Rev. ${letra}</button></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Treinamentos', titulo:ed.meta.titulo || 'Sem título', codigo:t.codigo,
+      h1Attrs:'id="tre-ed-h1"', voltar:['Treinamento', '#/treinamentos/' + t.codigo], lead:estado,
+      acoes:[`<button class="btn ghost" onclick="trePrevia(0)">${ic('eye')} Pré-visualizar</button>`,
+        `<button class="btn ghost" onclick="treImportarModal()">${ic('subir')} Importar texto</button>`,
+        `<button class="btn ghost" onclick="treExportar()">${ic('down')} Exportar</button>`,
+        `<button class="btn solid" onclick="treEdPublicarModal()">${ic('enviar')} Publicar a Rev. ${letra}</button>`] }) + `
     <div class="tre-ed-status" id="tre-ed-st" role="status"></div>
     <div class="tre-ed">
       <div class="tre-ed-main">
@@ -1566,7 +1562,7 @@ async function treEdSalvar(){
 }
 /* o rascunho acabou de nascer: o topo passa a dizer "rascunho da Rev. X" */
 function treEdDesenharCabeca(){
-  const ed = treino.ed, lead = document.querySelector('.topo-gestao .lead');
+  const ed = treino.ed, lead = document.querySelector('.cab .cab-lead');
   if (!ed || !$('#tre-ed-h1')) return;
   if (lead && ed.t.revisao_atual) lead.textContent = `Rascunho da Rev. ${treProxLetra()}. Quem faz o treinamento continua vendo a Rev. ${ed.t.revisao_atual} até você publicar.`;
 }
@@ -2196,13 +2192,13 @@ async function treCertificadoCanvas(c, cfg, k){
   const esp = mm => { if ('letterSpacing' in x) x.letterSpacing = (mm * u).toFixed(1) + 'px'; };
   const linha = (x0, y0, x1, y1) => { x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke(); };
   /* o papel */
-  x.fillStyle = '#E3EFEC'; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#E3EFEC'; x.fillRect(0, 0, W, H); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const B = 66 * u;
   x.strokeStyle = 'rgba(0,53,47,.05)'; x.lineWidth = Math.max(1, .14 * u);
   for (let gx = B + 10 * u; gx < W; gx += 10 * u) linha(gx, 0, gx, H);
   for (let gy = 10 * u; gy < H; gy += 10 * u) linha(B, gy, W, gy);
   /* a faixa Cortex, com a rede neural do certificado */
-  x.fillStyle = '#00352F'; x.fillRect(0, 0, B, H);
+  x.fillStyle = '#00352F'; x.fillRect(0, 0, B, H); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const rnd = treSorteio(c.certificado);
   const pts = Array.from({ length:30 }, () => [(5 + rnd() * 56) * u, (6 + rnd() * 198) * u, rnd()]);
   x.lineWidth = .32 * u;
@@ -2225,46 +2221,46 @@ async function treCertificadoCanvas(c, cfg, k){
     linha(cx, cy, cx + sx * 6 * u, cy); linha(cx, cy, cx, cy + sy * 6 * u); });
   /* o topo: as duas marcas */
   const X0 = 88 * u, XR = W - 20 * u;
-  if (treMarca.nro){ const s = treTinta(treMarca.nro, '#00352F'), h = 9.5 * u; x.drawImage(s, X0, 21 * u, h * s.width / s.height, h); }
-  if (treMarca.labbio){ const s = treTinta(treMarca.labbio, '#00594F'), h = 10.5 * u, w = h * s.width / s.height; x.drawImage(s, XR - w, 20.5 * u, w, h); }
+  if (treMarca.nro){ const s = treTinta(treMarca.nro, '#00352F'), h = 9.5 * u; x.drawImage(s, X0, 21 * u, h * s.width / s.height, h); } // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  if (treMarca.labbio){ const s = treTinta(treMarca.labbio, '#00594F'), h = 10.5 * u, w = h * s.width / s.height; x.drawImage(s, XR - w, 20.5 * u, w, h); } // auditar: ok, cor de dado ou de canvas, precisa ser literal
   /* o texto */
-  x.fillStyle = '#CEDC00'; x.fillRect(X0, 49.3 * u, 2.3 * u, 2.3 * u);
-  x.font = F(600, 3.4); x.fillStyle = '#2E3533'; esp(.75); x.textBaseline = 'alphabetic';
+  x.fillStyle = '#CEDC00'; x.fillRect(X0, 49.3 * u, 2.3 * u, 2.3 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x.font = F(600, 3.4); x.fillStyle = '#2E3533'; esp(.75); x.textBaseline = 'alphabetic'; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   x.fillText('Certificado de conclusão', X0 + 5.2 * u, 51.9 * u); esp(0);
-  x.font = S(400, 5); x.fillStyle = '#2E3533'; x.fillText('Certificamos que', X0, 69 * u);
+  x.font = S(400, 5); x.fillStyle = '#2E3533'; x.fillText('Certificamos que', X0, 69 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   let tam = 15.5; x.font = F(700, tam);
   while (x.measureText(c.nome).width > XR - X0 && tam > 8){ tam -= .5; x.font = F(700, tam); }
-  x.fillStyle = '#1D1D1F'; esp(-.02 * tam); x.fillText(c.nome, X0, 87 * u); esp(0);
-  x.font = S(400, 5); x.fillStyle = '#2E3533'; x.fillText('concluiu o treinamento', X0, 102 * u);
+  x.fillStyle = '#1D1D1F'; esp(-.02 * tam); x.fillText(c.nome, X0, 87 * u); esp(0); // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x.font = S(400, 5); x.fillStyle = '#2E3533'; x.fillText('concluiu o treinamento', X0, 102 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   let tt = 10.5, ls;
   do { x.font = F(700, tt); ls = treQuebra(x, c.titulo, XR - X0, 2); tt -= .5; } while (ls.length > 1 && x.measureText(ls[0]).width > XR - X0 && tt > 6);
-  x.fillStyle = '#00352F';
+  x.fillStyle = '#00352F'; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const lh = (tt + .5) * 1.18 * u;
   ls.forEach((l, i) => x.fillText(l, X0, 116 * u + i * lh));
   let y = 116 * u + (ls.length - 1) * lh;
-  x.fillStyle = '#CEDC00'; x.fillRect(X0, y + 5 * u, 26 * u, 1.4 * u);
+  x.fillStyle = '#CEDC00'; x.fillRect(X0, y + 5 * u, 26 * u, 1.4 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const meta = [`${c.codigo}, REV. ${c.revisao}`, c.carga_horaria_min ? 'CARGA HORÁRIA ' + treDuracao(c.carga_horaria_min).toUpperCase() : null,
     c.nota != null ? `NOTA ${c.nota}%` : null].filter(Boolean).join('  ,   ');
-  x.font = F(600, 3.3); x.fillStyle = '#2E3533'; esp(.45); x.fillText(meta, X0, y + 16 * u); esp(0);
+  x.font = F(600, 3.3); x.fillStyle = '#2E3533'; esp(.45); x.fillText(meta, X0, y + 16 * u); esp(0); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   if ((c.modulos || []).length){
-    x.font = S(400, 3.5); x.fillStyle = '#616C68';
+    x.font = S(400, 3.5); x.fillStyle = '#616C68'; // auditar: ok, cor de dado ou de canvas, precisa ser literal
     const txt = 'Conteúdo: ' + c.modulos.map((m, i) => `${i + 1}. ${m}`).join(', ');
     treQuebra(x, txt, XR - X0, 2).forEach((l, i) => x.fillText(l, X0, y + 25 * u + i * 5 * u));
   }
   /* o pé: a data, a assinatura e o código */
   const yb = 187 * u;
   x.strokeStyle = 'rgba(0,53,47,.14)'; x.lineWidth = .25 * u; linha(X0, yb - 15 * u, XR, yb - 15 * u);
-  const rot = (t, xx, al) => { x.font = F(600, 2.7); x.fillStyle = '#616C68'; esp(.55); x.textAlign = al || 'left'; x.fillText(t, xx, yb - 6 * u); esp(0); };
+  const rot = (t, xx, al) => { x.font = F(600, 2.7); x.fillStyle = '#616C68'; esp(.55); x.textAlign = al || 'left'; x.fillText(t, xx, yb - 6 * u); esp(0); }; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   rot('BELO HORIZONTE', X0);
-  x.font = F(600, 4.6); x.fillStyle = '#1D1D1F'; x.textAlign = 'left'; x.fillText(treDataLonga(c.concluido_em), X0, yb + 1.5 * u);
+  x.font = F(600, 4.6); x.fillStyle = '#1D1D1F'; x.textAlign = 'left'; x.fillText(treDataLonga(c.concluido_em), X0, yb + 1.5 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const SX = X0 + 60 * u, SW = 56 * u;
-  x.strokeStyle = '#00352F'; x.lineWidth = .3 * u; linha(SX, yb - 2 * u, SX + SW, yb - 2 * u);
-  x.font = F(600, 4.1); x.fillStyle = '#1D1D1F'; x.textAlign = 'center';
+  x.strokeStyle = '#00352F'; x.lineWidth = .3 * u; linha(SX, yb - 2 * u, SX + SW, yb - 2 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x.font = F(600, 4.1); x.fillStyle = '#1D1D1F'; x.textAlign = 'center'; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   x.fillText(cfg?.assinatura_nome || 'Departamento de Pessoal', SX + SW / 2, yb + 4 * u);
-  x.font = F(500, 3.1); x.fillStyle = '#616C68'; x.fillText(cfg?.assinatura_cargo || 'NeuroDynamics', SX + SW / 2, yb + 9 * u);
+  x.font = F(500, 3.1); x.fillStyle = '#616C68'; x.fillText(cfg?.assinatura_cargo || 'NeuroDynamics', SX + SW / 2, yb + 9 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   rot('CÓDIGO DO CERTIFICADO', XR, 'right');
-  x.font = M(600, 4.4); x.fillStyle = '#00352F'; esp(.3); x.textAlign = 'right'; x.fillText(c.certificado, XR, yb + 1.5 * u); esp(0);
-  x.font = F(500, 2.8); x.fillStyle = '#616C68'; x.fillText('Confira em membro.neurodynamics.dev', XR, yb + 7 * u);
+  x.font = M(600, 4.4); x.fillStyle = '#00352F'; esp(.3); x.textAlign = 'right'; x.fillText(c.certificado, XR, yb + 1.5 * u); esp(0); // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x.font = F(500, 2.8); x.fillStyle = '#616C68'; x.fillText('Confira em membro.neurodynamics.dev', XR, yb + 7 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   x.textAlign = 'left';
   return cv;
 }

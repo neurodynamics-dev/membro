@@ -1,6 +1,6 @@
 <!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Descadastro | NeuroDynamics</title>
-<link rel="stylesheet" href="https://brand.neurodynamics.dev/design-system/tokens.css"><link rel="stylesheet" href="https://brand.neurodynamics.dev/design-system/neuro.css">
-<style>body{padding:24px;font:16px Arial,sans-serif;background:#050807;color:#E8EDEB}main{max-width:600px;margin:15vh auto}button{padding:12px;border-radius:11px;background:#CEDC00;color:#00352F;border:0;cursor:pointer}</style>
+<link rel="stylesheet" href="ds/tokens.css"><link rel="stylesheet" href="ds/neuro.css">
+<style>body{padding:24px;font:16px var(--f);background:var(--bg);color:var(--ink)}main{max-width:600px;margin:15vh auto}button{padding:12px;border-radius:var(--r-sm);background:var(--syn);color:var(--cortex);border:0;cursor:pointer}</style>
 <main><h1>Descadastro da newsletter</h1><p id="status">Confirme para interromper os boletins da comunidade.</p><button id="confirmar">Confirmar descadastro</button></main>
 <script>
 const token=new URLSearchParams(location.search).get('t'), status=document.getElementById('status'),botao=document.getElementById('confirmar');

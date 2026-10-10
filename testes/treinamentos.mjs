@@ -207,21 +207,21 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   await ir(p, '#/treinamentos/NRO-TRE-003/editar', 1300);
   const prob = await p.evaluate(() => [...document.querySelectorAll('#tre-ed-prob li')].map(l => l.textContent));
   confere('o editor lista o que impede publicar', prob.includes('Módulo 1: sem título.') && prob.some(x => /apenas uma correta, há 2 marcadas/.test(x)), prob);
-  await p.click('.topo-gestao .btn.solid'); await p.waitForTimeout(300);
+  await p.click('.cab .btn.solid'); await p.waitForTimeout(300);
   confere('e publicar mostra os problemas, sem botão de publicar', /Antes de publicar, resolva/.test(await texto(p, '#modal')) && !(await p.$('#tre-pub-ok')));
   await p.evaluate(() => fechaModal());
   confere('nunca publicado: excluir, não arquivar', /Excluir o treinamento/.test(await texto(p, '.tre-ed-zona')) && !/Arquivar/.test(await texto(p, '.tre-ed-zona')));
 
   /* o editor do publicado: grava sozinho */
   await ir(p, '#/treinamentos/NRO-TRE-001/editar', 1300);
-  confere('o topo diz qual revisão está publicada e qual será a próxima', /Rev\. B publicada/.test(await texto(p, '.topo-gestao .lead'))
-    && /Publicar a Rev\. C/.test(await texto(p, '.topo-gestao .btn.solid')));
+  confere('o topo diz qual revisão está publicada e qual será a próxima', /Rev\. B publicada/.test(await texto(p, '.cab .cab-lead'))
+    && /Publicar a Rev\. C/.test(await texto(p, '.cab .btn.solid')));
   await p.fill('.tre-ed-mod[data-i="0"] .tre-ed-tit', 'O que é a agenda da equipe');
   confere('mudar avisa que há o que salvar', /por salvar/.test(await texto(p, '#tre-ed-st')));
   await p.waitForTimeout(3200);
   const salvo = (await rpcs(p, 'treinamento_rascunho_salvar')).at(-1);
   confere('dois segundos e meio depois, o rascunho grava sozinho', salvo?.p_conteudo?.modulos?.[0]?.titulo === 'O que é a agenda da equipe', salvo);
-  confere('e o topo passa a falar do rascunho da Rev. C', /Rascunho da Rev\. C/.test(await texto(p, '.topo-gestao .lead')) && /salvo às/.test(await texto(p, '#tre-ed-st')));
+  confere('e o topo passa a falar do rascunho da Rev. C', /Rascunho da Rev\. C/.test(await texto(p, '.cab .cab-lead')) && /salvo às/.test(await texto(p, '#tre-ed-st')));
   /* uma questão nova no módulo 3 */
   await p.click('.tre-ed-mod[data-i="2"] .tre-ed-abre'); await p.waitForTimeout(200);
   await p.click('.tre-ed-mod[data-i="2"] .tre-ed-addq .kb-add:nth-child(3)'); await p.waitForTimeout(200);
@@ -235,13 +235,13 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   await p.waitForTimeout(500);
   confere('preenchida, nada impede publicar', /Nada impede/.test(await texto(p, '#tre-ed-prob')));
   /* a prévia mostra o gabarito */
-  await p.click('.topo-gestao button:has-text("Pré-visualizar")'); await p.waitForTimeout(300);
+  await p.click('.cab button:has-text("Pré-visualizar")'); await p.waitForTimeout(300);
   await p.click('.tre-previa-abas button:nth-child(2)'); await p.waitForTimeout(300);
   confere('a pré-visualização mostra a verificação com a certa marcada', await p.evaluate(() =>
     document.querySelectorAll('#modal .tre-op.e-certa').length === 3 && /É a aba Mês/.test(document.querySelector('#modal .tre-q-exp')?.textContent || '')));
   await p.evaluate(() => fechaModal());
   /* exportar e ler de volta */
-  const md = await baixa(p, () => p.click('.topo-gestao button:has-text("Exportar")'));
+  const md = await baixa(p, () => p.click('.cab button:has-text("Exportar")'));
   const txt = md.conteudo.toString('utf8');
   confere('exportar desce o Markdown do formato do README', md.nome === 'NRO-TRE-001-rascunho-rev-C.md' && /^---\ntitulo: Agenda no SOMA\ncodigo: NRO-TRE-001/.test(txt)
     && /\n# O que é a agenda da equipe\n/.test(txt) && /## Verificação de conhecimento/.test(txt) && /- \[V\] O check-in é pelo QR/.test(txt), txt.slice(0, 200));
@@ -252,7 +252,7 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
     return JSON.stringify(canon(r.conteudo)) === JSON.stringify(canon(treino.ed.conteudo)); }, txt);
   confere('e o que se exporta se lê de volta igual (os ids inclusive)', volta);
   /* importar o exemplo do README */
-  await p.click('.topo-gestao button:has-text("Importar texto")'); await p.waitForTimeout(200);
+  await p.click('.cab button:has-text("Importar texto")'); await p.waitForTimeout(200);
   await p.fill('#tre-imp-txt', EXEMPLO); await p.waitForTimeout(200);
   const prev = await p.evaluate(() => ({ cab: document.querySelector('.tre-imp-cab')?.textContent.replace(/\s+/g, ' '),
     avisos: [...document.querySelectorAll('.tre-imp-res .aviso-box li')].map(l => l.textContent), ok: !document.querySelector('#tre-imp-ok').disabled }));
@@ -266,21 +266,21 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   confere('e grava o rascunho e os dados', (await rpcs(p, 'treinamento_rascunho_salvar')).at(-1)?.p_conteudo?.modulos?.length === 4
     && (await rpcs(p, 'treinamento_salvar')).some(x => x?.titulo === 'Acesso ao LABBIO' && x?.carga_horaria_min === '20'));
   /* publicar: a marca do exemplo impede; tirando o módulo, publica */
-  await p.click('.topo-gestao .btn.solid'); await p.waitForTimeout(300);
+  await p.click('.cab .btn.solid'); await p.waitForTimeout(300);
   confere('publicar recusa o vídeo com o link de exemplo', /link de exemplo/.test(await texto(p, '#modal')));
   await p.evaluate(() => fechaModal());
   p.once('dialog', d => d.accept());
   await p.click('.tre-ed-mod[data-i="3"] .icon-btn.perigo'); await p.waitForTimeout(300);
   await p.click('#modal .btn.solid'); await p.waitForTimeout(400);
-  await p.click('.topo-gestao .btn.solid'); await p.waitForTimeout(300);
+  await p.click('.cab .btn.solid'); await p.waitForTimeout(300);
   confere('publicar oferece pedir que todos refaçam', !!(await p.$('#tre-pub-refazer')));
   await p.fill('#tre-pub-notas', 'Questão nova no módulo de presença.');
   await p.click('#tre-pub-ok'); await p.waitForTimeout(1500);
   const pub = (await rpcs(p, 'treinamento_publicar')).at(-1);
   confere('publica a Rev. C sem pedir que refaçam, com as notas', pub?.p_exige_refazer === false && pub?.p_notas === 'Questão nova no módulo de presença.', pub);
   confere('e diz que publicou', /Rev\. C publicada/.test(await toasts(p)));
-  confere('o editor volta com a Rev. C em vigor e a D como a próxima', /Rev\. C publicada/.test(await texto(p, '.topo-gestao .lead'))
-    && /Publicar a Rev\. D/.test(await texto(p, '.topo-gestao .btn.solid')));
+  confere('o editor volta com a Rev. C em vigor e a D como a próxima', /Rev\. C publicada/.test(await texto(p, '.cab .cab-lead'))
+    && /Publicar a Rev\. D/.test(await texto(p, '.cab .btn.solid')));
   /* atribuir */
   await p.check('.tre-atr-l:has-text("Sinais") input'); await p.waitForTimeout(100);
   await p.click('.tre-atr-l:has-text("Sinais") .seg button:nth-child(2)'); await p.waitForTimeout(100);
@@ -294,7 +294,7 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   await p.click('.seg button:nth-child(2)'); await p.waitForTimeout(200);
   confere('o recorte "Devem" mostra só quem deve (Ana e Carla, de Órtese; o Bruno tem o opcional)', await p.evaluate(() => document.querySelectorAll('tbody tr').length) === 2
     && /Carla/.test(await texto(p, 'tbody')) && !/Bruno/.test(await texto(p, 'tbody')));
-  const csv = await baixa(p, () => p.click('.topo-gestao button:has-text("CSV")'));
+  const csv = await baixa(p, () => p.click('.cab button:has-text("CSV")'));
   confere('a planilha do acompanhamento', csv.nome === 'NRO-TRE-001-acompanhamento.csv' && /Registro;.*Nome/.test(csv.conteudo.toString('utf8').replace(/"/g, '')));
 
   /* novo, do zero e de um texto */
@@ -365,7 +365,7 @@ const DO_AGENTE = '```markdown\n# Apresentação do Studio\n\n## Módulo 1: O qu
   const { ctx, p, erros } = await abrir({ stub: stubLeitura, hash:'#/treinamentos' });
   const filhos = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec[data-r="treinamentos"] .lt-filho .nm')].map(e => e.textContent));
   confere('quem não gere: sem Gestão nem Configurações no menu', filhos.join('|') === 'Para você|Todos os treinamentos|Meus certificados', filhos);
-  confere('nem na barra da tela, nem o botão de novo', !/Gestão/.test(await texto(p, '.nav1')) && !(await p.$('.topo-gestao a[href="#/treinamentos/novo"]')));
+  confere('nem na barra da tela, nem o botão de novo', !/Gestão/.test(await texto(p, '.nav1')) && !(await p.$('.cab a[href="#/treinamentos/novo"]')));
   await ir(p, '#/treinamentos/gestao', 1000);
   confere('o endereço da gestão devolve para "Para você"', await p.evaluate(() => location.hash) === '#/treinamentos' && /Para você/.test(await texto(p, '#main h1')));
   await ir(p, '#/treinamentos/NRO-TRE-001/editar', 1000);

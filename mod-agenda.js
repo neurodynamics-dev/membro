@@ -41,7 +41,7 @@ const agenda = {
   ev:null, rascunho:null, arr:null, rolagem:null, linkEntrevista:null
 };
 const AG_CAMADAS = CAMADAS_AGENDA;
-const AG_CORES = ['#2DD4BF', '#CEDC00', '#4ADE97', '#7FA7F2', '#A78BFA', '#F5C36A', '#F1806F', '#8E8E93'];
+const AG_CORES = ['#2DD4BF', '#CEDC00', '#4ADE97', '#7FA7F2', '#A78BFA', '#F5C36A', '#F1806F', '#8E8E93']; // auditar: ok, cor de dado ou de canvas, precisa ser literal
 const AG_REPETE = [['Única', 'Não repete'], ['Diária', 'Todos os dias'], ['Dias úteis', 'Dias úteis (seg. a sex.)'],
   ['Semanal', 'Semanal'], ['Quinzenal', 'Quinzenal'], ['Mensal', 'Mensal'], ['Anual', 'Anual']];
 const AG_LEMBRETES = [0, 5, 10, 15, 30, 60, 120, 1440, 2880, 10080];
@@ -170,7 +170,7 @@ async function agCalendario(visao, ref){
   if (!noMesmoLugar) $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando a agenda…</div>`;
   await agPreparar();
   await agCarregar(per.de, per.ate);
-  $('#main').innerHTML = `<div class="agx">
+  $('#main').innerHTML = cabecalho({ espaco:'Agenda', titulo:'Agenda' }) + `<div class="agx">
     <aside class="agx-lado" aria-label="Agenda">
       ${agBotaoCriar()}
       <div class="agx-mini" id="agx-mini">${agMiniHTML(agenda.mini || ref)}</div>
@@ -182,7 +182,7 @@ async function agCalendario(visao, ref){
       <div class="cal-barra">
         <button class="btn ghost mini" onclick="location.hash=agHref(agenda.visao,new Date())">Hoje</button>
         <span class="cal-nav">${ibtn('back', 'Anterior', 'agPasso(-1)', 'sm')}${ibtn('chevron', 'Próximo', 'agPasso(1)', 'sm')}</span>
-        <h1 class="cal-tit">${esc(agTitulo(visao, ref, per))}</h1>
+        <h2 class="cal-tit">${esc(agTitulo(visao, ref, per))}</h2>
         <span class="cal-dir">
           <span class="seg" role="group" aria-label="Visão">${[['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês']].map(([k, l]) =>
             `<button class="${visao === k ? 'on' : ''}" aria-pressed="${visao === k}" onclick="agVisao('${k}')">${l}</button>`).join('')}</span>
@@ -703,10 +703,8 @@ function agEventoLeitura(volta){
   const esp = (agenda.espacos || []).find(e => String(e.id) === String(f.espaco_id))?.nome;
   const conv = [...ev.conv];
   const conta = k => conv.filter(([, v]) => v.resposta === k).length + ev.ext.filter(x => x.resposta === k).length;
-  $('#main').innerHTML = `<div class="evp leitura">
-    <div class="evp-topo"><a class="icon-btn" href="${volta}" title="Voltar à agenda" aria-label="Voltar à agenda">${ic('x')}</a>
-      <span class="evp-cor" style="--cc:${esc(ev.corEvento || '#2DD4BF')}"></span>
-      <h1 class="evp-tit ${ev.cancelado ? 'riscado' : ''}">${esc(f.titulo || '(sem título)')}</h1></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Agenda', titulo:f.titulo || '(sem título)', voltar:['Agenda', volta],
+      h1Attrs:ev.cancelado ? 'class="riscado"' : '', meta:[ev.cancelado ? '<span class="pill p-bad">Cancelado</span>' : ''] }) + `<div class="evp leitura">
     ${agAtaBotao()}
     ${ev.cancelado ? '<div class="aviso-box err">Evento cancelado.</div>' : ''}
     <div class="evp-cols"><div class="evp-det">
@@ -998,8 +996,7 @@ async function agConfig(aba){
   aba = ['predefinidos', 'google'].includes(aba) ? aba : '';
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span></div>`;
   agenda.predef = null; await agPreparar();
-  const topo = `<div class="topo-gestao"><div style="padding-top:34px"><a class="icon-btn" href="#/agenda" title="Voltar à agenda" aria-label="Voltar à agenda">${ic('back')}</a></div>
-      <div class="tx"><span class="eyebrow">Agenda</span><h1>Configurações</h1></div></div>
+  const topo = cabecalho({ espaco:'Agenda', titulo:'Configurações', voltar:['Agenda', '#/agenda'] }) + `
     ${navNivel1([['', 'Geral', '#/agenda/config'], ['predefinidos', 'Eventos predefinidos', '#/agenda/config/predefinidos'],
       ['google', 'Google Agenda', '#/agenda/config/google']], aba, 'Configurações da agenda')}
     <div id="agc-corpo"></div>`;
@@ -1059,7 +1056,7 @@ function agCfgPredefinidos(){
 function agPdEditar(id){
   if (!podeGerir()) return;
   const p = (agenda.predef || []).find(x => x.id === id) || { nome:'', titulo:'', duracao_min:60, dia_inteiro:false, hora_inicio:null, local:'',
-    espaco_id:null, meet_url:'', descricao:'', visibilidade:'convidados', cor:'#2DD4BF', todos:false, grupos:[], convidados:[], lembretes:[30], recorrencia:'Única', ordem:100 };
+    espaco_id:null, meet_url:'', descricao:'', visibilidade:'convidados', cor:'#2DD4BF', todos:false, grupos:[], convidados:[], lembretes:[30], recorrencia:'Única', ordem:100 }; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   agenda.pd = { id: p.id || null, grupos:new Set(p.grupos || []), pessoas:new Set(p.convidados || []), lembretes:[...(p.lembretes || [])], cor:p.cor };
   const ativos = (state.membros || []).filter(m => ['Ativo', 'Em pausa / avaliação'].includes(m.status)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   abreModal(`<h3>${p.id ? esc(p.nome) : 'Novo evento predefinido'}</h3>

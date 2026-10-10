@@ -62,13 +62,7 @@ async function pageAdmin(sub, sub2){
   if (!p || !painelPermitido(p)) return galeriaAdmin();
 
   const [k, titulo, , lead] = p;
-  $('#main').innerHTML = `
-    <div class="topo-gestao">
-      <div style="padding-top:34px"><a class="icon-btn" href="#/admin" title="Voltar" aria-label="Voltar">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-          stroke-linecap="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></a></div>
-      <div class="tx"><span class="eyebrow">Administração</span>
-        <h1>${esc(titulo)}</h1><p class="lead">${esc(lead)}</p></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Administração', titulo, lead:esc(lead), voltar:['Painéis', '#/admin'] }) + `
     ${PAINEIS.filter(painelPermitido).map(([x]) => `<section id="sec-${x}" ${x===k?'':'hidden'}>${
       x===k ? '<div class="carregando"><span class="spin"></span> Carregando…</div>' : ''}</section>`).join('')}`;
 
@@ -115,10 +109,7 @@ function galeriaAdmin(){
   const pend = adminP.sols.filter(s => ['aberta','em_analise'].includes(s.status)).length;
   const ouv  = adminP.ouvidoria.filter(m => !m.tratada).length;
   const conta = { solicitacoes: pend, ouvidoria: ouv };
-  $('#main').innerHTML = `
-    <div class="topo-gestao"><div class="tx"><span class="eyebrow">Administração</span>
-      <h1>Painéis</h1>
-</div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Administração', titulo:'Painéis' }) + `
     ${GRUPOS_PAINEL.map(g => {
       const itens = PAINEIS.filter(([,, gr]) => gr === g).filter(painelPermitido);
       if (!itens.length) return '';
@@ -372,7 +363,7 @@ function desenhaSols(){
       : '<div class="vazio">Nada por aqui com esse filtro.</div>'}`;
 }
 function cartaoSol(s){
-  const st = STATUS_SOL[s.status] || {l:s.status, c:'#8E8E93'};
+  const st = STATUS_SOL[s.status] || {l:s.status, c:'#8E8E93'}; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const aberto = adminP.solAbertas.has(s.id);
   const d = s.dados || {};
   const it = (dt, dd, full) => dd ? `<div class="it ${full?'full':''}"><dt>${dt}</dt><dd>${esc(dd)}</dd></div>` : '';
@@ -629,11 +620,11 @@ const MAPA_INST = {'REGISTRO':'registro','STATUS':'status','NOME':'nome','DEPART
 const ALIAS_INST = {'CARGO':'cargo','E-MAIL NRO':'email_nro','E-MAIL PESSOAL':'email_pessoal',
   'PROJETO NO FOMENTO':'projeto_fomento','GESTOR IMEDIATO':'_gestor_nome'};
 const MAPA_ACESSOS = {
-  'POSSUI TERMO DE SIGILO DO LABBIO ASSINADO?':'Termo de sigilo — LABBIO',
-  'POSSUI TERMO DE SIGILO DA VISURI ASSINADO?':'Termo de sigilo — Visuri',
-  'POSSUI TERMO DE SIGILO DA NRO ASSINADO?':'Termo de sigilo — NRO',
-  'ACESSO BIOMÉTRICO AO LABBIO':'Biometria — LABBIO',
-  'ACESSO BIOMÉTRICO AO LEB':'Biometria — LEB',
+  'POSSUI TERMO DE SIGILO DO LABBIO ASSINADO?':'Termo de sigilo: LABBIO',
+  'POSSUI TERMO DE SIGILO DA VISURI ASSINADO?':'Termo de sigilo: Visuri',
+  'POSSUI TERMO DE SIGILO DA NRO ASSINADO?':'Termo de sigilo: NRO',
+  'ACESSO BIOMÉTRICO AO LABBIO':'Biometria: LABBIO',
+  'ACESSO BIOMÉTRICO AO LEB':'Biometria: LEB',
   'PASTAS COM ACESSO NO DRIVE CTA-EEUFMG':'Drive CTA-EEUFMG',
   'ACESSO A TIMES NO GITHUB CTA-EEUFMG':'GitHub CTA-EEUFMG',
   'ACESSO À CONTA DE EMAIL ZIMBRA':'E-mail Zimbra',
@@ -795,7 +786,7 @@ async function executarImport(){
           state.membros = r2.data||[];
           diz(`✔ Gestor imediato atualizado em ${vinc.length} registro(s).`);
         }
-        if(semPar.length) diz(`⚠ Gestor não encontrado pelo nome em ${semPar.length} caso(s): ${semPar.join('; ')}`);
+        if(semPar.length) diz(`Atenção: Gestor não encontrado pelo nome em ${semPar.length} caso(s): ${semPar.join('; ')}`);
       }
     }
     const porNome = new Map(state.membros.map(m=>[norm(m.nome), m.registro]));
@@ -809,7 +800,7 @@ async function executarImport(){
       diz(`Importando ${linhas.length} fichas de dados pessoais…`);
       await upsertLotes('dados_pessoais', linhas, 'registro');
       diz(`✔ Dados pessoais importados.`);
-      if(semPar.length) diz(`⚠ ${semPar.length} resposta(s) do FORM sem membro correspondente: ${semPar.join('; ')}`);
+      if(semPar.length) diz(`Atenção: ${semPar.length} resposta(s) do FORM sem membro correspondente: ${semPar.join('; ')}`);
     }
     if($('#ck-a').checked && pacote.acessos.length){
       const porItem = new Map(state.itensAcesso.map(i=>[i.nome, i.id]));
@@ -822,8 +813,8 @@ async function executarImport(){
       diz(`Importando ${linhas.length} concessões de acesso…`);
       await upsertLotes('acessos_concedidos', linhas, 'registro,item_id');
       diz(`✔ Acessos importados.`);
-      if(semMembro) diz(`⚠ ${semMembro} concessão(ões) ignorada(s): nome sem membro correspondente.`);
-      if(semItem) diz(`⚠ ${semItem} concessão(ões) ignorada(s): item fora do catálogo.`);
+      if(semMembro) diz(`Atenção: ${semMembro} concessão(ões) ignorada(s): nome sem membro correspondente.`);
+      if(semItem) diz(`Atenção: ${semItem} concessão(ões) ignorada(s): item fora do catálogo.`);
     }
     diz('');
     diz('Importação concluída. Confira o quadro na aba Membros.');
@@ -1592,7 +1583,7 @@ function modalGrupo(id, paiSugerido){
           ${id ? '' : `oninput="admPrefixoAuto(null)"`}></div>
       <div class="fld"><label for="gr-pref">Prefixo do código</label>
         <input id="gr-pref" value="${esc(g.prefixo)}" maxlength="6" placeholder="NEB"
-          oninput="this.dataset.mexido='1'" style="text-transform:uppercase;font-family:var(--fm)"></div>
+          oninput="this.dataset.mexido='1'" data-codigo></div>
       <div class="fld"><label for="gr-ordem">Ordem na lista</label>
         <input id="gr-ordem" type="number" value="${g.ordem ?? 0}"></div>
       ${temArvore ? `

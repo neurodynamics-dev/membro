@@ -89,7 +89,7 @@ function pageRelatorios(){
   }
 
   $('#sec-relatorios').innerHTML = `
-    <p class="sub" style="margin-bottom:18px">Tudo daqui sai para imprimir ou colar em e-mail —
+    <p class="sub" style="margin-bottom:18px">Tudo daqui sai para imprimir ou colar em e-mail:
       por isso continua em superfície clara, e não no escuro da tela.</p>
     <div class="gal">${tiles.map(([i,tt,td,fn]) =>
       `<button class="tile" onclick="${fn}"><span class="sq">${icRel(i)}</span>
@@ -405,7 +405,7 @@ function gerarEmails(){
   $('#eml-result').innerHTML = emails.length ? `
     <div class="fld" style="margin-top:4px"><label>${emails.length} e-mail(s), separados por vírgula</label>
       <textarea id="eml-texto" readonly style="min-height:110px;font-size:12.5px">${esc(emails.join(', '))}</textarea></div>
-    ${semEmail.length?`<p class="small muted">⚠ ${semEmail.length} membro(s) sem e-mail cadastrado: ${esc(semEmail.map(m=>m.nome).join('; '))}</p>`:''}
+    ${semEmail.length?`<p class="small muted">Atenção: ${semEmail.length} membro(s) sem e-mail cadastrado: ${esc(semEmail.map(m=>m.nome).join('; '))}</p>`:''}
     <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
       <button class="btn ghost" onclick="copiar(document.getElementById('eml-texto').value)">${ic('copy')} Copiar</button>
       <a class="btn ghost" id="eml-mailto" href="${esc(mailtoHref)}" onclick="return abrirEmail(this.href)">${ic('mail')} App de e-mail (Cco)</a>

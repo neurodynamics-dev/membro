@@ -1006,7 +1006,7 @@ navegador; o membro copia o endereço e cola na janela de horários.
 | `mod-criador.js` | O criador do Studio: o motor de desenho, os 23 modelos, o editor, a galeria, baixar e salvar no quadro (`#/studio/criar`, `#/studio/modelos`) |
 | `studio/` | As marcas que o criador desenha: o imagotipo da NRO, o símbolo e a logo do LABBIO (do repositório do site), servidas daqui para o canvas poder exportar |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
-| `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
+| `quiosque.html`, `quiosque.css`, `quiosque.js` | O quiosque do check-in do LABBIO, para a tela da entrada: entra uma vez com a conta do quiosque (sem segredo no código), widgets que giram, a chegada e a hora do dia; `?layout=b` para a composição de faixa e palco. Ver `PUBLICACAO-2.19.md` |
 | `mailer/`      | Ícones e logos recoloridas que os e-mails do Full mailer mostram por link ([detalhes](mailer/README.md)) |
 | `tour.html`    | O tour do SOMA: conduz quem chega a criar a conta e mostra cada espaço com os dados da própria pessoa ([detalhes](#o-tour-do-soma)) |
 | `manifest.webmanifest`, `icone-*.png` | O SOMA instalável: nome, cores e ícones da tela de início (iPhone e Android) e o selo das notificações |
@@ -1344,14 +1344,15 @@ A migração única é [`db/2.18.0_soma.sql`](db/2.18.0_soma.sql), depois da 2.1
 |---|---|
 | `mod-reporte.js` | Reporte semanal, feed paginado, painel/PDF, aprovação de newsletters e importação da comunidade |
 | `mod-marca.js` | Materiais, assinatura, guias de interfaces e vínculos com séries controladas |
-| `select-nro.js`, `select-nro.css` | Select progressivo com teclado e sincronização do elemento nativo |
+| `ds/` | Cópia do design system (tokens, componentes, casca, select). Gerada pelo brand com `scripts/distribuir.mjs`; não edite aqui |
+| `soma.css` | O CSS próprio do SOMA, carregado depois de `ds/` |
 | `fontes-pdf.js`, `fontes/` | Fontes Archivo locais, métricas e licença OFL para PDFs |
 | `descadastrar.html` | Confirmação pública de descadastro da comunidade |
 
-Reporte fica em `#/equipe/reporte`, feed em `#/feed` e newsletters em `#/equipe/newsletter`. O ciclo usa America/Sao_Paulo; a configuração afeta os próximos ciclos. A passagem da fila materializa o ciclo e os boletins dos períodos anteriores. Rascunhos usam controle de versão; envio de reporte é idempotente. Cada sinalização abre um card para o Pessoal, sem gravar ocorrência diretamente.
+Reporte fica em `#/equipe/reporte` (a frente aberta e o passo têm endereço: `#/equipe/reporte/<frente>/<1-4>`), feed em `#/equipe/feed` (`#/feed` é só o endereço antigo) e newsletters em `#/equipe/newsletter`. O ciclo usa America/Sao_Paulo; a configuração afeta os próximos ciclos. A passagem da fila materializa o ciclo e os boletins dos períodos anteriores. Rascunhos usam controle de versão; envio de reporte é idempotente. Cada sinalização abre um card para o Pessoal, sem gravar ocorrência diretamente.
 
 O envio de newsletter exige três votos distintos de integrantes ativos da liderança sobre a mesma versão. Editar o conteúdo zera os votos. A fila só inclui membros elegíveis e inscritos não descadastrados. Importar de novo não reativa descadastros. Entrega depende da fila/provedor; como nos demais e-mails, uma falha entre envio e baixa exige conferir o provedor antes de repetir manualmente.
 
 Tipos de evento com ata usam a série NRO-PUB-003 por padrão. O botão cria e salva o rascunho antes de abrir Arquivos, respeitando a permissão de criação da série. Reabrir o evento reutiliza o PN.
 
-Marca usa os assets públicos de `brand.neurodynamics.dev`, mas resolve documentos controlados pelo rol e por `doc_pode_ler`. Configure a série de cada peça em `#/marca/config`. O importador do Studio aceita JSON ou Markdown com bloco JSON, validado contra o README gerado no próprio editor; fotos são adicionadas na interface.
+Marca guarda só o que exige login: os modelos e templates (miniaturas do `brand.neurodynamics.dev`, documentos controlados resolvidos pelo rol e por `doc_pode_ler`), a assinatura de e-mail e o vínculo de cada modelo com uma série. Logos, wallpapers, kit de interface e prompts ficam no manual público. Configure a série de cada peça em `#/marca/config`. O importador do Studio aceita JSON ou Markdown com bloco JSON, validado contra o README gerado no próprio editor; fotos são adicionadas na interface.

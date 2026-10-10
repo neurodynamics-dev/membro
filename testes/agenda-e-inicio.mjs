@@ -252,7 +252,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
     vivo.length === 3 && /Próximo compromisso/.test(vivo[0]) && /3 pessoas/.test(vivo[1]) && /3 dias úteis/.test(vivo[2]), vivo);
   await ir(p, '#/', 1200);
   const rec = await p.evaluate(() => [...document.querySelectorAll('#card-recentes a.ini-rc')].map(a => [a.getAttribute('href'), a.querySelector('b').textContent]));
-  confere('abertos por último: o mais recente primeiro, com o nome da tela', JSON.stringify(rec) === JSON.stringify([['#/equipe/presenca', 'Presença'], ['#/okrs/OE1', 'OKRs']]), rec);
+  confere('abertos por último: o mais recente primeiro, com o nome da tela', JSON.stringify(rec) === JSON.stringify([['#/equipe/presenca', 'Presença'], ['#/okrs/OE1', 'Planejamento estratégico']]), rec);
 
   await p.click('#ft button:has-text("Atalhos do teclado")'); await p.waitForTimeout(300);
   confere('os atalhos do teclado', await p.locator('#modal.open kbd').count() >= 8);

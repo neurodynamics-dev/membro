@@ -123,7 +123,7 @@ console.log('\nOKRs (admin)');
     com.length === 1 && com[0].dados.texto === 'Duas vagas preenchidas.' && com[0].dados.autor === 'Ana Figueiredo', com);
   await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 
-  await p.click('.topo-gestao .btn.solid'); await p.waitForTimeout(400);
+  await p.click('.cab .btn.solid'); await p.waitForTimeout(400);
   confere('"Novo objetivo estratégico" sugere o próximo código (OE3)',
     await p.inputValue('#okr-f-codigo') === 'OE3');
   await p.keyboard.press('Escape'); await p.waitForTimeout(300);
@@ -141,7 +141,7 @@ console.log('\nOKRs (leitura)');
 {
   const { ctx, p, erros } = await abrir({ hash:'#/okrs/OE2', stub: stubDe('leitura') });
   const t = await p.evaluate(() => ({
-    novo: !!document.querySelector('.topo-gestao .btn.solid'),
+    novo: !!document.querySelector('.cab .btn.solid'),
     desdobrar: !!document.querySelector('.okr-no button[title="Desdobrar"]') }));
   confere('quem é só leitura não cria nem desdobra', !t.novo && !t.desdobrar, t);
   await p.click('.okr-no.foco .nm'); await p.waitForTimeout(500);
@@ -226,7 +226,7 @@ console.log('\nSeleção (admin)');
   const aval = await p.evaluate(() => [...document.querySelectorAll('.aval-cand')].map(a => ({
     nome: a.querySelector('.nm').textContent, nota: a.querySelector('.nota-badge')?.textContent?.trim() })));
   confere('avaliação da dinâmica: os dois candidatos da fase, a média de quem já foi avaliado primeiro',
-    aval.length === 2 && /Paula/.test(aval[0].nome) && aval[0].nota === '★ 4.5', aval);
+    aval.length === 2 && /Paula/.test(aval[0].nome) && aval[0].nota === 'Nota 4.5', aval);
   await p.click('.aval-cand:has-text("Marcos") .btn'); await p.waitForTimeout(300);
   await p.click('#modal .crit-row:nth-of-type(1) .seg button:has-text("4")');
   await p.click('#modal .crit-row:nth-of-type(2) .seg button:has-text("5")');

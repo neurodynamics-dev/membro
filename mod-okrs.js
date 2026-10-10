@@ -29,8 +29,8 @@ const OKR_NIVEL = {estrategico:'Objetivo estratégico', tatico:'Objetivo tático
 const OKR_SUBNIVEL = {estrategico:'tatico', tatico:'operacional', operacional:'operacional'};
 const OKR_PREFIXO = {estrategico:'OE', tatico:'OT', operacional:'OP'};
 const OKR_STATUS = {'Não iniciado':'dt-gray','Em andamento':'dt-info','Em risco':'dt-warn','Concluído':'dt-ok','Cancelado':'dt-bad'};
-const OKR_EIXOS_CORES = {'Tecnologia':'#4C6FBF','Científico':'#7C5CBF','Gestão':'#00594F',
-  'Prospecção':'#B7791F','Parcerias':'#C05B3B','Formação':'#3D8B8B'};
+const OKR_EIXOS_CORES = {'Tecnologia':'#4C6FBF','Científico':'#7C5CBF','Gestão':'#00594F', // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  'Prospecção':'#B7791F','Parcerias':'#C05B3B','Formação':'#3D8B8B'}; // auditar: ok, cor de dado ou de canvas, precisa ser literal
 const OKR = { pronto:false, erro:null, itens:[], foco:null };
 
 const okrPorId = (id)=> OKR.itens.find(o=>o.id===id);
@@ -39,7 +39,7 @@ const okrOrdena = (a,b)=> (a.ordem-b.ordem) || String(a.codigo).localeCompare(St
 const okrFilhos = (id)=> OKR.itens.filter(o=>o.pai_id===id).sort(okrOrdena);
 const okrRaizes = ()=> OKR.itens.filter(o=>!o.pai_id || !okrPorId(o.pai_id)).sort(okrOrdena);
 const okrPill = (st)=> `<span class="pill"><span class="dt ${OKR_STATUS[st]||'dt-gray'}"></span>${esc(st||'—')}</span>`;
-const okrEixoChip = (e)=> e ? `<span class="okr-eixo"><span class="dt" style="background:${OKR_EIXOS_CORES[e]||'#8E8E93'}"></span>${esc(e)}</span>` : '';
+const okrEixoChip = (e)=> e ? `<span class="okr-eixo"><span class="dt" style="background:${OKR_EIXOS_CORES[e]||'var(--idle)'}"></span>${esc(e)}</span>` : '';
 const okrTrimestre = (d)=> d ? 'Q'+Math.ceil(parseInt(String(d).slice(5,7),10)/3) : '';
 const okrBarra = (pr, texto)=> `<span class="okr-prog"><span class="trilho"><span class="fill" style="width:${pr.pct}%"></span></span>
   <span class="pc">${texto || pr.pct + '%'}</span></span>`;
@@ -102,10 +102,8 @@ async function okrCarregar(){
    ROTA
    ============================================================ */
 async function pageOkrs(sub){
-  const topo = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Planejamento estratégico</span>
-      <h1>OKRs</h1></div>
-    ${podeGerir() ? `<div class="acoes"><button class="btn solid" onclick="modalOKREditar(null,null)">${ic('plus')}
-      Novo objetivo estratégico</button></div>` : ''}</div>`;
+  const topo = cabecalho({ espaco:'OKRs', titulo:'Planejamento estratégico',
+    acoes:podeGerir() ? `<button class="btn solid" onclick="modalOKREditar(null,null)">${ic('plus')} Novo objetivo estratégico</button>` : '' });
   if(!OKR.pronto){
     $('#main').innerHTML = topo + '<div class="carregando"><span class="spin"></span> Carregando…</div>';
     try{ await okrCarregar(); }

@@ -1,3 +1,4 @@
+/* NRO DS 3.0.0, gerado de brand/design-system/select.css. Não edite aqui: edite no brand e rode scripts/distribuir.mjs. */
 .nro-select{position:relative;display:inline-block;min-width:0;max-width:100%;vertical-align:middle}
 .fld>.nro-select{display:block;width:100%}
 .nro-select>select{position:absolute!important;inset:0;width:100%;height:100%;opacity:0;pointer-events:none}
