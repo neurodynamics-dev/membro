@@ -2917,3 +2917,40 @@ input[data-codigo]{font-family:var(--fm);text-transform:uppercase} /* auditar: o
 .board-ctl{flex-wrap:wrap}
 .board-dots{flex-wrap:wrap}
 @media (max-width:640px){.board-dots button{width:14px}}
+
+/* ============ TERMO DE SIGILO DO LABBIO (2.19.1) ============ */
+.termo-lead{color:var(--muted);max-width:var(--w-leitura);margin-bottom:var(--s5)}
+.termo-sec{font-family:var(--fd);font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+  margin:var(--s6) 0 var(--s3)}
+.termo-sec:first-of-type{margin-top:0}
+.termo-form .fgrid{max-width:var(--w-fluxo)}
+.termo-form .fld .msg{display:block;margin-top:5px;font-size:12px;color:var(--bad-tx)}
+.termo-form .fld .hint{display:block;margin-top:5px;font-size:12px;color:var(--dim)}
+.termo-form .fld.erro input,.termo-form .fld.erro .nro-select-button{border-color:var(--bad)}
+.termo-foto{margin-top:var(--s5);max-width:var(--w-fluxo)}
+.termo-previa{max-width:var(--w-fluxo)}
+.termo-previa dd{font-family:var(--f);font-size:15px}
+.termo-conferi{margin:var(--s5) 0 var(--s2);font-weight:600}
+.termo-passos{max-width:var(--w-leitura);display:grid;gap:var(--s4);padding-left:20px}
+.termo-passos li{line-height:1.6;color:var(--muted)} .termo-passos b{color:var(--ink)}
+.termo-drop{display:flex;align-items:center;justify-content:center;min-height:140px;max-width:var(--w-fluxo);border:1px dashed var(--line2);
+  border-radius:var(--r);background:rgba(var(--tom),.02);cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
+.termo-drop:hover{border-color:var(--dim);background:rgba(var(--tom),.04)}
+.termo-drop input{position:absolute;width:1px;height:1px;opacity:0}
+.termo-drop span{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted)}
+.termo-drop b{color:var(--ink)} .termo-drop small{font-size:12px;color:var(--dim)} .termo-drop .ic{width:22px;height:22px}
+.termo-drop:focus-within{outline:2px solid var(--foco);outline-offset:2px}
+.termo-arquivo{margin-top:var(--s3);font-size:13px;min-height:20px}
+.termo-arquivo.ok{color:var(--ok-tx)} .termo-arquivo.erro{color:var(--bad-tx)}
+.termo-fim{max-width:var(--w-leitura);padding:var(--s7) 0;text-align:left}
+.termo-fim .ic{width:34px;height:34px;color:var(--ok-tx)}
+.termo-fim h2{margin:var(--s3) 0 var(--s2)}
+.termo-fim p{color:var(--muted);margin-bottom:var(--s4)}
+.termo-painel-topo{display:flex;align-items:center;justify-content:space-between;gap:var(--s4);flex-wrap:wrap;margin-bottom:var(--s4)}
+.termo-painel-topo p{color:var(--muted);font-size:13.5px;max-width:720px}
+.termo-col{text-align:center}
+.termo-ic{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;color:var(--dim)}
+.termo-ic .ic{width:15px;height:15px}
+button.termo-ic{cursor:pointer;border:1px solid transparent} button.termo-ic:hover{border-color:var(--line2);background:rgba(var(--tom),.05)}
+.termo-ic.ok{color:var(--ok-tx)} .termo-ic.info{color:var(--info-tx)} .termo-ic.err{color:var(--bad-tx)} .termo-ic.warn{color:var(--warn-tx)}
+.termo-antigo{margin-top:var(--s3)}

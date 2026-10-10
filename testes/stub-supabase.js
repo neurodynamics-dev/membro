@@ -900,6 +900,46 @@
           const papeisStub = () => { const pf = DADOS.perfis[0];
             return pf.papeis || ['admin','pessoal','lideranca','selecao','leitura'].filter(k => k === (pf.papel || 'leitura') || k === 'leitura'); };
           if (nome === 'conta_ativa') return { data: !(window.__teste || {}).bloqueada, error:null };
+          /* ---- 2.19.1: o termo de sigilo. Sem window.__teste.termo, não há campanha ---- */
+          if (nome.startsWith('termo_')){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const T = (window.__teste || {}).termo;
+            if (!T) return { data: nome === 'termo_estado' ? { status:'nenhum' } : { status:'sem_permissao' }, error:null };
+            const st = () => T.conferido ? 'conferido' : T.enviado ? 'enviado' : T.devolvido ? 'devolvido' : 'pendente';
+            if (nome === 'termo_estado') return { data:{ status: st(), campanha:'labbio-2026', titulo:'Termo de sigilo do LABBIO',
+              modelo:'termos/termo_sigilo_labbio_3.pdf', modelo_sha256: T.sha, pausado: !!T.pausado, dispensa_disponivel: !T.dispensa,
+              bloqueia: ['pendente','devolvido'].includes(st()) && !!T.dispensa && !T.pausado, dados_confirmados_em: T.confirmado || null,
+              emitido_em: T.emitido || null, enviado_em: T.enviado || null, motivo: T.devolvido || null }, error:null };
+            if (nome === 'termo_dispensar'){ const ja = !!T.dispensa; T.dispensa = true; return { data:{ status: ja ? 'ja_usada' : 'ok' }, error:null }; }
+            if (nome === 'termo_meus_dados') return { data:{ status:'ok', registro:4, nome:'Ana Figueiredo', foto:false, nome_civil:'Ana Figueiredo',
+              nacionalidade:'brasileira', cpf: T.dados?.cpf || '', endereco_antigo:'Rua Antiga, 10' , ...(T.dados || {}) }, error:null };
+            if (nome === 'termo_confirmar_dados'){
+              const p = args.p, e = {};
+              if (!/\S+\s+\S+/.test(p.nome_civil || '')) e.nome_civil = 'Escreva o nome completo, como no documento.';
+              if ((p.cpf || '').replace(/\D/g, '') !== '52998224725') e.cpf = 'CPF inválido. Confira os 11 números.';
+              for (const k of ['data_nascimento','rg','rg_orgao','estado_civil','telefone','end_logradouro','end_numero','end_bairro','end_cep','end_cidade','end_uf','instituicao','curso'])
+                if (!p[k]) e[k] = 'Preencha este campo.';
+              if (!p.matricula && !p.sem_matricula) e.matricula = 'Informe a matrícula, ou marque que não tem.';
+              if (Object.keys(e).length) return { data:{ status:'invalido', campos:e }, error:null };
+              const d = { ...p, cpf: p.cpf.replace(/\D/g, ''), end_cep: p.end_cep.replace(/\D/g, ''), rg_orgao: p.rg_orgao.toUpperCase(), end_uf: p.end_uf.toUpperCase() };
+              if (T.emitido && JSON.stringify(T.dados) !== JSON.stringify(d)) T.emitido = null;
+              T.dados = d; T.confirmado = '2026-10-11T12:00:00Z';
+              return { data:{ status:'ok', dados:d }, error:null };
+            }
+            if (nome === 'termo_emitir'){
+              if (!T.confirmado) return { data:{ status:'dados_pendentes' }, error:null };
+              T.emitido = '2026-10-11T12:05:00Z';
+              return { data:{ status:'ok', modelo:'termos/termo_sigilo_labbio_3.pdf', modelo_sha256: T.sha, dados: T.dados, dia:11, mes:'outubro', ano:2026, registro:4 }, error:null };
+            }
+            if (nome === 'termo_registrar_envio'){ if (!T.emitido) return { data:{ status:'nao_emitido' }, error:null };
+              T.enviado = '2026-10-11T12:30:00Z'; T.devolvido = null; T.envio = args; return { data:{ status:'ok' }, error:null }; }
+            if (nome === 'termo_painel') return { data:{ status:'ok', campanha:'labbio-2026', ativa:true, pessoas:[
+              { registro:11, nome:'Bruno Tavares', situacao:'enviado', enviado_em:'2026-10-11T10:00:00Z', arquivo:'labbio-2026/11/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.pdf' },
+              { registro:17, nome:'Carla Mendonça', situacao:'pendente' },
+              { registro:4, nome:'Ana Figueiredo', situacao:'conferido', enviado_em:'2026-10-10T10:00:00Z', arquivo:'labbio-2026/4/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.pdf' }] }, error:null };
+            if (nome === 'termo_conferir') return { data:{ status: !args.p_ok && !args.p_motivo ? 'motivo_obrigatorio' : 'ok' }, error:null };
+            if (nome === 'termo_campanha_ativar') return { data:{ status:'ok', avisados:9 }, error:null };
+          }
           if (nome === 'papeis_atuais'){
             if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:'function public.papeis_atuais() does not exist' } };
             return { data: (window.__teste || {}).bloqueada ? [] : papeisStub(), error:null };

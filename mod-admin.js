@@ -46,6 +46,7 @@ const ICONES_ADM = {
   relatorios:'<path d="M4 20h16M7 20V9M12 20V4M17 20v-7"/>',
   emails:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="m4.5 7 7.5 5.4L19.5 7"/><path d="M7 15.5h5"/>',
   auditoria:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.5M4.5 12h.5M4.5 18h.5"/>',
+  termo:'<path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M13.5 3.5V8h4.5M9.5 16.5c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3 0"/>',
   links:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/>',
   site:'<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>'
 };
@@ -74,6 +75,7 @@ async function pageAdmin(sub, sub2){
     $('#main').innerHTML = guardaTopo + `<section id="sec-auditoria">${corpo}</section>`;
     renderTabelaAud();
   });
+  if (k === 'termo')      return comModulo('termo', () => painelTermo($('#sec-termo')));
   if (k === 'contas')     return pageContas();
   if (k === 'grupos')     return admCarregarGrupos(sub2);
   if (k === 'acessos')    return admCarregarCatalogo();

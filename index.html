@@ -1073,6 +1073,7 @@ const PAINEIS = [
                                                        () => can() || podeSelecao()],
   ['contas',       'Contas e perfis',     'Pessoas',  'Papéis de acesso, vínculo com o quadro e senha', can],
   ['acessos',      'Catálogo de acessos', 'Pessoas',  'Os sistemas, locais e documentos controlados pela NRO', can],
+  ['termo',        'Termo de sigilo',     'Pessoas',  'A campanha do termo do LABBIO: quem enviou, conferir e devolver', can],
   ['grupos',       'Grupos e quadros',    'Pessoas',  'A árvore de grupos, quem está em cada um e quem enxerga cada quadro', can],
   ['importar',     'Importar planilha',   'Pessoas',  'Atualizar o quadro em massa pelo NRO-PES-005 ou pelo Excel do SOMA', can],
   ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
@@ -1515,7 +1516,27 @@ async function abrirPortal(){
      portal aberto empurra (32.0) */
   setTimeout(empurrarFila, 6000);
   state.filaTimer ||= setInterval(empurrarFila, 150e3);
-  render(route());
+  await carregarObrigacoes();
+  await render(route());
+  if (state.obrigacao?.termo && state.obrigacao.termo.status !== 'nenhum')
+    carregarModulo('termo').then(() => termoPedirNaEntrada()).catch(() => {});
+}
+/* As obrigações da entrada (2.19.1): por ora, o termo de sigilo. Sem a
+   2.19.1 no banco, a função não existe e nada muda. */
+async function carregarObrigacoes(){
+  try {
+    const { data, error } = await sb.rpc('termo_estado');
+    state.obrigacao = { termo: !error && data ? data : null };
+  } catch (e){ state.obrigacao = { termo: null }; }
+  desenharMenu();
+}
+/* Depois da dispensa única, a pendência leva direto ao termo — menos
+   na sessão em que a pessoa acabou de dispensar. */
+function obrigacaoBloqueia(){
+  const t = state.obrigacao?.termo;
+  if (!t || !t.bloqueia) return false;
+  try { if (sessionStorage.getItem('nd.termo.depois.' + t.campanha)) return false; } catch (e){}
+  return true;
 }
 
 /* ---------------- roteador ---------------- */
@@ -1595,6 +1616,10 @@ window.addEventListener('hashchange', e => {
 
 async function render(rt){
   pararBoard();
+  if (obrigacaoBloqueia() && !(rt.r === 'servicos' && rt.sub === 'termo') && rt.r !== 'versoes'){
+    history.replaceState(null, '', location.pathname + '#/servicos/termo');
+    rt = { r:'servicos', sub:'termo', sub2:null };
+  }
   let def = ROTAS[rt.r];
   if (def.espera) await def.espera();
   if (def.permite && !def.permite()){
@@ -1729,6 +1754,7 @@ function arvoreDoMenu(){
       { sub:'declaracao', rot:'Declaração de vínculo' },
       { sub:'eventos', rot:'Eventos e participações' },
       { sub:'cofre', rot:'Cofre de senhas' },
+      ...(state.obrigacao?.termo && state.obrigacao.termo.status !== 'nenhum' ? [{ sub:'termo', rot:'Termo de sigilo' }] : []),
       { rotulo:'Ao Depto. de Pessoal' },
       ...SERVICOS_MENU.map(([sub, rot]) => ({ sub, rot }))] }
   ];
@@ -3723,7 +3749,8 @@ const IC_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const SERVICOS_MODULO = {
   declaracao: ['documentos', 'pageDeclaracao'],
   eventos:    ['documentos', 'pageEventosExt'],
-  cofre:      ['cofre',      'pageCofre']
+  cofre:      ['cofre',      'pageCofre'],
+  termo:      ['termo',      'pageTermo']
 };
 async function pageServicos(sub, sub2){
   if (sub === 'pedidos') return pagePedidos();
