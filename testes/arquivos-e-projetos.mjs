@@ -440,11 +440,11 @@ console.log('\nProjetos');
 
   await ir(p, '#/projetos/NEBULA');
   confere('a página do projeto: nome, código, supervisor marcado na equipe',
-    (await p.textContent('.pj-topo h1')).trim() === 'Nebula' && /Projeto NEBULA/.test(await p.textContent('.pj-topo'))
+    (await p.textContent('.cab h1')).trim() === 'Nebula' && /NEBULA/.test(await p.textContent('.cab'))
     && /Bruno Tavares/.test(await p.textContent('.pj-membro:has(.pj-sup)')));
   confere('diz que a equipe é o grupo NRO_PROJECT_NEBULA, dentro de NRO_PROJECTS',
     /NRO_PROJECT_NEBULA.*NRO_PROJECTS/.test((await p.textContent('#pj-corpo')).replace(/\s+/g, ' ')));
-  confere('e leva ao quadro de atividades do projeto', await p.getAttribute('.pj-topo a:has-text("Quadro")', 'href') === '#/atividades/NEB');
+  confere('e leva ao quadro de atividades do projeto', await p.getAttribute('.cab-acoes a:has-text("Quadro")', 'href') === '#/atividades/NEB');
 
   await ir(p, '#/projetos/NEBULA/arquivos', 1300);
   const rol = await linhas(p);
@@ -492,7 +492,7 @@ console.log('\nProjetos');
   const menuPj2 = await p.evaluate(() => [...document.querySelectorAll('#lt-nav .lt-sec[data-r="projetos"] .lt-filho .nm')].map(x => x.textContent.trim()));
   confere('o menu ganha o projeto novo', menuPj2.includes('Órion II'), menuPj2);
 
-  await p.click('.pj-topo button:has-text("Editar")'); await p.waitForSelector('#pe-st');
+  await p.click('.cab-acoes button:has-text("Editar")'); await p.waitForSelector('#pe-st');
   await p.selectOption('#pe-st', 'pausado'); await p.click('#pe-btn'); await p.waitForTimeout(900);
   const ed = (await rpcs(p, 'projeto_salvar')).at(-1);
   confere('editar manda o status', ed.status === 'pausado' && ed.id === 'pj-ORIONII', ed);

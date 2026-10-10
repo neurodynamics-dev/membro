@@ -409,7 +409,7 @@ console.log('\nAtividades: os cartões mais completos');
 
   /* atividade nova com pessoas e etiquetas */
   await ir(p, '#/atividades/ORT', 1000);
-  await p.click('.kb-acoes .btn.solid'); await p.waitForTimeout(300);
+  await p.click('.cab-acoes .btn.solid'); await p.waitForTimeout(300);
   await p.fill('#na-tit', 'Montar o suporte novo');
   await p.check('.na-pes[value="17"]');
   await p.click('#modal .et[data-et="Firmware"]');
