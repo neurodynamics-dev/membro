@@ -2199,7 +2199,8 @@ function crPainelEsq(){
         <option value="">Outros tamanhos…</option>${outros.map(t => `<option value="${t}"${peca.tamanho === t ? ' selected' : ''}>${esc(CR_TAMANHOS[t].l)}, ${CR_TAMANHOS[t].w}×${CR_TAMANHOS[t].h}</option>`).join('')}</select>` : ''}
       <p class="mini">${esc(CR_TAMANHOS[peca.tamanho].onde)}</p></section>
     <section class="cr-sec"><h4>Lâminas (${peca.laminas.length})</h4>
-      <ol class="cr-lams">${peca.laminas.map((l, i) => `<li class="${i === criador.atual ? 'on' : ''}">
+      <ol class="cr-lams">${peca.laminas.map((l, i) => `<li class="${i === criador.atual ? 'on' : ''}" data-i="${i}">
+        ${peca.laminas.length > 1 ? `<span class="cr-alca" title="Arraste para mudar a ordem" aria-hidden="true" onpointerdown="crArrastarLamina(event,${i})"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.4"/><circle cx="15" cy="6" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="9" cy="18" r="1.4"/><circle cx="15" cy="18" r="1.4"/></svg></span>` : ''}
         <button class="cr-lam" onclick="crIr(${i})"><span class="n">${String(i + 1).padStart(2, '0')}</span>
           <span class="nm">${esc(CR_LAYOUTS[l.layout]?.l || l.layout)}</span>
           <span class="tt">${esc(String(l.campos?.titulo || l.campos?.veiculo || '').replace(/\*/g, '').slice(0, 34))}</span></button>
@@ -2251,6 +2252,34 @@ function crDuplicarLamina(i){
 function crMoverLamina(i, d){
   const ls = criador.peca.laminas, j = i + d; if (j < 0 || j >= ls.length) return;
   [ls[i], ls[j]] = [ls[j], ls[i]]; criador.atual = j; crMudou(true);
+}
+/* leva a lâmina de i para j; a lâmina em edição continua sendo a mesma (pela identidade, não pela posição) */
+function crReordenarLamina(i, j){
+  const ls = criador.peca.laminas; if (i === j || i < 0 || j < 0 || i >= ls.length || j >= ls.length) return;
+  const atual = ls[criador.atual];
+  const [l] = ls.splice(i, 1); ls.splice(j, 0, l);
+  criador.atual = Math.max(0, ls.indexOf(atual)); crMudou(true);
+}
+/* arrastar pela alça, com mouse ou toque: a linha de destino mostra onde a lâmina entra */
+function crArrastarLamina(e, i){
+  const lista = e.target.closest('.cr-lams'), li = e.target.closest('li'); if (!lista || !li) return;
+  e.preventDefault();
+  const alca = e.currentTarget; alca.setPointerCapture?.(e.pointerId);
+  const itens = [...lista.children]; let destino = i;
+  li.classList.add('arrastando');
+  const marca = () => itens.forEach((x, k) => { x.classList.toggle('alvo-antes', k === destino && destino < i); x.classList.toggle('alvo-depois', k === destino && destino > i); });
+  const move = ev => {
+    /* a posição final é quantas das outras lâminas ficam acima do ponteiro */
+    const y = ev.clientY; destino = 0;
+    itens.forEach((x, k) => { if (k === i) return; const r = x.getBoundingClientRect(); if (y > r.top + r.height / 2) destino++; });
+    marca();
+  };
+  const fim = () => {
+    alca.removeEventListener('pointermove', move); alca.removeEventListener('pointerup', fim); alca.removeEventListener('pointercancel', fim);
+    itens.forEach(x => x.classList.remove('arrastando', 'alvo-antes', 'alvo-depois'));
+    if (destino !== i) crReordenarLamina(i, destino);
+  };
+  alca.addEventListener('pointermove', move); alca.addEventListener('pointerup', fim); alca.addEventListener('pointercancel', fim);
 }
 async function crTirarLamina(i){
   if (!await confirma(`Tirar a lâmina ${String(i + 1).padStart(2, '0')}?`, 'Tirar')) return;
