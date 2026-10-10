@@ -91,6 +91,14 @@ db/
 | `v32_fila_e_notificacoes.sql` | a fila de envio que anda sozinha: o banco chama a Edge Function `notificar-email` a cada minuto (`soma-fila`, pelo `pg_cron` e o `pg_net`) e logo depois de cada aviso novo (o gatilho `fila_acordar`), com uma senha que a migração gera e guarda no Vault (`soma_fila_token`); uma passada de cada vez (`fila_passada_inicio`, `fila_passada_fim`) e o registro delas (`fila_passadas`, `fila_situacao`); o empurrão do portal aberto (`fila_empurrar`). O sino que não empilha: `notificacoes_limpar`, o expurgo (`notificacoes_expurgar`) e o aviso de teste que substitui o anterior. As notificações no aparelho (Web Push): `push_inscricoes`, `push_inscrever`, `push_cancelar`, `push_meus`, as chaves VAPID no Vault e a fila da Edge Function em `push_lote` e `push_baixa`. Depois dela, publique de novo a `notificar-email` e desligue nela a verificação de JWT |
 | `2.19.0_quiosque.sql` | o quiosque entra com uma conta de serviço: `quiosque_conta`, `conta_quiosque()`, `conta_ativa()` falsa para ela (nenhuma tabela lê pela API), `quiosque_estado_conta()` e `quiosque_painel()`; o segredo que estava no código público deixa de servir. Confira antes: `quiosque_estado(text)` e a linha `segredo_quiosque` em `config_sistema` (ver `PUBLICACAO-2.19.md`) |
 | `2.19.0_avisos.sql` | quadro de avisos com onze layouts (hero, número, contagem, lista, citação e progresso entram) e as colunas `familia` e `valor` em `portal_avisos`; só acrescenta, pode rodar de novo |
+
+Teste das duas migrações da 2.19.0 (19 asserções; aplica cada uma duas vezes e simula o que só a produção tem, `config_sistema` e `quiosque_estado`):
+
+```sh
+createdb -T tbase t219
+psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.18.0_soma.sql
+psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
+```
 | `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
 | `2.17.0_notas_fotos_e_cartoes.sql` | a primeira com o número novo: os bugs e sugestões das notas de versão (`soma_feedback`, votos, comentários, o andamento por `admin`); a foto enviada pelo portal (o bucket público `fotos`, `membro_foto_definir`); os cartões com outras pessoas, etiquetas, checklists (`atividade_checklist`), a cópia para outro quadro (`atividade_copiar`) e o comentário que se corrige e se apaga. Passa a ser a dona de `atividade_criar`, `atividade_editar`, `atividades_quadro` e `atividades_carga` |
 

@@ -117,11 +117,16 @@ end $$;
 revoke all on function public.quiosque_painel() from public, anon;
 grant execute on function public.quiosque_painel() to authenticated;
 
--- 6. o segredo que estava no código público deixa de servir
+-- 6. o segredo que estava no código público deixa de servir. Toda função
+--    nasce com execute para PUBLIC: tirar só de anon e authenticated não
+--    basta (eles herdam de PUBLIC). quiosque_estado_conta() continua chamando
+--    a quiosque_estado como dona (security definer).
 do $$ begin
+  execute 'revoke execute on function public.quiosque_estado(text) from public';
   if exists (select 1 from pg_roles where rolname = 'anon') then
     execute 'revoke execute on function public.quiosque_estado(text) from anon'; end if;
-  execute 'revoke execute on function public.quiosque_estado(text) from authenticated';
+  if exists (select 1 from pg_roles where rolname = 'authenticated') then
+    execute 'revoke execute on function public.quiosque_estado(text) from authenticated'; end if;
 end $$;
 
 insert into public.migracoes(id, descricao) values('2.19.0_quiosque',
