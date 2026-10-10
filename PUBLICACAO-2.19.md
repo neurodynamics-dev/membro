@@ -1,4 +1,11 @@
-# Publicação do quiosque com conta de serviço (2.19.0)
+# Publicação da 2.19.0
+
+Duas migrações: `db/2.19.0_quiosque.sql` (abaixo, com ordem que importa) e
+`db/2.19.0_avisos.sql` (quadro de avisos; só acrescenta, pode ir antes ou
+depois do merge, mas sem ela o editor não salva cor nem valor e os layouts
+novos são recusados).
+
+## Quiosque com conta de serviço
 
 O quiosque deixa de usar o segredo escrito no `quiosque.html`. A ordem
 importa: com o HTML novo no ar e o banco antigo, a TV fica sem dados; com o

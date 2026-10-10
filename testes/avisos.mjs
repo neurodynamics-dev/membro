@@ -1,4 +1,4 @@
-/* O quadro de avisos e o editor, com os onze layouts (db/2.20.0_avisos.sql).
+/* O quadro de avisos e o editor, com os onze layouts (db/2.19.0_avisos.sql).
    Confere, com asserção de verdade (sai 1 se algo falhar):
      1. cada layout desenha a sua estrutura (hero, número, contagem, lista, citação, progresso...);
      2. o texto do aviso nunca vira HTML; *palavra* só vale no hero;

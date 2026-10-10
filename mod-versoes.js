@@ -31,6 +31,16 @@
 /* A entrada mais nova fica em cima. "antes" é o número da numeração
    antiga; os itens são [tipo, texto em Markdown]. */
 const NOTAS_VERSAO = [
+  { v:'2.19.0', data:'2026-10-10', titulo:'Design system v3, quiosque com conta própria e quadro de avisos novo', itens:[
+    ['novo', '**Design system v3** em todo o SOMA: um cabeçalho único em todas as telas (rótulo, título e voltar), templates de tela, estados de carregando, vazio e erro, e o catálogo em `#/dev/templates`.'],
+    ['novo', '**Quiosque** com conta de serviço: o segredo deixa de ficar no código. Dois layouts (o padrão e `?layout=b`), widgets que giram, a chegada de quem faz check-in e a hora do dia.'],
+    ['novo', '**Quadro de avisos** com onze layouts, vindos das bandas e dos widgets da marca: hero, contagem, número, progresso, lista e citação entram. Cada aviso pode ter uma das doze cores, e quem lê escolhe entre rodízio e grade.'],
+    ['melhoria', '**Reporte semanal** reconstruído: endereços próprios e um fluxo de quatro passos, com revisão antes de enviar.'],
+    ['melhoria', '**Marca** fica no SOMA só com o que exige login (assinatura de e-mail, modelos controlados e configurações). Logos, wallpapers e o kit de interface estão no manual da marca, refeito do zero.'],
+    ['melhoria', '**Menu lateral** mais limpo: a logo leva ao início, o botão de recolher fica ao lado dela, e no menu recolhido o símbolo vira o botão de expandir.'],
+    ['melhoria', 'Rodapé e cabeçalho iguais aos dos sites da NeuroDynamics, sem a linha de sinal; o botão de contato dos sites ganha contraste.'],
+    ['correcao', 'Textos sem pontos médios nem travessões como separador; cores das telas avulsas (convite, validação de documentos, tour) vindas dos tokens.']
+  ]},
   { v:'2.18.0', data:'2026-10-07', titulo:'Reporte semanal, Marca e novos controles de acesso', itens:[
     ['novo', '**Reporte semanal** em três etapas: apontamento, escalonamento e publicações no **Feed da equipe**. A liderança preenche suas frentes; o admin acompanha o ciclo e baixa o reporte unificado.'],
     ['novo', '**Newsletters** semanais para membros e mensais para a comunidade, com três aprovações distintas da liderança. A comunidade é importada em Administração › E-mails e pode se descadastrar pelo rodapé.'],

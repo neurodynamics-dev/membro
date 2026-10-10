@@ -1,5 +1,5 @@
 -- ============================================================
--- SOMA 2.20.0: quadro de avisos com mais layouts
+-- SOMA 2.19.0: quadro de avisos com mais layouts
 --
 -- Seis layouts novos, vindos dos desenhos de banda e de widget do design
 -- system: hero, numero, contagem, lista, citacao e progresso (os cinco de
@@ -44,10 +44,10 @@ alter table public.portal_avisos add constraint portal_aviso_familia check (fami
 alter table public.portal_avisos drop constraint if exists portal_aviso_valor;
 alter table public.portal_avisos add constraint portal_aviso_valor check (valor is null or char_length(valor) <= 24);
 
-insert into public.migracoes(id, descricao) values('2.20.0_avisos',
- 'SOMA 2.20.0: quadro de avisos com os layouts hero, numero, contagem, lista, citacao e progresso; colunas familia e valor')
+insert into public.migracoes(id, descricao) values('2.19.0_avisos',
+ 'SOMA 2.19.0: quadro de avisos com os layouts hero, numero, contagem, lista, citacao e progresso; colunas familia e valor')
 on conflict(id) do nothing;
 
 -- CONFERIR (somente leitura)
--- select id, aplicada_em from public.migracoes where id='2.20.0_avisos';
+-- select id, aplicada_em from public.migracoes where id='2.19.0_avisos';
 -- select column_name from information_schema.columns where table_name='portal_avisos' and column_name in ('familia','valor');

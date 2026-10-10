@@ -136,13 +136,14 @@ console.log('\nAberto (admin, 1440px)');
     }));
 
   await ir(p, '#/', 700);
-  confere('sem "Início" no menu: no início, quem fica marcada é a casinha ao lado da logo',
+  confere('sem "Início" no menu: no início, quem fica marcada é a logo',
     JSON.stringify(await atual(p)) === '[]'
-    && await p.getAttribute('#lt-casa', 'aria-current') === 'page', await atual(p));
+    && await p.getAttribute('#lt-marca', 'aria-current') === 'page', await atual(p));
   await ir(p, '#/agenda/mes', 600);
-  confere('e sai dela quando se sai do início', await p.getAttribute('#lt-casa', 'aria-current') === null);
-  await p.click('#lt-casa'); await p.waitForTimeout(500);
-  confere('a casinha leva ao início', await p.evaluate(() => location.hash) === '#/');
+  confere('e sai dela quando se sai do início', await p.getAttribute('#lt-marca', 'aria-current') === null);
+  await p.click('#lt-marca'); await p.waitForTimeout(500);
+  confere('a logo leva ao início, e não há uma casinha repetindo o caminho', await p.evaluate(() => location.hash) === '#/'
+    && await p.locator('#lt-casa').count() === 0);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-seta');
   await p.waitForTimeout(200);
   let srv = await secao(p, 'servicos');
@@ -198,11 +199,12 @@ console.log('\nAberto (admin, 1440px)');
       r = b.getBoundingClientRect(), i = b.querySelector('svg').getBoundingClientRect();
     return { borda: cs.borderTopColor, fundo: cs.backgroundColor, legenda: getComputedStyle(b.querySelector('span')).opacity,
       atalho: getComputedStyle(b.querySelector('kbd')).opacity, w: Math.round(r.width), ic: Math.round(i.left + i.width / 2),
-      casa: getComputedStyle(document.getElementById('lt-casa')).display }; });
+      marca: getComputedStyle(document.getElementById('lt-marca')).display,
+      simbolo: getComputedStyle(document.querySelector('#lt-recolher .lt-simbolo')).display }; });
   confere('no trilho, a busca é só o ícone — sem caixa nem legenda —, no eixo dos outros ícones',
     bus.borda === 'rgba(0, 0, 0, 0)' && bus.fundo === 'rgba(0, 0, 0, 0)' && bus.legenda === '0' && bus.atalho === '0'
     && bus.w <= 48 && bus.ic === 34, bus);
-  confere('e a casinha sai do trilho: a logo já é o início', bus.casa === 'none', bus);
+  confere('no trilho, o símbolo ocupa o lugar do botão de expandir e o imagotipo sai', bus.marca === 'none' && bus.simbolo === 'block', bus);
 
   await p.reload({ waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])'); await p.waitForTimeout(700);
@@ -379,7 +381,7 @@ console.log('\nTema');
     const amostras = { 'título': 'main h1', 'texto de apoio': '.cab .cab-lead', 'rótulo (dim)': '.cab .eyebrow',
       'item do menu': '#lt-nav .lt-item .lt-rot', 'código': '.arq-tab .cod', 'subtítulo da linha': '.arq-tab .sub',
       'quem mexeu': '.arq-tab .arq-quem', 'classe controlado': '.arq-cls.controlado', 'status ativo': '.pill.p-ok',
-      'link secundário': '.nav1 a:not(.on)', 'selo Synapse': '.hd-tag', 'frase da estrutura': '.arq-leg .fr',
+      'link secundário': '.nav1 a:not(.on)', 'frase da estrutura': '.arq-leg .fr',
       'rótulo de campo': '.fld label' };
     return Object.entries(amostras).map(([nome, sel]) => { const el = document.querySelector(sel); if (!el) return { nome, falta: true };
       const f = fundo(el), t = sobre(rgb(getComputedStyle(el).color), f), [a, b] = [lum(t), lum(f)].sort((x, y) => y - x);

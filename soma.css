@@ -95,12 +95,6 @@ img{max-width:100%}
 body.lt-animando #hd{transition:width .22s var(--lt-ease)}
 body.lt-animando main,body.lt-animando .av-slot,
 body.lt-animando footer#ft{transition:margin-left .22s var(--lt-ease)}
-/* o início: a logo leva, e a casinha, menor, diz que leva */
-.lt-casa{flex:none;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
-  color:var(--dim);transition:color .15s,background .15s}
-.lt-casa .ic{width:16px;height:16px}
-.lt-casa:hover{color:var(--ink);background:rgba(var(--tom),.06)}
-.lt-casa[aria-current="page"]{color:var(--syn-tx)}
 /* o nome vai em texto, não no imagotipo: o imagotipo já traz o símbolo,
    e o ícone do app ao lado o repetiria */
 
@@ -113,7 +107,7 @@ body.lt-animando footer#ft{transition:margin-left .22s var(--lt-ease)}
 /* os subitens: texto só, pendurados numa linha-guia que desce do
    centro do ícone — o filho atual acende o trecho dele na guia */
 
-/* o pé: sino, conta e o botão de recolher */
+/* o pé: sino e conta */
 .lt-conta .lt-seta{right:14px}
 /* o seletor de tema mora ao lado do sair, como no pé do app do Claude:
    mostra o tema para onde vai — o sol no escuro, a lua no claro */
@@ -121,18 +115,13 @@ body.lt-animando footer#ft{transition:margin-left .22s var(--lt-ease)}
 .lt-conta .lt-eu{padding-right:68px}
 .lt-tema .t-lua,[data-tema="claro"] .lt-tema .t-sol{display:none}
 [data-tema="claro"] .lt-tema .t-lua{display:block}
-#lt-recolher .ic.expande{display:none}
 
 /* ---- trilho: só ícones; o mouse (ou o Tab) abre o voo ao lado ---- */
 @media (min-width:901px){
-  /* no trilho a busca é só o ícone, sem caixa nem legenda — como no app
-     do Claude —, no mesmo x dos outros ícones; e a casinha sai: a logo
-     já é o início */
-  body.lt-recolhida .lt-casa{display:none}
+  /* no trilho a busca é só o ícone, sem caixa nem legenda, no mesmo x
+     dos outros ícones */
   /* sem o recuo da seta e o vão do rótulo, o item cabe nos 48px do trilho */
   /* a lista continua rolando no trilho (janela baixa), só sem barra */
-  body.lt-recolhida #lt-recolher .ic.recolhe{display:none}
-  body.lt-recolhida #lt-recolher .ic.expande{display:block}
   /* o voo: o .lt-sub vira painel à direita do trilho. É fixo — assim a
      rolagem da lista não o recorta —, e a altura vem de ajustarVoo(). O
      recuo de 8px é transparente e faz de ponte: o mouse atravessa sem o

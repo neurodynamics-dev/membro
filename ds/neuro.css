@@ -561,14 +561,31 @@ h1.title{font-size:var(--fs-h1);font-weight:600;line-height:var(--lh-display);le
 
 /* ---------- menu lateral  ---------- */
 body.lt-recolhida{--lt-w:var(--lt-trilho)}
-.lt-topo{flex:none;display:flex;align-items:center;height:66px;padding:0 14px 0 20px;
-  border-bottom:1px solid var(--line);overflow:hidden}
+.lt-topo{flex:none;display:flex;align-items:center;gap:8px;height:68px;padding:6px 12px 0 22px;overflow:hidden}
+/* a logo é o início; o botão ao lado recolhe. No trilho, o símbolo ocupa
+   o lugar do botão e vira o ícone do painel ao passar o mouse */
+.lt-recolher{flex:none;position:relative;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;color:var(--dim);transition:color .15s,background .15s}
+.lt-recolher:hover{color:var(--ink);background:rgba(var(--tom),.06)}
+.lt-recolher .ic{width:18px;height:18px}
+.lt-recolher .lt-simbolo,.lt-recolher .ic.expande{display:none}
+@media (min-width:901px){
+  body.lt-recolhida .lt-topo{padding:6px 0 0;justify-content:center}
+  body.lt-recolhida .lt-marca{display:none}
+  body.lt-recolhida .lt-recolher{width:40px;height:40px;border-radius:10px}
+  body.lt-recolhida .lt-recolher .ic.recolhe{display:none}
+  body.lt-recolhida .lt-recolher .lt-simbolo{display:block}
+  body.lt-recolhida .lt-recolher:hover .lt-simbolo,body.lt-recolhida .lt-recolher:focus-visible .lt-simbolo{display:none}
+  body.lt-recolhida .lt-recolher:hover .ic.expande,body.lt-recolhida .lt-recolher:focus-visible .ic.expande{display:block}
+}
+@media (max-width:900px){.lt-recolher{display:none}}
 .lt-marca{display:flex;align-items:center;gap:12px;min-width:0}
 .lt-simbolo{width:28px;height:28px;border-radius:8px;flex:none;display:block;
   box-shadow:0 0 0 1px var(--line2)}
 .lt-nome{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;
   transition:opacity .15s}
 .lt-marca{flex:1}
+.lt-marca[aria-current="page"]{opacity:1}
 .lt-nome .logotype{font-size:14.5px;line-height:1}
 /* o texto no lugar do imagotipo quando a imagem não carrega */
 .logotype{font-family:var(--fd);font-weight:700;font-size:16.5px;letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
@@ -1022,7 +1039,7 @@ a.chip{text-decoration:none}
 .vazio .glyph .ic{width:42px;height:42px;display:inline-block}
 
 /* ---------- modal / toast ---------- */
-.lt-imagotipo{width:142px;height:auto;display:block}
+.lt-imagotipo{width:128px;height:auto;display:block}
 .lt-marca>.lt-simbolo{display:none}
 body.lt-recolhida .lt-marca>.lt-simbolo{display:block}
 .pill,.tag,.res-pill{border-radius:5px}
