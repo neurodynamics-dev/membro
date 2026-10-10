@@ -470,7 +470,7 @@ main{padding-top:24px;padding-bottom:90px}
   --syn-tx:var(--cortex-accent);--syn-borda:var(--cortex-accent);--foco:var(--cortex-accent);
   --bad-tx:var(--fn-critical-medium);--warn-tx:var(--fn-caution-medium);--info-tx:var(--fn-signal-medium);--lima-tx:var(--cortex-medium);--teal-tx:#D6FBF6; /* auditar: ok, paleta local do SOMA sem token no DS */
   --roxo-tx:var(--dendrito-medium);--cinza-tx:#E4E4E6;--ocup-tx:#FFE8E3;--fora-tx:#E8A79B; /* auditar: ok, paleta local do SOMA sem token no DS */
-  --bg-topo:var(--painel);--toast:var(--toast);--campo:rgba(255,255,255,.05); /* auditar: ok, paleta local do SOMA sem token no DS */
+  --bg-topo:var(--painel);--toast:#151B19 /* auditar: ok, valor do escuro dentro da banda */;--campo:rgba(255,255,255,.05); /* auditar: ok, paleta local do SOMA sem token no DS */
   --ok-tx:var(--fn-nominal-medium);
 }
 .sl-destaque{background:linear-gradient(118deg,var(--deep) 0%,var(--green) 62%,#0A6F62 100%);
