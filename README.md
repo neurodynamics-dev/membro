@@ -1006,7 +1006,7 @@ navegador; o membro copia o endereço e cola na janela de horários.
 | `mod-criador.js` | O criador do Studio: o motor de desenho, os 23 modelos, o editor, a galeria, baixar e salvar no quadro (`#/studio/criar`, `#/studio/modelos`) |
 | `studio/` | As marcas que o criador desenha: o imagotipo da NRO, o símbolo e a logo do LABBIO (do repositório do site), servidas daqui para o canvas poder exportar |
 | `admin.html`   | Encaminhamento — o painel virou `#/admin` |
-| `quiosque.html`| O quiosque do check-in do LABBIO, para a tela da entrada |
+| `quiosque.html`, `quiosque.css`, `quiosque.js` | O quiosque do check-in do LABBIO, para a tela da entrada: entra uma vez com a conta do quiosque (sem segredo no código), widgets que giram, a chegada e a hora do dia; `?layout=b` para a composição de faixa e palco. Ver `PUBLICACAO-2.19.md` |
 | `mailer/`      | Ícones e logos recoloridas que os e-mails do Full mailer mostram por link ([detalhes](mailer/README.md)) |
 | `tour.html`    | O tour do SOMA: conduz quem chega a criar a conta e mostra cada espaço com os dados da própria pessoa ([detalhes](#o-tour-do-soma)) |
 | `manifest.webmanifest`, `icone-*.png` | O SOMA instalável: nome, cores e ícones da tela de início (iPhone e Android) e o selo das notificações |

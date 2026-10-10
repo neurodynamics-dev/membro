@@ -1,0 +1,166 @@
+/* ============================================================
+   Quiosque do LABBIO (a TV da entrada). Registro expressivo do
+   design system: Void, grade Cortex, blob Axon; um segundo blob e o
+   arco do sol seguem a hora do dia. Widgets são painéis Sulco.
+   Tamanhos em rem: 1rem = 1/56,25 da altura da tela (16px em 900px,
+   19,2px em 1080p), então a composição escala com a TV.
+   Regras: interface-rules.md, seção 10.
+   ============================================================ */
+html{font-size:calc(100vh / 56.25)}
+body{margin:0;height:100vh;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:1rem;line-height:1.5;cursor:none}
+body.cursor{cursor:default}
+.fundo{position:fixed;inset:0;z-index:0;overflow:hidden;background:radial-gradient(120% 90% at 72% -12%,color-mix(in srgb,var(--axon) 14%,var(--bg)) 0%,var(--bg) 58%)}
+.fundo::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(var(--ink-rgb),.05) 1px,transparent 1px),linear-gradient(90deg,rgba(var(--ink-rgb),.05) 1px,transparent 1px);background-size:2.75rem 2.75rem;transition:opacity 2s}
+.fase-noite .fundo::before{opacity:.65}
+.blob{position:absolute;border-radius:50%;filter:blur(4.4rem);pointer-events:none;transition:background 2s,opacity 2s}
+.blob.axon{width:45rem;height:45rem;left:-12.5rem;top:-23.75rem;opacity:.5;background:radial-gradient(circle,var(--axon),transparent 70%)}
+.blob.hora{width:51rem;height:51rem;right:-16rem;bottom:-26rem;opacity:.3}
+.fase-madrugada .blob.hora{background:radial-gradient(circle,var(--lumen-primary),transparent 70%);opacity:.22}
+.fase-dia .blob.hora{background:radial-gradient(circle,var(--synapse),transparent 70%);opacity:.05}
+.fase-entardecer .blob.hora{background:radial-gradient(circle,var(--ritmo-primary),transparent 70%);opacity:.22}
+.fase-noite .blob.hora{background:radial-gradient(circle,var(--retina-primary),transparent 70%);opacity:.26}
+
+#app{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column;gap:1.25rem;padding:1.5rem 2rem 1.75rem}
+.topo{display:flex;align-items:center;gap:1rem}
+.topo .marca{font-family:var(--fd);font-weight:700;font-size:1.5rem;letter-spacing:-.02em}
+.topo .sub{font-family:var(--fd);font-weight:600;font-size:.69rem;letter-spacing:var(--tr-label);text-transform:uppercase;color:var(--muted)}
+.vivo{margin-left:auto;display:inline-flex;align-items:center;gap:.5rem;padding:.2rem .6rem;border:1px solid color-mix(in srgb,var(--fn-signal-primary) 45%,transparent);border-radius:var(--r-tag);
+  font-family:var(--fm);font-size:.69rem;letter-spacing:.06em;text-transform:uppercase;color:var(--fn-signal-medium)}
+.vivo i{width:.4rem;height:.4rem;background:var(--fn-signal-primary)}
+.vivo.off{border-color:color-mix(in srgb,var(--fn-idle-primary) 55%,transparent);color:var(--fn-idle-medium)}
+.vivo.off i{background:var(--fn-idle-primary)}
+
+/* ---------- a grade: A (três colunas) e B (faixa e palco) ---------- */
+#palco{flex:1;min-height:0;display:grid;gap:1.25rem}
+.layout-a #palco{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr) 26.25rem;grid-template-rows:auto minmax(0,1fr)}
+.layout-a .agora{grid-column:1;grid-row:1}
+.layout-a .r1{grid-column:1;grid-row:2}
+.layout-a .r2{grid-column:2;grid-row:1/3}
+.layout-b #palco{grid-template-columns:minmax(0,1fr) 26.25rem;grid-template-rows:auto minmax(0,1fr)}
+.layout-b .agora{grid-column:1;grid-row:1}
+.layout-b .r2{grid-column:1;grid-row:2}
+.layout-b .r1{display:none}
+.coluna{grid-column:3;grid-row:1/3;min-height:0;display:flex;flex-direction:column;gap:1.25rem}
+.layout-b .coluna{grid-column:2}
+
+/* ---------- widget (painel Sulco) ---------- */
+.widget{display:flex;flex-direction:column;gap:1.1rem;padding:1.5rem;background:rgba(var(--painel-rgb),.78);border:1px solid var(--line);border-radius:var(--r);min-height:0}
+.widget>header{display:flex;align-items:center;gap:.9rem}
+.widget .w-rot{font-size:.69rem}
+.widget .w-meta{margin-left:auto}
+.widget .w-passos{margin-left:.5rem}
+.w-corpo{flex:1;min-height:0;display:flex;flex-direction:column}
+.widget.fam .band-ic{opacity:.06}
+.rot{font-family:var(--fd);font-weight:600;font-size:.69rem;letter-spacing:var(--tr-label);text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--fm)}
+.vazio-w{color:var(--muted);font-size:.95rem;margin:auto 0}
+
+/* ---------- agora: relógio, tempo, sol ---------- */
+.relogio{font-family:var(--fd);font-weight:300;font-size:6.4rem;line-height:1;letter-spacing:-.03em}
+.relogio .s{font-size:2rem;color:var(--muted);margin-left:.4rem}
+.data{margin-top:.5rem;font-size:1.05rem;color:var(--muted)}
+.tempo{display:flex;align-items:center;gap:1.1rem;margin-top:1.2rem}
+.tempo svg{width:2.9rem;height:2.9rem;fill:none;stroke:var(--ink);stroke-width:1.5;flex:none}
+.tempo .t{font-family:var(--fd);font-weight:300;font-size:3rem;line-height:1}
+.tempo .m{font-size:.85rem;color:var(--muted);line-height:1.55}
+.tempo .m b{color:var(--ink);font-weight:500;font-size:.95rem}
+.sol{margin-top:1rem}
+.sol svg{display:block;width:100%;height:5.6rem}
+.sol .pontas{display:flex;justify-content:space-between;align-items:flex-end;margin-top:.3rem}
+.sol .pontas b{display:block;font-family:var(--fm);font-weight:500;font-size:.95rem;margin-top:.15rem}
+.sol .msg{font-size:.78rem;color:var(--muted)}
+.layout-b .agora .w-corpo{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:2.5rem;align-items:center}
+.layout-b .relogio{font-size:5rem}
+.layout-b .tempo,.layout-b .sol{margin-top:0}
+.layout-b .sol svg{height:4.4rem}
+
+/* ---------- agenda ---------- */
+.ag{display:flex;flex-direction:column;gap:.15rem}
+.ag-i{display:grid;grid-template-columns:4.2rem minmax(0,1fr) auto;gap:1rem;align-items:center;padding:.8rem .9rem;border-radius:var(--r-sm)}
+.ag-i.agora{background:rgba(var(--tom),.06)}
+.ag-i .h{font-family:var(--fm);font-weight:500;font-size:1.05rem}
+.ag-i .h small{display:block;font-weight:400;font-size:.78rem;color:var(--dim)}
+.ag-i .tt{font-family:var(--fd);font-weight:500;font-size:1.2rem;line-height:1.25;letter-spacing:-.01em}
+.ag-i .mm{font-size:.85rem;color:var(--muted)}
+.ag-i.passou{opacity:.45}
+.pill-agora{display:inline-flex;align-items:center;gap:.4rem;padding:.12rem .5rem;border:1px solid color-mix(in srgb,var(--fn-nominal-primary) 45%,transparent);border-radius:var(--r-tag);
+  font-family:var(--fm);font-size:.69rem;letter-spacing:.06em;text-transform:uppercase;color:var(--fn-nominal-medium)}
+.pill-agora i{width:.4rem;height:.4rem;background:var(--fn-nominal-primary)}
+.destaque{margin:auto 0;display:flex;flex-direction:column;gap:1rem}
+.destaque h3{margin:0;font-family:var(--fd);font-weight:600;font-size:2.6rem;line-height:1.08;letter-spacing:var(--tr-heading);text-wrap:balance;max-width:80%}
+.destaque p{margin:0;color:var(--muted);font-size:1.05rem;max-width:34rem}
+.destaque .quando{font-family:var(--fm);font-size:1.4rem}
+
+/* ---------- família por slide (aviso, boas-vindas, placar) ---------- */
+.widget.fam{border-color:color-mix(in srgb,var(--fam-primary) 24%,transparent)}
+.fam .destaque h3{color:var(--fam-light)}
+
+/* ---------- ticks (marcas discretas: 1,5px e 4,5px) ---------- */
+.ticks{position:relative;height:.7rem;background:repeating-linear-gradient(90deg,rgba(var(--tom),.12) 0 1.5px,transparent 1.5px 6px)}
+.ticks i{position:absolute;inset:0 auto 0 0;width:var(--p,0%);background:repeating-linear-gradient(90deg,var(--fam-primary,var(--cortex-medium)) 0 1.5px,transparent 1.5px 6px)}
+.rank{display:grid;grid-template-columns:auto auto minmax(0,max-content) minmax(3rem,1fr) auto;column-gap:.9rem;row-gap:.85rem;align-items:center;margin:auto 0}
+.rank .k{font-family:var(--fm);font-size:.85rem;color:var(--dim)}
+.rank .nm{font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .v{font-family:var(--fm);font-size:.9rem;text-align:right}
+.cadeia{display:flex;gap:3px;flex-wrap:wrap}
+.cadeia i{width:.62rem;height:.62rem;background:var(--fam-primary)}
+.seq{display:flex;flex-direction:column;gap:1.1rem;margin:auto 0}
+.seq-l{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.9rem;align-items:center}
+.seq-l .nm{font-size:1rem}
+.seq-l .dias{font-family:var(--fm);font-size:.95rem}
+.seq-l .cadeia{grid-column:2/4}
+
+/* ---------- laboratório agora ---------- */
+.lab{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2.2rem;align-items:end;margin:auto 0}
+.num-g{font-family:var(--fd);font-weight:300;font-size:7rem;line-height:.95;letter-spacing:-.03em}
+.num-g+div{color:var(--muted);font-size:.95rem;margin-top:.4rem}
+.areas{display:flex;flex-direction:column;gap:.7rem}
+.areas>div{display:grid;grid-template-columns:5.6rem minmax(0,1fr) 1.5rem;gap:.7rem;align-items:center;font-size:.9rem}
+.areas .v{font-family:var(--fm);text-align:right}
+
+/* ---------- avatares ---------- */
+.avk{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:50%;overflow:hidden;
+  background:var(--cortex-dark);color:var(--cortex-light);font-family:var(--fd);font-weight:600}
+.avk img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.avs{display:flex}.avs .avk+.avk{margin-left:-.5rem;box-shadow:0 0 0 2px var(--bg)}
+
+/* ---------- coluna do check-in ---------- */
+.qr{align-items:stretch;gap:1rem}
+.qr .corpo{display:flex;gap:1.4rem;align-items:center}
+#qrbox{width:9.6rem;height:9.6rem;flex:none;background:var(--paper);border-radius:var(--r-sm);padding:.5rem;display:flex}
+#qrbox img,#qrbox canvas{width:100%!important;height:100%!important}
+.qr .n{font-family:var(--fd);font-weight:300;font-size:4.6rem;line-height:1}
+.qr .n+div{color:var(--muted);font-size:.85rem;margin-top:.3rem;line-height:1.4}
+.qr .cta{font-size:.85rem;color:var(--muted)}
+.qr-trilha{height:3px;background:rgba(var(--tom),.12);overflow:hidden}
+.qr-trilha i{display:block;height:100%;width:100%;background:var(--syn);transition:width 1s linear}
+.qr-off{display:none;padding:1.2rem;border:1px solid var(--line2);border-radius:var(--r-sm);color:var(--muted);font-size:.9rem}
+.ultimos{flex:1;min-height:0;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,black 80%,transparent);mask-image:linear-gradient(to bottom,black 80%,transparent)}
+.ck{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.9rem;align-items:center;padding:.7rem 0;border-bottom:1px solid var(--line)}
+.ck:last-child{border-bottom:0}
+.ck .cn{font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ck .cs{font-size:.78rem;color:var(--muted)}
+.ck .h{font-family:var(--fm);font-size:.85rem;color:var(--muted)}
+
+/* ---------- a chegada: o momento do check-in, em Axon e Cortex ---------- */
+#chegada{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;text-align:center;
+  background:radial-gradient(80% 70% at 50% 40%,color-mix(in srgb,var(--axon) 70%,var(--cortex)) 0%,var(--cortex) 55%,var(--bg) 100%);opacity:0;transition:opacity .5s}
+#chegada.on{display:flex}#chegada.vis{opacity:1}
+#chegada .rot{color:var(--cortex-medium);font-size:.85rem}
+#chegada .avk{width:11.25rem;height:11.25rem;font-size:3.2rem;box-shadow:0 0 0 .4rem rgba(var(--ink-rgb),.14)}
+#chegada h2{margin:.5rem 0 0;font-family:var(--fd);font-weight:600;font-size:3.6rem;letter-spacing:var(--tr-display);line-height:1.05}
+#chegada .area{font-size:1.3rem;color:var(--cortex-medium)}
+#chegada .info{font-size:1rem;color:var(--cortex-light);line-height:1.6}
+#chegada .cadeia{justify-content:center;margin-top:.6rem;--fam-primary:var(--lumen-primary);max-width:28rem}
+#chegada .cadeia i{width:.8rem;height:.8rem}
+
+/* ---------- entrada: a conta do quiosque ---------- */
+#entrar{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:2rem}
+#entrar.on{display:flex}
+#entrar .painel{width:min(28rem,100%);padding:2rem;display:flex;flex-direction:column;gap:1.1rem;background:rgba(var(--painel-rgb),.9);border:1px solid var(--line2);border-radius:var(--r)}
+#entrar h1{margin:0;font-family:var(--fd);font-weight:600;font-size:1.7rem;letter-spacing:var(--tr-heading)}
+#entrar p{margin:0;color:var(--muted);font-size:.9rem}
+#entrar .erro{color:var(--bad-tx);font-size:.85rem;min-height:1.2rem}
+#entrar .btn{justify-content:center;width:100%}
+
+@media (prefers-reduced-motion:reduce){.blob,.fundo::before,.qr-trilha i,#chegada{transition:none}.w-corpo{transition:none}}

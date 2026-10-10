@@ -15,7 +15,8 @@ seção correspondente.
 | 0 | Feita (brand): tokens com tema, `neuro.css` v3, `casca.*`, `v3/`, `distribuir.mjs`, `auditar.mjs` |
 | 1 | Feita (membro): `ds/`, `soma.css`, `cabecalho()` e templates, `#/dev/templates`, `testes/templates.mjs` |
 | 2 | Feita (membro): Equipe inteira no cabeçalho único (Organograma, Quadro, Ficha, Presença, Feed), Reporte reconstruído com endereços e fluxo de 4 passos, Marca reconstruída. A Ficha mantém o corpo atual (a lateral com SpecList e os Newsletters ficam para a Fase 4) |
-| 3 a 7 | A fazer |
+| 3 | Feita (membro): quiosque novo (layouts A e B, widgets, chegada, hora do dia) e conta de serviço. `db/2.19.0_quiosque.sql` **ainda não aplicada**: depende de conferir `quiosque_estado` e `config_sistema` no banco (ver `PUBLICACAO-2.19.md`) |
+| 4 a 7 | A fazer |
 
 ## 0. Decisões tomadas
 

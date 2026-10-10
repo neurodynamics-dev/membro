@@ -417,7 +417,7 @@ h1.title{font-size:var(--fs-h1);font-weight:600;line-height:var(--lh-display);le
 /* Painel Sulco que pode girar conteúdo de bater o olho (10 a 15 s,
    no máximo 4 slides) com progresso segmentado em Synapse. Relógio,
    check-in e presença nunca giram. .fam tinge o slide de destaque. */
-.widget{position:relative;overflow:hidden;border-radius:var(--r);background:rgba(11,18,16,.78);
+.widget{position:relative;overflow:hidden;border-radius:var(--r);background:rgba(var(--painel-rgb),.78);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line);padding:24px;
   display:flex;flex-direction:column;gap:18px;min-width:0;color:var(--ink);transition:border-color .6s}
 .widget>header{position:relative;display:flex;align-items:center;gap:14px;min-height:14px}
