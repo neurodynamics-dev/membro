@@ -94,7 +94,7 @@ async function pageStudio(sub, sub2){
   $('#main').innerHTML = '<div class="carregando"><span class="spin"></span> Carregando o Studio…</div>';
   const ok = await stCarregar();
   if (!ok){
-    $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Studio</span><h1>Studio</h1></div></div>
+    $('#main').innerHTML = cabecalho({ espaco:'Studio', titulo:'Quadro de publicações' }) + `
       <div class="aviso-box err"><b>O Studio ainda não está no banco.</b> ${esc(studioM.erro?.message || '')}<br>
       <span class="small">Falta aplicar a migração <code>db/v23_studio.sql</code>. O criador já funciona:
       <a href="#/studio/criar">criar uma peça</a> e baixar, sem salvar no quadro.</span></div>`;
@@ -130,10 +130,9 @@ function stNav(atual){
       ? ` <span class="n sua" title="Esperando a sua aprovação">${n}</span>` : ''}</a>`).join('')}</nav>`;
 }
 function stTopo(titulo, lead, acoes){
-  return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Studio</span><h1>${titulo}</h1>
-    ${lead ? `<p class="lead">${lead}</p>` : ''}</div>
-    <div class="acoes">${acoes ?? `<button class="btn ghost mini" onclick="stModalIdeia()">${ic('lampada')} Nova ideia</button>
-      <a class="btn solid mini" href="#/studio/criar">${ic('plus')} Criar publicação</a>`}</div></div>`;
+  return cabecalho({ espaco:'Studio', titulo, lead,
+    acoes: acoes ?? [`<button class="btn ghost" onclick="stModalIdeia()">${ic('lampada')} Nova ideia</button>`,
+      `<a class="btn solid" href="#/studio/criar">${ic('plus')} Criar publicação</a>`] });
 }
 
 /* ============================================================
@@ -567,13 +566,12 @@ async function stPublicacao(cod){
   const passos = ST_COLUNAS.map((s, i) => { const at = ST_COLUNAS.indexOf(pub.status);
     return `<li class="${i < at ? 'feito' : i === at ? 'agora' : ''}"><span>${esc(stRotStatus(s))}</span></li>`; }).join('');
   const redesComo = (pub.redes || []).filter(r => ST_COMO[r]);
-  $('#main').innerHTML = `<div class="topo-gestao st-pub-topo"><div class="tx"><span class="eyebrow">Studio › ${esc(pub.codigo)}</span>
-      <h1>${esc(pub.titulo)}</h1>
-      <p class="lead">${[tipo?.[1], pub.formato && STUDIO_FORMATOS[pub.formato], (pub.redes || []).map(r => STUDIO_REDES[r]?.l).filter(Boolean).join(', ')].filter(Boolean).map(esc).join(', ') || 'Sem tipo nem rede ainda'}
-        ${pub.data_publicacao ? `, <b>${esc(stQuando(pub.data_publicacao))}</b>` : ''}</p></div>
-      <div class="acoes">${pub.formato === 'texto' ? '' : `<a class="btn ${pub.imagens?.length ? 'ghost' : 'solid'} mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} ${pub.imagens?.length ? 'Editar a arte' : 'Criar a arte'}</a>`}
+  $('#main').innerHTML = cabecalho({ espaco:'Studio', titulo:pub.titulo, codigo:pub.codigo, voltar:['Quadro', '#/studio'],
+      lead:`${[tipo?.[1], pub.formato && STUDIO_FORMATOS[pub.formato], (pub.redes || []).map(r => STUDIO_REDES[r]?.l).filter(Boolean).join(', ')].filter(Boolean).map(esc).join(', ') || 'Sem tipo nem rede ainda'}
+        ${pub.data_publicacao ? `, <b>${esc(stQuando(pub.data_publicacao))}</b>` : ''}`,
+      acoes:[`${pub.formato === 'texto' ? '' : `<a class="btn ${pub.imagens?.length ? 'ghost' : 'solid'} mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} ${pub.imagens?.length ? 'Editar a arte' : 'Criar a arte'}</a>`}
         ${pub.status !== 'arquivada' ? `<button class="btn ghost mini" onclick="stArquivar('${pub.id}')">Arquivar</button>` : `<button class="btn ghost mini" onclick="stMover('${pub.id}','ideia')">Desarquivar</button>`}
-        ${podeApagar ? ibtn('trash', 'Apagar', `stExcluir('${pub.id}')`) : ''}</div></div>
+        ${podeApagar ? ibtn('trash', 'Apagar', `stExcluir('${pub.id}')`) : ''}`] }) + `
     ${stNav('')}
     ${pub.status === 'arquivada' ? '<div class="aviso-box info">Arquivada: fora do quadro e do calendário.</div>' : `<ol class="st-passos">${passos}</ol>`}
     <div class="st-pub">

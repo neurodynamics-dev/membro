@@ -62,13 +62,7 @@ async function pageAdmin(sub, sub2){
   if (!p || !painelPermitido(p)) return galeriaAdmin();
 
   const [k, titulo, , lead] = p;
-  $('#main').innerHTML = `
-    <div class="topo-gestao">
-      <div style="padding-top:34px"><a class="icon-btn" href="#/admin" title="Voltar" aria-label="Voltar">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-          stroke-linecap="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></a></div>
-      <div class="tx"><span class="eyebrow">Administração</span>
-        <h1>${esc(titulo)}</h1><p class="lead">${esc(lead)}</p></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Administração', titulo, lead:esc(lead), voltar:['Painéis', '#/admin'] }) + `
     ${PAINEIS.filter(painelPermitido).map(([x]) => `<section id="sec-${x}" ${x===k?'':'hidden'}>${
       x===k ? '<div class="carregando"><span class="spin"></span> Carregando…</div>' : ''}</section>`).join('')}`;
 
@@ -115,10 +109,7 @@ function galeriaAdmin(){
   const pend = adminP.sols.filter(s => ['aberta','em_analise'].includes(s.status)).length;
   const ouv  = adminP.ouvidoria.filter(m => !m.tratada).length;
   const conta = { solicitacoes: pend, ouvidoria: ouv };
-  $('#main').innerHTML = `
-    <div class="topo-gestao"><div class="tx"><span class="eyebrow">Administração</span>
-      <h1>Painéis</h1>
-</div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Administração', titulo:'Painéis' }) + `
     ${GRUPOS_PAINEL.map(g => {
       const itens = PAINEIS.filter(([,, gr]) => gr === g).filter(painelPermitido);
       if (!itens.length) return '';

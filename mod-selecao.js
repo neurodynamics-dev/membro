@@ -167,10 +167,8 @@ async function pageSelecao(sub, sub2){
 
 async function desenhaSelecao(){
   const m = $('#main');
-  const topo = (acoes) => `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Comitê de Seleção</span>
-      <h1>Processo seletivo</h1><p class="lead">Os bastidores do processo: candidatos, avaliação, agenda,
-      a dinâmica em grupo e o que vai para o site.</p></div>
-    ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+  const topo = (acoes) => cabecalho({ espaco:'Seleção', titulo:'Processo seletivo',
+    lead:'Os bastidores do processo: candidatos, avaliação, agenda, a dinâmica em grupo e o que vai para o site.', acoes:[].concat(acoes || '') });
   if(!podeSelecao()){
     m.innerHTML = topo() + `<div class="aviso-box warn"><b>Acesso restrito.</b> Esta página é do Comitê de
       Seleção: quem está num grupo com o papel Seleção, definido em Administração › Grupos.</div>`;

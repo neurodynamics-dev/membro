@@ -889,9 +889,9 @@ function treNavConfig(atual){
   return navNivel2([['', 'Treinamentos', '#/treinamentos/config'], ['geral', 'Geral', '#/treinamentos/config/geral'],
     ['readme', 'README de conteúdo', '#/treinamentos/config/readme']], atual, 'Configurações');
 }
-function treTopo(titulo, lead, acoes, olho){
-  return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">${esc(olho || 'Treinamentos')}</span><h1>${titulo}</h1>
-    ${lead ? `<p class="lead">${lead}</p>` : ''}</div>${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+/* o eyebrow é sempre o espaço (Treinamentos); o 4º argumento fica só por compatibilidade */
+function treTopo(titulo, lead, acoes, _olho){
+  return cabecalho({ espaco:'Treinamentos', titulo, lead, acoes:[].concat(acoes || '') });
 }
 async function treCarregarLista(){
   const { data, error } = await sb.rpc('treinamentos_meus');
@@ -1068,11 +1068,8 @@ async function treTreinamento(cod){
       ${t.notas_revisao ? esc(t.notas_revisao) : ''} O certificado da Rev. ${esc(a.conclusao?.revisao || '')} continua no seu perfil.</div></div>`;
   $('#main').innerHTML = `<div class="tre-hero">
       <div class="tre-hero-tx">
-        <a class="tre-voltar" href="#/treinamentos">${ic('back')} Treinamentos</a>
-        <span class="eyebrow">${esc(t.codigo)}, Rev. ${esc(t.revisao)}${t.categoria ? ', ' + esc(t.categoria) : ''}</span>
-        <h1>${esc(t.titulo)}</h1>
-        ${t.resumo ? `<p class="lead">${esc(t.resumo)}</p>` : ''}
-        <div class="tre-hero-tags">${trePill(s)} ${treObrig(a.obrigatorio)}</div>
+        ${cabecalho({ espaco:'Treinamentos', titulo:t.titulo, codigo:t.codigo, voltar:['Treinamentos', '#/treinamentos'],
+          lead:t.resumo ? esc(t.resumo) : '', meta:['Rev. ' + esc(t.revisao) + (t.categoria ? ', ' + esc(t.categoria) : ''), trePill(s), treObrig(a.obrigatorio)] })}
       </div>
       <dl class="tre-ficha">
         <div><dt>Módulos</dt><dd>${mods.length}</dd></div>
@@ -1141,8 +1138,8 @@ async function treModulo(cod, n){
     <article class="tre-conteudo">
       ${a.situacao === 'vencido' ? `<div class="aviso-box warn">Este treinamento venceu: o que você fizer agora não renova o certificado.
         Para ficar em dia, <button class="tre-a" style="font:inherit" onclick="treRecomecar()">recomece do zero</button>.</div>` : ''}
-      <span class="eyebrow">Módulo ${String(n).padStart(2, '0')} de ${String(mods.length).padStart(2, '0')}${feito ? ', concluído' : ''}</span>
-      <h1>${esc(m.titulo)}</h1>
+      ${cabecalho({ espaco:'Treinamentos', titulo:m.titulo, voltar:[t.titulo, '#/treinamentos/' + t.codigo],
+        meta:['Módulo ' + String(n).padStart(2, '0') + ' de ' + String(mods.length).padStart(2, '0') + (feito ? ', concluído' : '')] })}
       <div class="tre-md">${treMd(m.corpo, ctx)}</div>
       ${(m.links || []).length ? `<section class="tre-links"><h2>Links relacionados</h2><div class="doc-grid">${m.links.map(treLinkCartao).join('')}</div></section>` : ''}
       ${qs.length ? treVerificacaoHTML(m, qs, res, t) : `<div class="tre-concluir">
@@ -1468,13 +1465,12 @@ function treEdDesenhar(){
     ? (t.revisao_atual ? `Rascunho da Rev. ${letra}. Quem faz o treinamento continua vendo a Rev. ${esc(t.revisao_atual)} até você publicar.`
                        : 'Rascunho, não publicado.')
     : `Rev. ${esc(t.revisao_atual)} publicada${t.status === 'arquivado' ? ' e arquivada' : ''}. Mudar o conteúdo abre o rascunho da Rev. ${letra}.`;
-  $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Editor de ${esc(t.codigo)}</span>
-      <h1 id="tre-ed-h1">${esc(ed.meta.titulo || 'Sem título')}</h1><p class="lead">${estado}</p></div>
-      <div class="acoes">
-        <button class="btn ghost mini" onclick="trePrevia(0)">${ic('eye')} Pré-visualizar</button>
-        <button class="btn ghost mini" onclick="treImportarModal()">${ic('subir')} Importar texto</button>
-        <button class="btn ghost mini" onclick="treExportar()">${ic('down')} Exportar</button>
-        <button class="btn solid mini" onclick="treEdPublicarModal()">${ic('enviar')} Publicar a Rev. ${letra}</button></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Treinamentos', titulo:ed.meta.titulo || 'Sem título', codigo:t.codigo,
+      h1Attrs:'id="tre-ed-h1"', voltar:['Treinamento', '#/treinamentos/' + t.codigo], lead:estado,
+      acoes:[`<button class="btn ghost" onclick="trePrevia(0)">${ic('eye')} Pré-visualizar</button>`,
+        `<button class="btn ghost" onclick="treImportarModal()">${ic('subir')} Importar texto</button>`,
+        `<button class="btn ghost" onclick="treExportar()">${ic('down')} Exportar</button>`,
+        `<button class="btn solid" onclick="treEdPublicarModal()">${ic('enviar')} Publicar a Rev. ${letra}</button>`] }) + `
     <div class="tre-ed-status" id="tre-ed-st" role="status"></div>
     <div class="tre-ed">
       <div class="tre-ed-main">
@@ -1566,7 +1562,7 @@ async function treEdSalvar(){
 }
 /* o rascunho acabou de nascer: o topo passa a dizer "rascunho da Rev. X" */
 function treEdDesenharCabeca(){
-  const ed = treino.ed, lead = document.querySelector('.topo-gestao .lead');
+  const ed = treino.ed, lead = document.querySelector('.cab .cab-lead');
   if (!ed || !$('#tre-ed-h1')) return;
   if (lead && ed.t.revisao_atual) lead.textContent = `Rascunho da Rev. ${treProxLetra()}. Quem faz o treinamento continua vendo a Rev. ${ed.t.revisao_atual} até você publicar.`;
 }

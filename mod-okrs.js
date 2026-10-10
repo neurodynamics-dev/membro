@@ -102,10 +102,8 @@ async function okrCarregar(){
    ROTA
    ============================================================ */
 async function pageOkrs(sub){
-  const topo = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Planejamento estratégico</span>
-      <h1>OKRs</h1></div>
-    ${podeGerir() ? `<div class="acoes"><button class="btn solid" onclick="modalOKREditar(null,null)">${ic('plus')}
-      Novo objetivo estratégico</button></div>` : ''}</div>`;
+  const topo = cabecalho({ espaco:'OKRs', titulo:'Planejamento estratégico',
+    acoes:podeGerir() ? `<button class="btn solid" onclick="modalOKREditar(null,null)">${ic('plus')} Novo objetivo estratégico</button>` : '' });
   if(!OKR.pronto){
     $('#main').innerHTML = topo + '<div class="carregando"><span class="spin"></span> Carregando…</div>';
     try{ await okrCarregar(); }

@@ -2546,10 +2546,9 @@ const CR_GRUPOS_MODELOS = [
   ['Em branco', 'Todos os leiautes, todos os tamanhos', ['livre']]
 ];
 async function crPaginaModelos(){
-  $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Studio</span><h1>Modelos</h1>
-      <p class="lead">Cada modelo é uma peça pronta para mudar: troque o texto, a foto, o tema, o acento, acrescente lâminas.
-      Todos saem no tamanho exato da rede.</p></div>
-      <div class="acoes"><a class="btn solid mini" href="#/studio/criar">${ic('plus')} Peça em branco</a></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Studio', titulo:'Modelos',
+      lead:'Cada modelo é uma peça pronta para mudar: troque o texto, a foto, o tema, o acento, acrescente lâminas. Todos saem no tamanho exato da rede.',
+      acoes:`<a class="btn solid" href="#/studio/criar">${ic('plus')} Peça em branco</a>` }) + `
     ${typeof stNav === 'function' ? stNav('modelos') : ''}
     <div class="cr-pilares">${Object.entries(STUDIO_PILARES).map(([k, [l, d, c]]) =>
       `<div class="cr-pilar" style="--c:${c}"><b>${esc(l)}</b><span>${esc(d)}</span></div>`).join('')}</div>

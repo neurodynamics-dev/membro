@@ -279,7 +279,7 @@ console.log('\nConfigurações e exportação');
     esc.length === 1 && esc[0].op === 'insert' && esc[0].dados.serie_id === 's-pub3', esc);
 
   await ir(p, '#/arquivos');
-  await p.click('.topo-gestao button:has-text("Exportar")'); await p.waitForTimeout(900);
+  await p.click('.cab button:has-text("Exportar")'); await p.waitForTimeout(900);
   const pl = await p.evaluate(() => window.__planilha);
   confere('a exportação sai no nome e nas abas da NRO-PUB-001',
     /^NRO-PUB-001 CONTROLE DE DOCUMENTOS E REGISTROS/.test(pl?.nome) && pl.abas.map(a => a.n).join() === 'NRO-PUB,NRO-PES,NRO-PRO', pl && { nome: pl.nome, abas: pl.abas.map(a => a.n) });
@@ -351,7 +351,7 @@ console.log('\nA estrutura de cada série — a coluna nova da NRO-PUB-001');
 
   /* adicionar: primeiro, o que é */
   await ir(p, '#/arquivos/PRO');
-  await p.click('.topo-gestao button:has-text("Adicionar")'); await p.waitForSelector('.arq-add');
+  await p.click('.cab button:has-text("Adicionar")'); await p.waitForSelector('.arq-add');
   const ops = await p.evaluate(() => [...document.querySelectorAll('#aa-tpl option')].map(o => o.textContent));
   confere('"Adicionar" pergunta o que é: um arquivo real numa série (os templates do emissor) ou uma série nova',
     ops.length === 3 && ops[1] === 'NRO-PRO-003 RELATÓRIO DE EXECUÇÃO DE TESTES (cada PN é um registro)'
@@ -363,7 +363,7 @@ console.log('\nA estrutura de cada série — a coluna nova da NRO-PUB-001');
     /Vai nascer NRO-PRO-003-2: um registro, arquivo real, integrante da série/.test(nasce)
     && /do template NRO-PRO-003 Rev\. B/.test(nasce) && /Registro aprovado não se altera/.test(nasce), nasce);
   await p.keyboard.press('Escape'); await p.waitForTimeout(200);
-  await p.click('.topo-gestao button:has-text("Adicionar")'); await p.waitForSelector('.arq-add');
+  await p.click('.cab button:has-text("Adicionar")'); await p.waitForSelector('.arq-add');
   await p.click('.arq-add-op button:has-text("Template → registros")'); await p.waitForSelector('#as-btn');
   confere('"Uma série nova" abre a série já com a estrutura escolhida',
     await p.evaluate(() => document.querySelector('input[name="as-est"]:checked')?.value) === 'registros'
@@ -410,7 +410,7 @@ console.log('\nQuem não é gestor');
   confere('fora do grupo do emissor, o template não oferece "Novo PN" (o banco recusaria)',
     await p.locator('button:has-text("Novo PN")').count() === 0);
   await ir(p, '#/arquivos/PUB');
-  confere('nem o rol oferece "Adicionar"', await p.locator('.topo-gestao button:has-text("Adicionar")').count() === 0);
+  confere('nem o rol oferece "Adicionar"', await p.locator('.cab button:has-text("Adicionar")').count() === 0);
   await ir(p, '#/arquivos/config');
   confere('#/arquivos/config devolve para o rol', await p.evaluate(() => location.hash) === '#/arquivos'
     && (await p.textContent('main h1')) === 'Todos os arquivos');
@@ -422,7 +422,7 @@ console.log('\nQuem não é gestor');
 console.log('\nProjetos');
 {
   const { ctx, p, erros } = await abrir({ hash:'#/projetos' });
-  await p.waitForSelector('.topo-gestao');
+  await p.waitForSelector('.cab');
   confere('"Meus" começa vazio para quem não está em equipe nenhuma, e aponta para todos',
     /Você não está na equipe de nenhum projeto/.test(await p.textContent('.vazio')));
   await p.click('.vazio button:has-text("Ver todos")'); await p.waitForTimeout(300);

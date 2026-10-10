@@ -63,9 +63,8 @@ const COF_MOTIVO = {
 const cofMotivo = (data, error, padrao) => error ? motivoRPC(null, error, padrao)
   : COF_MOTIVO[data?.status] || motivoRPC(data, null, padrao);
 const cofCarregando = t => `<div class="carregando"><span class="spin"></span> ${t || 'Abrindo o cofre…'}</div>`;
-const cofTopo = (titulo, lead, acoes) => `<div class="topo-gestao"><div class="tx">
-  <span class="eyebrow">Serviços › Cofre</span><h1>${titulo}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}</div>
-  ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+const cofTopo = (titulo, lead, acoes) => cabecalho({ espaco:'Serviços', titulo:desesc(titulo), lead, acoes:[].concat(acoes || ''),
+  voltar:/^Cofre de senhas$/.test(desesc(titulo)) ? null : ['Cofre de senhas', '#/servicos/cofre'] });
 const cofFaltaBanco = erro => `${cofTopo('Cofre de senhas', '')}<div class="aviso-box err"><b>O cofre ainda não está no banco.</b>
   ${esc(erro?.message || '')}<br><span class="small">Falta aplicar a migração <code>db/v27_cofre.sql</code> — e, antes dela, ligar o
   Vault do Supabase (Database › Extensions › supabase_vault).</span></div>`;

@@ -168,8 +168,7 @@ async function pageAtividades(sub, sub2){
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando as atividades…</div>`;
   await atvCarregar();
   if (atividades.erro){
-    $('#main').innerHTML = `<div class="pg-head"><span class="eyebrow">Trabalho</span>
-      <h1>Atividades</h1></div>` + avisoSemMigracao();
+    $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:'Quadros' }) + avisoSemMigracao();
     return;
   }
   if (sub === 'card' && sub2) return telaCard(sub2);
@@ -177,11 +176,8 @@ async function pageAtividades(sub, sub2){
 
   const gs = meusGrupos();
   if (!gs.length){
-    $('#main').innerHTML = `<div class="pg-head"><span class="eyebrow">Trabalho</span>
-      <h1>Atividades</h1></div>
-      <div class="vazio"><div class="glyph">—</div><h3>Nenhum quadro</h3>
-      <p>Os quadros são por grupo, e ainda não existe nenhum. Quem cria é a
-      Administração, em Grupos.</p></div>`;
+    $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:'Quadros' })
+      + estado.vazio({ texto:'Nenhum quadro. Os quadros são por grupo; quem cria é a Administração, em Grupos.' });
     return;
   }
   atividades.grupoAtual = gs.find(g => g.prefixo === (sub||'').toUpperCase())
@@ -261,24 +257,12 @@ function telaQuadro(){
    ============================================================ */
 function topoQuadro(g, comAcoes){
   const edito = posso.editar(g);
-  return `
-    <div class="kb-topo">
-      <div class="kb-ident">
-        <span class="eyebrow">Trabalho</span>
-        <div class="kb-linha">
-          <h1>Atividades</h1>
-          ${seletorGrupo(g)}
-        </div>
-      </div>
-      <div class="kb-acoes">
-        ${comAcoes ? `<a class="btn ghost" href="#/atividades/${esc(g.prefixo)}/arquivadas" title="Os cartões arquivados deste quadro">${ic('arquivar')} Arquivadas</a>` : ''}
-        <a class="btn ghost" href="#/atividades/carga">Carga da equipe</a>
-        ${comAcoes && edito
-          ? `<button class="btn solid" onclick="modalNovaAtividade()">Nova atividade</button>` : ''}
-        ${comAcoes && !edito
-          ? `<span class="kb-selo">${icCadeado(13)} só leitura</span>` : ''}
-      </div>
-    </div>`;
+  return cabecalho({ espaco:'Atividades', titulo:g.nome,
+    acoes:[seletorGrupo(g),
+      comAcoes ? `<a class="btn ghost" href="#/atividades/${esc(g.prefixo)}/arquivadas" title="Os cartões arquivados deste quadro">${ic('arquivar')} Arquivadas</a>` : '',
+      `<a class="btn ghost" href="#/atividades/carga">Carga da equipe</a>`,
+      comAcoes && edito ? `<button class="btn solid" onclick="modalNovaAtividade()">Nova atividade</button>` : '',
+      comAcoes && !edito ? `<span class="kb-selo">${icCadeado(13)} só leitura</span>` : ''] });
 }
 
 function seletorGrupo(g){
@@ -494,10 +478,8 @@ async function soltarEm(ev, status, antesDoId){
    ============================================================ */
 async function telaArquivadas(){
   const g = atividades.grupoAtual, edito = posso.editar(g);
-  $('#main').innerHTML = `<div class="topo-gestao">
-      <div style="padding-top:34px"><a class="icon-btn" href="#/atividades/${esc(g.prefixo)}" title="Voltar ao quadro" aria-label="Voltar ao quadro">${ic('back')}</a></div>
-      <div class="tx"><span class="eyebrow">Atividades, ${esc(g.nome)}</span><h1>Arquivadas</h1></div></div>
-    <div class="card" id="arq-lista"><div class="carregando"><span class="spin"></span></div></div>`;
+  $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:'Arquivadas', voltar:[g.nome, '#/atividades/' + g.prefixo] })
+    + `<div class="card" id="arq-lista"><div class="carregando"><span class="spin"></span></div></div>`;
   const { data, error } = await sb.from('atividades_quadro').select('*').eq('grupo_id', g.id).eq('arquivada', true)
     .order('atualizado_em', { ascending:false }).limit(200);
   const el = $('#arq-lista'); if (!el) return;
@@ -647,10 +629,8 @@ async function telaCard(codigo){
     if (!r.error && r.data?.arquivada) a = r.data;
   }
   if (!a){
-    $('#main').innerHTML = `<div class="topo-gestao"><div class="tx">
-      <span class="eyebrow">Atividade</span><h1>${esc(codigo)} não encontrada</h1>
-      <p class="lead">O código não existe, ou você não tem acesso ao quadro dela.</p></div></div>
-      <div class="acts"><a class="btn ghost" href="#/atividades">Voltar ao quadro</a></div>`;
+    $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:codigo + ' não encontrada', voltar:['Quadro', '#/atividades'],
+      lead:'O código não existe, ou você não tem acesso ao quadro dela.' });
     return;
   }
   atividades.card = a;
@@ -674,20 +654,12 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
   const copias = log.filter(e => e.tipo === 'copiou_para' && e.para).map(e => e.para);
   atividades.comentarios = comentarios;
 
-  $('#main').innerHTML = `
-    <div class="topo-gestao">
-      <div style="padding-top:34px"><a class="icon-btn" href="#/atividades/${esc(volta)}"
-        title="Voltar ao quadro" aria-label="Voltar ao quadro">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-          stroke-linecap="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></a></div>
-      <div class="tx"><span class="eyebrow">${esc(a.grupo)}, ${esc(a.codigo)}</span>
-        <h1 id="cd-titulo" class="${edito ? 'editavel' : ''}" ${edito ? 'onclick="editarTitulo()"' : ''}>${esc(a.titulo)}</h1>
-        ${a.atrasada ? `<p class="lead" style="color:var(--bad)">Atrasada desde ${fmtD(a.prazo)}.</p>` : ''}</div>
-      <div class="acoes">
-        <button class="btn ghost" onclick="alternarSeguir(${sigo})">${sigo?'Seguindo':'Seguir'}</button>
-        <button class="btn ${a.sinalizada?'solid':'ghost'}" onclick="modalSinalizar()">
-          ${a.sinalizada ? 'Sinalizada' : 'Sinalizar'}</button>
-      </div>
+  $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:a.titulo, codigo:a.codigo,
+      h1Attrs:`id="cd-titulo" class="${edito ? 'editavel' : ''}" ${edito ? 'onclick="editarTitulo()"' : ''}`,
+      voltar:['Quadro', '#/atividades/' + volta],
+      meta:[esc(a.grupo), a.atrasada ? `<span class="pill p-bad">Atrasada desde ${fmtD(a.prazo)}</span>` : ''],
+      acoes:[`<button class="btn ghost" onclick="alternarSeguir(${sigo})">${sigo?'Seguindo':'Seguir'}</button>`,
+        `<button class="btn ${a.sinalizada?'solid':'ghost'}" onclick="modalSinalizar()">${a.sinalizada ? 'Sinalizada' : 'Sinalizar'}</button>`] }) + `
     </div>
 
     ${a.arquivada ? `<div class="aviso-box warn"><b>Arquivada.</b> Fora do quadro${editoDono
@@ -1732,11 +1704,8 @@ async function telaCarga(){
   const { data, error } = await sb.from('atividades_carga').select('*').order('abertas', { ascending:false });
   const linhas = (data || []).filter(x => x.abertas > 0 || x.atrasadas > 0);
   const max = Math.max(1, ...linhas.map(x => x.abertas));
-  $('#main').innerHTML = `
-    <div class="topo-gestao"><div class="tx"><span class="eyebrow">Trabalho</span>
-      <h1>Carga da equipe</h1>
-      <p class="lead">Atividades abertas, atrasadas e sinalizadas por pessoa, como responsável ou incluída.</p></div>
-      <div class="acoes"><a class="btn ghost" href="#/atividades">${ic('back')} Quadro</a></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:'Carga da equipe', voltar:['Quadro', '#/atividades'],
+      lead:'Atividades abertas, atrasadas e sinalizadas por pessoa, como responsável ou incluída.' }) + `
     ${error ? avisoSemMigracao() : ''}
     ${linhas.length ? `<div class="card"><div class="barras">${linhas.map(x => `
       <div class="barra carga">

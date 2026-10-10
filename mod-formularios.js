@@ -114,12 +114,10 @@ function frmDesenhar(){
   const revDoc = reg ? m.template_rev : frmProxRev(m.rev_vigente);
   const defVelha = def.rev && m.template_rev && def.rev !== m.template_rev;
   $('#main').innerHTML = `
-    <a class="tre-voltar" href="#/arquivos/${esc(r.codigo)}" style="margin-top:22px">${ic('back')} ${esc(r.codigo)}</a>
-    <div class="topo-gestao"><div class="tx"><span class="eyebrow">Arquivos › Escrever no portal</span>
-      <h1>${esc(r.codigo)} <span class="frm-h1-t">${esc(def.titulo || r.serie_titulo || '')}</span></h1>
-      <p class="lead">O que iria no template ${esc(m.template_codigo || '')}${m.template_rev ? ' Rev. ' + esc(m.template_rev) : ''}, escrito aqui mesmo.
+    ${cabecalho({ espaco:'Arquivos', titulo:def.titulo || r.serie_titulo || r.codigo, codigo:r.codigo, voltar:[r.codigo, '#/arquivos/' + r.codigo],
+      lead:`O que iria no template ${esc(m.template_codigo || '')}${m.template_rev ? ' Rev. ' + esc(m.template_rev) : ''}, escrito aqui mesmo.
         O rascunho grava sozinho; ao mandar, o portal gera o PDF no modelo da NRO e ${reg ? 'o registro' : `a Rev. ${esc(revDoc)}`} vai
-        para a revisão de ${esc(frmRevisores(r))}.</p></div></div>
+        para a revisão de ${esc(frmRevisores(r))}.` })}
     ${m.fechado ? `<div class="aviso-box info">Registro aprovado. Somente leitura.</div>` : ''}
     ${!m.fechado && m.pendente ? `<div class="aviso-box warn">Versão aguardando revisão. Não é possível enviar outra até a decisão; o rascunho continua sendo salvo.</div>` : ''}
     ${!m.fechado && frm.origem === 'ultima' && u?.estado === 'devolvida' ? `<div class="aviso-box warn"><b>A versão de ${fmtD(u.enviado_em)} voltou para ajuste</b>${

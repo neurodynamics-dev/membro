@@ -88,7 +88,7 @@ async function pageProjetos(sub, sub2){
   $('#main').innerHTML = '<div class="carregando"><span class="spin"></span> Carregando os projetos…</div>';
   await pjCarregar();
   if (projetosM.erro){
-    $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Projetos</span><h1>Projetos</h1></div></div>
+    $('#main').innerHTML = cabecalho({ espaco:'Projetos', titulo:'Carteira de projetos' }) + `
       <div class="aviso-box err"><b>Projetos ainda não estão no banco.</b> ${esc(projetosM.erro.message || '')}<br>
       <span class="small">Falta aplicar a migração <code>db/v20_projetos_arquivos.sql</code>.</span></div>`;
     return;
@@ -113,9 +113,8 @@ function pjLista(){
   const f = projetosM;
   const mostra = f.lista.filter(p => (f.ver === 'todos' || pjSouDaEquipe(p)) && (!f.status || p.status === f.status));
   const meus = f.lista.filter(pjSouDaEquipe).length;
-  $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Projetos</span>
-      <h1>Projetos</h1></div>
-      ${docGestor() ? `<div class="acoes"><button class="btn solid mini" onclick="pjModalNovo()">${ic('plus')} Novo projeto</button></div>` : ''}</div>
+  $('#main').innerHTML = cabecalho({ espaco:'Projetos', titulo:'Carteira de projetos',
+      acoes:docGestor() ? `<button class="btn solid" onclick="pjModalNovo()">${ic('plus')} Novo projeto</button>` : '' }) + `
     <div class="filtros" style="align-items:center">
       <div class="seg" role="group" aria-label="Quais projetos">
         <button class="${f.ver === 'meus' ? 'on' : ''}" aria-pressed="${f.ver === 'meus'}" onclick="projetosM.ver='meus';pjLista()">Meus (${meus})</button>
@@ -150,15 +149,11 @@ async function pjPagina(p, aba){
   const sup = (state.membros || []).find(m => m.registro === p.supervisor);
   const pr = pjProgresso(p);
   const quadro = g && g.quadro !== false;
-  $('#main').innerHTML = `<div class="pj-topo">
-      ${logoProjeto(p.logo_semente, 72, p.nome)}
-      <div class="tx"><span class="eyebrow">Projeto ${esc(p.codigo)}</span><h1>${esc(p.nome)}</h1>
-        ${p.descricao ? `<p class="lead">${esc(p.descricao)}</p>` : ''}
-        ${pkmLinhaHTML(p)}</div>
-      <div class="acoes">${pjPill(p.status)}
-        ${quadro ? `<a class="btn ghost mini" href="#/atividades/${esc(g.prefixo)}">${ic('quadro')} Quadro</a>` : ''}
-        ${pjPodeEditar(p) ? `<button class="btn ghost mini" onclick="pjModalEditar('${p.id}')">${ic('pencil')} Editar</button>` : ''}</div>
-    </div>
+  $('#main').innerHTML = cabecalho({ espaco:'Projetos', titulo:p.nome, codigo:p.codigo, voltar:['Carteira de projetos', '#/projetos'],
+      lead:p.descricao ? esc(p.descricao) : '', meta:[pjPill(p.status)],
+      acoes:[quadro ? `<a class="btn ghost" href="#/atividades/${esc(g.prefixo)}">${ic('quadro')} Quadro</a>` : '',
+        pjPodeEditar(p) ? `<button class="btn ghost" onclick="pjModalEditar('${p.id}')">${ic('pencil')} Editar</button>` : ''] })
+    + `<div class="pj-ident">${logoProjeto(p.logo_semente, 72, p.nome)}${pkmLinhaHTML(p)}</div>
     ${navNivel1([['', 'Visão geral', '#/projetos/' + esc(p.codigo)],
       ['arquivos', 'Arquivos', `#/projetos/${esc(p.codigo)}/arquivos`, `<span class="n">${pr.ativos}/${pr.total}</span>`]], aba, 'Projeto')}
     <div id="pj-corpo"></div>`;

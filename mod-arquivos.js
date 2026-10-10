@@ -120,8 +120,7 @@ async function arqCarregar(forcar){
   arq.pronto = true; arq.em = Date.now();
 }
 function arqSemMigracao(){
-  $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Arquivos</span>
-      <h1>Controle de documentos e registros</h1></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Arquivos', titulo:'Controle de documentos e registros' }) + `
     <div class="aviso-box err"><b>O controle de arquivos ainda não está no banco.</b>
       ${esc(arq.erro?.message || '')}<br><span class="small">Falta aplicar a migração
       <code>db/v20_projetos_arquivos.sql</code> (e, para trazer a planilha NRO-PUB-001,
@@ -176,10 +175,9 @@ function arqNavHTML(atual){
   </nav>`;
 }
 
-function arqTopo(eyebrow, titulo, lead, acoes){
-  return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">${eyebrow}</span>
-      <h1>${titulo}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}</div>
-    ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+/* o eyebrow é sempre o espaço (Arquivos); o primeiro argumento fica só por compatibilidade */
+function arqTopo(_eyebrow, titulo, lead, acoes){
+  return cabecalho({ espaco:'Arquivos', titulo, lead, acoes:[].concat(acoes || '') });
 }
 const arqPill = st => { const s = ARQ_STATUS[st] || ARQ_STATUS.rascunho;
   return `<span class="pill ${s[2]}"><span class="dt dt-${s[1]}"></span>${s[0]}</span>`; };
@@ -468,8 +466,8 @@ async function arqEscrever(){
   if (typeof frmEscrever !== 'function'){
     try { await carregarModulo('formularios'); }
     catch(e){
-      $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1><p class="lead">O formulário não pôde ser carregado
-        (${esc(e.message)}). Verifique a conexão e recarregue a página.</p></div>`;
+      $('#main').innerHTML = cabecalho({ espaco:'Arquivos', titulo:'Não carregou',
+        lead:`O formulário não pôde ser carregado (${esc(e.message)}). Verifique a conexão e recarregue a página.` });
       return;
     }
   }
@@ -484,22 +482,13 @@ function arqDesenharTela(){
   const pj = arqProjeto(r.projeto_id);
   $('#main').innerHTML = `<div class="arq-folha${tpl ? ' tpl' : ''}">
     ${tpl ? `<span class="arq-fita">${ic('molde')} ${esc(arqNatureza(r))}: molde, não documento</span>` : ''}
-    <nav class="arq-migalha" aria-label="Caminho"><a href="#/arquivos">Arquivos</a><span>›</span>
-      <a href="#/arquivos/${esc(r.prefixo)}">${esc(e?.nome || r.prefixo)}</a>
-      ${cabeca ? `<span>›</span><a href="#/arquivos/${esc(cabeca.codigo)}">${esc(cabeca.codigo)}</a>` : ''}
-      <span>›</span><b>${esc(r.codigo)}</b></nav>
-    <div class="arq-cab">
-      <span class="arq-ic ${r.natureza}">${ic(ARQ_ICONE[r.natureza])}</span>
-      <div class="tx"><span class="cod">${esc(r.codigo)}</span>
-        <h1>${esc(r.titulo)}</h1>
-        <div class="arq-selos">${arqPill(r.status)}
-          <span class="pill"><span class="dt dt-info"></span>${esc(arqNatureza(r))}</span>
-          <span class="pill"><span class="dt dt-gray"></span>${esc(ARQ_SUBTIPOS[r.subtipo] || r.subtipo)}</span>
-          <span class="arq-cls ${r.classe}" title="${esc(ARQ_CLASSES[r.classe][1])}">${ic(r.classe === 'publico' ? 'eye' : r.classe === 'confidencial' ? 'cadeado' : 'shield')}${ARQ_CLASSES[r.classe][0]}</span>
-          ${pj ? `<a class="chip mini" style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 4px"
-              href="#/projetos/${esc(pj.codigo)}">${logoProjeto(pj.logo_semente, 16, pj.nome)}${esc(pj.nome)}</a>` : ''}
-        </div></div>
-    </div>
+    ${cabecalho({ espaco:'Arquivos', titulo:r.titulo, codigo:r.codigo,
+      trilha:[['Arquivos', '#/arquivos'], [e?.nome || r.prefixo, '#/arquivos/' + r.prefixo], ...(cabeca ? [[cabeca.codigo, '#/arquivos/' + cabeca.codigo]] : []), [r.codigo]],
+      meta:[arqPill(r.status),
+        `<span class="pill"><span class="dt dt-info"></span>${esc(arqNatureza(r))}</span>`,
+        `<span class="pill"><span class="dt dt-gray"></span>${esc(ARQ_SUBTIPOS[r.subtipo] || r.subtipo)}</span>`,
+        `<span class="arq-cls ${r.classe}" title="${esc(ARQ_CLASSES[r.classe][1])}">${ic(r.classe === 'publico' ? 'eye' : r.classe === 'confidencial' ? 'cadeado' : 'shield')}${ARQ_CLASSES[r.classe][0]}</span>`,
+        pj ? `<a class="chip mini" style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 4px" href="#/projetos/${esc(pj.codigo)}">${logoProjeto(pj.logo_semente, 16, pj.nome)}${esc(pj.nome)}</a>` : ''] })}
     ${arqEtapasHTML(t)}
     <div class="arq-cols">
       <div class="arq-main">${arqPrincipalHTML(t)}</div>

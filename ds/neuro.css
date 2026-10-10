@@ -1062,18 +1062,8 @@ body.lt-recolhida .lt-marca>.lt-simbolo{display:block}
 .cab-cod{font-family:var(--fm);font-size:12px;line-height:1.5;color:var(--ink);white-space:nowrap;
   border:1px solid var(--line2);border-radius:var(--r-tag);padding:1px 8px}
 .cab-lead{margin:0;max-width:var(--measure);color:var(--muted);font-size:var(--fs-body);line-height:var(--lh-body)}
-/* no celular, só a ação principal fica à vista; o resto vai para "Mais ações" */
-.cab-mais{display:none;position:relative}
-.cab-mais>summary{list-style:none;cursor:pointer}
-.cab-mais>summary::-webkit-details-marker{display:none}
-.cab-mais-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:220px;padding:6px;display:flex;flex-direction:column;gap:2px;
-  background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-sm)}
-.cab-mais-pop .btn{width:100%;justify-content:flex-start;border-color:transparent;background:none}
-.cab-mais-pop .btn:hover{background:rgba(var(--tom),.06)}
-@media (max-width:700px){
-  .cab-acoes>.sec{display:none}
-  .cab-mais{display:block}
-}
+/* no celular as ações quebram de linha abaixo do título e ocupam a largura */
+@media (max-width:700px){.cab-acoes{width:100%}.cab-acoes>.btn{flex:1 1 auto;justify-content:center}}
 
 /* ---------- larguras ------------------------------------- */
 .tpl-f{max-width:var(--w-fluxo)}

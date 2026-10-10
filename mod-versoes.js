@@ -229,10 +229,9 @@ async function pageVersoes(sub, sub2){
 
 function topoVersoes(secao){
   const abertos = (versoes.relatos || []).filter(f => FB_ABERTOS.includes(f.status)).length;
-  return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">SOMA ${esc(VERSAO)}</span>
-      <h1>${secao === 'comentarios' ? 'Bugs e sugestões' : 'Notas de versão'}</h1></div>
-      <div class="acoes"><a class="btn solid" href="#/versoes/comentarios/bug">${ic('bug')} Relatar um bug</a>
-        <a class="btn ghost" href="#/versoes/comentarios/sugestao">${ic('lampada')} Sugerir melhoria</a></div></div>
+  return cabecalho({ espaco:'SOMA', titulo:secao === 'comentarios' ? 'Bugs e sugestões' : 'Notas de versão', meta:['Versão ' + esc(VERSAO)],
+      acoes:[`<a class="btn solid" href="#/versoes/comentarios/bug">${ic('bug')} Relatar um bug</a>`,
+        `<a class="btn ghost" href="#/versoes/comentarios/sugestao">${ic('lampada')} Sugerir melhoria</a>`] }) + `
     ${navNivel1([['notas', 'Notas de versão', '#/versoes'],
       ['comentarios', 'Bugs e sugestões', '#/versoes/comentarios', abertos ? ` (${abertos})` : '']], secao, 'Notas de versão')}`;
 }
@@ -443,15 +442,9 @@ async function telaRelato(id, semCarregar){
   const autor = state.membros.find(m => m.registro === f.autor) || { registro:f.autor, nome:f.autor_nome || 'Alguém' };
   const pessoa = r => state.membros.find(m => m.registro === r) || { registro:r, nome:'Registro ' + r };
   const todos = [...state.membros].filter(m => m.registro !== f.autor);
-  $('#main').innerHTML = `
-    <div class="topo-gestao">
-      <div style="padding-top:34px"><a class="icon-btn" href="#/versoes/comentarios" title="Voltar aos relatos" aria-label="Voltar aos relatos">${ic('back')}</a></div>
-      <div class="tx"><span class="eyebrow">Bugs e sugestões, ${esc(f.codigo)}</span><h1>${esc(f.titulo)}</h1></div>
-      <div class="acoes">
-        ${meu && f.status === 'aberto' ? `<button class="btn ghost" onclick="relatoEditar(${f.id})">${ic('pencil')} Editar</button>` : ''}
-        ${(meu && f.status === 'aberto') || adm ? `<button class="btn ghost" onclick="relatoExcluir(${f.id})">${ic('trash')} Excluir</button>` : ''}
-      </div>
-    </div>
+  $('#main').innerHTML = cabecalho({ espaco:'SOMA', titulo:f.titulo, codigo:f.codigo, voltar:['Bugs e sugestões', '#/versoes/comentarios'],
+      acoes:[meu && f.status === 'aberto' ? `<button class="btn ghost" onclick="relatoEditar(${f.id})">${ic('pencil')} Editar</button>` : '',
+        (meu && f.status === 'aberto') || adm ? `<button class="btn ghost" onclick="relatoExcluir(${f.id})">${ic('trash')} Excluir</button>` : ''] }) + `
     <div class="fb-det">
       <div>
         <div class="card" style="margin-bottom:16px" id="rl-corpo-card">

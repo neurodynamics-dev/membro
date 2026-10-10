@@ -724,21 +724,20 @@ function navNivel2(itens, atual, rotulo){
    - código do objeto: Tag em Plex Mono na linha de meta;
    - ações: no máximo um .btn.solid na tela; no celular as outras vão
      para "Mais". */
-function cabecalho({ espaco, titulo, voltar, trilha, codigo, meta, lead, acoes, secoes } = {}){
+function cabecalho({ espaco, titulo, h1Attrs, voltar, trilha, codigo, meta, lead, acoes, secoes } = {}){
   const topo = trilha?.length
     ? `<nav class="trilha" aria-label="Trilha">${trilha.map(([l, h]) => h ? `<a href="${h}">${esc(l)}</a>` : `<span aria-current="page">${esc(l)}</span>`).join('')}</nav>`
     : voltar ? `<a class="cab-voltar" href="${voltar[1]}" data-voltar><span class="s" aria-hidden="true">←</span>${esc(voltar[0])}</a>` : '';
   const lista = [].concat(acoes || []).filter(Boolean);
-  const outras = lista.filter(a => !/class="[^"]*\bsolid\b/.test(a));
-  const acs = lista.length ? `<div class="cab-acoes">${lista.map(a => outras.includes(a) ? `<span class="sec">${a}</span>` : a).join('')}${
-    outras.length ? `<details class="cab-mais"><summary class="btn ghost mini">Mais</summary><div class="cab-mais-pop">${
-      outras.map(a => a.replace(/\sid="[^"]*"/g, '')).join('')}</div></details>` : ''}</div>` : '';
+  const acs = lista.length ? `<div class="cab-acoes">${lista.join('')}</div>` : '';
   const linhaMeta = [codigo ? `<span class="cab-cod">${esc(codigo)}</span>` : '', ...[].concat(meta || [])].filter(Boolean);
   return `<header class="cab">${topo}${espaco ? `<span class="eyebrow">${esc(espaco)}</span>` : ''}
-    <div class="cab-linha"><h1>${esc(titulo || '')}</h1>${acs}</div>
+    <div class="cab-linha"><h1${h1Attrs ? ' ' + h1Attrs : ''}>${esc(titulo || '')}</h1>${acs}</div>
     ${linhaMeta.length ? `<div class="cab-meta">${linhaMeta.join('')}</div>` : ''}
     ${lead ? `<p class="cab-lead">${lead}</p>` : ''}</header>${secoes || ''}`;
 }
+/* os módulos antigos passam títulos já escapados; cabecalho() escapa de novo, então desfaz antes */
+const desesc = t => String(t ?? '').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&');
 /* Voltar: se a tela anterior é do mesmo espaço, volta pelo histórico
    (mantém filtro e rolagem); se não, vai para o pai que o link diz. */
 document.addEventListener('click', e => {
@@ -1618,16 +1617,13 @@ async function render(rt){
     $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
     try { await carregarModulo(def.modulo); }
     catch(e){
-      $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1>
-        <p class="lead">Esta parte do portal não pôde ser carregada (${esc(e.message)}).
-        Verifique a conexão e recarregue a página.</p></div>`;
+      $('#main').innerHTML = cabecalho({ titulo:'Não carregou', lead:`Esta parte do portal não pôde ser carregada (${esc(e.message)}). Verifique a conexão e recarregue a página.` });
       return;
     }
   }
   const desenhar = window[def.desenha];
   if (typeof desenhar !== 'function'){
-    $('#main').innerHTML = `<div class="pg-head"><h1>Tela indisponível</h1>
-      <p class="lead">Erro do portal: a rota não tem tela. Informe o Depto. de Pessoal.</p></div>`;
+    $('#main').innerHTML = cabecalho({ titulo:'Tela indisponível', lead:`Erro do portal: a rota não tem tela. Informe o Depto. de Pessoal.` });
     return;
   }
   await desenhar(rt.sub, rt.sub2);
@@ -3554,8 +3550,7 @@ async function pageEquipe(sub){
   if (sub === 'presenca'){
     $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
     try { await carregarModulo('presenca'); }
-    catch(e){ $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1>
-        <p class="lead">${esc(e.message)}</p></div>`; return; }
+    catch(e){ $('#main').innerHTML = cabecalho({ titulo:'Não carregou', lead:`${esc(e.message)}` }); return; }
     return pagePresenca();
   }
   const doModulo = sub === 'quadro' || /^\d+$/.test(sub || '');
@@ -3566,8 +3561,7 @@ async function pageEquipe(sub){
     $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
     try { await carregarModulo('gestao'); }
     catch(e){
-      $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1>
-        <p class="lead">Esta parte não pôde ser carregada (${esc(e.message)}). Recarregue a página.</p></div>`;
+      $('#main').innerHTML = cabecalho({ titulo:'Não carregou', lead:`Esta parte não pôde ser carregada (${esc(e.message)}). Recarregue a página.` });
       return;
     }
     return sub === 'quadro' ? pageQuadro(null) : pageQuadro(sub);
@@ -3674,9 +3668,7 @@ async function pageServicos(sub, sub2){
       $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
       try { await carregarModulo(mod[0]); }
       catch(e){
-        $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1>
-          <p class="lead">Esta parte do portal não pôde ser carregada (${esc(e.message)}).
-          Verifique a conexão e recarregue a página.</p></div>`;
+        $('#main').innerHTML = cabecalho({ titulo:'Não carregou', lead:`Esta parte do portal não pôde ser carregada (${esc(e.message)}). Verifique a conexão e recarregue a página.` });
         return;
       }
     }
@@ -3684,11 +3676,8 @@ async function pageServicos(sub, sub2){
   }
   if (sub) return formServico(sub);
   const semReg = !state.perfil.registro;
-  $('#main').innerHTML = `
-    <div class="pg-head"><span class="eyebrow">Serviços</span>
-      <h1>Serviços</h1>
-      <p class="lead">Acompanhamento dos pedidos em
-        <a href="#/servicos/pedidos" style="border-bottom:1px solid var(--line2)">Meus pedidos</a>.</p></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Serviços', titulo:'Pedidos e documentos',
+      lead:'Acompanhamento dos pedidos em <a href="#/servicos/pedidos" style="border-bottom:1px solid var(--line2)">Meus pedidos</a>.' }) + `
     ${semReg ? `<div class="aviso-box warn">Conta sem vínculo com um registro de membro: solicitações bloqueadas.
       A ouvidoria continua disponível.</div>` : ''}
     <h2 class="srv-bloco">Documentos e acessos</h2>
@@ -3985,10 +3974,8 @@ async function enviarServico(tipo){
    ============================================================ */
 const pedAbertos = new Set();
 async function pagePedidos(){
-  $('#main').innerHTML = `
-    <div class="pg-head"><span class="eyebrow">Acompanhamento</span>
-      <h1>Meus pedidos</h1>
-      <p class="lead">Solicitações ao Depto. de Pessoal. A ouvidoria é anônima e não aparece aqui.</p></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Serviços', titulo:'Meus pedidos', voltar:['Serviços', '#/servicos'],
+      lead:'Solicitações ao Depto. de Pessoal. A ouvidoria é anônima e não aparece aqui.' }) + `
     <div id="ped-lista"><div class="carregando"><span class="spin"></span> Carregando…</div></div>`;
   if (!state.perfil.registro){
     $('#ped-lista').innerHTML = `<div class="aviso-box warn">Sua conta ainda não está vinculada a um

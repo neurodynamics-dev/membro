@@ -410,9 +410,6 @@ main{padding-top:24px;padding-bottom:90px}
 }
 /* topo escrito à mão (telas ainda não migradas para cabecalho()): o mesmo
    tamanho de título do cabeçalho único */
-.pg-head{margin:var(--s6) 0;display:flex;flex-direction:column;align-items:flex-start;gap:var(--s3)}
-.pg-head h1{font-size:var(--fs-h2);font-weight:600;line-height:1.06;margin:0}
-.pg-head .lead{color:var(--muted);max-width:640px;font-size:15px}
 .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:26px 12px;line-height:1.6;
   border:1.5px dashed var(--line2);border-radius:14px}
 .btn.perigo{border:1px solid rgba(var(--bad-rgb),.4);color:var(--bad)}
@@ -2226,9 +2223,6 @@ tr.ml-fora td{opacity:.6}
 .tre-hero{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:26px;align-items:start;margin:22px 0 20px}
 @media (max-width:900px){.tre-hero{grid-template-columns:1fr;gap:16px}}
 .tre-hero-tx{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
-.tre-voltar{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-bottom:12px}
-.tre-voltar .ic{width:14px;height:14px}
-.tre-voltar:hover{color:var(--ink)}
 .tre-hero h1{font-size:clamp(26px,4vw,40px);font-weight:600;line-height:1.08;margin:12px 0 10px}
 .tre-hero .lead{color:var(--muted);font-size:15px;max-width:640px}
 .tre-hero-tags{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
@@ -2271,7 +2265,6 @@ tr.ml-fora td{opacity:.6}
 .tre-lado{position:sticky;top:20px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);
   border-radius:var(--r);background:var(--card);padding:16px 10px 10px}
 @media (max-width:980px){.tre-lado{position:static}.tre-lado .tre-mods.mini{display:none}}
-.tre-lado .tre-voltar{margin:0 8px 2px}
 .tre-lado-tt{font-family:var(--fd);font-weight:600;font-size:14.5px;line-height:1.3;margin:0 8px}
 .tre-lado .tre-prog{margin:4px 8px 0}
 .tre-lado>.small{margin:0 8px 6px}
@@ -2513,7 +2506,7 @@ tr.ml-fora td{opacity:.6}
 .srv-bloco{font-family:var(--fd);font-weight:600;font-size:10.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
   display:flex;align-items:center;gap:10px;margin:30px 0 12px}
 .srv-bloco::before{content:'';width:7px;height:7px;background:var(--syn)}
-.pg-head+.srv-bloco,.aviso-box+.srv-bloco{margin-top:0}
+.aviso-box+.srv-bloco{margin-top:0}
 a.srv.agora .lb{display:inline-flex;align-items:center;gap:7px;color:var(--syn-tx)}
 a.srv.agora .lb .ic{width:14px;height:14px}
 .fld label .opc{font-weight:400;letter-spacing:0;text-transform:none;color:var(--dim)}
@@ -2868,3 +2861,5 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 .marca-tile-acoes{margin-top:auto}
 /* só para leitor de tela: o rótulo de um campo dentro de uma tabela */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* a marca do projeto (o Pokémon) e a linha evolutiva, logo abaixo do cabeçalho */
+.pj-ident{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;margin:0 0 var(--s5)}
