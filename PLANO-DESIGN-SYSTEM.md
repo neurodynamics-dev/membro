@@ -7,6 +7,15 @@ Este documento diz **o que** fazer, **em que ordem** e **como saber que
 ficou pronto**. Cada fase pode ser executada numa sessão própria, citando a
 seção correspondente.
 
+## Estado
+
+| Fase | Situação |
+|---|---|
+| Casca dos sites (cabeçalho e rodapé) | Feita: brand, website, selecao e o rodapé do SOMA |
+| 0 | Feita (brand): tokens com tema, `neuro.css` v3, `casca.*`, `v3/`, `distribuir.mjs`, `auditar.mjs` |
+| 1 | Feita (membro): `ds/`, `soma.css`, `cabecalho()` e templates, `#/dev/templates`, `testes/templates.mjs` |
+| 2 a 7 | A fazer |
+
 ## 0. Decisões tomadas
 
 | Tema | Decisão |

@@ -54,13 +54,14 @@ function chips(arr, max){
   const v = arr.slice(0, max||99).map(g => `<span class="chip mini">${esc(g)}</span>`).join(' ');
   return v + (arr.length > (max||99) ? ` <span class="chip mini">+${arr.length-max}</span>` : '');
 }
-/* Cabeçalho de página no padrão da marca, com as ações à direita. */
+/* O cabeçalho é o único da casca (cabecalho(), PLANO-DESIGN-SYSTEM §3.1).
+   O voltar chega como onclick ("location.hash='#/equipe/quadro'"): vira link
+   com o nome da tela de destino. */
+const VOLTAR_PARA = { '#/equipe/quadro':'Quadro de pessoal', '#/equipe':'Organograma', '#/admin':'Painéis' };
 function topoGestao({ olho, titulo, lead, acoes, voltar }){
-  return `<div class="topo-gestao">
-    ${voltar ? `<div style="padding-top:34px">${ibtn('back','Voltar', voltar)}</div>` : ''}
-    <div class="tx"><span class="eyebrow">${esc(olho||'Gestão')}</span>
-      <h1>${esc(titulo)}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}</div>
-    ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+  const alvo = voltar && (String(voltar).match(/location\.hash\s*=\s*'([^']+)'/) || [])[1];
+  return cabecalho({ espaco: olho || 'Equipe', titulo, lead, acoes,
+    voltar: voltar ? [VOLTAR_PARA[alvo] || 'Voltar', alvo || 'javascript:history.back()'] : null });
 }
 
 /* ============================================================

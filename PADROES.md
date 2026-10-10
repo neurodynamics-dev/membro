@@ -60,7 +60,7 @@ lado. Abaixo de 900px o menu vira gaveta, puxada pela barra de topo.
 |---|---|---|
 | 1 — as seções da tela | `.nav1`, o seletor segmentado com a pílula clara no item atual (`navNivel1()`) | as seções de um espaço (Arquivos, Studio, Treinamentos, Equipe, Seleção, Cofre, Eventos) ou de um objeto (a ficha, o projeto, o candidato) |
 | 2 — os recortes de uma seção | `.abas`, sublinhadas (`navNivel2()`) | Configurações › Geral · README; Dinâmica › Painel · Roteiro… |
-| filtro, que não troca de seção | `.seg`, o controle segmentado com o item ligado em Synapse | Meus · Todos, status, idioma, a visão da Agenda |
+| filtro, que não troca de seção | `.seg`, o controle segmentado com o item ligado quieto (9% e tinta, como o nível 1; seleção nunca é Synapse) | Meus, Todos; status; idioma; a visão da Agenda |
 
 Aba sublinhada no primeiro nível ou pílula no segundo é o erro que esta regra
 existe para evitar. O componente está no design system (card *Navegação*).
@@ -537,8 +537,31 @@ README ensina os agentes de IA a escrever o que o portal não lê.
 ## 8. Layout
 
 O design system da marca é a fonte
-([brand.neurodynamics.dev](https://brand.neurodynamics.dev)). O CSS da casca
-é cópia dele; mexer aqui sem mexer lá é dívida.
+([brand.neurodynamics.dev](https://brand.neurodynamics.dev)). O SOMA o recebe
+em `ds/` (tokens, componentes, casca do rodapé, select), gerada no brand por
+`scripts/distribuir.mjs`: **não edite `ds/`**. O CSS próprio do SOMA mora em
+`soma.css`, carregado depois. Componente que outro app também usaria vai
+para o `neuro.css` do brand, não para o `soma.css`.
+
+### Uma tela, um template
+
+Toda tela é um dos templates do `PLANO-DESIGN-SYSTEM.md` (seção 3): Lista,
+Objeto, Fluxo, Painel, Leitura, Ajustes, Área de trabalho ou Avulsa. O topo
+é sempre `cabecalho()`, na casca:
+
+- o eyebrow é o espaço do menu (Equipe, Arquivos...), nunca slogan, trilha
+  ou código; o h1 é a tela, num tamanho só;
+- voltar só em objeto e subtela (`voltar: ['Quadro de pessoal', '#/equipe/quadro']`);
+  com três níveis ou mais, `trilha`; seção irmã não tem voltar, tem o
+  SectionNav (`secoes`);
+- o código do objeto vai em `codigo`, numa Tag em Plex Mono;
+- no máximo um `.btn.solid`; no celular as outras ações vão para "Mais".
+
+As funções de cada template (`ferramentas`, `layoutObjeto`, `spec`,
+`etapas`, `layoutFluxo`, `layoutLeitura`, `ajuste`, `estado`) estão ao lado
+de `cabecalho()`. O catálogo vivo é `#/dev/templates` (só admin), e
+`testes/templates.mjs` confere e fotografa cada um. Tela nova passa no
+auditor do brand: `node ../brand/scripts/auditar.mjs --falhar <arquivos>`.
 
 Os três erros que mais aparecem ao trazer tela clara para o escuro:
 

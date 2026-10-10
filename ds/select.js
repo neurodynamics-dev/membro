@@ -1,3 +1,4 @@
+/* NRO DS 3.0.0, gerado de brand/design-system/select.js. Não edite aqui: edite no brand e rode scripts/distribuir.mjs. */
 /* Progressive select enhancement. Native value/change and form submission remain authoritative. */
 (()=>{
  const controls=new Map();let active=null,seq=0,queued=false;

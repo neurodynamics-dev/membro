@@ -1344,7 +1344,8 @@ A migração única é [`db/2.18.0_soma.sql`](db/2.18.0_soma.sql), depois da 2.1
 |---|---|
 | `mod-reporte.js` | Reporte semanal, feed paginado, painel/PDF, aprovação de newsletters e importação da comunidade |
 | `mod-marca.js` | Materiais, assinatura, guias de interfaces e vínculos com séries controladas |
-| `select-nro.js`, `select-nro.css` | Select progressivo com teclado e sincronização do elemento nativo |
+| `ds/` | Cópia do design system (tokens, componentes, casca, select). Gerada pelo brand com `scripts/distribuir.mjs`; não edite aqui |
+| `soma.css` | O CSS próprio do SOMA, carregado depois de `ds/` |
 | `fontes-pdf.js`, `fontes/` | Fontes Archivo locais, métricas e licença OFL para PDFs |
 | `descadastrar.html` | Confirmação pública de descadastro da comunidade |
 
