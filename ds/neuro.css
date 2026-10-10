@@ -1111,7 +1111,12 @@ body.lt-recolhida .lt-marca>.lt-simbolo{display:block}
 .etapas li.feita a,.etapas li.feita span.r{color:var(--muted)}
 .etapas li.atual a,.etapas li.atual span.r{color:var(--ink);font-weight:600}
 .etapas a:hover{color:var(--ink)}
-@media (max-width:640px){.etapas li:not(.atual) .t{display:none}}
+@media (max-width:640px){
+  .etapas{display:flex}
+  .etapas li{flex:0 0 28px}
+  .etapas li.atual{flex:1 1 auto;min-width:0}
+  .etapas li:not(.atual) .t{display:none}
+}
 .fluxo-corpo{display:flex;flex-direction:column;gap:var(--s5)}
 /* a barra de ações fica presa embaixo: salvamento à esquerda, ação principal à direita */
 .barra-acoes{position:sticky;bottom:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;
@@ -1150,3 +1155,6 @@ body.lt-recolhida .lt-marca>.lt-simbolo{display:block}
 /* carregando só aparece se passar de ~300 ms (PADROES §6) */
 .aparece{animation:nd-aparece .2s .3s both}
 @keyframes nd-aparece{from{opacity:0}to{opacity:1}}
+
+/* ícone dentro de um chip: do tamanho do texto */
+.chip .ic,.chip svg{width:13px;height:13px;flex:none}

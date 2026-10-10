@@ -389,8 +389,12 @@ function mostrarAvisoSemVinculo(){
   document.getElementById('main')?.insertAdjacentElement('beforebegin', d);
 }
 
-function toast(msg, err){ const t=document.createElement('div'); t.className='toast'+(err?' err':'');
-  t.textContent=msg; $('#toast').appendChild(t); setTimeout(()=>t.remove(), 5200); }
+/* acao = { rotulo, fn }: um botão no aviso (o "Desfazer" de quem acabou de remover) */
+function toast(msg, err, acao){ const t=document.createElement('div'); t.className='toast'+(err?' err':'');
+  const tx=document.createElement('span'); tx.textContent=msg; t.appendChild(tx);
+  if (acao){ const b=document.createElement('button'); b.type='button'; b.className='toast-acao'; b.textContent=acao.rotulo;
+    b.onclick=()=>{ t.remove(); acao.fn(); }; t.appendChild(b); }
+  $('#toast').appendChild(t); setTimeout(()=>t.remove(), acao ? 8000 : 5200); }
 
 const state = {
   perfil:null, membros:[], itensAcesso:[], avisos:[],
@@ -1216,7 +1220,7 @@ function registrarBusca(f){
 function acoesDaCasca(){
   const a = [
     ['Início', 'Avisos, semana e pendências', '#/'],
-    ['Assinatura de e-mail','Marca','#/marca/assinatura'],['Wallpapers e logos','Marca','#/marca'],['Prompts para LLMs','Interfaces','#/marca/interfaces'],
+    ['Assinatura de e-mail','Marca','#/marca/assinatura'],['Modelos de documentos e peças','Marca','#/marca'],
     ['Agenda', 'A semana', '#/agenda'],
     ['Novo evento', 'Criar um evento na agenda', '#/agenda/novo'],
     ['Agenda do mês', 'O mês inteiro', '#/agenda/mes'],
@@ -1226,7 +1230,7 @@ function acoesDaCasca(){
     ['Atividades', 'O quadro do seu grupo', '#/atividades'],
     ['Equipe', 'Organograma e fichas', '#/equipe'],
     ...(tenhoPapel('lideranca') ? [['Reporte semanal', 'Reporte da frente', '#/equipe/reporte']] : []),
-    ['Feed da equipe', 'Publicações da equipe', '#/feed'],
+    ['Feed da equipe', 'Publicações da equipe', '#/equipe/feed'],
     ['Serviços', 'Pedidos ao Depto. de Pessoal', '#/servicos'],
     ['Solicitar acesso', 'Documento, sistema ou local', '#/servicos/acesso'],
     ['Pedir afastamento', 'Afastamento temporário', '#/servicos/afastamento'],
@@ -1536,7 +1540,6 @@ async function abrirPortal(){
    para o início, em vez de desenhar uma tela vazia. */
 const ROTAS = {
   marca: {desenha:'pageMarca',modulo:'marca'},
-  feed: { desenha:'pageFeed', modulo:'reporte' },
   home:        { desenha:'pageHome' },
   agenda:      { desenha:'pageAgenda', modulo:'agenda' },
   atividades:  { desenha:'pageAtividades', modulo:'atividades' },
@@ -1569,6 +1572,7 @@ const ROTAS = {
    importa: #/quadro/4 precisa virar #/equipe/4, não só #/equipe. */
 const ALIAS = {
   brand:['marca',null],assinatura:['marca','assinatura'],
+  feed:        ()    => ['equipe', 'feed'],
   calendario:  (sub) => ['agenda', sub],
   organizacao: ()    => ['equipe', null],
   quadro:      (sub) => ['equipe', sub || 'quadro'],
@@ -1712,7 +1716,7 @@ function arvoreDoMenu(){
       { sub:'modelos', rot:'Modelos' },
       { sep:true },
       { sub:'config', rot:'Configurações' }] }] : []),
-    {r:'marca',rot:'Marca',ic:'marca',filhos:[{sub:'',rot:'Galeria'},{sub:'assinatura',rot:'Assinatura de e-mail'},{sub:'interfaces',rot:'Interfaces'},...(docGestor()?[{sub:'config',rot:'Configurações'}]:[]),{rot:'Manual da marca',href:'https://brand.neurodynamics.dev',fora:true}]},
+    {r:'marca',rot:'Marca',ic:'marca',filhos:[{sub:'',rot:'Modelos'},{sub:'assinatura',rot:'Assinatura de e-mail'},...(docGestor()?[{sub:'config',rot:'Configurações'}]:[]),{rot:'Manual da marca',href:'https://brand.neurodynamics.dev',fora:true}]},
     { r:'equipe', rot:'Equipe', ic:'users', filhos: [
       { sub:'', rot:'Organograma' },
       /* a ficha (#/equipe/<registro>) se abre a partir do quadro */
@@ -3554,9 +3558,9 @@ async function pageEquipe(sub){
         <p class="lead">${esc(e.message)}</p></div>`; return; }
     return pagePresenca();
   }
-  const doModulo = sub === 'quadro' || sub === 'apontamento' || /^\d+$/.test(sub || '');
+  const doModulo = sub === 'quadro' || /^\d+$/.test(sub || '');
   if (doModulo){
-    if (sub !== 'apontamento' && !podeQuadro()){
+    if (!podeQuadro()){
       history.replaceState(null,'',location.pathname+'#/equipe'); return pageEquipe(null);
     }
     $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando…</div>`;
@@ -3566,28 +3570,23 @@ async function pageEquipe(sub){
         <p class="lead">Esta parte não pôde ser carregada (${esc(e.message)}). Recarregue a página.</p></div>`;
       return;
     }
-    if (sub === 'apontamento') return pageApontamento();
     return sub === 'quadro' ? pageQuadro(null) : pageQuadro(sub);
   }
   pageOrganizacao();
 }
-/* O apontamento é de quem lidera um grupo — não é papel de gestão, então
-   a aba aparece para todo mundo; a lista de grupos é que filtra. */
+/* As seções de Equipe: o mesmo SectionNav em todas as telas do espaço.
+   O reporte é de quem lidera um grupo, não papel de gestão. */
 function abasEquipe(atual){
   const abas = [['', 'Organograma']];
   if (podeQuadro()) abas.push(['quadro', 'Quadro de pessoal']);
   abas.push(['presenca', 'Presença'], ['feed','Feed da equipe']);
-  if(tenhoPapel('lideranca')) abas.push(['reporte','Reporte semanal']);
+  if(tenhoPapel('lideranca')) abas.push(['reporte','Reporte semanal'], ['newsletter','Newsletters']);
   return navNivel1(abas.map(([s, l]) => [s, l, '#/equipe' + (s ? '/' + s : '')]), atual, 'Equipe');
 }
 
 function pageOrganizacao(){
   const ativos = orgAtivos();
-  $('#main').innerHTML = `
-    <div class="pg-head"><span class="eyebrow">Quem é quem</span>
-      <h1>Equipe</h1>
-</div>
-    ${abasEquipe('')}
+  $('#main').innerHTML = `${cabecalho({ espaco:'Equipe', titulo:'Organograma', secoes:abasEquipe('') })}
     <div id="org-area"></div>`;
   if (!ativos.length){ $('#org-area').innerHTML = '<div class="empty">Nenhum membro ativo cadastrado.</div>'; return; }
   if (!state.orgFoco || !ativos.some(m=>m.registro===state.orgFoco)){

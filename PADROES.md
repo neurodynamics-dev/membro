@@ -98,12 +98,14 @@ conforme quem entra é menu que ninguém aprende.
 #/atividades/card/<codigo>  uma atividade (ex.: #/atividades/card/ORT-14)
 #/equipe                    organograma
 #/equipe/<registro>         a ficha
-#/marca
-#/marca/assinatura|interfaces|config
-#/feed
-#/equipe/quadro|presenca|reporte|feed|newsletter
+#/marca                    os modelos controlados e templates (Arquivos é o dono do download)
+#/marca/assinatura|config  a assinatura de e-mail; o vínculo de cada modelo com uma série
+#/equipe/quadro|presenca|feed|newsletter
+#/equipe/reporte            o ciclo da semana
+#/equipe/reporte/<frente>/<1-4>  preencher ou consultar uma frente (apontamentos, escalonamentos, feed, revisão)
+#/equipe/reporte/config     prazo e reunião (admin)
 #/admin/emails/comunidade
-# /equipe/apontamento é alias compatível de /equipe/reporte
+# /equipe/apontamento é alias de /equipe/reporte; /feed e /marca/interfaces são endereços antigos
 #/okrs[/<codigo>]           a árvore de objetivos, com um em foco (OE1, OT1.2…)
 #/projetos[/novo]           os projetos
 #/projetos/<CÓDIGO>         um projeto (ex.: #/projetos/NEBULA)

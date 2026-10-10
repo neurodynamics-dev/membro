@@ -27,22 +27,49 @@ try{
   };
   function assertPayload(p){if(!Array.isArray(p.apontamentos)||!Array.isArray(p.escalonamentos)||!Array.isArray(p.feed))throw Error('Payload incompleto');window.saved=structuredClone(p);}
  });
- await p.goto('http://localhost:8765/#/equipe/reporte');await p.getByRole('button',{name:'Preencher',exact:true}).click();
- await p.locator('#rep-0-entregas').selectOption('INSUFICIENTE');
- await p.getByRole('link',{name:'Escalonamento',exact:true}).click();
+ await p.goto('http://localhost:8765/#/equipe/reporte');
+ /* L: o ciclo da semana, com o cabeçalho único e as seções de Equipe */
+ await p.getByRole('heading',{name:'Reporte semanal'}).waitFor();
+ assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Equipe');checks++;
+ assert.ok(await p.locator('#main .nav1').getByRole('link',{name:'Feed da equipe'}).count());checks++;
+ await p.getByRole('link',{name:'Preencher',exact:true}).click();
+ /* F: tem endereço, etapas (não SectionNav) e o voltar */
+ await p.getByRole('heading',{name:'Órtese'}).waitFor();
+ assert.match(await p.evaluate(()=>location.hash),/#\/equipe\/reporte\/f1\/1$/);checks++;
+ assert.equal(await p.locator('#main .etapas li').count(),4);checks++;
+ assert.equal(await p.locator('#main .nav1').count(),0);checks++;
+ assert.ok(await p.locator('#main .cab-voltar').count());checks++;
+ await p.locator('#rep-0-entregas-i').click();
+ assert.ok(await p.locator('#rep-just-0').isVisible());checks++;
+ await p.getByRole('link',{name:'Continuar'}).click();
  await p.getByRole('button',{name:'Adicionar tópico'}).click();await p.locator('#rep-topico-0').fill('Revisar cronograma');
- await p.getByRole('link',{name:'Feed da equipe',exact:true}).last().click();
+ await p.evaluate(()=>{window.saved=null});
+ await p.waitForFunction(()=>window.saved,null,{timeout:5000}); /* o salvamento automático, 2 s depois */
+ assert.equal(await p.evaluate(()=>window.saved.escalonamentos[0].texto),'Revisar cronograma');checks++;
+ await p.getByRole('button',{name:'Remover tópico 1'}).click();
+ await p.getByRole('button',{name:'Desfazer'}).click();
+ assert.equal(await p.locator('#rep-topico-0').inputValue(),'Revisar cronograma');checks++;
+ await p.getByRole('link',{name:'Continuar'}).click();
  await p.getByRole('button',{name:'Adicionar publicação'}).click();
  await p.locator('#rep-feed-0-titulo').fill('Ensaio concluído');await p.locator('#rep-feed-0-subtitulo').fill('Primeira rodada');await p.locator('#rep-feed-0-texto').fill('Resultado **validado**.');
- await p.getByRole('button',{name:'Salvar rascunho'}).click();await p.waitForFunction(()=>window.saved);
+ await p.evaluate(()=>{window.saved=null});await p.getByRole('button',{name:'Salvar rascunho'}).click();await p.waitForFunction(()=>window.saved);
  const saved=await p.evaluate(()=>window.saved);assert.equal(saved.apontamentos[0].entregas,'INSUFICIENTE');checks++;
  assert.equal(saved.escalonamentos[0].texto,'Revisar cronograma');checks++;
  assert.equal(saved.feed[0].subtitulo,'Primeira rodada');checks++;
+ await p.getByRole('link',{name:'Continuar'}).click();
+ /* só a Revisão tem o Enviar, e ele é o único sólido */
+ assert.equal(await p.locator('#main .btn.solid').count(),1);checks++;
  await p.evaluate(()=>window.failSave=true);await p.getByRole('button',{name:'Enviar reporte',exact:true}).click();await p.locator('#modal button.solid').click();
- await p.waitForTimeout(200);assert.equal(await p.evaluate(()=>window.sent||0),0);checks++;
- await p.evaluate(()=>window.failSave=false);await p.getByRole('button',{name:'Enviar reporte',exact:true}).click();await p.locator('#modal button.solid').click();
+ await p.getByRole('button',{name:'Recarregar o reporte'}).waitFor();assert.equal(await p.evaluate(()=>window.sent||0),0);checks++;
+ await p.evaluate(()=>window.failSave=false);await p.getByRole('button',{name:'Recarregar o reporte'}).click();
+ await p.getByRole('heading',{name:'Órtese'}).waitFor();
+ await p.getByRole('button',{name:'Enviar reporte',exact:true}).waitFor();
+ await p.getByRole('button',{name:'Enviar reporte',exact:true}).click();await p.locator('#modal button.solid').click();
  await p.waitForFunction(()=>window.sent===1);checks++;
+ /* F: o feed é uma seção de Equipe, com cabeçalho; #/feed é só o endereço antigo */
  await p.evaluate(()=>location.hash='#/feed');await p.getByRole('heading',{name:'Ensaio concluído'}).waitFor();assert.equal(await p.locator('#feed-lista strong').innerText(),'validado');checks++;
+ assert.equal(await p.locator('#main .cab h1').innerText(),'Feed da equipe');checks++;
+ assert.ok(await p.locator('#main .nav1').count());checks++;
  assert.deepEqual(errors,[]);checks++;
  console.log(`${checks} verificações passaram.`);
 }finally{await nav.close();}

@@ -1164,12 +1164,6 @@ a.ft-t .av .avx:first-child{margin-left:0}
 .chip.herdado{border-style:dashed;color:var(--dim)}
 .ficha-grupos{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 dd.ficha-grupos{margin-top:2px}
-.topo-gestao{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:var(--s6) 0}
-.topo-gestao .tx{flex:1;min-width:240px}
-.topo-gestao h1{font-size:var(--fs-h2);font-weight:600;line-height:1.06;margin:12px 0 0}
-.topo-gestao .lead{color:var(--muted);font-size:var(--fs-body);max-width:var(--measure);margin-top:12px}
-.topo-gestao .acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:34px}
-@media (max-width:700px){.topo-gestao .acoes{padding-top:0}}
 
 /* linha do tempo das ocorrências */
 .timeline{display:flex;flex-direction:column;gap:2px;position:relative;padding-left:20px}
@@ -2616,7 +2610,6 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 .evx-add .btn{height:40px}
 .evx-cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
 .evx-cfg .card h3{margin-bottom:6px}
-#main>.tre-voltar+.topo-gestao{margin-top:4px}
 
 /* ============ FORMULÁRIOS (v26) ============
    Escrever o PN no portal (mod-formularios): as seções do template,
@@ -2853,4 +2846,25 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;animation-iteration-count:1!important}}
 
 
-.marca-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin:20px 0}.marca-grid .card{margin:0;min-width:0}.marca-grid h3{margin:16px 0}.marca-grid .acts{flex-wrap:wrap}
+/* Marca: os tiles dos modelos */
+.marca-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:var(--s4)}
+
+/* ============ REPORTE SEMANAL (Fase 2) ============ */
+/* blocos repetidos do fluxo (tópico, publicação): linha entre eles, sem cartão dentro de cartão */
+.rep-bloco{padding:var(--s5) 0;border-top:1px solid var(--line)}
+.rep-bloco:first-child{border-top:0;padding-top:0}
+.rep-bloco-cab{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}
+.rep-bloco h3{margin:0 0 var(--s3);font-size:var(--fs-sm);font-weight:600;letter-spacing:0}
+.rep-bloco-cab h3{margin:0}
+.rep-bloco .fld+.fld{margin-top:var(--s3)}
+.toast-acao{margin-left:14px;padding:0;font-family:var(--fd);font-weight:600;font-size:12px;letter-spacing:var(--tr-label);text-transform:uppercase;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.toast{display:flex;align-items:center}
+
+.marca-tile{padding:0;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.marca-tile>img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:rgba(var(--tom),.04);border-bottom:1px solid var(--line)}
+.marca-tile-corpo{display:flex;flex-direction:column;gap:var(--s3);padding:var(--s4);flex:1}
+.marca-tile h3{margin:0;font-size:var(--fs-body);font-weight:600}
+.marca-tile-meta{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s2)}
+.marca-tile-acoes{margin-top:auto}
+/* só para leitor de tela: o rótulo de um campo dentro de uma tabela */
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

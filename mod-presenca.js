@@ -26,8 +26,8 @@ const presHora = x => new Date(x).toLocaleTimeString('pt-BR', { hour:'2-digit', 
 
 async function pagePresenca(){
   const eu = state.perfil?.registro;
-  $('#main').innerHTML = `<div class="pg-head"><span class="eyebrow">Equipe</span><h1>Presença</h1></div>
-    ${abasEquipe('presenca')}<div id="pres-corpo"><div class="carregando"><span class="spin"></span></div></div>`;
+  $('#main').innerHTML = `${cabecalho({ espaco:'Equipe', titulo:'Presença', secoes:abasEquipe('presenca') })}
+    <div id="pres-corpo"><div class="carregando"><span class="spin"></span></div></div>`;
   const [rec, sts, aus, placar] = await Promise.all([
     sb.from('presencas').select('registro,registrado_em').gte('registrado_em', new Date(Date.now() - 14 * 864e5).toISOString())
       .order('registrado_em', { ascending:false }).limit(300),
