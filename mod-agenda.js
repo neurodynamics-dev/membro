@@ -41,7 +41,7 @@ const agenda = {
   ev:null, rascunho:null, arr:null, rolagem:null, linkEntrevista:null
 };
 const AG_CAMADAS = CAMADAS_AGENDA;
-const AG_CORES = ['#2DD4BF', '#CEDC00', '#4ADE97', '#7FA7F2', '#A78BFA', '#F5C36A', '#F1806F', '#8E8E93'];
+const AG_CORES = ['#2DD4BF', '#CEDC00', '#4ADE97', '#7FA7F2', '#A78BFA', '#F5C36A', '#F1806F', '#8E8E93']; // auditar: ok, cor de dado ou de canvas, precisa ser literal
 const AG_REPETE = [['Única', 'Não repete'], ['Diária', 'Todos os dias'], ['Dias úteis', 'Dias úteis (seg. a sex.)'],
   ['Semanal', 'Semanal'], ['Quinzenal', 'Quinzenal'], ['Mensal', 'Mensal'], ['Anual', 'Anual']];
 const AG_LEMBRETES = [0, 5, 10, 15, 30, 60, 120, 1440, 2880, 10080];
@@ -1056,7 +1056,7 @@ function agCfgPredefinidos(){
 function agPdEditar(id){
   if (!podeGerir()) return;
   const p = (agenda.predef || []).find(x => x.id === id) || { nome:'', titulo:'', duracao_min:60, dia_inteiro:false, hora_inicio:null, local:'',
-    espaco_id:null, meet_url:'', descricao:'', visibilidade:'convidados', cor:'#2DD4BF', todos:false, grupos:[], convidados:[], lembretes:[30], recorrencia:'Única', ordem:100 };
+    espaco_id:null, meet_url:'', descricao:'', visibilidade:'convidados', cor:'#2DD4BF', todos:false, grupos:[], convidados:[], lembretes:[30], recorrencia:'Única', ordem:100 }; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   agenda.pd = { id: p.id || null, grupos:new Set(p.grupos || []), pessoas:new Set(p.convidados || []), lembretes:[...(p.lembretes || [])], cor:p.cor };
   const ativos = (state.membros || []).filter(m => ['Ativo', 'Em pausa / avaliação'].includes(m.status)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   abreModal(`<h3>${p.id ? esc(p.nome) : 'Novo evento predefinido'}</h3>

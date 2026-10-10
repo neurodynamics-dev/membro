@@ -16,23 +16,16 @@
   agenda aberta à chave anônima (migração 28.0). O token é de uma pessoa
   num evento; quem não o tem não lê nada.
 -->
+<link rel="stylesheet" href="ds/tokens.css">
 <style>
-:root{
-  --bg:#050807; --panel:#0B1210; --ink:#E8EDEB; --muted:#9AA5A1; --dim:#616C68;
-  --line:rgba(232,237,235,.1); --line2:rgba(232,237,235,.18); --syn:#CEDC00; --deep:#00352F;
-  --ok:#00F59B; --bad:#FF2D20; --warn:#FFAA00;
-  --fd:'Archivo',-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
-  --fm:'IBM Plex Mono',ui-monospace,Menlo,monospace;
-  --f:'Instrument Sans',-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
-}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--f);background:var(--bg);color:var(--ink);min-height:100vh;display:flex;
   align-items:center;justify-content:center;padding:24px 16px;line-height:1.55;
-  background-image:radial-gradient(900px 500px at 15% 0%,rgba(0,89,79,.35),transparent 60%),
-    radial-gradient(700px 420px at 100% 100%,rgba(206,220,0,.08),transparent 60%)}
-.cx{width:100%;max-width:480px;background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:28px}
+  background-image:radial-gradient(900px 500px at 15% 0%,rgba(var(--syn-rgb),.2),transparent 60%),
+    radial-gradient(700px 420px at 100% 100%,rgba(var(--syn-rgb),.08),transparent 60%)}
+.cx{width:100%;max-width:480px;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);padding:28px}
 .marca{display:flex;align-items:center;gap:10px;margin-bottom:22px}
-.marca img{width:30px;height:30px;border-radius:8px}
+.marca img{width:30px;height:30px;border-radius:var(--r-tag)}
 .marca span{font-family:var(--fd);font-weight:600;font-size:15px}
 .olho{font-family:var(--fd);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);
   display:flex;align-items:center;gap:8px}
@@ -44,7 +37,7 @@ dt{font-family:var(--fd);font-size:10.5px;letter-spacing:.12em;text-transform:up
 dd a{color:var(--syn)}
 .pergunta{font-family:var(--fd);font-weight:600;font-size:14px;margin:22px 0 10px}
 .bts{display:flex;gap:8px;flex-wrap:wrap}
-.bts button{flex:1;min-width:110px;height:44px;border-radius:11px;border:1px solid var(--line2);background:rgba(255,255,255,.03);
+.bts button{flex:1;min-width:110px;height:44px;border-radius:var(--r-sm);border:1px solid var(--line2);background:rgba(255,255,255,.03);
   color:var(--ink);font:600 14px var(--fd);cursor:pointer;transition:background .15s,border-color .15s}
 .bts button:hover{border-color:var(--muted)}
 .bts button.on{background:rgba(232,237,235,.09);border-color:var(--line2);color:var(--ink)}

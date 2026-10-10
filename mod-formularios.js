@@ -187,7 +187,7 @@ function frmCampoHTML(c){
     case 'redacao': return caixa(`<div class="frm-redacao">
         <input id="${id}" list="frm-membros" value="${esc(v?.nome || '')}" placeholder="Quem redigiu" aria-label="Quem redigiu"
           oninput="frmSetRedacao('${c.id}', 'nome', this.value)">
-        <input value="${esc(v?.ia || '')}" placeholder="Com apoio de IA? Qual — LLM Gemini" aria-label="Com apoio de IA"
+        <input value="${esc(v?.ia || '')}" placeholder="Com apoio de IA? Qual: LLM Gemini" aria-label="Com apoio de IA"
           oninput="frmSetRedacao('${c.id}', 'ia', this.value)"></div>
       <p class="mini frm-frase" id="${id}-frase">${esc(frmFraseRedacao(v))}</p>`);
     case 'pessoas': case 'lista': case 'tabela':
@@ -335,7 +335,7 @@ function frmFaltasAtualizar(){
 /* ---------------- o PDF ---------------- */
 function frmTitulo(d){
   const comp = frm.def.complemento ? DocNRO.preencher(frm.def.complemento, frm.def, d).trim() : null;
-  return { comp, titulo: (frm.t.r.serie_titulo || frm.t.r.titulo) + (comp ? ' — ' + comp : (frm.t.r.complemento ? ' — ' + frm.t.r.complemento : '')) };
+  return { comp, titulo: (frm.t.r.serie_titulo || frm.t.r.titulo) + (comp ? ', ' + comp : (frm.t.r.complemento ? ', ' + frm.t.r.complemento : '')) };
 }
 function frmDocumento(d){
   const m = frm.meta, r = frm.t.r, reg = m.tipo === 'registro';
@@ -487,7 +487,7 @@ async function frmCfgPrevia(id, defTexto){
   try{
     await precisaDocNRO();
     const c = frm.cfg.rol.find(r => r.serie_id === s.id && r.pn == null);
-    const cod = `NRO-${s.prefixo}-${String(s.sn).padStart(3, '0')}-·`;
+    const cod = `NRO-${s.prefixo}-${String(s.sn).padStart(3, '0')}-?`;
     const em = frm.cfg.emissores.find(e => e.prefixo === s.prefixo);
     const dados = frmExemplo(def);
     const comp = def.complemento ? DocNRO.preencher(def.complemento, def, dados) : '';

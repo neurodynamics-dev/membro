@@ -723,7 +723,7 @@ async function cofUsoTodos(){
         <td class="small">${fmtDT(x.criado_em)}</td><td><span class="nome">${esc(x.nome || '—')}</span></td>
         <td>${esc(COF_ACAO[x.acao] || x.acao)}${x.detalhe ? `<span class="small dim" style="display:block">${esc(x.detalhe)}</span>` : ''}</td>
         <td class="small">${esc(x.conta || '—')}</td></tr>`).join('')}</tbody></table></div>`
-      : '<div class="vazio"><div class="glyph">·</div><h3>Nada registrado</h3></div>'}`;
+      : '<div class="vazio"><div class="glyph">-</div><h3>Nada registrado</h3></div>'}`;
 }
 function cofUsoFiltrar(){
   const c = $('#cu-conta')?.value || '', t = $('#cu-acao')?.value || '';

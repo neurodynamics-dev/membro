@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#050807">
+<meta name="theme-color" content="#050807"> <!-- auditar: ok, theme-color exige valor literal -->
 <script>/* o tema escolhido vale antes de a página pintar — sem piscar */
 try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.dataset.tema = 'claro'; }catch(e){}</script>
 <title>Portal do Membro | NeuroDynamics</title>
@@ -351,12 +351,12 @@ const motivoRPC = (data, error, padrao) =>
                  : `${padrao}.`;
 
 const STATUS_SOL = {
-  aberta:     {l:'Aberta',      c:'#2DD4BF'},
-  em_analise: {l:'Em análise',  c:'#F5C36A'},
-  aprovada:   {l:'Aprovada',    c:'#4ADE97'},
-  recusada:   {l:'Recusada',    c:'#F1806F'},
-  concluida:  {l:'Concluída',   c:'#4ADE97'},
-  cancelada:  {l:'Cancelada',   c:'#8E8E93'}
+  aberta:     {l:'Aberta',      c:'#2DD4BF'}, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  em_analise: {l:'Em análise',  c:'#F5C36A'}, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  aprovada:   {l:'Aprovada',    c:'#4ADE97'}, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  recusada:   {l:'Recusada',    c:'#F1806F'}, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  concluida:  {l:'Concluída',   c:'#4ADE97'}, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  cancelada:  {l:'Cancelada',   c:'#8E8E93'} // auditar: ok, cor de dado ou de canvas, precisa ser literal
 };
 const TIPOS_SOL = {
   acesso:      'Solicitação de acesso',
@@ -556,7 +556,7 @@ function fotoArquivo(){
   const s = Math.max(L / img.width, L / img.height) * fotoEd.k;
   const out = document.createElement('canvas'); out.width = out.height = FOTO_LADO;
   const c = out.getContext('2d');
-  c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, FOTO_LADO, FOTO_LADO);   /* PNG transparente não vira preto */
+  c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, FOTO_LADO, FOTO_LADO);   /* PNG transparente não vira preto */ // auditar: ok, cor de dado ou de canvas, precisa ser literal
   c.imageSmoothingQuality = 'high';
   c.drawImage(img, fotoEd.x * f, fotoEd.y * f, img.width * s * f, img.height * s * f);
   return new Promise((ok, erro) => out.toBlob(b => b ? ok(b) : erro(new Error('não foi possível gerar a imagem')), 'image/jpeg', .9));
@@ -1111,14 +1111,14 @@ const STUDIO_STATUS = [
   ['publicada', 'Publicada',            'No ar, com o link']
 ];
 const STUDIO_REDES = {
-  instagram:{ l:'Instagram', s:'IG',  c:'#E1306C', legenda:2200 },
-  linkedin: { l:'LinkedIn',  s:'IN',  c:'#3B8FE0', legenda:3000 },
-  youtube:  { l:'YouTube',   s:'YT',  c:'#FF4E45', legenda:5000 },
-  tiktok:   { l:'TikTok',    s:'TT',  c:'#25F4EE', legenda:2200 },
-  x:        { l:'X',         s:'X',   c:'#B8C2BE', legenda:280 },
-  facebook: { l:'Facebook',  s:'FB',  c:'#4C8DF6', legenda:63206 },
-  whatsapp: { l:'WhatsApp',  s:'WA',  c:'#25D366', legenda:0 },
-  site:     { l:'Site',      s:'WEB', c:'#CEDC00', legenda:0 }
+  instagram:{ l:'Instagram', s:'IG',  c:'#E1306C', legenda:2200 }, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  linkedin: { l:'LinkedIn',  s:'IN',  c:'#3B8FE0', legenda:3000 }, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  youtube:  { l:'YouTube',   s:'YT',  c:'#FF4E45', legenda:5000 }, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  tiktok:   { l:'TikTok',    s:'TT',  c:'#25F4EE', legenda:2200 }, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x:        { l:'X',         s:'X',   c:'#B8C2BE', legenda:280 }, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  facebook: { l:'Facebook',  s:'FB',  c:'#4C8DF6', legenda:63206 }, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  whatsapp: { l:'WhatsApp',  s:'WA',  c:'#25D366', legenda:0 }, // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  site:     { l:'Site',      s:'WEB', c:'#CEDC00', legenda:0 } // auditar: ok, cor de dado ou de canvas, precisa ser literal
 };
 /* o formato da publicação — o que ela é na rede, não o tamanho da arte */
 const STUDIO_FORMATOS = {
@@ -1130,12 +1130,12 @@ const STUDIO_FORMATOS = {
    dito do jeito da equipe — convidar — e o institucional, que para um
    laboratório é metade do que se publica */
 const STUDIO_PILARES = {
-  educar:        ['Educar',        'Ensina algo: como funciona, dicas, o que a pesquisa descobriu', '#7FA7F2'],
-  inspirar:      ['Inspirar',      'Frases, histórias, datas que movem, depoimentos',               '#A78BFA'],
-  conectar:      ['Conectar',      'Gente: aniversários, boas-vindas, bastidores, parceiros',       '#2DD4BF'],
-  entreter:      ['Entreter',      'Enquetes, perguntas, desafios, o lado leve da equipe',          '#F5C36A'],
-  institucional: ['Institucional', 'Na mídia, conquistas, projetos, artigos, avisos',               '#CEDC00'],
-  convidar:      ['Convidar',      'Eventos, vagas, inscrições: pede uma ação',                     '#4ADE97']
+  educar:        ['Educar',        'Ensina algo: como funciona, dicas, o que a pesquisa descobriu', '#7FA7F2'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  inspirar:      ['Inspirar',      'Frases, histórias, datas que movem, depoimentos',               '#A78BFA'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  conectar:      ['Conectar',      'Gente: aniversários, boas-vindas, bastidores, parceiros',       '#2DD4BF'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  entreter:      ['Entreter',      'Enquetes, perguntas, desafios, o lado leve da equipe',          '#F5C36A'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  institucional: ['Institucional', 'Na mídia, conquistas, projetos, artigos, avisos',               '#CEDC00'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  convidar:      ['Convidar',      'Eventos, vagas, inscrições: pede uma ação',                     '#4ADE97'] // auditar: ok, cor de dado ou de canvas, precisa ser literal
 };
 /* o que é a publicação. O id é também o modelo que o criador abre. */
 const STUDIO_TIPOS = [
@@ -1877,8 +1877,8 @@ voador:21 Spearow>22 Fearow
 veneno:23 Ekans>24 Arbok
 eletrico:172 Pichu>25 Pikachu>26 Raichu
 terra:27 Sandshrew>28 Sandslash
-veneno:29 Nidoran♀>30 Nidorina>31 Nidoqueen
-veneno:32 Nidoran♂>33 Nidorino>34 Nidoking
+veneno:29 Nidoran F>30 Nidorina>31 Nidoqueen
+veneno:32 Nidoran M>33 Nidorino>34 Nidoking
 fada:173 Cleffa>35 Clefairy>36 Clefable
 fogo:37 Vulpix>38 Ninetales
 fada:174 Igglybuff>39 Jigglypuff>40 Wigglytuff
@@ -2125,7 +2125,7 @@ function aplicarTema(t){
   if (t === 'claro') document.documentElement.dataset.tema = 'claro';
   else delete document.documentElement.dataset.tema;
   const outro = t === 'claro' ? 'escuro' : 'claro';
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'claro' ? '#E8EDEB' : '#050807');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'claro' ? '#E8EDEB' : '#050807'); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const b = $('#lt-tema');
   if (b){ b.setAttribute('aria-label', `Usar o tema ${outro}`); b.title = `Tema ${outro}`; }
   const v = $('#lt-tema-voo .nm'); if (v) v.textContent = `Tema ${outro}`;
@@ -2356,7 +2356,7 @@ function desenharSino(){
   const ns = state.notifs || [];
   $('#sn-lista').innerHTML = ns.length ? ns.map(n => `<div class="sn-linha">
     <button class="sn-item ${n.lida?'':'nova'}" onclick="irNotificacao(${n.id}, '${esc(n.href||'')}')">
-      <span class="tt">${esc(String(n.titulo || '').replace(/ — /g, ': '))}</span>
+      <span class="tt">${esc(String(n.titulo || '').replace(/\s—\s/g, ': '))}</span>
       ${n.corpo ? `<span class="cp">${esc(n.corpo)}</span>` : ''}
       <span class="qd">${fmtQuando(n.criado_em)}</span></button>
     <button class="sn-x" onclick="apagarNotificacao(${n.id}, event)" aria-label="Apagar este aviso" title="Apagar">×</button></div>`).join('')
@@ -3307,7 +3307,7 @@ async function carregarItens(de, ate){
   if (error) throw error;
   return data || [];
 }
-const corDoItem = it => it.cor || '#8E8E93';
+const corDoItem = it => it.cor || '#8E8E93'; // auditar: ok, cor de dado ou de canvas, precisa ser literal
 function horaDoItem(it){
   if (it.dia_inteiro || !it.hora_inicio) return 'dia inteiro';
   return it.hora_inicio.slice(0,5) + (it.hora_fim ? '–' + it.hora_fim.slice(0,5) : '');
@@ -3336,13 +3336,13 @@ function gruposDaEquipe(){
    entrevistas do PS são as que a pessoa conduz (2.17.1): só o comitê de
    seleção as vê. A Agenda e o início leem as mesmas. */
 const CAMADAS_AGENDA = [
-  ['eventos', 'Eventos', '#2DD4BF'],
-  ['marcos', 'Calendário da equipe', '#CEDC00'],
-  ['ausencias', 'Ausências', '#4C6FBF'],
-  ['entrevistas', 'Entrevistas do PS', '#4ADE97'],
-  ['tarefas', 'Minhas tarefas', '#7FA7F2'],
-  ['publicacoes', 'Minhas publicações', '#A78BFA'],
-  ['treinamentos', 'Treinamentos a vencer', '#F5C36A']
+  ['eventos', 'Eventos', '#2DD4BF'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  ['marcos', 'Calendário da equipe', '#CEDC00'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  ['ausencias', 'Ausências', '#4C6FBF'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  ['entrevistas', 'Entrevistas do PS', '#4ADE97'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  ['tarefas', 'Minhas tarefas', '#7FA7F2'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  ['publicacoes', 'Minhas publicações', '#A78BFA'], // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  ['treinamentos', 'Treinamentos a vencer', '#F5C36A'] // auditar: ok, cor de dado ou de canvas, precisa ser literal
 ];
 const AUSENCIAS_AGENDA = { ausente:'Fora do escritório', ferias:'Férias', afastamento:'Afastamento' };
 /* Os itens de um período num formato só:
@@ -3440,7 +3440,7 @@ function calMesHTML({ chave, ano, mes, itens = [], max = 3 }){
     cels += `<div class="calm-cel${fora ? ' fora' : ''}${k === hoje ? ' hoje' : ''}${isoDow(d) > 5 ? ' fds' : ''}" data-dia="${k}">
       <button type="button" class="calm-n" data-dia-n="${k}" aria-label="${d.getDate()} de ${MESES_LONGOS[d.getMonth()]}">${d.getDate()}</button>
       ${vis.map(it => `<button type="button" class="calm-chip${it.classe ? ' ' + it.classe : ''}${it._meio ? ' meio' : ''}${it._segue ? ' segue' : ''}"
-          style="--cc:${esc(it.cor || '#8E8E93')}" data-i="${esc(it.id)}"${it.arrasta ? ' draggable="true"' : ''}
+          style="--cc:${esc(it.cor || 'var(--idle)')}" data-i="${esc(it.id)}"${it.arrasta ? ' draggable="true"' : ''}
           title="${esc((it.hora ? it.hora + ' ' : '') + it.titulo + (it.dica ? ', ' + it.dica : ''))}">${it.hora && !it._meio ? `<span class="h">${esc(it.hora)}</span>` : ''}${
             it.pontos?.length ? `<span class="calm-pts">${it.pontos.map(c => `<i style="background:${esc(c)}"></i>`).join('')}</span>` : ''}${esc(it.titulo)}</button>`).join('')}
       ${lista.length > max ? `<button type="button" class="calm-mais" data-dia-n="${k}">+${lista.length - max}</button>` : ''}
@@ -3995,7 +3995,7 @@ function desenhaPedidos(){
     return;
   }
   el.innerHTML = state.pedidos.map(p=>{
-    const st = STATUS_SOL[p.status] || {l:p.status, c:'#8E8E93'};
+    const st = STATUS_SOL[p.status] || {l:p.status, c:'#8E8E93'}; // auditar: ok, cor de dado ou de canvas, precisa ser literal
     const aberto = pedAbertos.has(p.id);
     return `<div class="ped" onclick="togglePedido('${p.id}')">
       <div class="top">

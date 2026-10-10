@@ -268,7 +268,7 @@ async function evxLista(filtro){
       `<a class="btn solid" href="#/servicos/eventos/novo">${ic('plus')} Registrar evento</a>`)}
     ${evxNav(filtro)}
     ${lista.length ? `<div class="evx-lista">${lista.map(evxCartao).join('')}</div>`
-      : `<div class="vazio"><div class="glyph">${filtro === 'aprovar' ? '✓' : '·'}</div>
+      : `<div class="vazio"><div class="glyph">${filtro === 'aprovar' ? '✓' : '-'}</div>
           <h3>${filtro === 'aprovar' ? 'Nada aguardando aprovação' : filtro === 'todos' ? 'Nenhum evento aprovado'
             : 'Nenhum evento registrado'}</h3>
           ${filtro !== 'aprovar' ? `<a class="btn ghost" href="#/servicos/eventos/novo">Registrar evento</a>` : ''}</div>`}`;

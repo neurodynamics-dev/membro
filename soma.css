@@ -473,7 +473,7 @@ main{padding-top:24px;padding-bottom:90px}
   --bg-topo:var(--painel);--toast:#151B19 /* auditar: ok, valor do escuro dentro da banda */;--campo:rgba(255,255,255,.05); /* auditar: ok, paleta local do SOMA sem token no DS */
   --ok-tx:var(--fn-nominal-medium);
 }
-.sl-destaque{background:linear-gradient(118deg,var(--deep) 0%,var(--green) 62%,#0A6F62 100%);
+.sl-destaque{background:linear-gradient(118deg,var(--cortex) 0%,var(--axon) 100%);
   border:1px solid rgba(var(--syn-rgb),.18)}
 .sl-destaque::after{content:'';position:absolute;right:-90px;top:-90px;width:330px;height:330px;border-radius:50%;
   background:radial-gradient(circle,rgba(var(--syn-rgb),.22),transparent 70%);filter:blur(34px)}
@@ -783,7 +783,7 @@ h1.evp-tit{border:0;word-break:break-word}
 .ini-carga i{display:block;height:100%;border-radius:3px;background:var(--syn)}
 .ini-evs{display:flex;flex-direction:column;gap:4px;min-width:0}
 .ini-ev{display:flex;flex-direction:column;gap:1px;min-width:0;padding:4px 6px;border-radius:6px;font-size:11.5px;line-height:1.3;
-  color:var(--ink);background:rgba(var(--tom),.04);border-left:3px solid var(--cc,#8E8E93)}
+  color:var(--ink);background:rgba(var(--tom),.04);border-left:3px solid var(--cc,var(--idle))}
 a.ini-ev:hover{background:rgba(var(--tom),.09)}
 .ini-ev .h{font-family:var(--fm);font-size:10px;color:var(--muted)}
 .ini-ev .t{font-weight:500;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
@@ -894,7 +894,7 @@ a.ini-rc .ic-q .ic{width:15px;height:15px}
 .pres-folha.off .cod,.pres-folha.off .tx b{color:var(--dim);text-decoration:line-through}
 .int-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
 .int-row:first-of-type{border-top:none}
-.int-row .pt{width:9px;height:9px;border-radius:50%;flex:none;background:var(--cc,#8E8E93)}
+.int-row .pt{width:9px;height:9px;border-radius:50%;flex:none;background:var(--cc,var(--idle))}
 .int-row .qd{font-family:var(--fm);font-size:11.5px;color:var(--dim);margin-left:auto;white-space:nowrap}
 .int-row .rm{width:22px;height:22px;border-radius:6px;color:var(--dim);font-size:15px;flex:none}
 .int-row .rm:hover{background:rgba(var(--bad-rgb),.12);color:var(--bad)}
@@ -934,7 +934,7 @@ a.ini-rc .ic-q .ic{width:15px;height:15px}
 .mag-dias{display:flex;gap:6px;flex-wrap:wrap}
 .mag-dias button{width:38px;height:34px;border-radius:9px;font-size:12px;font-weight:600;
   border:1px solid var(--line2);background:rgba(var(--tom),.03);color:var(--muted)}
-.mag-dias button.on{background:var(--syn);border-color:var(--syn-borda);color:var(--deep)}
+.mag-dias button.on{background:rgba(var(--tom),.12);border-color:var(--ink);color:var(--ink)}
 .mag-prev{font-family:var(--fm);font-size:11.5px;color:var(--muted);display:flex;
   flex-direction:column;gap:5px;max-height:210px;overflow:auto}
 .mag-prev div{display:flex;gap:10px;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:4px}
@@ -1636,7 +1636,7 @@ a.arq-no:hover{border-color:var(--dim)}
 .arq-conf-l .tx{flex:1;min-width:200px}
 .arq-conf-l .cd{font-family:var(--fm);font-size:11.5px;color:var(--syn-tx)}
 .arq-conf-l .tt{display:block;font-size:12.5px;color:var(--muted)}
-.arq-conf-l .seg button.on{background:var(--syn);color:var(--deep)}
+.arq-conf-l .seg button.on{background:rgba(var(--tom),.12);color:var(--ink)}
 .arq-arrasta{border:1.5px dashed var(--line2);border-radius:14px;padding:22px 18px;text-align:center;color:var(--muted);
   font-size:13px;line-height:1.6;cursor:pointer;transition:border-color .15s,background .15s}
 .arq-arrasta:hover,.arq-arrasta.sobre{border-color:var(--syn-borda);background:rgba(var(--syn-rgb),.04)}
@@ -1921,7 +1921,7 @@ tr.ml-fora td{opacity:.6}
   font-size:12px;color:var(--muted);background:rgba(var(--tom),.03);transition:border-color .15s,color .15s,background .15s;
   text-decoration:none;white-space:nowrap}
 .chip-b:hover{color:var(--ink);border-color:var(--dim)}
-.chip-b.on{background:var(--syn);border-color:var(--syn);color:var(--deep);font-weight:600}
+.chip-b.on{background:rgba(var(--tom),.12);border-color:var(--ink);color:var(--ink);font-weight:600}
 .chip-b .pt{width:8px;height:8px;border-radius:50%;background:var(--c,var(--dim))}
 .st-cfg-2 h3 .ic,.st-pub h3 .ic,#modal h3 .ic{width:17px;height:17px;flex:none;vertical-align:-3px;margin-right:3px}
 .st-col .kb-add{display:flex;align-items:center;justify-content:center;gap:7px;text-decoration:none}
@@ -2477,7 +2477,7 @@ tr.ml-fora td{opacity:.6}
 .tre-arq .mono{color:var(--syn-tx);font-size:12px;flex:none;min-width:112px}
 .tre-previa-abas{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:10px}
 .tre-previa-abas button{font-size:12px;padding:5px 10px;border-radius:8px;color:var(--muted);border:1px solid var(--line)}
-.tre-previa-abas button.on{background:var(--syn);color:var(--deep);border-color:var(--syn-borda);font-weight:600}
+.tre-previa-abas button.on{background:rgba(var(--tom),.12);color:var(--ink);border-color:var(--ink);font-weight:600}
 .tre-previa-tt{font-size:26px;font-weight:600;margin:10px 0 16px}
 .tre-previa .tre-md{max-width:760px}
 /* configurações e o README */
@@ -2534,12 +2534,12 @@ a.pend-i .go{font-family:var(--fd);font-size:12.5px;font-weight:600;color:var(--
 @media (max-width:980px){.dcl-grade{grid-template-columns:minmax(0,1fr)}}
 .dcl-folha{background:var(--paper);color:var(--sulco-medium);border-radius:6px;padding:20px 24px 14px;margin-bottom:18px;max-width:600px;
   font-family:Arial,Helvetica,sans-serif;font-size:12.5px;line-height:1.6;box-shadow:0 10px 32px rgba(var(--sombra-rgb),calc(.28 * var(--sombra-k)))}
-.dcl-folha-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding-bottom:10px;border-bottom:1px solid #D9D9D9}
+.dcl-folha-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;padding-bottom:10px;border-bottom:1px solid #D9D9D9} /* auditar: ok, cores da folha do documento (registro formal) */
 .dcl-folha-cab .lg{font-family:var(--fd);font-weight:700;font-size:15px;letter-spacing:-.02em;color:var(--cortex-dark)}
-.dcl-folha-cab .dp{text-align:right;font-size:10px;line-height:1.45;color:#3A3A3C}
+.dcl-folha-cab .dp{text-align:right;font-size:10px;line-height:1.45;color:#3A3A3C} /* auditar: ok, cores da folha do documento (registro formal) */
 .dcl-folha p{text-align:justify;margin:16px 0}
-.dcl-folha-pe{display:flex;align-items:center;gap:6px;border-top:3px double #8E8E93;padding-top:6px;
-  font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#6E6E73}
+.dcl-folha-pe{display:flex;align-items:center;gap:6px;border-top:3px double #8E8E93;padding-top:6px; /* auditar: ok, cores da folha do documento (registro formal) */
+  font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#6E6E73} /* auditar: ok, cores da folha do documento (registro formal) */
 .dcl-folha-pe .ic{width:12px;height:12px;flex:none}
 .dcl-dados{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0 18px}
 .dcl-dados>div{padding:9px 0;border-bottom:1px solid var(--line);min-width:0}
@@ -2863,3 +2863,6 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* a marca do projeto (o Pokémon) e a linha evolutiva, logo abaixo do cabeçalho */
 .pj-ident{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;margin:0 0 var(--s5)}
+
+/* campo de código: Plex Mono, em caixa alta */
+input[data-codigo]{font-family:var(--fm);text-transform:uppercase} /* auditar: ok, campo de código, não rótulo */

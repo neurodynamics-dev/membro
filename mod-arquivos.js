@@ -1155,7 +1155,7 @@ async function arqRolDoProjeto(pj, podeCriar){
     if (!pns.length || pd.quantidade === 'varios'){
       if (!pns.length) resumo.criar++;
       corpo += `<tr class="previsto"><td><div class="cel-cod"><span class="arq-ic ${cab.tipo === 'registro' ? 'registro' : 'documento'}">${ic(cab.tipo === 'registro' ? 'registro' : 'doc')}</span>
-          <span class="cod">${esc(cab.codigo)}-·</span></div></td>
+          <span class="cod">${esc(cab.codigo)}-?</span></div></td>
         <td><span class="tit">${esc(cab.titulo)}</span><span class="sub">${pns.length ? 'mais um' : 'a criar'}, ${cab.tipo === 'registro' ? 'um registro' : 'um documento'} do template ${esc(cab.codigo)}${cab.rev_vigente ? ' Rev. ' + esc(cab.rev_vigente) : ''}</span></td>
         <td class="arq-rev">—</td><td>—</td>
         <td>${podeCriar ? `<button class="btn ghost mini" onclick="arqCriarPN('${pd.serie_id}', '${pj.id}', null)">${ic('plus')} Criar</button>`
@@ -1306,7 +1306,7 @@ function arqCfgEmissores(){
         <select id="em-g-${e.prefixo}" aria-label="Grupo do emissor ${esc(e.prefixo)}" style="height:34px;max-width:240px">
           <option value="">Sem grupo</option>${grupos.map(g => `<option value="${g.id}" ${g.id === e.grupo_id ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}</select>
         <button class="btn ghost mini" onclick="arqSalvarEmissor('${e.prefixo}')">Salvar</button></div>`).join('')}
-      <div class="acc-row"><input id="em-novo-p" maxlength="3" placeholder="XXX" style="width:70px;height:34px;text-transform:uppercase;font-family:var(--fm)">
+      <div class="acc-row"><input id="em-novo-p" maxlength="3" placeholder="XXX" data-codigo style="width:70px;height:34px">
         <input id="em-novo-n" class="nm" placeholder="Departamento Clínico" style="height:34px">
         <button class="btn solid mini" onclick="arqSalvarEmissor(null)">${ic('plus')} Emissor</button></div></div>`;
 }

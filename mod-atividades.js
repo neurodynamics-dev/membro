@@ -211,7 +211,7 @@ function telaQuadro(){
         <h3>${esc(g.nome)} é um quadro fechado</h3>
         <p>Você vê que ele existe, mas não as atividades dele. São
            ${g.pessoas || 0} pessoa${(g.pessoas||0)===1?'':'s'} no grupo.</p>
-        <p class="sub">Para acompanhar, peça acesso a quem administra o portal —
+        <p class="sub">Para acompanhar, peça acesso a quem administra o portal:
            é uma permissão por quadro, e não precisa colocar você no grupo.</p>
         <div class="acts"><a class="btn ghost" href="#/servicos/solicitacoes">Abrir uma solicitação</a></div>
       </div>`;
@@ -800,7 +800,7 @@ function origemSolicitacao(o){
 
   return `<div class="card" style="margin-bottom:16px">
     <h3>De onde veio</h3>
-    <p class="sub" style="margin-bottom:14px">Solicitação ${esc(o.protocolo || '')} —
+    <p class="sub" style="margin-bottom:14px">Solicitação ${esc(o.protocolo || '')}:
       ${esc(TIPOS_SOL[o.especie] || o.especie)}, <span class="pill"><span class="dt"
         style="background:${esc(STATUS_SOL[o.status]?.c || 'var(--dim)')}"></span
         >${esc(STATUS_SOL[o.status]?.l || o.status)}</span></p>
@@ -921,7 +921,7 @@ function origemApontamento(o){
   return `<div class="card" style="margin-bottom:16px">
     <h3>De onde veio</h3>
     <p class="sub" style="margin-bottom:14px">Apontamento semanal do grupo
-      ${esc(o.grupo || '—')}${o.data ? ' — ' + fmtD(String(o.data).slice(0,10)) : ''}</p>
+      ${esc(o.grupo || '—')}${o.data ? ', ' + fmtD(String(o.data).slice(0,10)) : ''}</p>
     <div class="dl">
       ${linhaDl('Entregue por', esc(o.responsavel || '—'))}
       ${linhaDl('Pessoas no apontamento', String(itens.length))}

@@ -201,7 +201,7 @@ function pjModalNovo(){
     <div class="form-grid">
       <div class="fld"><label for="pn-nome">Nome</label><input id="pn-nome" placeholder="Nebula" oninput="pjNovoNome()"></div>
       <div class="fld"><label for="pn-cod">Código</label><input id="pn-cod" placeholder="NEBULA" maxlength="16"
-        style="text-transform:uppercase;font-family:var(--fm)" oninput="projetosM.novo.mexeuCodigo=true;pjNovoLogo()"></div>
+        data-codigo oninput="projetosM.novo.mexeuCodigo=true;pjNovoLogo()"></div>
       <div class="fld full"><label>Pokémon</label><div id="pn-pkm"></div></div>
       <div class="fld full"><label for="pn-desc">Descrição</label><textarea id="pn-desc" rows="2" placeholder="Para que serve o projeto"></textarea></div>
       <div class="fld full"><label for="pn-sup">Supervisor</label><select id="pn-sup"><option value="">Escolha</option>
