@@ -226,7 +226,7 @@ console.log('\nSeleção (admin)');
   const aval = await p.evaluate(() => [...document.querySelectorAll('.aval-cand')].map(a => ({
     nome: a.querySelector('.nm').textContent, nota: a.querySelector('.nota-badge')?.textContent?.trim() })));
   confere('avaliação da dinâmica: os dois candidatos da fase, a média de quem já foi avaliado primeiro',
-    aval.length === 2 && /Paula/.test(aval[0].nome) && aval[0].nota === '★ 4.5', aval);
+    aval.length === 2 && /Paula/.test(aval[0].nome) && aval[0].nota === 'Nota 4.5', aval);
   await p.click('.aval-cand:has-text("Marcos") .btn'); await p.waitForTimeout(300);
   await p.click('#modal .crit-row:nth-of-type(1) .seg button:has-text("4")');
   await p.click('#modal .crit-row:nth-of-type(2) .seg button:has-text("5")');

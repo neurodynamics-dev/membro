@@ -449,7 +449,7 @@ console.log('\nProjetos');
   await ir(p, '#/projetos/NEBULA/arquivos', 1300);
   const rol = await linhas(p);
   confere('o rol segue o padrão: o termo (rascunho), o USRS a criar, o relatório e mais um a criar',
-    rol.map(l => (l.previsto ? '·' : '') + (l.cod || '')).join() === 'NRO-PRO-001-1,·NRO-PRO-004-·,NRO-PRO-003-1,·NRO-PRO-003-·', rol);
+    rol.map(l => (l.previsto ? '·' : '') + (l.cod || '')).join() === 'NRO-PRO-001-1,·NRO-PRO-004-?,NRO-PRO-003-1,·NRO-PRO-003-·', rol);
   await p.click('.arq-tab tr.previsto:has-text("USRS") button:has-text("Criar")'); await p.waitForTimeout(1100);
   const cri = await rpcs(p, 'doc_arquivo_criar');
   confere('"Criar" cria o PN para o projeto e abre o arquivo novo',

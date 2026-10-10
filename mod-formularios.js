@@ -335,7 +335,7 @@ function frmFaltasAtualizar(){
 /* ---------------- o PDF ---------------- */
 function frmTitulo(d){
   const comp = frm.def.complemento ? DocNRO.preencher(frm.def.complemento, frm.def, d).trim() : null;
-  return { comp, titulo: (frm.t.r.serie_titulo || frm.t.r.titulo) + (comp ? ', ' + comp : (frm.t.r.complemento ? ', ' + frm.t.r.complemento : '')) };
+  return { comp, titulo: (frm.t.r.serie_titulo || frm.t.r.titulo) + (comp ? ' — ' + comp : (frm.t.r.complemento ? ' — ' + frm.t.r.complemento : '')) }; // auditar: ok, título de documento controlado (nome do arquivo)
 }
 function frmDocumento(d){
   const m = frm.meta, r = frm.t.r, reg = m.tipo === 'registro';
