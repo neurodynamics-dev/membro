@@ -41,6 +41,7 @@
 .nd-cta{display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 18px;border-radius:var(--r-sm);
   background:var(--syn);color:var(--deep);font-family:var(--fd);font-weight:600;font-size:var(--fs-sm);white-space:nowrap;
   text-decoration:none;transition:transform var(--t-fast),box-shadow var(--t-fast)}
+.nd-cab .nd-cta,.nd-menu .nd-cta{color:var(--deep)} /* vence .nd-cab a{color:inherit}: texto escuro sobre Synapse */
 .nd-cta:hover{transform:translateY(-1px);box-shadow:var(--shadow-cta)}
 
 /* chave de idioma (Switch): 2 ou 3 opções, seleção quieta */
@@ -100,22 +101,6 @@
 .nd-rod::after{content:'';position:absolute;z-index:-1;pointer-events:none;width:760px;height:760px;left:-240px;bottom:-500px;border-radius:50%;
   background:radial-gradient(circle,color-mix(in srgb,var(--axon) 60%,transparent),transparent 70%);filter:blur(30px);opacity:.75}
 
-/* o sinal: linha de base com potenciais de ação; o pulso Synapse
-   corre por ela de tempos em tempos (casca.js) */
-.nd-rod-sinal{position:relative;height:64px;max-width:var(--max);margin:0 auto;padding:0 26px;transform:translateY(-1px)}
-.nd-rod-sinal svg{display:block;width:100%;height:100%;overflow:visible}
-.nd-rod-sinal path{fill:none;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
-.nd-rod-sinal .base{stroke:var(--cortex-medium);stroke-opacity:.3;stroke-width:1.2}
-.nd-rod-sinal .pulso{stroke:var(--syn-borda);stroke-width:1.8;stroke-dasharray:0 1000;opacity:0;
-  filter:drop-shadow(0 0 4px rgba(var(--syn-rgb),.75))}
-.nd-rod-sinal.vivo .pulso{animation:nd-pulso 2.8s cubic-bezier(.45,.05,.35,1) both}
-@keyframes nd-pulso{
-  0%{opacity:0;stroke-dasharray:26 1000;stroke-dashoffset:26}
-  6%{opacity:1}
-  92%{opacity:1}
-  100%{opacity:0;stroke-dasharray:26 1000;stroke-dashoffset:-1000}}
-@media (prefers-reduced-motion:reduce){.nd-rod-sinal .pulso{display:none}}
-
 .nd-rod-in{max-width:var(--max);margin:0 auto;padding:0 26px}
 .nd-rod-topo{display:grid;grid-template-columns:minmax(0,1.45fr) repeat(3,minmax(0,1fr));gap:40px 36px;padding:36px 0 56px}
 .nd-rod-frase{margin:0;font-family:var(--fd);font-weight:500;font-size:clamp(26px,2.8vw,36px);line-height:1.08;
@@ -171,15 +156,15 @@
   .nd-rod-base{gap:8px 18px}
   .nd-rod-base .dir{margin-left:0;width:100%;justify-content:space-between;padding-top:6px}
   .nd-topo-bt{height:44px}
-  .nd-rod-in,.nd-rod-sinal{padding-left:18px;padding-right:18px}
+  .nd-rod-in{padding-left:18px;padding-right:18px}
 }
 
 /* ---------- rodapé do app (SOMA) --------------------------- */
 /* Sem a frase e sem o fundo expressivo: o app já tem o dele. Fica o
-   sinal, as colunas e a linha de base; respeita o tema claro. */
+   as colunas e a linha de base; respeita o tema claro. */
 .nd-rod.app{margin-top:clamp(56px,7vh,90px)}
 .nd-rod.app::before,.nd-rod.app::after{display:none}
-.nd-rod.app .nd-rod-in,.nd-rod.app .nd-rod-sinal{max-width:var(--max-main,var(--max));padding-left:32px;padding-right:32px}
+.nd-rod.app .nd-rod-in{max-width:var(--max-main,var(--max));padding-left:32px;padding-right:32px}
 .nd-rod.app .nd-rod-topo{grid-template-columns:minmax(0,1.2fr) repeat(3,minmax(0,1fr));padding:20px 0 36px}
 .nd-rod.app .nd-rod-col>ul:not(.nd-eco)>li>a,.nd-rod.app .nd-rod-col>ul>li>button{display:inline-flex;align-items:center;min-height:30px;padding:0;
   border:0;background:none;cursor:pointer;font:inherit;text-align:left;color:var(--muted);transition:color var(--t-fast)}
@@ -189,7 +174,7 @@
 .nd-versao:hover{color:var(--ink);border-color:var(--dim)}
 .nd-rod-soma{margin:0;font-family:var(--fd);font-weight:600;font-size:20px;letter-spacing:var(--tr-heading)}
 .nd-rod-soma+p{margin:6px 0 12px;color:var(--muted);max-width:30ch}
-@media (max-width:900px){.nd-rod.app .nd-rod-in,.nd-rod.app .nd-rod-sinal{padding-left:18px;padding-right:18px}}
+@media (max-width:900px){.nd-rod.app .nd-rod-in{padding-left:18px;padding-right:18px}}
 @media (max-width:960px){.nd-rod.app .nd-rod-topo{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.nd-rod.app .nd-rod-topo{grid-template-columns:minmax(0,1fr)}
   .nd-rod.app .nd-rod-col>ul:not(.nd-eco)>li>a,.nd-rod.app .nd-rod-col>ul>li>button{min-height:44px}}

@@ -211,7 +211,6 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
 <main id="main" hidden></main>
 
 <footer id="ft" class="nd-rod app" data-nd-rod hidden>
-  <div id="ft-sinal"></div>
   <div class="nd-rod-in">
     <div class="ft-vivo" id="ft-vivo" hidden></div>
     <div class="nd-rod-topo">
@@ -1508,7 +1507,6 @@ async function abrirPortal(){
   $('#ft-ver').textContent = 'SOMA ' + VERSAO;
   /* o rodapé da casca (ds/casca.js): o sinal e os quatro endereços */
   if (window.NDCasca){
-    const sinal = $('#ft-sinal'); if (sinal) sinal.outerHTML = NDCasca.sinal();
     const eco = $('#ft-eco'); if (eco) eco.outerHTML = NDCasca.ecossistema('soma', 'pt');
     NDCasca.ligar();
   }
