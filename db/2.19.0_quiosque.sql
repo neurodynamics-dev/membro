@@ -24,7 +24,7 @@
 --
 -- ANTES DE APLICAR (confira no banco; a migração para com mensagem se algo faltar):
 --   a) existe public.quiosque_estado(text)
---   b) existe public.config_sistema(chave, valor) com a linha 'quiosque_segredo'
+--   b) existe public.config_sistema(chave, valor) com a linha 'segredo_quiosque'
 --      (o segredo que o quiosque.html antigo mandava). Se a chave tem outro
 --      nome, troque v_chave na função quiosque_estado_conta e no bloco de checagem.
 --   c) criar a conta: Authentication, Users, Add user, e-mail
@@ -46,8 +46,8 @@ begin
      or not exists (select 1 from information_schema.columns where table_schema='public' and table_name='config_sistema' and column_name='valor') then
     raise exception 'public.config_sistema(chave, valor) não existe. Confira onde o segredo do quiosque mora antes de aplicar.';
   end if;
-  if not exists (select 1 from public.config_sistema where chave = 'quiosque_segredo') then
-    raise exception 'Falta a linha quiosque_segredo em config_sistema. Se a chave tem outro nome, ajuste v_chave nesta migração.';
+  if not exists (select 1 from public.config_sistema where chave = 'segredo_quiosque') then
+    raise exception 'Falta a linha segredo_quiosque em config_sistema. Se a chave tem outro nome, ajuste v_chave nesta migração.';
   end if;
 end $$;
 
@@ -87,7 +87,7 @@ comment on function public.conta_ativa() is
 create or replace function public.quiosque_estado_conta()
 returns jsonb language plpgsql volatile security definer
 set search_path = public as $$
-declare v_chave constant text := 'quiosque_segredo'; v_seg text;
+declare v_chave constant text := 'segredo_quiosque'; v_seg text;
 begin
   if not public.conta_quiosque() then return jsonb_build_object('status', 'sem_permissao'); end if;
   select valor into v_seg from public.config_sistema where chave = v_chave;

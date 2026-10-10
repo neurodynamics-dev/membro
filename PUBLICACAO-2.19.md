@@ -13,7 +13,7 @@ banco novo e o HTML antigo, também.
 ## Passo a passo
 1. **Conferir o banco** (a migração para com mensagem se algo faltar):
    `public.quiosque_estado(text)` existe? `public.config_sistema(chave, valor)`
-   tem a linha `quiosque_segredo`? Se a chave tem outro nome, ajuste `v_chave`
+   tem a linha `segredo_quiosque`? Se a chave tem outro nome, ajuste `v_chave`
    na migração antes de aplicar. A função `quiosque_estado` não está neste
    repositório (veio do SOMA antigo), então esta conferência é sua.
 2. **Criar a conta**: Supabase, Authentication, Users, Add user. E-mail
