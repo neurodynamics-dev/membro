@@ -27,8 +27,6 @@ const adminP = {
   projetos:[], projSel:null, projIdioma:'en'
 };
 
-const LAYOUTS = {padrao:'Padrão', destaque:'Destaque (banda verde)', urgente:'Urgente',
-                 evento:'Evento (bloco de data)', conquista:'Conquista'};
 
 /* Com onze painéis, aba não cabe mais: a Administração vira galeria —
    o componente "galeria de tiles" do design system — e cada painel tem
@@ -208,13 +206,13 @@ async function admCarregarAvisos(){
 }
 function desenhaAvisos(){
   $('#sec-avisos').innerHTML = `
-    <p class="small muted" style="margin-bottom:12px">Avisos publicados, na ordem definida. ${dica('Layouts: banda verde para destaques, coral para urgências, bloco de data para eventos e acento lima para conquistas.', 'Layouts')}</p>
+    <p class="small muted" style="margin-bottom:12px">Avisos publicados, na ordem definida. ${dica('Onze layouts: banda verde e hero para destaques, urgente para o que não espera, evento e contagem para datas, número e progresso para metas, lista e citação para texto. A cor vale para qualquer um.', 'Layouts')}</p>
     <div class="editor">
       <div>
         <div class="lista" id="av-lista">${adminP.avisos.length ? adminP.avisos.map(a=>`
           <button class="item ${a.id===adminP.sel?'on':''}" onclick="selAviso('${a.id}')">
             <span><span class="nm">${esc(a.titulo)}</span>
-            <span class="sl">${esc(LAYOUTS[a.layout]||a.layout)}, ordem ${esc(a.ordem)}</span></span>
+            <span class="sl">${esc(AVISO_LAYOUTS[a.layout]?.nome||a.layout)}, ordem ${esc(a.ordem)}</span></span>
             ${a.publicado ? '' : '<span class="off">oculto</span>'}
           </button>`).join('')
           : '<div class="vazio">Nenhum aviso.</div>'}</div>
@@ -226,27 +224,15 @@ function desenhaAvisos(){
 }
 function selAviso(id){ adminP.sel = id; desenhaAvisos(); }
 function previewAviso(a){
-  const TAGS = {padrao:'Aviso', destaque:'Quadro de avisos', urgente:'Urgente',
-                conquista:'Conquista', evento:'Evento'};
-  if (a.layout==='evento'){
-    const d = a.data_evento || a.data_inicio;
-    const dt = d ? new Date(d+'T12:00') : null;
-    return `<div class="preview pv-evento">
-      ${dt?`<div class="quando"><div class="d">${dt.getDate()}</div><div class="m">${MES_CURTO[dt.getMonth()]}</div></div>`:''}
-      <div><span class="sl-tag">${TAGS.evento}</span>
-      <h3>${esc(a.titulo||'Título do aviso')}</h3>
-      ${a.corpo?`<p>${esc(a.corpo)}</p>`:''}</div></div>`;
-  }
-  return `<div class="preview pv-${esc(a.layout||'padrao')}">
-    <span class="sl-tag">${TAGS[a.layout]||'Aviso'}</span>
-    <h3>${esc(a.titulo||'Título do aviso')}</h3>
-    ${a.corpo?`<p>${esc(a.corpo)}</p>`:''}</div>`;
+  return `<div class="board-prev"><div class="board"><div class="slide on">${slideAviso(a)}</div></div></div>`;
 }
 function lerFormAviso(){
   return {
     titulo: $('#a-titulo').value.trim(),
     corpo: $('#a-corpo').value.trim() || null,
     layout: $('#a-layout').value,
+    familia: $('#a-familia').value || null,
+    valor: $('#a-valor').value.trim() || null,
     link_url: $('#a-url').value.trim() || null,
     link_rotulo: $('#a-rotulo').value.trim() || null,
     data_evento: $('#a-devento').value || null,
@@ -265,15 +251,24 @@ function desenhaFormAviso(){
     <p class="sub">id ${esc(a.id).slice(0,8)}, atualizado ${a.atualizado_em?new Date(a.atualizado_em).toLocaleString('pt-BR'):'—'}</p>
     <div id="a-preview">${previewAviso(a)}</div>
     <div class="fgrid">
+      <div class="fld full"><label>Layout</label>
+        <input type="hidden" id="a-layout" value="${esc(a.layout||'padrao')}">
+        <div class="lay-opcoes" role="group" aria-label="Layout">${Object.entries(AVISO_LAYOUTS).map(([k,l])=>`
+          <button type="button" class="lay ${a.layout===k?'on':''}" data-lay="${k}" aria-pressed="${a.layout===k}" onclick="escolheLayoutAviso('${k}')">
+            <b>${esc(l.nome)}</b><span>${esc(l.dica)}</span></button>`).join('')}</div></div>
+      <div class="fld full"><label>Cor</label>
+        <input type="hidden" id="a-familia" value="${esc(a.familia||'')}">
+        <div class="fam-opcoes" role="group" aria-label="Cor do aviso">
+          <button type="button" class="fam-bt ${a.familia?'':'on'}" data-fam="" aria-pressed="${!a.familia}" onclick="escolheFamiliaAviso('')">Do layout</button>
+          ${AVISO_FAMILIAS.map(f=>`<button type="button" class="fam-bt f-${f} ${a.familia===f?'on':''}" data-fam="${f}" aria-pressed="${a.familia===f}"
+            onclick="escolheFamiliaAviso('${f}')" title="${esc(AVISO_NOME_FAMILIA[f])}"><i></i>${esc(AVISO_NOME_FAMILIA[f])}</button>`).join('')}</div></div>
       <div class="fld full"><label>Título</label><input id="a-titulo" value="${esc(a.titulo)}" oninput="atualizaPreview()"></div>
       <div class="fld full"><label>Corpo (1–2 frases)</label>
         <textarea id="a-corpo" rows="2" oninput="atualizaPreview()">${esc(a.corpo||'')}</textarea></div>
-      <div class="fld"><label>Layout</label>
-        <select id="a-layout" onchange="atualizaPreview();$('#a-devento-wrap').style.display=this.value==='evento'?'':'none'">
-          ${Object.entries(LAYOUTS).map(([k,l])=>`<option value="${k}" ${a.layout===k?'selected':''}>${l}</option>`).join('')}
-        </select></div>
-      <div class="fld" id="a-devento-wrap" style="${a.layout==='evento'?'':'display:none'}">
-        <label>Data do evento (bloco de data)</label>
+      <div class="fld" id="a-valor-wrap"><label id="a-valor-rot">Valor</label>
+        <input id="a-valor" maxlength="24" value="${esc(a.valor||'')}" oninput="atualizaPreview()"></div>
+      <div class="fld" id="a-devento-wrap">
+        <label>Data do evento</label>
         <input id="a-devento" type="date" value="${esc(a.data_evento||'')}" onchange="atualizaPreview()"></div>
       <div class="fld"><label>Link (opcional)</label><input id="a-url" value="${esc(a.link_url||'')}" placeholder="https://…"></div>
       <div class="fld"><label>Rótulo do link</label><input id="a-rotulo" value="${esc(a.link_rotulo||'')}" placeholder="Saiba mais"></div>
@@ -287,6 +282,29 @@ function desenhaFormAviso(){
       <button class="btn solid" id="a-salvar" onclick="salvarAviso('${a.id}')">Salvar alterações</button>
       <button class="btn perigo" onclick="excluirAviso('${a.id}')">Excluir</button>
     </div>`;
+  ajustaCamposAviso();
+}
+/* cada layout pede campos diferentes: o que não serve some */
+function ajustaCamposAviso(){
+  const L = $('#a-layout')?.value; if (!L) return;
+  $('#a-devento-wrap').style.display = (L==='evento' || L==='contagem') ? '' : 'none';
+  $('#a-valor-wrap').style.display = (L==='numero' || L==='progresso') ? '' : 'none';
+  $('#a-valor-rot').textContent = L==='progresso' ? 'Valor (0 a 100)' : 'Valor (o número grande)';
+  const rotCorpo = {lista:'Itens (uma linha por item, até 6)', citacao:'A frase', numero:'O que o valor mede (opcional)'}[L] || 'Corpo (1–2 frases)';
+  const rotTit = L==='citacao' ? 'Quem disse' : 'Título (no Hero, *palavra* fica em Synapse)';
+  const lc = document.querySelector('#a-corpo')?.closest('.fld')?.querySelector('label'); if (lc) lc.textContent = rotCorpo;
+  const lt = document.querySelector('#a-titulo')?.closest('.fld')?.querySelector('label'); if (lt) lt.textContent = rotTit;
+  const ta = $('#a-corpo'); if (ta) ta.rows = L==='lista' ? 5 : 2;
+}
+function escolheLayoutAviso(k){
+  $('#a-layout').value = k;
+  document.querySelectorAll('.lay-opcoes .lay').forEach(b=>{ const on = b.dataset.lay===k; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  ajustaCamposAviso(); atualizaPreview();
+}
+function escolheFamiliaAviso(f){
+  $('#a-familia').value = f;
+  document.querySelectorAll('.fam-opcoes .fam-bt').forEach(b=>{ const on = b.dataset.fam===f; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  atualizaPreview();
 }
 function atualizaPreview(){
   const el = $('#a-preview'); if(!el) return;

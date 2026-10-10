@@ -3049,6 +3049,90 @@ function modalAtalhos(){
     <div class="acts"><button class="btn solid" onclick="fechaModal()">Fechar</button></div>`);
 }
 
+/* Os layouts do quadro de avisos: cada um é uma banda ou um widget do
+   design system. A mesma função desenha o quadro da Início e a prévia do
+   editor (mod-admin.js). */
+const AVISO_LAYOUTS = {
+  padrao:    { nome:'Padrão',         tag:'Aviso',            dica:'Vidro sóbrio: título e uma frase.' },
+  destaque:  { nome:'Banda verde',    tag:'Quadro de avisos', dica:'A banda da marca, para o que importa.' },
+  hero:      { nome:'Hero',           tag:'Em destaque',      dica:'Título grande com uma palavra em Synapse: *assim*.' },
+  urgente:   { nome:'Urgente',        tag:'Urgente',          dica:'Borda e marca em Critical. Só para o que não espera.' },
+  evento:    { nome:'Evento',         tag:'Evento',           dica:'Bloco de data à esquerda.' },
+  contagem:  { nome:'Contagem',       tag:'Contagem',         dica:'Dias que faltam para a data do evento.' },
+  numero:    { nome:'Número',         tag:'Em números',       dica:'Um valor grande (o campo Valor) e o que ele mede.' },
+  progresso: { nome:'Progresso',      tag:'Meta',             dica:'Porcentagem em barra (o campo Valor, de 0 a 100).' },
+  conquista: { nome:'Conquista',      tag:'Conquista',        dica:'Acento Synapse para celebrar.' },
+  lista:     { nome:'Lista',          tag:'Lista',            dica:'Cada linha do corpo vira um item (até 6).' },
+  citacao:   { nome:'Citação',        tag:'Citação',          dica:'O corpo é a frase; o título, quem disse.' }
+};
+const AVISO_FAMILIAS = ['cortex','ion','neuron','glia','retina','nexo','dendrito','lumen','ritmo','impulso','plexo','iris'];
+const AVISO_NOME_FAMILIA = {cortex:'Cortex',ion:'Ion',neuron:'Neuron',glia:'Glia',retina:'Retina',nexo:'Nexo',dendrito:'Dendrito',
+  lumen:'Lumen',ritmo:'Ritmo',impulso:'Impulso',plexo:'Plexo',iris:'Iris'};
+/* *palavra* no título vira a palavra em Synapse (hero) */
+const avisoTitulo = (t, destaca) => { const e = esc(t || '');
+  return destaca ? e.replace(/\*([^*]+)\*/g, '<em>$1</em>') : e.replace(/\*/g, ''); };
+function avisoDiasAte(a){
+  const d = a.data_evento || a.data_inicio; if (!d) return null;
+  const hoje = new Date(); hoje.setHours(12,0,0,0);
+  return Math.round((new Date(d + 'T12:00') - hoje) / 86400000);
+}
+function avisoMes(a){
+  const d = a.data_evento || a.data_inicio; const dt = d ? new Date(d + 'T12:00') : null;
+  return dt ? { d: dt.getDate(), m: MES_CURTO[dt.getMonth()], a: dt.getFullYear() } : null;
+}
+function slideAviso(a){
+  const L = AVISO_LAYOUTS[a.layout] ? a.layout : 'padrao';
+  const fam = AVISO_FAMILIAS.includes(a.familia) ? ' fam f-' + a.familia : '';
+  const escura = L === 'hero' || L === 'destaque';
+  const link = a.link_url ? `<div class="acts"><a class="btn ${escura ? 'solid' : 'ghost'}"
+      href="${esc(a.link_url)}" target="_blank" rel="noopener">${esc(a.link_rotulo || 'Saiba mais')}</a></div>` : '';
+  const corpo = a.corpo ? `<p>${esc(a.corpo)}</p>` : '';
+  const tag = `<span class="sl-tag">${AVISO_LAYOUTS[L].tag}</span>`;
+  const cls = `sl-base sl-${L}${fam}${L === 'hero' ? ' ilha-escura' : ''}`;
+  const titulo = (conteudo) => `<h2>${conteudo}</h2>`;
+  if (L === 'evento'){
+    const q = avisoMes(a);
+    const quando = q ? `<div class="quando"><div class="d">${q.d}</div><div class="m">${q.m}</div><div class="a">${q.a}</div></div>` : '';
+    return `<div class="${cls}">${quando}<div class="txt">${tag}${titulo(avisoTitulo(a.titulo))}${corpo}${link}</div></div>`;
+  }
+  if (L === 'contagem'){
+    const n = avisoDiasAte(a);
+    const num = n == null ? '?' : n > 0 ? String(n) : n === 0 ? 'Hoje' : 'Passou';
+    const un = n == null ? 'sem data' : n === 1 ? 'dia' : n > 1 ? 'dias' : '';
+    return `<div class="${cls}"><div class="w-num">${num}${un ? `<small>${un}</small>` : ''}</div>
+      <div class="txt">${tag}${titulo(avisoTitulo(a.titulo))}${corpo}${link}</div></div>`;
+  }
+  if (L === 'numero'){
+    return `<div class="${cls}"><div class="w-num">${esc(a.valor || '0')}</div>
+      <div class="txt">${tag}${titulo(avisoTitulo(a.titulo))}${corpo}${link}</div></div>`;
+  }
+  if (L === 'progresso'){
+    const v = Math.max(0, Math.min(100, parseFloat(String(a.valor || '0').replace(',', '.')) || 0));
+    return `<div class="${cls}">${tag}<div class="w-num">${String(Math.round(v))}<small>%</small></div>
+      <div class="progresso" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v)}"><div class="fill" style="width:${v}%"></div></div>
+      ${titulo(avisoTitulo(a.titulo))}${corpo}${link}</div>`;
+  }
+  if (L === 'lista'){
+    const itens = String(a.corpo || '').split('\n').map(x => x.trim()).filter(Boolean).slice(0, 6);
+    return `<div class="${cls}">${tag}${titulo(avisoTitulo(a.titulo))}
+      ${itens.length ? `<ul class="sl-itens">${itens.map(i => `<li>${esc(i)}</li>`).join('')}</ul>` : ''}${link}</div>`;
+  }
+  if (L === 'citacao'){
+    const frase = a.corpo || a.titulo || '';
+    return `<div class="${cls}">${tag}<blockquote>${esc(frase)}</blockquote>${a.corpo && a.titulo ? `<cite>${esc(a.titulo)}</cite>` : ''}${link}</div>`;
+  }
+  if (L === 'hero'){
+    return `<div class="${cls}"><div class="blob b1"></div><div class="blob b2"></div>
+      <div class="txt">${tag}${titulo(avisoTitulo(a.titulo, true))}${corpo}${link}</div></div>`;
+  }
+  const h = L === 'conquista' ? `<b>${avisoTitulo(a.titulo)}</b>` : avisoTitulo(a.titulo);
+  return `<div class="${cls}">${tag}${titulo(h)}${corpo}${link}</div>`;
+}
+function modoBoard(){ try{ return localStorage.getItem('nd.board') === 'grade' ? 'grade' : 'rodizio'; }catch(e){ return 'rodizio'; } }
+function trocarModoBoard(m){
+  try{ localStorage.setItem('nd.board', m); }catch(e){}
+  desenharBoard();
+}
 async function carregarBoard(){
   const { data, error } = await sb.from('portal_avisos').select('*')
     .order('ordem').order('criado_em', {ascending:false});
@@ -3059,44 +3143,34 @@ async function carregarBoard(){
     return;
   }
   state.avisos = data || [];
+  desenharBoard();
+}
+function desenharBoard(){
+  const el = $('#sec-board'); if(!el) return;
+  pararBoard();
   if (!state.avisos.length){ el.innerHTML = ''; return; }
+  const grade = modoBoard() === 'grade', n = state.avisos.length;
+  const largos = new Set(['hero','destaque']);
   el.innerHTML = `
-    <div class="board" id="board" aria-roledescription="carrossel"
+    <div class="board ${grade ? 'grade' : ''}" id="board" ${grade ? '' : 'aria-roledescription="carrossel"'}
          onmouseenter="pausarBoard()" onmouseleave="retomarBoard()">
-      ${state.avisos.map((a,i)=>`<div class="slide ${i===0?'on':''}" data-ix="${i}">${slideAviso(a)}</div>`).join('')}
+      ${state.avisos.map((a,i)=>`<div class="slide ${i===0 || grade ? 'on' : ''} ${grade && largos.has(a.layout) ? 'larga' : ''}" data-ix="${i}">${slideAviso(a)}</div>`).join('')}
     </div>
-    ${state.avisos.length>1 ? `
+    ${n>1 ? `
     <div class="board-ctl">
-      <div class="board-dots">${state.avisos.map((_,i)=>
-        `<button class="${i===0?'on':''}" data-dot="${i}" aria-label="Aviso ${i+1}" onclick="irBoard(${i})"></button>`).join('')}</div>
-      <div class="board-arrows">
+      ${grade ? '' : `<div class="board-dots">${state.avisos.map((_,i)=>
+        `<button class="${i===0?'on':''}" data-dot="${i}" aria-label="Aviso ${i+1}" onclick="irBoard(${i})"></button>`).join('')}</div>`}
+      <div class="seg board-modo" role="group" aria-label="Como ver os avisos">
+        <button class="${grade ? '' : 'on'}" aria-pressed="${!grade}" onclick="trocarModoBoard('rodizio')">Rodízio</button>
+        <button class="${grade ? 'on' : ''}" aria-pressed="${grade}" onclick="trocarModoBoard('grade')">Grade</button>
+      </div>
+      ${grade ? '' : `<div class="board-arrows">
         <button aria-label="Aviso anterior" onclick="passoBoard(-1)">‹</button>
         <button aria-label="Próximo aviso" onclick="passoBoard(1)">›</button>
-      </div>
+      </div>`}
     </div>` : ''}`;
   state.board.ix = 0;
-  iniciarBoard();
-}
-function slideAviso(a){
-  const link = a.link_url ? `<div class="acts"><a class="btn ${a.layout==='destaque'?'claro':'ghost'}"
-      href="${esc(a.link_url)}" target="_blank" rel="noopener">${esc(a.link_rotulo || 'Saiba mais')}</a></div>` : '';
-  const corpo = a.corpo ? `<p>${esc(a.corpo)}</p>` : '';
-  const TAGS = {padrao:'Aviso', destaque:'Quadro de avisos', urgente:'Urgente',
-                conquista:'Conquista', evento:'Evento'};
-  if (a.layout === 'evento'){
-    const d = a.data_evento || a.data_inicio;
-    const dt = d ? new Date(d+'T12:00') : null;
-    const quando = dt ? `<div class="quando">
-        <div class="d">${dt.getDate()}</div>
-        <div class="m">${MES_CURTO[dt.getMonth()]}</div>
-        <div class="a">${dt.getFullYear()}</div></div>` : '';
-    return `<div class="sl-base sl-evento">${quando}
-      <div class="txt"><span class="sl-tag">${TAGS.evento}</span>
-        <h2>${esc(a.titulo)}</h2>${corpo}${link}</div></div>`;
-  }
-  const titulo = a.layout==='conquista' ? `<h2><b>${esc(a.titulo)}</b></h2>` : `<h2>${esc(a.titulo)}</h2>`;
-  return `<div class="sl-base sl-${esc(a.layout)}">
-    <span class="sl-tag">${TAGS[a.layout]||'Aviso'}</span>${titulo}${corpo}${link}</div>`;
+  if (!grade) iniciarBoard();
 }
 function mostrarSlide(ix){
   const n = state.avisos.length; if(!n) return;
