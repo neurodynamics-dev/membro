@@ -74,7 +74,7 @@ function marcaAssinatura(){
  const campos=Object.entries({nome:'Nome',cargo:'Cargo',departamento:'Departamento',email:'E-mail',telefone:'Telefone',pronomes:'Pronomes'});
  const clientes={gmail:'Gmail: Configurações, Ver todas as configurações, Geral, Assinatura. Cole a assinatura copiada no editor.',outlook:'Outlook: Configurações, Contas, Assinaturas. Cole a assinatura copiada no editor.',outros:'Outros clientes: cole a assinatura copiada no editor de assinatura do cliente de e-mail.'};
  $('#main').innerHTML=marcaTopo('Assinatura de e-mail','assinatura')
-  +`<div class="objeto" style="grid-template-columns:minmax(0,1fr) minmax(0,min(100%,580px))"><div class="objeto-principal card"><p class="small muted" style="margin:0 0 var(--s4)">Os dados vêm da sua ficha. Mudar aqui não altera a ficha.</p>
+  +`<div class="objeto larga"><div class="objeto-principal card"><p class="small muted" style="margin:0 0 var(--s4)">Os dados vêm da sua ficha. Mudar aqui não altera a ficha.</p>
    ${campos.map(([k,n])=>`<div class="fld" style="margin-bottom:var(--s3)"><label for="marca-sig-${k}">${n}</label><input id="marca-sig-${k}" value="${esc(marca.assinatura[k])}" oninput="marca.assinatura.${k}=this.value;marcaSigRender()"></div>`).join('')}
    ${navNivel2(Object.keys(clientes).map(k=>[k,{gmail:'Gmail',outlook:'Outlook',outros:'Outros'}[k],`javascript:marcaCliente('${k}')`]),marca.cliente,'Cliente de e-mail').replace(/<a /g,'<a role="button" ')}
    <p class="small muted" id="marca-sig-ajuda">${esc(clientes[marca.cliente])}</p></div>
