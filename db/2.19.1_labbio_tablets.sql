@@ -95,17 +95,18 @@ create or replace function public.sala_situacao(p_espaco integer)
 returns jsonb language plpgsql stable security definer set search_path = public as $$
 declare v_atual eventos; v_prox eventos; v_ocup sala_ocupacoes;
 begin
-  select * into v_atual from eventos e
+  -- atribuição direta: o SQL Editor do Supabase lia a forma anterior como criação de tabela
+  v_atual := (select e from eventos e
    where e.espaco_id = p_espaco and coalesce(e.status, '') <> 'Cancelado'
      and (e.data + coalesce(e.hora_inicio, '00:00')) at time zone 'America/Sao_Paulo' <= now()
      and (e.data + coalesce(e.hora_fim, '24:00')) at time zone 'America/Sao_Paulo' > now()
-   order by e.hora_inicio limit 1;
-  select * into v_prox from eventos e
+   order by e.hora_inicio limit 1);
+  v_prox := (select e from eventos e
    where e.espaco_id = p_espaco and coalesce(e.status, '') <> 'Cancelado'
      and (e.data + coalesce(e.hora_inicio, '00:00')) at time zone 'America/Sao_Paulo' > now()
      and e.data <= (now() at time zone 'America/Sao_Paulo')::date + 7
-   order by e.data, e.hora_inicio limit 1;
-  select * into v_ocup from sala_ocupacoes where espaco_id = p_espaco and ate > now() and inicio <= now() order by ate desc limit 1;
+   order by e.data, e.hora_inicio limit 1);
+  v_ocup := (select o from sala_ocupacoes o where o.espaco_id = p_espaco and o.ate > now() and o.inicio <= now() order by o.ate desc limit 1);
   return jsonb_build_object(
     'estado', case when v_atual.id is not null then 'evento' when v_ocup.id is not null then 'ocupada' else 'livre' end,
     'agora', now(),
