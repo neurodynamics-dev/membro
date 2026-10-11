@@ -900,6 +900,63 @@
           const papeisStub = () => { const pf = DADOS.perfis[0];
             return pf.papeis || ['admin','pessoal','lideranca','selecao','leitura'].filter(k => k === (pf.papel || 'leitura') || k === 'leitura'); };
           if (nome === 'conta_ativa') return { data: !(window.__teste || {}).bloqueada, error:null };
+          /* ---- 2.19.1: gestores do LABBIO (db/2.19.1_labbio_base.sql).
+             window.__teste.labbio = { conta: 'nao_gestor'|'convidado'|'ativo'|'revogado',
+             principal: true|false }. Sem ele, a conta é de membro (nao_gestor).
+             Para conta externa, qualquer RPC fora de labbio_* falha como na
+             porta da API (window.__barradas anota quais). ---- */
+          {
+            const LB = (window.__teste || {}).labbio;
+            const externa = LB && LB.conta && LB.conta !== 'nao_gestor';
+            if (externa && !/^labbio_/.test(nome)){
+              (window.__barradas ||= []).push(nome);
+              return { data:null, error:{ code:'42501', message:'Esta conta é do painel do LABBIO e não acessa o portal da equipe.' } };
+            }
+            if (/^labbio_(eu|gestores_lista|convidar|aceitar|principal|revogar)$/.test(nome)){
+              (window.__rpcs ||= []).push({ nome, p:args });
+              const G = window.__lbG ||= [
+                { id:'g1', nome:'Gestora Um', email:'gestora@labbio.test', situacao:'ativo', principal:true, convidado_em:'2026-10-01T12:00:00Z',
+                  aceito_em:'2026-10-02T12:00:00Z', revogado_em:null, revogado_motivo:null, ultimo_acesso:'2026-10-10T12:00:00Z', tem_conta:true, convidado_por:'Ana Figueiredo' },
+                { id:'g2', nome:'Gestor Dois', email:'dois@labbio.test', situacao:'convidado', principal:false, convidado_em:'2026-10-09T12:00:00Z',
+                  aceito_em:null, revogado_em:null, revogado_motivo:null, ultimo_acesso:null, tem_conta:false, convidado_por:'Gestora Um' }];
+              const ativo = LB && LB.conta === 'ativo';
+              const souAdm = !externa && (DADOS.perfis[0].papel === 'admin');
+              const eu = ativo ? { ...G[0], principal: LB.principal !== false } : null;
+              const r = d => ({ data:d, error:null });
+              if (nome === 'labbio_eu') return r(!LB || LB.conta === 'nao_gestor' ? { status:'nao_gestor' }
+                : LB.conta === 'ativo' ? { status:'ok', gestor:eu } : { status:LB.conta });
+              if (nome === 'labbio_aceitar'){
+                if (!/^[0-9a-f]{48}$/.test(args.p_token || '')) return r({ status:'invalido' });
+                if (args.p_token.startsWith('0')) return r({ status:'expirado' });
+                LB.conta = 'ativo'; return r({ status:'ok', gestor:{ ...G[0] } });
+              }
+              if (!(ativo || souAdm)) return r({ status:'sem_permissao' });
+              if (nome === 'labbio_gestores_lista') return r({ status:'ok', gestores: structuredClone(G) });
+              if (nome === 'labbio_convidar'){
+                const e = String(args.p_email || '').trim().toLowerCase();
+                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return r({ status:'email_invalido' });
+                if (!String(args.p_nome || '').trim()) return r({ status:'nome_obrigatorio' });
+                if (/@nro\.dev$/.test(e)) return r({ status:'email_de_membro' });
+                if (G.some(g => g.email === e && g.situacao === 'ativo')) return r({ status:'ja_ativo' });
+                G.push({ id:'g' + (G.length + 1), nome:args.p_nome.trim(), email:e, situacao:'convidado', principal:false,
+                  convidado_em:new Date().toISOString(), tem_conta:false, convidado_por: souAdm ? 'Ana Figueiredo' : 'Gestora Um' });
+                return r({ status:'ok', id:'g' + G.length });
+              }
+              const podeEstrela = souAdm || (eu && eu.principal);
+              if (nome === 'labbio_principal'){
+                if (!podeEstrela) return r({ status:'sem_permissao' });
+                const g = G.find(x => x.id === args.p_id && x.situacao === 'ativo'); if (!g) return r({ status:'invalido' });
+                G.forEach(x => x.principal = x === g); return r({ status:'ok' });
+              }
+              if (nome === 'labbio_revogar'){
+                if (!podeEstrela) return r({ status:'sem_permissao' });
+                const g = G.find(x => x.id === args.p_id && x.situacao !== 'revogado'); if (!g) return r({ status:'invalido' });
+                if (g.principal && G.some(x => x !== g && x.situacao === 'ativo')) return r({ status:'transfira_antes' });
+                Object.assign(g, { situacao:'revogado', principal:false, revogado_em:new Date().toISOString(), revogado_motivo:args.p_motivo || null });
+                return r({ status:'ok' });
+              }
+            }
+          }
           /* ---- 2.19.1: reporte por liderança direta (db/2.19.1_reporte.sql).
              Sem window.__teste.reporteLider, o líder não tem reporte nem
              cobrança. As opções: { cobranca:'nenhuma'|'aviso'|'obrigatoria',
