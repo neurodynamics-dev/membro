@@ -86,16 +86,16 @@ try{
  await p.getByRole('button',{name:'Enviar reporte',exact:true}).waitFor();
  await p.getByRole('button',{name:'Enviar reporte',exact:true}).click();await p.locator('#modal button.solid').click();
  await p.waitForFunction(()=>window.sent===1);checks++;
- /* F: o feed é uma seção de Equipe, com cabeçalho; #/feed é só o endereço antigo */
+ /* F: o feed mora em Serviços desde a 2.19.2; #/feed é só o endereço antigo */
  await p.evaluate(()=>location.hash='#/feed');await p.getByRole('heading',{name:'Ensaio concluído'}).waitFor();assert.equal(await p.locator('#feed-lista strong').innerText(),'validado');checks++;
  assert.equal(await p.locator('#main .cab h1').innerText(),'Feed da equipe');checks++;
- assert.ok(await p.locator('#main .nav1').count());checks++;
- assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Equipe');checks++;
+ assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Serviços');checks++;
  assert.equal(await p.locator('#main .nav1 a[href="#/equipe/reporte"]').count(),0);checks++;
  await p.evaluate(()=>location.hash='#/equipe/newsletter');
  await p.getByRole('heading',{name:'Newsletters',exact:true}).waitFor();
- assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Equipe');checks++;
- assert.ok(await p.locator('#main .nav1 a[href="#/equipe/feed"]').count());checks++;
+ /* o endereço antigo redireciona para Serviços */
+ assert.equal(await p.evaluate(()=>location.hash),'#/servicos/newsletter');checks++;
+ assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Serviços');checks++;
  /* Leitura não ganha acesso pela rota direta nem pelo endereço antigo. */
  const leitura=await nav.newPage();const errosLeitura=[];leitura.on('pageerror',e=>errosLeitura.push(e.message));
  await leitura.route('**/*supabase*.js',r=>r.fulfill({contentType:'application/javascript',

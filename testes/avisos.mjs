@@ -2,7 +2,7 @@
    Confere, com asserção de verdade (sai 1 se algo falhar):
      1. cada layout desenha a sua estrutura (hero, número, contagem, lista, citação, progresso...);
      2. o texto do aviso nunca vira HTML; *palavra* só vale no hero;
-     3. rodízio por padrão e grade à escolha, lembrada ao recarregar;
+     3. rodízio (a grade saiu na 2.19.2);
      4. no tema claro, o hero continua escuro; nada cria rolagem lateral no celular;
      5. o editor oferece os onze layouts e as doze cores, esconde os campos que o layout não usa,
         e salva layout, família e valor.
@@ -69,12 +69,8 @@ for (const tema of ['escuro', 'claro']){
   await p.screenshot({ path:`avisos-${tema}-rodizio.png`, clip:{ x:0, y:0, width:1280, height:700 } });
   await p.evaluate(() => mostrarSlide(4)); await p.waitForTimeout(700);
   await p.locator('#board').screenshot({ path:`avisos-${tema}-contagem.png` });
-  await p.click('.board-modo button:has-text("Grade")'); await p.waitForTimeout(300);
-  confere('grade: todos à vista, sem pontos nem setas', await p.locator('#board.grade').count() === 1
-    && await p.locator('#board .slide:visible').count() === 11 && await p.locator('[data-dot]').count() === 0 && await p.locator('.board-arrows').count() === 0);
-  confere('a grade fica lembrada ao recarregar', await (async () => { await p.reload({ waitUntil:'domcontentloaded' }); await p.waitForSelector('#hd:not([hidden])');
-    await p.evaluate(a => { window.__agenda.portal_avisos.splice(0, 99, ...a); return carregarBoard(); }, AVISOS); await p.waitForSelector('#board.grade'); return true; })());
-  await p.screenshot({ path:`avisos-${tema}-grade.png`, fullPage:true });
+  /* 2.19.2: só rodízio; o botão Rodízio/Grade saiu */
+  confere('sem o botão Rodízio/Grade', await p.locator('.board-modo').count() === 0 && await p.locator('#board.grade').count() === 0);
   confere('sem erro de página', erros.length === 0, erros);
   await ctx.close();
 }
@@ -83,8 +79,7 @@ for (const tema of ['escuro', 'claro']){
   await p.evaluate(a => { window.__agenda.portal_avisos.splice(0, 99, ...a); return carregarBoard(); }, AVISOS);
   await p.waitForSelector('#board'); await p.waitForTimeout(300);
   console.log('\nCelular');
-  for (const modo of ['rodizio', 'grade']){
-    await p.evaluate(m => trocarModoBoard(m), modo); await p.waitForTimeout(300);
+  for (const modo of ['rodizio']){  // 2.19.2: só rodízio
     for (let i = 0; i < (modo === 'rodizio' ? 11 : 1); i++){
       if (modo === 'rodizio') await p.evaluate(k => mostrarSlide(k), i);
       const lateral = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
