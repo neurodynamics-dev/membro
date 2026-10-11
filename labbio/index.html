@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#050807"> <!-- auditar: ok, theme-color exige valor literal -->
+<script>try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.dataset.tema = 'claro'; }catch(e){}</script>
+<title>Painel do LABBIO | NeuroDynamics</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../ds/tokens.css">
+<link rel="stylesheet" href="../ds/neuro.css">
+<link rel="stylesheet" href="labbio.css">
+</head>
+<body class="labbio">
+<header class="lb-topo" id="lb-topo" hidden>
+  <a class="lb-marcas" href="#/" aria-label="Painel do LABBIO, início">
+    <img class="lb-logo" src="../studio/labbio.png" alt="LABBIO">
+    <span class="lb-sep" aria-hidden="true"></span>
+    <img class="lb-nro lb-nro-escuro" src="../studio/nro-imagotipo-branco.png" alt="NeuroDynamics">
+    <img class="lb-nro lb-nro-claro" src="../studio/nro-imagotipo.png" alt="NeuroDynamics">
+  </a>
+  <button class="lb-menu-bt" id="lb-menu-bt" type="button" aria-controls="lb-nav" aria-expanded="false">Menu</button>
+  <nav class="lb-nav" id="lb-nav" aria-label="Painel do LABBIO"></nav>
+  <div class="lb-eu"><span id="lb-eu-nome"></span><button class="btn ghost mini" type="button" onclick="labSair()">Sair</button></div>
+</header>
+<main class="lb-main" id="lb-main" tabindex="-1"><div class="carregando"><span class="spin"></span> Carregando…</div></main>
+<div id="lb-veu" class="lb-veu" hidden></div>
+<div id="lb-modal" class="lb-modal" role="dialog" aria-modal="true" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="labbio.js"></script>
+</body>
+</html>

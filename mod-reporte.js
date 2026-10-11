@@ -44,9 +44,7 @@ async function pageReporte(){
    reporte.aberto=null;reporte.lider=null;
    reporte.painel=await repRPC('reporte_painel');return repTelaConfig();
   }
-  if(a==='painel'){
-   $('#main').innerHTML=repTopo('Reporte semanal')+estado.vazio({texto:'O painel da semana ainda não está disponível.'});return;
-  }
+  if(a==='painel')return repTelaPainel();
   /* Favoritos do modelo por frente, anteriores à rota explícita. */
   if(a&&a!=='frente'&&!/^[1-4]$/.test(a)){
    history.replaceState(null,'',location.pathname+'#/servicos/reporte/frente/'+encodeURIComponent(a)+'/'+(b||'1'));
@@ -65,6 +63,7 @@ async function pageReporte(){
    $('#main .cab').insertAdjacentHTML('afterend','<div class="aviso-box info">Esta semana ainda segue o reporte por frente. O reporte por liderança começa na próxima sprint.</div>');return;
   }
   reporte.lider=d;reporte.aberto=d.reporte?d:null;reporte.sujo=false;
+  reporte.consolidado=await repRPC('reporte_consolidado_pode').then(v=>v===true,()=>false);
   if(!d.reporte){
    $('#main').innerHTML=repTopo('Reporte semanal')+estado.vazio({texto:'A sprint desta semana já fechou e você não abriu o reporte.'});return;
   }
@@ -207,7 +206,7 @@ async function repEnviar(){
  if(reporte.ocupado)return;
  const r=reporte.aberto.reporte;
  if(r.apontamentos.some(a=>a.sinalizado&&!String(a.justificativa||'').trim())){document.getElementById('rep-enviar')?.blur();return toast('Informe a justificativa dos membros sinalizados.',true);}
- if(!await confirma('Depois de enviado, o reporte não pode ser editado. As publicações entram no feed da equipe e as sinalizações vão para o Pessoal.','Enviar reporte'))return;
+ if(!await confirma('Depois de enviado, o reporte não pode ser editado. As publicações vão para a mesa editorial, onde a gerência decide o que publicar, e as sinalizações vão para o Pessoal.','Enviar reporte'))return;
  r.etapa=3;if(!await repSalvar(true))return;
  reporte.ocupado=true;
  try{await repRPC('reporte_enviar',{p_id:r.id,p_versao:r.versao});await carregarObrigacoes();toast('Reporte enviado.');reporte.aberto=null;location.hash='#/servicos/reporte';}
@@ -233,7 +232,7 @@ async function repImagem(i,file){
 }
 
 /* ---------------- reporte por liderança direta (2.19.1) ---------------- */
-const REP_ENVIO_LIDER='Ao enviar, as avaliações vão para a ficha de cada pessoa, as sinalizações abrem o acompanhamento no PMO (ou o desligamento, se for a segunda em 60 dias) e as publicações entram no feed.';
+const REP_ENVIO_LIDER='Ao enviar, as avaliações vão para a ficha de cada pessoa, as sinalizações abrem o acompanhamento no PMO (ou o desligamento, se for a segunda em 60 dias) e as publicações vão para a mesa editorial, onde a gerência decide o que publicar.';
 const repPodeEditarLider=()=>repEhLider()&&!repTravado(reporte.aberto)&&!reporte.conflito&&!reporte.mutando;
 function repAvisoCobranca(){
  if(state.obrigacao?.reporte?.status!=='obrigatoria')return '';
@@ -272,7 +271,7 @@ function repRenderLider(){
   !travado?'<button class="btn ghost" id="rep-salvar" onclick="repSalvar()">Salvar rascunho</button>':'',
   n<4?`<a class="btn solid" href="${rota(n+1)}">Continuar</a>`:(!travado?'<button class="btn solid" id="rep-enviar" onclick="repEnviar()">Enviar reporte</button>':'')].join('');
  $('#main').innerHTML=repAvisoCobranca()+cabecalho({espaco:'Serviços',titulo:'Reporte semanal',meta:['Semana de '+fmtD(d.ciclo.semana),prazo],
-  acoes:souAdmin()?['<a class="btn ghost" href="#/servicos/reporte/config">Configurar ciclo</a>']:[]})
+  acoes:[reporte.consolidado?'<a class="btn ghost" href="#/servicos/reporte/painel">Painel da semana</a>':'',souAdmin()?'<a class="btn ghost" href="#/servicos/reporte/config">Configurar ciclo</a>':'']})
   +repAvisoLider(d)+'<div id="rep-aviso"></div>'
   +layoutFluxo({passos:etapas(REP_PASSOS,String(n),rota),corpo,salvo:travado?'<span class="salvo"></span>':'<span class="salvo ok" id="rep-salvo">Rascunho carregado</span>',acoes});
 }
@@ -420,66 +419,28 @@ async function repConfigSalvar(){
  p.modelo_lider_desde=$('#rep-modelo-desde').value||null;
  await repRPC('reporte_configurar',{p});toast('Ciclo configurado.');location.hash='#/servicos/reporte';}catch(e){falha(e,'Não foi possível configurar o ciclo');}
 }
+/* ---------------- o painel da semana (modelo por liderança, 2.19.1) ---------------- */
+const REP_SIT_LIDER={enviado:['Enviado','p-ok'],ausente:['Ausente',''],ferias:['Férias',''],pendente:['Pendente','p-warn']};
+async function repTelaPainel(){
+ reporte.consolidado=await repRPC('reporte_consolidado_pode').then(v=>v===true,()=>false);
+ if(!reporte.consolidado){location.hash='#/servicos/reporte';return;}
+ const d=await repRPC('reporte_lider_painel');
+ reporte.liderPainel=d;
+ const c=d.ciclo,ls=d.lideres||[];
+ const conta=s=>ls.filter(x=>x.situacao===s).length,atras=ls.filter(x=>x.atrasado).length;
+ const m=(r,v)=>`<div class="metrica"><span class="rot">${r}</span><span class="val">${v}</span></div>`;
+ const linhas=ls.map(x=>{
+  const [t,cl]=x.situacao==='enviado'&&x.atrasado?['Atrasado','p-warn']:(REP_SIT_LIDER[x.situacao]||[x.situacao,'']);
+  return `<tr><td class="nome">${esc(x.nome)}</td><td>${repPill(t,cl)}</td><td class="mono">${x.enviado_em?fmtDT(x.enviado_em):'—'}</td></tr>`;}).join('');
+ $('#main').innerHTML=cabecalho({espaco:'Serviços',titulo:'Reporte semanal',voltar:['Meu reporte','#/servicos/reporte'],meta:['Semana de '+fmtD(c.semana)],
+   acoes:[`<button class="btn ghost" onclick="repPDF()">${ic('doc')}Baixar o reporte unificado</button>`,souAdmin()?'<a class="btn ghost" href="#/servicos/reporte/config">Configurar</a>':'']})
+  +`<div class="metricas" style="margin-bottom:18px">${m('Lideranças',ls.length)}${m('Enviados',conta('enviado'))}${m('Atrasados',atras)}${m('Ausentes ou férias',conta('ausente')+conta('ferias'))}${m('Pendentes',conta('pendente'))}</div>`
+  +(ls.length?`<div class="card" style="padding:0"><div class="wrap"><table class="tabela trabalho" id="rep-painel-tabela"><thead><tr><th>Liderança</th><th>Situação</th><th>Enviado em</th></tr></thead><tbody>${linhas}</tbody></table></div></div>`
+   :estado.vazio({texto:'Nenhuma liderança com reporte nesta semana.'}));
+}
 async function repPDF(){
- try{const d=await repRPC('reporte_unificado',{p_ciclo:reporte.painel.ciclo.id});
+ try{const d=await repRPC('reporte_unificado',{p_ciclo:(reporte.liderPainel||reporte.painel).ciclo.id});
  await precisaDocNRO();
- const doc=DocNRO.reporteUnificado(d);DocNRO.baixar(doc,'Reporte semanal '+reporte.painel.ciclo.semana+'.pdf');
+ const doc=DocNRO.reporteUnificado(d);DocNRO.baixar(doc,'Reporte semanal '+(reporte.liderPainel||reporte.painel).ciclo.semana+'.pdf');
  }catch(e){falha(e,'Não foi possível gerar o reporte');}
-}
-
-/* ---------------- E: o feed da equipe ---------------- */
-async function pageFeed(){
- reporte.feed=[];
- $('#main').innerHTML=repTopo('Feed da equipe','feed')+layoutLeitura('<div id="feed-lista"></div><button id="feed-mais" class="btn ghost" style="margin-top:28px;width:100%;justify-content:center" onclick="repFeedMais()" hidden>Carregar mais</button>');
- $('#feed-lista').innerHTML=estado.carregando('lista');
- await repFeedMais(true);
-}
-async function repFeedMais(primeira){
- const el=$('#feed-lista'),bt=$('#feed-mais');bt.disabled=true;
- try{const ultimo=reporte.feed.at(-1);const itens=await repRPC('feed_lista',ultimo?{p_antes:ultimo.publicado_em,p_id:ultimo.id}:{});
- if(primeira)el.innerHTML='';
- reporte.feed.push(...itens);bt.hidden=itens.length<20;
- if(!reporte.feed.length)el.innerHTML=estado.vazio({texto:'Nenhuma publicação ainda. O que a liderança envia no reporte semanal aparece aqui.'});
- el.insertAdjacentHTML('beforeend',itens.map(f=>`<article class="artigo"><div class="artigo-meta"><span>${esc(f.autor)}</span><time>${fmtDT(f.publicado_em)}</time>${can()?`<button type="button" class="icbtn sm" style="margin-left:auto" aria-label="Ocultar publicação" onclick="repOcultar('${f.id}')">${ic('x')}</button>`:''}</div>
-  <h2>${esc(f.titulo)}</h2>${f.subtitulo?`<p class="sub">${esc(f.subtitulo)}</p>`:''}${f.imagem_path?`<img id="feed-img-${f.id}" alt="" loading="lazy">`:''}<div class="md">${md(f.texto)}</div></article>`).join(''));
- for(const f of itens.filter(x=>x.imagem_path)){const {data,error}=await sb.storage.from('feed').createSignedUrl(f.imagem_path,300);if(!error&&data?.signedUrl){const img=document.getElementById('feed-img-'+f.id);if(img)img.src=data.signedUrl;}}
- }catch(e){el.innerHTML=estado.erro({texto:'Não foi possível carregar o feed: '+e.message+'.',acao:'<button class="btn ghost mini" onclick="pageFeed()">Tentar de novo</button>'});}finally{bt.disabled=false;}
-}
-async function repOcultar(id){if(!await confirma('A publicação deixará de aparecer no feed.','Ocultar publicação'))return;try{await repRPC('feed_ocultar',{p_id:id});await pageFeed();}catch(e){falha(e,'Não foi possível ocultar a publicação');}}
-
-/* ---------------- newsletters ---------------- */
-async function pageNewsletter(){
- if(!tenhoPapel('lideranca')){location.hash='#/';return;}
- $('#main').innerHTML=repTopo('Newsletters','newsletter')+'<div id="news-lista">Carregando…</div>';
- try{
-  const lista=await repRPC('newsletter_lista');reporte.newsletters=lista;
-  $('#news-lista').innerHTML=`<div class="acts"><button class="btn" onclick="repNewsGerar('semanal')">Gerar boletim semanal</button><button class="btn" onclick="repNewsGerar('mensal')">Gerar boletim mensal</button>
-  ${souAdmin()?'<button class="btn" onclick="repComunidade()">Importar comunidade</button>':''}</div>`+
-  (lista.map(n=>`<article class="card" id="news-${esc(n.id)}"><h2>${esc(n.assunto)}</h2><p class="small muted">${esc(n.status)}. Aprovações: ${n.aprovacoes}/3. Versão ${n.versao}.</p>
-  ${n.itens.map(i=>`<h3>${esc(i.titulo)}</h3><p>${esc(i.subtitulo)}</p><div class="md">${md(i.texto)}</div>`).join('')}
-  ${n.status==='em_aprovacao'?`<div class="acts"><button class="btn" onclick="repNewsEditar('${n.id}')">Revisar conteúdo</button><button class="btn" onclick="repNewsVotar('${n.id}',false)">Recusar</button><button class="btn solid" onclick="repNewsVotar('${n.id}',true)">Aprovar versão ${n.versao}</button></div>`:''}</article>`).join('')||'<div class="vazio">Nenhuma newsletter. O período anterior precisa ter publicações no feed.</div>');
-  const id=location.hash.split('/')[3];if(id)document.getElementById('news-'+id)?.scrollIntoView();
- }catch(e){$('#news-lista').textContent='Não foi possível carregar newsletters: '+e.message+'.';}
-}
-async function repNewsGerar(tipo){try{const d=await repRPC('newsletter_gerar',{p_tipo:tipo});if(!d.id)toast('Nenhuma publicação no período.',true);await pageNewsletter();}catch(e){falha(e,'Não foi possível gerar o boletim');}}
-async function repNewsVotar(id,aprova){
- const n=reporte.newsletters.find(x=>x.id===id);if(!n)return;
- if(!await confirma(aprova?'Aprovar esta versão para envio após três aprovações da liderança?':'Recusar esta versão?',aprova?'Aprovar':'Recusar'))return;
- try{await repRPC('newsletter_decidir',{p_id:id,p_versao:n.versao,p_aprova:aprova});await pageNewsletter();}catch(e){falha(e,'Não foi possível registrar a decisão');}
-}
-function repNewsEditar(id){const n=reporte.newsletters.find(x=>x.id===id);reporte.newsEdit=structuredClone(n);
- abreModal(`<h3>Revisar newsletter</h3><p class="small muted">Salvar remove as aprovações desta versão.</p><div class="fld"><label for="news-assunto">Assunto</label><input id="news-assunto" value="${esc(n.assunto)}"></div>
- ${n.itens.map((x,i)=>['titulo','subtitulo','texto'].map(k=>`<div class="fld"><label for="news-${i}-${k}">${esc(k)}</label><textarea id="news-${i}-${k}" oninput="reporte.newsEdit.itens[${i}].${k}=this.value">${esc(x[k])}</textarea></div>`).join('')).join('')}
- <button class="btn solid" onclick="repNewsSalvar()">Salvar nova versão</button>`);}
-async function repNewsSalvar(){try{await repRPC('newsletter_revisar',{p_id:reporte.newsEdit.id,p_assunto:$('#news-assunto').value,p_itens:reporte.newsEdit.itens});fechaModal();await pageNewsletter();}catch(e){falha(e,'Não foi possível revisar o boletim');}}
-function repComunidade(){if(!souAdmin())return;abreModal(`<h3>Importar comunidade</h3><p class="small muted">Colunas: nome, email, origem. Descadastros anteriores são preservados.</p><input aria-label="Planilha da comunidade" type="file" accept=".xlsx,.xls,.csv" onchange="repComunidadeLer(this.files[0])"><div id="news-importar"></div>`);}
-async function repComunidadeLer(file){try{
- if(!file)return;if(!window.XLSX)await carregarLib('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
- const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});reporte.importar=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
- $('#news-importar').innerHTML=`<p>${reporte.importar.length} registros.</p><button class="btn solid" onclick="repComunidadeSalvar()">Importar</button>`;
- }catch(e){falha(e,'Não foi possível ler a planilha');}}
-async function repComunidadeSalvar(){try{const d=await repRPC('comunidade_importar',{p_itens:reporte.importar});fechaModal();toast(`${d.processados} registros processados.`);}catch(e){falha(e,'Não foi possível importar a comunidade');}}
-
-function repComunidadePagina(){
- $('#sec-emails').innerHTML=`<div class="card"><h2>Comunidade</h2><p>Familiares, professores associados e parceiros que recebem o boletim mensal.</p><div class="acts"><button class="btn solid" onclick="repComunidade()">Importar planilha</button><a class="btn" href="#/equipe/newsletter">Newsletters</a></div>${dica('A planilha deve ter nome e e-mail. A importação não reativa quem se descadastrou. A comunidade recebe somente boletins aprovados por três integrantes da liderança.')}</div>`;
 }

@@ -1,4 +1,4 @@
-# SOMA 2.19.1: plano de execução (Reporte, LABBIO, Trainees)
+# SOMA 2.19.1: plano de execução (Reporte, LABBIO, Trainees, Feed)
 
 Complementa `PLANO-2.19.1.md` (a matriz) e o plano funcional da coordenação
 (`PLANO-IMPLEMENTACAO-SOMA-2.19.1.md`, §5, §7, §8 e §11), que continua sendo a
@@ -140,7 +140,7 @@ a gravação na ficha. `membros.gestor_registro` já existe (usado em
 
 Ordem obrigatória: L1 (identidade, segurança) antes de qualquer tela.
 
-### L1 [O] Migração `db/2.19.1_labbio_base.sql`
+### L1 [O] Migração `db/2.19.1_labbio_base.sql` (feita: 52 asserções; a defesa tem também a porta da API, `api_pre_request`)
 
 - `labbio_gestores(user_id uuid pk references auth.users, nome, email,
   situacao 'convidado'|'ativo'|'revogado', principal bool, convidado_por,
@@ -174,7 +174,7 @@ Ordem obrigatória: L1 (identidade, segurança) antes de qualquer tela.
   treinamentos, agenda, gestores.
 - Admin no SOMA: painel `labbio` em PAINEIS (lista, convidar, revogar, estrela).
 
-### L3 [O] Migração `db/2.19.1_labbio_dados.sql` (consultas)
+### L3 [O] Migração `db/2.19.1_labbio_dados.sql` (consultas) (feita: 25 asserções)
 
 - `labbio_membros(p_busca, p_filtros)`: só os campos de D5; termo
   (`termo_situacao`) e acesso (`acessos_concedidos` do item LABBIO).
@@ -186,6 +186,7 @@ Ordem obrigatória: L1 (identidade, segurança) antes de qualquer tela.
   conclusão/validade, sem gabarito (lê `treinamento_conclusoes`).
 - `labbio_revogacoes()` + `labbio_revogacao_confirmar(id)`: gatilho em
   `membros` (status para desligado, D6) cria pendência **sem notificar**.
+  Cobre também a dispensa de trainee (T1 põe o status em Desligado).
 - **Teste**: cada função recusa conta comum; campos fora de D5 não saem.
 
 ### L4 [S] Telas de consulta
@@ -194,7 +195,7 @@ Membros (tabela com busca/filtros, ícone + texto para termo e acesso),
 perfil, check-ins (paginado, painel lateral explicando as origens),
 treinamentos (matriz com filtros), faixa de revogações no início.
 
-### L5 [O] Solicitação de acesso biométrico
+### L5 [O] Solicitação de acesso biométrico (feita: `db/2.19.1_labbio_acesso.sql`, 48 asserções)
 
 - `portal_solicitacoes` ganha subtipo pelo id estável do catálogo
   (`acessos.chave = 'labbio_biometria'`); estados novos
@@ -216,7 +217,7 @@ desligar ao sair, fallback de upload), trilha visual no modelo de Arquivos;
 no `/labbio`, fila de pedidos com copiar por campo, baixar foto, negar com
 motivo, confirmar implantação.
 
-### L7 [O] Agenda: consulta de salas
+### L7 [O] Agenda: consulta de salas (feita: `db/2.19.1_labbio_salas.sql`, 19 asserções)
 
 - `espacos.labbio bool`, `espacos.consulta_labbio bool` (Sala de Reuniões,
   Auditório). `labbio_consultas(evento_id, ocorrencia, versao, situacao
@@ -227,7 +228,7 @@ motivo, confirmar implantação.
 
 ### L8 [S] Agenda no `/labbio` e aviso ao organizador.
 
-### L9 [O] Tablets
+### L9 [O] Tablets (feita: `db/2.19.1_labbio_tablets.sql`, 17 asserções; gestão em `labbio_dispositivo_*`)
 
 - `sala_dispositivos(id, espaco_id, rotulo, token_hash, ativo)`,
   `sala_ocupacoes(espaco_id, ate, criada_por_dispositivo)`.
@@ -242,7 +243,7 @@ motivo, confirmar implantação.
 
 ## Pacote T: Trainees
 
-### T1 [O] Migração `db/2.19.1_trainees.sql`
+### T1 [O] Migração `db/2.19.1_trainees.sql` (feita: 33 asserções; trainee pelo cargo, sem coluna nova)
 
 - Sem coluna nova (D8): trainee é `membros.cargo = 'Trainee'`, lido só por
   `eh_trainee(p_reg) returns boolean`. Como o status continua `Ativo`, os
@@ -267,7 +268,7 @@ motivo, confirmar implantação.
 - Equipe › Quadro de pessoal: filtro "trainees" e por área de interesse;
   chip "Trainee" consistente (ficha, organograma, busca).
 
-### T3 [O+S] Onboarding com progresso no servidor
+### T3 [O+S] Onboarding com progresso no servidor ([O] feita: `db/2.19.1_onboarding.sql`, 15 asserções)
 
 - [O] `onboarding_trilhas(versao, etapas jsonb)`, `onboarding_progresso
   (registro, versao, etapa, concluida_em)`; etapas obrigatórias leem o fato
@@ -278,11 +279,47 @@ motivo, confirmar implantação.
 
 ---
 
+## Pacote F: Feed, notícias públicas, reações e newsletter
+
+Contrato: `fichas/CONTRATO-FEED.md`. Regras: §9 do plano funcional.
+
+### F0 [O] Migração `db/2.19.1_feed.sql` (feita: 84 asserções)
+
+- Estados `rascunho → pronto → (publicando) → publicado → retirado`; o
+  reporte só contribui (envio deixa `pronto`); publica quem é admin ou está
+  em `NRO_MANAGERS` (`feed_editor()`), sem votos; autoria do texto separada
+  de quem publicou.
+- Tópico (≤ 1.200) e notícia (≥ 300 para publicar, slug estável com
+  histórico). Interno ou no site; o acervo da 2.18 continua interno.
+- Imagens: bucket `feed` privado; no site, cópia controlada para o bucket
+  público `noticias` em dois passos idempotentes (preparar → copiar →
+  confirmar); retirar devolve as cópias a apagar.
+- Reações só em notícia completa (tópico não tem): um emoji por pessoa, por conta com registro em qualquer status
+  (egresso e desligado reagem ao público), sem conta do LABBIO; limite de
+  30 mudanças em 10 minutos.
+- Newsletter sem votos: cada edição congela os itens ainda não enviados
+  àquele público; sem item, sem edição; "enviar agora" do editor; férias e
+  afastamento fora; as antigas em aprovação ficam canceladas.
+- Inscrição pública com confirmação por link (7 dias), resposta que não
+  revela cadastro, limites.
+- Edge Function: links "Ler a matéria completa", imagens públicas e a fila
+  de confirmação.
+
+### F1 [S] Portal: feed, mesa editorial, widget do início, newsletter (`fichas/F1.md`)
+### F2 [S] Site: `#/news`, a matéria, a inscrição e a confirmação (`fichas/F2.md`, repositório website)
+### F3 [S] `noticia.html`: entrar e reagir fora do portal (`fichas/F3.md`)
+
+Fora: Open Graph por matéria (o site é estático com rotas `#/`; precisa de
+build ou proxy, decisão do usuário).
+
+---
+
 ## Ordem e checkpoints
 
 1. R1 → R2 → R3 → R4 → R5 (o reporte destrava o resto da casca).
 2. L1 → L3 → L2 → L4 → L5 → L6 → L7 → L8 → L9 → L10.
 3. T1 → T2 → T3.
+4. F0 → F1 → F2 → F3 (F1 mexe em `mod-reporte.js`: depois da R5).
 
 Cada [O] termina com o contrato publicado aqui (RPC, campos, estados) e o
 teste de banco passando. A partir daí, a [S] correspondente pode ir para o

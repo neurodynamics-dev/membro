@@ -52,7 +52,8 @@ existe precisa mudar de comportamento).
 2. **Reporte** (nova unidade, sinalizações, cobrança de sexta, PDF) e a
    **ausência comum** que ele usa.
 3. **Feed e newsletter** (publicação por managers, tipos, widget, site,
-   reações, inscrição).
+   reações, inscrição). Banco e Edge Function feitos (`db/2.19.1_feed.sql`);
+   telas nas fichas F1, F2 (site) e F3.
 4. **LABBIO**: identidade e gestores, `/labbio`, membros e acesso, solicitação
    biométrica, check-ins, treinamentos, consulta de salas e tablets.
 5. **Recadastro e termo** (feitos), **trainees e
@@ -68,4 +69,5 @@ existe precisa mudar de comportamento).
 | Questionário, escala e prazo da PCM | Pessoal |
 | Conteúdo do onboarding (contexto, organização, segurança) | Coordenação |
 | Confirmar os grupos reais NRO_PMO, NRO_PESSOAL, NRO_COORD_OFFICE e NRO_TRAINEE (só NRO_LEADERSHIP e NRO_MANAGERS aparecem nas migrações) | Admin |
-| Cadência da newsletter (manter semanal e mensal, ou enviar ao publicar) | Coordenação |
+| Cadência da newsletter: adotado manter semanal (equipe) e mensal (comunidade) só com o que é novo, mais o "enviar agora" do editor; mudar se a coordenação preferir enviar ao publicar | Coordenação |
+| Prévia por matéria nas redes (Open Graph): exige build ou proxy no site estático | Coordenação |

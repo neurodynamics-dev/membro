@@ -123,8 +123,9 @@ console.log('\nAberto (admin, 1440px)');
 
   await ir(p, '#/admin/contas', 1200);
   const adm = await secao(p, 'admin');
+  /* 18 desde a 2.19.1: os painéis Onboarding (ficha T3) e LABBIO (só admin, ficha L2) */
   confere('Administração: todos os painéis, em quatro grupos',
-    adm.filhos.length === 16 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
+    adm.filhos.length === 18 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
   confere('#/admin/contas marca "Contas e perfis"',
     JSON.stringify(await atual(p)) === '["Contas e perfis"]', await atual(p));
   await ir(p, '#/admin/site', 1200);
@@ -442,12 +443,13 @@ console.log('\nPor papel');
 for (const [papel, esperado] of [
   ['leitura', { admin:null, quadroPessoal:false, selecao:false }],
   ['selecao', { admin:'Todos os painéis|E-mails|Relatórios', quadroPessoal:false, selecao:true }],
-  ['pessoal', { admin:16, quadroPessoal:true, selecao:true }]
+  ['pessoal', { admin:17, quadroPessoal:true, selecao:true }]   // 17 com o Onboarding (2.19.1, T3)
 ]){
   const { ctx, p } = await abrir({ stub: stubDe(papel) });
   const adm = await secao(p, 'admin'), eq = await secao(p, 'equipe'), sel = await secao(p, 'selecao');
-  confere(`${papel}: Seleção ${esperado.selecao ? 'aparece, com as oito abas' : 'não aparece'}`,
-    esperado.selecao ? sel?.filhos.length === 8 : sel === null, sel?.filhos ?? null);
+  /* nove abas desde a 2.19.1 (Trainees, ficha T2) */
+  confere(`${papel}: Seleção ${esperado.selecao ? 'aparece, com as nove abas' : 'não aparece'}`,
+    esperado.selecao ? sel?.filhos.length === 9 : sel === null, sel?.filhos ?? null);
   const okAdm = esperado.admin === null ? adm === null
     : typeof esperado.admin === 'number' ? adm?.filhos.length === esperado.admin
     : adm?.filhos.join('|') === esperado.admin;

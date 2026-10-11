@@ -963,7 +963,46 @@
     return n;
   }
 
+  /* modelo por liderança (2.19.1): só tabelas, com nome de pessoa (nunca "Registro N") */
+  function reporteUnificadoLider(d){
+    const doc=novo(), w=escritor(doc,{departamento:'Diretoria',titulo:'Reporte semanal',codigo:'',rev:''});
+    const dh = iso => { if (!iso) return '—'; const x = new Date(iso); return isNaN(x) ? '—'
+      : dataCurta(x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0')) + ' ' + String(x.getHours()).padStart(2, '0') + ':' + String(x.getMinutes()).padStart(2, '0'); };
+    const dia = iso => iso ? dataCurta(String(iso).slice(0, 10)) : '—';
+    const pt = v => v === 'INSUFICIENTE' ? 'Insuficiente' : v === 'SUFICIENTE' ? 'Suficiente' : (v || '—');
+    w.titulo('Reporte semanal');
+    w.subtitulo('Semana de ' + dataCurta(String(d.ciclo.semana).slice(0, 10)));
+    w.paragrafo('Gerado em ' + dh(d.gerado_em) + '.');
+    const c = d.cobertura || {};
+    w.subtitulo('Cobertura');
+    w.tabela([{ rotulo:'Lideranças' }, { rotulo:'Enviados' }, { rotulo:'Atrasados' }, { rotulo:'Ausentes' }, { rotulo:'Pendentes' }],
+      [[c.lideres, c.enviados, c.atrasados, c.ausentes, c.pendentes].map(x => String(x ?? 0))]);
+    w.subtitulo('Apontamentos');
+    if ((d.apontamentos || []).length)
+      w.tabela([{ rotulo:'Membro', largura:1.6 }, { rotulo:'Liderança', largura:1.5 }, { rotulo:'Entregas', largura:1 }, { rotulo:'Assiduidade', largura:1 },
+                { rotulo:'Sinalização', largura:.9 }, { rotulo:'Relato', largura:2 }],
+        d.apontamentos.map(a => [a.nome, a.lider_nome, pt(a.entregas), pt(a.assiduidade), a.sinalizado ? 'Sim' : 'Não', a.relato || '—']));
+    else w.paragrafo('Nenhuma insuficiência ou sinalização nesta semana.');
+    w.subtitulo('Escalonamentos');
+    if ((d.escalonamentos || []).length)
+      w.tabela([{ rotulo:'Liderança', largura:1.5 }, { rotulo:'Item', largura:2.6 }, { rotulo:'Card', largura:.9 }, { rotulo:'Responsável', largura:1.5 }],
+        d.escalonamentos.map(e => [e.lider_nome, e.texto, e.atividade_codigo || '—', e.responsavel_nome || '—']));
+    else w.paragrafo('Nenhum escalonamento nesta semana.');
+    w.subtitulo('Atividades atrasadas');
+    if ((d.atrasados || []).length)
+      w.tabela([{ rotulo:'Código', largura:.9 }, { rotulo:'Título', largura:2.6 }, { rotulo:'Responsável', largura:1.5 }, { rotulo:'Prazo', largura:1 }, { rotulo:'Dias', largura:.5, alinhar:'right' }],
+        d.atrasados.map(a => [a.codigo, a.titulo, a.responsavel_nome || '—', dia(a.prazo), String(a.dias ?? '')]));
+    else w.paragrafo('Nenhuma atividade atrasada.');
+    w.subtitulo('Divulgação');
+    if ((d.feed || []).length)
+      w.tabela([{ rotulo:'Título', largura:2 }, { rotulo:'Resumo', largura:2.4 }, { rotulo:'Autoria', largura:1.3 }, { rotulo:'Publicado em', largura:1.1 }],
+        d.feed.map(f => [f.titulo, f.subtitulo || '—', f.autor || '—', dia(f.publicado_em)]));
+    else w.paragrafo('Nada para divulgar nesta semana.');
+    rodape(doc,{texto:'Reporte semanal'});return doc;
+  }
+
   function reporteUnificado(d){
+    if (d && d.modelo === 'lider') return reporteUnificadoLider(d);
     const doc=novo(), w=escritor(doc,{departamento:'Diretoria',titulo:'Reporte semanal',codigo:'',rev:''});
     w.titulo('Semana de '+dataCurta(d.painel.ciclo.semana));
     for(const f of d.painel.frentes){

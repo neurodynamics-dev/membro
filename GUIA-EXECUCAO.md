@@ -11,7 +11,8 @@ da coordenação (as regras de negócio). Se algo aqui conflitar com o código,
 |---|---|---|---|
 | `neurodynamics-dev/membro` | `slp/ecstatic-noether-evq50w` | `astra/2.19.1` | membro#37 é da branch [O]; o executor abre um PR **de `astra/2.19.1` para `slp/ecstatic-noether-evq50w`** (nunca para `main`) |
 | `neurodynamics-dev/brand` | `slp/ecstatic-noether-evq50w` | `astra/2.19.1` (só se a ficha mandar mexer no design system) | idem, para `slp/ecstatic-noether-evq50w` |
-| `website`, `selecao` | não entram nestas fichas | — | — |
+| `neurodynamics-dev/website` | `slp/ecstatic-noether-evq50w` | `astra/2.19.1` (só a ficha F2) | website#8 é da branch [O]; o executor abre um PR de `astra/2.19.1` para `slp/ecstatic-noether-evq50w` |
+| `neurodynamics-dev/selecao` | não entra nestas fichas | — | — |
 
 - `astra/2.19.1` nasce do commit que a ficha indicar em "Base" (sempre um
   commit de `slp/ecstatic-noether-evq50w`).

@@ -85,3 +85,73 @@ troque a senha se a TV for trocada de lugar.
    na próxima segunda (`reporte_config.modelo_lider_desde`).
 3. **Publicar o HTML** só depois das fichas R2 a R5: até lá, a tela é a do
    modelo por frente e não enxerga o reporte novo.
+
+# 2.19.1: gestores do LABBIO
+
+1. **Confira** se o papel `authenticator` já tem um `pgrst.db_pre_request`:
+   `select setconfig from pg_db_role_setting s join pg_roles r on r.oid = s.setrole where r.rolname = 'authenticator';`
+   Se tiver outro, a migração para e avisa (as duas funções precisam ser juntadas).
+2. **Aplicar** `db/2.19.1_labbio_base.sql` (depois da `2.19.0_quiosque.sql`).
+   Ela liga a porta da API e manda o PostgREST recarregar a configuração.
+3. **Publicar de novo** a Edge Function `notificar-email` (ela passa a mandar
+   os convites do LABBIO).
+4. **Conferir**: logado como membro, o portal funciona como antes. Uma conta
+   de gestor (depois do convite) não lê nada do portal: qualquer chamada fora
+   de `labbio_*` volta "Esta conta é do painel do LABBIO".
+5. O primeiro gestor é convidado por um admin logado no SOMA, em
+   Administração › LABBIO (a tela vem na ficha L2). O SQL Editor não serve:
+   o convite precisa saber quem convidou.
+
+**Plano de volta**: `alter role authenticator reset pgrst.db_pre_request; notify pgrst, 'reload config';`
+(as contas de gestor continuam sem ler tabelas, pela `conta_ativa()`).
+
+# 2.19.1: pedido de acesso biométrico ao LABBIO
+
+1. **Aplicar** `db/2.19.1_labbio_acesso.sql` (depois da `2.19.1_labbio_base`
+   e da `2.19.1_recadastro`). Ela cria o item "Acesso biométrico ao LABBIO"
+   no catálogo com a chave `labbio_biometria`. Se já havia um item para isso,
+   mova a chave para ele (instrução no fim da migração).
+2. **Confirmar com o LABBIO** os campos que a Intelbras pede:
+   `update public.labbio_config set campos = '{nome_civil,cpf,matricula}' where id;`
+   (só campos de Meus dados). A foto é obrigatória.
+3. **Publicar de novo** a `notificar-email` (o aviso ao responsável principal).
+4. A triagem do Pessoal continua igual: "Aprovar" num pedido de biometria
+   encaminha ao LABBIO e não concede nada; o acesso entra quando o gestor
+   confirma o cadastro no painel.
+
+# 2.19.1: trainees
+
+1. **Criar o grupo** NRO_TRAINEE em Administração › Grupos (a migração avisa
+   se faltar e a admissão recusa sem ele).
+2. **Aplicar** `db/2.19.1_trainees.sql`.
+3. A admissão é pela tela de Seleção (ficha T2). A ps_integrar antiga continua
+   existindo, mas não deve ser usada para trainees: ela cria membro efetivo.
+
+# Ordem das migrações da 2.19.1
+
+`2.19.1_labbio_base` → `2.19.1_recadastro` → `2.19.1_termo` →
+`2.19.1_labbio_acesso` → `2.19.1_reporte` → `2.19.1_trainees` → `2.19.1_labbio_dados` →
+`2.19.1_labbio_salas` → `2.19.1_labbio_tablets` → `2.19.1_onboarding` → `2.19.1_feed`.
+
+# 2.19.1: salas e tablets do LABBIO
+
+1. **Aplicar** `db/2.19.1_labbio_salas.sql`. Ela marca, pelo nome, a Sala de
+   Reuniões e o Auditório como espaços do LABBIO com consulta. Confira:
+   `select id, nome, labbio, consulta_labbio from public.espacos order by nome;`
+   e marque outros espaços do LABBIO (sem consulta) com `labbio = true`.
+2. **Aplicar** `db/2.19.1_labbio_tablets.sql`.
+3. Piloto: um tablet por vez. No painel do LABBIO, cadastre o aparelho, copie
+   o endereço (aparece uma vez) e abra no tablet.
+
+# 2.19.1: feed, notícias no site e newsletter
+
+1. **Aplicar** `db/2.19.1_feed.sql`. O acervo continua publicado só para a
+   equipe; nada vai para o site sozinho. Os boletins que esperavam votos
+   ficam cancelados (não disparam). A partir de agora, só o que for
+   publicado entra nas próximas edições.
+2. **Publicar de novo** a `notificar-email` (confirmação da inscrição pelo
+   site e o link "Ler a matéria completa" na newsletter). Se o site não for
+   `https://neurodynamics.dev`, defina o segredo `SITE_URL`.
+3. **Conferir** que NRO_MANAGERS tem as pessoas certas: são elas que publicam.
+4. As telas vêm nas fichas F1 a F3; até lá, enviar o reporte deixa a
+   contribuição "pronta" e ninguém a publica.

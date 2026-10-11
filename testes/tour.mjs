@@ -10,7 +10,9 @@
      4. no celular: nada vaza para os lados, a barra de baixo e a gaveta
         das etapas; no iPhone, a aba do iPhone vem escolhida;
      5. o link do e-mail que venceu, o de nova senha (vai para o portal),
-        o tema claro e as setas do teclado.
+        o tema claro e as setas do teclado;
+     6. a trilha de onboarding do servidor (2.19.1): o contador, marcar
+        como lida, a etapa de fato e, sem a migração, a lista local.
    Rode com o portal servido da raiz: python3 -m http.server 8765 */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
@@ -105,8 +107,10 @@ console.log('\nSem conta');
   confere('o cabeçalho mostra quem entrou', (await p.textContent('#hd-conta')).includes('Ana'));
   confere('o cadastro em andamento sai do navegador', await p.evaluate(() => localStorage.getItem('nd.tour.cadastro')) === null);
   await p.waitForTimeout(600);
+  /* 2.19.1 (T3): conta vinculada passa a ver a trilha do servidor no lugar da lista local */
   const passos = await p.evaluate(() => [...document.querySelectorAll('#trilho .ms-l li.feito')].map(l => l.textContent.trim()));
-  confere('os primeiros passos riscam a conta e o vínculo', passos.includes('Criar a sua conta') && passos.includes('Conta ligada ao quadro de pessoal'), passos);
+  confere('os primeiros passos viram a trilha do servidor, com o que já está feito',
+    passos.includes('Conferir os seus dados') && passos.includes('A NeuroDynamics, o LABBIO e os objetivos da equipe'), passos);
   confere('sem erro na página', erros.length === 0, erros);
   await ctx.close();
 }
@@ -255,6 +259,41 @@ console.log('\nOs links do e-mail e o tema');
   const { ctx, p } = await abrir({ hash:'#tarefas', antes: () => { localStorage.setItem('nd.tour.ultima', '"placar"'); } });
   await ir(p, '#bem-vindo');
   confere('quem volta ao começo pode continuar de onde parou', (await p.textContent('.retomar')).includes('Tarefas'));
+  await ctx.close();
+}
+
+/* ---------- 6. a trilha de onboarding (2.19.1, ficha T3) ---------- */
+{
+  const { ctx, p, erros } = await abrir({ hash:'#bem-vindo' });
+  await p.waitForFunction(() => document.querySelector('#trilho .missao h3')?.textContent.includes('de 7'));
+  confere('trilha: sete etapas, "2 de 7"', await p.locator('#trilho .ms-l li').count() === 7
+    && (await p.textContent('#trilho .missao h3')).includes('2 de 7'));
+  confere('cada etapa leva à etapa do tour', await p.locator('#trilho .ms-l a[href="#equipe"]').count() === 1);
+  await ir(p, '#equipe');
+  const bt = p.locator('#et-trilha [data-onb="organizacao"]');
+  confere('na etapa equipe, "Marcar como lida"', (await bt.textContent()).includes('Marcar como lida'));
+  await bt.click();
+  await p.waitForFunction(() => document.querySelector('#trilho .missao h3')?.textContent.includes('3 de 7'));
+  const ult = await p.evaluate(() => (window.__rpcs || []).filter(x => x.nome === 'onboarding_marcar').at(-1)?.p);
+  confere('marca a etapa no servidor e o contador vira "3 de 7"', ult?.p_etapa === 'organizacao' && ult?.p_feita === true, ult);
+  confere('a etapa mostra "Lida" e "Desmarcar"', (await p.textContent('#et-trilha')).includes('Lida') && await p.locator('#et-trilha [data-feita="0"]').count() === 1);
+  await ir(p, '#servicos');
+  confere('o termo (fato) não tem botão e leva ao termo', await p.locator('#et-trilha [data-onb]').count() === 0
+    && await p.locator('#et-trilha a[href$="#/servicos/termo"]').count() === 1);
+  confere('a navegação continua livre', await p.locator('.et-nav a.prox').count() === 1);
+  confere('sem erro na página', erros.length === 0, erros);
+  await ctx.close();
+}
+{
+  /* sem a migração: a lista local de sempre, sem quebrar */
+  const semMig = troca(stubAdmin, "if (nome === 'onboarding_meu') return r(meu());",
+    "if (nome === 'onboarding_meu') return { data:null, error:{ message:'function onboarding_meu does not exist' } };");
+  const { ctx, p, erros } = await abrir({ stub: semMig, hash:'#equipe' });
+  await p.waitForTimeout(500);
+  const itens = await p.evaluate(() => [...document.querySelectorAll('#trilho .ms-l li')].map(l => l.textContent.trim()));
+  confere('sem a migração, a lista antiga', itens.includes('Criar a sua conta') && itens.length === 7, itens);
+  confere('e a etapa não mostra a trilha', await p.locator('#et-trilha').isHidden());
+  confere('sem erro na página', erros.length === 0, erros);
   await ctx.close();
 }
 

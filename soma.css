@@ -3005,3 +3005,11 @@ button.termo-ic{cursor:pointer;border:1px solid transparent} button.termo-ic:hov
   .rec-passos{grid-template-columns:minmax(0,1fr)}
   .rec-passo{min-height:0}
 }
+
+/* o card "Últimas publicações" do início (2.19.1, F1) */
+.feed-ini-i{display:flex;align-items:baseline;gap:8px;padding:8px 0;border-top:1px solid var(--line);text-decoration:none;color:inherit;min-width:0}
+.feed-ini-i:first-of-type{border-top:0}
+.feed-ini-i:hover .tt{text-decoration:underline;text-underline-offset:3px}
+.feed-ini-i .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.feed-ini-i .dt{flex-shrink:0}
+.erro-campo{color:var(--bad-tx);margin-top:4px}
