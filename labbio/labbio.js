@@ -39,7 +39,7 @@ const estado = {
 };
 const cabecalho = ({ titulo, lead, acoes }) => `<header class="cab"><span class="eyebrow">LABBIO</span>
   <div class="cab-linha"><h1 id="lb-h1" tabindex="-1">${esc(titulo)}</h1>${acoes || ''}</div>${lead ? `<p class="cab-lead">${esc(lead)}</p>` : ''}</header>`;
-const marcas = () => `<span class="lb-marcas"><img class="lb-logo" src="../studio/labbio.png" alt="LABBIO"><span class="lb-sep" aria-hidden="true"></span>
+const marcas = () => `<span class="lb-marcas"><span class="lb-logo" role="img" aria-label="LABBIO"></span><span class="lb-sep" aria-hidden="true"></span>
   <img class="lb-nro lb-nro-escuro" src="../studio/nro-imagotipo-branco.png" alt="NeuroDynamics"><img class="lb-nro lb-nro-claro" src="../studio/nro-imagotipo.png" alt="NeuroDynamics"></span>`;
 
 function abreModal(html, persistente = false){

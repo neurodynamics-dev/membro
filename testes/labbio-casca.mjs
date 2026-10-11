@@ -45,8 +45,10 @@ try{
   {
     const t = await abrir('labbio/index.html', { labbio:{ conta:'ativo' } }), { p } = t;
     await p.waitForSelector('#lb-topo:not([hidden]) .lb-nav a');
-    const ordem = await p.evaluate(() => [...document.querySelectorAll('#lb-topo .lb-marcas img')].map(i => i.getAttribute('src')));
-    confere('as duas logos, LABBIO antes da NRO', ordem[0].endsWith('labbio.png') && ordem.slice(1).every(s => s.includes('nro-imagotipo')), ordem);
+    const ordem = await p.evaluate(() => [...document.querySelectorAll('#lb-topo .lb-marcas > :not(.lb-sep)')].map(i => i.getAttribute('src') || i.getAttribute('aria-label')));
+    confere('as duas logos, LABBIO antes da NRO', ordem[0] === 'LABBIO' && ordem.slice(1).every(s => s.includes('nro-imagotipo')), ordem);
+    const logo = await p.locator('#lb-topo .lb-logo').evaluate(e => [getComputedStyle(e).maskImage, getComputedStyle(e).backgroundColor, getComputedStyle(document.body).color]);
+    confere('a marca do LABBIO na cor do texto, completa no computador', logo[0].includes('labbio-marca') && logo[1] === logo[2], logo);
     confere('a navegação', (await p.locator('.lb-nav a').allInnerTexts()).join('|') === 'Início|Membros|Solicitações|Check-ins|Treinamentos|Agenda|Gestores');
     confere('o nome do gestor no canto', (await p.locator('#lb-eu-nome').innerText()) === 'Gestora Um');
     const cor = await p.evaluate(() => { const b = document.createElement('button'); b.className = 'btn solid'; document.body.appendChild(b);
@@ -112,6 +114,7 @@ try{
     confere('celular: a navegação fica no botão Menu', await p.locator('.lb-nav').isHidden() && await p.locator('#lb-menu-bt').isVisible());
     await p.click('#lb-menu-bt');
     confere('e abre', await p.locator('.lb-nav').isVisible());
+    confere('celular: a marca fica só "lab·bio"', (await p.locator('#lb-topo .lb-logo').evaluate(e => getComputedStyle(e).maskImage)).includes('labbio-curto'));
     const w = await p.evaluate(() => document.scrollingElement.scrollWidth);
     confere('sem rolagem horizontal', w <= 390, w);
     await fechar(t);

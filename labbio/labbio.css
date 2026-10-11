@@ -11,7 +11,11 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 .lb-topo{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:12px 24px;
   background:rgba(var(--fundo-rgb),.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .lb-marcas{display:flex;align-items:center;gap:14px;text-decoration:none;flex-shrink:0}
-.lb-logo{height:28px;width:auto;display:block}
+/* a marca do LABBIO como máscara: ganha a cor do texto, sem fundo preto, nos dois temas;
+   em tela pequena só "lab·bio", sem a linha "laboratório de bioengenharia" */
+.lb-logo{display:block;flex:none;height:28px;aspect-ratio:473/240;background:var(--ink);
+  -webkit-mask:url(../studio/labbio-marca.png) center/contain no-repeat;mask:url(../studio/labbio-marca.png) center/contain no-repeat}
+@media(max-width:700px){.lb-logo{aspect-ratio:493/200;-webkit-mask-image:url(../studio/labbio-curto.png);mask-image:url(../studio/labbio-curto.png)}}
 .lb-sep{width:1px;height:24px;background:var(--line2)}
 .lb-nro{height:22px;width:auto;display:block}
 .lb-nro-claro{display:none}
@@ -30,7 +34,7 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
   .lb-nav{display:none;flex-basis:100%;flex-direction:column}
   .lb-topo.aberto .lb-nav{display:flex}
   .lb-eu{flex-basis:100%;justify-content:space-between}
-  .lb-logo{height:24px}.lb-nro{height:18px}
+  .lb-logo{height:22px}.lb-nro{height:18px}
 }
 
 .lb-main{max-width:1120px;margin:0 auto;padding:32px 24px 64px;outline:none}

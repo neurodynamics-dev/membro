@@ -29,7 +29,8 @@ try{
   console.log(`Tablet ${viewport.width} × ${viewport.height}`);
   const t=await abrir('livre',viewport),{p}=t;
   confere('Livre com os dois períodos',await p.locator('#sala-status').innerText()==='Livre'&&await p.getByRole('button',{name:'Ocupar por 15 min'}).isVisible()&&await p.getByRole('button',{name:'Ocupar por 30 min'}).isVisible());
-  confere('só a marca LABBIO, a 28 px',await p.locator('img').count()===1&&await p.locator('img').getAttribute('alt')==='LABBIO'&&await p.locator('img').evaluate(e=>e.getBoundingClientRect().height===28));
+  confere('só a marca LABBIO, a 28 px, sem fundo',await p.locator('img').count()===0&&await p.getByRole('img',{name:'LABBIO'}).count()===1&&await p.locator('.lb-logo').evaluate(e=>e.getBoundingClientRect().height===28&&getComputedStyle(e.parentElement).backgroundColor==='rgba(0, 0, 0, 0)'));
+  confere('a marca muda para só "lab·bio" em tela pequena',await p.locator('.lb-logo').evaluate(e=>getComputedStyle(e).maskImage).then(m=>m.includes(viewport.width<=700?'labbio-curto':'labbio-marca')));
   confere('não reutiliza sessão nem procura login',await p.evaluate(()=>window.__clienteOpcoes.auth.persistSession===false&&window.__clienteOpcoes.auth.detectSessionInUrl===false));
   confere('o QR não fica na tela principal',await p.locator('#sala-qr').isHidden()&&await p.locator('#sala-opcoes').isHidden());
   await p.getByRole('button',{name:'Opções'}).click();
