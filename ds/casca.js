@@ -90,32 +90,6 @@
     feito: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
   };
 
-  /* O traço do rodapé: linha de base com ruído e potenciais de ação.
-     Determinístico: o mesmo desenho em todos os sites. viewBox 1000x64. */
-  function tracado() {
-    var s = 11, rnd = function () { s = (s * 16807) % 2147483647; return s / 2147483647; };
-    var picos = [118, 152, 391, 604, 622, 640, 868];
-    var d = 'M0 40', x = 0;
-    while (x < 1000) {
-      var p = null;
-      for (var i = 0; i < picos.length; i++) if (x >= picos[i] && x < picos[i] + 5) p = picos[i];
-      if (p !== null) {
-        d += ' L' + p + ' 40 L' + (p + 2) + ' 35 L' + (p + 4) + ' 7 L' + (p + 7) + ' 53 L' + (p + 11) + ' 44 L' + (p + 16) + ' 40';
-        x = p + 16;
-      } else {
-        x += 5;
-        d += ' L' + x + ' ' + (40 + (rnd() - .5) * 3.2).toFixed(1);
-      }
-    }
-    return d;
-  }
-  var TRACADO = tracado();
-  function sinalHTML() {
-    return '<div class="nd-rod-sinal" aria-hidden="true"><svg viewBox="0 0 1000 64" preserveAspectRatio="none">' +
-      '<path class="base" d="' + TRACADO + '" pathLength="1000"/>' +
-      '<path class="pulso" d="' + TRACADO + '" pathLength="1000"/></svg></div>';
-  }
-
   /* ---------- cabeçalho ------------------------------------ */
   function idiomaHTML(c, onde) {
     if (!c.idiomas || c.idiomas.length < 2) return '';
@@ -174,7 +148,7 @@
         esc(l.rotulo) + (externo(l.href) ? ' ↗' : '') + '</a></li>';
     }).join('');
     var ano = c.ano || new Date().getFullYear();
-    return '<footer class="nd-rod" data-nd-rod>' + sinalHTML() +
+    return '<footer class="nd-rod" data-nd-rod>' +
       '<div class="nd-rod-in"><div class="nd-rod-topo">' +
         '<div class="nd-rod-marca"><p class="nd-rod-frase">' + esc(c.frase || tx.frase) + '</p>' +
           '<p class="nd-rod-desc">' + esc(c.desc || tx.desc) + '</p></div>' +
@@ -225,19 +199,6 @@
     for (var i = 0; i < els.length; i++) { els[i].textContent = f; els[i].setAttribute('datetime', agora.toISOString()); }
   }
 
-  /* O pulso: um impulso Synapse corre pela linha, como o sinal pelo
-     axônio. Só com o rodapé na tela, com a aba visível e sem pedido
-     de movimento reduzido. Também responde à chegada do ponteiro. */
-  var pulsoTimer = null, visivel = false;
-  function pulsar(el) {
-    if (!el || reduz() || document.hidden) return;
-    el.classList.remove('vivo'); void el.getBoundingClientRect(); el.classList.add('vivo');
-  }
-  function agendarPulso(el) {
-    clearTimeout(pulsoTimer);
-    if (!visivel) return;
-    pulsoTimer = setTimeout(function () { pulsar(el); agendarPulso(el); }, 7000 + Math.random() * 6000);
-  }
 
   function ligar(opcoes) {
     opcoes = opcoes || {};
@@ -272,21 +233,6 @@
     }
     if (opcoes.aoIdioma) NDCasca.aoIdioma = opcoes.aoIdioma;
     hora(); clearInterval(relogio); relogio = setInterval(hora, 20000);
-    var sinal = doc.querySelector('.nd-rod-sinal');
-    if (sinal && typeof IntersectionObserver !== 'undefined') {
-      if (NDCasca.__obs) NDCasca.__obs.disconnect();
-      NDCasca.__obs = new IntersectionObserver(function (es) {
-        visivel = es[0].isIntersecting;
-        if (visivel) { pulsar(sinal); agendarPulso(sinal); } else clearTimeout(pulsoTimer);
-      }, { threshold: .3 });
-      NDCasca.__obs.observe(sinal);
-      var rod = sinal.closest('footer');
-      if (rod && !rod.__ndPonteiro) {
-        rod.__ndPonteiro = true;
-        var ultimo = 0;
-        rod.addEventListener('pointerenter', function () { var n = Date.now(); if (n - ultimo > 3000) { ultimo = n; pulsar(sinal); } });
-      }
-    }
     var logo = doc.querySelector('.nd-cab-marca img');
     if (logo && !logo.__nd) {
       logo.__nd = true;
@@ -329,7 +275,7 @@
   }
 
   var NDCasca = {
-    cabecalho: cabecalho, rodape: rodape, ecossistema: ecossistema, sinal: sinalHTML,
+    cabecalho: cabecalho, rodape: rodape, ecossistema: ecossistema,
     montar: montar, ligar: ligar, marcar: marcar, menu: menu,
     ECOSSISTEMA: ECOSSISTEMA, TEXTOS: TEXTOS, EMAIL: EMAIL, BASE: BASE
   };

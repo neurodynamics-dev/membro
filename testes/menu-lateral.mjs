@@ -123,8 +123,9 @@ console.log('\nAberto (admin, 1440px)');
 
   await ir(p, '#/admin/contas', 1200);
   const adm = await secao(p, 'admin');
+  /* 18 desde a 2.19.1: os painéis Onboarding (ficha T3) e LABBIO (só admin, ficha L2) */
   confere('Administração: todos os painéis, em quatro grupos',
-    adm.filhos.length === 14 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
+    adm.filhos.length === 18 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
   confere('#/admin/contas marca "Contas e perfis"',
     JSON.stringify(await atual(p)) === '["Contas e perfis"]', await atual(p));
   await ir(p, '#/admin/site', 1200);
@@ -136,24 +137,33 @@ console.log('\nAberto (admin, 1440px)');
     }));
 
   await ir(p, '#/', 700);
-  confere('sem "Início" no menu: no início, quem fica marcada é a casinha ao lado da logo',
+  confere('sem "Início" no menu: no início, quem fica marcada é a logo',
     JSON.stringify(await atual(p)) === '[]'
-    && await p.getAttribute('#lt-casa', 'aria-current') === 'page', await atual(p));
+    && await p.getAttribute('#lt-marca', 'aria-current') === 'page', await atual(p));
   await ir(p, '#/agenda/mes', 600);
-  confere('e sai dela quando se sai do início', await p.getAttribute('#lt-casa', 'aria-current') === null);
-  await p.click('#lt-casa'); await p.waitForTimeout(500);
-  confere('a casinha leva ao início', await p.evaluate(() => location.hash) === '#/');
+  confere('e sai dela quando se sai do início', await p.getAttribute('#lt-marca', 'aria-current') === null);
+  await p.click('#lt-marca'); await p.waitForTimeout(500);
+  confere('a logo leva ao início, e não há uma casinha repetindo o caminho', await p.evaluate(() => location.hash) === '#/'
+    && await p.locator('#lt-casa').count() === 0);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-seta');
   await p.waitForTimeout(200);
   let srv = await secao(p, 'servicos');
-  /* onze: todos os serviços, Meus pedidos (desde a v24), o que o SOMA faz
-     sozinho — a declaração, os eventos e o cofre (v25–v27) — e os seis
-     pedidos ao Depto. de Pessoal, cada bloco com o seu rótulo */
+  /* 2.19.1: o reporte saiu de Equipe e entrou em Serviços, só para liderança.
+     Treze: todos os serviços, Meus pedidos (desde a v24), Reporte semanal, o que o SOMA faz
+     sozinho — a declaração, os eventos, o cofre (v25–v27) e Meus dados
+     (2.19.1) — e os seis pedidos ao Depto. de Pessoal, cada bloco com o
+     seu rótulo */
+    /* 14 desde a 2.19.1: "Acesso ao LABBIO" em Documentos e acessos (ficha L6) */
   confere('a seta abre Serviços sem navegar',
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 11 && srv.filhos[1] === 'Meus pedidos'
-      && srv.filhos.slice(2, 5).join('|') === 'Declaração de vínculo|Eventos e participações|Cofre de senhas'
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 14 && srv.filhos[1] === 'Meus pedidos'
+      && srv.filhos[2] === 'Reporte semanal'
+      && srv.filhos.slice(3, 8).join('|') === 'Declaração de vínculo|Acesso ao LABBIO|Eventos e participações|Cofre de senhas|Meus dados'
       && srv.rotulos.join('|') === 'Documentos e acessos|Ao Depto. de Pessoal'
       && await p.evaluate(() => location.hash) === '#/', srv);
+  const equipe = await secao(p, 'equipe');
+  confere('Equipe mantém Feed e Newsletters, sem Reporte semanal (2.19.1)',
+    equipe.filhos.length === 5 && !equipe.filhos.includes('Reporte semanal')
+      && equipe.filhos.includes('Newsletters') && equipe.filhos.includes('Feed da equipe'), equipe);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-filho[data-sub="ouvidoria"]');
   await p.waitForTimeout(700);
   confere('o subitem leva à tela', await p.evaluate(() => location.hash) === '#/servicos/ouvidoria');
@@ -198,11 +208,12 @@ console.log('\nAberto (admin, 1440px)');
       r = b.getBoundingClientRect(), i = b.querySelector('svg').getBoundingClientRect();
     return { borda: cs.borderTopColor, fundo: cs.backgroundColor, legenda: getComputedStyle(b.querySelector('span')).opacity,
       atalho: getComputedStyle(b.querySelector('kbd')).opacity, w: Math.round(r.width), ic: Math.round(i.left + i.width / 2),
-      casa: getComputedStyle(document.getElementById('lt-casa')).display }; });
+      marca: getComputedStyle(document.getElementById('lt-marca')).display,
+      simbolo: getComputedStyle(document.querySelector('#lt-recolher .lt-simbolo')).display }; });
   confere('no trilho, a busca é só o ícone — sem caixa nem legenda —, no eixo dos outros ícones',
     bus.borda === 'rgba(0, 0, 0, 0)' && bus.fundo === 'rgba(0, 0, 0, 0)' && bus.legenda === '0' && bus.atalho === '0'
     && bus.w <= 48 && bus.ic === 34, bus);
-  confere('e a casinha sai do trilho: a logo já é o início', bus.casa === 'none', bus);
+  confere('no trilho, o símbolo ocupa o lugar do botão de expandir e o imagotipo sai', bus.marca === 'none' && bus.simbolo === 'block', bus);
 
   await p.reload({ waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])'); await p.waitForTimeout(700);
@@ -379,7 +390,7 @@ console.log('\nTema');
     const amostras = { 'título': 'main h1', 'texto de apoio': '.cab .cab-lead', 'rótulo (dim)': '.cab .eyebrow',
       'item do menu': '#lt-nav .lt-item .lt-rot', 'código': '.arq-tab .cod', 'subtítulo da linha': '.arq-tab .sub',
       'quem mexeu': '.arq-tab .arq-quem', 'classe controlado': '.arq-cls.controlado', 'status ativo': '.pill.p-ok',
-      'link secundário': '.nav1 a:not(.on)', 'selo Synapse': '.hd-tag', 'frase da estrutura': '.arq-leg .fr',
+      'link secundário': '.nav1 a:not(.on)', 'frase da estrutura': '.arq-leg .fr',
       'rótulo de campo': '.fld label' };
     return Object.entries(amostras).map(([nome, sel]) => { const el = document.querySelector(sel); if (!el) return { nome, falta: true };
       const f = fundo(el), t = sobre(rgb(getComputedStyle(el).color), f), [a, b] = [lum(t), lum(f)].sort((x, y) => y - x);
@@ -433,12 +444,13 @@ console.log('\nPor papel');
 for (const [papel, esperado] of [
   ['leitura', { admin:null, quadroPessoal:false, selecao:false }],
   ['selecao', { admin:'Todos os painéis|E-mails|Relatórios', quadroPessoal:false, selecao:true }],
-  ['pessoal', { admin:14, quadroPessoal:true, selecao:true }]
+  ['pessoal', { admin:17, quadroPessoal:true, selecao:true }]   // 17 com o Onboarding (2.19.1, T3)
 ]){
   const { ctx, p } = await abrir({ stub: stubDe(papel) });
   const adm = await secao(p, 'admin'), eq = await secao(p, 'equipe'), sel = await secao(p, 'selecao');
-  confere(`${papel}: Seleção ${esperado.selecao ? 'aparece, com as oito abas' : 'não aparece'}`,
-    esperado.selecao ? sel?.filhos.length === 8 : sel === null, sel?.filhos ?? null);
+  /* nove abas desde a 2.19.1 (Trainees, ficha T2) */
+  confere(`${papel}: Seleção ${esperado.selecao ? 'aparece, com as nove abas' : 'não aparece'}`,
+    esperado.selecao ? sel?.filhos.length === 9 : sel === null, sel?.filhos ?? null);
   const okAdm = esperado.admin === null ? adm === null
     : typeof esperado.admin === 'number' ? adm?.filhos.length === esperado.admin
     : adm?.filhos.join('|') === esperado.admin;
@@ -446,6 +458,9 @@ for (const [papel, esperado] of [
     okAdm, adm?.filhos ?? null);
   confere(`${papel}: "Quadro de pessoal" ${esperado.quadroPessoal ? 'aparece' : 'não aparece'} em Equipe`,
     eq.filhos.includes('Quadro de pessoal') === esperado.quadroPessoal, eq.filhos);
+  const servicos = await secao(p, 'servicos');
+  confere(`${papel}: reporte não aparece sem liderança`,
+    !servicos.filhos.includes('Reporte semanal') && !eq.filhos.includes('Reporte semanal'), servicos);
   await ctx.close();
 }
 

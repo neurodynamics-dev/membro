@@ -21,7 +21,7 @@
    abrirEmail, gmailCompose, marcados, gruposEfetivos, gruposDaEquipe, dica.
    ============================================================ */
 
-const CDN_JSPDF     = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+const CDN_JSPDF     = 'vendor/jspdf-2.5.1.umd.min.js';   /* local desde a 2.19.1, o mesmo do doc-nro.js */
 const CDN_AUTOTABLE = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
 const CDN_XLSX      = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 
@@ -29,8 +29,6 @@ const CDN_XLSX      = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.f
 let pdfFontesDados;
 async function precisaPDF(){
   if (!window.jspdf) await carregarLib(CDN_JSPDF);
-  if (!window.FontesPDF) await carregarLib('fontes-pdf.js');
-  pdfFontesDados = await FontesPDF.carregar();
   if (!window.jspdf?.jsPDF?.API?.autoTable) await carregarLib(CDN_AUTOTABLE);
   if (!LOGO_PDF) await carregarLogoPDF();
 }
@@ -115,7 +113,7 @@ function grupoCheckboxes(idPrefix, selecionados){
     <input type="checkbox" class="${idPrefix}" value="${esc(g)}" ${selecionados&&selecionados.includes(g)?'checked':''}> ${esc(g)}</label>`).join('')}</div>`;
 }
 /* ---------------- PDF: modelo de documento NRO ---------------- */
-function pdfNovo(orient){ const {jsPDF}=window.jspdf; const doc = new jsPDF({orientation:orient||'portrait',unit:'mm',format:'a4'}); FontesPDF.registrar(doc,pdfFontesDados); return doc; }
+function pdfNovo(orient){ const {jsPDF}=window.jspdf; const doc = new jsPDF({orientation:orient||'portrait',unit:'mm',format:'a4'}); doc.setFont('helvetica','normal'); return doc; }
 function desenhaLogo(doc,x,y,s,cor){
   doc.setFillColor(cor[0],cor[1],cor[2]);
   doc.circle(x+s*0.33, y+s*0.5, s*0.24, 'F');
@@ -134,26 +132,26 @@ function pdfCabecalho(doc, titulo, subtitulo, codigo){
     doc.addImage(LOGO_PDF.dados, 'PNG', 12, 9, w, h);
   } else {
     desenhaLogo(doc, 12, 9, 8, [29,29,31]);
-    doc.setTextColor(29,29,31); doc.setFont('Archivo','bold'); doc.setFontSize(11.5);
+    doc.setTextColor(29,29,31); doc.setFont('helvetica','bold'); doc.setFontSize(11.5);
     doc.text('NeuroDynamics', 21.5, 14.6);
   }
   doc.setTextColor(29,29,31); doc.setFontSize(9.5);
-  doc.setFont('Archivo','normal');
+  doc.setFont('helvetica','normal');
   let tt = titulo;
   while(tt.length>10 && doc.getTextWidth(tt) > W-108) tt = tt.slice(0,-2);
   if(tt !== titulo) tt = tt.trim()+'…';
-  doc.setFont('Archivo','bold');
+  doc.setFont('helvetica','bold');
   doc.text('Departamento de Pessoal', W-12, 10.8, {align:'right'});
-  doc.setFont('Archivo','normal');
+  doc.setFont('helvetica','normal');
   doc.text(tt, W-12, 15, {align:'right'});
   doc.text(codigo || 'SOMA 5.0', W-12, 19.2, {align:'right'});
   // Título principal no corpo do documento
   let y = 33;
-  doc.setFont('Archivo','bold'); doc.setFontSize(15);
+  doc.setFont('helvetica','bold'); doc.setFontSize(15);
   const tl = doc.splitTextToSize(titulo, W-24);
   doc.text(tl, 12, y); y += tl.length*6.6 + 1.5;
   if(subtitulo){
-    doc.setFont('Archivo','normal'); doc.setFontSize(9); doc.setTextColor(96,96,99);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(96,96,99);
     const ls = doc.splitTextToSize(subtitulo, W-24);
     doc.text(ls, 12, y); y += ls.length*4.2 + 2;
   }
@@ -172,9 +170,9 @@ function pdfRodape(doc, texto){
 function pdfBloco(doc, y, titulo, texto){
   const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
   if(y > H-35){ doc.addPage(); y = 16; }
-  doc.setFont('Archivo','bold'); doc.setFontSize(10.5); doc.setTextColor(29,29,31);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(29,29,31);
   doc.text(titulo, 12, y); y += 5.5;
-  doc.setFont('Archivo','normal'); doc.setFontSize(9.5); doc.setTextColor(60,60,64);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(60,60,64);
   const ls = doc.splitTextToSize(texto || '—', W-24);
   for(const linha of ls){
     if(y > H-18){ doc.addPage(); y = 16; }
@@ -205,10 +203,10 @@ function filtraPorSelecao(sts, grupos){
 function secaoTabela(doc, y, titulo, head, body, colStyles){
   const H = doc.internal.pageSize.getHeight();
   if(y > H-40){ doc.addPage(); y = 16; }
-  doc.setFont('Archivo','bold'); doc.setFontSize(10.5); doc.setTextColor(29,29,31);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(29,29,31);
   doc.text(titulo, 12, y);
   doc.autoTable({ startY:y+2.5, head:head||undefined, body, theme:'plain',
-    styles:{font:'Archivo', fontSize:8.5, cellPadding:1.8, textColor:[29,29,31]},
+    styles:{font:'helvetica', fontSize:8.5, cellPadding:1.8, textColor:[29,29,31]},
     headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:8.5},
     alternateRowStyles:{fillColor:[255,255,255]},
     columnStyles:colStyles||{}, margin:{left:12,right:12} });
@@ -317,12 +315,12 @@ async function gerarListaPortaria(){
     doc.autoTable({ startY:y, theme:'grid',
       head:[['Nome','Matrícula','Assinatura']],
       body:lista.map(m=>[m.nome, mats.get(m.registro)||'—','']),
-      styles:{font:'Archivo', fontSize:9, cellPadding:2.2, textColor:[29,29,31], lineColor:[196,204,201], lineWidth:.25, minCellHeight:9},
+      styles:{font:'helvetica', fontSize:9, cellPadding:2.2, textColor:[29,29,31], lineColor:[196,204,201], lineWidth:.25, minCellHeight:9},
       headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:9},
       columnStyles:{0:{cellWidth:86},1:{cellWidth:38},2:{cellWidth:'auto'}}, margin:{left:12,right:12} });
     let fy = doc.lastAutoTable.finalY + 9;
     if(fy > doc.internal.pageSize.getHeight()-22){ doc.addPage(); fy = 16; }
-    doc.setFont('Archivo','normal'); doc.setFontSize(9.5); doc.setTextColor(29,29,31);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(29,29,31);
     doc.text(`Em caso de dúvidas, contatar ${respNome} em ${respTel}.`, 12, fy);
     pdfRodape(doc);
     doc.save(`NRO-PES_lista_portaria_${hojeISO()}.pdf`);
@@ -376,7 +374,7 @@ async function gerarListaAssinatura(){
     doc.autoTable({ startY:y, theme:'grid',
       head:[['Nome','Matrícula','Assinatura']],
       body:lista.map(m=>[m.nome, mats.get(m.registro)||'—','']),
-      styles:{font:'Archivo', fontSize:9, cellPadding:2.2, textColor:[29,29,31], lineColor:[196,204,201], lineWidth:.25, minCellHeight:9},
+      styles:{font:'helvetica', fontSize:9, cellPadding:2.2, textColor:[29,29,31], lineColor:[196,204,201], lineWidth:.25, minCellHeight:9},
       headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:9},
       columnStyles:{0:{cellWidth:86},1:{cellWidth:38},2:{cellWidth:'auto'}}, margin:{left:12,right:12} });
     pdfRodape(doc);
@@ -547,7 +545,7 @@ async function gerarAutorizados(){
     doc.autoTable({ startY:y, theme:'plain',
       head:[['Reg.','Nome','Departamento','Status','Concedido em']],
       body:lista.map(m=>[pad3(m.registro), m.nome, m.departamento||'—', m.status, desde.get(m.registro)?fmtD(desde.get(m.registro)):'—']),
-      styles:{font:'Archivo', fontSize:9, cellPadding:2, textColor:[29,29,31]},
+      styles:{font:'helvetica', fontSize:9, cellPadding:2, textColor:[29,29,31]},
       headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:9},
       alternateRowStyles:{fillColor:[255,255,255]}, margin:{left:12,right:12} });
     pdfRodape(doc);
@@ -603,7 +601,7 @@ function exportarPDFQuadro(){
       body:lista.map(m=>[pad3(m.registro), m.nome, m.status, m.departamento||'', m.cargo||'',
         m.gestor_registro?(nomeDe(m.gestor_registro)||''):'', (m.grupos||[]).join(', '),
         m.email_nro||m.email_pessoal||'', m.data_ingresso?fmtD(m.data_ingresso):'']),
-      styles:{font:'Archivo', fontSize:7.5, cellPadding:1.6, textColor:[29,29,31]},
+      styles:{font:'helvetica', fontSize:7.5, cellPadding:1.6, textColor:[29,29,31]},
       headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:8},
       alternateRowStyles:{fillColor:[255,255,255]}, margin:{left:12,right:12} });
     pdfRodape(doc);

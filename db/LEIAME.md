@@ -90,6 +90,99 @@ db/
 | `v31_ps_entrevistas.sql` | as entrevistas do processo seletivo online: quem abriu cada janela (`ps_slots.criado_por`), o link da chamada no lugar do local (`link_reuniao`, obrigatório em entrevista nova), o reagendamento pelo comitê (`ps_reagendar`, `ps_slot_editar`, `ps_slot_excluir`) e a fila de e-mails (`ps_envios`): a reserva, o reagendamento, o link e o cancelamento ao candidato, e o resumo da véspera ao responsável; o site ganha o link em `ps_acompanhar` e o "online" em `ps_horarios` |
 | `v32_fila_e_notificacoes.sql` | a fila de envio que anda sozinha: o banco chama a Edge Function `notificar-email` a cada minuto (`soma-fila`, pelo `pg_cron` e o `pg_net`) e logo depois de cada aviso novo (o gatilho `fila_acordar`), com uma senha que a migração gera e guarda no Vault (`soma_fila_token`); uma passada de cada vez (`fila_passada_inicio`, `fila_passada_fim`) e o registro delas (`fila_passadas`, `fila_situacao`); o empurrão do portal aberto (`fila_empurrar`). O sino que não empilha: `notificacoes_limpar`, o expurgo (`notificacoes_expurgar`) e o aviso de teste que substitui o anterior. As notificações no aparelho (Web Push): `push_inscricoes`, `push_inscrever`, `push_cancelar`, `push_meus`, as chaves VAPID no Vault e a fila da Edge Function em `push_lote` e `push_baixa`. Depois dela, publique de novo a `notificar-email` e desligue nela a verificação de JWT |
 | `2.19.0_quiosque.sql` | o quiosque entra com uma conta de serviço: `quiosque_conta`, `conta_quiosque()`, `conta_ativa()` falsa para ela (nenhuma tabela lê pela API), `quiosque_estado_conta()` e `quiosque_painel()`; o segredo que estava no código público deixa de servir. Confira antes: `quiosque_estado(text)` e a linha `segredo_quiosque` em `config_sistema` (ver `PUBLICACAO-2.19.md`) |
+| `2.19.0_avisos.sql` | quadro de avisos com onze layouts (hero, número, contagem, lista, citação e progresso entram) e as colunas `familia` e `valor` em `portal_avisos`; só acrescenta, pode rodar de novo |
+
+Teste das duas migrações da 2.19.0 (19 asserções; aplica cada uma duas vezes e simula o que só a produção tem, `config_sistema` e `quiosque_estado`):
+
+```sh
+createdb -T tbase t219
+psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.18.0_soma.sql
+psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
+```
+
+### 2.19.1: recadastro e termo de sigilo do LABBIO
+
+| Migração | O que faz |
+|---|---|
+| `2.19.1_recadastro.sql` | Meus dados e o recadastro semestral: os campos pessoais em `dados_pessoais`, o histórico de cada conferência (`cadastro_confirmacoes`, a fotografia dos dados), as campanhas (`recadastro_campanhas`, com o termo opcional) e quem já concluiu (`recadastro_pendencias`). `cadastro_meus_dados`, `cadastro_confirmar` (valida CPF, CEP, UF...), `recadastro_estado` (o que a entrada pede), `recadastro_dispensar` (uma vez por campanha), `recadastro_painel` e `recadastro_campanha_ativar` (avisa todos os membros ativos). Férias e afastamento pausam o pedido |
+| `2.19.1_termo.sql` | o termo de sigilo do LABBIO como serviço à parte: `termo_campanhas`, `termo_pendencias`, o bucket privado `termos`; `termo_emitir` só com dados conferidos há até 180 dias (e guarda quais saíram no termo), `termo_registrar_envio` só para um termo emitido com a última conferência; `termo_painel` e `termo_conferir` para o Pessoal. Depende da `2.19.1_recadastro.sql` |
+| `2.19.1_reporte.sql` | o reporte por liderança direta: um por líder e semana (`reportes.modelo = 'lider'`, a lista fotografada em `pessoas`), cobrança de sexta 16h (`reporte_cobrancas`, `reporte_cobranca_estado`, `reporte_ausente`), fechamento na segunda 0h (`reporte_ciclos.fecha_em`), avaliações na ficha (`membro_reporte_avaliacoes`), sinalizações com PMO e offboarding (`reporte_sinalizacoes`, `reporte_sequencias`), consolidado para admin e NRO_MANAGERS. Os ciclos por frente continuam como estavam. Independente do recadastro e do termo |
+| `2.19.1_labbio_base.sql` | os gestores do LABBIO com conta própria, que não é membro: convite por e-mail (fila `labbio_envios`, mandada pela `notificar-email`), aceite, a estrela do responsável principal, revogação. A conta externa fica fechada em quatro camadas: a porta da API (`api_pre_request`, configurada em `pgrst.db_pre_request` do papel `authenticator`; só passa `/rpc/labbio_*`), `conta_ativa()` falsa, `papeis_atuais()` vazio e uma política restritiva no Storage. Depende da `2.19.0_quiosque.sql`. Depois dela, publique de novo a `notificar-email` |
+| `2.19.1_labbio_acesso.sql` | o pedido de acesso biométrico ao LABBIO: rascunho → Pessoal → LABBIO → concedido (e devolvido, negado, cancelado), com versões (`labbio_pedido_versoes`) e a trilha (`labbio_pedido_eventos`); foto no bucket privado `biometria`; o item do catálogo pela chave `labbio_biometria`; os campos pedidos em `labbio_config`. A triagem do Pessoal (`pessoal_solicitacao_decidir`) encaminha esse subtipo em vez de conceder; os outros pedidos de acesso não mudam. Depende da `2.19.1_labbio_base` e da `2.19.1_recadastro` |
+| `2.19.1_trainees.sql` | trainees no SOMA principal: trainee é quem tem cargo `Trainee` (`eh_trainee`), status Ativo, no grupo NRO_TRAINEE. `ps_trainees_pendentes`, `ps_admitir_trainees` (lote, tudo ou nada, sem duplicar; o candidato continua `trainee` no PS), `trainees_quadro` (área de interesse separada da alocação), `trainee_efetivar` e `trainee_dispensar` (Desligado, card no Pessoal; nada é apagado e nenhum acesso é dado como revogado sozinho) |
+| `2.19.1_labbio_dados.sql` | as consultas do painel do LABBIO (`labbio_inicio`, `labbio_membros`, `labbio_membro`, `labbio_checkins`, `labbio_treinamentos`), só com os campos combinados; a revogação física pendente (`labbio_revogacoes`), criada por gatilho quando quem tem biometria sai (Desligado, Egresso), sem notificação, até o gestor confirmar. Depende da `2.19.1_labbio_acesso`, da `2.19.1_termo` e da `2.19.1_trainees` |
+| `2.19.1_labbio_salas.sql` | a consulta ao LABBIO para a Sala de Reuniões e o Auditório (`espacos.labbio`, `espacos.consulta_labbio`, `labbio_consultas`): nasce por gatilho ao salvar o evento, presa à ocorrência e à versão de local e horário, consultiva (sem resposta, o evento vale); conflito avisa o organizador uma vez; sobreposição sem títulos alheios para o organizador |
+| `2.19.1_labbio_tablets.sql` | os tablets na porta das salas: token por aparelho (só o hash fica), `sala_estado`, `sala_ocupar` (até 30 min, antes da próxima reserva) e `sala_liberar` para o papel anon; a gestão é do painel do LABBIO e do admin |
+| `2.19.1_onboarding.sql` | a trilha de onboarding versionada (`onboarding_trilhas`, a 1 com as sete etapas do plano) e o progresso no servidor (`onboarding_progresso`); as etapas de fato (dados, termo, treinamentos) o SOMA confere sozinho; `onboarding_meu`, `onboarding_marcar`, `onboarding_painel`, `onboarding_trilha_salvar`. Nada bloqueia o SOMA |
+| `2.19.1_feed.sql` | o feed editorial: estados rascunho, pronto, publicando, publicado e retirado; tópico ou notícia (slug estável, `feed_slugs`); quem publica é NRO_MANAGERS ou admin, sem votação (o reporte só contribui); público no site com as imagens copiadas para o bucket público `noticias` em dois passos; reações (`feed_reacoes`, só em notícia) de quem tem registro no quadro, em qualquer status; newsletter sem votos, com os itens ainda não distribuídos (`newsletter_itens`) e envio na hora (`newsletter_enviar_agora`); inscrição pública confirmada (`comunidade_inscrever`, `comunidade_confirmar`, fila `comunidade_envios`). Depois dela, publique de novo a `notificar-email` |
+
+A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
+2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
+sigilo do LABBIO". Teste (44 asserções):
+
+```sh
+createdb -T tbase t2191
+psql -X -v ON_ERROR_STOP=1 -d t2191 -f testes/2.18.0_soma.sql -f testes/2.19.0.sql -f testes/2.19.1_recadastro.sql
+```
+
+O LABBIO, identidade e segurança (52 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191l 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql
+```
+
+O pedido de acesso biométrico (48 asserções), depois do LABBIO e do recadastro:
+
+```sh
+bash testes/preparar-base.sh teste t2191a 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql 2.19.1_labbio_acesso.sql
+```
+
+Os trainees (33 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191t 2.18.0_soma.sql 2.19.0.sql 2.19.1_recadastro.sql 2.19.1_trainees.sql
+```
+
+As consultas do LABBIO (25 asserções), depois do pedido de biometria e dos trainees:
+
+```sh
+bash testes/preparar-base.sh teste t2191d 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
+     2.19.1_labbio_acesso.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
+     2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql
+```
+
+As salas (19) e os tablets (17), depois do LABBIO:
+
+```sh
+bash testes/preparar-base.sh teste t2191tb 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql
+```
+
+O onboarding (15 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191o 2.18.0_soma.sql 2.19.0.sql 2.19.1_recadastro.sql 2.19.1_trainees.sql 2.19.1_onboarding.sql
+```
+
+O feed e a newsletter (84 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191f 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_reporte.sql 2.19.1_feed.sql
+```
+
+A 2.19.1 inteira, na ordem de aplicação em produção (632 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
+     2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
+     2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql
+```
+
+O reporte (70 asserções, mais o teste da 2.18.0 do reporte de novo):
+
+```sh
+bash testes/preparar-base.sh             # monta a tbase, uma vez
+bash testes/preparar-base.sh teste t2191r 2.18.0_soma.sql 2.19.0.sql 2.19.1_reporte.sql
+```
 | `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
 | `2.17.0_notas_fotos_e_cartoes.sql` | a primeira com o número novo: os bugs e sugestões das notas de versão (`soma_feedback`, votos, comentários, o andamento por `admin`); a foto enviada pelo portal (o bucket público `fotos`, `membro_foto_definir`); os cartões com outras pessoas, etiquetas, checklists (`atividade_checklist`), a cópia para outro quadro (`atividade_copiar`) e o comentário que se corrige e se apaga. Passa a ser a dona de `atividade_criar`, `atividade_editar`, `atividades_quadro` e `atividades_carga` |
 

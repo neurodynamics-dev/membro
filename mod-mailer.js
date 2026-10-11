@@ -307,7 +307,7 @@ function mlDoRoteiro(rt){
 async function pageMailer(sub){
   const el = $('#sec-emails'); if (!el) return;
   const gestao = podeGerir();
-  if (sub==='comunidade' && souAdmin()){await carregarModulo('reporte');return repComunidadePagina();}
+  if (sub==='comunidade' && souAdmin()){await carregarModulo('feed');return feedComunidadePagina();}
   const aba = gestao && ['programados', 'pilulas'].includes(sub) ? sub : 'escrever';
   const fila = (ML.programados || []).filter(p => p.status === 'programado').length;
   el.innerHTML = (gestao ? navNivel1([

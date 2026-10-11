@@ -3,7 +3,7 @@
 (()=>{
  const controls=new Map();let active=null,seq=0,queued=false;
  const close=()=>{if(!active)return;active.list.remove();active.button.setAttribute('aria-expanded','false');active=null;};
- function position(c){const r=c.button.getBoundingClientRect();c.list.style.left=Math.max(8,Math.min(r.left,innerWidth-r.width-8))+'px';c.list.style.width=Math.min(r.width,innerWidth-16)+'px';c.list.style.top=Math.min(r.bottom+4,innerHeight-100)+'px';c.list.style.maxHeight=Math.max(80,Math.min(280,innerHeight-r.bottom-12))+'px';}
+ function position(c){const r=c.button.getBoundingClientRect();c.list.style.minWidth=Math.min(r.width,innerWidth-16)+'px';c.list.style.width='max-content';c.list.style.maxWidth=Math.min(440,innerWidth-16)+'px';const lw=c.list.offsetWidth||r.width;c.list.style.left=Math.max(8,Math.min(r.left,innerWidth-lw-8))+'px';c.list.style.top=Math.min(r.bottom+4,innerHeight-100)+'px';c.list.style.maxHeight=Math.max(80,Math.min(280,innerHeight-r.bottom-12))+'px';}
  function draw(c){
   c.list.replaceChildren();
   [...c.select.options].forEach((o,i)=>{
@@ -26,7 +26,16 @@
   for(const [s,c] of controls){if(!s.isConnected){if(active===c)close();controls.delete(s);}else sync(c);}
   document.querySelectorAll('select:not([data-nro-select])').forEach(s=>{
    if(s.hidden||s.closest('[hidden]'))return;
-   const wrap=document.createElement('span');wrap.className='nro-select';s.before(wrap);wrap.append(s);
+   /* o embrulho herda o tamanho que o CSS dava ao select (flex, largura cheia, mínimo), senão encolhe até o texto */
+   const cs=getComputedStyle(s),pai=s.parentElement,cheio=pai&&s.offsetWidth>0&&s.offsetWidth>=pai.clientWidth-parseFloat(getComputedStyle(pai).paddingLeft||0)-parseFloat(getComputedStyle(pai).paddingRight||0)-2;
+   const wrap=document.createElement('span');wrap.className='nro-select';
+   if(cs.flexGrow!=='0')wrap.style.flex=cs.flexGrow+' '+cs.flexShrink+' '+cs.flexBasis;
+   if(cs.minWidth&&cs.minWidth!=='auto'&&cs.minWidth!=='0px')wrap.style.minWidth=cs.minWidth;
+   if(cheio||s.style.width==='100%')wrap.style.width='100%';else if(s.style.width)wrap.style.width=s.style.width;
+   s.before(wrap);wrap.append(s);
+   /* a medida: as opções empilhadas, invisíveis, dão ao botão a largura da maior, como no select nativo */
+   const medida=document.createElement('span');medida.className='nro-select-medida';medida.setAttribute('aria-hidden','true');
+   [...s.options].forEach(o=>{const d=document.createElement('span');d.textContent=o.text;medida.append(d);});wrap.append(medida);
    s.dataset.nroSelect='';s.tabIndex=-1;
    const button=document.createElement('button');button.type='button';button.className='nro-select-button';button.setAttribute('aria-haspopup','listbox');button.setAttribute('aria-expanded','false');
    const list=document.createElement('div');list.className='nro-select-list';list.role='listbox';list.id='nro-list-'+(++seq);button.setAttribute('aria-controls',list.id);if(s.multiple)list.setAttribute('aria-multiselectable','true');

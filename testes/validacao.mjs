@@ -32,6 +32,9 @@ async function abrir(q = '', vp = { width:1280, height:900 }){
   await p.route('**/*supabase*.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:stub }));
   await p.route('https://membro.neurodynamics.dev/fontes-pdf.js', r => r.fulfill({contentType:'application/javascript',body:readFileSync(new URL('../fontes-pdf.js',import.meta.url))}));
   await p.route('https://membro.neurodynamics.dev/fontes/**', r => r.fulfill({headers:{'Access-Control-Allow-Origin':'*'},body:readFileSync(new URL('../fontes/'+new URL(r.request().url()).pathname.split('/').pop(),import.meta.url))}));
+  /* desde a 2.19.1 o doc-nro.js traz o jsPDF, o QR e a logo de perto dele (vendor/ e marca/) */
+  await p.route(/https:\/\/membro\.neurodynamics\.dev\/(vendor|marca)\//, r => r.fulfill({ headers:{'Access-Control-Allow-Origin':'*'},
+    body: readFileSync(new URL('..' + new URL(r.request().url()).pathname, import.meta.url)) }));
   await p.route('https://membro.neurodynamics.dev/doc-nro.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:DOCNRO }));
   await p.route('**/cdnjs.cloudflare.com/**/jspdf.umd.min.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:JSPDF }));
   await p.route('**/cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:QR }));

@@ -107,12 +107,17 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
      montada por desenharMenu(), porque depende do papel e dos grupos. -->
 <header id="hd" hidden>
   <div class="lt-topo">
-    <a class="lt-marca" href="#/" aria-label="Início do Portal do Membro">
+    <a class="lt-marca" id="lt-marca" href="#/" aria-label="Início do SOMA">
+      <img class="lt-imagotipo" src="https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png" alt="NeuroDynamics"></a>
+    <!-- recolher e expandir: no trilho, o símbolo vira o botão (o ícone do painel aparece ao passar o mouse) -->
+    <button class="lt-recolher" id="lt-recolher" onclick="alternarLateral()" aria-controls="hd" aria-expanded="true"
+      aria-label="Recolher o menu" title="Recolher o menu">
       <img class="lt-simbolo" src="https://brand.neurodynamics.dev/assets/icon-square-solid-white.png" alt="">
-      <span class="lt-nome"><img class="lt-imagotipo" src="https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png" alt="NeuroDynamics"><span class="hd-tag">Portal do Membro</span></span>
-    </a>
-    <a class="lt-casa" id="lt-casa" href="#/" aria-label="Início" title="Início">
-      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.2 12 4l8 6.2V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg></a>
+      <svg class="ic recolhe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+        stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M9.5 4v16M16 9.5 13.5 12l2.5 2.5"/></svg>
+      <svg class="ic expande" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+        stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M9.5 4v16M13.5 9.5 16 12l-2.5 2.5"/></svg>
+    </button>
   </div>
   <button class="lt-busca" id="busca-abre" onclick="abrirPaleta()" aria-label="Buscar" title="Buscar (/)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -146,19 +151,6 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
         <button class="lt-filho" id="lt-tema-voo" onclick="alternarTema()"><span class="nm">Tema claro</span></button>
         <button class="lt-filho" onclick="sair()"><span class="nm">Sair da conta</span></button></div></div>
     </div>
-    <div class="lt-sec">
-      <div class="lt-linha">
-        <button class="lt-item" id="lt-recolher" onclick="alternarLateral()" aria-controls="hd" aria-expanded="true">
-          <svg class="ic recolhe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M9.5 4v16M16 9.5 13.5 12l2.5 2.5"/></svg>
-          <svg class="ic expande" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M9.5 4v16M13.5 9.5 16 12l-2.5 2.5"/></svg>
-          <span class="lt-rot">Recolher o menu</span></button>
-      </div>
-      <div class="lt-sub lt-dica"><div class="lt-voo"><span class="lt-voo-tit">Expandir o menu</span></div></div>
-    </div>
   </div>
 </header>
 
@@ -168,8 +160,8 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
     aria-controls="hd" aria-expanded="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
       stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
-  <a class="tm-marca" href="#/" aria-label="Início do Portal do Membro">
-    <img class="lt-simbolo" src="https://brand.neurodynamics.dev/assets/icon-square-solid-white.png" alt=""><span class="hd-tag">Portal do Membro</span></a>
+  <a class="tm-marca" href="#/" aria-label="Início do SOMA">
+    <img class="lt-imagotipo" src="https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png" alt="NeuroDynamics"></a>
   <button class="tm-bt" onclick="abrirPaleta()" aria-label="Buscar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
       stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
@@ -211,7 +203,6 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
 <main id="main" hidden></main>
 
 <footer id="ft" class="nd-rod app" data-nd-rod hidden>
-  <div id="ft-sinal"></div>
   <div class="nd-rod-in">
     <div class="ft-vivo" id="ft-vivo" hidden></div>
     <div class="nd-rod-topo">
@@ -274,7 +265,7 @@ const CONFIG = {
    é a 2.16.0. Acompanha a query dos módulos carregados sob demanda, para
    um deploy não deixar módulo velho em cache, e as notas de cada versão
    moram em mod-versoes.js (#/versoes). */
-const VERSAO = '2.18.0';
+const VERSAO = '2.19.0';
 const LOGO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
 const LOGO_BRANCO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
@@ -397,7 +388,7 @@ function toast(msg, err, acao){ const t=document.createElement('div'); t.classNa
   $('#toast').appendChild(t); setTimeout(()=>t.remove(), acao ? 8000 : 5200); }
 
 const state = {
-  perfil:null, membros:[], itensAcesso:[], avisos:[],
+  perfil:null, membros:[], itensAcesso:[], avisos:[], feedEditor:false,
   eventos:null, presencas:null, statusMembro:[], minhasPresencas:null,
   cal:{ ano:new Date().getFullYear(), mes:new Date().getMonth() },
   agendas:null, ag:null, tipos:null, itens:null, itensMes:null,
@@ -1045,6 +1036,10 @@ function carregarGrupos(){
           () => {});
 }
 const grupoPorNome = n  => (state.grupos || []).find(g => g.nome === n) || null;
+/* trainee é quem tem o cargo Trainee (2.19.1, sem coluna nova): uma regra
+   só, para o chip aparecer igual no quadro, na ficha e no organograma */
+const ehTrainee = m => /^trainee$/i.test(String(m?.cargo || '').trim());
+const chipTrainee = m => ehTrainee(m) ? ' <span class="chip mini">Trainee</span>' : '';
 const grupoPorId   = id => (state.grupos || []).find(g => g.id === id) || null;
 /* O grupo e os de cima, até a raiz. state.grupos só tem os ativos, então
    um grupo desativado no caminho interrompe a subida — como no banco. */
@@ -1082,6 +1077,10 @@ const PAINEIS = [
                                                        () => can() || podeSelecao()],
   ['contas',       'Contas e perfis',     'Pessoas',  'Papéis de acesso, vínculo com o quadro e senha', can],
   ['acessos',      'Catálogo de acessos', 'Pessoas',  'Os sistemas, locais e documentos controlados pela NRO', can],
+  ['recadastro',   'Recadastro',          'Pessoas',  'A conferência semestral dos dados: começar, encerrar e quem já fez', can],
+  ['termo',        'Termo de sigilo',     'Pessoas',  'O termo do LABBIO: quem enviou, conferir e devolver', can],
+  ['onboarding',   'Onboarding',          'Pessoas',  'Quem já passou por cada etapa da trilha', can],
+  ['labbio',       'LABBIO',              'Pessoas',  'Os gestores do painel do LABBIO: convidar, revogar e a estrela', () => souAdmin()],
   ['grupos',       'Grupos e quadros',    'Pessoas',  'A árvore de grupos, quem está em cada um e quem enxerga cada quadro', can],
   ['importar',     'Importar planilha',   'Pessoas',  'Atualizar o quadro em massa pelo NRO-PES-005 ou pelo Excel do SOMA', can],
   ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
@@ -1095,7 +1094,7 @@ const GRUPOS_PAINEL = ['Portal','Pessoas','Registro','Conteúdo'];
 /* As abas do Processo Seletivo — também listadas pelo menu antes de o
    módulo de seleção descer. A primeira é a visão geral, em #/selecao. */
 const ABAS_SELECAO = [['','Visão geral'],['candidatos','Candidatos'],['avaliacao','Avaliação'],
-  ['agenda','Agenda'],['dinamica','Dinâmica'],['publicacoes','Publicações'],['faq','FAQ'],
+  ['agenda','Agenda'],['dinamica','Dinâmica'],['trainees','Trainees'],['publicacoes','Publicações'],['faq','FAQ'],
   ['config','Configurações']];
 
 /* ---------------- Studio: o vocabulário (v23) ----------------
@@ -1228,7 +1227,7 @@ function acoesDaCasca(){
     ['Presença e check-in', 'Quem está no LABBIO, ranking e sequência', '#/equipe/presenca'],
     ['Atividades', 'O quadro do seu grupo', '#/atividades'],
     ['Equipe', 'Organograma e fichas', '#/equipe'],
-    ...(tenhoPapel('lideranca') ? [['Reporte semanal', 'Reporte da frente', '#/equipe/reporte']] : []),
+    ...(tenhoPapel('lideranca') ? [['Reporte semanal', 'Seu reporte da semana', '#/servicos/reporte']] : []),
     ['Feed da equipe', 'Publicações da equipe', '#/equipe/feed'],
     ['Serviços', 'Pedidos ao Depto. de Pessoal', '#/servicos'],
     ['Solicitar acesso', 'Documento, sistema ou local', '#/servicos/acesso'],
@@ -1465,6 +1464,11 @@ async function abrirPortal(){
   const { data:{ user } } = await sb.auth.getUser();
   /* conta de membro Desligado, Egresso ou Sob demanda: o banco já nega
      tudo; aqui só não se abre a casca */
+  /* 2.19.1 (L2): conta de gestor do LABBIO é externa e só chama labbio_*;
+     vai para o painel dela antes de qualquer outra chamada. Sem a
+     migração, a chamada falha e o portal segue como sempre. */
+  const lb = await sb.rpc('labbio_eu').then(r => r, () => ({}));
+  if (['ok', 'convidado', 'revogado'].includes(lb.data?.status)){ location.replace('labbio/'); return; }
   const [ativa, papeis] = await Promise.all([sb.rpc('conta_ativa'), sb.rpc('papeis_atuais')]);
   if (ativa.data === false){ return acessoEncerrado(); }
   const [p, m] = await Promise.all([
@@ -1482,6 +1486,7 @@ async function abrirPortal(){
   carregarGrupoPapeis();
   const grupos = carregarGrupos();   /* os quadros de Atividades são os grupos da pessoa */
   carregarOKRsDoMenu();
+  carregarFeedEditor();
   carregarProjetosEArquivos();
   state.studioPronto = Promise.all([grupos, carregarStudioConfig()]);
   carregarTreinamentoConfig();
@@ -1508,7 +1513,6 @@ async function abrirPortal(){
   $('#ft-ver').textContent = 'SOMA ' + VERSAO;
   /* o rodapé da casca (ds/casca.js): o sinal e os quatro endereços */
   if (window.NDCasca){
-    const sinal = $('#ft-sinal'); if (sinal) sinal.outerHTML = NDCasca.sinal();
     const eco = $('#ft-eco'); if (eco) eco.outerHTML = NDCasca.ecossistema('soma', 'pt');
     NDCasca.ligar();
   }
@@ -1525,8 +1529,65 @@ async function abrirPortal(){
      portal aberto empurra (32.0) */
   setTimeout(empurrarFila, 6000);
   state.filaTimer ||= setInterval(empurrarFila, 150e3);
-  render(route());
+  await carregarObrigacoes();
+  await render(route());
+  if (state.obrigacao?.recadastro?.status === 'pendente')
+    await carregarModulo('cadastro').then(() => recadastroPedir()).catch(() => {});
+  reporteAvisarEntrada();
+  state.reporteTimer ||= setInterval(reporteReavaliarCobranca, 5 * 60e3);
 }
+/* As obrigações da entrada (2.19.1): o recadastro semestral (que, em
+   2026/2, inclui o termo de sigilo do LABBIO). Sem a 2.19.1 no banco, a
+   função não existe e nada muda. */
+async function carregarObrigacoes(){
+  /* o termo é um serviço à parte: aparece no menu enquanto houver termo pedido */
+  const ler = async f => { try { const { data, error } = await sb.rpc(f); return !error && data ? data : null; } catch (e){ return null; } };
+  const [recadastro, termo, reporte] = await Promise.all([ler('recadastro_estado'), ler('termo_estado'),
+    tenhoPapel('lideranca') ? ler('reporte_cobranca_estado') : null]);
+  state.obrigacao = { recadastro, termo, reporte };
+  desenharMenu();
+}
+/* Depois da dispensa única, a pendência leva direto ao recadastro — menos
+   na sessão em que a pessoa acabou de dispensar. */
+function obrigacaoBloqueia(){
+  const r = state.obrigacao?.recadastro;
+  let dispensado = false;
+  try { dispensado = !!sessionStorage.getItem('nd.recadastro.depois.' + r?.campanha); } catch (e){}
+  if (r?.bloqueia && !dispensado) return '#/servicos/recadastro';
+  return state.obrigacao?.reporte?.status === 'obrigatoria' ? '#/servicos/reporte' : null;
+}
+
+
+/* A cobrança usa o estado do servidor, inclusive quando a aba volta do repouso. */
+function reporteAvisarEntrada(){
+  const r = state.obrigacao?.reporte;
+  if (r?.status !== 'aviso' || document.querySelector('.rec-painel, #modal.open')) return;
+  try { if (sessionStorage.getItem('nd.reporte.aviso.' + r.ciclo_id)) return; } catch (e){}
+  abreModal(`<h3>Reporte semanal</h3><p>Hoje às 16h é a reunião da gerência. Seu reporte desta semana ainda não foi enviado.</p>
+    <div class="acts"><button class="btn ghost" onclick="reporteAdiarAviso()">Agora não</button><button class="btn solid" onclick="fechaModal(); location.hash='#/servicos/reporte'">Abrir o reporte</button></div>`);
+}
+function reporteAdiarAviso(){
+  const r = state.obrigacao?.reporte;
+  if (r) try { sessionStorage.setItem('nd.reporte.aviso.' + r.ciclo_id, '1'); } catch (e){}
+  fechaModal();
+}
+async function reporteReavaliarCobranca(){
+  if (document.hidden || !state.perfil || !tenhoPapel('lideranca') || state.reporteConsultando) return;
+  const perfil = state.perfil, obrigacao = state.obrigacao;
+  state.reporteConsultando = true;
+  try {
+    const {data, error} = await sb.rpc('reporte_cobranca_estado');
+    if (error || !data || !['nenhuma','aviso','obrigatoria'].includes(data.status)
+        || state.perfil !== perfil || state.obrigacao !== obrigacao) return;
+    const anterior = state.obrigacao?.reporte;
+    state.obrigacao ||= {};
+    state.obrigacao.reporte = data;
+    if (data.status === 'obrigatoria' && (anterior?.status !== 'obrigatoria' || anterior.ciclo_id !== data.ciclo_id))
+      await render(route());
+  } catch (e) { /* Mantém a última cobrança conhecida se a conexão falhar. */ }
+  finally { state.reporteConsultando = false; }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) reporteReavaliarCobranca(); });
 
 /* ---------------- roteador ---------------- */
 /* Cada rota diz qual função a desenha e, quando vem de fora deste
@@ -1587,7 +1648,8 @@ const ALIAS = {
 const ALIAS_AGENDA = { agendar:['agenda','novo'], presenca:['equipe','presenca'], minha:['agenda','config','google'] };
 
 function route(){
-  const h = (location.hash || '#/').replace(/^#\//,'');
+  /* o que vem depois de "?" é parâmetro da tela (#/servicos/dados?de=termo) */
+  const h = (location.hash || '#/').replace(/^#\//,'').split('?')[0];
   let [r, sub, sub2] = h.split('/');
   if (ALIAS[r]) [r, sub] = ALIAS[r](sub || null);
   if (r === 'agenda' && ALIAS_AGENDA[sub]){
@@ -1605,6 +1667,12 @@ window.addEventListener('hashchange', e => {
 
 async function render(rt){
   pararBoard();
+  const forcar = obrigacaoBloqueia();
+  const liberados = forcar === '#/servicos/recadastro' ? ['recadastro', 'dados', 'termo'] : ['reporte'];
+  if (forcar && !(rt.r === 'servicos' && liberados.includes(rt.sub)) && rt.r !== 'versoes'){
+    history.replaceState(null, '', location.pathname + forcar);
+    rt = { r:'servicos', sub:forcar.split('/')[2], sub2:null };
+  }
   let def = ROTAS[rt.r];
   if (def.espera) await def.espera();
   if (def.permite && !def.permite()){
@@ -1718,7 +1786,7 @@ function arvoreDoMenu(){
       /* a ficha (#/equipe/<registro>) se abre a partir do quadro */
       ...(podeQuadro() ? [{ sub:'quadro', rot:'Quadro de pessoal', tambem:'^\\d+$' }] : []),
       { sub:'presenca', rot:'Presença' },
-      ...(tenhoPapel('lideranca') ? [{ sub:'reporte', rot:'Reporte semanal', tambem:'^apontamento$' }, {sub:'newsletter',rot:'Newsletters'}] : []),
+      ...(tenhoPapel('lideranca') || state.feedEditor ? [{sub:'newsletter',rot:'Newsletters'}] : []),
       { sub:'feed', rot:'Feed da equipe' }] },
     /* os treinamentos: o que os seus grupos pedem é a primeira tela, e a
        página de um treinamento (#/treinamentos/NRO-TRE-003) acende ela */
@@ -1735,10 +1803,15 @@ function arvoreDoMenu(){
     { r:'servicos', rot:'Serviços', ic:'servicos', filhos: [
       { sub:'', rot:'Todos os serviços' },
       { sub:'pedidos', rot:'Meus pedidos' },
+      ...(tenhoPapel('lideranca') ? [{ sub:'reporte', rot:'Reporte semanal' }] : []),
       { rotulo:'Documentos e acessos' },
       { sub:'declaracao', rot:'Declaração de vínculo' },
+      { sub:'biometria', rot:'Acesso ao LABBIO' },
       { sub:'eventos', rot:'Eventos e participações' },
       { sub:'cofre', rot:'Cofre de senhas' },
+      { sub:'dados', rot:'Meus dados' },
+      ...(state.obrigacao?.recadastro?.status === 'pendente' ? [{ sub:'recadastro', rot:'Recadastro' }] : []),
+      ...(state.obrigacao?.termo && state.obrigacao.termo.status !== 'nenhum' ? [{ sub:'termo', rot:'Termo de sigilo do LABBIO' }] : []),
       { rotulo:'Ao Depto. de Pessoal' },
       ...SERVICOS_MENU.map(([sub, rot]) => ({ sub, rot }))] }
   ];
@@ -1766,6 +1839,13 @@ function familiaDoOKR(cod){
 }
 /* Os objetivos estratégicos, para o menu. Sem a tabela (migração v8 não
    aplicada), OKRs fica sem subitens e a tela explica o resto. */
+/* 2.19.1 (F1): quem publica no feed (admin ou NRO_MANAGERS) ganha a mesa
+   editorial e a newsletter. Sem a migração, fica falso e nada muda. */
+async function carregarFeedEditor(){
+  const r = await sb.rpc('feed_editor').then(x => x, () => ({ error:true }));
+  const ed = !r.error && r.data === true;
+  if (ed !== state.feedEditor){ state.feedEditor = ed; desenharMenu(); }
+}
 function carregarOKRsDoMenu(){
   return sb.from('okr_objetivos').select('id,codigo,titulo,ordem,nivel,pai_id').eq('nivel', 'estrategico')
     .order('ordem').order('codigo')
@@ -2089,8 +2169,8 @@ function marcarMenu(rt){
     else item.removeAttribute('aria-current');
     if (atual && aberta) mostrarNaLista(atual);
   });
-  const casa = $('#lt-casa');
-  if (casa) rt.r === 'home' ? casa.setAttribute('aria-current', 'page') : casa.removeAttribute('aria-current');
+  const marca = $('#lt-marca');
+  if (marca) rt.r === 'home' ? marca.setAttribute('aria-current', 'page') : marca.removeAttribute('aria-current');
 }
 /* O subitem atual pode estar abaixo da dobra da lista (os painéis da
    Administração são muitos): rola só a lista, nunca a página. */
@@ -2156,7 +2236,8 @@ function alternarLateral(recolher){
   if (escolha) try { localStorage.setItem(CHAVE_MENU, rec ? 'recolhido' : 'aberto'); } catch(e){}
   const b = $('#lt-recolher');
   if (b){ b.setAttribute('aria-expanded', String(!rec));
-          b.setAttribute('aria-label', rec ? 'Expandir o menu' : 'Recolher o menu'); }
+          b.setAttribute('aria-label', rec ? 'Expandir o menu' : 'Recolher o menu');
+          b.title = rec ? 'Expandir o menu' : 'Recolher o menu'; }
   /* o voo ajustado no trilho não pode sobrar na lista aberta */
   document.querySelectorAll('#hd .lt-sub').forEach(s => {
     s.style.top = ''; if (s.firstElementChild) s.firstElementChild.style.maxHeight = ''; });
@@ -2851,6 +2932,7 @@ async function pageHome(){
         </div>
       </div>
       <aside class="ini-lado" aria-label="Atalhos">
+        <div class="card" id="card-feed"><div class="head"><h3>Últimas publicações</h3><a href="#/equipe/feed">feed completo →</a></div>${spin}</div>
         <div class="card" id="card-links"><div class="head"><h3>Links úteis</h3></div>${spin}</div>
         <div class="card" id="card-recentes"></div>
       </aside>
@@ -2862,6 +2944,7 @@ async function pageHome(){
   carregarPlacarInicio();
   carregarTarefasInicio();
   carregarLinksInicio();
+  carregarFeedInicio();
   desenharRecentes();
 }
 
@@ -2922,6 +3005,20 @@ async function carregarTreinamentosResumo(){
         <span class="tre-prog"><i style="width:${pct}%"></i></span>
         <span class="go">${t.situacao === 'andamento' ? 'Continuar' : t.situacao === 'pendente' ? 'Começar' : 'Refazer'} →</span></a>`; }).join('')}</div>
     ${pend.length > 3 ? `<a class="small tre-inicio-mais" href="#/treinamentos">e mais ${pend.length - 3}…</a>` : ''}</div>`;
+}
+
+/* ---------- as últimas publicações (2.19.1, F1) ----------
+   Quatro linhas, sem imagem nem reação. Sem a migração ou com erro, o card some. */
+async function carregarFeedInicio(){
+  const el = $('#card-feed'); if (!el) return;
+  try{
+    const r = await sb.rpc('feed_lista', { p_limite:4 });
+    if (r.error || !Array.isArray(r.data)){ el.remove(); return; }
+    el.innerHTML = `<div class="head"><h3>Últimas publicações</h3><a href="#/equipe/feed">feed completo →</a></div>`
+      + (r.data.length ? r.data.map(f => `<a class="feed-ini-i" href="#/equipe/feed/${esc(f.id)}"><span class="tag">${f.tipo === 'noticia' ? 'Notícia' : 'Tópico'}</span>
+          <span class="tt">${esc(f.titulo)}</span><span class="dt small muted">${fmtD(f.publicado_em)}</span></a>`).join('')
+        : '<p class="small muted">Nada publicado ainda.</p>');
+  }catch(_){ el.remove(); }
 }
 
 /* ---------- links úteis ----------
@@ -3051,6 +3148,90 @@ function modalAtalhos(){
     <div class="acts"><button class="btn solid" onclick="fechaModal()">Fechar</button></div>`);
 }
 
+/* Os layouts do quadro de avisos: cada um é uma banda ou um widget do
+   design system. A mesma função desenha o quadro da Início e a prévia do
+   editor (mod-admin.js). */
+const AVISO_LAYOUTS = {
+  padrao:    { nome:'Padrão',         tag:'Aviso',            dica:'Vidro sóbrio: título e uma frase.' },
+  destaque:  { nome:'Banda verde',    tag:'Quadro de avisos', dica:'A banda da marca, para o que importa.' },
+  hero:      { nome:'Hero',           tag:'Em destaque',      dica:'Título grande com uma palavra em Synapse: *assim*.' },
+  urgente:   { nome:'Urgente',        tag:'Urgente',          dica:'Borda e marca em Critical. Só para o que não espera.' },
+  evento:    { nome:'Evento',         tag:'Evento',           dica:'Bloco de data à esquerda.' },
+  contagem:  { nome:'Contagem',       tag:'Contagem',         dica:'Dias que faltam para a data do evento.' },
+  numero:    { nome:'Número',         tag:'Em números',       dica:'Um valor grande (o campo Valor) e o que ele mede.' },
+  progresso: { nome:'Progresso',      tag:'Meta',             dica:'Porcentagem em barra (o campo Valor, de 0 a 100).' },
+  conquista: { nome:'Conquista',      tag:'Conquista',        dica:'Acento Synapse para celebrar.' },
+  lista:     { nome:'Lista',          tag:'Lista',            dica:'Cada linha do corpo vira um item (até 6).' },
+  citacao:   { nome:'Citação',        tag:'Citação',          dica:'O corpo é a frase; o título, quem disse.' }
+};
+const AVISO_FAMILIAS = ['cortex','ion','neuron','glia','retina','nexo','dendrito','lumen','ritmo','impulso','plexo','iris'];
+const AVISO_NOME_FAMILIA = {cortex:'Cortex',ion:'Ion',neuron:'Neuron',glia:'Glia',retina:'Retina',nexo:'Nexo',dendrito:'Dendrito',
+  lumen:'Lumen',ritmo:'Ritmo',impulso:'Impulso',plexo:'Plexo',iris:'Iris'};
+/* *palavra* no título vira a palavra em Synapse (hero) */
+const avisoTitulo = (t, destaca) => { const e = esc(t || '');
+  return destaca ? e.replace(/\*([^*]+)\*/g, '<em>$1</em>') : e.replace(/\*/g, ''); };
+function avisoDiasAte(a){
+  const d = a.data_evento || a.data_inicio; if (!d) return null;
+  const hoje = new Date(); hoje.setHours(12,0,0,0);
+  return Math.round((new Date(d + 'T12:00') - hoje) / 86400000);
+}
+function avisoMes(a){
+  const d = a.data_evento || a.data_inicio; const dt = d ? new Date(d + 'T12:00') : null;
+  return dt ? { d: dt.getDate(), m: MES_CURTO[dt.getMonth()], a: dt.getFullYear() } : null;
+}
+function slideAviso(a){
+  const L = AVISO_LAYOUTS[a.layout] ? a.layout : 'padrao';
+  const fam = AVISO_FAMILIAS.includes(a.familia) ? ' fam f-' + a.familia : '';
+  const escura = L === 'hero' || L === 'destaque';
+  const link = a.link_url ? `<div class="acts"><a class="btn ${escura ? 'solid' : 'ghost'}"
+      href="${esc(a.link_url)}" target="_blank" rel="noopener">${esc(a.link_rotulo || 'Saiba mais')}</a></div>` : '';
+  const corpo = a.corpo ? `<p>${esc(a.corpo)}</p>` : '';
+  const tag = `<span class="sl-tag">${AVISO_LAYOUTS[L].tag}</span>`;
+  const cls = `sl-base sl-${L}${fam}${L === 'hero' ? ' ilha-escura' : ''}`;
+  const titulo = (conteudo) => `<h2>${conteudo}</h2>`;
+  if (L === 'evento'){
+    const q = avisoMes(a);
+    const quando = q ? `<div class="quando"><div class="d">${q.d}</div><div class="m">${q.m}</div><div class="a">${q.a}</div></div>` : '';
+    return `<div class="${cls}">${quando}<div class="txt">${tag}${titulo(avisoTitulo(a.titulo))}${corpo}${link}</div></div>`;
+  }
+  if (L === 'contagem'){
+    const n = avisoDiasAte(a);
+    const num = n == null ? '?' : n > 0 ? String(n) : n === 0 ? 'Hoje' : 'Passou';
+    const un = n == null ? 'sem data' : n === 1 ? 'dia' : n > 1 ? 'dias' : '';
+    return `<div class="${cls}"><div class="w-num">${num}${un ? `<small>${un}</small>` : ''}</div>
+      <div class="txt">${tag}${titulo(avisoTitulo(a.titulo))}${corpo}${link}</div></div>`;
+  }
+  if (L === 'numero'){
+    return `<div class="${cls}"><div class="w-num">${esc(a.valor || '0')}</div>
+      <div class="txt">${tag}${titulo(avisoTitulo(a.titulo))}${corpo}${link}</div></div>`;
+  }
+  if (L === 'progresso'){
+    const v = Math.max(0, Math.min(100, parseFloat(String(a.valor || '0').replace(',', '.')) || 0));
+    return `<div class="${cls}">${tag}<div class="w-num">${String(Math.round(v))}<small>%</small></div>
+      <div class="progresso" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(v)}"><div class="fill" style="width:${v}%"></div></div>
+      ${titulo(avisoTitulo(a.titulo))}${corpo}${link}</div>`;
+  }
+  if (L === 'lista'){
+    const itens = String(a.corpo || '').split('\n').map(x => x.trim()).filter(Boolean).slice(0, 6);
+    return `<div class="${cls}">${tag}${titulo(avisoTitulo(a.titulo))}
+      ${itens.length ? `<ul class="sl-itens">${itens.map(i => `<li>${esc(i)}</li>`).join('')}</ul>` : ''}${link}</div>`;
+  }
+  if (L === 'citacao'){
+    const frase = a.corpo || a.titulo || '';
+    return `<div class="${cls}">${tag}<blockquote>${esc(frase)}</blockquote>${a.corpo && a.titulo ? `<cite>${esc(a.titulo)}</cite>` : ''}${link}</div>`;
+  }
+  if (L === 'hero'){
+    return `<div class="${cls}"><div class="blob b1"></div><div class="blob b2"></div>
+      <div class="txt">${tag}${titulo(avisoTitulo(a.titulo, true))}${corpo}${link}</div></div>`;
+  }
+  const h = L === 'conquista' ? `<b>${avisoTitulo(a.titulo)}</b>` : avisoTitulo(a.titulo);
+  return `<div class="${cls}">${tag}${titulo(h)}${corpo}${link}</div>`;
+}
+function modoBoard(){ try{ return localStorage.getItem('nd.board') === 'grade' ? 'grade' : 'rodizio'; }catch(e){ return 'rodizio'; } }
+function trocarModoBoard(m){
+  try{ localStorage.setItem('nd.board', m); }catch(e){}
+  desenharBoard();
+}
 async function carregarBoard(){
   const { data, error } = await sb.from('portal_avisos').select('*')
     .order('ordem').order('criado_em', {ascending:false});
@@ -3061,44 +3242,34 @@ async function carregarBoard(){
     return;
   }
   state.avisos = data || [];
+  desenharBoard();
+}
+function desenharBoard(){
+  const el = $('#sec-board'); if(!el) return;
+  pararBoard();
   if (!state.avisos.length){ el.innerHTML = ''; return; }
+  const grade = modoBoard() === 'grade', n = state.avisos.length;
+  const largos = new Set(['hero','destaque']);
   el.innerHTML = `
-    <div class="board" id="board" aria-roledescription="carrossel"
+    <div class="board ${grade ? 'grade' : ''}" id="board" ${grade ? '' : 'aria-roledescription="carrossel"'}
          onmouseenter="pausarBoard()" onmouseleave="retomarBoard()">
-      ${state.avisos.map((a,i)=>`<div class="slide ${i===0?'on':''}" data-ix="${i}">${slideAviso(a)}</div>`).join('')}
+      ${state.avisos.map((a,i)=>`<div class="slide ${i===0 || grade ? 'on' : ''} ${grade && largos.has(a.layout) ? 'larga' : ''}" data-ix="${i}">${slideAviso(a)}</div>`).join('')}
     </div>
-    ${state.avisos.length>1 ? `
+    ${n>1 ? `
     <div class="board-ctl">
-      <div class="board-dots">${state.avisos.map((_,i)=>
-        `<button class="${i===0?'on':''}" data-dot="${i}" aria-label="Aviso ${i+1}" onclick="irBoard(${i})"></button>`).join('')}</div>
-      <div class="board-arrows">
+      ${grade ? '' : `<div class="board-dots">${state.avisos.map((_,i)=>
+        `<button class="${i===0?'on':''}" data-dot="${i}" aria-label="Aviso ${i+1}" onclick="irBoard(${i})"></button>`).join('')}</div>`}
+      <div class="seg board-modo" role="group" aria-label="Como ver os avisos">
+        <button class="${grade ? '' : 'on'}" aria-pressed="${!grade}" onclick="trocarModoBoard('rodizio')">Rodízio</button>
+        <button class="${grade ? 'on' : ''}" aria-pressed="${grade}" onclick="trocarModoBoard('grade')">Grade</button>
+      </div>
+      ${grade ? '' : `<div class="board-arrows">
         <button aria-label="Aviso anterior" onclick="passoBoard(-1)">‹</button>
         <button aria-label="Próximo aviso" onclick="passoBoard(1)">›</button>
-      </div>
+      </div>`}
     </div>` : ''}`;
   state.board.ix = 0;
-  iniciarBoard();
-}
-function slideAviso(a){
-  const link = a.link_url ? `<div class="acts"><a class="btn ${a.layout==='destaque'?'claro':'ghost'}"
-      href="${esc(a.link_url)}" target="_blank" rel="noopener">${esc(a.link_rotulo || 'Saiba mais')}</a></div>` : '';
-  const corpo = a.corpo ? `<p>${esc(a.corpo)}</p>` : '';
-  const TAGS = {padrao:'Aviso', destaque:'Quadro de avisos', urgente:'Urgente',
-                conquista:'Conquista', evento:'Evento'};
-  if (a.layout === 'evento'){
-    const d = a.data_evento || a.data_inicio;
-    const dt = d ? new Date(d+'T12:00') : null;
-    const quando = dt ? `<div class="quando">
-        <div class="d">${dt.getDate()}</div>
-        <div class="m">${MES_CURTO[dt.getMonth()]}</div>
-        <div class="a">${dt.getFullYear()}</div></div>` : '';
-    return `<div class="sl-base sl-evento">${quando}
-      <div class="txt"><span class="sl-tag">${TAGS.evento}</span>
-        <h2>${esc(a.titulo)}</h2>${corpo}${link}</div></div>`;
-  }
-  const titulo = a.layout==='conquista' ? `<h2><b>${esc(a.titulo)}</b></h2>` : `<h2>${esc(a.titulo)}</h2>`;
-  return `<div class="sl-base sl-${esc(a.layout)}">
-    <span class="sl-tag">${TAGS[a.layout]||'Aviso'}</span>${titulo}${corpo}${link}</div>`;
+  if (!grade) iniciarBoard();
 }
 function mostrarSlide(ix){
   const n = state.avisos.length; if(!n) return;
@@ -3539,11 +3710,12 @@ function orgRaiz(ativos){
    fichas são de quem tem papel. Um objeto, um lugar — antes isto eram
    duas telas, em dois apps, sobre os mesmos dados. */
 async function pageEquipe(sub){
-  if(sub==='newsletter'){if(!tenhoPapel('lideranca')){location.hash='#/';return;}await carregarModulo('reporte');return pageNewsletter();}
-  if(sub==='feed'){await carregarModulo('reporte');return pageFeed();}
+  if(sub==='newsletter'){if(!(tenhoPapel('lideranca')||state.feedEditor)){location.hash='#/';return;}await carregarModulo('feed');return pageNewsletter();}
+  if(sub==='feed'){await carregarModulo('feed');return pageFeed();}
   if(sub==='reporte'||sub==='apontamento'){
-    if(!tenhoPapel('lideranca')){location.hash='#/';return;}
-    await carregarModulo('reporte');return pageReporte();
+    const resto = location.hash.split('/').slice(3).join('/');
+    history.replaceState(null, '', location.pathname + '#/servicos/reporte' + (resto ? '/' + resto : ''));
+    return render(route());
   }
   /* a presença no LABBIO (o check-in, o ranking, o status do dia e a
      folha de check-in) mora em mod-presenca desde a revisão 28 */
@@ -3569,12 +3741,12 @@ async function pageEquipe(sub){
   pageOrganizacao();
 }
 /* As seções de Equipe: o mesmo SectionNav em todas as telas do espaço.
-   O reporte é de quem lidera um grupo, não papel de gestão. */
+   Newsletters são de quem lidera um grupo, não papel de gestão. */
 function abasEquipe(atual){
   const abas = [['', 'Organograma']];
   if (podeQuadro()) abas.push(['quadro', 'Quadro de pessoal']);
   abas.push(['presenca', 'Presença'], ['feed','Feed da equipe']);
-  if(tenhoPapel('lideranca')) abas.push(['reporte','Reporte semanal'], ['newsletter','Newsletters']);
+  if(tenhoPapel('lideranca') || state.feedEditor) abas.push(['newsletter','Newsletters']);
   return navNivel1(abas.map(([s, l]) => [s, l, '#/equipe' + (s ? '/' + s : '')]), atual, 'Equipe');
 }
 
@@ -3595,7 +3767,7 @@ function cartaoOrg(m, ativos){
   const lidera = ativos.filter(x=>x.gestor_registro===m.registro).length;
   return `<button class="org-card" onclick="focarOrg(${m.registro})" title="${esc(m.nome)}">
     ${avatarFoto(m, 38, 12)}
-    <span class="tx"><span class="nm">${esc(m.nome)}</span>
+    <span class="tx"><span class="nm">${esc(m.nome)}${chipTrainee(m)}</span>
     <span class="cg">${esc(m.cargo||'—')}${lidera?`, lidera ${lidera}`:''}${m.status!=='Ativo'?', em pausa':''}</span></span></button>`;
 }
 function desenhaOrg(filtro){
@@ -3627,7 +3799,7 @@ function desenhaOrg(filtro){
           onclick="modalFoto(${foco.registro})" title="${foco.foto_url ? 'Trocar a foto' : 'Enviar foto'}"
           aria-label="${foco.foto_url ? 'Trocar a foto' : 'Enviar foto'}">${ic('camera')}</button>` : ''}</span>
         <span class="tx" style="flex:1;white-space:normal">
-          <span class="nm" style="font-size:15px;white-space:normal">${esc(foco.nome)}</span>
+          <span class="nm" style="font-size:15px;white-space:normal">${esc(foco.nome)}${chipTrainee(foco)}</span>
           <span class="cg" style="white-space:normal">${esc(foco.cargo||'—')}${foco.departamento?', '+esc(foco.departamento):''}</span>
           <span class="small" style="display:block;margin-top:3px">${esc(foco.email_nro||foco.email_pessoal||'')}</span>
         </span>
@@ -3656,9 +3828,14 @@ const IC_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
    (mod-cofre, v27) moram em módulos: descem na primeira visita, como
    qualquer outro espaço. */
 const SERVICOS_MODULO = {
+  reporte:    ['reporte',    'pageReporte'],
   declaracao: ['documentos', 'pageDeclaracao'],
   eventos:    ['documentos', 'pageEventosExt'],
-  cofre:      ['cofre',      'pageCofre']
+  cofre:      ['cofre',      'pageCofre'],
+  dados:      ['cadastro',   'pageDados'],
+  recadastro: ['cadastro',   'pageRecadastro'],
+  termo:      ['termo',      'pageTermo'],
+  biometria:  ['biometria',  'pageBiometria']
 };
 async function pageServicos(sub, sub2){
   if (sub === 'pedidos') return pagePedidos();
@@ -3693,6 +3870,12 @@ async function pageServicos(sub, sub2){
         <h3>Registrar evento</h3>
         <p>Congresso, feira ou palestra em que a equipe esteve. Gera a declaração de participação.</p>
         <span class="go">Registrar →</span>
+      </a>
+      <a class="srv" href="#/servicos/biometria">
+        <span class="lb">${ic('selo')} Com foto</span>
+        <h3>Acesso ao LABBIO</h3>
+        <p>Pedido de acesso biométrico ao laboratório, com os seus dados e uma foto.</p>
+        <span class="go">Pedir →</span>
       </a>
       <a class="srv agora" href="#/servicos/cofre">
         <span class="lb">${ic('cofre')} Contas da equipe</span>
@@ -3758,7 +3941,7 @@ function formServico(tipo){
       <p class="desc">Documento, sistema, plataforma ou local. Analisada pelo Depto. de Pessoal.</p>
       ${temCatalogo ? `
       <div class="fld"><label>Acesso</label>
-        <select id="f-item" onchange="$('#f-item-outro-wrap').hidden = this.value !== '__outro'">
+        <select id="f-item" onchange="srvItemMudou(this)">
           ${cats.map(c=>`<optgroup label="${esc(CAT_ACESSO[c]||c||'Outros')}">
             ${state.itensAcesso.filter(i=>i.categoria===c).map(i=>
               `<option value="${esc(i.id)}">${esc(i.nome)}</option>`).join('')}
@@ -3769,6 +3952,9 @@ function formServico(tipo){
         <input id="f-item-outro" placeholder="ex.: pasta do projeto Órion no Drive"></div>`
       : `<div class="fld"><label>Acesso</label>
         <input id="f-item-outro" placeholder="ex.: repositório no GitHub, pasta do Drive…"></div>`}
+      <div class="aviso-box info" id="f-bio-aviso" hidden>O acesso biométrico ao LABBIO tem um pedido próprio, com foto.
+        <a href="#/servicos/biometria">Abrir o pedido de acesso ao LABBIO</a></div>
+      <div id="f-resto-acesso">
       <div class="fld"><label>Justificativa</label>
         <textarea id="f-just" rows="3" placeholder="Atividade ou projeto em que o acesso será usado"></textarea>
         <p class="mini">Mínimo de 10 caracteres.</p></div>
@@ -3779,7 +3965,7 @@ function formServico(tipo){
         <div style="margin-top:10px" hidden id="f-tempo-outro-wrap">
           <input id="f-tempo-outro" placeholder="ex.: até o fim do semestre"></div></div>
       <div class="fld"><label>Observações <span style="font-weight:400;text-transform:none">(opcional)</span></label>
-        <textarea id="f-obs" rows="2"></textarea></div>`;
+        <textarea id="f-obs" rows="2"></textarea></div></div>`;
   }
   else if (tipo==='afastamento'){
     corpo = `
@@ -3868,6 +4054,13 @@ function formServico(tipo){
         <p class="err-msg" id="f-erro"></p>
       </div>
     </div>`;
+}
+/* o item da biometria não segue este formulário: tem pedido próprio (2.19.1, L6) */
+function srvItemMudou(sel){
+  const it = (state.itensAcesso || []).find(i => i.id === sel.value), bio = it?.chave === 'labbio_biometria';
+  $('#f-item-outro-wrap').hidden = sel.value !== '__outro';
+  $('#f-bio-aviso').hidden = !bio; $('#f-resto-acesso').hidden = bio;
+  const b = $('#f-enviar'); if (b) b.hidden = bio;
 }
 function selTempo(btn){
   document.querySelectorAll('#f-tempo .chip').forEach(c=>c.classList.remove('on'));

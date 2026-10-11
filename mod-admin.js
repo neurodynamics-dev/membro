@@ -27,8 +27,6 @@ const adminP = {
   projetos:[], projSel:null, projIdioma:'en'
 };
 
-const LAYOUTS = {padrao:'Padrão', destaque:'Destaque (banda verde)', urgente:'Urgente',
-                 evento:'Evento (bloco de data)', conquista:'Conquista'};
 
 /* Com onze painéis, aba não cabe mais: a Administração vira galeria —
    o componente "galeria de tiles" do design system — e cada painel tem
@@ -48,6 +46,10 @@ const ICONES_ADM = {
   relatorios:'<path d="M4 20h16M7 20V9M12 20V4M17 20v-7"/>',
   emails:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="m4.5 7 7.5 5.4L19.5 7"/><path d="M7 15.5h5"/>',
   auditoria:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.5M4.5 12h.5M4.5 18h.5"/>',
+  recadastro:'<path d="M4 20.5v-1a5 5 0 0 1 5-5h2"/><circle cx="10" cy="7.5" r="3.5"/><path d="m14.5 18 2 2 4-4.5"/>',
+  labbio:'<path d="M4 20.5h16M6 20.5V8l6-4 6 4v12.5"/><path d="M10 20.5v-5h4v5M9.5 10.5h5"/>',
+  onboarding:'<path d="M5 20V5.5M5 5.5h10l-2 3 2 3H5"/><path d="M9 20h10"/>',
+  termo:'<path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M13.5 3.5V8h4.5M9.5 16.5c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3 0"/>',
   links:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/>',
   site:'<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>'
 };
@@ -76,10 +78,14 @@ async function pageAdmin(sub, sub2){
     $('#main').innerHTML = guardaTopo + `<section id="sec-auditoria">${corpo}</section>`;
     renderTabelaAud();
   });
+  if (k === 'recadastro') return comModulo('cadastro', () => painelRecadastro($('#sec-recadastro')));
+  if (k === 'termo')      return comModulo('termo', () => painelTermo($('#sec-termo')));
   if (k === 'contas')     return pageContas();
   if (k === 'grupos')     return admCarregarGrupos(sub2);
   if (k === 'acessos')    return admCarregarCatalogo();
   if (k === 'importar')   return pageImportar();
+  if (k === 'onboarding') return admCarregarOnboarding();
+  if (k === 'labbio')     return admCarregarLabbio();
 
   /* Um painel por vez: só existe um #sec-* na tela, e carregar os cinco
      juntos fazia quatro deles escreverem em contêiner inexistente. */
@@ -87,6 +93,117 @@ async function pageAdmin(sub, sub2){
                   solicitacoes: admCarregarSols, ouvidoria: admCarregarOuvidoria,
                   agendas: admCarregarAgendas };
   if (carga[k]) await carga[k]();
+}
+
+/* ============================================================
+   LABBIO (2.19.1, ficha L2): os gestores do painel /labbio, do lado do
+   admin do SOMA (estrela e revogação em qualquer gestor). O painel deles
+   mora em labbio/; aqui só a lista e o convite.
+   ============================================================ */
+const admLb = { gestores:[] };
+const ADM_LB_SIT = { ativo:['Ativo', 'p-ok', 'dt-ok'], convidado:['Convidado', 'p-warn', 'dt-warn'], revogado:['Revogado', '', 'dt-gray'] };
+const ADM_LB_CONVITE = { email_invalido:'Confira o e-mail.', nome_obrigatorio:'Escreva o nome de quem vai receber o convite.',
+  email_de_membro:'Este e-mail é de um membro da NeuroDynamics. Use outro e-mail para o painel.', ja_ativo:'Esta pessoa já é gestora do painel.' };
+async function admCarregarLabbio(){
+  const el = $('#sec-labbio'); if (!el) return;
+  try{
+    const { data, error } = await sb.rpc('labbio_gestores_lista');
+    if (error) throw error;
+    if (data?.status !== 'ok'){ el.innerHTML = '<div class="aviso-box warn">Sem acesso aos gestores do LABBIO.</div>'; return; }
+    admLb.gestores = data.gestores || []; admDesenharLabbio();
+  }catch(e){
+    el.innerHTML = `<div class="aviso-box err">Não foi possível carregar os gestores (${esc(e.message || 'erro')}). Confira se a migração 2.19.1_labbio_base foi aplicada.</div>`;
+  }
+}
+function admDesenharLabbio(){
+  const el = $('#sec-labbio'); if (!el) return;
+  const gs = admLb.gestores;
+  el.innerHTML = `<div class="acts" style="margin-top:0;margin-bottom:14px"><a class="btn ghost" href="labbio/" target="_blank" rel="noopener">Abrir o painel do LABBIO ↗</a></div>
+    ${gs.length ? `<div class="card" style="padding:8px 14px"><div class="wrap"><table class="tabela trabalho" id="adm-lb-tabela">
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Situação</th><th>Convidado por</th><th>Aceito em</th><th>Último acesso</th><th><span class="sr">Ações</span></th></tr></thead>
+      <tbody>${gs.map(g => { const [t, c, d] = ADM_LB_SIT[g.situacao] || [g.situacao, '', 'dt-gray'];
+        return `<tr><td>${g.principal ? '<span style="color:var(--syn-tx)"><svg class="ic-estrela" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="currentColor"/></svg></span> ' : ''}${esc(g.nome)}${g.principal ? '<span class="sr"> (Responsável principal)</span>' : ''}</td>
+        <td>${esc(g.email)}</td><td><span class="pill ${c}"><span class="dt ${d}"></span>${esc(t)}</span></td>
+        <td>${esc(g.convidado_por || '—')}</td><td>${g.aceito_em ? fmtDT(g.aceito_em) : '—'}</td><td>${g.ultimo_acesso ? fmtDT(g.ultimo_acesso) : '—'}</td>
+        <td style="white-space:nowrap">${g.situacao === 'ativo' && !g.principal ? `<button class="btn ghost mini" onclick="admLbEstrela('${esc(g.id)}')">Passar a estrela</button> ` : ''}${g.situacao !== 'revogado'
+          ? `<button class="btn ghost mini" onclick="admLbRevogar('${esc(g.id)}')">Revogar</button>` : ''}</td></tr>`; }).join('')}</tbody></table></div></div>`
+      : '<div class="empty">Nenhum gestor ainda. Convide o primeiro abaixo.</div>'}
+    <div class="card" style="margin-top:16px"><h3 style="margin-bottom:10px">Convidar gestor</h3>
+      <div class="form-grid"><div class="fld"><label for="adm-lb-nome">Nome</label><input id="adm-lb-nome" autocomplete="off"></div>
+        <div class="fld"><label for="adm-lb-email">E-mail</label><input id="adm-lb-email" type="email" autocomplete="off"></div></div>
+      <button class="btn solid" id="adm-lb-btn" onclick="admLbConvidar()">Convidar</button>
+      <p class="small" id="adm-lb-msg" role="status" style="margin-top:8px"></p></div>`;
+}
+async function admLbConvidar(){
+  const email = $('#adm-lb-email').value.trim(), m = $('#adm-lb-msg'), bt = $('#adm-lb-btn'); bt.disabled = true; m.textContent = '';
+  try{
+    const { data, error } = await sb.rpc('labbio_convidar', { p_email:email, p_nome:$('#adm-lb-nome').value.trim() });
+    if (error) throw error;
+    if (data?.status !== 'ok'){ m.textContent = ADM_LB_CONVITE[data?.status] || motivoRPC(data, null, 'Não foi possível convidar'); return; }
+    toast(`Convite enviado para ${email}.`); await admCarregarLabbio();
+  }catch(e){ falha(e, 'Não foi possível convidar'); }
+  finally{ if (document.body.contains(bt)) bt.disabled = false; }
+}
+async function admLbEstrela(id){
+  const g = admLb.gestores.find(x => x.id === id); if (!g) return;
+  if (!await confirma(`Passar a estrela de responsável principal para <b>${esc(g.nome)}</b>?`, 'Passar a estrela')) return;
+  try{
+    const { data, error } = await sb.rpc('labbio_principal', { p_id:id }); if (error) throw error;
+    if (data?.status !== 'ok') return toast('Só um gestor ativo pode receber a estrela.', true);
+    toast(`${g.nome} agora é o responsável principal.`); admCarregarLabbio();
+  }catch(e){ falha(e, 'Não foi possível passar a estrela'); }
+}
+function admLbRevogar(id){
+  const g = admLb.gestores.find(x => x.id === id); if (!g) return;
+  abreModal(`<h3>Revogar ${esc(g.nome)}</h3><p class="small muted" style="margin-bottom:10px">O acesso ao painel do LABBIO acaba na hora.</p>
+    <div class="fld"><label for="adm-lb-motivo">Motivo (opcional)</label><textarea id="adm-lb-motivo" rows="3"></textarea></div>
+    <p class="small" id="adm-lb-rv-msg" style="color:var(--bad-tx)"></p>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn danger" onclick="admLbRevogarOk('${esc(id)}')">Revogar</button></div>`);
+}
+async function admLbRevogarOk(id){
+  try{
+    const { data, error } = await sb.rpc('labbio_revogar', { p_id:id, p_motivo:$('#adm-lb-motivo').value.trim() || null }); if (error) throw error;
+    if (data?.status === 'transfira_antes'){ $('#adm-lb-rv-msg').textContent = 'Passe a estrela para outro gestor antes de revogar o principal.'; return; }
+    if (data?.status !== 'ok'){ $('#adm-lb-rv-msg').textContent = motivoRPC(data, null, 'Não foi possível revogar'); return; }
+    fechaModal(); toast('Acesso revogado.'); admCarregarLabbio();
+  }catch(e){ falha(e, 'Não foi possível revogar'); }
+}
+
+/* ============================================================
+   ONBOARDING (2.19.1, ficha T3): quem já passou por cada etapa da
+   trilha (onboarding_painel), trainees primeiro, como o banco ordena.
+   ============================================================ */
+const admOnb = { dados:null, soTrainees:false };
+async function admCarregarOnboarding(){
+  const el = $('#sec-onboarding'); if (!el) return;
+  try{
+    const { data, error } = await sb.rpc('onboarding_painel');
+    if (error) throw error;
+    if (data?.status !== 'ok'){ el.innerHTML = `<div class="aviso-box warn">Sem acesso ao painel de onboarding.</div>`; return; }
+    admOnb.dados = data; admDesenharOnboarding();
+  }catch(e){
+    el.innerHTML = `<div class="aviso-box err">Não foi possível carregar o onboarding (${esc(e.message || 'erro')}). Confira se a migração 2.19.1_onboarding foi aplicada.</div>`;
+  }
+}
+function admDesenharOnboarding(){
+  const el = $('#sec-onboarding'); if (!el || !admOnb.dados) return;
+  const ps = (admOnb.dados.pessoas || []).filter(x => !admOnb.soTrainees || x.trainee);
+  const barra = x => `<div class="rec-barra" role="progressbar" aria-valuemin="0" aria-valuemax="${x.total}" aria-valuenow="${x.feitas}"
+      aria-label="${x.feitas} de ${x.total} etapas">${Array.from({ length:x.total }, (_, i) => `<span class="${i < x.feitas ? 'feito' : ''}"></span>`).join('')}</div>`;
+  el.innerHTML = `<div class="filtros" style="margin-bottom:12px">
+      <button type="button" class="chip${admOnb.soTrainees ? ' on' : ''}" aria-pressed="${admOnb.soTrainees}" id="onb-so-trainees"
+        onclick="admOnb.soTrainees=!admOnb.soTrainees;admDesenharOnboarding()">Só trainees</button></div>
+    ${ps.length ? `<div class="card" style="padding:8px 14px"><div class="wrap"><table class="tabela trabalho" id="onb-tabela">
+      <thead><tr><th>Pessoa</th><th>Liderança</th><th style="width:200px">Progresso</th><th>Pendências</th></tr></thead>
+      <tbody>${ps.map(x => `<tr>
+        <td><a href="#/equipe/${x.registro}">${esc(x.nome)}</a>${x.trainee ? ' <span class="chip mini">Trainee</span>' : ''}</td>
+        <td>${esc(x.gestor_nome || '—')}</td>
+        <td>${barra(x)}<span class="small muted">${x.feitas} de ${x.total}</span></td>
+        <td class="small" style="white-space:normal">${(x.pendentes || []).length
+          ? `<ul style="margin:0;padding-left:16px">${x.pendentes.slice(0, 3).map(t => `<li>${esc(t)}</li>`).join('')}</ul>${x.pendentes.length > 3 ? `<span class="muted">e mais ${x.pendentes.length - 3}</span>` : ''}`
+          : '<span class="muted">Nada pendente</span>'}</td></tr>`).join('')}</tbody></table></div></div>`
+      : '<div class="empty">Ninguém com este filtro.</div>'}`;
 }
 
 /* O cabeçalho antigo tinha um contador por aba; agora a contagem vive nos
@@ -208,13 +325,13 @@ async function admCarregarAvisos(){
 }
 function desenhaAvisos(){
   $('#sec-avisos').innerHTML = `
-    <p class="small muted" style="margin-bottom:12px">Avisos publicados, na ordem definida. ${dica('Layouts: banda verde para destaques, coral para urgências, bloco de data para eventos e acento lima para conquistas.', 'Layouts')}</p>
+    <p class="small muted" style="margin-bottom:12px">Avisos publicados, na ordem definida. ${dica('Onze layouts: banda verde e hero para destaques, urgente para o que não espera, evento e contagem para datas, número e progresso para metas, lista e citação para texto. A cor vale para qualquer um.', 'Layouts')}</p>
     <div class="editor">
       <div>
         <div class="lista" id="av-lista">${adminP.avisos.length ? adminP.avisos.map(a=>`
           <button class="item ${a.id===adminP.sel?'on':''}" onclick="selAviso('${a.id}')">
             <span><span class="nm">${esc(a.titulo)}</span>
-            <span class="sl">${esc(LAYOUTS[a.layout]||a.layout)}, ordem ${esc(a.ordem)}</span></span>
+            <span class="sl">${esc(AVISO_LAYOUTS[a.layout]?.nome||a.layout)}, ordem ${esc(a.ordem)}</span></span>
             ${a.publicado ? '' : '<span class="off">oculto</span>'}
           </button>`).join('')
           : '<div class="vazio">Nenhum aviso.</div>'}</div>
@@ -226,27 +343,15 @@ function desenhaAvisos(){
 }
 function selAviso(id){ adminP.sel = id; desenhaAvisos(); }
 function previewAviso(a){
-  const TAGS = {padrao:'Aviso', destaque:'Quadro de avisos', urgente:'Urgente',
-                conquista:'Conquista', evento:'Evento'};
-  if (a.layout==='evento'){
-    const d = a.data_evento || a.data_inicio;
-    const dt = d ? new Date(d+'T12:00') : null;
-    return `<div class="preview pv-evento">
-      ${dt?`<div class="quando"><div class="d">${dt.getDate()}</div><div class="m">${MES_CURTO[dt.getMonth()]}</div></div>`:''}
-      <div><span class="sl-tag">${TAGS.evento}</span>
-      <h3>${esc(a.titulo||'Título do aviso')}</h3>
-      ${a.corpo?`<p>${esc(a.corpo)}</p>`:''}</div></div>`;
-  }
-  return `<div class="preview pv-${esc(a.layout||'padrao')}">
-    <span class="sl-tag">${TAGS[a.layout]||'Aviso'}</span>
-    <h3>${esc(a.titulo||'Título do aviso')}</h3>
-    ${a.corpo?`<p>${esc(a.corpo)}</p>`:''}</div>`;
+  return `<div class="board-prev"><div class="board"><div class="slide on">${slideAviso(a)}</div></div></div>`;
 }
 function lerFormAviso(){
   return {
     titulo: $('#a-titulo').value.trim(),
     corpo: $('#a-corpo').value.trim() || null,
     layout: $('#a-layout').value,
+    familia: $('#a-familia').value || null,
+    valor: $('#a-valor').value.trim() || null,
     link_url: $('#a-url').value.trim() || null,
     link_rotulo: $('#a-rotulo').value.trim() || null,
     data_evento: $('#a-devento').value || null,
@@ -265,15 +370,24 @@ function desenhaFormAviso(){
     <p class="sub">id ${esc(a.id).slice(0,8)}, atualizado ${a.atualizado_em?new Date(a.atualizado_em).toLocaleString('pt-BR'):'—'}</p>
     <div id="a-preview">${previewAviso(a)}</div>
     <div class="fgrid">
+      <div class="fld full"><label>Layout</label>
+        <input type="hidden" id="a-layout" value="${esc(a.layout||'padrao')}">
+        <div class="lay-opcoes" role="group" aria-label="Layout">${Object.entries(AVISO_LAYOUTS).map(([k,l])=>`
+          <button type="button" class="lay ${a.layout===k?'on':''}" data-lay="${k}" aria-pressed="${a.layout===k}" onclick="escolheLayoutAviso('${k}')">
+            <b>${esc(l.nome)}</b><span>${esc(l.dica)}</span></button>`).join('')}</div></div>
+      <div class="fld full"><label>Cor</label>
+        <input type="hidden" id="a-familia" value="${esc(a.familia||'')}">
+        <div class="fam-opcoes" role="group" aria-label="Cor do aviso">
+          <button type="button" class="fam-bt ${a.familia?'':'on'}" data-fam="" aria-pressed="${!a.familia}" onclick="escolheFamiliaAviso('')">Do layout</button>
+          ${AVISO_FAMILIAS.map(f=>`<button type="button" class="fam-bt f-${f} ${a.familia===f?'on':''}" data-fam="${f}" aria-pressed="${a.familia===f}"
+            onclick="escolheFamiliaAviso('${f}')" title="${esc(AVISO_NOME_FAMILIA[f])}"><i></i>${esc(AVISO_NOME_FAMILIA[f])}</button>`).join('')}</div></div>
       <div class="fld full"><label>Título</label><input id="a-titulo" value="${esc(a.titulo)}" oninput="atualizaPreview()"></div>
       <div class="fld full"><label>Corpo (1–2 frases)</label>
         <textarea id="a-corpo" rows="2" oninput="atualizaPreview()">${esc(a.corpo||'')}</textarea></div>
-      <div class="fld"><label>Layout</label>
-        <select id="a-layout" onchange="atualizaPreview();$('#a-devento-wrap').style.display=this.value==='evento'?'':'none'">
-          ${Object.entries(LAYOUTS).map(([k,l])=>`<option value="${k}" ${a.layout===k?'selected':''}>${l}</option>`).join('')}
-        </select></div>
-      <div class="fld" id="a-devento-wrap" style="${a.layout==='evento'?'':'display:none'}">
-        <label>Data do evento (bloco de data)</label>
+      <div class="fld" id="a-valor-wrap"><label id="a-valor-rot">Valor</label>
+        <input id="a-valor" maxlength="24" value="${esc(a.valor||'')}" oninput="atualizaPreview()"></div>
+      <div class="fld" id="a-devento-wrap">
+        <label>Data do evento</label>
         <input id="a-devento" type="date" value="${esc(a.data_evento||'')}" onchange="atualizaPreview()"></div>
       <div class="fld"><label>Link (opcional)</label><input id="a-url" value="${esc(a.link_url||'')}" placeholder="https://…"></div>
       <div class="fld"><label>Rótulo do link</label><input id="a-rotulo" value="${esc(a.link_rotulo||'')}" placeholder="Saiba mais"></div>
@@ -287,6 +401,29 @@ function desenhaFormAviso(){
       <button class="btn solid" id="a-salvar" onclick="salvarAviso('${a.id}')">Salvar alterações</button>
       <button class="btn perigo" onclick="excluirAviso('${a.id}')">Excluir</button>
     </div>`;
+  ajustaCamposAviso();
+}
+/* cada layout pede campos diferentes: o que não serve some */
+function ajustaCamposAviso(){
+  const L = $('#a-layout')?.value; if (!L) return;
+  $('#a-devento-wrap').style.display = (L==='evento' || L==='contagem') ? '' : 'none';
+  $('#a-valor-wrap').style.display = (L==='numero' || L==='progresso') ? '' : 'none';
+  $('#a-valor-rot').textContent = L==='progresso' ? 'Valor (0 a 100)' : 'Valor (o número grande)';
+  const rotCorpo = {lista:'Itens (uma linha por item, até 6)', citacao:'A frase', numero:'O que o valor mede (opcional)'}[L] || 'Corpo (1–2 frases)';
+  const rotTit = L==='citacao' ? 'Quem disse' : 'Título (no Hero, *palavra* fica em Synapse)';
+  const lc = document.querySelector('#a-corpo')?.closest('.fld')?.querySelector('label'); if (lc) lc.textContent = rotCorpo;
+  const lt = document.querySelector('#a-titulo')?.closest('.fld')?.querySelector('label'); if (lt) lt.textContent = rotTit;
+  const ta = $('#a-corpo'); if (ta) ta.rows = L==='lista' ? 5 : 2;
+}
+function escolheLayoutAviso(k){
+  $('#a-layout').value = k;
+  document.querySelectorAll('.lay-opcoes .lay').forEach(b=>{ const on = b.dataset.lay===k; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  ajustaCamposAviso(); atualizaPreview();
+}
+function escolheFamiliaAviso(f){
+  $('#a-familia').value = f;
+  document.querySelectorAll('.fam-opcoes .fam-bt').forEach(b=>{ const on = b.dataset.fam===f; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  atualizaPreview();
 }
 function atualizaPreview(){
   const el = $('#a-preview'); if(!el) return;

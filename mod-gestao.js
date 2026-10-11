@@ -29,7 +29,7 @@
 const gestao = {
   pronto: false, apont: null,
   tiposOcorrencia: [],
-  filtros: { q:'', status:'Ativo', dep:'', grupo:'' },
+  filtros: { q:'', status:'Ativo', dep:'', grupo:'', trainee:false },
   ficha: null,
   aud: []
 };
@@ -87,6 +87,35 @@ async function pageQuadro(sub){
   const reg = sub != null ? parseInt(sub, 10) : null;
   if (reg != null && !isNaN(reg)) return abrirFicha(reg);
   renderQuadro();
+  carregarTermosDoQuadro();
+}
+/* O termo de sigilo do LABBIO (2.19.1): uma coluna a mais para quem gere.
+   Sem a 2.19.1 no banco (ou sem permissão), a coluna não aparece. */
+async function carregarTermosDoQuadro(){
+  if (!can()) return;
+  try {
+    const { data, error } = await sb.rpc('termo_painel');
+    if (error || data?.status !== 'ok') return;
+    gestao.termo = Object.fromEntries((data.pessoas || []).map(p => [p.registro, p]));
+    renderTabelaMembros();
+  } catch (e) { /* sem a função: segue sem a coluna */ }
+}
+const TERMO_ICONE = { conferido: ['check', 'Termo conferido', 'ok'], enviado: ['doc', 'Termo enviado, a conferir', 'info'],
+  devolvido: ['x', 'Termo devolvido', 'err'], pendente: ['relogio', 'Termo pendente', 'warn'] };
+function celulaTermo(m){
+  const t = gestao.termo?.[m.registro];
+  if (!t) return '<td class="termo-col"><span class="sr">Fora da campanha</span></td>';
+  const [icone, rotulo, cls] = TERMO_ICONE[t.situacao] || TERMO_ICONE.pendente;
+  return t.arquivo
+    ? `<td class="termo-col"><button class="termo-ic ${cls}" title="${esc(rotulo)}: abrir o PDF" aria-label="${esc(rotulo)}: abrir o PDF de ${esc(m.nome)}"
+        onclick="event.stopPropagation();abrirTermoAssinado('${esc(t.arquivo)}')">${ic(icone)}</button></td>`
+    : `<td class="termo-col"><span class="termo-ic ${cls}" title="${esc(rotulo)}" role="img" aria-label="${esc(rotulo)}">${ic(icone)}</span></td>`;
+}
+async function abrirTermoAssinado(caminho){
+  const w = window.open('', '_blank');
+  const { data, error } = await sb.storage.from('termos').createSignedUrl(caminho, 120);
+  if (error || !data?.signedUrl){ w?.close(); toast('Não foi possível abrir o termo.', true); return; }
+  if (w) w.location = data.signedUrl; else location.href = data.signedUrl;
 }
 
 function renderQuadro(){
@@ -140,6 +169,7 @@ function membrosFiltrados(){
     (!f.status || m.status === f.status) &&
     (!f.dep || m.departamento === f.dep) &&
     (!f.grupo || gruposEfetivos(m).has(f.grupo)) &&
+    (!f.trainee || ehTrainee(m)) &&
     (!q || norm(m.nome).includes(q) || norm(m.email_nro).includes(q)
         || norm(m.email_pessoal).includes(q) || String(m.registro).includes(q))
   ).sort((a,b) => a.registro - b.registro);
@@ -156,8 +186,10 @@ function filtrosHTML(){
     ${sel('status','Status', STATUS_LIST, f.status)}
     ${sel('dep','Departamento', opcoesDe('departamento'), f.dep)}
     ${sel('grupo','Grupo', todosGrupos(), f.grupo)}
+    <button type="button" class="chip${f.trainee ? ' on' : ''}" aria-pressed="${f.trainee}" id="q-f-trainee"
+      onclick="gestao.filtros.trainee=!gestao.filtros.trainee;this.classList.toggle('on',gestao.filtros.trainee);this.setAttribute('aria-pressed',gestao.filtros.trainee);renderTabelaMembros()">Trainees</button>
     ${ibtn('x','Limpar filtros (volta ao padrão de ativos)',
-      "gestao.filtros={q:'',status:'Ativo',dep:'',grupo:''};renderQuadro()")}
+      "gestao.filtros={q:'',status:'Ativo',dep:'',grupo:'',trainee:false};renderQuadro()")}
   </div>`;
 }
 function renderTabelaMembros(){
@@ -166,15 +198,15 @@ function renderTabelaMembros(){
   el.innerHTML = ms.length ? `
     <div class="wrap"><table class="tabela trabalho fixa">
       <thead><tr><th style="width:64px">Reg.</th><th>Nome</th><th>Departamento</th>
-        <th>Cargo</th><th style="width:150px">Grupos</th><th style="width:132px">Status</th></tr></thead>
+        <th>Cargo</th><th style="width:150px">Grupos</th><th style="width:132px">Status</th>${gestao.termo ? '<th style="width:64px" title="Termo de sigilo do LABBIO">Termo</th>' : ''}</tr></thead>
       <tbody>${ms.map(m=>`<tr class="click" tabindex="0" onclick="abrirFicha(${m.registro})"
         onkeydown="if(event.key==='Enter')abrirFicha(${m.registro})">
         <td class="reg">${pad3(m.registro)}</td>
-        <td class="nome" title="${esc(m.nome)}">${esc(m.nome)}</td>
+        <td class="nome" title="${esc(m.nome)}">${esc(m.nome)}${chipTrainee(m)}</td>
         <td title="${esc(m.departamento||'')}">${esc(m.departamento||'—')}</td>
         <td title="${esc(m.cargo||'')}">${esc(m.cargo||'—')}</td>
         <td title="${esc([...gruposEfetivos(m)].join(', '))}">${chips([...gruposEfetivos(m)],2)}</td>
-        <td>${pill(m.status)}</td></tr>`).join('')}</tbody></table></div>
+        <td>${pill(m.status)}</td>${gestao.termo ? celulaTermo(m) : ''}</tr>`).join('')}</tbody></table></div>
     <div class="small muted" style="padding:10px 4px">${ms.length} de ${state.membros.length} registros</div>`
     : `<div class="empty">Nenhum membro corresponde aos filtros.</div>`;
 }
@@ -478,6 +510,7 @@ function renderFicha(){
     espaco: 'Equipe',
     titulo: m.nome,
     codigo: String(m.registro).padStart(3, '0'),
+    meta: ehTrainee(m) ? '<span class="chip mini">Trainee</span>' : '',
     voltar: podeQuadro() ? ['Quadro de pessoal', '#/equipe/quadro'] : ['Organograma', '#/equipe'],
     acoes: [`<button class="btn ghost" onclick="relatorioDoMembro()">${ic('doc')}Relatório</button>`,
       can() ? `<button class="btn ghost" onclick="gestao.ficha.editando=true;gestao.ficha.tab='dados';renderFicha()">${ic('pencil')}Editar dados</button>` : '']
