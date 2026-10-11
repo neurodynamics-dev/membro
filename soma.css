@@ -1477,7 +1477,14 @@ button.pub-row.on{border-color:var(--syn-borda);background:rgba(var(--syn-rgb),.
 th.ord{cursor:pointer;user-select:none}
 th.ord:hover{color:var(--ink)}
 th.ord[aria-sort="ascending"]::after{content:' ↑'} th.ord[aria-sort="descending"]::after{content:' ↓'}
-.arq-filtros .fld{min-width:150px}
+/* FilterBar (filtroBarra): a busca na mesma linha, na altura dos botões; as opções são botões */
+.fb-busca{height:32px;width:min(260px,100%);padding:0 12px;border-radius:8px;border:1px solid var(--line);
+  background:rgba(var(--tom),.02);color:var(--ink);font:inherit;font-size:12.5px}
+.fb-busca:focus{outline:none;border-color:var(--syn-borda);background:rgba(var(--syn-rgb),.04)}
+.fb-pop [role=option]{width:100%;text-align:left;white-space:nowrap}
+.fb-pop [role=option]:focus-visible{outline:2px solid var(--foco);outline-offset:-2px}
+:root[data-tema="claro"] .fb-pop [role=option][aria-selected="true"]::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+#arq-fb{margin-bottom:14px}
 
 .arq-emis{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
 .arq-emi{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px 16px;color:var(--ink);

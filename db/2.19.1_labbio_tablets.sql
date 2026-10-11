@@ -46,7 +46,7 @@ end $$;
 
 -- 1. a gestão --------------------------------------------------------------------
 create or replace function public.labbio_dispositivo_criar(p_espaco integer, p_rotulo text)
-returns jsonb language plpgsql volatile security definer set search_path = public as $$
+returns jsonb language plpgsql volatile security definer set search_path = public, extensions as $$
 declare v_token text := encode(gen_random_bytes(24), 'hex'); v_id uuid;
 begin
   if not (conta_labbio() or labbio_admin()) then return jsonb_build_object('status', 'sem_permissao'); end if;
@@ -79,7 +79,7 @@ end $$;
 
 -- 2. o tablet ----------------------------------------------------------------------
 create or replace function public.sala_dispositivo(p_token text)
-returns sala_dispositivos language sql stable security definer set search_path = public as $$
+returns sala_dispositivos language sql stable security definer set search_path = public, extensions as $$
   select * from sala_dispositivos where token_hash = encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') and ativo $$;
 
 -- os eventos da sala em horário local (a agenda guarda data e hora locais)

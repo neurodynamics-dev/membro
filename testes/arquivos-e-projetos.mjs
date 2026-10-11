@@ -77,12 +77,13 @@ console.log('\nArquivos — o rol primeiro, a visão geral depois');
     nav.map(x => x.t).join('|') === 'Todos os arquivos|Para revisar 1|Templates|Visão geral|Configurações'
     && nav[0].on && await p.locator('.nav1 .n.sua').count() === 1, nav);
   confere('e o menu acende "Todos os arquivos"', JSON.stringify(await atual(p)) === '["Todos os arquivos"]', await atual(p));
-  await p.selectOption('#arq-emissor', 'PES'); await p.waitForTimeout(900);
+  await p.click('#arq-fb .fb-btn:has-text("Emissor")'); await p.click('#arq-fb [role=option][data-v="PES"]'); await p.waitForTimeout(900);
   confere('filtrar por emissor é o mesmo rol, com o endereço do emissor',
     await p.evaluate(() => location.hash) === '#/arquivos/PES'
     && (await linhas(p)).map(l => l.cod).join() === 'NRO-PES-004,NRO-PES-005,NRO-PES-007,NRO-PES-014'
     && (await atual(p)).includes('Pessoal'), await atual(p));
-  await p.selectOption('#arq-emissor', ''); await p.waitForTimeout(900);
+  confere('o emissor vira tag removível na barra de filtros', (await p.textContent('#arq-fb .fb-ativos')).includes('Emissor:NRO-PES Pessoal'));
+  await p.click('#arq-fb .fb-tag button'); await p.waitForTimeout(900);
   confere('e "Todos" volta para o rol inteiro', await p.evaluate(() => location.hash) === '#/arquivos'
     && (await linhas(p)).length === 9);
 
@@ -114,10 +115,20 @@ console.log('\nArquivos — o rol primeiro, a visão geral depois');
   await p.click('th:has-text("Status")'); await p.waitForTimeout(150);
   confere('ordenar por status põe o rascunho primeiro', (await linhas(p))[0].cod === 'NRO-PES-004'
     && await p.getAttribute('th:has-text("Status")', 'aria-sort') === 'ascending');
-  await p.check('.arq-filtros input[type=checkbox]'); await p.waitForTimeout(150);
+  await p.click('#arq-fb .fb-btn:has-text("Revisão")'); await p.click('#arq-fb [role=option][data-v="sim"]'); await p.waitForTimeout(150);
   ls = await linhas(p);
   confere('"só com versão em revisão" deixa só o procedimento', ls.length === 1 && ls[0].cod === 'NRO-PES-007', ls);
-  await p.uncheck('.arq-filtros input[type=checkbox]');
+  confere('com o total de resultados', (await p.textContent('#arq-fb .fb-total')).trim() === '1 resultado');
+  await p.click('#arq-fb .fb-limpa'); await p.waitForTimeout(150);
+  await p.click('#arq-fb .fb-btn:has-text("Status")');
+  await p.click('#arq-fb [role=option][data-v="rascunho"]'); await p.click('#arq-fb [role=option][data-v="ativo"]');
+  ls = await linhas(p);
+  confere('dois status no mesmo grupo somam (OU), com a contagem no botão', ls.length > 4 && ls.every(l => /^(Rascunho|Ativo)$/.test(l.status)) && ls.some(l => l.status === 'Rascunho')
+    && await p.evaluate(() => location.hash) === '#/arquivos'
+    && (await p.textContent('#arq-fb .fb-btn.ativo .n')) === '2' && await p.locator('#arq-fb .fb-tag').count() === 2, ls.map(l => l.cod + ' ' + l.status));
+  await p.keyboard.press('Escape');
+  confere('Esc fecha a lista', await p.locator('#arq-fb .fb-pop:not([hidden])').count() === 0);
+  await p.click('#arq-fb .fb-limpa'); await p.waitForTimeout(150);
   await p.fill('#arq-q', 'offboard'); await p.waitForTimeout(350);
   ls = await linhas(p);
   confere('a busca acha pelo título', ls.length === 1 && ls[0].cod === 'NRO-PES-014', ls);
