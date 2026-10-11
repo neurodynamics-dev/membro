@@ -16,7 +16,7 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | T1 trainees | [O] | feita (`db/2.19.1_trainees.sql`) | `CONTRATO-TRAINEES.md` |
 | L3 consultas e revogação pendente | [O] | feita (`db/2.19.1_labbio_dados.sql`) | `CONTRATO-LABBIO.md` |
 | [L4](L4.md) telas de consulta do /labbio | [S] | feita ([O]; o executor pula) | `CONTRATO-LABBIO.md` |
-| [L6](L6.md) pedido de biometria: membro, Pessoal e LABBIO | [S] | a fazer (depois da L4) | `CONTRATO-LABBIO.md` |
+| [L6](L6.md) pedido de biometria: membro, Pessoal e LABBIO | [S] | feita ([O]; o executor pula) | `CONTRATO-LABBIO.md` |
 | L7 salas e L9 tablets | [O] | feitas (`db/2.19.1_labbio_salas.sql`, `db/2.19.1_labbio_tablets.sql`) | `CONTRATO-LABBIO.md` |
 | [L8](L8.md) agenda do /labbio, aviso ao organizador, cadastro de tablets | [S] | a fazer (depois da L6) | `CONTRATO-LABBIO.md` |
 | [L10](L10.md) tela do tablet (`sala.html`) | [S] | a fazer (depois da L8) | `CONTRATO-LABBIO.md` |
@@ -28,5 +28,5 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | [F2](F2.md) site: notícias, matéria, inscrição (repositório **website**) | [S] | feita ([O], website `5654a9a`; o executor pula) | `CONTRATO-FEED.md` |
 | [F3](F3.md) `noticia.html`: reagir fora do portal | [S] | feita ([O]; o executor pula) | `CONTRATO-FEED.md` |
 
-Ordem sugerida para o executor: R2 → R3 → R4 → F1 → L6 → L8 → L10.
+Ordem sugerida para o executor: R2 → R3 → R4 → F1 → L8 → L10.
 F2 e F3 já foram feitas na branch [O]; traga-as com o merge de `slp/ecstatic-noether-evq50w` antes da próxima ficha.

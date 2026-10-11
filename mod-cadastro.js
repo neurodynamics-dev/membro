@@ -51,7 +51,8 @@ function cadDesenhar(){
   const foto = d.foto ? '' : `<div class="aviso-box info termo-foto"><b>Sugestão: coloque uma foto de perfil.</b>
     Rosto de frente, fundo neutro e claro, sem óculos escuros. Ela aparece no menu, nos cartões e no placar.
     <a href="#" onclick="modalFoto(state.perfil?.registro);return false">Enviar foto</a></div>`;
-  const volta = cadM.volta === 'recadastro' ? ['Recadastro', '#/servicos/recadastro'] : cadM.volta === 'termo' ? ['Termo de sigilo', '#/servicos/termo'] : null;
+  const volta = cadM.volta === 'recadastro' ? ['Recadastro', '#/servicos/recadastro'] : cadM.volta === 'termo' ? ['Termo de sigilo', '#/servicos/termo']
+    : cadM.volta === 'biometria' ? ['Acesso ao LABBIO', '#/servicos/biometria/dados'] : null;
   $('#main').innerHTML = cabecalho({ espaco: 'Serviços', titulo: 'Meus dados', lead, voltar: volta || undefined }) + `
     <form id="termo-form" class="termo-form" onsubmit="cadConfirmar(event)" novalidate>
       <h3 class="termo-sec">Identificação</h3>
@@ -111,6 +112,7 @@ async function cadConfirmar(ev){
     toast('Dados confirmados. Obrigado!');
     if (cadM.volta === 'recadastro') location.hash = '#/servicos/recadastro';
     else if (cadM.volta === 'termo') location.hash = '#/servicos/termo/baixar';
+    else if (cadM.volta === 'biometria') location.hash = '#/servicos/biometria/dados';
     else cadDesenhar();
   } catch (e){ toast('Não foi possível salvar os dados: ' + (e.message || e), true); }
   finally { const bb = $('#termo-ok'); if (bb) bb.disabled = false; }

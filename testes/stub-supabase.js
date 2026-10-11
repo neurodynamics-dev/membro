@@ -1725,7 +1725,7 @@
             return { data: {
               tipo:'solicitacao', id:'s1', protocolo:'SOL26-0001',
               titulo:'Acesso ao LABBIO', especie:'acesso', status:'aberta',
-              dados:{ item:'LABBIO — porta principal', item_id:'i1',
+              dados:{ item:'LABBIO — porta principal', item_id:'i1', ...(((window.__teste || {}).biometria) ? { labbio_pedido_id:'p1' } : {}),
                       justificativa:'Montagem da bancada <b>nova</b>',
                       tempo_necessario:'Até dezembro' },
               resposta:null, respondido_por:null, respondido_em:null,

@@ -1768,6 +1768,7 @@ function arvoreDoMenu(){
       ...(tenhoPapel('lideranca') ? [{ sub:'reporte', rot:'Reporte semanal' }] : []),
       { rotulo:'Documentos e acessos' },
       { sub:'declaracao', rot:'Declaração de vínculo' },
+      { sub:'biometria', rot:'Acesso ao LABBIO' },
       { sub:'eventos', rot:'Eventos e participações' },
       { sub:'cofre', rot:'Cofre de senhas' },
       { sub:'dados', rot:'Meus dados' },
@@ -3795,7 +3796,8 @@ const SERVICOS_MODULO = {
   cofre:      ['cofre',      'pageCofre'],
   dados:      ['cadastro',   'pageDados'],
   recadastro: ['cadastro',   'pageRecadastro'],
-  termo:      ['termo',      'pageTermo']
+  termo:      ['termo',      'pageTermo'],
+  biometria:  ['biometria',  'pageBiometria']
 };
 async function pageServicos(sub, sub2){
   if (sub === 'pedidos') return pagePedidos();
@@ -3830,6 +3832,12 @@ async function pageServicos(sub, sub2){
         <h3>Registrar evento</h3>
         <p>Congresso, feira ou palestra em que a equipe esteve. Gera a declaração de participação.</p>
         <span class="go">Registrar →</span>
+      </a>
+      <a class="srv" href="#/servicos/biometria">
+        <span class="lb">${ic('selo')} Com foto</span>
+        <h3>Acesso ao LABBIO</h3>
+        <p>Pedido de acesso biométrico ao laboratório, com os seus dados e uma foto.</p>
+        <span class="go">Pedir →</span>
       </a>
       <a class="srv agora" href="#/servicos/cofre">
         <span class="lb">${ic('cofre')} Contas da equipe</span>
@@ -3895,7 +3903,7 @@ function formServico(tipo){
       <p class="desc">Documento, sistema, plataforma ou local. Analisada pelo Depto. de Pessoal.</p>
       ${temCatalogo ? `
       <div class="fld"><label>Acesso</label>
-        <select id="f-item" onchange="$('#f-item-outro-wrap').hidden = this.value !== '__outro'">
+        <select id="f-item" onchange="srvItemMudou(this)">
           ${cats.map(c=>`<optgroup label="${esc(CAT_ACESSO[c]||c||'Outros')}">
             ${state.itensAcesso.filter(i=>i.categoria===c).map(i=>
               `<option value="${esc(i.id)}">${esc(i.nome)}</option>`).join('')}
@@ -3906,6 +3914,9 @@ function formServico(tipo){
         <input id="f-item-outro" placeholder="ex.: pasta do projeto Órion no Drive"></div>`
       : `<div class="fld"><label>Acesso</label>
         <input id="f-item-outro" placeholder="ex.: repositório no GitHub, pasta do Drive…"></div>`}
+      <div class="aviso-box info" id="f-bio-aviso" hidden>O acesso biométrico ao LABBIO tem um pedido próprio, com foto.
+        <a href="#/servicos/biometria">Abrir o pedido de acesso ao LABBIO</a></div>
+      <div id="f-resto-acesso">
       <div class="fld"><label>Justificativa</label>
         <textarea id="f-just" rows="3" placeholder="Atividade ou projeto em que o acesso será usado"></textarea>
         <p class="mini">Mínimo de 10 caracteres.</p></div>
@@ -3916,7 +3927,7 @@ function formServico(tipo){
         <div style="margin-top:10px" hidden id="f-tempo-outro-wrap">
           <input id="f-tempo-outro" placeholder="ex.: até o fim do semestre"></div></div>
       <div class="fld"><label>Observações <span style="font-weight:400;text-transform:none">(opcional)</span></label>
-        <textarea id="f-obs" rows="2"></textarea></div>`;
+        <textarea id="f-obs" rows="2"></textarea></div></div>`;
   }
   else if (tipo==='afastamento'){
     corpo = `
@@ -4005,6 +4016,13 @@ function formServico(tipo){
         <p class="err-msg" id="f-erro"></p>
       </div>
     </div>`;
+}
+/* o item da biometria não segue este formulário: tem pedido próprio (2.19.1, L6) */
+function srvItemMudou(sel){
+  const it = (state.itensAcesso || []).find(i => i.id === sel.value), bio = it?.chave === 'labbio_biometria';
+  $('#f-item-outro-wrap').hidden = sel.value !== '__outro';
+  $('#f-bio-aviso').hidden = !bio; $('#f-resto-acesso').hidden = bio;
+  const b = $('#f-enviar'); if (b) b.hidden = bio;
 }
 function selTempo(btn){
   document.querySelectorAll('#f-tempo .chip').forEach(c=>c.classList.remove('on'));

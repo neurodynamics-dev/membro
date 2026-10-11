@@ -153,10 +153,11 @@ console.log('\nAberto (admin, 1440px)');
      sozinho — a declaração, os eventos, o cofre (v25–v27) e Meus dados
      (2.19.1) — e os seis pedidos ao Depto. de Pessoal, cada bloco com o
      seu rótulo */
+    /* 14 desde a 2.19.1: "Acesso ao LABBIO" em Documentos e acessos (ficha L6) */
   confere('a seta abre Serviços sem navegar',
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 13 && srv.filhos[1] === 'Meus pedidos'
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 14 && srv.filhos[1] === 'Meus pedidos'
       && srv.filhos[2] === 'Reporte semanal'
-      && srv.filhos.slice(3, 7).join('|') === 'Declaração de vínculo|Eventos e participações|Cofre de senhas|Meus dados'
+      && srv.filhos.slice(3, 8).join('|') === 'Declaração de vínculo|Acesso ao LABBIO|Eventos e participações|Cofre de senhas|Meus dados'
       && srv.rotulos.join('|') === 'Documentos e acessos|Ao Depto. de Pessoal'
       && await p.evaluate(() => location.hash) === '#/', srv);
   const equipe = await secao(p, 'equipe');

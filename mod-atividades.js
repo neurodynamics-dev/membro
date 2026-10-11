@@ -812,11 +812,18 @@ function origemSolicitacao(o){
     ${o.resposta ? `<div class="aviso-box" style="margin-top:14px"><b>Resposta:</b>
       ${esc(o.resposta)}<br><span class="small muted">${esc(o.respondido_por || '')}${
         o.respondido_em ? ', ' + fmtD(String(o.respondido_em).slice(0,10)) : ''}</span></div>` : ''}
-    ${can() ? formDecisao(o, fechada) : (fechada ? '' :
+    ${(o.dados || {}).labbio_pedido_id ? blocoBiometria(o.dados.labbio_pedido_id) : can() ? formDecisao(o, fechada) : (fechada ? '' :
       `<p class="sub" style="margin-top:14px">Só o Depto de Pessoal decide esta solicitação.</p>`)}
   </div>`;
 }
 
+/* pedido de acesso biométrico (2.19.1, L6): o Pessoal vê os dados e a foto e encaminha ao LABBIO */
+function blocoBiometria(id){
+  if (!can()) return `<p class="sub" style="margin-top:14px">Só o Depto de Pessoal decide esta solicitação.</p>`;
+  carregarModulo('biometria').then(() => bioPessoalBloco(id)).catch(() => {
+    const el = document.getElementById('bio-pessoal'); if (el) el.innerHTML = '<div class="aviso-box err">Não foi possível carregar o pedido de biometria.</div>'; });
+  return `<div id="bio-pessoal" style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px"><div class="carregando"><span class="spin"></span> Carregando o pedido…</div></div>`;
+}
 function formDecisao(o, fechada){
   const itens = (state.itensAcesso || []);
   const jaAtivo = new Set((o.acessos || []).filter(x => x.ativo).map(x => x.item_id));
