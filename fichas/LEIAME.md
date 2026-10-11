@@ -8,7 +8,7 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | R1 migração do reporte | [O] | feita (`db/2.19.1_reporte.sql`) | `CONTRATO-REPORTE.md` |
 | [R2](R2.md) reporte em Serviços | [S] | feita (Astra, `7702f3c`, revisada e incorporada) | `CONTRATO-REPORTE.md` |
 | [R3](R3.md) tela do reporte do líder | [S] | feita (Astra, `112db25`, revisada e incorporada) | `CONTRATO-REPORTE.md` |
-| [R4](R4.md) cobrança de sexta | [S] | a fazer | `CONTRATO-REPORTE.md` |
+| [R4](R4.md) cobrança de sexta | [S] | feita (Astra, `186d0d1`, revisada e incorporada) | `CONTRATO-REPORTE.md` |
 | [R5](R5.md) painel e PDF unificado | [S] | feita ([O]; o executor pula) | `CONTRATO-REPORTE.md` |
 | L1 identidade dos gestores | [O] | feita (`db/2.19.1_labbio_base.sql`) | `CONTRATO-LABBIO.md` |
 | [L2](L2.md) casca `/labbio`, entrada, gestores e painel no SOMA | [S] | feita ([O]; o executor pula) | `CONTRATO-LABBIO.md` |
@@ -28,5 +28,5 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | [F2](F2.md) site: notícias, matéria, inscrição (repositório **website**) | [S] | feita ([O], website `5654a9a`; o executor pula) | `CONTRATO-FEED.md` |
 | [F3](F3.md) `noticia.html`: reagir fora do portal | [S] | feita ([O]; o executor pula) | `CONTRATO-FEED.md` |
 
-Ordem sugerida para o executor: R2 → R3 → R4 → F1 → L8 → L10.
+Ordem sugerida para o executor: L8 → L10.
 F2 e F3 já foram feitas na branch [O]; traga-as com o merge de `slp/ecstatic-noether-evq50w` antes da próxima ficha.

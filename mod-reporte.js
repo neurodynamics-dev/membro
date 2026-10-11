@@ -209,7 +209,7 @@ async function repEnviar(){
  if(!await confirma('Depois de enviado, o reporte não pode ser editado. As publicações vão para a mesa editorial, onde a gerência decide o que publicar, e as sinalizações vão para o Pessoal.','Enviar reporte'))return;
  r.etapa=3;if(!await repSalvar(true))return;
  reporte.ocupado=true;
- try{await repRPC('reporte_enviar',{p_id:r.id,p_versao:r.versao});toast('Reporte enviado.');reporte.aberto=null;location.hash='#/servicos/reporte';}
+ try{await repRPC('reporte_enviar',{p_id:r.id,p_versao:r.versao});await carregarObrigacoes();toast('Reporte enviado.');reporte.aberto=null;location.hash='#/servicos/reporte';}
  catch(e){falha(e,'Não foi possível enviar o reporte');}finally{reporte.ocupado=false;}
 }
 async function repVincular(i,codigo){
@@ -234,6 +234,24 @@ async function repImagem(i,file){
 /* ---------------- reporte por liderança direta (2.19.1) ---------------- */
 const REP_ENVIO_LIDER='Ao enviar, as avaliações vão para a ficha de cada pessoa, as sinalizações abrem o acompanhamento no PMO (ou o desligamento, se for a segunda em 60 dias) e as publicações vão para a mesa editorial, onde a gerência decide o que publicar.';
 const repPodeEditarLider=()=>repEhLider()&&!repTravado(reporte.aberto)&&!reporte.conflito&&!reporte.mutando;
+function repAvisoCobranca(){
+ if(state.obrigacao?.reporte?.status!=='obrigatoria')return '';
+ return '<div class="aviso-box warn" role="alert">Passou das 16h de sexta e o seu reporte não foi enviado. Envie agora ou, se você esteve ausente nesta semana, registre a ausência. <button class="btn ghost mini" onclick="repAusente()">Estive ausente</button></div>';
+}
+async function repAusente(){
+ const cobranca=state.obrigacao?.reporte;
+ if(cobranca?.status!=='obrigatoria'||reporte.ocupado||reporte.mutando)return;
+ if(!await confirma('Registrar que você esteve ausente nesta semana? O reporte fica dispensado, sem avaliar ninguém.','Estive ausente'))return;
+ if(state.obrigacao?.reporte!==cobranca||reporte.ocupado||reporte.mutando)return;
+ reporte.mutando=true;$('#main').inert=true;clearTimeout(reporte.timer);
+ try{
+  if(reporte.salvando)await reporte.salvando;
+  await repRPC('reporte_ausente',{p_ciclo:cobranca.ciclo_id});
+  reporte.sujo=false;reporte.conflito=false;reporte.aberto=null;reporte.lider=null;
+  await carregarObrigacoes();location.hash='#/';
+ }catch(e){falha(e,'Não foi possível registrar a ausência');}
+ finally{reporte.mutando=false;$('#main').inert=false;}
+}
 function repAvisoLider(d){
  const r=d.reporte,c=d.ciclo;
  if(r.enviado_em)return `<div class="aviso-box info" role="status">Reporte enviado em ${fmtDT(r.enviado_em)}.${r.atrasado?' Fora do prazo.':''}</div>`;
@@ -252,7 +270,7 @@ function repRenderLider(){
  const acoes=[n>1?`<a class="btn ghost" href="${rota(n-1)}">Etapa anterior</a>`:'',
   !travado?'<button class="btn ghost" id="rep-salvar" onclick="repSalvar()">Salvar rascunho</button>':'',
   n<4?`<a class="btn solid" href="${rota(n+1)}">Continuar</a>`:(!travado?'<button class="btn solid" id="rep-enviar" onclick="repEnviar()">Enviar reporte</button>':'')].join('');
- $('#main').innerHTML=cabecalho({espaco:'Serviços',titulo:'Reporte semanal',meta:['Semana de '+fmtD(d.ciclo.semana),prazo],
+ $('#main').innerHTML=repAvisoCobranca()+cabecalho({espaco:'Serviços',titulo:'Reporte semanal',meta:['Semana de '+fmtD(d.ciclo.semana),prazo],
   acoes:[reporte.consolidado?'<a class="btn ghost" href="#/servicos/reporte/painel">Painel da semana</a>':'',souAdmin()?'<a class="btn ghost" href="#/servicos/reporte/config">Configurar ciclo</a>':'']})
   +repAvisoLider(d)+'<div id="rep-aviso"></div>'
   +layoutFluxo({passos:etapas(REP_PASSOS,String(n),rota),corpo,salvo:travado?'<span class="salvo"></span>':'<span class="salvo ok" id="rep-salvo">Rascunho carregado</span>',acoes});
@@ -379,6 +397,7 @@ async function repEnviarLider(){
   r.etapa=3;if(!await repSalvar(true))return;
   reporte.ocupado=true;
   const res=await repRPC('reporte_enviar',{p_id:r.id,p_versao:r.versao});
+  await carregarObrigacoes();
   toast('Reporte enviado.'+(res.atrasado?' Ficou registrado como fora do prazo.':''));
   reporte.aberto=null;reporte.lider=null;await pageReporte();
  }catch(e){repErro(e);}finally{reporte.ocupado=false;reporte.mutando=false;$('#main').inert=false;}

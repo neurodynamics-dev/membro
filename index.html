@@ -1532,7 +1532,9 @@ async function abrirPortal(){
   await carregarObrigacoes();
   await render(route());
   if (state.obrigacao?.recadastro?.status === 'pendente')
-    carregarModulo('cadastro').then(() => recadastroPedir()).catch(() => {});
+    await carregarModulo('cadastro').then(() => recadastroPedir()).catch(() => {});
+  reporteAvisarEntrada();
+  state.reporteTimer ||= setInterval(reporteReavaliarCobranca, 5 * 60e3);
 }
 /* As obrigações da entrada (2.19.1): o recadastro semestral (que, em
    2026/2, inclui o termo de sigilo do LABBIO). Sem a 2.19.1 no banco, a
@@ -1540,18 +1542,52 @@ async function abrirPortal(){
 async function carregarObrigacoes(){
   /* o termo é um serviço à parte: aparece no menu enquanto houver termo pedido */
   const ler = async f => { try { const { data, error } = await sb.rpc(f); return !error && data ? data : null; } catch (e){ return null; } };
-  const [recadastro, termo] = await Promise.all([ler('recadastro_estado'), ler('termo_estado')]);
-  state.obrigacao = { recadastro, termo };
+  const [recadastro, termo, reporte] = await Promise.all([ler('recadastro_estado'), ler('termo_estado'),
+    tenhoPapel('lideranca') ? ler('reporte_cobranca_estado') : null]);
+  state.obrigacao = { recadastro, termo, reporte };
   desenharMenu();
 }
 /* Depois da dispensa única, a pendência leva direto ao recadastro — menos
    na sessão em que a pessoa acabou de dispensar. */
 function obrigacaoBloqueia(){
   const r = state.obrigacao?.recadastro;
-  if (!r || !r.bloqueia) return false;
-  try { if (sessionStorage.getItem('nd.recadastro.depois.' + r.campanha)) return false; } catch (e){}
-  return true;
+  let dispensado = false;
+  try { dispensado = !!sessionStorage.getItem('nd.recadastro.depois.' + r?.campanha); } catch (e){}
+  if (r?.bloqueia && !dispensado) return '#/servicos/recadastro';
+  return state.obrigacao?.reporte?.status === 'obrigatoria' ? '#/servicos/reporte' : null;
 }
+
+
+/* A cobrança usa o estado do servidor, inclusive quando a aba volta do repouso. */
+function reporteAvisarEntrada(){
+  const r = state.obrigacao?.reporte;
+  if (r?.status !== 'aviso' || document.querySelector('.rec-painel, #modal.open')) return;
+  try { if (sessionStorage.getItem('nd.reporte.aviso.' + r.ciclo_id)) return; } catch (e){}
+  abreModal(`<h3>Reporte semanal</h3><p>Hoje às 16h é a reunião da gerência. Seu reporte desta semana ainda não foi enviado.</p>
+    <div class="acts"><button class="btn ghost" onclick="reporteAdiarAviso()">Agora não</button><button class="btn solid" onclick="fechaModal(); location.hash='#/servicos/reporte'">Abrir o reporte</button></div>`);
+}
+function reporteAdiarAviso(){
+  const r = state.obrigacao?.reporte;
+  if (r) try { sessionStorage.setItem('nd.reporte.aviso.' + r.ciclo_id, '1'); } catch (e){}
+  fechaModal();
+}
+async function reporteReavaliarCobranca(){
+  if (document.hidden || !state.perfil || !tenhoPapel('lideranca') || state.reporteConsultando) return;
+  const perfil = state.perfil, obrigacao = state.obrigacao;
+  state.reporteConsultando = true;
+  try {
+    const {data, error} = await sb.rpc('reporte_cobranca_estado');
+    if (error || !data || !['nenhuma','aviso','obrigatoria'].includes(data.status)
+        || state.perfil !== perfil || state.obrigacao !== obrigacao) return;
+    const anterior = state.obrigacao?.reporte;
+    state.obrigacao ||= {};
+    state.obrigacao.reporte = data;
+    if (data.status === 'obrigatoria' && (anterior?.status !== 'obrigatoria' || anterior.ciclo_id !== data.ciclo_id))
+      await render(route());
+  } catch (e) { /* Mantém a última cobrança conhecida se a conexão falhar. */ }
+  finally { state.reporteConsultando = false; }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) reporteReavaliarCobranca(); });
 
 /* ---------------- roteador ---------------- */
 /* Cada rota diz qual função a desenha e, quando vem de fora deste
@@ -1631,9 +1667,11 @@ window.addEventListener('hashchange', e => {
 
 async function render(rt){
   pararBoard();
-  if (obrigacaoBloqueia() && !(rt.r === 'servicos' && ['recadastro', 'dados', 'termo'].includes(rt.sub)) && rt.r !== 'versoes'){
-    history.replaceState(null, '', location.pathname + '#/servicos/recadastro');
-    rt = { r:'servicos', sub:'recadastro', sub2:null };
+  const forcar = obrigacaoBloqueia();
+  const liberados = forcar === '#/servicos/recadastro' ? ['recadastro', 'dados', 'termo'] : ['reporte'];
+  if (forcar && !(rt.r === 'servicos' && liberados.includes(rt.sub)) && rt.r !== 'versoes'){
+    history.replaceState(null, '', location.pathname + forcar);
+    rt = { r:'servicos', sub:forcar.split('/')[2], sub2:null };
   }
   let def = ROTAS[rt.r];
   if (def.espera) await def.espera();
