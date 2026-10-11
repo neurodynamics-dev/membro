@@ -246,7 +246,7 @@ returns jsonb language sql stable security definer set search_path = public as $
 
 -- convidar (admin do SOMA ou gestor ativo). O token só existe no e-mail.
 create or replace function public.labbio_convidar(p_email text, p_nome text)
-returns jsonb language plpgsql volatile security definer set search_path = public as $$
+returns jsonb language plpgsql volatile security definer set search_path = public, extensions as $$
 declare v_email text := lower(btrim(coalesce(p_email, ''))); g labbio_gestores; v_token text; v_uid uuid; v_eu uuid := labbio_eu_id();
         v_existe boolean;
 begin
@@ -287,7 +287,7 @@ end $$;
 
 -- aceitar: a conta logada, com o mesmo e-mail do convite
 create or replace function public.labbio_aceitar(p_token text)
-returns jsonb language plpgsql volatile security definer set search_path = public as $$
+returns jsonb language plpgsql volatile security definer set search_path = public, extensions as $$
 declare c labbio_convites; g labbio_gestores;
 begin
   if auth.uid() is null then return jsonb_build_object('status', 'sem_sessao'); end if;
