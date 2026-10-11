@@ -186,6 +186,7 @@ Ordem obrigatória: L1 (identidade, segurança) antes de qualquer tela.
   conclusão/validade, sem gabarito (lê `treinamento_conclusoes`).
 - `labbio_revogacoes()` + `labbio_revogacao_confirmar(id)`: gatilho em
   `membros` (status para desligado, D6) cria pendência **sem notificar**.
+  Cobre também a dispensa de trainee (T1 põe o status em Desligado).
 - **Teste**: cada função recusa conta comum; campos fora de D5 não saem.
 
 ### L4 [S] Telas de consulta
@@ -242,7 +243,7 @@ motivo, confirmar implantação.
 
 ## Pacote T: Trainees
 
-### T1 [O] Migração `db/2.19.1_trainees.sql`
+### T1 [O] Migração `db/2.19.1_trainees.sql` (feita: 33 asserções; trainee pelo cargo, sem coluna nova)
 
 - Sem coluna nova (D8): trainee é `membros.cargo = 'Trainee'`, lido só por
   `eh_trainee(p_reg) returns boolean`. Como o status continua `Ativo`, os

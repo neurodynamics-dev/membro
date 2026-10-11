@@ -118,3 +118,16 @@ troque a senha se a TV for trocada de lugar.
 4. A triagem do Pessoal continua igual: "Aprovar" num pedido de biometria
    encaminha ao LABBIO e não concede nada; o acesso entra quando o gestor
    confirma o cadastro no painel.
+
+# 2.19.1: trainees
+
+1. **Criar o grupo** NRO_TRAINEE em Administração › Grupos (a migração avisa
+   se faltar e a admissão recusa sem ele).
+2. **Aplicar** `db/2.19.1_trainees.sql`.
+3. A admissão é pela tela de Seleção (ficha T2). A ps_integrar antiga continua
+   existindo, mas não deve ser usada para trainees: ela cria membro efetivo.
+
+# Ordem das migrações da 2.19.1
+
+`2.19.1_labbio_base` → `2.19.1_recadastro` → `2.19.1_termo` →
+`2.19.1_labbio_acesso` → `2.19.1_reporte` → `2.19.1_trainees`.
