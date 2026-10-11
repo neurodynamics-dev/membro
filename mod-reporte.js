@@ -44,9 +44,7 @@ async function pageReporte(){
    reporte.aberto=null;reporte.lider=null;
    reporte.painel=await repRPC('reporte_painel');return repTelaConfig();
   }
-  if(a==='painel'){
-   $('#main').innerHTML=repTopo('Reporte semanal')+estado.vazio({texto:'O painel da semana ainda não está disponível.'});return;
-  }
+  if(a==='painel')return repTelaPainel();
   /* Favoritos do modelo por frente, anteriores à rota explícita. */
   if(a&&a!=='frente'&&!/^[1-4]$/.test(a)){
    history.replaceState(null,'',location.pathname+'#/servicos/reporte/frente/'+encodeURIComponent(a)+'/'+(b||'1'));
@@ -65,6 +63,7 @@ async function pageReporte(){
    $('#main .cab').insertAdjacentHTML('afterend','<div class="aviso-box info">Esta semana ainda segue o reporte por frente. O reporte por liderança começa na próxima sprint.</div>');return;
   }
   reporte.lider=d;reporte.aberto=d.reporte?d:null;reporte.sujo=false;
+  reporte.consolidado=await repRPC('reporte_consolidado_pode').then(v=>v===true,()=>false);
   if(!d.reporte){
    $('#main').innerHTML=repTopo('Reporte semanal')+estado.vazio({texto:'A sprint desta semana já fechou e você não abriu o reporte.'});return;
   }
@@ -254,7 +253,7 @@ function repRenderLider(){
   !travado?'<button class="btn ghost" id="rep-salvar" onclick="repSalvar()">Salvar rascunho</button>':'',
   n<4?`<a class="btn solid" href="${rota(n+1)}">Continuar</a>`:(!travado?'<button class="btn solid" id="rep-enviar" onclick="repEnviar()">Enviar reporte</button>':'')].join('');
  $('#main').innerHTML=cabecalho({espaco:'Serviços',titulo:'Reporte semanal',meta:['Semana de '+fmtD(d.ciclo.semana),prazo],
-  acoes:souAdmin()?['<a class="btn ghost" href="#/servicos/reporte/config">Configurar ciclo</a>']:[]})
+  acoes:[reporte.consolidado?'<a class="btn ghost" href="#/servicos/reporte/painel">Painel da semana</a>':'',souAdmin()?'<a class="btn ghost" href="#/servicos/reporte/config">Configurar ciclo</a>':'']})
   +repAvisoLider(d)+'<div id="rep-aviso"></div>'
   +layoutFluxo({passos:etapas(REP_PASSOS,String(n),rota),corpo,salvo:travado?'<span class="salvo"></span>':'<span class="salvo ok" id="rep-salvo">Rascunho carregado</span>',acoes});
 }
@@ -401,10 +400,29 @@ async function repConfigSalvar(){
  p.modelo_lider_desde=$('#rep-modelo-desde').value||null;
  await repRPC('reporte_configurar',{p});toast('Ciclo configurado.');location.hash='#/servicos/reporte';}catch(e){falha(e,'Não foi possível configurar o ciclo');}
 }
+/* ---------------- o painel da semana (modelo por liderança, 2.19.1) ---------------- */
+const REP_SIT_LIDER={enviado:['Enviado','p-ok'],ausente:['Ausente',''],ferias:['Férias',''],pendente:['Pendente','p-warn']};
+async function repTelaPainel(){
+ reporte.consolidado=await repRPC('reporte_consolidado_pode').then(v=>v===true,()=>false);
+ if(!reporte.consolidado){location.hash='#/servicos/reporte';return;}
+ const d=await repRPC('reporte_lider_painel');
+ reporte.liderPainel=d;
+ const c=d.ciclo,ls=d.lideres||[];
+ const conta=s=>ls.filter(x=>x.situacao===s).length,atras=ls.filter(x=>x.atrasado).length;
+ const m=(r,v)=>`<div class="metrica"><span class="rot">${r}</span><span class="val">${v}</span></div>`;
+ const linhas=ls.map(x=>{
+  const [t,cl]=x.situacao==='enviado'&&x.atrasado?['Atrasado','p-warn']:(REP_SIT_LIDER[x.situacao]||[x.situacao,'']);
+  return `<tr><td class="nome">${esc(x.nome)}</td><td>${repPill(t,cl)}</td><td class="mono">${x.enviado_em?fmtDT(x.enviado_em):'—'}</td></tr>`;}).join('');
+ $('#main').innerHTML=cabecalho({espaco:'Serviços',titulo:'Reporte semanal',voltar:['Meu reporte','#/servicos/reporte'],meta:['Semana de '+fmtD(c.semana)],
+   acoes:[`<button class="btn ghost" onclick="repPDF()">${ic('doc')}Baixar o reporte unificado</button>`,souAdmin()?'<a class="btn ghost" href="#/servicos/reporte/config">Configurar</a>':'']})
+  +`<div class="metricas" style="margin-bottom:18px">${m('Lideranças',ls.length)}${m('Enviados',conta('enviado'))}${m('Atrasados',atras)}${m('Ausentes ou férias',conta('ausente')+conta('ferias'))}${m('Pendentes',conta('pendente'))}</div>`
+  +(ls.length?`<div class="card" style="padding:0"><div class="wrap"><table class="tabela trabalho" id="rep-painel-tabela"><thead><tr><th>Liderança</th><th>Situação</th><th>Enviado em</th></tr></thead><tbody>${linhas}</tbody></table></div></div>`
+   :estado.vazio({texto:'Nenhuma liderança com reporte nesta semana.'}));
+}
 async function repPDF(){
- try{const d=await repRPC('reporte_unificado',{p_ciclo:reporte.painel.ciclo.id});
+ try{const d=await repRPC('reporte_unificado',{p_ciclo:(reporte.liderPainel||reporte.painel).ciclo.id});
  await precisaDocNRO();
- const doc=DocNRO.reporteUnificado(d);DocNRO.baixar(doc,'Reporte semanal '+reporte.painel.ciclo.semana+'.pdf');
+ const doc=DocNRO.reporteUnificado(d);DocNRO.baixar(doc,'Reporte semanal '+(reporte.liderPainel||reporte.painel).ciclo.semana+'.pdf');
  }catch(e){falha(e,'Não foi possível gerar o reporte');}
 }
 

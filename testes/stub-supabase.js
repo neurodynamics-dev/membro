@@ -1310,7 +1310,7 @@
              Sem window.__teste.reporteLider, o líder não tem reporte nem
              cobrança. As opções: { cobranca:'nenhuma'|'aviso'|'obrigatoria',
              semLiderados, mudancas, enviado, fechado, consolidado } ---- */
-          if (/^reporte_(meu|cadeia_atualizar|participante|cobranca_estado|ausente|lider_painel|avaliacoes_de)$/.test(nome)
+          if (/^reporte_(meu|cadeia_atualizar|participante|cobranca_estado|ausente|lider_painel|avaliacoes_de|consolidado_pode)$/.test(nome)
               || (/^reporte_(salvar|enviar|unificado)$/.test(nome) && (window.__teste || {}).reporteLider)){
             (window.__rpcs ||= []).push({ nome, p:args });
             const L = (window.__teste || {}).reporteLider;
@@ -1377,6 +1377,7 @@
               const st = R.enviado_em || L.ausente ? 'nenhuma' : (L.cobranca || 'nenhuma');
               return { data:{ status: st, ciclo_id:'cl1', prazo: ciclo.prazo, fecha_em: ciclo.fecha_em, agora: new Date().toISOString() }, error:null };
             }
+            if (nome === 'reporte_consolidado_pode') return { data: !!L.consolidado, error:null };
             if (nome === 'reporte_ausente'){ L.ausente = true; return ok({}); }
             if (nome === 'reporte_lider_painel'){
               if (!L.consolidado) return { data:{ status:'sem_permissao' }, error:null };
