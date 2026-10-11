@@ -13,6 +13,7 @@
  function botoes(){
   const estado=st.dados?.estado;
   $('sala-acoes').hidden=!st.online||st.invalido||!['livre','ocupada'].includes(estado);
+  $('sala-opcoes-bt').hidden=st.invalido||!st.dados;if($('sala-opcoes-bt').hidden)fecharOpcoes();
   $('sala-15').hidden=$('sala-30').hidden=estado!=='livre';$('sala-liberar').hidden=estado!=='ocupada';
   for(const bt of $('sala-acoes').querySelectorAll('button'))bt.disabled=st.ocupado;
  }
@@ -49,6 +50,17 @@
   for(const id of ['sala-evento','sala-ate','sala-mensagem','sala-offline'])texto(id,'');
   $('sala-qr').replaceChildren();delete $('sala-qr').dataset.url;botoes();
  }
+ /* as opções (o QR da reserva e atualizar) ficam atrás de um botão; fecham sozinhas em 60 s */
+ let fechaOpcoes;
+ function abrirOpcoes(){
+  if(st.invalido||!st.dados)return;
+  $('sala-opcoes').hidden=false;$('sala-veu').hidden=false;$('sala-opcoes-bt').setAttribute('aria-expanded','true');
+  $('sala-opcoes-fechar').focus();clearTimeout(fechaOpcoes);fechaOpcoes=setTimeout(fecharOpcoes,60000);
+ }
+ function fecharOpcoes(){
+  clearTimeout(fechaOpcoes);if($('sala-opcoes').hidden)return;
+  $('sala-opcoes').hidden=true;$('sala-veu').hidden=true;$('sala-opcoes-bt').setAttribute('aria-expanded','false');
+ }
  async function consultar(nome='sala_estado',args={}){
   if(st.ocupado||st.invalido)return;
   if(!token)return invalido();
@@ -66,6 +78,9 @@
   }catch(_){st.online=false;desenhar();}
   finally{clearTimeout(timer);st.ocupado=false;botoes();}
  }
+ $('sala-opcoes-bt').onclick=abrirOpcoes;$('sala-opcoes-fechar').onclick=fecharOpcoes;$('sala-veu').onclick=fecharOpcoes;
+ $('sala-atualizar').onclick=()=>{fecharOpcoes();consultar();};
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharOpcoes();});
  const ocupar=minutos=>{if(st.online&&st.dados.estado==='livre')consultar('sala_ocupar',{p_minutos:minutos});};
  $('sala-15').onclick=()=>ocupar(15);$('sala-30').onclick=()=>ocupar(30);
  $('sala-liberar').onclick=()=>{if(st.online&&st.dados.estado==='ocupada')consultar('sala_liberar');};

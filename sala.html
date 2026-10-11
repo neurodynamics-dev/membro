@@ -35,8 +35,16 @@
   </section>
   <footer id="sala-proxima" class="sala-proxima" hidden>
     <div class="sala-reserva"><h3>Próxima reserva</h3><p id="sala-proximo-titulo"></p><p id="sala-proximo-horario" class="mono"></p></div>
-    <div id="sala-detalhes" class="sala-detalhes" hidden><div id="sala-qr" role="img" aria-label="QR para abrir os detalhes da reserva no portal"></div><span>Ver detalhes<br>no portal</span></div>
+    <button id="sala-opcoes-bt" class="btn ghost sala-opcoes-bt" type="button" aria-haspopup="dialog" aria-controls="sala-opcoes" hidden>Opções</button>
   </footer>
+  <div id="sala-veu" class="sala-veu" hidden></div>
+  <section id="sala-opcoes" class="sala-opcoes" role="dialog" aria-modal="true" aria-labelledby="sala-opcoes-tit" hidden>
+    <h3 id="sala-opcoes-tit">Opções</h3>
+    <div id="sala-detalhes" class="sala-detalhes" hidden><div id="sala-qr" role="img" aria-label="QR para abrir os detalhes da reserva no portal"></div>
+      <p>Aponte a câmera do celular para ver os detalhes da reserva no portal.</p></div>
+    <div class="sala-opcoes-acoes"><button class="btn ghost" id="sala-atualizar" type="button">Atualizar agora</button>
+      <button class="btn solid" id="sala-opcoes-fechar" type="button">Fechar</button></div>
+  </section>
 </main>
 </body>
 </html>
