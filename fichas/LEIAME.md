@@ -18,8 +18,8 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | [L4](L4.md) telas de consulta do /labbio | [S] | feita ([O]; o executor pula) | `CONTRATO-LABBIO.md` |
 | [L6](L6.md) pedido de biometria: membro, Pessoal e LABBIO | [S] | feita ([O]; o executor pula) | `CONTRATO-LABBIO.md` |
 | L7 salas e L9 tablets | [O] | feitas (`db/2.19.1_labbio_salas.sql`, `db/2.19.1_labbio_tablets.sql`) | `CONTRATO-LABBIO.md` |
-| [L8](L8.md) agenda do /labbio, aviso ao organizador, cadastro de tablets | [S] | a fazer (depois da L6) | `CONTRATO-LABBIO.md` |
-| [L10](L10.md) tela do tablet (`sala.html`) | [S] | a fazer (depois da L8) | `CONTRATO-LABBIO.md` |
+| [L8](L8.md) agenda do /labbio, aviso ao organizador, cadastro de tablets | [S] | feita (Astra, `75006ce`, revisada e incorporada) | `CONTRATO-LABBIO.md` |
+| [L10](L10.md) tela do tablet (`sala.html`) | [S] | feita (Astra, `437d169`, revisada e incorporada; QR atrás do botão Opções) | `CONTRATO-LABBIO.md` |
 | T3 onboarding (banco) | [O] | feita (`db/2.19.1_onboarding.sql`) | `CONTRATO-TRAINEES.md` |
 | [T2](T2.md) telas dos trainees | [S] | feita ([O]; o executor pula) | `CONTRATO-TRAINEES.md` |
 | [T3](T3.md) tour com progresso no servidor e painel | [S] | feita ([O]; o executor pula) | `CONTRATO-TRAINEES.md` |
@@ -28,5 +28,5 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | [F2](F2.md) site: notícias, matéria, inscrição (repositório **website**) | [S] | feita ([O], website `5654a9a`; o executor pula) | `CONTRATO-FEED.md` |
 | [F3](F3.md) `noticia.html`: reagir fora do portal | [S] | feita ([O]; o executor pula) | `CONTRATO-FEED.md` |
 
-Ordem sugerida para o executor: L8 → L10.
+Todas as fichas da 2.19.1 estão feitas.
 F2 e F3 já foram feitas na branch [O]; traga-as com o merge de `slp/ecstatic-noether-evq50w` antes da próxima ficha.
