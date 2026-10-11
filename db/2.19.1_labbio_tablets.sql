@@ -46,13 +46,13 @@ end $$;
 
 -- 1. a gestão --------------------------------------------------------------------
 create or replace function public.labbio_dispositivo_criar(p_espaco integer, p_rotulo text)
-returns jsonb language plpgsql volatile security definer set search_path = public, extensions as $$
-declare v_token text := encode(gen_random_bytes(24), 'hex'); v_id uuid;
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+declare v_token text := left(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 48); v_id uuid;
 begin
   if not (conta_labbio() or labbio_admin()) then return jsonb_build_object('status', 'sem_permissao'); end if;
   if not exists (select 1 from espacos where id = p_espaco and labbio) then return jsonb_build_object('status', 'espaco_invalido'); end if;
   if length(btrim(coalesce(p_rotulo, ''))) = 0 then return jsonb_build_object('status', 'rotulo_obrigatorio'); end if;
-  insert into sala_dispositivos (espaco_id, rotulo, token_hash) values (p_espaco, btrim(p_rotulo), encode(digest(v_token, 'sha256'), 'hex'))
+  insert into sala_dispositivos (espaco_id, rotulo, token_hash) values (p_espaco, btrim(p_rotulo), encode(sha256(convert_to(v_token, 'UTF8')), 'hex'))
   returning id into v_id;
   perform labbio_auditar('dispositivo_criar', v_id, jsonb_build_object('espaco', p_espaco));
   -- o token sai só agora: quem configura o tablet copia o endereço
@@ -79,8 +79,8 @@ end $$;
 
 -- 2. o tablet ----------------------------------------------------------------------
 create or replace function public.sala_dispositivo(p_token text)
-returns sala_dispositivos language sql stable security definer set search_path = public, extensions as $$
-  select * from sala_dispositivos where token_hash = encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') and ativo $$;
+returns sala_dispositivos language sql stable security definer set search_path = public as $$
+  select * from sala_dispositivos where token_hash = encode(sha256(convert_to(coalesce(p_token, ''), 'UTF8')), 'hex') and ativo $$;
 
 -- os eventos da sala em horário local (a agenda guarda data e hora locais)
 create or replace function public.sala_evento_json(e eventos)
