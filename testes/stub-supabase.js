@@ -817,8 +817,10 @@
   window.supabase = {
     createClient(){
       return {
-        from: builder,
+        /* toda tabela lida e toda RPC chamada, em ordem (window.__tabelas, window.__chamadas) */
+        from: (t, ...resto) => { (window.__tabelas ||= []).push(t); return builder(t, ...resto); },
         rpc: async (nome, args) => {
+          (window.__chamadas ||= []).push(nome);
           if (nome === 'notificacoes_marcar_lidas') return { data: 1, error: null };
           /* ---- v32: o sino que não empilha, a fila e o aparelho ---- */
           if (nome === 'notificacoes_limpar'){
@@ -1195,7 +1197,10 @@
               { registro:11, nome:'Bruno Tavares', trainee:false, gestor_nome:'Ana Figueiredo', feitas:7, total:7, pendentes:[] }] } : { status:'sem_permissao' });
           }
           /* ---- 2.19.1: feed editorial, site, reações e newsletter (db/2.19.1_feed.sql).
-             window.__teste.feed = { editor:true|false } (sem ele: editor = admin).
+             window.__teste.feed = { editor:true|false, semPermissao:true }
+             (sem ele: editor = admin; semPermissao: feed_reagir nega, como para
+             conta sem registro ou do LABBIO). Sem sessão: troque getSession e
+             signInWithPassword no texto do stub, como testes/tour.mjs faz.
              Para o site e a página de reação: noticias_publicas, noticia_publica,
              feed_reagir, comunidade_*. Estado em window.__fd. ---- */
           if (/^(feed_(lista|editor|editorial|item_salvar|publicar|publicar_confirmar|retirar|reagir)|newsletter_(lista|pendentes|enviar_agora)|noticias_publicas|noticia_publica|comunidade_(inscrever|confirmar))$/.test(nome)){
@@ -1230,7 +1235,7 @@
             }
             if (nome === 'feed_reagir'){
               const f = FD.itens.find(x => x.id === args.p_ref);
-              if (!f || f.estado !== 'publicado' || FT.semLogin) return r({ status:'sem_permissao' });
+              if (!f || f.estado !== 'publicado' || FT.semPermissao) return r({ status:'sem_permissao' });
               if (args.p_emoji && !['👏','❤️','🎉','💡','🚀','😮'].includes(args.p_emoji)) return r({ status:'invalido' });
               if (f.minha_reacao) f.reacoes[f.minha_reacao] = Math.max(0, (f.reacoes[f.minha_reacao] || 1) - 1);
               if (f.minha_reacao && !f.reacoes[f.minha_reacao]) delete f.reacoes[f.minha_reacao];
@@ -2635,7 +2640,12 @@
                 return { data:{ path: caminho }, error:null }; },
               createSignedUrl: async (caminho, exp, op) => { (window.__baixados ||= []).push({ bucket, caminho, op });
                 return { data:{ signedUrl:'javascript:void(0)' }, error:null }; },
-              remove: async (caminhos) => { (window.__removidos ||= []).push(...caminhos); return { data:[], error:null }; },
+              remove: async (caminhos) => { (window.__removidos ||= []).push(...caminhos);
+                (window.__removidosB ||= []).push(...caminhos.map(caminho => ({ bucket, caminho }))); return { data:[], error:null }; },
+              /* baixar (a cópia das imagens do feed para o bucket público): um JPEG de mentira */
+              download: async (caminho) => { (window.__baixados ||= []).push({ bucket, caminho, op:'download' });
+                if ((window.__teste || {}).downloadFalha === caminho) return { data:null, error:{ message:'Object not found' } };
+                return { data: new Blob([new Uint8Array([255, 216, 255, 217])], { type:'image/jpeg' }), error:null }; },
               /* a prévia de uma arte: um retângulo da cor da marca */
               createSignedUrls: async (caminhos) => ({ data: caminhos.map(c => ({ path:c, signedUrl:
                 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="100"><rect width="80" height="100" fill="#00594F"/><circle cx="60" cy="20" r="12" fill="#CEDC00"/></svg>') })), error:null }),

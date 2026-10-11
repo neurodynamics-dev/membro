@@ -1,4 +1,4 @@
-# SOMA 2.19.1: plano de execução (Reporte, LABBIO, Trainees)
+# SOMA 2.19.1: plano de execução (Reporte, LABBIO, Trainees, Feed)
 
 Complementa `PLANO-2.19.1.md` (a matriz) e o plano funcional da coordenação
 (`PLANO-IMPLEMENTACAO-SOMA-2.19.1.md`, §5, §7, §8 e §11), que continua sendo a
@@ -279,11 +279,47 @@ motivo, confirmar implantação.
 
 ---
 
+## Pacote F: Feed, notícias públicas, reações e newsletter
+
+Contrato: `fichas/CONTRATO-FEED.md`. Regras: §9 do plano funcional.
+
+### F0 [O] Migração `db/2.19.1_feed.sql` (feita: 82 asserções)
+
+- Estados `rascunho → pronto → (publicando) → publicado → retirado`; o
+  reporte só contribui (envio deixa `pronto`); publica quem é admin ou está
+  em `NRO_MANAGERS` (`feed_editor()`), sem votos; autoria do texto separada
+  de quem publicou.
+- Tópico (≤ 1.200) e notícia (≥ 300 para publicar, slug estável com
+  histórico). Interno ou no site; o acervo da 2.18 continua interno.
+- Imagens: bucket `feed` privado; no site, cópia controlada para o bucket
+  público `noticias` em dois passos idempotentes (preparar → copiar →
+  confirmar); retirar devolve as cópias a apagar.
+- Reações: um emoji por pessoa, por conta com registro em qualquer status
+  (egresso e desligado reagem ao público), sem conta do LABBIO; limite de
+  30 mudanças em 10 minutos.
+- Newsletter sem votos: cada edição congela os itens ainda não enviados
+  àquele público; sem item, sem edição; "enviar agora" do editor; férias e
+  afastamento fora; as antigas em aprovação ficam canceladas.
+- Inscrição pública com confirmação por link (7 dias), resposta que não
+  revela cadastro, limites.
+- Edge Function: links "Ler a matéria completa", imagens públicas e a fila
+  de confirmação.
+
+### F1 [S] Portal: feed, mesa editorial, widget do início, newsletter (`fichas/F1.md`)
+### F2 [S] Site: `#/news`, a matéria, a inscrição e a confirmação (`fichas/F2.md`, repositório website)
+### F3 [S] `noticia.html`: entrar e reagir fora do portal (`fichas/F3.md`)
+
+Fora: Open Graph por matéria (o site é estático com rotas `#/`; precisa de
+build ou proxy, decisão do usuário).
+
+---
+
 ## Ordem e checkpoints
 
 1. R1 → R2 → R3 → R4 → R5 (o reporte destrava o resto da casca).
 2. L1 → L3 → L2 → L4 → L5 → L6 → L7 → L8 → L9 → L10.
 3. T1 → T2 → T3.
+4. F0 → F1 → F2 → F3 (F1 mexe em `mod-reporte.js`: depois da R5).
 
 Cada [O] termina com o contrato publicado aqui (RPC, campos, estados) e o
 teste de banco passando. A partir daí, a [S] correspondente pode ir para o

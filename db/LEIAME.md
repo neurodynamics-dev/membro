@@ -163,17 +163,18 @@ O onboarding (15 asserções):
 bash testes/preparar-base.sh teste t2191o 2.18.0_soma.sql 2.19.0.sql 2.19.1_recadastro.sql 2.19.1_trainees.sql 2.19.1_onboarding.sql
 ```
 
-O feed e a newsletter (78 asserções):
+O feed e a newsletter (82 asserções):
 
 ```sh
 bash testes/preparar-base.sh teste t2191f 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_reporte.sql 2.19.1_feed.sql
 ```
 
-A 2.19.1 inteira, na ordem de aplicação em produção (626 asserções):
+A 2.19.1 inteira, na ordem de aplicação em produção (630 asserções):
 
 ```sh
 bash testes/preparar-base.sh teste t2191 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
-     2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql
+     2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
+     2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql
 ```
 
 O reporte (70 asserções, mais o teste da 2.18.0 do reporte de novo):

@@ -190,9 +190,18 @@ begin
   perform ok(public.noticia_publica('ortese-aprovada')->>'status' = 'nao_encontrada', 'some do site na hora');
   perform eu(45, 'leitura');
   perform ok(public.feed_reagir(v_not, '👏')->>'status' = 'sem_permissao', 'retirada não aceita reação');
-  -- de volta, para a newsletter
+  -- só para a equipe: retirar → apagar a cópia pública → publicar interno
   perform eu(43, 'leitura');
-  update feed_itens set estado = 'publicando' where id = v_not;
+  perform ok(public.noticias_objeto_pode(v_not || '/1.jpg', true), 'o editor apaga a cópia pública do item retirado');
+  r := public.feed_publicar(v_not, false);
+  perform ok(r->>'status' = 'ok' and (select estado = 'publicado' and not publico and retirado_em is null from feed_itens where id = v_not),
+    'republica só para a equipe');
+  perform ok(public.noticia_publica('ortese-aprovada')->>'status' = 'nao_encontrada'
+             and exists (select 1 from jsonb_array_elements(public.feed_lista()) x where x->>'id' = v_not::text),
+    'fora do site, dentro do portal');
+  perform ok(not public.noticias_objeto_pode(v_not || '/1.jpg', true), 'publicado não deixa apagar a cópia');
+  -- de volta ao site, para a newsletter
+  update feed_itens set estado = 'publicando', publico = true where id = v_not;
   perform ok(public.feed_publicar_confirmar(v_not)->>'status' = 'ok', 'republica (a cópia ainda existe)');
 end $$;
 
