@@ -39,7 +39,8 @@ existe precisa mudar de comportamento).
 | Check-in da folha com localização | ausente: `registrar_checkin_folha(p_token uuid)` só recebe o token | nova assinatura com coordenadas; a antiga deixa de servir | banco |
 | Painel LABBIO em `/labbio` | ausente | entrada estática própria, Retina, logo LABBIO | navegador |
 | Gestores do LABBIO (conta sem membro) | ausente; `conta_ativa()` não barra conta sem registro | capacidade própria, negada no portal principal pelo servidor | banco |
-| Termo de sigilo centralizado | ausente: hoje é item de acesso "Termo de sigilo: LABBIO" (importação) e a série PES-016 | campanha de recadastro e termo (aguarda o modelo) | banco + navegador |
+| Recadastro semestral | ausente | **feito**: Meus dados (`#/servicos/dados`), campanha semestral com painel de passos na entrada, uma dispensa, pausa nas férias; passo no onboarding | banco (44) + navegador |
+| Termo de sigilo centralizado | ausente: hoje é item de acesso "Termo de sigilo: LABBIO" (importação) e a série PES-016 | **feito**: serviço à parte (`#/servicos/termo`), modelo do LABBIO sem alteração, só os campos do formulário; em 2026/2 entra como passos 2 a 4 do recadastro | banco + navegador |
 | Acesso biométrico com foto | parcial: `portal_solicitacoes` tipo `acesso`; aprovar em `pessoal_solicitacao_decidir` concede o acesso na hora | subtipo LABBIO: Pessoal encaminha, LABBIO implanta; foto pela câmera | banco + navegador |
 | Agenda: consulta ao LABBIO para Sala de Reuniões e Auditório | ausente; `espacos` existe (fora do repositório), sem esses nomes nos dados | marcar os dois espaços; consulta consultiva por ocorrência | banco |
 | Tablets na porta das salas | ausente | URL por sala, token do aparelho, ocupação momentânea | navegador |
@@ -54,14 +55,13 @@ existe precisa mudar de comportamento).
    reações, inscrição).
 4. **LABBIO**: identidade e gestores, `/labbio`, membros e acesso, solicitação
    biométrica, check-ins, treinamentos, consulta de salas e tablets.
-5. **Recadastro e termo** (estrutura pronta; ativa com o modelo), **trainees e
+5. **Recadastro e termo** (feitos), **trainees e
    onboarding**, **PCM**, **check-in com localização**.
 
 ## Insumos que faltam (não impedem construir; impedem ativar)
 
 | Item | Quem fornece |
 |---|---|
-| Modelo oficial do termo de sigilo do LABBIO | Coordenação |
 | Campos e formato de foto exigidos pela Intelbras | Gestores do LABBIO |
 | Primeiro gestor do LABBIO e o responsável principal (estrela); logo do LABBIO em vetor ou PNG grande | LABBIO |
 | Centro e raio do LABBIO para o check-in da folha | Medir no local |

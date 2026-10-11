@@ -900,20 +900,15 @@
           const papeisStub = () => { const pf = DADOS.perfis[0];
             return pf.papeis || ['admin','pessoal','lideranca','selecao','leitura'].filter(k => k === (pf.papel || 'leitura') || k === 'leitura'); };
           if (nome === 'conta_ativa') return { data: !(window.__teste || {}).bloqueada, error:null };
-          /* ---- 2.19.1: o termo de sigilo. Sem window.__teste.termo, não há campanha ---- */
-          if (nome.startsWith('termo_')){
+          /* ---- 2.19.1: Meus dados, recadastro e termo de sigilo. Sem
+             window.__teste.rec, não há campanha; rec.termo = a campanha
+             inclui o termo do LABBIO ---- */
+          if (/^(cadastro|recadastro|termo)_/.test(nome)){
             (window.__rpcs ||= []).push({ nome, p:args });
-            const T = (window.__teste || {}).termo;
-            if (!T) return { data: nome === 'termo_estado' ? { status:'nenhum' } : { status:'sem_permissao' }, error:null };
-            const st = () => T.conferido ? 'conferido' : T.enviado ? 'enviado' : T.devolvido ? 'devolvido' : 'pendente';
-            if (nome === 'termo_estado') return { data:{ status: st(), campanha:'labbio-2026', titulo:'Termo de sigilo do LABBIO',
-              modelo:'termos/termo_sigilo_labbio_3.pdf', modelo_sha256: T.sha, pausado: !!T.pausado, dispensa_disponivel: !T.dispensa,
-              bloqueia: ['pendente','devolvido'].includes(st()) && !!T.dispensa && !T.pausado, dados_confirmados_em: T.confirmado || null,
-              emitido_em: T.emitido || null, enviado_em: T.enviado || null, motivo: T.devolvido || null }, error:null };
-            if (nome === 'termo_dispensar'){ const ja = !!T.dispensa; T.dispensa = true; return { data:{ status: ja ? 'ja_usada' : 'ok' }, error:null }; }
-            if (nome === 'termo_meus_dados') return { data:{ status:'ok', registro:4, nome:'Ana Figueiredo', foto:false, nome_civil:'Ana Figueiredo',
-              nacionalidade:'brasileira', cpf: T.dados?.cpf || '', endereco_antigo:'Rua Antiga, 10' , ...(T.dados || {}) }, error:null };
-            if (nome === 'termo_confirmar_dados'){
+            const T = (window.__teste || {}).rec;
+            if (nome === 'cadastro_meus_dados') return { data:{ status:'ok', registro:4, nome:'Ana Figueiredo', foto:false, nome_civil:'Ana Figueiredo',
+              nacionalidade:'brasileira', endereco_antigo:'Rua Antiga, 10', ...((T || {}).dados || {}), confirmado_em: (T || {}).confirmado || null }, error:null };
+            if (nome === 'cadastro_confirmar'){
               const p = args.p, e = {};
               if (!/\S+\s+\S+/.test(p.nome_civil || '')) e.nome_civil = 'Escreva o nome completo, como no documento.';
               if ((p.cpf || '').replace(/\D/g, '') !== '52998224725') e.cpf = 'CPF inválido. Confira os 11 números.';
@@ -922,10 +917,29 @@
               if (!p.matricula && !p.sem_matricula) e.matricula = 'Informe a matrícula, ou marque que não tem.';
               if (Object.keys(e).length) return { data:{ status:'invalido', campos:e }, error:null };
               const d = { ...p, cpf: p.cpf.replace(/\D/g, ''), end_cep: p.end_cep.replace(/\D/g, ''), rg_orgao: p.rg_orgao.toUpperCase(), end_uf: p.end_uf.toUpperCase() };
-              if (T.emitido && JSON.stringify(T.dados) !== JSON.stringify(d)) T.emitido = null;
-              T.dados = d; T.confirmado = '2026-10-11T12:00:00Z';
+              if (T){ if (T.emitido && JSON.stringify(T.dados) !== JSON.stringify(d)) T.emitido = null;
+                T.dados = d; T.confirmado = '2026-10-11T12:00:00Z'; }
               return { data:{ status:'ok', dados:d }, error:null };
             }
+            const st = () => T.conferido ? 'conferido' : T.enviado ? 'enviado' : T.devolvido ? 'devolvido' : 'pendente';
+            const termoEst = () => (!T || !T.termo) ? { status:'nenhum' } : { status: st(), campanha:'labbio-2026', titulo:'Termo de sigilo do LABBIO',
+              modelo:'termos/termo_sigilo_labbio_3.pdf', modelo_sha256: T.sha, dados_confirmados_em: T.confirmado || null, dados_recentes: !!T.confirmado,
+              emitido_em: T.emitido || null, enviado_em: T.enviado || null, motivo: T.devolvido || null };
+            if (nome === 'recadastro_estado'){
+              if (!T) return { data:{ status:'nenhum' }, error:null };
+              const feito = !!T.confirmado && (!T.termo || ['enviado','conferido'].includes(st()));
+              const status = feito ? 'concluido' : 'pendente';
+              return { data:{ status, campanha:'2026-2', titulo:'Recadastro 2026/2', termo_campanha: T.termo ? 'labbio-2026' : null,
+                dados_confirmados_em: T.confirmado || null, termo: T.termo ? termoEst() : null, pausado: !!T.pausado,
+                dispensa_disponivel: !T.dispensa, bloqueia: status === 'pendente' && !!T.dispensa && !T.pausado }, error:null };
+            }
+            if (nome === 'recadastro_dispensar'){ const ja = !!T?.dispensa; if (T) T.dispensa = true; return { data:{ status: ja ? 'ja_usada' : 'ok' }, error:null }; }
+            if (nome === 'recadastro_painel') return { data:{ status:'ok', campanha: T ? { id:'2026-2', titulo:'Recadastro 2026/2', ativa:true, termo: T.termo ? 'labbio-2026' : null } : null,
+              pessoas:[{ registro:4, nome:'Ana Figueiredo', confirmado_em:'2026-10-10T10:00:00Z', concluido_em:'2026-10-10T10:30:00Z' },
+                       { registro:11, nome:'Bruno Tavares', confirmado_em:null, concluido_em:null }] }, error:null };
+            if (nome === 'recadastro_campanha_ativar') return { data:{ status:'ok', avisados:9 }, error:null };
+            if (nome === 'termo_estado') return { data: termoEst(), error:null };
+            if (!T) return { data:{ status:'sem_permissao' }, error:null };
             if (nome === 'termo_emitir'){
               if (!T.confirmado) return { data:{ status:'dados_pendentes' }, error:null };
               T.emitido = '2026-10-11T12:05:00Z';
@@ -933,12 +947,11 @@
             }
             if (nome === 'termo_registrar_envio'){ if (!T.emitido) return { data:{ status:'nao_emitido' }, error:null };
               T.enviado = '2026-10-11T12:30:00Z'; T.devolvido = null; T.envio = args; return { data:{ status:'ok' }, error:null }; }
-            if (nome === 'termo_painel') return { data:{ status:'ok', campanha:'labbio-2026', ativa:true, pessoas:[
+            if (nome === 'termo_painel') return { data:{ status:'ok', campanha:'labbio-2026', pessoas:[
               { registro:11, nome:'Bruno Tavares', situacao:'enviado', enviado_em:'2026-10-11T10:00:00Z', arquivo:'labbio-2026/11/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.pdf' },
               { registro:17, nome:'Carla Mendonça', situacao:'pendente' },
               { registro:4, nome:'Ana Figueiredo', situacao:'conferido', enviado_em:'2026-10-10T10:00:00Z', arquivo:'labbio-2026/4/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.pdf' }] }, error:null };
             if (nome === 'termo_conferir') return { data:{ status: !args.p_ok && !args.p_motivo ? 'motivo_obrigatorio' : 'ok' }, error:null };
-            if (nome === 'termo_campanha_ativar') return { data:{ status:'ok', avisados:9 }, error:null };
           }
           if (nome === 'papeis_atuais'){
             if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:'function public.papeis_atuais() does not exist' } };

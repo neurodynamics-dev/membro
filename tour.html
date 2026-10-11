@@ -939,6 +939,8 @@ const agoraNoLab = () => dado('agora', async () => [...new Set((falhou(await q(s
   .map(x => x.registro))]);
 const ultimoCheckin = () => dado('ultimo', async () => (falhou(await q(sb.from('presencas').select('registrado_em')
   .eq('registro', T.perfil.registro).order('registrado_em', { ascending:false }).limit(1))) || [])[0]?.registrado_em || null);
+/* quando a pessoa conferiu os dados pela última vez (Serviços › Meus dados, 2.19.1) */
+const meusDadosConferidos = () => dado('dados', async () => falhou(await q(sb.rpc('cadastro_meus_dados')))?.confirmado_em || null);
 const meusTreinos = () => dado('treinos', async () => { const d = falhou(await q(sb.rpc('treinamentos_meus'))); return Array.isArray(d) ? d : []; });
 const minhaAgenda = () => dado('agenda', async () => falhou(await q(sb.rpc('agenda_itens',
   { p_de: hojeISO(), p_ate: isoDia(new Date(Date.now() + 14 * 864e5)) }))) || []);
@@ -960,7 +962,7 @@ const minhasPublicacoes = () => dado('pubs', async () => {
 /* ============================================================
    OS PRIMEIROS PASSOS
    O que dá para conferir, o tour confere sozinho; o resto a
-   pessoa marca. Seis itens, os mesmos na coluna e na última etapa.
+   pessoa marca. Sete itens, os mesmos na coluna e na última etapa.
    ============================================================ */
 const instalado = () => emApp() || !!ler('nd.instalado', false) || !!ler('nd.tour.celular', false);
 /* este navegador recebe as notificações do SOMA? (o mesmo endereço, a mesma inscrição) */
@@ -974,6 +976,7 @@ async function aparelhoRecebe(){
 const MISSAO = [
   ['conta',   'Criar a sua conta',              'conta'],
   ['vinculo', 'Conta ligada ao quadro de pessoal', 'conta'],
+  ['dados',   'Conferir os seus dados',          'conta'],
   ['checkin', 'Fazer o primeiro check-in',       'placar'],
   ['celular', 'Pôr o SOMA na tela do celular',   'celular'],
   ['avisos',  'Escolher como receber os avisos',  'seu-soma'],
@@ -981,9 +984,10 @@ const MISSAO = [
 ];
 async function estadoMissao(){
   const st = { conta: logado(), vinculo: logado() && vinculado(), celular: instalado(),
-               checkin: null, avisos: !!ler('nd.tour.avisos', false) || null, treinos: null };
+               checkin: null, avisos: !!ler('nd.tour.avisos', false) || null, treinos: null, dados: null };
   if (logado() && vinculado() && sb){
-    const [u, pref, tr] = await Promise.all([ultimoCheckin(), minhaPreferencia(), meusTreinos()]);
+    const [u, pref, tr, dd] = await Promise.all([ultimoCheckin(), minhaPreferencia(), meusTreinos(), meusDadosConferidos()]);
+    st.dados = dd.erro ? null : !!dd.v;
     st.checkin = u.erro ? null : !!u.v;
     if (!st.avisos) st.avisos = pref.erro ? null : (!!pref.v || await aparelhoRecebe());
     st.treinos = tr.erro ? null : !tr.v.some(t => t.obrigatorio && t.situacao !== 'concluido');
@@ -1186,6 +1190,12 @@ function etConta(){
             quadro de pessoal. <b>O que muda.</b> Você navega pelo SOMA, mas não recebe tarefas, não comenta, não faz check-in e não
             abre pedidos. <b>O que fazer.</b> Mande ao Depto. de Pessoal o e-mail desta conta. O vínculo é feito em
             Administração, Contas e perfis, e vale na hora: depois, recarregue esta página.</div></section>`}
+        ${ok ? `<section class="bl"><h2>Confira os seus dados</h2>
+          <p>Antes de tudo, abra <b>Serviços › Meus dados</b> e confira cada campo como está nos seus documentos: nome
+            completo, CPF, identidade, endereço e vínculo acadêmico. São esses dados que vão para a sua ficha, para os termos que você
+            assina e para o cadastro de acesso ao LABBIO. Todo semestre o SOMA pede para conferir de novo; e, se algo mudar no meio
+            do caminho (endereço, curso, telefone), atualize por lá na hora.</p>
+          <div class="acts" style="margin-top:14px">${noSoma('#/servicos/dados', 'Conferir meus dados', 'solid')}</div></section>` : ''}
         <section class="bl"><h2>Cuidados com a conta</h2>
           <ul class="pontos">
             <li><span><b>Esqueceu a senha?</b> Na tela de entrada do SOMA, <b>Esqueci minha senha</b>. O link chega por e-mail.</span></li>

@@ -1073,7 +1073,8 @@ const PAINEIS = [
                                                        () => can() || podeSelecao()],
   ['contas',       'Contas e perfis',     'Pessoas',  'Papéis de acesso, vínculo com o quadro e senha', can],
   ['acessos',      'Catálogo de acessos', 'Pessoas',  'Os sistemas, locais e documentos controlados pela NRO', can],
-  ['termo',        'Termo de sigilo',     'Pessoas',  'A campanha do termo do LABBIO: quem enviou, conferir e devolver', can],
+  ['recadastro',   'Recadastro',          'Pessoas',  'A conferência semestral dos dados: começar, encerrar e quem já fez', can],
+  ['termo',        'Termo de sigilo',     'Pessoas',  'O termo do LABBIO: quem enviou, conferir e devolver', can],
   ['grupos',       'Grupos e quadros',    'Pessoas',  'A árvore de grupos, quem está em cada um e quem enxerga cada quadro', can],
   ['importar',     'Importar planilha',   'Pessoas',  'Atualizar o quadro em massa pelo NRO-PES-005 ou pelo Excel do SOMA', can],
   ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
@@ -1518,24 +1519,25 @@ async function abrirPortal(){
   state.filaTimer ||= setInterval(empurrarFila, 150e3);
   await carregarObrigacoes();
   await render(route());
-  if (state.obrigacao?.termo && state.obrigacao.termo.status !== 'nenhum')
-    carregarModulo('termo').then(() => termoPedirNaEntrada()).catch(() => {});
+  if (state.obrigacao?.recadastro?.status === 'pendente')
+    carregarModulo('cadastro').then(() => recadastroPedir()).catch(() => {});
 }
-/* As obrigações da entrada (2.19.1): por ora, o termo de sigilo. Sem a
-   2.19.1 no banco, a função não existe e nada muda. */
+/* As obrigações da entrada (2.19.1): o recadastro semestral (que, em
+   2026/2, inclui o termo de sigilo do LABBIO). Sem a 2.19.1 no banco, a
+   função não existe e nada muda. */
 async function carregarObrigacoes(){
-  try {
-    const { data, error } = await sb.rpc('termo_estado');
-    state.obrigacao = { termo: !error && data ? data : null };
-  } catch (e){ state.obrigacao = { termo: null }; }
+  /* o termo é um serviço à parte: aparece no menu enquanto houver termo pedido */
+  const ler = async f => { try { const { data, error } = await sb.rpc(f); return !error && data ? data : null; } catch (e){ return null; } };
+  const [recadastro, termo] = await Promise.all([ler('recadastro_estado'), ler('termo_estado')]);
+  state.obrigacao = { recadastro, termo };
   desenharMenu();
 }
-/* Depois da dispensa única, a pendência leva direto ao termo — menos
+/* Depois da dispensa única, a pendência leva direto ao recadastro — menos
    na sessão em que a pessoa acabou de dispensar. */
 function obrigacaoBloqueia(){
-  const t = state.obrigacao?.termo;
-  if (!t || !t.bloqueia) return false;
-  try { if (sessionStorage.getItem('nd.termo.depois.' + t.campanha)) return false; } catch (e){}
+  const r = state.obrigacao?.recadastro;
+  if (!r || !r.bloqueia) return false;
+  try { if (sessionStorage.getItem('nd.recadastro.depois.' + r.campanha)) return false; } catch (e){}
   return true;
 }
 
@@ -1598,7 +1600,8 @@ const ALIAS = {
 const ALIAS_AGENDA = { agendar:['agenda','novo'], presenca:['equipe','presenca'], minha:['agenda','config','google'] };
 
 function route(){
-  const h = (location.hash || '#/').replace(/^#\//,'');
+  /* o que vem depois de "?" é parâmetro da tela (#/servicos/dados?de=termo) */
+  const h = (location.hash || '#/').replace(/^#\//,'').split('?')[0];
   let [r, sub, sub2] = h.split('/');
   if (ALIAS[r]) [r, sub] = ALIAS[r](sub || null);
   if (r === 'agenda' && ALIAS_AGENDA[sub]){
@@ -1616,9 +1619,9 @@ window.addEventListener('hashchange', e => {
 
 async function render(rt){
   pararBoard();
-  if (obrigacaoBloqueia() && !(rt.r === 'servicos' && rt.sub === 'termo') && rt.r !== 'versoes'){
-    history.replaceState(null, '', location.pathname + '#/servicos/termo');
-    rt = { r:'servicos', sub:'termo', sub2:null };
+  if (obrigacaoBloqueia() && !(rt.r === 'servicos' && ['recadastro', 'dados', 'termo'].includes(rt.sub)) && rt.r !== 'versoes'){
+    history.replaceState(null, '', location.pathname + '#/servicos/recadastro');
+    rt = { r:'servicos', sub:'recadastro', sub2:null };
   }
   let def = ROTAS[rt.r];
   if (def.espera) await def.espera();
@@ -1754,7 +1757,9 @@ function arvoreDoMenu(){
       { sub:'declaracao', rot:'Declaração de vínculo' },
       { sub:'eventos', rot:'Eventos e participações' },
       { sub:'cofre', rot:'Cofre de senhas' },
-      ...(state.obrigacao?.termo && state.obrigacao.termo.status !== 'nenhum' ? [{ sub:'termo', rot:'Termo de sigilo' }] : []),
+      { sub:'dados', rot:'Meus dados' },
+      ...(state.obrigacao?.recadastro?.status === 'pendente' ? [{ sub:'recadastro', rot:'Recadastro' }] : []),
+      ...(state.obrigacao?.termo && state.obrigacao.termo.status !== 'nenhum' ? [{ sub:'termo', rot:'Termo de sigilo do LABBIO' }] : []),
       { rotulo:'Ao Depto. de Pessoal' },
       ...SERVICOS_MENU.map(([sub, rot]) => ({ sub, rot }))] }
   ];
@@ -3750,6 +3755,8 @@ const SERVICOS_MODULO = {
   declaracao: ['documentos', 'pageDeclaracao'],
   eventos:    ['documentos', 'pageEventosExt'],
   cofre:      ['cofre',      'pageCofre'],
+  dados:      ['cadastro',   'pageDados'],
+  recadastro: ['cadastro',   'pageRecadastro'],
   termo:      ['termo',      'pageTermo']
 };
 async function pageServicos(sub, sub2){

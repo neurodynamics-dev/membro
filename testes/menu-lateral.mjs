@@ -124,7 +124,7 @@ console.log('\nAberto (admin, 1440px)');
   await ir(p, '#/admin/contas', 1200);
   const adm = await secao(p, 'admin');
   confere('Administração: todos os painéis, em quatro grupos',
-    adm.filhos.length === 15 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
+    adm.filhos.length === 16 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
   confere('#/admin/contas marca "Contas e perfis"',
     JSON.stringify(await atual(p)) === '["Contas e perfis"]', await atual(p));
   await ir(p, '#/admin/site', 1200);
@@ -147,12 +147,13 @@ console.log('\nAberto (admin, 1440px)');
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-seta');
   await p.waitForTimeout(200);
   let srv = await secao(p, 'servicos');
-  /* onze: todos os serviços, Meus pedidos (desde a v24), o que o SOMA faz
-     sozinho — a declaração, os eventos e o cofre (v25–v27) — e os seis
-     pedidos ao Depto. de Pessoal, cada bloco com o seu rótulo */
+  /* doze: todos os serviços, Meus pedidos (desde a v24), o que o SOMA faz
+     sozinho — a declaração, os eventos, o cofre (v25–v27) e Meus dados
+     (2.19.1) — e os seis pedidos ao Depto. de Pessoal, cada bloco com o
+     seu rótulo */
   confere('a seta abre Serviços sem navegar',
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 11 && srv.filhos[1] === 'Meus pedidos'
-      && srv.filhos.slice(2, 5).join('|') === 'Declaração de vínculo|Eventos e participações|Cofre de senhas'
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 12 && srv.filhos[1] === 'Meus pedidos'
+      && srv.filhos.slice(2, 6).join('|') === 'Declaração de vínculo|Eventos e participações|Cofre de senhas|Meus dados'
       && srv.rotulos.join('|') === 'Documentos e acessos|Ao Depto. de Pessoal'
       && await p.evaluate(() => location.hash) === '#/', srv);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-filho[data-sub="ouvidoria"]');
@@ -435,7 +436,7 @@ console.log('\nPor papel');
 for (const [papel, esperado] of [
   ['leitura', { admin:null, quadroPessoal:false, selecao:false }],
   ['selecao', { admin:'Todos os painéis|E-mails|Relatórios', quadroPessoal:false, selecao:true }],
-  ['pessoal', { admin:15, quadroPessoal:true, selecao:true }]
+  ['pessoal', { admin:16, quadroPessoal:true, selecao:true }]
 ]){
   const { ctx, p } = await abrir({ stub: stubDe(papel) });
   const adm = await secao(p, 'admin'), eq = await secao(p, 'equipe'), sel = await secao(p, 'selecao');

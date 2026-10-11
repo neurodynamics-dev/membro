@@ -2954,3 +2954,54 @@ input[data-codigo]{font-family:var(--fm);text-transform:uppercase} /* auditar: o
 button.termo-ic{cursor:pointer;border:1px solid transparent} button.termo-ic:hover{border-color:var(--line2);background:rgba(var(--tom),.05)}
 .termo-ic.ok{color:var(--ok-tx)} .termo-ic.info{color:var(--info-tx)} .termo-ic.err{color:var(--bad-tx)} .termo-ic.warn{color:var(--warn-tx)}
 .termo-antigo{margin-top:var(--s3)}
+
+/* ============================================================
+   RECADASTRO (2.19.1): o painel de passos, no modelo dos widgets.
+   Na entrada, ocupa quase a tela toda, por cima do portal; em
+   #/servicos/recadastro, é a própria página. A barra segmentada é o
+   progresso; cada passo é um widget com o número grande.
+   ============================================================ */
+.rec-ov{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:rgba(var(--veu-rgb),calc(.72 * var(--veu-k)));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow:auto}
+.rec-painel{display:flex;flex-direction:column;gap:var(--s5);width:100%}
+.rec-painel.modal{width:min(1180px,100%);max-height:calc(100dvh - 48px);overflow:auto;padding:clamp(24px,4vw,48px);
+  border:1px solid var(--line2);border-radius:var(--r);background:var(--bg)}
+.rec-topo{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s4)}
+.rec-topo h2{font-family:var(--fd);font-weight:600;font-size:clamp(26px,3.4vw,40px);line-height:1.1;letter-spacing:-.01em;
+  margin:var(--s2) 0 var(--s3);max-width:24ch}
+.rec-lead{color:var(--muted);max-width:var(--w-leitura);line-height:1.6}
+.rec-aviso{margin-top:var(--s3);font-weight:600;color:var(--warn-tx)}
+.rec-fechar{flex:none}
+.rec-barra{display:flex;gap:6px}
+.rec-barra span{flex:1;height:4px;border-radius:2px;background:rgba(var(--tom),.12)}
+.rec-barra span.feito{background:var(--syn)}
+.rec-barra span.atual{background:color-mix(in srgb,var(--syn) 45%,transparent)}
+.rec-passos{display:grid;gap:var(--s4);grid-template-columns:repeat(4,minmax(0,1fr))}
+.rec-passos.n1{grid-template-columns:minmax(0,560px)}
+.rec-passo{min-height:300px}
+.rec-passo>header{min-height:18px}
+.rec-passo .w-num{font-size:clamp(56px,6vw,88px);color:var(--dim)}
+.rec-passo.atual{border-color:var(--syn-borda)}
+.rec-passo.atual .w-num{color:var(--ink)}
+.rec-passo.atual .w-rot::before{background:var(--syn)}
+.rec-passo.feito .w-num{color:var(--ok-tx)}
+.rec-passo.bloq{opacity:.55}
+.rec-passo h3{font-family:var(--fd);font-weight:600;font-size:19px;line-height:1.25}
+.rec-passo p{color:var(--muted);font-size:13.5px;line-height:1.55}
+.rec-ok{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ok-tx)}
+.rec-ok .ic{width:14px;height:14px}
+.rec-acao{margin-top:auto}
+.rec-acao .btn{width:100%;justify-content:center}
+.rec-quando{font-family:var(--fm);font-size:12px!important;color:var(--dim)!important}
+.rec-link{color:var(--syn-tx)}
+.rec-pe{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap}
+.rec-pe-txt{font-size:13px;color:var(--dim)}
+.rec-nova{display:flex;align-items:flex-end;gap:var(--s3);flex-wrap:wrap}
+.rec-nova .fld{margin:0}
+@media (max-width:1000px){ .rec-passos{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:620px){
+  .rec-ov{padding:0;align-items:stretch}
+  .rec-painel.modal{max-height:none;min-height:100dvh;border-radius:0;border:0}
+  .rec-passos{grid-template-columns:minmax(0,1fr)}
+  .rec-passo{min-height:0}
+}

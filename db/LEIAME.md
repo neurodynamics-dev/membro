@@ -99,6 +99,22 @@ createdb -T tbase t219
 psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.18.0_soma.sql
 psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 ```
+
+### 2.19.1: recadastro e termo de sigilo do LABBIO
+
+| Migração | O que faz |
+|---|---|
+| `2.19.1_recadastro.sql` | Meus dados e o recadastro semestral: os campos pessoais em `dados_pessoais`, o histórico de cada conferência (`cadastro_confirmacoes`, a fotografia dos dados), as campanhas (`recadastro_campanhas`, com o termo opcional) e quem já concluiu (`recadastro_pendencias`). `cadastro_meus_dados`, `cadastro_confirmar` (valida CPF, CEP, UF...), `recadastro_estado` (o que a entrada pede), `recadastro_dispensar` (uma vez por campanha), `recadastro_painel` e `recadastro_campanha_ativar` (avisa todos os membros ativos). Férias e afastamento pausam o pedido |
+| `2.19.1_termo.sql` | o termo de sigilo do LABBIO como serviço à parte: `termo_campanhas`, `termo_pendencias`, o bucket privado `termos`; `termo_emitir` só com dados conferidos há até 180 dias (e guarda quais saíram no termo), `termo_registrar_envio` só para um termo emitido com a última conferência; `termo_painel` e `termo_conferir` para o Pessoal. Depende da `2.19.1_recadastro.sql` |
+
+A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
+2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
+sigilo do LABBIO". Teste (44 asserções):
+
+```sh
+createdb -T tbase t2191
+psql -X -v ON_ERROR_STOP=1 -d t2191 -f testes/2.18.0_soma.sql -f testes/2.19.0.sql -f testes/2.19.1_recadastro.sql
+```
 | `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
 | `2.17.0_notas_fotos_e_cartoes.sql` | a primeira com o número novo: os bugs e sugestões das notas de versão (`soma_feedback`, votos, comentários, o andamento por `admin`); a foto enviada pelo portal (o bucket público `fotos`, `membro_foto_definir`); os cartões com outras pessoas, etiquetas, checklists (`atividade_checklist`), a cópia para outro quadro (`atividade_copiar`) e o comentário que se corrige e se apaga. Passa a ser a dona de `atividade_criar`, `atividade_editar`, `atividades_quadro` e `atividades_carga` |
 

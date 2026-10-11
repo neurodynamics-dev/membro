@@ -169,7 +169,7 @@ console.log('\nCom conta');
   await p.waitForFunction(() => document.querySelector('#qr-cel svg'), null, { timeout:8000 }).catch(() => {});
   confere('no computador, o QR para abrir o passo a passo no celular', await p.locator('#qr-cel svg').count() === 1);
   await ir(p, '#ajuda');
-  confere('a ajuda: os primeiros passos, as dúvidas e o guia de bolso', await p.locator('.missao[data-missao="grande"] li').count() === 6
+  confere('a ajuda: os primeiros passos, as dúvidas e o guia de bolso', await p.locator('.missao[data-missao="grande"] li').count() === 7
     && await p.locator('.faq details').count() >= 10 && await p.locator('.bolso .g').count() >= 15);
   confere('sem erro na página', erros.length === 0, erros);
   for (const e of ETAPAS){ await ir(p, '#' + e, 500); }

@@ -101,7 +101,7 @@ async function carregarTermosDoQuadro(){
   } catch (e) { /* sem a função: segue sem a coluna */ }
 }
 const TERMO_ICONE = { conferido: ['check', 'Termo conferido', 'ok'], enviado: ['doc', 'Termo enviado, a conferir', 'info'],
-  devolvido: ['x', 'Termo devolvido', 'err'], dados_confirmados: ['relogio', 'Termo pendente: dados confirmados', 'warn'], pendente: ['relogio', 'Termo pendente', 'warn'] };
+  devolvido: ['x', 'Termo devolvido', 'err'], pendente: ['relogio', 'Termo pendente', 'warn'] };
 function celulaTermo(m){
   const t = gestao.termo?.[m.registro];
   if (!t) return '<td class="termo-col"><span class="sr">Fora da campanha</span></td>';

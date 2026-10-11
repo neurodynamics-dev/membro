@@ -54,3 +54,21 @@ A sessão da conta do quiosque fica no navegador da TV. Por isso ela não lê
 tabela nenhuma (passo 3 da migração), mas ainda pode chamar as funções do banco
 liberadas a qualquer conta autenticada. Não use essa conta para mais nada, e
 troque a senha se a TV for trocada de lugar.
+
+# 2.19.1: recadastro e termo de sigilo do LABBIO
+
+1. **Aplicar** `db/2.19.1_recadastro.sql` e, depois, `db/2.19.1_termo.sql`.
+   Nada aparece para os membros até a campanha começar.
+2. **Publicar o HTML** (merge). O modelo do termo vai junto, em
+   `termos/termo_sigilo_labbio_3.pdf`, sem nenhuma alteração; o portal
+   confere o SHA-256 dele antes de gerar cada termo.
+3. **Começar o recadastro**: Administração › Recadastro, código `2026-2`,
+   marcar "Incluir o termo de sigilo do LABBIO". Todos os membros ativos
+   recebem o aviso; na entrada, o painel de quatro passos aparece (dados,
+   baixar, assinar no gov.br, enviar). Uma dispensa por pessoa; depois, o
+   SOMA leva ao recadastro até concluir. Férias e afastamento pausam.
+4. **Conferir os termos**: Administração › Termo de sigilo (abrir o PDF,
+   conferir ou devolver com motivo). A coluna do termo aparece também no
+   quadro de pessoal.
+5. Nos próximos semestres, o recadastro é só a conferência dos dados: não
+   marque o termo.
