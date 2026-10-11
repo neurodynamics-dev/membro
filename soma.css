@@ -1484,7 +1484,7 @@ th.ord[aria-sort="ascending"]::after{content:' ↑'} th.ord[aria-sort="descendin
 .fb-pop [role=option]{width:100%;text-align:left;white-space:nowrap}
 .fb-pop [role=option]:focus-visible{outline:2px solid var(--foco);outline-offset:-2px}
 :root[data-tema="claro"] .fb-pop [role=option][aria-selected="true"]::before{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
-#arq-fb{margin-bottom:14px}
+#arq-fb,.q-filtros{margin-bottom:14px}
 
 .arq-emis{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
 .arq-emi{border:1px solid var(--line);border-radius:14px;background:var(--card);padding:14px 16px;color:var(--ink);
@@ -3014,11 +3014,13 @@ button.termo-ic{cursor:pointer;border:1px solid transparent} button.termo-ic:hov
 }
 
 /* o card "Últimas publicações" do início (2.19.1, F1) */
-.feed-ini-i{display:flex;align-items:baseline;gap:8px;padding:8px 0;border-top:1px solid var(--line);text-decoration:none;color:inherit;min-width:0}
+/* 2.19.2: o título em até três linhas, e o tempo pequeno e apagado embaixo */
+.feed-ini-i{display:flex;flex-direction:column;gap:3px;padding:10px 0;border-top:1px solid var(--line);text-decoration:none;color:inherit;min-width:0}
 .feed-ini-i:first-of-type{border-top:0}
 .feed-ini-i:hover .tt{text-decoration:underline;text-underline-offset:3px}
-.feed-ini-i .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
-.feed-ini-i .dt{flex-shrink:0}
+.feed-ini-i .tt{font-size:15px;line-height:1.4;font-weight:500;overflow-wrap:anywhere;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.feed-ini-i .dt{font-size:11.5px;color:var(--dim)}
 .erro-campo{color:var(--bad-tx);margin-top:4px}
 
 /* o pedido de acesso biométrico (2.19.1, L6) */
@@ -3031,3 +3033,20 @@ button.termo-ic{cursor:pointer;border:1px solid transparent} button.termo-ic:hov
 .bio-lado{display:flex;flex-direction:column;gap:12px}
 .bio-trilha{list-style:none;margin:0;padding:0 0 0 14px;display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--line)}
 .bio-trilha li.atual{border-left:2px solid var(--syn);margin-left:-16px;padding-left:14px}
+
+/* 2.19.2: no trilho, a logo (o símbolo) leva ao Início e o botão de abrir o menu fica à parte, logo abaixo */
+@media (min-width:901px){
+  body.lt-recolhida .lt-topo{flex-direction:column;justify-content:flex-start;gap:6px;height:auto;padding:14px 0 8px}
+  body.lt-recolhida .lt-marca{display:flex;flex:none}
+  body.lt-recolhida .lt-marca .lt-imagotipo{display:none}
+  body.lt-recolhida .lt-recolher{width:32px;height:32px;border-radius:8px}
+  body.lt-recolhida .lt-recolher .lt-simbolo,
+  body.lt-recolhida .lt-recolher:hover .lt-simbolo,body.lt-recolhida .lt-recolher:focus-visible .lt-simbolo{display:none}
+  body.lt-recolhida .lt-recolher .ic.expande{display:block}
+}
+
+/* o trainee no organograma: o nome encolhe com reticências e o ponto fica sempre visível à direita */
+.org-card .nm-linha{display:flex;align-items:center;gap:7px;min-width:0}
+.org-card .nm-linha .nm{min-width:0}
+.ponto-trainee{flex:none;width:8px;height:8px;border-radius:50%;background:var(--plexo-medium);
+  box-shadow:0 0 0 3px rgba(255,185,211,.18),0 0 10px 1px var(--plexo-medium)} /* auditar: ok, o brilho do ponto é a cor Plexo médio */

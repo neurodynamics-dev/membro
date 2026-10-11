@@ -4,14 +4,14 @@
    NRO_MANAGERS), a newsletter sem votos e a importação da comunidade.
 
    Rotas:
-     #/equipe/feed                feed da equipe (reações nas notícias)
-     #/equipe/feed/<id>           o mesmo, com a publicação em foco
-     #/equipe/feed/editorial      a mesa editorial (só editor)
-     #/equipe/newsletter          próximas edições e as já criadas
+     #/servicos/feed                feed da equipe (reações nas notícias)
+     #/servicos/feed/<id>           o mesmo, com a publicação em foco
+     #/servicos/feed/editorial      a mesa editorial (só editor)
+     #/servicos/newsletter          próximas edições e as já criadas
 
    Depende da casca para: sb, $, esc, state, toast, falha, abreModal,
    fechaModal, confirma, fmtD, fmtDT, ic, md, cabecalho, estado,
-   layoutLeitura, abasEquipe, souAdmin, tenhoPapel, carregarLib.
+   layoutLeitura, souAdmin, tenhoPapel, carregarLib.
    ============================================================ */
 
 const feed = { lista:[], tipo:null, fim:false, ocupado:false, ed:{ itens:[], filtro:'pronto' }, edicao:null, vez:0 };
@@ -33,8 +33,8 @@ async function pageFeed(){
   if (x === 'editorial') return feedMesa();
   const vez = ++feed.vez;
   feed.lista = []; feed.fim = false;
-  const mesa = state.feedEditor ? '<a class="btn" href="#/equipe/feed/editorial">Mesa editorial</a>' : '';
-  $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Feed da equipe', secoes:abasEquipe('feed'), acoes:[mesa] })
+  const mesa = state.feedEditor ? '<a class="btn" href="#/servicos/feed/editorial">Mesa editorial</a>' : '';
+  $('#main').innerHTML = cabecalho({ espaco:'Serviços', titulo:'Feed da equipe', acoes:[mesa] })
     + `<div class="seg" role="group" aria-label="Tipo de publicação" style="margin-bottom:18px">${[[null, 'Tudo'], ['noticia', 'Notícias'], ['topico', 'Tópicos']].map(([k, l]) =>
       `<button type="button" data-t="${k || ''}" class="${feed.tipo === k ? 'on' : ''}" aria-pressed="${feed.tipo === k}" onclick="feedFiltro(${k ? `'${k}'` : 'null'})">${l}</button>`).join('')}</div>`
     + layoutLeitura('<div id="feed-lista"></div><button id="feed-mais" class="btn ghost" style="margin-top:28px;width:100%;justify-content:center" onclick="feedMais()" hidden>Carregar mais</button>');
@@ -138,15 +138,15 @@ async function feedSoEquipe(id){
 /* ---------------- a mesa editorial ---------------- */
 const FEED_FILTROS_MESA = [['pronto', 'Prontas'], ['publicando', 'Publicando'], ['publicado', 'Publicadas'], ['retirado', 'Retiradas'], [null, 'Todas']];
 async function feedMesa(){
-  if (!state.feedEditor){ history.replaceState(null, '', location.pathname + '#/equipe/feed'); return pageFeed(); }
-  const topo = cabecalho({ espaco:'Equipe', titulo:'Mesa editorial', secoes:abasEquipe('feed'),
-    acoes:['<a class="btn ghost" href="#/equipe/feed">← Feed</a>', '<button class="btn solid" type="button" onclick="feedEditar(null)">Nova publicação</button>'] });
+  if (!state.feedEditor){ history.replaceState(null, '', location.pathname + '#/servicos/feed'); return pageFeed(); }
+  const topo = cabecalho({ espaco:'Serviços', titulo:'Mesa editorial',
+    acoes:['<a class="btn ghost" href="#/servicos/feed">← Feed</a>', '<button class="btn solid" type="button" onclick="feedEditar(null)">Nova publicação</button>'] });
   $('#main').innerHTML = topo + `<div class="seg" role="group" aria-label="Situação" style="margin-bottom:14px">${FEED_FILTROS_MESA.map(([k, l]) =>
     `<button type="button" class="${feed.ed.filtro === k ? 'on' : ''}" aria-pressed="${feed.ed.filtro === k}" onclick="feed.ed.filtro=${k ? `'${k}'` : 'null'};feedMesa()">${l}</button>`).join('')}</div>
     <div id="feed-mesa">${estado.carregando('lista')}</div>`;
   try{
     const d = await feedRPC('feed_editorial', { p_estado:feed.ed.filtro });
-    if (d?.status !== 'ok'){ history.replaceState(null, '', location.pathname + '#/equipe/feed'); return pageFeed(); }
+    if (d?.status !== 'ok'){ history.replaceState(null, '', location.pathname + '#/servicos/feed'); return pageFeed(); }
     feed.ed.itens = d.itens || [];
     $('#feed-mesa').innerHTML = feed.ed.itens.length ? `<div class="card" style="padding:0"><div class="wrap"><table class="tabela trabalho" id="feed-mesa-tabela"><thead><tr>
       <th>Tipo</th><th>Publicação</th><th>Autoria</th><th>Origem</th><th>Situação</th><th>Atualizada</th><th></th></tr></thead><tbody>${feed.ed.itens.map(feedLinhaMesa).join('')}</tbody></table></div></div>`
@@ -320,7 +320,7 @@ async function feedPublicarExec(id){
 /* ---------------- newsletter ---------------- */
 async function pageNewsletter(){
   if (!(tenhoPapel('lideranca') || state.feedEditor)){ location.hash = '#/'; return; }
-  $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Newsletters', secoes:abasEquipe('newsletter') }) + '<div id="news-corpo">' + estado.carregando('lista') + '</div>';
+  $('#main').innerHTML = cabecalho({ espaco:'Serviços', titulo:'Newsletters' }) + '<div id="news-corpo">' + estado.carregando('lista') + '</div>';
   try{
     const [pend, lista] = await Promise.all([state.feedEditor ? feedRPC('newsletter_pendentes') : Promise.resolve(null), feedRPC('newsletter_lista')]);
     feed.pend = pend?.status === 'ok' ? pend : null; feed.news = Array.isArray(lista) ? lista : [];
@@ -381,6 +381,6 @@ async function feedComunidadeSalvar(){
 }
 function feedComunidadePagina(){
   $('#sec-emails').innerHTML = `<div class="card"><h2>Comunidade</h2><p>Familiares, professores associados e parceiros que recebem o boletim mensal.</p>
-    <div class="acts"><button class="btn solid" onclick="feedComunidade()">Importar planilha</button><a class="btn" href="#/equipe/newsletter">Newsletters</a></div>
+    <div class="acts"><button class="btn solid" onclick="feedComunidade()">Importar planilha</button><a class="btn" href="#/servicos/newsletter">Newsletters</a></div>
     ${dica('A planilha deve ter nome e e-mail. A importação não reativa quem se descadastrou. A comunidade recebe o boletim mensal com o que foi publicado no site; quem se inscreve pelo site confirma por e-mail.')}</div>`;
 }

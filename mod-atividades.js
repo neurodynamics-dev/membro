@@ -773,7 +773,7 @@ const ROTULO_DADOS = {
 };
 
 function blocoOrigem(a, o){
-  if(a.origem_tipo==='newsletter')return `<div class="card"><h3>Newsletter</h3><a class="btn" href="#/equipe/newsletter/${esc(a.origem_id)}">Revisar newsletter</a></div>`;
+  if(a.origem_tipo==='newsletter')return `<div class="card"><h3>Newsletter</h3><a class="btn" href="#/servicos/newsletter/${esc(a.origem_id)}">Revisar newsletter</a></div>`;
   if(a.origem_tipo==='reporte')return `<div class="card"><h3>Sinalização do reporte semanal</h3><p class="small muted">Acompanhe o caso neste cartão. Registre ocorrências na ficha do membro.</p></div>`;
   if (!a.origem_tipo) return '';
   if (!o) return `<div class="card" style="margin-bottom:16px"><h3>De onde veio</h3>

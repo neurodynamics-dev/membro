@@ -30,10 +30,11 @@ try{
     const t = await abrir('#/'), { p } = t;
     await p.waitForSelector('#card-feed .feed-ini-i');
     const txt = await p.locator('#card-feed').innerText();
+    /* 2.19.2: sem a marca de tópico ou notícia, com o tempo relativo */
     confere('o card tem as duas publicações, sem a pronta', await p.locator('#card-feed .feed-ini-i').count() === 2
-      && /notícia/i.test(txt) && /tópico/i.test(txt) && !txt.includes('Prêmio no congresso'), txt);
-    confere('o link vai para o feed', await p.locator('#card-feed a[href="#/equipe/feed"]').count() === 1);
-    await alvo(p, '#/equipe/feed'); await p.waitForSelector('#feed-lista .artigo');
+      && !/notícia|tópico/i.test(txt) && / atrás|ontem|agora/.test(txt) && !txt.includes('Prêmio no congresso'), txt);
+    confere('o link vai para o feed', await p.locator('#card-feed a[href="#/servicos/feed"]').count() === 1);
+    await alvo(p, '#/servicos/feed'); await p.waitForSelector('#feed-lista .artigo');
     confere('o feed: dois artigos', await p.locator('#feed-lista .artigo').count() === 2);
     const f1 = p.locator('#feed-f1');
     confere('f1 com legenda e etiqueta "No site"', (await f1.locator('figcaption').innerText()) === 'O protótipo na bancada' && /no site/i.test(await f1.innerText()));
@@ -53,17 +54,17 @@ try{
     await fechar(t);
   }
   {
-    const t = await abrir('#/equipe/feed/editorial', { papel:'leitura', feedOp:{ editor:false } }), { p } = t;
+    const t = await abrir('#/servicos/feed/editorial', { papel:'leitura', feedOp:{ editor:false } }), { p } = t;
     await p.waitForSelector('#feed-lista .artigo');
-    confere('sem ser editor, a mesa volta para o feed e não há link', (await p.evaluate(() => location.hash)) === '#/equipe/feed'
-      && await p.locator('a[href="#/equipe/feed/editorial"]').count() === 0);
-    confere('e sem a aba Newsletters', await p.locator('a[href="#/equipe/newsletter"]').count() === 0);
+    confere('sem ser editor, a mesa volta para o feed e não há link', (await p.evaluate(() => location.hash)) === '#/servicos/feed'
+      && await p.locator('a[href="#/servicos/feed/editorial"]').count() === 0);
+    confere('e sem a aba Newsletters', await p.locator('a[href="#/servicos/newsletter"]').count() === 0);
     await fechar(t);
   }
 
   console.log('Mesa editorial');
   {
-    const t = await abrir('#/equipe/feed/editorial'), { p } = t;
+    const t = await abrir('#/servicos/feed/editorial'), { p } = t;
     await p.waitForSelector('#feed-mesa-tabela');
     const f3 = p.locator('#feed-m-f3');
     confere('"Prontas": a contribuição do reporte', await p.locator('#feed-mesa-tabela tbody tr').count() === 1 && (await f3.innerText()).includes('Reporte'));
@@ -108,7 +109,7 @@ try{
   }
   {
     /* a cópia falha no meio: a publicação fica incompleta e dá para tentar de novo */
-    const t = await abrir('#/equipe/feed/editorial', { teste:{ downloadFalha:'f5/a.jpg' } }), { p } = t;
+    const t = await abrir('#/servicos/feed/editorial', { teste:{ downloadFalha:'f5/a.jpg' } }), { p } = t;
     await p.waitForSelector('#feed-mesa-tabela');
     await p.evaluate(() => { (window.__fd ||= { itens:[], inscritos:[], envios:[] }); });
     const id = await p.evaluate(async () => {
@@ -134,7 +135,7 @@ try{
 
   console.log('Retirar, tópico longo e newsletter');
   {
-    const t = await abrir('#/equipe/feed/editorial'), { p } = t;
+    const t = await abrir('#/servicos/feed/editorial'), { p } = t;
     await p.waitForSelector('#feed-mesa-tabela');
     await p.getByRole('button', { name:'Publicadas' }).click(); await p.waitForSelector('#feed-m-f1');
     await p.locator('#feed-m-f1').getByRole('button', { name:'Retirar' }).click();
@@ -151,7 +152,7 @@ try{
     await fechar(t);
   }
   {
-    const t = await abrir('#/equipe/newsletter'), { p } = t;
+    const t = await abrir('#/servicos/newsletter'), { p } = t;
     await p.waitForSelector('#news-enviar-semanal');
     confere('próximas edições para o editor', /equipe, semanal/i.test(await p.locator('#news-corpo').innerText()) && (await p.locator('#news-corpo').innerText()).includes('42 inscritos'));
     await p.click('#news-enviar-semanal');
@@ -166,7 +167,7 @@ try{
     await fechar(t);
   }
   {
-    const t = await abrir('#/equipe/newsletter', { papel:'lideranca', feedOp:{ editor:false } }), { p } = t;
+    const t = await abrir('#/servicos/newsletter', { papel:'lideranca', feedOp:{ editor:false } }), { p } = t;
     await p.waitForSelector('#news-tabela, .vazio');
     const corpo = await p.locator('#news-corpo').innerText();
     confere('liderança que não edita vê as edições, não as próximas', !/equipe, semanal/i.test(corpo) && /edições/i.test(corpo) && await p.locator('#news-enviar-semanal').count() === 0);

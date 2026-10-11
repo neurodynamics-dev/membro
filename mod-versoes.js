@@ -31,6 +31,24 @@
 /* A entrada mais nova fica em cima. "antes" é o número da numeração
    antiga; os itens são [tipo, texto em Markdown]. */
 const NOTAS_VERSAO = [
+  { v:'2.19.2', data:'2026-10-11', titulo:'Menu reorganizado, filtros novos e ajustes da tela inicial', itens:[
+    ['melhoria', '**Feed da equipe**, **Newsletters** e **Marca** passam para Serviços. Os endereços antigos do feed e das newsletters continuam funcionando.'],
+    ['melhoria', '**Equipe** sobe no menu, antes de OKRs.'],
+    ['melhoria', '**Menu lateral recolhido**: a logo volta a levar ao início, e abrir o menu é um botão à parte.'],
+    ['melhoria', '**Filtros** do Arquivo e do Quadro de pessoal na barra de filtros do design system: várias opções por grupo, os filtros ativos como etiquetas e o total de resultados.'],
+    ['melhoria', '**Últimas publicações** na tela inicial: título maior, em até três linhas, sem a marca de tópico ou notícia, e o tempo relativo ("5 min atrás", "2 semanas atrás").'],
+    ['melhoria', '**Organograma**: trainee aparece com um ponto Plexo ao lado do nome.'],
+    ['melhoria', '**Quadro de avisos** só em rodízio; o botão de grade saiu.'],
+    ['melhoria', '**Painel do LABBIO**: o admin do SOMA entra com a própria conta. A logo do LABBIO perde o fundo preto e, em telas pequenas, fica só a palavra "labbio".'],
+    ['correcao', 'O cartão **Acesso ao LABBIO** em Serviços tinha o ícone gigante.']
+  ]},
+  { v:'2.19.1', data:'2026-10-11', titulo:'Reporte por liderança, feed editorial, LABBIO e trainees', itens:[
+    ['novo', '**Reporte semanal** por liderança direta, com cobrança na sexta às 16h, painel da semana e PDF em tabelas.'],
+    ['novo', '**Feed editorial**: publicação por NRO_MANAGERS, notícias no site, reações e newsletter sem votos.'],
+    ['novo', '**LABBIO**: painel próprio para os gestores do laboratório, pedido de acesso biométrico, consulta das salas e tablets na porta.'],
+    ['novo', '**Trainees** no SOMA, com admissão em lote, e trilha de **onboarding**.'],
+    ['novo', '**Recadastro** semestral e termo de sigilo do LABBIO.']
+  ]},
   { v:'2.19.0', data:'2026-10-10', titulo:'Design system v3, quiosque com conta própria e quadro de avisos novo', itens:[
     ['novo', '**Design system v3** em todo o SOMA: um cabeçalho único em todas as telas (rótulo, título e voltar), templates de tela, estados de carregando, vazio e erro, e o catálogo em `#/dev/templates`.'],
     ['novo', '**Quiosque** com conta de serviço: o segredo deixa de ficar no código. Dois layouts (o padrão e `?layout=b`), widgets que giram, a chegada de quem faz check-in e a hora do dia.'],

@@ -29,7 +29,7 @@
 const gestao = {
   pronto: false, apont: null,
   tiposOcorrencia: [],
-  filtros: { q:'', status:'Ativo', dep:'', grupo:'', trainee:false },
+  filtros: { q:'', status:['Ativo'], dep:[], grupo:[], trainee:false },
   ficha: null,
   aud: []
 };
@@ -148,10 +148,11 @@ function renderQuadro(){
           <span class="n">${n}</span></div>`).join('')}</div>`
         : '<div class="empty">Nenhum membro ativo cadastrado.</div>'}
     </div>
-    ${filtrosHTML()}
+    <div class="q-filtros">${filtrosHTML()}</div>
     <div class="card" style="padding:8px 14px"><div id="tb-membros"></div></div>
     <div id="q-ocorr" style="margin-top:18px"></div>`;
 
+  fbDesenhar('q-fb');
   renderTabelaMembros();
   carregarPendencias();
   if (can()) carregarOcorrenciasRecentes();
@@ -166,31 +167,31 @@ function todosGrupos(){
 function membrosFiltrados(){
   const f = gestao.filtros, q = norm(f.q);
   return state.membros.filter(m =>
-    (!f.status || m.status === f.status) &&
-    (!f.dep || m.departamento === f.dep) &&
-    (!f.grupo || gruposEfetivos(m).has(f.grupo)) &&
+    (!f.status.length || f.status.includes(m.status)) &&
+    (!f.dep.length || f.dep.includes(m.departamento)) &&
+    (!f.grupo.length || f.grupo.some(g => gruposEfetivos(m).has(g))) &&
     (!f.trainee || ehTrainee(m)) &&
     (!q || norm(m.nome).includes(q) || norm(m.email_nro).includes(q)
         || norm(m.email_pessoal).includes(q) || String(m.registro).includes(q))
   ).sort((a,b) => a.registro - b.registro);
 }
+/* os filtros do quadro: a FilterBar do sistema de design, como no Arquivo (2.19.2) */
 function filtrosHTML(){
-  const f = gestao.filtros;
-  const sel = (id, label, opts, atual) => `<div class="fld"><label>${label}</label>
-    <select onchange="gestao.filtros.${id}=this.value;renderTabelaMembros()">
-      <option value="">Todos</option>${opts.map(o=>`<option ${atual===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
-  return `<div class="filtros">
-    <div class="fld cresce"><label>Buscar</label>
-      <input value="${esc(f.q)}" placeholder="Nome, e-mail ou registro"
-        oninput="gestao.filtros.q=this.value;renderTabelaMembros()"></div>
-    ${sel('status','Status', STATUS_LIST, f.status)}
-    ${sel('dep','Departamento', opcoesDe('departamento'), f.dep)}
-    ${sel('grupo','Grupo', todosGrupos(), f.grupo)}
-    <button type="button" class="chip${f.trainee ? ' on' : ''}" aria-pressed="${f.trainee}" id="q-f-trainee"
-      onclick="gestao.filtros.trainee=!gestao.filtros.trainee;this.classList.toggle('on',gestao.filtros.trainee);this.setAttribute('aria-pressed',gestao.filtros.trainee);renderTabelaMembros()">Trainees</button>
-    ${ibtn('x','Limpar filtros (volta ao padrão de ativos)',
-      "gestao.filtros={q:'',status:'Ativo',dep:'',grupo:'',trainee:false};renderQuadro()")}
-  </div>`;
+  const f = gestao.filtros, ops = l => l.map(o => [o, o]);
+  return filtroBarra({ id:'q-fb', aoMudar: quadroFiltroMudou,
+    antes: `<input id="q-busca" class="fb-busca" type="search" value="${esc(f.q)}" placeholder="Nome, e-mail ou registro"
+      aria-label="Buscar por nome, e-mail ou registro" oninput="gestao.filtros.q=this.value;renderTabelaMembros()">`,
+    grupos: [
+      { k:'status', rot:'Status', ops: ops(STATUS_LIST), sel: f.status },
+      { k:'dep', rot:'Departamento', ops: ops(opcoesDe('departamento')), sel: f.dep },
+      { k:'grupo', rot:'Grupo', ops: ops(todosGrupos()), sel: f.grupo },
+      { k:'trainee', rot:'Trainees', unico:true, ops: [['sim', 'Só trainees']], sel: f.trainee ? ['sim'] : [] },
+    ] });
+}
+function quadroFiltroMudou(k, vals){
+  if (k === 'trainee') gestao.filtros.trainee = vals[0] === 'sim';
+  else gestao.filtros[k] = vals;
+  renderTabelaMembros();
 }
 function renderTabelaMembros(){
   const ms = membrosFiltrados();
@@ -209,6 +210,8 @@ function renderTabelaMembros(){
         <td>${pill(m.status)}</td>${gestao.termo ? celulaTermo(m) : ''}</tr>`).join('')}</tbody></table></div>
     <div class="small muted" style="padding:10px 4px">${ms.length} de ${state.membros.length} registros</div>`
     : `<div class="empty">Nenhum membro corresponde aos filtros.</div>`;
+  const tot = document.querySelector('#q-fb .fb-total');
+  if (tot){ tot.hidden = false; tot.innerHTML = `<b>${ms.length}</b> ${ms.length === 1 ? 'resultado' : 'resultados'}`; }
 }
 
 async function carregarPendencias(){
