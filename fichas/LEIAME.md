@@ -14,4 +14,7 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | [L2](L2.md) casca `/labbio`, entrada, gestores e painel no SOMA | [S] | a fazer | `CONTRATO-LABBIO.md` |
 | L5 pedido de biometria | [O] | feita (`db/2.19.1_labbio_acesso.sql`) | `CONTRATO-LABBIO.md` |
 | T1 trainees | [O] | feita (`db/2.19.1_trainees.sql`) | `../PLANO-EXECUCAO-2.19.1.md` |
-| L3, L4, L6 a L10, T2, T3 | [O] e [S] | as fichas [S] saem depois de cada [O] | `../PLANO-EXECUCAO-2.19.1.md` |
+| L3 consultas e revogação pendente | [O] | feita (`db/2.19.1_labbio_dados.sql`) | `CONTRATO-LABBIO.md` |
+| [L4](L4.md) telas de consulta do /labbio | [S] | a fazer (depois da L2) | `CONTRATO-LABBIO.md` |
+| [L6](L6.md) pedido de biometria: membro, Pessoal e LABBIO | [S] | a fazer (depois da L4) | `CONTRATO-LABBIO.md` |
+| L7 a L10, T2, T3 | [O] e [S] | as fichas [S] saem depois de cada [O] | `../PLANO-EXECUCAO-2.19.1.md` |

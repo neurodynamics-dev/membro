@@ -18,7 +18,8 @@
     itens_de_acesso: [
       { id:'i1', nome:'LABBIO — porta principal', categoria:'local', ativo:true, ordem:1 },
       { id:'i2', nome:'Google Workspace', categoria:'sistema', ativo:true, ordem:2 },
-      { id:'i3', nome:'Termo de confidencialidade', categoria:'documento', ativo:true, ordem:3 }
+      { id:'i3', nome:'Termo de confidencialidade', categoria:'documento', ativo:true, ordem:3 },
+      { id:'i4', nome:'Acesso biométrico ao LABBIO', categoria:'local', ativo:true, ordem:4, chave:'labbio_biometria' },
     ],
     ocorrencias: [
       { id:'o1', registro:4, tipo:'Mudança de cargo', data:'2026-05-02',
@@ -955,6 +956,115 @@
                 Object.assign(g, { situacao:'revogado', principal:false, revogado_em:new Date().toISOString(), revogado_motivo:args.p_motivo || null });
                 return r({ status:'ok' });
               }
+            }
+          }
+          /* ---- 2.19.1: painel do LABBIO (consultas, L3) e pedido de biometria (L5).
+             As consultas pedem window.__teste.labbio.conta === 'ativo'. O pedido do
+             membro lê window.__teste.biometria = { etapa, temAcesso, semDados }
+             (sem ele: nenhum pedido). ---- */
+          if (/^labbio_(inicio|membros|membro|checkins|treinamentos|revogacoes|revogacao_confirmar|solicitacoes|pedido_ler|pedido_decidir|pedido_meu|pedido_criar|pedido_enviar|pedido_cancelar|pedido_pessoal)$/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const LB = (window.__teste || {}).labbio, BI = (window.__teste || {}).biometria || {};
+            const r = d => ({ data:d, error:null });
+            const gestor = LB && LB.conta === 'ativo';
+            const pessoa = (registro, nome, extra = {}) => ({ registro, nome, foto_url:null, email_nro: nome.split(' ')[0].toLowerCase() + '@neurodynamics.dev',
+              email_pessoal:null, telefone:'(31) 90000-0000', status:'Ativo', cargo:'Pesquisador(a)', area:'Órtese', trainee:false, gestor:4,
+              gestor_nome:'Ana Figueiredo', termo:{ situacao:'pendente', enviado_em:null, conferido_em:null, arquivo:null },
+              acesso:{ estado:'nao_possui', sub:null }, ...extra });
+            const PED = window.__lbP ||= {
+              id:'p1', registro:11, nome:'Bruno Tavares', protocolo:'SOL-0042', etapa: BI.etapa || 'labbio', versao:1, devolvido_por:null,
+              justificativa:'Projeto da órtese, bancada do LABBIO', tempo:'Até o fim do semestre', encaminhado_em:'2026-10-10T12:00:00Z',
+              criado_em:'2026-10-09T12:00:00Z', atualizado_em:'2026-10-10T12:00:00Z',
+              enviada:{ versao:1, dados:{ nome_civil:'Bruno Tavares da Silva', cpf:'52998224725', matricula:'2021012345', nome:'Bruno Tavares',
+                confirmado_em:'2026-10-01T12:00:00Z' }, foto_path:'11/p1/1.jpg', enviada_em:'2026-10-09T12:00:00Z' },
+              eventos:[{ versao:1, de:'rascunho', para:'pessoal', ator:'membro', ator_nome:'Bruno Tavares', motivo:null, quando:'2026-10-09T12:00:00Z' },
+                       { versao:1, de:'pessoal', para:'labbio', ator:'pessoal', ator_nome:'Carla Mendonça', motivo:null, quando:'2026-10-10T12:00:00Z' }] };
+            const REV = window.__lbR ||= [{ id:'rv1', registro:46, nome:'Lia Moura', status_de:'Ativo', status_para:'Desligado',
+              criada_em:'2026-10-08T12:00:00Z', confirmada_em:null, observacao:null, confirmada_por:null }];
+            const evento = (de, para, ator, motivo) => PED.eventos.push({ versao:PED.versao, de, para, ator, ator_nome: ator === 'labbio' ? 'Gestora Um' : 'Bruno Tavares', motivo: motivo || null, quando:new Date().toISOString() });
+            // o lado do membro
+            if (nome === 'labbio_pedido_meu') return r({ status:'ok', tem_acesso: !!BI.temAcesso,
+              dados: BI.semDados ? null : { nome_civil:'Ana Figueiredo', cpf:'52998224725', matricula:'2020000004', nome:'Ana Figueiredo', confirmado_em:'2026-10-01T12:00:00Z' },
+              campos:['nome_civil','cpf','matricula'], pedido: BI.etapa ? { ...structuredClone(PED), registro:4, nome:'Ana Figueiredo' } : null });
+            if (nome === 'labbio_pedido_criar'){
+              if (BI.temAcesso) return r({ status:'ja_tem_acesso' });
+              if (String(args.p_justificativa || '').trim().length < 10) return r({ status:'invalido', campo:'justificativa' });
+              if (!String(args.p_tempo || '').trim()) return r({ status:'invalido', campo:'tempo' });
+              Object.assign(PED, { etapa:'rascunho', versao:1, justificativa:args.p_justificativa, tempo:args.p_tempo, encaminhado_em:null, eventos:[] });
+              BI.etapa = 'rascunho';
+              return r({ status:'ok', pedido: structuredClone(PED) });
+            }
+            if (nome === 'labbio_pedido_enviar'){
+              if (args.p_versao !== PED.versao) return r({ status:'conflito' });
+              if (BI.semDados) return r({ status:'dados_pendentes' });
+              if (!args.p_foto_path || !(window.__uploads || []).some(u => u.bucket === 'biometria' && u.caminho === args.p_foto_path)) return r({ status:'foto_pendente' });
+              const para = PED.etapa === 'devolvido' && PED.devolvido_por === 'labbio' ? 'labbio' : 'pessoal';
+              evento(PED.etapa, para, 'membro'); PED.etapa = para; BI.etapa = para;
+              PED.enviada = { ...PED.enviada, versao:PED.versao, foto_path:args.p_foto_path, enviada_em:new Date().toISOString() };
+              return r({ status:'ok', pedido: structuredClone(PED) });
+            }
+            if (nome === 'labbio_pedido_cancelar'){ evento(PED.etapa, 'cancelado', 'membro'); PED.etapa = 'cancelado'; BI.etapa = 'cancelado'; return r({ status:'ok' }); }
+            if (nome === 'labbio_pedido_pessoal'){
+              if (!['admin','pessoal'].includes(DADOS.perfis[0].papel)) return r({ status:'sem_permissao' });
+              if (args.p_acao !== 'encaminhar' && !String(args.p_motivo || '').trim()) return r({ status:'motivo_obrigatorio' });
+              const para = { encaminhar:'labbio', negar:'negado_pessoal', devolver:'devolvido' }[args.p_acao];
+              evento('pessoal', para, 'pessoal', args.p_motivo); PED.etapa = para;
+              if (para === 'devolvido'){ PED.devolvido_por = 'pessoal'; PED.versao++; }
+              return r({ status:'ok', pedido: structuredClone(PED) });
+            }
+            if (nome === 'labbio_pedido_ler' && !gestor && ['admin','pessoal'].includes(DADOS.perfis[0].papel)) return r({ status:'ok', pedido: structuredClone(PED) });
+            // o lado do LABBIO
+            if (!gestor) return r({ status:'sem_permissao' });
+            if (nome === 'labbio_inicio') return r({ status:'ok', membros:12, com_acesso:7, pedidos_abertos: PED.etapa === 'labbio' ? 1 : 0,
+              revogacoes: REV.filter(x => !x.confirmada_em).map(({ id, registro, nome, status_para, criada_em }) => ({ id, registro, nome, status_para, criada_em })) });
+            const listaMembros = () => [pessoa(4, 'Ana Figueiredo', { acesso:{ estado:'possui', sub:null, desde:'2026-03-01' },
+                               termo:{ situacao:'conferido', enviado_em:'2026-10-05T12:00:00Z', conferido_em:'2026-10-06T12:00:00Z', arquivo:'labbio-2026/4/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.pdf' } }),
+                             pessoa(11, 'Bruno Tavares', { acesso:{ estado:'solicitado', sub: PED.etapa } }),
+                             pessoa(17, 'Carla Mendonça', { trainee:true, cargo:'Trainee' }),
+                             pessoa(46, 'Lia Moura', { status:'Desligado', acesso:{ estado:'possui', sub:'revogacao_pendente' } })]
+                .filter(x => x.registro !== 46 || REV.some(v => v.registro === 46 && !v.confirmada_em));
+            if (nome === 'labbio_membros'){
+              const q = String(args.p_busca || '').trim().toLowerCase();
+              return r({ status:'ok', membros: listaMembros().filter(x => !q || x.nome.toLowerCase().includes(q) || String(x.registro) === q) });
+            }
+            if (nome === 'labbio_membro'){
+              const m = listaMembros().find(x => x.registro === args.p_registro);
+              if (!m) return r({ status:'nao_encontrado' });
+              return r({ status:'ok', membro:m, liderados: args.p_registro === 4 ? [{ registro:11, nome:'Bruno Tavares' }, { registro:17, nome:'Carla Mendonça' }] : [],
+                pedidos: args.p_registro === 11 ? [structuredClone(PED)] : [], revogacoes: REV.filter(x => x.registro === args.p_registro) });
+            }
+            if (nome === 'labbio_checkins'){
+              if (!args.p_de || !args.p_ate || args.p_ate < args.p_de) return r({ status:'invalido' });
+              let itens = Array.from({ length:73 }, (_, i) => ({ registro: [4, 11, 17][i % 3], nome: ['Ana Figueiredo','Bruno Tavares','Carla Mendonça'][i % 3],
+                registrado_em: new Date(Date.parse('2026-10-10T12:00:00Z') - i * 36e5).toISOString(), origem: i % 5 === 0 ? 'folha' : 'quiosque' }));
+              if (args.p_registro) itens = itens.filter(x => x.registro === args.p_registro);
+              if (args.p_origem) itens = itens.filter(x => x.origem === args.p_origem);
+              const pag = args.p_pagina || 1;
+              return r({ status:'ok', pagina:pag, por_pagina:50, total:itens.length, itens: itens.slice((pag - 1) * 50, pag * 50) });
+            }
+            if (nome === 'labbio_treinamentos') return r({ status:'ok',
+              treinamentos:[{ id:'t1', codigo:'NRO-TRE-001', titulo:'Segurança na bancada', categoria:'Segurança', revisao:'B', validade_meses:12 },
+                            { id:'t2', codigo:'NRO-TRE-002', titulo:'Impressora 3D', categoria:'Máquinas', revisao:'A', validade_meses:null }],
+              pessoas:[{ registro:4, nome:'Ana Figueiredo', area:'Órtese', celulas:{ t1:{ situacao:'concluido', obrigatorio:true, concluido_em:'2026-03-01T12:00:00Z', revisao:'B', vence_em:'2027-03-01T12:00:00Z' },
+                                                                                    t2:{ situacao:'andamento', obrigatorio:false, concluido_em:null, revisao:null, vence_em:null } } },
+                       { registro:11, nome:'Bruno Tavares', area:'Sinais', celulas:{ t1:{ situacao:'vencido', obrigatorio:true, concluido_em:null, revisao:null, vence_em:null },
+                                                                                    t2:{ situacao:'pendente', obrigatorio:null, concluido_em:null, revisao:null, vence_em:null } } }] });
+            if (nome === 'labbio_revogacoes') return r({ status:'ok', revogacoes: REV.filter(x => args.p_abertas === false || !x.confirmada_em) });
+            if (nome === 'labbio_revogacao_confirmar'){ const v = REV.find(x => x.id === args.p_id); if (!v) return r({ status:'nao_encontrado' });
+              Object.assign(v, { confirmada_em:new Date().toISOString(), observacao:args.p_observacao || null, confirmada_por:'Gestora Um' }); return r({ status:'ok' }); }
+            if (nome === 'labbio_solicitacoes'){
+              const sit = args.p_situacao || 'abertos', aberto = PED.etapa === 'labbio', visto = !!PED.encaminhado_em;
+              return r({ status:'ok', pedidos: visto && (sit === 'todos' || (sit === 'abertos') === aberto) ? [structuredClone(PED)] : [] });
+            }
+            if (nome === 'labbio_pedido_ler') return r(PED.encaminhado_em ? { status:'ok', pedido: structuredClone(PED) } : { status:'sem_permissao' });
+            if (nome === 'labbio_pedido_decidir'){
+              if (PED.etapa !== 'labbio') return r({ status:'encerrado' });
+              if (args.p_versao !== PED.versao) return r({ status:'conflito' });
+              if (args.p_acao !== 'implantado' && !String(args.p_motivo || '').trim()) return r({ status:'motivo_obrigatorio' });
+              const para = { implantado:'concedido', negar:'negado_labbio', devolver:'devolvido' }[args.p_acao];
+              evento('labbio', para, 'labbio', args.p_motivo); PED.etapa = para;
+              if (para === 'devolvido'){ PED.devolvido_por = 'labbio'; PED.versao++; }
+              return r({ status:'ok', pedido: structuredClone(PED) });
             }
           }
           /* ---- 2.19.1: reporte por liderança direta (db/2.19.1_reporte.sql).
