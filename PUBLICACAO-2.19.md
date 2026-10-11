@@ -130,4 +130,4 @@ troque a senha se a TV for trocada de lugar.
 # Ordem das migrações da 2.19.1
 
 `2.19.1_labbio_base` → `2.19.1_recadastro` → `2.19.1_termo` →
-`2.19.1_labbio_acesso` → `2.19.1_reporte` → `2.19.1_trainees`.
+`2.19.1_labbio_acesso` → `2.19.1_reporte` → `2.19.1_trainees` → `2.19.1_labbio_dados`.

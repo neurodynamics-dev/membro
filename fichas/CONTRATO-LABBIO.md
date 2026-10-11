@@ -78,3 +78,34 @@ Lado do **LABBIO** (`/labbio`):
 ```
 
 A foto se abre com `sb.storage.from('biometria').createSignedUrl(foto_path, 120)`.
+
+## Consultas do painel (L3)
+
+Todas exigem gestor ativo; senão `{ status: 'sem_permissao' }`.
+
+| RPC | Devolve |
+|---|---|
+| `labbio_inicio()` | `{ status, membros, com_acesso, pedidos_abertos, revogacoes: [{ id, registro, nome, status_para, criada_em }] }` |
+| `labbio_membros(p_busca default null)` | `{ status, membros: [pessoa] }` (ativos e quem tem revogação pendente; busca por nome ou registro) |
+| `labbio_membro(p_registro)` | `{ status, membro: pessoa, liderados: [{ registro, nome }], pedidos: [pedido], revogacoes: [...] }`; `nao_encontrado` |
+| `labbio_checkins(p_de, p_ate, p_registro?, p_origem? 'quiosque'\|'folha', p_pagina default 1)` | `{ status, pagina, por_pagina: 50, total, itens: [{ registro, nome, registrado_em, origem }] }`; `invalido` se o período é invertido ou passa de 366 dias |
+| `labbio_treinamentos()` | `{ status, treinamentos: [{ id, codigo, titulo, categoria, revisao, validade_meses }], pessoas: [{ registro, nome, area, celulas: { <treinamento id>: { situacao, obrigatorio, concluido_em, revisao, vence_em } } }] }` |
+| `labbio_revogacoes(p_abertas default true)` | `{ status, revogacoes: [{ id, registro, nome, status_de, status_para, criada_em, confirmada_em, observacao, confirmada_por }] }` |
+| `labbio_revogacao_confirmar(p_id, p_observacao?)` | `{ status }` (tira o acesso da ficha) |
+
+`pessoa`:
+```json
+{ "registro": 11, "nome": "Bruno Tavares", "foto_url": null, "email_nro": "...", "email_pessoal": "...",
+  "telefone": "...", "status": "Ativo", "cargo": "...", "area": "...", "trainee": false,
+  "gestor": 4, "gestor_nome": "Ana Figueiredo",
+  "termo": { "situacao": "sem_campanha|pendente|enviado|conferido|devolvido", "enviado_em": null, "conferido_em": null,
+             "arquivo": "labbio-2026/11/<uuid>.pdf (só se enviado ou conferido)" },
+  "acesso": { "estado": "possui|solicitado|nao_possui", "sub": "revogacao_pendente|pessoal|labbio|devolvido|null", "desde": "2026-10-11" } }
+```
+
+- Situação do treinamento (`treinamento_situacao`): `concluido`, `andamento`,
+  `pendente`, `nova_revisao`, `vencido` ou `null` (não publicado).
+  `obrigatorio`: `true`, `false` (opcional) ou `null` (não atribuído).
+- O termo assinado abre com `sb.storage.from('termos').createSignedUrl(arquivo, 120)`
+  (em nova guia).
+- Revogação pendente nunca notifica ninguém: só aparece no início do painel.

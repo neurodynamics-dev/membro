@@ -174,7 +174,7 @@ Ordem obrigatória: L1 (identidade, segurança) antes de qualquer tela.
   treinamentos, agenda, gestores.
 - Admin no SOMA: painel `labbio` em PAINEIS (lista, convidar, revogar, estrela).
 
-### L3 [O] Migração `db/2.19.1_labbio_dados.sql` (consultas)
+### L3 [O] Migração `db/2.19.1_labbio_dados.sql` (consultas) (feita: 25 asserções)
 
 - `labbio_membros(p_busca, p_filtros)`: só os campos de D5; termo
   (`termo_situacao`) e acesso (`acessos_concedidos` do item LABBIO).
