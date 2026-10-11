@@ -1221,7 +1221,7 @@ function acoesDaCasca(){
     ['Presença e check-in', 'Quem está no LABBIO, ranking e sequência', '#/equipe/presenca'],
     ['Atividades', 'O quadro do seu grupo', '#/atividades'],
     ['Equipe', 'Organograma e fichas', '#/equipe'],
-    ...(tenhoPapel('lideranca') ? [['Reporte semanal', 'Reporte da frente', '#/equipe/reporte']] : []),
+    ...(tenhoPapel('lideranca') ? [['Reporte semanal', 'Seu reporte da semana', '#/servicos/reporte']] : []),
     ['Feed da equipe', 'Publicações da equipe', '#/equipe/feed'],
     ['Serviços', 'Pedidos ao Depto. de Pessoal', '#/servicos'],
     ['Solicitar acesso', 'Documento, sistema ou local', '#/servicos/acesso'],
@@ -1736,7 +1736,7 @@ function arvoreDoMenu(){
       /* a ficha (#/equipe/<registro>) se abre a partir do quadro */
       ...(podeQuadro() ? [{ sub:'quadro', rot:'Quadro de pessoal', tambem:'^\\d+$' }] : []),
       { sub:'presenca', rot:'Presença' },
-      ...(tenhoPapel('lideranca') ? [{ sub:'reporte', rot:'Reporte semanal', tambem:'^apontamento$' }, {sub:'newsletter',rot:'Newsletters'}] : []),
+      ...(tenhoPapel('lideranca') ? [{sub:'newsletter',rot:'Newsletters'}] : []),
       { sub:'feed', rot:'Feed da equipe' }] },
     /* os treinamentos: o que os seus grupos pedem é a primeira tela, e a
        página de um treinamento (#/treinamentos/NRO-TRE-003) acende ela */
@@ -1753,6 +1753,7 @@ function arvoreDoMenu(){
     { r:'servicos', rot:'Serviços', ic:'servicos', filhos: [
       { sub:'', rot:'Todos os serviços' },
       { sub:'pedidos', rot:'Meus pedidos' },
+      ...(tenhoPapel('lideranca') ? [{ sub:'reporte', rot:'Reporte semanal' }] : []),
       { rotulo:'Documentos e acessos' },
       { sub:'declaracao', rot:'Declaração de vínculo' },
       { sub:'eventos', rot:'Eventos e participações' },
@@ -3638,8 +3639,9 @@ async function pageEquipe(sub){
   if(sub==='newsletter'){if(!tenhoPapel('lideranca')){location.hash='#/';return;}await carregarModulo('reporte');return pageNewsletter();}
   if(sub==='feed'){await carregarModulo('reporte');return pageFeed();}
   if(sub==='reporte'||sub==='apontamento'){
-    if(!tenhoPapel('lideranca')){location.hash='#/';return;}
-    await carregarModulo('reporte');return pageReporte();
+    const resto = location.hash.split('/').slice(3).join('/');
+    history.replaceState(null, '', location.pathname + '#/servicos/reporte' + (resto ? '/' + resto : ''));
+    return render(route());
   }
   /* a presença no LABBIO (o check-in, o ranking, o status do dia e a
      folha de check-in) mora em mod-presenca desde a revisão 28 */
@@ -3665,12 +3667,12 @@ async function pageEquipe(sub){
   pageOrganizacao();
 }
 /* As seções de Equipe: o mesmo SectionNav em todas as telas do espaço.
-   O reporte é de quem lidera um grupo, não papel de gestão. */
+   Newsletters são de quem lidera um grupo, não papel de gestão. */
 function abasEquipe(atual){
   const abas = [['', 'Organograma']];
   if (podeQuadro()) abas.push(['quadro', 'Quadro de pessoal']);
   abas.push(['presenca', 'Presença'], ['feed','Feed da equipe']);
-  if(tenhoPapel('lideranca')) abas.push(['reporte','Reporte semanal'], ['newsletter','Newsletters']);
+  if(tenhoPapel('lideranca')) abas.push(['newsletter','Newsletters']);
   return navNivel1(abas.map(([s, l]) => [s, l, '#/equipe' + (s ? '/' + s : '')]), atual, 'Equipe');
 }
 
@@ -3752,6 +3754,7 @@ const IC_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
    (mod-cofre, v27) moram em módulos: descem na primeira visita, como
    qualquer outro espaço. */
 const SERVICOS_MODULO = {
+  reporte:    ['reporte',    'pageReporte'],
   declaracao: ['documentos', 'pageDeclaracao'],
   eventos:    ['documentos', 'pageEventosExt'],
   cofre:      ['cofre',      'pageCofre'],
