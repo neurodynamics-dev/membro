@@ -15,6 +15,8 @@ try{
   let report={id:'r1',frente_id:'f1',versao:1,etapa:1,apontamentos:[{registro:17,assiduidade:'SUFICIENTE',entregas:'SUFICIENTE'}],escalonamentos:[]};
   let feed=[];window.repStub=async(n,p)=>{
    const ok=data=>({data,error:null});
+   /* R3: este teste preserva o fluxo por frente, anterior à ativação por liderança. */
+   if(n==='reporte_meu')return ok({status:'modelo_anterior',ciclo});
    if(n==='newsletter_lista')return ok([]);
    if(n==='reporte_painel')return ok({status:'ok',ciclo,frentes:[frente],config:{dia_prazo:4,hora_prazo:'18:00',dia_reuniao:0,hora_reuniao:'09:00'}});
    if(n==='reporte_abrir')return ok({status:'ok',reporte:structuredClone(report),ciclo,grupo:{nome:'Órtese'},feed:structuredClone(feed)});
@@ -40,7 +42,7 @@ try{
   ['#/equipe/reporte','#/servicos/reporte','Reporte semanal'],
   ['#/equipe/reporte/config','#/servicos/reporte/config','Configurar ciclo'],
   ['#/equipe/apontamento','#/servicos/reporte','Reporte semanal'],
-  ['#/equipe/reporte/f1/2','#/servicos/reporte/f1/2','Órtese']
+  ['#/equipe/reporte/f1/2','#/servicos/reporte/frente/f1/2','Órtese']
  ]){
   await p.goto('http://localhost:8765/'+antiga);
   await p.waitForFunction(hash=>location.hash===hash,nova);
@@ -53,7 +55,7 @@ try{
  await p.getByRole('link',{name:'Preencher',exact:true}).click();
  /* F: tem endereço, etapas (não SectionNav) e o voltar */
  await p.getByRole('heading',{name:'Órtese'}).waitFor();
- assert.match(await p.evaluate(()=>location.hash),/#\/servicos\/reporte\/f1\/1$/);checks++;
+ assert.match(await p.evaluate(()=>location.hash),/#\/servicos\/reporte\/frente\/f1\/1$/);checks++;
  assert.equal(await p.locator('#main .etapas li').count(),4);checks++;
  assert.equal(await p.locator('#main .nav1').count(),0);checks++;
  assert.ok(await p.locator('#main .cab-voltar').count());checks++;
