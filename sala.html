@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-tema="claro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Sala | LABBIO</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ds/tokens.css">
+<link rel="stylesheet" href="ds/neuro.css">
+<link rel="stylesheet" href="sala.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script defer src="vendor/qrcode-generator-1.4.4.js"></script>
+<script defer src="sala.js"></script>
+</head>
+<body class="sala">
+<main class="sala-pagina">
+  <header class="sala-topo"><span class="sala-marca"><img src="studio/labbio.png" alt="LABBIO" height="28"></span><time id="sala-relogio" aria-label="Hora atual"></time></header>
+  <h1 id="sala-nome">Sala</h1>
+  <p id="sala-offline" class="aviso-box warn" role="alert" hidden></p>
+  <section id="sala-estado" class="sala-estado" aria-live="polite" aria-atomic="true">
+    <div class="sala-situacao"><svg id="sala-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><h2 id="sala-status">Consultando</h2></div>
+    <p id="sala-evento" class="sala-titulo" hidden></p>
+    <p id="sala-ate" class="sala-ate" hidden></p>
+    <p id="sala-mensagem" role="status" hidden></p>
+    <div id="sala-acoes" class="sala-acoes" hidden>
+      <button class="btn solid" id="sala-15" type="button">Ocupar por 15 min</button>
+      <button class="btn ghost" id="sala-30" type="button">Ocupar por 30 min</button>
+      <button class="btn ghost" id="sala-liberar" type="button" hidden>Liberar</button>
+    </div>
+  </section>
+  <footer id="sala-proxima" class="sala-proxima" hidden>
+    <div class="sala-reserva"><h3>Próxima reserva</h3><p id="sala-proximo-titulo"></p><p id="sala-proximo-horario" class="mono"></p></div>
+    <div id="sala-detalhes" class="sala-detalhes" hidden><div id="sala-qr" role="img" aria-label="QR para abrir os detalhes da reserva no portal"></div><span>Ver detalhes<br>no portal</span></div>
+  </footer>
+</main>
+</body>
+</html>
