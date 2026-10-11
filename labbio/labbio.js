@@ -753,7 +753,7 @@ function labAgDesenhar(){
   const cab=dia!==e.data?`<h2 class="sub-h lb-ag-dia">${esc(new Date(e.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'}))}</h2>`:'';dia=e.data;
   return cab+`<article class="lb-ag-evento" data-evento="${esc(e.id)}"><p class="mono lb-ag-hora">${esc(e.hora_inicio||'Dia inteiro')}${e.hora_fim?' às '+esc(e.hora_fim):''}</p>
    <div class="lb-ag-descricao"><h3>${esc(e.titulo)}</h3><p>${esc(e.espaco)}. Organização: ${esc(e.organizador||'Não informada')}</p>${convidados?`<p>Convidados: ${esc(convidados)}</p>`:''}
-   ${sit?`<div class="lb-ag-consulta"><span class="pill ${sit[1]}">${sit[0]}</span>${c.situacao==='conflito'?`<span>${esc(c.motivo)}</span>`:''}
+   ${sit?`<div class="lb-ag-consulta"><span class="pill ${sit[1]}"><span class="dt"></span>${sit[0]}</span>${c.situacao==='conflito'?`<span>${esc(c.motivo)}</span>`:''}
     ${c.situacao==='pendente'?`<button class="btn ghost mini" onclick="labAgDecidir('${esc(c.id)}',true)">Disponível</button><button class="btn ghost mini" onclick="labAgConflito('${esc(c.id)}')">Conflito</button>`:''}</div>`:''}
    ${(e.sobreposicoes||[]).map(o=>`<div class="aviso-box warn">Cruza com ${esc(o.titulo)} (${esc(o.hora_inicio)}–${esc(o.hora_fim)}).</div>`).join('')}</div></article>`;
  }).join(''):estado.vazio('Nenhum evento nesta semana para este espaço.');
@@ -775,7 +775,7 @@ async function labAgDecidir(id,disponivel,motivo){
 }
 function labAgTablets(){
  const ds=lab.agenda.dispositivos;
- $('#lb-ag-tablets').innerHTML=ds.length?`<div class="lb-wrap"><table class="lb-tabela tabela trabalho"><thead><tr><th>Rótulo</th><th>Sala</th><th>Situação</th><th>Último contato</th><th><span class="sr">Ações</span></th></tr></thead><tbody>${ds.map(d=>`<tr data-tablet="${esc(d.id)}"><td>${esc(d.rotulo)}</td><td>${esc(d.espaco)}</td><td><span class="pill ${d.ativo?'p-ok':''}">${d.ativo?'Ativo':'Revogado'}</span></td><td>${esc(fmtDT(d.ultimo_contato))}</td><td>${d.ativo?`<button class="btn ghost mini" onclick="labAgRevogar('${esc(d.id)}')" aria-label="Revogar ${esc(d.rotulo)}">Revogar</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:estado.vazio('Nenhum tablet cadastrado.');
+ $('#lb-ag-tablets').innerHTML=ds.length?`<div class="lb-wrap"><table class="lb-tabela tabela trabalho"><thead><tr><th>Rótulo</th><th>Sala</th><th>Situação</th><th>Último contato</th><th><span class="sr">Ações</span></th></tr></thead><tbody>${ds.map(d=>`<tr data-tablet="${esc(d.id)}"><td>${esc(d.rotulo)}</td><td>${esc(d.espaco)}</td><td>${pillSit(d.ativo?'ativo':'revogado')}</td><td>${esc(fmtDT(d.ultimo_contato))}</td><td>${d.ativo?`<button class="btn ghost mini" onclick="labAgRevogar('${esc(d.id)}')" aria-label="Revogar ${esc(d.rotulo)}">Revogar</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:estado.vazio('Nenhum tablet cadastrado.');
 }
 function labAgNovoTablet(){
  // labbio_agenda já limita os espaços aos que pertencem ao LABBIO.

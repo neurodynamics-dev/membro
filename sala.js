@@ -54,11 +54,13 @@
  let fechaOpcoes;
  function abrirOpcoes(){
   if(st.invalido||!st.dados)return;
-  $('sala-opcoes').hidden=false;$('sala-veu').hidden=false;$('sala-opcoes-bt').setAttribute('aria-expanded','true');
+  $('sala-opcoes').hidden=false;$('sala-veu').hidden=false;
+  requestAnimationFrame(()=>{$('sala-opcoes').classList.add('open');$('sala-veu').classList.add('open');});$('sala-opcoes-bt').setAttribute('aria-expanded','true');
   $('sala-opcoes-fechar').focus();clearTimeout(fechaOpcoes);fechaOpcoes=setTimeout(fecharOpcoes,60000);
  }
  function fecharOpcoes(){
   clearTimeout(fechaOpcoes);if($('sala-opcoes').hidden)return;
+  $('sala-opcoes').classList.remove('open');$('sala-veu').classList.remove('open');
   $('sala-opcoes').hidden=true;$('sala-veu').hidden=true;$('sala-opcoes-bt').setAttribute('aria-expanded','false');
  }
  async function consultar(nome='sala_estado',args={}){

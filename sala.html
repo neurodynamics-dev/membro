@@ -17,7 +17,7 @@
 <script defer src="vendor/qrcode-generator-1.4.4.js"></script>
 <script defer src="sala.js"></script>
 </head>
-<body class="sala">
+<body class="sala labbio">
 <main class="sala-pagina">
   <header class="sala-topo"><span class="sala-marca"><img src="studio/labbio.png" alt="LABBIO" height="28"></span><time id="sala-relogio" aria-label="Hora atual"></time></header>
   <h1 id="sala-nome">Sala</h1>
@@ -34,15 +34,15 @@
     </div>
   </section>
   <footer id="sala-proxima" class="sala-proxima" hidden>
-    <div class="sala-reserva"><h3>Próxima reserva</h3><p id="sala-proximo-titulo"></p><p id="sala-proximo-horario" class="mono"></p></div>
+    <div class="sala-reserva"><h3 class="eyebrow">Próxima reserva</h3><p id="sala-proximo-titulo"></p><p id="sala-proximo-horario" class="mono"></p></div>
     <button id="sala-opcoes-bt" class="btn ghost sala-opcoes-bt" type="button" aria-haspopup="dialog" aria-controls="sala-opcoes" hidden>Opções</button>
   </footer>
-  <div id="sala-veu" class="sala-veu" hidden></div>
-  <section id="sala-opcoes" class="sala-opcoes" role="dialog" aria-modal="true" aria-labelledby="sala-opcoes-tit" hidden>
+  <div id="sala-veu" class="veu" hidden></div>
+  <section id="sala-opcoes" class="dlg sala-opcoes" role="dialog" aria-modal="true" aria-labelledby="sala-opcoes-tit" hidden>
     <h3 id="sala-opcoes-tit">Opções</h3>
     <div id="sala-detalhes" class="sala-detalhes" hidden><div id="sala-qr" role="img" aria-label="QR para abrir os detalhes da reserva no portal"></div>
       <p>Aponte a câmera do celular para ver os detalhes da reserva no portal.</p></div>
-    <div class="sala-opcoes-acoes"><button class="btn ghost" id="sala-atualizar" type="button">Atualizar agora</button>
+    <div class="acts"><button class="btn ghost" id="sala-atualizar" type="button">Atualizar agora</button>
       <button class="btn solid" id="sala-opcoes-fechar" type="button">Fechar</button></div>
   </section>
 </main>
