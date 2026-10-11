@@ -147,7 +147,7 @@ As consultas do LABBIO (25 asserções), depois do pedido de biometria e dos tra
 
 ```sh
 bash testes/preparar-base.sh teste t2191d 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
-     2.19.1_labbio_acesso.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
+     2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
      2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql
 ```
 

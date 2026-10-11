@@ -246,7 +246,7 @@ returns jsonb language sql stable security definer set search_path = public as $
 
 -- convidar (admin do SOMA ou gestor ativo). O token só existe no e-mail.
 create or replace function public.labbio_convidar(p_email text, p_nome text)
-returns jsonb language plpgsql volatile security definer set search_path = public, extensions as $$
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
 declare v_email text := lower(btrim(coalesce(p_email, ''))); g labbio_gestores; v_token text; v_uid uuid; v_eu uuid := labbio_eu_id();
         v_existe boolean;
 begin
@@ -273,9 +273,9 @@ begin
     values (v_email, btrim(p_nome), v_uid, portal_registro_atual(), v_eu) returning * into g;
   end if;
   update labbio_convites set anulado_em = now() where gestor_id = g.id and usado_em is null and anulado_em is null;
-  v_token := encode(gen_random_bytes(24), 'hex');
+  v_token := left(replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''), 48);
   insert into labbio_convites (token_hash, gestor_id, expira_em)
-  values (encode(digest(v_token, 'sha256'), 'hex'), g.id, now() + interval '7 days');
+  values (encode(sha256(convert_to(v_token, 'UTF8')), 'hex'), g.id, now() + interval '7 days');
   insert into labbio_envios (tipo, para_email, para_nome, assunto, dados)
   values ('convite', v_email, g.nome, 'Convite para o painel do LABBIO',
           jsonb_build_object('caminho', '/labbio/#/aceitar?c=' || v_token, 'expira_em', now() + interval '7 days',
@@ -287,11 +287,11 @@ end $$;
 
 -- aceitar: a conta logada, com o mesmo e-mail do convite
 create or replace function public.labbio_aceitar(p_token text)
-returns jsonb language plpgsql volatile security definer set search_path = public, extensions as $$
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
 declare c labbio_convites; g labbio_gestores;
 begin
   if auth.uid() is null then return jsonb_build_object('status', 'sem_sessao'); end if;
-  select * into c from labbio_convites where token_hash = encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') for update;
+  select * into c from labbio_convites where token_hash = encode(sha256(convert_to(coalesce(p_token, ''), 'UTF8')), 'hex') for update;
   if not found or c.anulado_em is not null then return jsonb_build_object('status', 'invalido'); end if;
   if c.usado_em is not null then return jsonb_build_object('status', 'usado'); end if;
   if c.expira_em < now() then return jsonb_build_object('status', 'expirado'); end if;
