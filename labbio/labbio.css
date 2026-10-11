@@ -151,3 +151,20 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 .lb-trilha{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--line);padding-left:14px}
 .lb-trilha li.atual{border-left:2px solid var(--syn);margin-left:-16px;padding-left:14px}
 .lb-trilha li.atual b{color:var(--syn-tx)}
+
+/* Agenda das salas (L8): consultas consultivas, separadas dos tablets. */
+.lb-ag-periodo{font-size:13px;color:var(--muted);margin:0 0 10px}
+#lb-ag-filtros .seg{display:inline-flex;flex-wrap:wrap;max-width:100%;margin-bottom:16px}
+.lb-ag-dia{margin:20px 0 10px;font-size:15px;text-transform:capitalize}
+.lb-ag-evento{display:grid;grid-template-columns:125px minmax(0,1fr);gap:18px;padding:18px 0;border-bottom:1px solid var(--line)}
+.lb-ag-hora{font-size:13px;color:var(--muted);margin:3px 0 0}
+.lb-ag-descricao{min-width:0;overflow-wrap:anywhere}
+.lb-ag-descricao h3{font-size:17px;margin:0 0 6px}
+.lb-ag-descricao p{font-size:13px;color:var(--muted);margin:4px 0}
+.lb-ag-consulta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.lb-ag-descricao .aviso-box{margin:10px 0 0;font-size:13px}
+.lb-ag-tablets{margin-top:36px}
+.lb-ag-tablets .cab-linha{justify-content:space-between;margin-bottom:16px}
+.lb-ag-tablets h2{font-size:20px}
+.lb-ag-tablets .lb-wrap{overflow-x:auto}
+@media(max-width:600px){.lb-ag-evento{grid-template-columns:minmax(0,1fr);gap:6px}.lb-ag-tablets .cab-linha{align-items:flex-start}}

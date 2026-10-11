@@ -631,6 +631,7 @@ async function agEventoPagina(id){
   agenda.ev.convOrig = JSON.stringify([...agenda.ev.conv].map(([r, v]) => [r, v.opcional]).sort());
   agenda.ev.extOrig = JSON.stringify(agenda.ev.ext.map(x => x.email).sort());
   agEventoDesenhar();
+  agConsultaLabbioCarregar(agenda.ev);
 }
 
 function agEventoDesenhar(){
@@ -668,6 +669,7 @@ function agEventoDesenhar(){
           ${(agenda.espacos || []).length ? `<select id="ev-esp" onchange="agenda.ev.f.espaco_id=this.value;document.getElementById('ev-local').hidden=!!this.value" aria-label="Sala">
             <option value="">Outro local</option>${agenda.espacos.map(e => `<option value="${e.id}" ${String(f.espaco_id) === String(e.id) ? 'selected' : ''}>${esc(e.nome)}</option>`).join('')}</select>` : ''}
           <input id="ev-local" placeholder="Local" value="${esc(f.local)}" ${f.espaco_id ? 'hidden' : ''} oninput="agenda.ev.f.local=this.value" aria-label="Local"></div></div>
+        <div id="ag-labbio-consulta">${agConsultaLabbioHTML(ev)}</div>
         <div class="evp-lin">${ic('video')}<input id="ev-meet" type="url" placeholder="Link da chamada (Meet)" value="${esc(f.meet_url)}" oninput="agenda.ev.f.meet_url=this.value" aria-label="Link da chamada">
           <a class="btn ghost mini" href="https://meet.google.com/new" target="_blank" rel="noopener">Criar no Meet</a></div>
         <div class="evp-lin top">${ic('sino')}<div class="evp-lemb" id="ev-lemb">${agLembretesHTML()}</div></div>
@@ -710,6 +712,7 @@ function agEventoLeitura(volta){
     <div class="evp-cols"><div class="evp-det">
       <div class="evp-lin">${ic('relogio')}<span>${esc(quando)}${f.recorrencia !== 'Única' ? `<span class="evp-sub">${esc(AG_REPETE.find(r => r[0] === f.recorrencia)?.[1] || f.recorrencia)}</span>` : ''}</span></div>
       ${esp || f.local ? `<div class="evp-lin">${ic('local')}<span>${esc(esp || f.local)}</span></div>` : ''}
+      <div id="ag-labbio-consulta">${agConsultaLabbioHTML(ev)}</div>
       ${f.meet_url ? `<div class="evp-lin">${ic('video')}<a class="btn solid mini" href="${esc(f.meet_url)}" target="_blank" rel="noopener">Entrar na chamada</a>
         <span class="evp-sub">${esc(f.meet_url.replace(/^https?:\/\//, ''))}</span></div>` : ''}
       ${f.lembretes.length ? `<div class="evp-lin">${ic('sino')}<span>${f.lembretes.map(agRotuloLembrete).join(', ')}</span></div>` : ''}
@@ -1226,4 +1229,23 @@ async function agAbrirAta(){
  const {data,error}=await sb.rpc('evento_ata_abrir',{p_evento:agenda.ev.id});
  if(error||data?.status!=='ok')return toast(motivoRPC(data,error,'Não foi possível abrir a ata'),true);
  location.hash='#/arquivos/'+data.codigo+'/escrever';
+}
+
+/* L8: a consulta é consultiva; o portal recebe só os horários sobrepostos. */
+async function agConsultaLabbioCarregar(ev){
+ if(ev.novo||!ev.f.espaco_id)return;
+ try{
+  const {data,error}=await sb.rpc('labbio_consulta_do_evento',{p_evento:ev.id});
+  if(agenda.ev!==ev||!document.getElementById('ag-labbio-consulta'))return;
+  if(error||data?.status!=='ok')return;
+  ev.consultaLabbio=data;
+  document.getElementById('ag-labbio-consulta').innerHTML=agConsultaLabbioHTML(ev);
+ }catch(_){} // A indisponibilidade da consulta não impede abrir o evento.
+}
+function agConsultaLabbioHTML(ev){
+ const d=ev.consultaLabbio,c=d?.consulta;if(!c)return '';
+ const aviso=c.situacao==='conflito'?`<div class="aviso-box warn">O LABBIO apontou conflito: ${esc(c.motivo)}. O evento continua marcado; ajuste se precisar.</div>`
+  :c.situacao==='pendente'?'<p class="evp-sub">LABBIO: consulta enviada, sem resposta. O evento vale assim mesmo.</p>'
+  :c.situacao==='disponivel'?'<p class="evp-sub">LABBIO: disponível.</p>':'';
+ return aviso+(d.sobreposicoes||[]).map(o=>`<p class="evp-sub">Outro evento usa este espaço das ${esc(o.hora_inicio)} às ${esc(o.hora_fim)}.</p>`).join('');
 }

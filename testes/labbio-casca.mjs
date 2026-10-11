@@ -53,9 +53,11 @@ try{
       const bg = getComputedStyle(b).backgroundColor; const ref = document.createElement('i'); ref.style.color = 'var(--retina-primary)'; document.body.appendChild(ref);
       return [bg, getComputedStyle(ref).color]; });
     confere('o botão sólido usa a cor Retina', cor[0] === cor[1], cor);
-    await p.evaluate(() => { location.hash = '#/agenda'; });   // a L8 preenche
-    await p.waitForFunction(() => document.querySelector('#lb-main').innerText.includes('Em breve'));
-    confere('as telas das próximas fichas dizem "Em breve."', true);
+    // L8 substitui o placeholder pela agenda consultiva e pelos tablets das salas.
+    await p.evaluate(() => { location.hash = '#/agenda'; });
+    await p.waitForSelector('#lb-ag-eventos [data-evento]');
+    confere('a agenda mostra eventos e a seção de tablets', await p.locator('#lb-ag-eventos [data-evento]').count() === 3
+      && await p.locator('#lb-ag-tablets-titulo').innerText() === 'Tablets das salas');
 
     console.log('Gestores');
     await p.evaluate(() => { location.hash = '#/gestores'; });

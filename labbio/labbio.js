@@ -42,9 +42,10 @@ const cabecalho = ({ titulo, lead, acoes }) => `<header class="cab"><span class=
 const marcas = () => `<span class="lb-marcas"><img class="lb-logo" src="../studio/labbio.png" alt="LABBIO"><span class="lb-sep" aria-hidden="true"></span>
   <img class="lb-nro lb-nro-escuro" src="../studio/nro-imagotipo-branco.png" alt="NeuroDynamics"><img class="lb-nro lb-nro-claro" src="../studio/nro-imagotipo.png" alt="NeuroDynamics"></span>`;
 
-function abreModal(html){ $('#lb-modal').innerHTML = html; $('#lb-modal').hidden = false; $('#lb-veu').hidden = false;
+function abreModal(html, persistente = false){
+  $('#lb-modal').dataset.persistente = persistente ? '1' : ''; $('#lb-modal').innerHTML = html; $('#lb-modal').hidden = false; $('#lb-veu').hidden = false;
   $('#lb-modal').querySelector('input,textarea,button')?.focus(); }
-function fechaModal(){ $('#lb-modal').hidden = true; $('#lb-veu').hidden = true; $('#lb-modal').innerHTML = ''; }
+function fechaModal(){ $('#lb-modal').dataset.persistente = ''; $('#lb-modal').hidden = true; $('#lb-veu').hidden = true; $('#lb-modal').innerHTML = ''; }
 function confirma(texto, rotulo){
   return new Promise(res => {
     abreModal(`<h3>Confirmar</h3><p>${esc(texto)}</p><div class="acts">
@@ -53,8 +54,8 @@ function confirma(texto, rotulo){
     $('#cf-sim').onclick = () => { fechaModal(); res(true); };
   });
 }
-$('#lb-veu').addEventListener('click', fechaModal);
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#lb-modal').hidden) fechaModal(); });
+$('#lb-veu').addEventListener('click', () => { if ($('#lb-modal').dataset.persistente !== '1') fechaModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#lb-modal').hidden && $('#lb-modal').dataset.persistente !== '1') fechaModal(); });
 
 /* ---------------- a rota ---------------- */
 function rota(){
@@ -221,7 +222,7 @@ function desenhar(){
   const r = rota(), sec = NAV.some(([k]) => k === r.sec) ? r.sec : '';
   $('#lb-nav').innerHTML = NAV.map(([k, l]) => `<a href="#/${k}"${k === sec ? ' aria-current="page"' : ''}>${esc(l)}</a>`).join('');
   $('#lb-topo').classList.remove('aberto'); $('#lb-menu-bt').setAttribute('aria-expanded', 'false');
-  ({ '':pgInicio, gestores:pgGestores, membros:pgMembros, checkins:pgCheckins, treinamentos:pgTreinamentos, solicitacoes:pgSolicitacoes }[sec] || pgEmBreve)(sec, r.sub);
+  ({ '':pgInicio, gestores:pgGestores, membros:pgMembros, checkins:pgCheckins, treinamentos:pgTreinamentos, solicitacoes:pgSolicitacoes, agenda:pgAgenda }[sec] || pgEmBreve)(sec, r.sub);
 }
 function pgEmBreve(sec){
   const rot = (NAV.find(([k]) => k === sec) || [, 'Painel'])[1];
@@ -705,3 +706,107 @@ window.addEventListener('hashchange', () => {
 });
 sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' && lab.eu){ lab.eu = null; setTimeout(telaLogin, 0); } });
 iniciar();
+
+/* ---------------- agenda das salas e tablets (L8) ---------------- */
+const labAgDia = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const labAgData = s => new Date(s+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+function labAgSegunda(s){const d=new Date(s+'T12:00:00');d.setDate(d.getDate()-(d.getDay()+6)%7);return labAgDia(d);}
+function labAgSomar(s,n){const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return labAgDia(d);}
+async function pgAgenda(){
+ lab.agenda ||= {de:labAgSegunda(labAgDia(new Date())),espaco:'',dados:null,dispositivos:[],versao:0};
+ const a=lab.agenda;
+ $('#lb-main').innerHTML=cabecalho({titulo:'Agenda',lead:'A consulta é consultiva: sem resposta, o evento continua marcado. A agenda do SOMA não mostra toda a ocupação do LABBIO.'})
+  +`<div class="lb-ferr"><button class="btn ghost" onclick="labAgSemana(-7)">Semana anterior</button><div class="fld"><label for="lb-ag-dia">Ir para a semana de</label><input id="lb-ag-dia" type="date" value="${esc(a.de)}" onchange="labAgEscolherDia(this.value)"></div><button class="btn ghost" onclick="labAgSemana(7)">Próxima semana</button><p class="lb-ag-periodo" id="lb-ag-periodo"></p></div>
+   <div id="lb-ag-filtros"></div><div id="lb-ag-eventos">${estado.carregando()}</div>
+   <section class="lb-ag-tablets" aria-labelledby="lb-ag-tablets-titulo"><div class="cab-linha"><h2 id="lb-ag-tablets-titulo">Tablets das salas</h2><button class="btn solid" id="lb-ag-cadastrar" onclick="labAgNovoTablet()" disabled>Cadastrar tablet</button></div><div id="lb-ag-tablets">${estado.carregando()}</div></section>`;
+ await labAgCarregar();
+}
+function labAgSemana(n){lab.agenda.de=labAgSomar(lab.agenda.de,n);labAgCarregar();}
+function labAgEscolherDia(s){if(/^\d{4}-\d{2}-\d{2}$/.test(s)){lab.agenda.de=labAgSegunda(s);labAgCarregar();}}
+async function labAgCarregar(){
+ const a=lab.agenda,versao=++a.versao;
+ $('#lb-ag-dia').value=a.de;$('#lb-ag-periodo').textContent=labAgData(a.de)+' a '+labAgData(labAgSomar(a.de,6));
+ $('#lb-ag-eventos').innerHTML=estado.carregando();$('#lb-ag-cadastrar').disabled=true;
+ try{
+  const [d,t]=await Promise.all([rpc('labbio_agenda',{p_de:a.de,p_ate:labAgSomar(a.de,6)}),rpc('labbio_dispositivos')]);
+  if(versao!==a.versao||rota().sec!=='agenda'||!lab.eu)return;
+  if(d?.status!=='ok'||t?.status!=='ok')throw new Error('indisponivel');
+  a.dados=d;a.dispositivos=t.dispositivos||[];
+  if(a.espaco&&!d.espacos.some(s=>String(s.id)===a.espaco))a.espaco='';
+  $('#lb-ag-cadastrar').disabled=!d.espacos.length;
+  labAgDesenhar();labAgTablets();
+ }catch(e){
+  if(versao!==a.versao||rota().sec!=='agenda'||e.message==='sem_acesso')return;
+  $('#lb-ag-eventos').innerHTML=estado.erro('Não foi possível carregar a agenda.', '<button class="btn ghost mini" onclick="labAgCarregar()">Tentar de novo</button>');
+  $('#lb-ag-tablets').innerHTML=estado.erro('Não foi possível carregar os tablets.');
+ }
+}
+function labAgFiltrar(id){lab.agenda.espaco=String(id);labAgDesenhar();}
+function labAgDesenhar(){
+ const a=lab.agenda;
+ $('#lb-ag-filtros').innerHTML=`<div class="seg" role="group" aria-label="Filtrar por espaço">${[{id:'',nome:'Todos'},...a.dados.espacos].map(s=>`<button class="${a.espaco===String(s.id)?'on':''}" aria-pressed="${a.espaco===String(s.id)}" onclick="labAgFiltrar('${esc(s.id)}')">${esc(s.nome)}</button>`).join('')}</div>`;
+ const eventos=a.dados.eventos.filter(e=>!a.espaco||String(e.espaco_id)===a.espaco).sort((x,y)=>(x.data+(x.hora_inicio||'')).localeCompare(y.data+(y.hora_inicio||'')));
+ let dia='';
+ $('#lb-ag-eventos').innerHTML=eventos.length?eventos.map(e=>{
+  const c=e.consulta,sit={pendente:['Sem resposta',''],disponivel:['Disponível','p-ok'],conflito:['Conflito','p-bad']}[c?.situacao];
+  const nomes=e.convidados||[],convidados=nomes.slice(0,3).join(', ')+(nomes.length>3?' e mais '+(nomes.length-3):'');
+  const cab=dia!==e.data?`<h2 class="sub-h lb-ag-dia">${esc(new Date(e.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'}))}</h2>`:'';dia=e.data;
+  return cab+`<article class="lb-ag-evento" data-evento="${esc(e.id)}"><p class="mono lb-ag-hora">${esc(e.hora_inicio||'Dia inteiro')}${e.hora_fim?' às '+esc(e.hora_fim):''}</p>
+   <div class="lb-ag-descricao"><h3>${esc(e.titulo)}</h3><p>${esc(e.espaco)}. Organização: ${esc(e.organizador||'Não informada')}</p>${convidados?`<p>Convidados: ${esc(convidados)}</p>`:''}
+   ${sit?`<div class="lb-ag-consulta"><span class="pill ${sit[1]}">${sit[0]}</span>${c.situacao==='conflito'?`<span>${esc(c.motivo)}</span>`:''}
+    ${c.situacao==='pendente'?`<button class="btn ghost mini" onclick="labAgDecidir('${esc(c.id)}',true)">Disponível</button><button class="btn ghost mini" onclick="labAgConflito('${esc(c.id)}')">Conflito</button>`:''}</div>`:''}
+   ${(e.sobreposicoes||[]).map(o=>`<div class="aviso-box warn">Cruza com ${esc(o.titulo)} (${esc(o.hora_inicio)}–${esc(o.hora_fim)}).</div>`).join('')}</div></article>`;
+ }).join(''):estado.vazio('Nenhum evento nesta semana para este espaço.');
+}
+function labAgConflito(id){
+ abreModal(`<h3>Apontar conflito</h3><form id="lb-ag-conflito" novalidate><div class="fld"><label for="lb-ag-motivo">Motivo do conflito</label><textarea id="lb-ag-motivo" rows="3" required></textarea></div><p id="lb-ag-motivo-erro" class="lb-msg ruim" role="alert"></p><div class="acts"><button class="btn ghost" type="button" onclick="fechaModal()">Cancelar</button><button class="btn solid" type="submit">Apontar conflito</button></div></form>`);
+ $('#lb-ag-conflito').onsubmit=ev=>{ev.preventDefault();const motivo=$('#lb-ag-motivo').value.trim();if(!motivo){$('#lb-ag-motivo-erro').textContent='Informe o motivo do conflito.';$('#lb-ag-motivo').focus();return;}labAgDecidir(id,false,motivo);};
+}
+async function labAgDecidir(id,disponivel,motivo){
+ if(lab.agenda.mutando)return;lab.agenda.mutando=true;
+ const botoes=[...document.querySelectorAll('#lb-ag-eventos button, #lb-modal button')];botoes.forEach(b=>b.disabled=true);
+ try{
+  const d=await rpc('labbio_consulta_decidir',{p_id:id,p_disponivel:disponivel,...(!disponivel?{p_motivo:motivo}:{})});
+  if(!['ok','invalidada'].includes(d?.status))throw new Error('indisponivel');
+  fechaModal();toast(d.status==='invalidada'?'O evento mudou; recarregue.':'Consulta registrada.');
+  if(rota().sec==='agenda')await labAgCarregar();
+ }catch(e){if(e.message!=='sem_acesso')toast('Não foi possível registrar a consulta. Tente de novo.',true);}
+ finally{lab.agenda.mutando=false;botoes.forEach(b=>b.disabled=false);}
+}
+function labAgTablets(){
+ const ds=lab.agenda.dispositivos;
+ $('#lb-ag-tablets').innerHTML=ds.length?`<div class="lb-wrap"><table class="lb-tabela tabela trabalho"><thead><tr><th>Rótulo</th><th>Sala</th><th>Situação</th><th>Último contato</th><th><span class="sr">Ações</span></th></tr></thead><tbody>${ds.map(d=>`<tr data-tablet="${esc(d.id)}"><td>${esc(d.rotulo)}</td><td>${esc(d.espaco)}</td><td><span class="pill ${d.ativo?'p-ok':''}">${d.ativo?'Ativo':'Revogado'}</span></td><td>${esc(fmtDT(d.ultimo_contato))}</td><td>${d.ativo?`<button class="btn ghost mini" onclick="labAgRevogar('${esc(d.id)}')" aria-label="Revogar ${esc(d.rotulo)}">Revogar</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:estado.vazio('Nenhum tablet cadastrado.');
+}
+function labAgNovoTablet(){
+ // labbio_agenda já limita os espaços aos que pertencem ao LABBIO.
+ const espacos=lab.agenda.dados?.espacos||[];if(!espacos.length)return;
+ abreModal(`<h3>Cadastrar tablet</h3><form id="lb-ag-tablet-form" novalidate><div class="fld"><label for="lb-ag-sala">Sala</label><select id="lb-ag-sala">${espacos.map(s=>`<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join('')}</select></div><div class="fld"><label for="lb-ag-rotulo">Rótulo</label><input id="lb-ag-rotulo" required maxlength="120"></div><p class="lb-msg ruim" id="lb-ag-tablet-erro" role="alert"></p><div class="acts"><button class="btn ghost" type="button" onclick="fechaModal()">Cancelar</button><button class="btn solid" type="submit">Cadastrar tablet</button></div></form>`);
+ $('#lb-ag-tablet-form').onsubmit=labAgCadastrar;
+}
+async function labAgCadastrar(ev){
+ ev.preventDefault();if(lab.agenda.mutando)return;
+ const rotulo=$('#lb-ag-rotulo').value.trim(),espaco=Number($('#lb-ag-sala').value),erro=$('#lb-ag-tablet-erro');
+ if(!rotulo){erro.textContent='Informe um rótulo para o tablet.';$('#lb-ag-rotulo').focus();return;}
+ lab.agenda.mutando=true;const form=ev.target;for(const b of form.querySelectorAll('button'))b.disabled=true;
+ try{
+  const d=await rpc('labbio_dispositivo_criar',{p_espaco:espaco,p_rotulo:rotulo});
+  if(d?.status!=='ok')throw new Error('indisponivel');
+  const endereco=new URL(d.endereco,location.origin+'/');
+  if(endereco.origin!==location.origin||endereco.pathname!=='/sala.html')throw new Error('endereco_invalido');
+  abreModal(`<h3>Abrir no tablet</h3><p>Este endereço só aparece agora. Abra no tablet e salve como favorito; quem tiver o endereço controla o tablet.</p><div class="fld"><label for="lb-ag-endereco">Endereço do tablet</label><input id="lb-ag-endereco" readonly value="${esc(endereco.href)}"></div><div class="acts"><button class="btn ghost" onclick="fechaModal()">Fechar</button><button class="btn solid" onclick="labAgCopiarEndereco()">Copiar</button></div>`,true);
+  if(rota().sec==='agenda')await labAgCarregar();
+ }catch(e){if(e.message!=='sem_acesso'){if(erro.isConnected)erro.textContent='Não foi possível cadastrar o tablet. Tente de novo.';else toast('Não foi possível carregar o endereço do tablet.',true);}}
+ finally{lab.agenda.mutando=false;for(const b of form.querySelectorAll('button'))b.disabled=false;}
+}
+async function labAgCopiarEndereco(){
+ const input=$('#lb-ag-endereco');if(!input)return;
+ try{await navigator.clipboard.writeText(input.value);toast('Endereço copiado.');}
+ catch(_){input.focus();input.select();toast('Selecione e copie o endereço.',true);}
+}
+async function labAgRevogar(id){
+ if(lab.agenda.mutando||!await confirma('Revogar este tablet? Ele deixará de consultar e controlar a sala.','Revogar'))return;
+ if(lab.agenda.mutando)return;lab.agenda.mutando=true;
+ try{const d=await rpc('labbio_dispositivo_revogar',{p_id:id});if(d?.status!=='ok')throw new Error('indisponivel');toast('Tablet revogado.');if(rota().sec==='agenda')await labAgCarregar();}
+ catch(e){if(e.message!=='sem_acesso')toast('Não foi possível revogar o tablet. Tente de novo.',true);}
+ finally{lab.agenda.mutando=false;}
+}
