@@ -85,3 +85,22 @@ troque a senha se a TV for trocada de lugar.
    na próxima segunda (`reporte_config.modelo_lider_desde`).
 3. **Publicar o HTML** só depois das fichas R2 a R5: até lá, a tela é a do
    modelo por frente e não enxerga o reporte novo.
+
+# 2.19.1: gestores do LABBIO
+
+1. **Confira** se o papel `authenticator` já tem um `pgrst.db_pre_request`:
+   `select setconfig from pg_db_role_setting s join pg_roles r on r.oid = s.setrole where r.rolname = 'authenticator';`
+   Se tiver outro, a migração para e avisa (as duas funções precisam ser juntadas).
+2. **Aplicar** `db/2.19.1_labbio_base.sql` (depois da `2.19.0_quiosque.sql`).
+   Ela liga a porta da API e manda o PostgREST recarregar a configuração.
+3. **Publicar de novo** a Edge Function `notificar-email` (ela passa a mandar
+   os convites do LABBIO).
+4. **Conferir**: logado como membro, o portal funciona como antes. Uma conta
+   de gestor (depois do convite) não lê nada do portal: qualquer chamada fora
+   de `labbio_*` volta "Esta conta é do painel do LABBIO".
+5. O primeiro gestor é convidado pelo admin, no SOMA (Administração ›
+   LABBIO, ficha L2) ou, até a tela existir, pelo SQL Editor não: o convite
+   precisa de um admin logado. Espere a tela.
+
+**Plano de volta**: `alter role authenticator reset pgrst.db_pre_request; notify pgrst, 'reload config';`
+(as contas de gestor continuam sem ler tabelas, pela `conta_ativa()`).

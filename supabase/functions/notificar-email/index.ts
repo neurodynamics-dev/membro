@@ -608,6 +608,72 @@ async function enviarDocumentos(): Promise<Record<string, unknown>> {
 }
 
 /* ------------------------------------------------------------
+   O PAINEL DO LABBIO (2.19.1)
+   O convite de um gestor do LABBIO, que não é membro e não tem conta
+   no portal da equipe. O link leva ao /labbio, onde a pessoa cria a
+   conta com este e-mail e aceita. O banco tira o link da fila depois do
+   envio. A fila é labbio_envios.
+   ------------------------------------------------------------ */
+export interface EnvioLabbio {
+  id: number;
+  tipo: "convite" | string;
+  para_email: string;
+  para_nome: string;
+  assunto: string;
+  dados: { caminho?: string; expira_em?: string; convidado_por?: string | null };
+}
+
+export function labbioHTML(e: EnvioLabbio): string {
+  const d = e.dados || {};
+  const url = linkDe(d.caminho || "/labbio/");
+  const miolo = titulo(`Olá, ${esc(primeiroNome(e.para_nome))}.`) + esp(14) + texto(
+    `${d.convidado_por ? esc(d.convidado_por) + " convidou você" : "Você foi convidado"} para o
+    <b style="font-weight:500">painel do LABBIO</b>, onde a gestão do laboratório acompanha os membros da NeuroDynamics,
+    os termos de sigilo, os pedidos de acesso, os check-ins e os treinamentos.`) + esp(24) +
+    botao(url, "Aceitar o convite") + esp(14) +
+    texto(`Crie a sua conta com este mesmo e-mail (${esc(e.para_email)}). O convite vale até ${esc(dataExtensa(d.expira_em) || "7 dias")}.`, "#2E3533", 14);
+  return moldura({
+    assunto: e.assunto, categoria: "LABBIO", miolo,
+    rodape: "Se você não esperava este convite, ignore este e-mail: sem aceitar, nada acontece.",
+  });
+}
+
+export function labbioTexto(e: EnvioLabbio): string {
+  const d = e.dados || {};
+  return `Olá, ${primeiroNome(e.para_nome)}.\n\n`
+    + `${d.convidado_por ? d.convidado_por + " convidou você" : "Você foi convidado"} para o painel do LABBIO.\n\n`
+    + `Aceitar o convite: ${linkDe(d.caminho || "/labbio/")}\n\n`
+    + `Crie a sua conta com este mesmo e-mail (${e.para_email}). O convite vale até ${dataExtensa(d.expira_em) || "7 dias"}.\n`
+    + `\nSe você não esperava este convite, ignore este e-mail.\n\n—\nNeuroDynamics PD&I\n`;
+}
+
+/** Manda os e-mails do LABBIO e dá baixa. Sem a migração, diz isso e segue. */
+async function enviarLabbio(): Promise<Record<string, unknown>> {
+  let lote: EnvioLabbio[];
+  try {
+    lote = (await rpc("labbio_envios_lote", { p_limite: LOTE })) as EnvioLabbio[];
+  } catch (e) {
+    return /PGRST202|404|labbio_envios_lote/.test(String(e))
+      ? { labbio: "sem_migracao_2191" } : { labbio: "erro", labbio_detalhe: String(e) };
+  }
+  if (!lote?.length) return { labbio: 0 };
+  const enviados: number[] = [], falhas: number[] = [];
+  let erro = "";
+  for (const e of lote) {
+    try {
+      const m = await enviarUm(e.para_email, e.para_nome, e.assunto, labbioHTML(e), labbioTexto(e));
+      if (m) { falhas.push(e.id); erro = m; } else { enviados.push(e.id); }
+    } catch (x) { falhas.push(e.id); erro = String(x); }
+  }
+  try {
+    await rpc("labbio_envios_baixa", { p: { enviados, falhas, erro } });
+  } catch (x) {
+    return { labbio: enviados.length, labbio_falhas: falhas.length, labbio_detalhe: "enviou, mas não deu baixa: " + String(x) };
+  }
+  return { labbio: enviados.length, labbio_falhas: falhas.length, ...(erro ? { labbio_detalhe: erro } : {}) };
+}
+
+/* ------------------------------------------------------------
    AS ENTREVISTAS DO PROCESSO SELETIVO (31.0)
    Ao candidato: a reserva (com o link da chamada), o reagendamento
    feito pela equipe, a troca do link e o cancelamento do horário. Ao
@@ -1252,7 +1318,7 @@ async function passada(): Promise<[Record<string, unknown>, number]> {
   /* as declarações e a agenda primeiro: saem mesmo que o sino não
      tenha aviso nenhum para ninguém, e o lembrete tem hora */
   const docs = { ...push, ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()),
-                 ...(await enviarPS()), ...(await enviarNewsletters()) };
+                 ...(await enviarPS()), ...(await enviarNewsletters()), ...(await enviarLabbio()) };
 
   let destinos: Destinatario[];
   try {

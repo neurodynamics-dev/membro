@@ -140,7 +140,7 @@ a gravação na ficha. `membros.gestor_registro` já existe (usado em
 
 Ordem obrigatória: L1 (identidade, segurança) antes de qualquer tela.
 
-### L1 [O] Migração `db/2.19.1_labbio_base.sql`
+### L1 [O] Migração `db/2.19.1_labbio_base.sql` (feita: 52 asserções; a defesa tem também a porta da API, `api_pre_request`)
 
 - `labbio_gestores(user_id uuid pk references auth.users, nome, email,
   situacao 'convidado'|'ativo'|'revogado', principal bool, convidado_por,
