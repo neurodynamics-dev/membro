@@ -268,7 +268,7 @@ motivo, confirmar implantação.
 - Equipe › Quadro de pessoal: filtro "trainees" e por área de interesse;
   chip "Trainee" consistente (ficha, organograma, busca).
 
-### T3 [O+S] Onboarding com progresso no servidor
+### T3 [O+S] Onboarding com progresso no servidor ([O] feita: `db/2.19.1_onboarding.sql`, 15 asserções)
 
 - [O] `onboarding_trilhas(versao, etapas jsonb)`, `onboarding_progresso
   (registro, versao, etapa, concluida_em)`; etapas obrigatórias leem o fato
