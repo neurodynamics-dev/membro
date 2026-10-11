@@ -31,7 +31,7 @@ begin
   perform ok(public.labbio_membros()->>'status' = 'sem_permissao' and public.labbio_inicio()->>'status' = 'sem_permissao'
              and public.labbio_checkins(current_date, current_date)->>'status' = 'sem_permissao', 'membro não consulta o painel');
   perform eu(4, 'admin');
-  perform ok(public.labbio_treinamentos()->>'status' = 'sem_permissao', 'nem o admin do SOMA (ele tem o portal)');
+  perform ok(public.labbio_treinamentos()->>'status' = 'ok', 'o admin do SOMA consulta o painel com a conta de membro (2.19.1_labbio_admin)');
   perform set_config('teste.uid', gest::text, false);
 
   raise notice 'Membros';

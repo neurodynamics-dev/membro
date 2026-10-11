@@ -327,6 +327,7 @@ declare p labbio_pedidos; g labbio_gestores; v_item uuid := labbio_item_biometri
 begin
   if not conta_labbio() then return jsonb_build_object('status', 'sem_permissao'); end if;
   select * into g from labbio_gestores where user_id = auth.uid();
+  g.nome := coalesce(g.nome, labbio_ator_nome());  -- o admin do SOMA não tem linha de gestor
   select * into p from labbio_pedidos where id = p_id for update;
   if not found or p.encaminhado_em is null then return jsonb_build_object('status', 'nao_encontrado'); end if;
   if p.etapa <> 'labbio' then return jsonb_build_object('status', 'encerrado'); end if;

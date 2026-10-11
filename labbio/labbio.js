@@ -65,13 +65,15 @@ function rota(){
   return { sec, sub, q:new URLSearchParams(q) };
 }
 
+/* 'admin': o admin do SOMA, com a própria conta de membro (não é gestor nem conta externa) */
+const PODE_ENTRAR = ['ok', 'admin'];
 /* toda chamada passa por aqui: sem_permissao no meio do uso pode ser revogação */
 async function rpc(nome, args){
   const { data, error } = await sb.rpc(nome, args || {});
   if (error) throw error;
   if (data?.status === 'sem_permissao' && nome !== 'labbio_eu'){
     const eu = await sb.rpc('labbio_eu').then(r => r.data, () => null);
-    if (eu?.status !== 'ok'){ telaAcesso(eu?.status || 'revogado'); throw new Error('sem_acesso'); }
+    if (!PODE_ENTRAR.includes(eu?.status)){ telaAcesso(eu?.status || 'revogado'); throw new Error('sem_acesso'); }
   }
   return data;
 }
@@ -93,10 +95,12 @@ async function iniciar(){
 async function carregarEu(){
   let eu = null;
   try { eu = (await sb.rpc('labbio_eu')).data; } catch(_){ eu = null; }
-  if (eu?.status !== 'ok') return telaAcesso(eu?.status || 'erro');
+  if (!PODE_ENTRAR.includes(eu?.status)) return telaAcesso(eu?.status || 'erro');
   lab.eu = eu.gestor;
   $('#lb-topo').hidden = false;
   $('#lb-eu-nome').textContent = lab.eu?.nome || '';
+  // o admin volta ao SOMA em vez de sair: sair encerraria a sessão do portal também
+  $('#lb-voltar').hidden = !lab.eu?.admin; $('#lb-sair-bt').hidden = !!lab.eu?.admin;
   if (rota().sec === 'aceitar') history.replaceState(null, '', location.pathname + '#/');
   desenhar();
 }
@@ -247,7 +251,7 @@ async function pgGestores(){
 }
 function desenharGestores(){
   const el = $('#lb-gest'); if (!el) return;
-  const souPrincipal = !!lab.eu?.principal;
+  const souPrincipal = !!(lab.eu?.principal || lab.eu?.admin);  // o banco deixa o admin passar a estrela e revogar
   el.innerHTML = `${tabelaGestores(lab.gestores, souPrincipal, 'lab')}
     <form class="lb-form-linha" id="f-convidar" novalidate aria-labelledby="h-convidar">
       <h2 id="h-convidar" class="sr">Convidar gestor</h2>
@@ -297,7 +301,7 @@ async function labEstrela(id){
     const d = await rpc('labbio_principal', { p_id:id });
     if (d?.status !== 'ok') return toast(d?.status === 'invalido' ? 'Só um gestor ativo pode receber a estrela.' : 'Não foi possível passar a estrela.', true);
     toast(`${g.nome} agora é o responsável principal.`);
-    const eu = (await sb.rpc('labbio_eu')).data; if (eu?.status === 'ok') lab.eu = eu.gestor;
+    const eu = (await sb.rpc('labbio_eu')).data; if (PODE_ENTRAR.includes(eu?.status)) lab.eu = eu.gestor;
     pgGestores();
   } catch(e){ if (e.message !== 'sem_acesso') toast('Não foi possível passar a estrela.', true); }
 }

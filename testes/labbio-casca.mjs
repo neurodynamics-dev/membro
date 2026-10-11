@@ -120,6 +120,25 @@ try{
     await fechar(t);
   }
 
+  console.log('Admin do SOMA');
+  {
+    const t = await abrir('labbio/index.html#/membros'), { p } = t;
+    await p.waitForSelector('#lb-topo:not([hidden]) .lb-nav a');
+    confere('o admin entra no painel com a conta de membro', (await p.locator('#lb-eu-nome').innerText()) === 'Ana Figueiredo (admin do SOMA)');
+    confere('e volta ao SOMA em vez de sair', await p.locator('#lb-voltar').isVisible() && await p.locator('#lb-sair-bt').isHidden()
+      && await p.locator('#lb-voltar').getAttribute('href') === '../');
+    await p.evaluate(() => { location.hash = '#/gestores'; });
+    await p.waitForSelector('#lb-gest-tabela');
+    confere('o admin pode revogar e passar a estrela', await p.locator('#lb-gest-tabela').getByRole('button', { name:'Revogar' }).count() > 0);
+    await fechar(t);
+  }
+  {
+    const t = await abrir('index.html#/admin/labbio'), { p } = t;
+    await p.waitForSelector('#adm-lb-tabela');
+    confere('no portal, o admin não é desviado para o painel', !p.url().includes('/labbio/'));
+    await fechar(t);
+  }
+
   console.log('No portal');
   {
     const t = await abrir('index.html', { labbio:{ conta:'ativo' } }), { p } = t;
