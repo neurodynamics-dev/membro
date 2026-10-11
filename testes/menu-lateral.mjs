@@ -123,9 +123,9 @@ console.log('\nAberto (admin, 1440px)');
 
   await ir(p, '#/admin/contas', 1200);
   const adm = await secao(p, 'admin');
-  /* 17 desde a 2.19.1: o painel Onboarding (ficha T3) */
+  /* 18 desde a 2.19.1: os painéis Onboarding (ficha T3) e LABBIO (só admin, ficha L2) */
   confere('Administração: todos os painéis, em quatro grupos',
-    adm.filhos.length === 17 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
+    adm.filhos.length === 18 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
   confere('#/admin/contas marca "Contas e perfis"',
     JSON.stringify(await atual(p)) === '["Contas e perfis"]', await atual(p));
   await ir(p, '#/admin/site', 1200);

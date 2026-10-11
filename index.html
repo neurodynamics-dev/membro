@@ -1080,6 +1080,7 @@ const PAINEIS = [
   ['recadastro',   'Recadastro',          'Pessoas',  'A conferência semestral dos dados: começar, encerrar e quem já fez', can],
   ['termo',        'Termo de sigilo',     'Pessoas',  'O termo do LABBIO: quem enviou, conferir e devolver', can],
   ['onboarding',   'Onboarding',          'Pessoas',  'Quem já passou por cada etapa da trilha', can],
+  ['labbio',       'LABBIO',              'Pessoas',  'Os gestores do painel do LABBIO: convidar, revogar e a estrela', () => souAdmin()],
   ['grupos',       'Grupos e quadros',    'Pessoas',  'A árvore de grupos, quem está em cada um e quem enxerga cada quadro', can],
   ['importar',     'Importar planilha',   'Pessoas',  'Atualizar o quadro em massa pelo NRO-PES-005 ou pelo Excel do SOMA', can],
   ['relatorios',   'Relatórios',          'Registro', 'Portaria, assinatura, e-mails, autorizados e quadro completo',
@@ -1463,6 +1464,11 @@ async function abrirPortal(){
   const { data:{ user } } = await sb.auth.getUser();
   /* conta de membro Desligado, Egresso ou Sob demanda: o banco já nega
      tudo; aqui só não se abre a casca */
+  /* 2.19.1 (L2): conta de gestor do LABBIO é externa e só chama labbio_*;
+     vai para o painel dela antes de qualquer outra chamada. Sem a
+     migração, a chamada falha e o portal segue como sempre. */
+  const lb = await sb.rpc('labbio_eu').then(r => r, () => ({}));
+  if (['ok', 'convidado', 'revogado'].includes(lb.data?.status)){ location.replace('labbio/'); return; }
   const [ativa, papeis] = await Promise.all([sb.rpc('conta_ativa'), sb.rpc('papeis_atuais')]);
   if (ativa.data === false){ return acessoEncerrado(); }
   const [p, m] = await Promise.all([

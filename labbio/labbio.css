@@ -68,7 +68,7 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 .lb-tabela td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
 .lb-wrap{position:relative;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
 .lb-acoes{display:flex;gap:6px;flex-wrap:wrap}
-.estrela{color:var(--syn-tx)}
+.estrela{color:var(--syn-tx);display:inline-flex;vertical-align:-2px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .pill.p-ok{color:var(--ok-tx);border-color:rgba(var(--ok-rgb),.35)}
 .pill.p-ok .dt{background:var(--ok)}
@@ -81,6 +81,7 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 .lb-veu{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
 .lb-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:41;width:min(480px,calc(100vw - 32px));
   background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-lg);padding:22px;display:flex;flex-direction:column;gap:12px}
+[hidden]{display:none!important}
 .lb-modal h3{font-family:var(--fd);font-size:18px}
 .lb-modal .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;align-items:center;max-width:92vw}

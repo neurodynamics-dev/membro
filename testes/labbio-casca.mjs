@@ -61,7 +61,7 @@ try{
     await p.evaluate(() => { location.hash = '#/gestores'; });
     await p.waitForSelector('#lb-gest-tabela');
     confere('dois gestores, a estrela no principal', await p.locator('#lb-gest-tabela tbody tr').count() === 2
-      && (await p.locator('#lb-gest-tabela tr[data-g="g1"]').innerText()).includes('★')
+      && await p.locator('#lb-gest-tabela tr[data-g="g1"] .ic-estrela').count() === 1 && await p.locator('#lb-gest-tabela tr[data-g="g2"] .ic-estrela').count() === 0
       && (await p.locator('#lb-gest-tabela tr[data-g="g1"] .sr').textContent()).includes('Responsável principal'));
     confere('último acesso nulo vira "—"', (await p.locator('#lb-gest-tabela tr[data-g="g2"] td').nth(5).innerText()) === '—');
     await p.fill('#cv-nome', 'Alguém'); await p.fill('#cv-email', 'x@nro.dev'); await p.click('#cv-btn');

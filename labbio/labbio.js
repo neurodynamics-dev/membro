@@ -18,6 +18,8 @@ const $ = s => document.querySelector(s);
 const esc = v => v == null ? '' : String(v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const fmtDT = d => d ? new Date(d).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
 const TOKEN_OK = /^[0-9a-f]{48}$/;
+/* a estrela do responsável principal (ícone, não glifo) */
+const ESTRELA = '<svg class="ic-estrela" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="currentColor"/></svg>';
 const CHAVE_CONVITE = 'nd.labbio.convite';
 
 const lab = { eu:null, sessao:null, gestores:null };
@@ -269,7 +271,7 @@ function tabelaGestores(gs, podeAcoes, pf){
   return `<div class="lb-wrap"><table class="lb-tabela" id="lb-gest-tabela"><thead><tr><th>Nome</th><th>E-mail</th><th>Situação</th>
     <th>Convidado por</th><th>Aceito em</th><th>Último acesso</th>${podeAcoes ? '<th><span class="sr">Ações</span></th>' : ''}</tr></thead>
     <tbody>${gs.map(g => `<tr data-g="${esc(g.id)}">
-      <td>${g.principal ? '<span class="estrela" aria-hidden="true">★</span> ' : ''}${esc(g.nome)}${g.principal ? '<span class="sr"> (Responsável principal)</span>' : ''}</td>
+      <td>${g.principal ? `<span class="estrela">${ESTRELA}</span> ` : ''}${esc(g.nome)}${g.principal ? '<span class="sr"> (Responsável principal)</span>' : ''}</td>
       <td>${esc(g.email)}</td><td>${pillSit(g.situacao)}</td><td>${esc(g.convidado_por || '—')}</td>
       <td>${fmtDT(g.aceito_em)}</td><td>${fmtDT(g.ultimo_acesso)}</td>
       ${podeAcoes ? `<td><div class="lb-acoes">
