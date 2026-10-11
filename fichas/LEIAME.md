@@ -11,7 +11,7 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | [R4](R4.md) cobrança de sexta | [S] | a fazer | `CONTRATO-REPORTE.md` |
 | [R5](R5.md) painel e PDF unificado | [S] | a fazer | `CONTRATO-REPORTE.md` |
 | L1 identidade dos gestores | [O] | feita (`db/2.19.1_labbio_base.sql`) | `CONTRATO-LABBIO.md` |
-| [L2](L2.md) casca `/labbio`, entrada, gestores e painel no SOMA | [S] | a fazer | `CONTRATO-LABBIO.md` |
+| [L2](L2.md) casca `/labbio`, entrada, gestores e painel no SOMA | [S] | feita ([O]; o executor pula) | `CONTRATO-LABBIO.md` |
 | L5 pedido de biometria | [O] | feita (`db/2.19.1_labbio_acesso.sql`) | `CONTRATO-LABBIO.md` |
 | T1 trainees | [O] | feita (`db/2.19.1_trainees.sql`) | `CONTRATO-TRAINEES.md` |
 | L3 consultas e revogação pendente | [O] | feita (`db/2.19.1_labbio_dados.sql`) | `CONTRATO-LABBIO.md` |
@@ -28,5 +28,5 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | [F2](F2.md) site: notícias, matéria, inscrição (repositório **website**) | [S] | feita ([O], website `5654a9a`; o executor pula) | `CONTRATO-FEED.md` |
 | [F3](F3.md) `noticia.html`: reagir fora do portal | [S] | feita ([O]; o executor pula) | `CONTRATO-FEED.md` |
 
-Ordem sugerida para o executor: R2 → R3 → R4 → R5 → F1 → L2 → L4 → L6 → L8 → L10.
+Ordem sugerida para o executor: R2 → R3 → R4 → R5 → F1 → L4 → L6 → L8 → L10.
 F2 e F3 já foram feitas na branch [O]; traga-as com o merge de `slp/ecstatic-noether-evq50w` antes da próxima ficha.

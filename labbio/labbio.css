@@ -1,0 +1,88 @@
+/* ============================================================
+   Painel do LABBIO (/labbio, 2.19.1): página própria, sem a casca do
+   portal. O acento do LABBIO é Retina, só neste escopo.
+   ============================================================ */
+body.labbio{ --syn:var(--retina-primary); --syn-tx:var(--retina-medium); --syn-borda:var(--retina-medium); --foco:var(--retina-medium); --syn-rgb:52,86,227 } /* auditar: ok, exceção do LABBIO: Retina no lugar de Synapse, só no /labbio */
+:root[data-tema="claro"] body.labbio{ --syn-tx:var(--retina-primary); --syn-borda:var(--retina-primary); --foco:var(--retina-primary) } /* auditar: ok, exceção do LABBIO: Retina no lugar de Synapse, só no /labbio */
+body.labbio .btn.solid{color:var(--paper)}
+body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-height:100vh}
+
+/* cabeçalho: LABBIO primeiro, o traço, a NRO */
+.lb-topo{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:12px 24px;
+  background:rgba(var(--fundo-rgb),.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.lb-marcas{display:flex;align-items:center;gap:14px;text-decoration:none;flex-shrink:0}
+.lb-logo{height:28px;width:auto;display:block}
+.lb-sep{width:1px;height:24px;background:var(--line2)}
+.lb-nro{height:22px;width:auto;display:block}
+.lb-nro-claro{display:none}
+:root[data-tema="claro"] .lb-nro-claro{display:block}
+:root[data-tema="claro"] .lb-nro-escuro{display:none}
+.lb-nav{display:flex;gap:4px;flex:1;min-width:0;flex-wrap:wrap}
+.lb-nav a{font-size:13.5px;color:var(--muted);padding:7px 11px;border-radius:var(--r-sm);text-decoration:none}
+.lb-nav a:hover{color:var(--ink);background:rgba(var(--tom),.05)}
+.lb-nav a[aria-current="page"]{color:var(--ink);background:rgba(var(--syn-rgb),.14);font-weight:600}
+.lb-eu{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);flex-shrink:0}
+.lb-menu-bt{display:none}
+@media (max-width:760px){
+  .lb-topo{flex-wrap:wrap;padding:10px 16px;gap:10px}
+  .lb-menu-bt{display:inline-flex;margin-left:auto;font:inherit;font-size:13px;color:var(--ink);background:transparent;
+    border:1px solid var(--line2);border-radius:var(--r-sm);padding:6px 12px;cursor:pointer}
+  .lb-nav{display:none;flex-basis:100%;flex-direction:column}
+  .lb-topo.aberto .lb-nav{display:flex}
+  .lb-eu{flex-basis:100%;justify-content:space-between}
+  .lb-logo{height:24px}.lb-nro{height:18px}
+}
+
+.lb-main{max-width:1120px;margin:0 auto;padding:32px 24px 64px;outline:none}
+@media (max-width:760px){.lb-main{padding:22px 16px 48px}}
+
+/* cabeçalho de página (o mesmo desenho do portal, sem a casca) */
+.cab{margin-bottom:24px}
+.cab .eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:600;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--dim)}
+.cab .eyebrow::before{content:'';width:7px;height:7px;background:var(--syn)}
+.cab-linha{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:10px}
+.cab h1{font-family:var(--fd);font-size:clamp(26px,4vw,36px);font-weight:600;line-height:1.1;flex:1;min-width:0}
+.cab-lead{color:var(--muted);margin-top:8px;max-width:680px}
+
+/* entrada (login, convite, avisos de acesso) */
+.lb-entrada{max-width:420px;margin:clamp(24px,10vh,90px) auto 0;display:flex;flex-direction:column;gap:16px}
+.lb-entrada .lb-marcas{margin-bottom:12px}
+.lb-entrada h1{font-family:var(--fd);font-size:28px;font-weight:600}
+.lb-entrada .lead{color:var(--muted)}
+.lb-entrada form{display:flex;flex-direction:column;gap:12px}
+.lb-entrada .btn{justify-content:center}
+.lb-msg{font-size:13px;min-height:18px;color:var(--muted);margin:0}
+.lb-msg.ruim{color:var(--bad-tx)}
+.lb-lk{background:none;border:0;padding:0;color:var(--syn-tx);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* atalhos do início */
+.lb-atalhos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.lb-atalhos a{text-decoration:none;color:inherit}
+.lb-atalhos .widget:hover{border-color:var(--line2)}
+
+/* tabelas e situação */
+.lb-tabela{width:100%;border-collapse:collapse;font-size:13.5px}
+.lb-tabela th{text-align:left;font-family:var(--fd);font-weight:600;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);padding:10px 10px;border-bottom:1px solid var(--line)}
+.lb-tabela td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.lb-wrap{position:relative;overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+.lb-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.estrela{color:var(--syn-tx)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.pill.p-ok{color:var(--ok-tx);border-color:rgba(var(--ok-rgb),.35)}
+.pill.p-ok .dt{background:var(--ok)}
+.pill.p-warn{color:var(--warn-tx);border-color:rgba(var(--warn-rgb),.35)}
+.pill.p-warn .dt{background:var(--warn)}
+.lb-form-linha{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:18px}
+.lb-form-linha .fld{flex:1;min-width:200px;margin:0}
+
+/* modal e toast */
+.lb-veu{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40}
+.lb-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:41;width:min(480px,calc(100vw - 32px));
+  background:var(--panel);border:1px solid var(--line2);border-radius:var(--r-lg);padding:22px;display:flex;flex-direction:column;gap:12px}
+.lb-modal h3{font-family:var(--fd);font-size:18px}
+.lb-modal .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;align-items:center;max-width:92vw}
+#toast .toast{background:var(--toast);border:1px solid var(--line2);color:var(--ink);border-radius:12px;padding:11px 18px;font-size:13.5px}
+#toast .toast.err{border-color:rgba(var(--bad-rgb),.5)}
