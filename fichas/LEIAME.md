@@ -13,8 +13,15 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | L1 identidade dos gestores | [O] | feita (`db/2.19.1_labbio_base.sql`) | `CONTRATO-LABBIO.md` |
 | [L2](L2.md) casca `/labbio`, entrada, gestores e painel no SOMA | [S] | a fazer | `CONTRATO-LABBIO.md` |
 | L5 pedido de biometria | [O] | feita (`db/2.19.1_labbio_acesso.sql`) | `CONTRATO-LABBIO.md` |
-| T1 trainees | [O] | feita (`db/2.19.1_trainees.sql`) | `../PLANO-EXECUCAO-2.19.1.md` |
+| T1 trainees | [O] | feita (`db/2.19.1_trainees.sql`) | `CONTRATO-TRAINEES.md` |
 | L3 consultas e revogação pendente | [O] | feita (`db/2.19.1_labbio_dados.sql`) | `CONTRATO-LABBIO.md` |
 | [L4](L4.md) telas de consulta do /labbio | [S] | a fazer (depois da L2) | `CONTRATO-LABBIO.md` |
 | [L6](L6.md) pedido de biometria: membro, Pessoal e LABBIO | [S] | a fazer (depois da L4) | `CONTRATO-LABBIO.md` |
-| L7 a L10, T2, T3 | [O] e [S] | as fichas [S] saem depois de cada [O] | `../PLANO-EXECUCAO-2.19.1.md` |
+| L7 salas e L9 tablets | [O] | feitas (`db/2.19.1_labbio_salas.sql`, `db/2.19.1_labbio_tablets.sql`) | `CONTRATO-LABBIO.md` |
+| [L8](L8.md) agenda do /labbio, aviso ao organizador, cadastro de tablets | [S] | a fazer (depois da L6) | `CONTRATO-LABBIO.md` |
+| [L10](L10.md) tela do tablet (`sala.html`) | [S] | a fazer (depois da L8) | `CONTRATO-LABBIO.md` |
+| T3 onboarding (banco) | [O] | feita (`db/2.19.1_onboarding.sql`) | `CONTRATO-TRAINEES.md` |
+| [T2](T2.md) telas dos trainees | [S] | a fazer (independe do LABBIO) | `CONTRATO-TRAINEES.md` |
+| [T3](T3.md) tour com progresso no servidor e painel | [S] | a fazer (depois da T2) | `CONTRATO-TRAINEES.md` |
+
+Ordem sugerida para o executor: R2 → R3 → R4 → R5 → L2 → L4 → L6 → L8 → L10 → T2 → T3.

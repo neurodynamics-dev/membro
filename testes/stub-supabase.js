@@ -1067,6 +1067,133 @@
               return r({ status:'ok', pedido: structuredClone(PED) });
             }
           }
+          /* ---- 2.19.1: agenda das salas (L7), tablets (L9), trainees (T1) e
+             onboarding (T3). Agenda e tablets do painel pedem
+             window.__teste.labbio.conta === 'ativo'; sala_* é do tablet (sem
+             conta): window.__teste.sala = { token, estado:'livre'|'evento'|'ocupada' }.
+             Trainees e onboarding usam o papel do perfil do stub. ---- */
+          if (/^(labbio_(agenda|consulta_decidir|consulta_do_evento|dispositivo_criar|dispositivos|dispositivo_revogar)|sala_(estado|ocupar|liberar)|ps_trainees_pendentes|ps_admitir_trainees|trainees_quadro|trainee_efetivar|trainee_dispensar|onboarding_(meu|marcar|painel))$/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const LB = (window.__teste || {}).labbio, gestor = LB && LB.conta === 'ativo';
+            const papel = DADOS.perfis[0].papel, gestao = ['admin','pessoal','selecao'].includes(papel);
+            const r = d => ({ data:d, error:null });
+            const hoje = new Date().toISOString().slice(0, 10);
+            const EV = window.__lbEv ||= [
+              { id:'ev1', titulo:'Reunião de projeto', data:hoje, hora_inicio:'10:00', hora_fim:'11:00', espaco_id:1, espaco:'Sala de reuniões', status:null,
+                organizador:'Ana Figueiredo', convidados:['Bruno Tavares','Carla Mendonça'], consulta:{ id:'c1', situacao:'pendente', motivo:null, decidido_em:null },
+                sobreposicoes:[{ id:'ev2', titulo:'Banca', hora_inicio:'10:30', hora_fim:'11:30' }] },
+              { id:'ev2', titulo:'Banca', data:hoje, hora_inicio:'10:30', hora_fim:'11:30', espaco_id:1, espaco:'Sala de reuniões', status:null,
+                organizador:'Diego Prado', convidados:[], consulta:{ id:'c2', situacao:'disponivel', motivo:null, decidido_em:hoje + 'T09:00:00Z' },
+                sobreposicoes:[{ id:'ev1', titulo:'Reunião de projeto', hora_inicio:'10:00', hora_fim:'11:00' }] },
+              { id:'ev3', titulo:'Seminário', data:hoje, hora_inicio:'14:00', hora_fim:'15:00', espaco_id:2, espaco:'Auditório', status:null,
+                organizador:'Ana Figueiredo', convidados:[], consulta:{ id:'c3', situacao:'pendente', motivo:null, decidido_em:null }, sobreposicoes:[] }];
+            if (nome === 'labbio_consulta_do_evento'){
+              const e = EV.find(x => x.id === args.p_evento);
+              return r({ status:'ok', consulta: e?.consulta ? { situacao:e.consulta.situacao, motivo:e.consulta.motivo, decidido_em:e.consulta.decidido_em, criada_em:hoje } : null,
+                sobreposicoes: (e?.sobreposicoes || []).map(({ hora_inicio, hora_fim }) => ({ hora_inicio, hora_fim })) });
+            }
+            // o tablet
+            if (/^sala_/.test(nome)){
+              const S = (window.__teste || {}).sala;
+              if (!S || args.p_token !== S.token) return r({ status:'dispositivo_invalido' });
+              const prox = { id:'ev3', titulo:'Seminário', data:hoje, hora_inicio:'14:00', hora_fim:'15:00', inicio:hoje + 'T17:00:00Z', fim:hoje + 'T18:00:00Z' };
+              const est = () => ({ status:'ok', sala:'Auditório', rotulo:'Porta do auditório', estado:S.estado, agora:new Date().toISOString(),
+                evento: S.estado === 'evento' ? { id:'ev9', titulo:'Defesa de TCC', data:hoje, hora_inicio:'09:00', hora_fim:'12:00', inicio:hoje + 'T12:00:00Z', fim:hoje + 'T15:00:00Z' } : null,
+                proximo: prox, ocupada_ate: S.estado === 'ocupada' ? S.ate : null });
+              if (nome === 'sala_ocupar'){
+                if (S.estado === 'evento') return r({ ...est(), status:'em_evento' });
+                if (!(args.p_minutos >= 5 && args.p_minutos <= 30)) return r({ ...est(), status:'invalido' });
+                S.estado = 'ocupada'; S.ate = new Date(Date.now() + args.p_minutos * 6e4).toISOString();
+              }
+              if (nome === 'sala_liberar' && S.estado === 'ocupada'){ S.estado = 'livre'; S.ate = null; }
+              return r(est());
+            }
+            if (/^labbio_/.test(nome)){
+              if (!gestor && !(papel === 'admin' && /dispositiv/.test(nome))) return r({ status:'sem_permissao' });
+              if (nome === 'labbio_agenda') return r({ status:'ok', espacos:[{ id:1, nome:'Sala de reuniões', consulta:true }, { id:2, nome:'Auditório', consulta:true }],
+                eventos: structuredClone(EV) });
+              if (nome === 'labbio_consulta_decidir'){
+                const e = EV.find(x => x.consulta?.id === args.p_id); if (!e) return r({ status:'nao_encontrado' });
+                if (!args.p_disponivel && !String(args.p_motivo || '').trim()) return r({ status:'motivo_obrigatorio' });
+                Object.assign(e.consulta, { situacao: args.p_disponivel ? 'disponivel' : 'conflito', motivo: args.p_motivo || null, decidido_em:new Date().toISOString() });
+                return r({ status:'ok' });
+              }
+              const DV = window.__lbDv ||= [{ id:'d1', rotulo:'Porta do auditório', espaco_id:2, espaco:'Auditório', ativo:true, criado_em:'2026-10-01T12:00:00Z', revogado_em:null, ultimo_contato:new Date().toISOString() }];
+              if (nome === 'labbio_dispositivos') return r({ status:'ok', dispositivos: structuredClone(DV) });
+              if (nome === 'labbio_dispositivo_criar'){
+                if (![1, 2].includes(args.p_espaco)) return r({ status:'espaco_invalido' });
+                if (!String(args.p_rotulo || '').trim()) return r({ status:'rotulo_obrigatorio' });
+                DV.push({ id:'d' + (DV.length + 1), rotulo:args.p_rotulo.trim(), espaco_id:args.p_espaco, espaco: args.p_espaco === 1 ? 'Sala de reuniões' : 'Auditório',
+                  ativo:true, criado_em:new Date().toISOString(), revogado_em:null, ultimo_contato:null });
+                return r({ status:'ok', id:'d' + DV.length, endereco:'sala.html?d=' + 'ab'.repeat(24) });
+              }
+              if (nome === 'labbio_dispositivo_revogar'){ const d = DV.find(x => x.id === args.p_id && x.ativo); if (!d) return r({ status:'nao_encontrado' });
+                Object.assign(d, { ativo:false, revogado_em:new Date().toISOString() }); return r({ status:'ok' }); }
+            }
+            // trainees
+            const TR = window.__trn ||= { pendentes:[
+                { id:'c1', nome:'Paula Nunes', email:'paula@exemplo.test', protocolo:'PS26-101', edicao:'Processo Seletivo 2026', areas_interesse:['Mecânica','Simulação'], curso:'Engenharia Mecânica', instituicao:'UFMG', membro_mesmo_email:null },
+                { id:'c2', nome:'Rafael Dias', email:'rafael@exemplo.test', protocolo:'PS26-102', edicao:'Processo Seletivo 2026', areas_interesse:['Software'], curso:'Ciência da Computação', instituicao:'UFMG', membro_mesmo_email:null },
+                { id:'c3', nome:'Bruno de novo', email:'bruno@neurodynamics.dev', protocolo:'PS26-103', edicao:'Processo Seletivo 2026', areas_interesse:['Software'], curso:'Engenharia Elétrica', instituicao:'UFMG', membro_mesmo_email:11 }],
+              quadro:[{ registro:301, nome:'Sara Lopes', alocacao:'Eletrônica', status:'Ativo', areas_interesse:['Eletrônica','Software'], gestor:4, gestor_nome:'Ana Figueiredo',
+                        grupos:['NRO_TRAINEE','Sinais'], data_ingresso:'2026-09-15', edicao:'Processo Seletivo 2026' }] };
+            if (nome === 'ps_trainees_pendentes') return r(gestao ? { status:'ok', grupo_trainee:'NRO_TRAINEE', candidatos: structuredClone(TR.pendentes) } : { status:'sem_permissao' });
+            if (nome === 'ps_admitir_trainees'){
+              if (!gestao) return r({ status:'sem_permissao' });
+              const erros = [];
+              for (const x of args.p_itens || []){
+                const c = TR.pendentes.find(p => p.id === x.candidato);
+                if (!c) erros.push({ candidato:x.candidato, erro:'nao_encontrado' });
+                else if (c.membro_mesmo_email) erros.push({ candidato:c.id, erro:'email_de_membro' });
+                else if (!String(x.area || '').trim()) erros.push({ candidato:c.id, erro:'area_obrigatoria' });
+                else if (!x.gestor) erros.push({ candidato:c.id, erro:'gestor_invalido' });
+              }
+              if (erros.length) return r({ status:'invalido', erros });
+              const admitidos = (args.p_itens || []).map((x, i) => { const c = TR.pendentes.find(p => p.id === x.candidato);
+                const reg = x.registro || 302 + i;
+                TR.quadro.push({ registro:reg, nome:c.nome, alocacao:x.area, status:'Ativo', areas_interesse:c.areas_interesse, gestor:x.gestor, gestor_nome:'Ana Figueiredo',
+                  grupos:['NRO_TRAINEE', ...(x.grupos || [])], data_ingresso:hoje, edicao:c.edicao });
+                return { candidato:c.id, registro:reg }; });
+              TR.pendentes = TR.pendentes.filter(p => !admitidos.some(a => a.candidato === p.id));
+              return r({ status:'ok', admitidos });
+            }
+            if (nome === 'trainees_quadro') return r(gestao || papel === 'lideranca' || papel === 'admin' ? { status:'ok',
+              trainees: TR.quadro.filter(t => t.status === 'Ativo' && (!args.p_area_interesse || t.areas_interesse.includes(args.p_area_interesse))) } : { status:'sem_permissao' });
+            if (nome === 'trainee_efetivar'){
+              if (!['admin','pessoal'].includes(papel)) return r({ status:'sem_permissao' });
+              if (!String(args.p_cargo || '').trim() || /^trainee$/i.test(args.p_cargo.trim())) return r({ status:'invalido', campo:'cargo' });
+              const t = TR.quadro.find(x => x.registro === args.p_reg); if (!t) return r({ status:'nao_trainee' });
+              TR.quadro = TR.quadro.filter(x => x !== t); return r({ status:'ok' });
+            }
+            if (nome === 'trainee_dispensar'){
+              if (!['admin','pessoal'].includes(papel)) return r({ status:'sem_permissao' });
+              if (!String(args.p_motivo || '').trim()) return r({ status:'motivo_obrigatorio' });
+              const t = TR.quadro.find(x => x.registro === args.p_reg); if (!t) return r({ status:'nao_trainee' });
+              t.status = 'Desligado'; return r({ status:'ok', atividades_abertas:2, acessos:'Google Workspace', card:'PES-31' });
+            }
+            // onboarding
+            const ON = window.__onb ||= { lidas:['contexto'] };
+            const etapas = () => [
+              ['contexto','A NeuroDynamics, o LABBIO e os objetivos da equipe','leitura',null,'bem-vindo'],
+              ['organizacao','Áreas, grupos, liderança e a cadeia de reporte','leitura',null,'equipe'],
+              ['dados','Conferir os seus dados','fato','dados','conta'],
+              ['termo','Assinar o termo de sigilo do LABBIO','fato','termo','servicos'],
+              ['soma','Usar o SOMA: tarefas, agenda, presença e Serviços','leitura',null,'inicio'],
+              ['treinamentos','Treinamentos obrigatórios e segurança no laboratório','fato','treinamentos','treinamentos'],
+              ['proximos','Próximos passos com a sua liderança','leitura',null,'ajuda']]
+              .map(([id, titulo, tipo, fato, ancora]) => ({ id, titulo, tipo, ...(fato ? { fato } : {}), ancora,
+                feita: tipo === 'leitura' ? ON.lidas.includes(id) : fato === 'dados', feita_em: ON.lidas.includes(id) ? '2026-10-01T12:00:00Z' : null }));
+            const meu = () => { const e = etapas(); return { status:'ok', versao:1, etapas:e, feitas:e.filter(x => x.feita).length, total:e.length }; };
+            if (nome === 'onboarding_meu') return r(meu());
+            if (nome === 'onboarding_marcar'){
+              const e = etapas().find(x => x.id === args.p_etapa); if (!e || e.tipo !== 'leitura') return r({ status:'invalido' });
+              ON.lidas = ON.lidas.filter(x => x !== args.p_etapa); if (args.p_feita !== false) ON.lidas.push(args.p_etapa);
+              return r(meu());
+            }
+            if (nome === 'onboarding_painel') return r(['admin','pessoal','lideranca'].includes(papel) ? { status:'ok', versao:1, pessoas:[
+              { registro:301, nome:'Sara Lopes', trainee:true, gestor_nome:'Ana Figueiredo', feitas:3, total:7, pendentes:['Assinar o termo de sigilo do LABBIO','Usar o SOMA: tarefas, agenda, presença e Serviços','Treinamentos obrigatórios e segurança no laboratório','Próximos passos com a sua liderança'] },
+              { registro:11, nome:'Bruno Tavares', trainee:false, gestor_nome:'Ana Figueiredo', feitas:7, total:7, pendentes:[] }] } : { status:'sem_permissao' });
+          }
           /* ---- 2.19.1: reporte por liderança direta (db/2.19.1_reporte.sql).
              Sem window.__teste.reporteLider, o líder não tem reporte nem
              cobrança. As opções: { cobranca:'nenhuma'|'aviso'|'obrigatoria',
