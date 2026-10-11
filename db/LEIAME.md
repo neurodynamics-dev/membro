@@ -106,6 +106,7 @@ psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 |---|---|
 | `2.19.1_recadastro.sql` | Meus dados e o recadastro semestral: os campos pessoais em `dados_pessoais`, o histórico de cada conferência (`cadastro_confirmacoes`, a fotografia dos dados), as campanhas (`recadastro_campanhas`, com o termo opcional) e quem já concluiu (`recadastro_pendencias`). `cadastro_meus_dados`, `cadastro_confirmar` (valida CPF, CEP, UF...), `recadastro_estado` (o que a entrada pede), `recadastro_dispensar` (uma vez por campanha), `recadastro_painel` e `recadastro_campanha_ativar` (avisa todos os membros ativos). Férias e afastamento pausam o pedido |
 | `2.19.1_termo.sql` | o termo de sigilo do LABBIO como serviço à parte: `termo_campanhas`, `termo_pendencias`, o bucket privado `termos`; `termo_emitir` só com dados conferidos há até 180 dias (e guarda quais saíram no termo), `termo_registrar_envio` só para um termo emitido com a última conferência; `termo_painel` e `termo_conferir` para o Pessoal. Depende da `2.19.1_recadastro.sql` |
+| `2.19.1_reporte.sql` | o reporte por liderança direta: um por líder e semana (`reportes.modelo = 'lider'`, a lista fotografada em `pessoas`), cobrança de sexta 16h (`reporte_cobrancas`, `reporte_cobranca_estado`, `reporte_ausente`), fechamento na segunda 0h (`reporte_ciclos.fecha_em`), avaliações na ficha (`membro_reporte_avaliacoes`), sinalizações com PMO e offboarding (`reporte_sinalizacoes`, `reporte_sequencias`), consolidado para admin e NRO_MANAGERS. Os ciclos por frente continuam como estavam. Independente do recadastro e do termo |
 
 A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
 2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
@@ -114,6 +115,13 @@ sigilo do LABBIO". Teste (44 asserções):
 ```sh
 createdb -T tbase t2191
 psql -X -v ON_ERROR_STOP=1 -d t2191 -f testes/2.18.0_soma.sql -f testes/2.19.0.sql -f testes/2.19.1_recadastro.sql
+```
+
+O reporte (70 asserções, mais o teste da 2.18.0 do reporte de novo):
+
+```sh
+bash testes/preparar-base.sh             # monta a tbase, uma vez
+bash testes/preparar-base.sh teste t2191r 2.18.0_soma.sql 2.19.0.sql 2.19.1_reporte.sql
 ```
 | `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
 | `2.17.0_notas_fotos_e_cartoes.sql` | a primeira com o número novo: os bugs e sugestões das notas de versão (`soma_feedback`, votos, comentários, o andamento por `admin`); a foto enviada pelo portal (o bucket público `fotos`, `membro_foto_definir`); os cartões com outras pessoas, etiquetas, checklists (`atividade_checklist`), a cópia para outro quadro (`atividade_copiar`) e o comentário que se corrige e se apaga. Passa a ser a dona de `atividade_criar`, `atividade_editar`, `atividades_quadro` e `atividades_carga` |

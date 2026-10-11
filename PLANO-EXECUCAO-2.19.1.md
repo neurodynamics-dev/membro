@@ -22,7 +22,7 @@ testes e quem executa.
 
 | # | Pergunta | Padrão adotado |
 |---|---|---|
-| D1 | Grupos reais de PMO, Pessoal, Coord. Office e Trainee | Chaves `NRO_PMO`, `NRO_PESSOAL`, `NRO_COORD_OFFICE`, `NRO_TRAINEE` em `grupos.chave`; a migração cria se não existir e o admin confere |
+| D1 | Grupos reais de PMO, Pessoal, Coord. Office e Trainee | Pelo nome (`NRO_PMO`, `NRO_PESSOAL`, `NRO_COORD_OFFICE`, `NRO_TRAINEE`) ou pela chave já usada (`pmo`, `pessoal`). A migração não cria grupo: avisa o que falta, e o efeito que depende dele fica registrado sem cartão |
 | D2 | "Fato distinto" na reincidência | Uma ocorrência contável por pessoa e ciclo; dois líderes no mesmo ciclo = uma |
 | D3 | Pendência de sexta no fim de semana | Fica até resolver; não acumula duas semanas (a nova substitui a velha, a velha vira "não enviado") |
 | D4 | Ciclo e fechamento | A sprint abre na segunda e fecha na sexta; a reunião da gerência é sexta 16h. Cobrança: sexta 16h (a hora da reunião). O ciclo fecha quando a sprint seguinte abre (segunda 0h, America/Sao_Paulo): entre sexta 16h e segunda 0h o envio é aceito e marcado como atrasado |
@@ -41,7 +41,9 @@ com versão, salvar e enviar, feed por reporte e o unificado. Muda: a unidade
 a gravação na ficha. `membros.gestor_registro` já existe (usado em
 `v15_atividades.sql`).
 
-### R1 [O] Migração `db/2.19.1_reporte.sql`
+### R1 [O] Migração `db/2.19.1_reporte.sql` (feita; contrato em `fichas/CONTRATO-REPORTE.md`)
+
+> O que segue é o desenho original. Onde divergir, vale o contrato e a migração.
 
 - `reportes.frente_id` passa a aceitar nulo; nova coluna `modelo`
   (`'frente'` legado, `'lider'` novo); índice único parcial
@@ -94,14 +96,14 @@ a gravação na ficha. `membros.gestor_registro` já existe (usado em
   fictícia, férias dispensam, cobrança não retroativa, mudança de gestor não
   reescreve enviado.
 
-### R2 [S] Rota e menu
+### R2 [S] Rota e menu (ficha: `fichas/R2.md`)
 
 - `#/servicos/reporte` (e `/1..4`, `/config`); `#/equipe/reporte*` redireciona
   (ALIAS em `index.html`). Item em Serviços só com `tenhoPapel('lideranca')`.
   Atualizar busca (`acoesDaCasca`), links de notificação e `tour.html`.
 - Teste: `testes/reporte.mjs` (rotas antigas redirecionam; leitura não vê).
 
-### R3 [S] Tela do reporte (`mod-reporte.js`)
+### R3 [S] Tela do reporte (`mod-reporte.js`) (ficha: `fichas/R3.md`)
 
 - Lista some: abre direto o reporte da semana (`reporte_meu`).
 - Passo 1 Apontamentos: uma linha por pessoa, dois **switches**
@@ -116,7 +118,7 @@ a gravação na ficha. `membros.gestor_registro` já existe (usado em
 - Componentes já existentes: `layoutFluxo`, `etapas`, `.switch` do DS (se não
   houver, criar em `brand/design-system` e distribuir).
 
-### R4 [S] Cobrança de sexta
+### R4 [S] Cobrança de sexta (ficha: `fichas/R4.md`)
 
 - Casca: `carregarObrigacoes()` ganha `reporte_cobranca_estado`; se `aviso`,
   pop-up dispensável (por sessão); se `obrigatoria`, mesmo guard do
@@ -125,7 +127,7 @@ a gravação na ficha. `membros.gestor_registro` já existe (usado em
   cada 5 min com a aba visível. Hora sempre do servidor.
 - Teste de navegador com o stub devolvendo cada estado.
 
-### R5 [S] PDF unificado
+### R5 [S] PDF unificado (ficha: `fichas/R5.md`)
 
 - `doc-nro.js` `reporteUnificado` com `e.tabela`: cabeçalho do ciclo
   (cobertura, enviados, ausentes, pendentes), apontamentos (inclui

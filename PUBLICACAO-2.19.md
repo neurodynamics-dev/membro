@@ -72,3 +72,16 @@ troque a senha se a TV for trocada de lugar.
    quadro de pessoal.
 5. Nos próximos semestres, o recadastro é só a conferência dos dados: não
    marque o termo.
+
+# 2.19.1: reporte por liderança direta
+
+1. **Antes**: em Administração › Grupos, confirme que existem os grupos do
+   PMO (nome `NRO_PMO` ou chave `pmo`), `NRO_PESSOAL` (ou chave `pessoal`),
+   `NRO_COORD_OFFICE` e `NRO_MANAGERS`, e que cada liderado tem o gestor
+   preenchido na ficha (`gestor_registro`). A migração avisa o grupo que
+   faltar; as sinalizações ficam registradas sem cartão até ele existir.
+2. **Aplicar** `db/2.19.1_reporte.sql`. O prazo passa a sexta 16h. O modelo
+   novo começa nesta semana se ninguém abriu reporte por frente nela; senão,
+   na próxima segunda (`reporte_config.modelo_lider_desde`).
+3. **Publicar o HTML** só depois das fichas R2 a R5: até lá, a tela é a do
+   modelo por frente e não enxerga o reporte novo.

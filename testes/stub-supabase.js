@@ -900,6 +900,100 @@
           const papeisStub = () => { const pf = DADOS.perfis[0];
             return pf.papeis || ['admin','pessoal','lideranca','selecao','leitura'].filter(k => k === (pf.papel || 'leitura') || k === 'leitura'); };
           if (nome === 'conta_ativa') return { data: !(window.__teste || {}).bloqueada, error:null };
+          /* ---- 2.19.1: reporte por liderança direta (db/2.19.1_reporte.sql).
+             Sem window.__teste.reporteLider, o líder não tem reporte nem
+             cobrança. As opções: { cobranca:'nenhuma'|'aviso'|'obrigatoria',
+             semLiderados, mudancas, enviado, fechado, consolidado } ---- */
+          if (/^reporte_(meu|cadeia_atualizar|participante|cobranca_estado|ausente|lider_painel|avaliacoes_de)$/.test(nome)
+              || (/^reporte_(salvar|enviar|unificado)$/.test(nome) && (window.__teste || {}).reporteLider)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const L = (window.__teste || {}).reporteLider;
+            const ok = d => ({ data:{ status:'ok', ...d }, error:null });
+            if (!L) return { data: nome === 'reporte_cobranca_estado' ? { status:'nenhuma' } : { status:'sem_permissao' }, error:null };
+            const ciclo = { id:'cl1', semana:'2026-10-05', modelo:'lider', prazo:'2026-10-09T19:00:00+00:00', reuniao_em:'2026-10-09T19:00:00+00:00',
+              fecha_em:'2026-10-12T03:00:00+00:00', fechado:false };
+            const pessoa = (registro, nome, origem = 'direto', justificativa = null) => ({ registro, nome, cargo:null, origem, justificativa });
+            const ap = registro => ({ registro, entregas:'SUFICIENTE', assiduidade:'SUFICIENTE', sinalizacao:null });
+            const R = window.__repL ||= { id:'rl1', ciclo_id:'cl1', autor:4, modelo:'lider', etapa:1, versao:1, atrasado:false,
+              enviado_em: L.enviado ? '2026-10-09T18:00:00+00:00' : null,
+              pessoas: L.semLiderados ? [] : [pessoa(11, 'Bruno Tavares'), pessoa(17, 'Carla Mendonça')],
+              apontamentos: L.semLiderados ? [] : [ap(11), ap(17)], escalonamentos:[], feed:[] };
+            const ver = v => v === R.versao;
+            if (nome === 'reporte_meu'){
+              if (L.fechado && !R.enviado_em) return ok({ ciclo, reporte:null, mudancas:null, feed:[] });
+              const { feed, ...rep } = R;
+              return ok({ ciclo, reporte: structuredClone(rep), feed: structuredClone(feed),
+                mudancas: L.mudancas && !R.enviado_em ? { entram:[pessoa(23, 'Diego Prado')], saem:[] } : null });
+            }
+            if (R.enviado_em && /salvar|participante|cadeia/.test(nome)) return { data:{ status:'encerrado' }, error:null };
+            if (nome === 'reporte_cadeia_atualizar'){
+              if (!ver(args.p_versao)) return { data:{ status:'conflito' }, error:null };
+              if (L.mudancas){ R.pessoas.push(pessoa(23, 'Diego Prado')); R.apontamentos.push(ap(23)); L.mudancas = false; }
+              return ok({ versao: ++R.versao });
+            }
+            if (nome === 'reporte_participante'){
+              if (!ver(args.p_versao)) return { data:{ status:'conflito' }, error:null };
+              if (args.p_incluir){
+                if (!String(args.p_justificativa || '').trim()) return { data:{ status:'justificativa_obrigatoria' }, error:null };
+                if (R.pessoas.some(x => x.registro === args.p_registro)) return { data:{ status:'duplicado' }, error:null };
+                const m = DADOS.membros.find(x => x.registro === args.p_registro);
+                R.pessoas.push(pessoa(args.p_registro, m?.nome || 'Registro ' + args.p_registro, 'excepcional', args.p_justificativa.trim()));
+                R.apontamentos.push(ap(args.p_registro));
+              } else {
+                R.pessoas = R.pessoas.filter(x => !(x.registro === args.p_registro && x.origem === 'excepcional'));
+                R.apontamentos = R.apontamentos.filter(x => x.registro !== args.p_registro);
+              }
+              return ok({ versao: ++R.versao });
+            }
+            if (nome === 'reporte_salvar'){
+              const p = args.p;
+              if (!ver(p.versao)) return { data:{ status:'conflito' }, error:null };
+              const invalido = !Array.isArray(p.apontamentos) || !Array.isArray(p.escalonamentos) || !Array.isArray(p.feed)
+                || p.apontamentos.some(a => !R.pessoas.some(x => x.registro === a.registro)
+                  || !['SUFICIENTE','INSUFICIENTE'].includes(a.entregas) || !['SUFICIENTE','INSUFICIENTE'].includes(a.assiduidade)
+                  || (a.sinalizacao && (!String(a.sinalizacao.relato || '').trim() || a.sinalizacao.conversa_confirmada !== true)))
+                || p.escalonamentos.some(e => !String(e.texto || '').trim());
+              if (invalido) return { data:{ status:'invalido' }, error:null };
+              Object.assign(R, { apontamentos: structuredClone(p.apontamentos), escalonamentos: structuredClone(p.escalonamentos),
+                feed: structuredClone(p.feed), etapa: p.etapa });
+              window.__repSalvo = structuredClone(p);
+              return ok({ versao: ++R.versao });
+            }
+            if (nome === 'reporte_enviar'){
+              if (R.enviado_em) return ok({});
+              if (!ver(args.p_versao)) return { data:{ status:'conflito' }, error:null };
+              if (R.etapa !== 3 || R.pessoas.some(x => !R.apontamentos.some(a => a.registro === x.registro))) return { data:{ status:'incompleto' }, error:null };
+              R.enviado_em = new Date().toISOString(); R.atrasado = L.cobranca === 'obrigatoria'; R.versao++;
+              L.cobranca = 'nenhuma';
+              return ok({ atrasado: R.atrasado });
+            }
+            if (nome === 'reporte_cobranca_estado'){
+              const st = R.enviado_em || L.ausente ? 'nenhuma' : (L.cobranca || 'nenhuma');
+              return { data:{ status: st, ciclo_id:'cl1', prazo: ciclo.prazo, fecha_em: ciclo.fecha_em, agora: new Date().toISOString() }, error:null };
+            }
+            if (nome === 'reporte_ausente'){ L.ausente = true; return ok({}); }
+            if (nome === 'reporte_lider_painel'){
+              if (!L.consolidado) return { data:{ status:'sem_permissao' }, error:null };
+              return ok({ ciclo, config:{ dia_prazo:4, hora_prazo:'16:00:00', dia_reuniao:4, hora_reuniao:'16:00:00', modelo_lider_desde:'2026-10-05' },
+                lideres:[{ registro:4, nome:'Ana Figueiredo', reporte_id:'rl1', enviado_em:R.enviado_em, atrasado:R.atrasado, situacao: R.enviado_em ? 'enviado' : 'pendente' },
+                         { registro:23, nome:'Diego Prado', reporte_id:null, enviado_em:null, atrasado:false, situacao:'ausente' }] });
+            }
+            if (nome === 'reporte_unificado'){
+              if (!L.consolidado) return { data:{ status:'sem_permissao' }, error:null };
+              return ok({ modelo:'lider', gerado_em:'2026-10-09T19:00:00+00:00', ciclo,
+                cobertura:{ lideres:2, enviados:1, atrasados:1, ausentes:1, pendentes:0 },
+                apontamentos:[{ registro:11, nome:'Bruno Tavares', lider:4, lider_nome:'Ana Figueiredo', entregas:'INSUFICIENTE', assiduidade:'SUFICIENTE',
+                                sinalizado:true, relato:'Combinamos a entrega na terça e não veio' },
+                              { registro:17, nome:'Carla Mendonça', lider:4, lider_nome:'Ana Figueiredo', entregas:'SUFICIENTE', assiduidade:'INSUFICIENTE',
+                                sinalizado:false, relato:null }],
+                escalonamentos:[{ lider_nome:'Ana Figueiredo', texto:'Falta verba para a bancada', atividade_codigo:'ORT-1', atividade_titulo:'Molde da órtese', responsavel_nome:'Carla Mendonça' }],
+                atrasados:[{ codigo:'ORT-2', titulo:'Teste de bancada', responsavel_nome:'Bruno Tavares', prazo:'2026-10-01', dias:8, status:'fazendo' }],
+                feed:[{ titulo:'Bancada pronta', subtitulo:'O ensaio da órtese começa', autor:'Ana Figueiredo', publicado_em:'2026-10-09T18:00:00+00:00' }] });
+            }
+            if (nome === 'reporte_avaliacoes_de') return ok({ itens:[
+              { semana:'2026-10-05', autor:4, autor_nome:'Ana Figueiredo', entregas:'INSUFICIENTE', assiduidade:'SUFICIENTE', origem:'direto', sinalizado:true },
+              { semana:'2026-09-28', autor:4, autor_nome:'Ana Figueiredo', entregas:'SUFICIENTE', assiduidade:'SUFICIENTE', origem:'direto', sinalizado:false }] });
+          }
           /* ---- 2.19.1: Meus dados, recadastro e termo de sigilo. Sem
              window.__teste.rec, não há campanha; rec.termo = a campanha
              inclui o termo do LABBIO ---- */
