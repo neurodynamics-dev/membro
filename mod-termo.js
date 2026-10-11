@@ -20,7 +20,7 @@
    ============================================================ */
 
 const TERMO_PASSOS = [['dados', 'Seus dados'], ['baixar', 'Conferir e baixar'], ['assinar', 'Assinar no gov.br'], ['enviar', 'Enviar o assinado']];
-const PDFLIB_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+const PDFLIB_URL = 'vendor/pdf-lib-1.17.1.min.js';   /* local, como o jsPDF */
 const ASSINADOR_URL = 'https://assinador.iti.br/';
 const ESTADOS_CIVIS = ['solteiro(a)', 'casado(a)', 'divorciado(a)', 'viúvo(a)', 'separado(a) judicialmente', 'em união estável'];
 const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];

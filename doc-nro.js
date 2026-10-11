@@ -25,21 +25,27 @@
    qrcode-generator 1.4.4 do jsDelivr, que só diz quais módulos do QR
    são escuros: o desenho é vetorial, nítido em qualquer impressão.
 
-   Archivo é embutida com licença OFL. A medição e o desenho usam
+   A fonte é a Helvetica do próprio PDF (a métrica do Arial do NRO-PUB-002). A medição e o desenho usam
    o mesmo arquivo local; limpa() mantém a compatibilidade dos registros.
    ============================================================ */
 (function(){
   'use strict';
   if (window.DocNRO) return;
 
-  const CDN_JSPDF = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-  const CDN_QR    = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
-  const LOGO_URL  = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
+  /* 2.19.1: tudo local, ao lado deste arquivo. CDN de terceiros e a logo de
+     outro domínio eram as falhas da geração (rede da universidade, bloqueio
+     entre origens): o documento não depende mais de nada fora do SOMA. */
+  const AQUI      = document.currentScript.src;
+  const CDN_JSPDF = new URL('vendor/jspdf-2.5.1.umd.min.js', AQUI).href;
+  const CDN_QR    = new URL('vendor/qrcode-generator-1.4.4.js', AQUI).href;
+  const LOGO_URL  = new URL('marca/logo-imagotipo-black.png', AQUI).href;
   const URL_VALIDACAO = 'https://auth.neurodynamics.dev';
 
   /* A página: A4, com as margens do template (a de cima deixa o
      cabeçalho respirar; a de baixo é a do rodapé). */
-  const PAG = { w:210, h:297, esq:22, dir:22, topo:36 };
+  /* As margens do NRO-PUB-002 (o .docx): esquerda 15 mm, direita 12,5 mm,
+     topo 32,5 mm, base 25 mm; cabeçalho e rodapé a 12,5 mm da borda. */
+  const PAG = { w:210, h:297, esq:15, dir:12.5, topo:32.5, base:25 };
   const LARG = PAG.w - PAG.esq - PAG.dir;                      /* 182,5 mm */
   const TINTA = [29, 29, 31], CINZA = [97, 108, 104], CLARO = [97, 108, 104];
   const LINHA = [196, 204, 201], FUNDO = [255, 255, 255], FUNDO_CLARO = [242, 242, 242];
@@ -71,14 +77,15 @@
       LOGO = { dados, prop: img.naturalWidth / img.naturalHeight };
     }catch(e){ LOGO = false; }
   }
-  /* Tudo o que um documento precisa, na primeira vez. */
-  const BASE_FONTES = new URL('fontes-pdf.js', document.currentScript.src).href;
-  let fontesDados, docAtual;
+  /* Tudo o que um documento precisa, na primeira vez. A fonte é a
+     Helvetica do próprio PDF, a mesma métrica do Arial do NRO-PUB-002:
+     nada a baixar, e qualquer leitor abre. Se algo falta, o erro diz o quê. */
+  let docAtual;
   async function precisa(){
-    if (!window.FontesPDF) await carregar(BASE_FONTES);
-    fontesDados = await window.FontesPDF.carregar();
-    if (!window.jspdf) await carregar(CDN_JSPDF);
-    if (typeof window.qrcode !== 'function') await carregar(CDN_QR);
+    const passo = async (nome, f) => { try { await f(); }
+      catch (e){ throw new Error(`não carregou ${nome} (${e.message || e}). Recarregue a página e tente de novo`); } };
+    if (!window.jspdf) await passo('o gerador de PDF', () => carregar(CDN_JSPDF));
+    if (typeof window.qrcode !== 'function') await passo('o gerador de QR Code', () => carregar(CDN_QR));
     await carregarLogo();
   }
 
@@ -95,14 +102,14 @@
         : c.length > 1 ? '' : '?');
   }
 
-  /* A largura usa as métricas da Archivo embutida no PDF. */
-  let FONTE = { estilo:'normal', tam:10, familia:'Archivo' };
+  /* A largura usa as métricas da Helvetica do PDF (as do Arial do modelo). */
+  let FONTE = { estilo:'normal', tam:11, familia:'helvetica' };
   /* a largura, em mm, na fonte corrente (ou na que se pedir) */
   function mede(t, estilo, tam){
     estilo = estilo || FONTE.estilo; tam = tam || FONTE.tam;
     if (!docAtual) return String(t).length * tam * .18;
     const atual = docAtual.getFont(), corpo = docAtual.getFontSize();
-    docAtual.setFont('Archivo', estilo); docAtual.setFontSize(tam);
+    docAtual.setFont('helvetica', estilo); docAtual.setFontSize(tam);
     const largura = docAtual.getTextWidth(String(t));
     docAtual.setFont(atual.fontName, atual.fontStyle); docAtual.setFontSize(corpo);
     return largura;
@@ -187,15 +194,15 @@
   function novo(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
-    window.FontesPDF.registrar(doc, fontesDados);
+    doc.setFont('helvetica', 'normal');
     docAtual = doc;
     doc.__textos = [[]];           /* o que foi escrito, por página — os testes leem */
     return doc;
   }
   const cor = (doc, c) => doc.setTextColor(c[0], c[1], c[2]);
   function fonte(doc, estilo, tamanho){
-    doc.setFont('Archivo', estilo || 'normal'); if (tamanho) doc.setFontSize(tamanho);
-    FONTE = { estilo: estilo || 'normal', tam: tamanho || FONTE.tam, familia:'Archivo' };
+    doc.setFont('helvetica', estilo || 'normal'); if (tamanho) doc.setFontSize(tamanho);
+    FONTE = { estilo: estilo || 'normal', tam: tamanho || FONTE.tam, familia:'helvetica' };
   }
   /* escreve e anota: a camada de texto do PDF é esta mesma */
   function escreve(doc, txt, x, y, op){
@@ -224,21 +231,23 @@
      direita, o departamento em negrito, o título e o código com a
      revisão. */
   function cabecalho(doc, c){
-    const x1 = PAG.w - PAG.dir;
+    const x1 = PAG.w - PAG.dir, topo = 12.5;
     if (LOGO){
-      const h = 8.6, w = Math.min(h * LOGO.prop, 70);
-      doc.addImage(LOGO.dados, 'PNG', PAG.esq, 10.2, w, h);
+      const h = 8, w = Math.min(h * LOGO.prop, 60);
+      doc.addImage(LOGO.dados, 'PNG', PAG.esq, topo, w, h);
     } else {
-      simbolo(doc, PAG.esq, 10.2, 8.6);
-      cor(doc, TINTA); fonte(doc, 'bold', 12.5);
-      escreve(doc, 'NeuroDynamics', PAG.esq + 10.4, 16.5);
+      simbolo(doc, PAG.esq, topo, 8);
+      cor(doc, TINTA); fonte(doc, 'bold', 12);
+      escreve(doc, 'NeuroDynamics', PAG.esq + 10, topo + 5.8);
     }
     cor(doc, TINTA);
     const cortar = (t, max) => { let s = limpa(t); while (s.length > 8 && mede(s) > max) s = s.slice(0, -2);
       return s === limpa(t) ? s : s.trim() + '…'; };
-    fonte(doc, 'normal', 9.5); escreve(doc, cortar(c.titulo || '', 100), x1, 12.6, { align:'right' });
-    escreve(doc, (c.codigo || '') + (c.rev ? ' Rev. ' + c.rev : ''), x1, 16.8, { align:'right' });
-    cor(doc, CINZA); fonte(doc, 'normal', 8); escreve(doc, cortar(c.departamento || 'NeuroDynamics', 100), x1, 21, { align:'right' });
+    /* como no modelo: o departamento em negrito, o título, e o código com a revisão, 11 pt */
+    fonte(doc, 'bold', 11); escreve(doc, cortar(c.departamento || 'NeuroDynamics', 110), x1, topo + 3.4, { align:'right' });
+    fonte(doc, 'normal', 11); escreve(doc, cortar(c.titulo || '', 110), x1, topo + 8.1, { align:'right' });
+    const cod = (c.codigo || '') + (c.rev ? ' Rev. ' + c.rev : '');
+    if (cod.trim()) escreve(doc, cod, x1, topo + 12.8, { align:'right' });
   }
 
   /* ============================================================
@@ -250,7 +259,7 @@
   function escritor(doc, cab, op = {}){
     const e = {
       doc, cab, y: PAG.topo, x0: PAG.esq, x1: PAG.w - PAG.dir, larg: LARG,
-      base: PAG.h - (op.rodape || 24), numerar: !!op.numerar, linha: 0, corpo: op.corpo || 10.5
+      base: PAG.h - (op.rodape || PAG.base), numerar: !!op.numerar, linha: 0, corpo: op.corpo || 11
     };
     cabecalho(doc, cab);
     e.novaPagina = () => {
@@ -343,19 +352,32 @@
     e.paragrafo = (txt, o = {}) => e.rico(trechosDe(txt, o), o);
 
     /* o título de uma seção, como os templates escrevem ("Objetivo do teste") */
+    /* os estilos do modelo: Título 1 em 20 pt (6,4 mm antes), Título 2 em 16 pt (2,8 mm antes) */
     e.titulo = (txt, o = {}) => {
-      e.garante(16);
-      e.y += o.antes == null ? 3 : o.antes;
-      cor(doc, TINTA); fonte(doc, o.negrito ? 'bold' : 'normal', o.tamanho || 14);
-      escreve(doc, txt, e.x0, e.y + 5.2);
-      e.y += 8;
+      const t = o.tamanho || 20;
+      e.garante(t * .55 + 10);
+      e.y += o.antes == null ? (e.y > PAG.topo + 1 ? 6.4 : 1) : o.antes;
+      cor(doc, TINTA); fonte(doc, o.negrito ? 'bold' : 'normal', t);
+      escreve(doc, txt, e.x0, e.y + t * .36);
+      e.y += t * .36 + 3.2;
       return e;
     };
-    e.subtitulo = txt => {
-      e.garante(12);
-      cor(doc, TINTA); fonte(doc, 'bold', 10.5);
-      escreve(doc, txt, e.x0, e.y + 4.2);
-      e.y += 7;
+    e.subtitulo = (txt, o = {}) => {
+      const t = o.tamanho || 16;
+      e.garante(t * .55 + 8);
+      e.y += e.y > PAG.topo + 1 ? 2.8 : 0;
+      cor(doc, TINTA); fonte(doc, 'normal', t);
+      escreve(doc, txt, e.x0, e.y + t * .36);
+      e.y += t * .36 + 2.6;
+      return e;
+    };
+    /* Título 3: 14 pt, cinza 595959, como no modelo */
+    e.titulo3 = txt => {
+      e.garante(14);
+      e.y += e.y > PAG.topo + 1 ? 2.8 : 0;
+      cor(doc, [89, 89, 89]); fonte(doc, 'normal', 14);
+      escreve(doc, txt, e.x0, e.y + 5);
+      e.y += 7.6; cor(doc, TINTA);
       return e;
     };
     e.instrucao = txt => e.rico([{ t:txt, i:true }], { tamanho:9, cor:CINZA, alinhar:'left', depois:2 });
@@ -401,19 +423,20 @@
        texto quebrado dentro da célula, e o cabeçalho de novo na folha
        seguinte. Célula pode ser texto ou {simbolo:'ok'|'x'|'~'|'-'}. */
     e.tabela = (colunas, linhas, o = {}) => {
-      const tam = o.tamanho || 8.6, pad = 1.6, lh = tam * .46, total = colunas.reduce((s, c) => s + (c.largura || 1), 0);
+      const tam = o.tamanho || 9, pad = 1.8, lh = tam * .46, total = colunas.reduce((s, c) => s + (c.largura || 1), 0), tc = 9;
       const ws = colunas.map(c => e.larg * (c.largura || 1) / total);
       const xs = ws.reduce((a, w, i) => (a.push(i ? a[i - 1] + ws[i - 1] : e.x0), a), []);
       const linhasDe = (txt, w, estilo, t) => { fonte(doc, estilo, t);
         return String(limpa(txt ?? '')).split('\n').flatMap(p => p ? quebra(p, w - pad * 2) : ['']); };
       const cabec = () => {
-        const cels = colunas.map((c, i) => linhasDe(String(c.rotulo || '').toUpperCase(), ws[i], 'bold', 6.8));
-        const h = Math.max(...cels.map(l => l.length)) * 6.8 * .45 + pad * 2;
+        const cels = colunas.map((c, i) => linhasDe(String(c.rotulo || ''), ws[i], 'bold', tc));
+        const h = Math.max(...cels.map(l => l.length)) * tc * .45 + pad * 2;
         colunas.forEach((c, i) => {
-          doc.setFillColor(FUNDO[0], FUNDO[1], FUNDO[2]); doc.setDrawColor(LINHA[0], LINHA[1], LINHA[2]); doc.setLineWidth(.25);
+          doc.setFillColor(FUNDO_CLARO[0], FUNDO_CLARO[1], FUNDO_CLARO[2]); doc.rect(xs[i], e.y, ws[i], h, 'F');
+          doc.setDrawColor(LINHA[0], LINHA[1], LINHA[2]); doc.setLineWidth(.25);
           doc.line(xs[i], e.y + h, xs[i] + ws[i], e.y + h);
-          cor(doc, TINTA); fonte(doc, 'bold', 6.8);
-          cels[i].forEach((l, k) => escreve(doc, l, xs[i] + pad, e.y + pad + 6.8 * .45 * (k + .8)));
+          cor(doc, TINTA); fonte(doc, 'bold', tc);
+          cels[i].forEach((l, k) => escreve(doc, l, xs[i] + pad, e.y + pad + tc * .45 * (k + .8)));
         });
         e.y += h;
       };
@@ -553,18 +576,17 @@
     const total = doc.getNumberOfPages();
     for (let i = 1; i <= total; i++){
       doc.setPage(i);
-      let y = PAG.h - 14.5;
+      let y = PAG.h - 18.5;
       if (o.nota){
-        cor(doc, CINZA); fonte(doc, 'italic', 7.4);
+        cor(doc, CINZA); fonte(doc, 'italic', 8);
         const ls = quebra(limpa(o.nota), LARG - 10);
-        y -= (ls.length - 1) * 3.1;
-        ls.forEach((l, k) => escreve(doc, l, PAG.w / 2, y + k * 3.1, { align:'center' }));
+        y -= (ls.length - 1) * 3.3;
+        ls.forEach((l, k) => escreve(doc, l, PAG.w / 2, y + k * 3.3, { align:'center' }));
       }
-      doc.setDrawColor(LINHA[0], LINHA[1], LINHA[2]); doc.setLineWidth(.2);
-      doc.line(PAG.esq, PAG.h - 10.5, PAG.w - PAG.dir, PAG.h - 10.5);
-      cor(doc, CLARO); fonte(doc, 'normal', 7.2);
-      if (o.texto) escreve(doc, o.texto, PAG.esq, PAG.h - 7);
-      escreve(doc, `Página ${i} de ${total}`, PAG.w - PAG.dir, PAG.h - 7, { align:'right' });
+      /* como no modelo: só o número da página, à direita, 11 pt; o nome do
+         documento já está no cabeçalho */
+      cor(doc, TINTA); fonte(doc, 'normal', 11);
+      escreve(doc, String(i), PAG.w - PAG.dir, PAG.h - 12.5, { align:'right' });
     }
   }
   /* A LEGENDA DE AUTENTICAÇÃO, em toda folha de um documento emitido:
@@ -594,7 +616,7 @@
       const ls = quebra(limpa(corpo), tw);
       ls.forEach((l, k) => escreve(doc, l, tx, top + 9.2 + k * 3.05));
       /* o código em destaque, como se lê em voz alta */
-      cor(doc, TINTA); doc.setFont('Archivo', 'normal'); doc.setFontSize(8.4); FONTE = { estilo:'bold', tam:8.4, familia:'Archivo' };
+      cor(doc, TINTA); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); FONTE = { estilo:'bold', tam:8.4, familia:'helvetica' };
       escreve(doc, `CÓDIGO VERIFICADOR ${a.codigo}  ,   CONTROLE ${a.controle}`, tx, top + h - 2.6);
       cor(doc, CLARO); fonte(doc, 'normal', 7.2);
       escreve(doc, `${a.documento}${a.revisao ? ' Rev. ' + a.revisao : ''}, ${host}`, PAG.esq, PAG.h - 7);
