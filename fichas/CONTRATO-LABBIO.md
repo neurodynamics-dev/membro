@@ -18,11 +18,18 @@ funções `labbio_*`. Qualquer outra chamada (tabela, `conta_ativa`,
 - o portal (`index.html`) chama `labbio_eu` **antes** de qualquer outra
   coisa ao abrir uma sessão e, se a conta for externa, manda para `/labbio/`.
 
+**Admin do SOMA no painel** (`db/2.19.1_labbio_admin.sql`): o admin entra em
+`/labbio/` com a própria conta de membro e tudo que vale para "gestor ativo"
+vale para ele (`conta_labbio()`). `labbio_eu()` responde
+`{ status: 'admin', gestor: { id: null, nome: 'Nome (admin do SOMA)', admin: true, ... } }`;
+o portal não desvia esse status, e o painel mostra "Voltar ao SOMA" no lugar
+de "Sair". Ele não é conta externa: o SOMA e a porta da API não mudam.
+
 ## Identidade (L1)
 
 | RPC | Quem | Devolve |
 |---|---|---|
-| `labbio_eu()` | qualquer conta logada | `{ status: 'ok', gestor }` (ativo) · `'convidado'` · `'revogado'` · `'nao_gestor'` (conta de membro) · `'sem_sessao'` |
+| `labbio_eu()` | qualquer conta logada | `{ status: 'ok', gestor }` (ativo) · `'admin'` (admin do SOMA, ver acima) · `'convidado'` · `'revogado'` · `'nao_gestor'` (conta de membro) · `'sem_sessao'` |
 | `labbio_gestores_lista()` | admin do SOMA ou gestor ativo | `{ status, gestores: [gestor] }` (ativos e convidados primeiro, revogados no fim) |
 | `labbio_convidar(p_email, p_nome)` | admin ou gestor ativo | `{ status, id }`; motivos `email_invalido`, `nome_obrigatorio`, `email_de_membro`, `ja_ativo` |
 | `labbio_aceitar(p_token)` | a conta logada com o e-mail do convite | `{ status, gestor }`; motivos `invalido`, `usado`, `expirado`, `email_diferente`, `conta_de_membro`, `sem_sessao` |

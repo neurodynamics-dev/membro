@@ -926,6 +926,9 @@
               const souAdm = !externa && (DADOS.perfis[0].papel === 'admin');
               const eu = ativo ? { ...G[0], principal: LB.principal !== false } : null;
               const r = d => ({ data:d, error:null });
+              /* o admin do SOMA (conta de membro) entra no painel com status próprio (2.19.1_labbio_admin) */
+              if (nome === 'labbio_eu' && souAdm) return r({ status:'admin', gestor:{ id:null, nome:'Ana Figueiredo (admin do SOMA)',
+                email:'ana@nro.dev', situacao:'ativo', principal:false, admin:true } });
               if (nome === 'labbio_eu') return r(!LB || LB.conta === 'nao_gestor' ? { status:'nao_gestor' }
                 : LB.conta === 'ativo' ? { status:'ok', gestor:eu } : { status:LB.conta });
               if (nome === 'labbio_aceitar'){
@@ -968,7 +971,8 @@
             (window.__rpcs ||= []).push({ nome, p:args });
             const LB = (window.__teste || {}).labbio, BI = (window.__teste || {}).biometria || {};
             const r = d => ({ data:d, error:null });
-            const gestor = LB && LB.conta === 'ativo';
+            // conta_labbio(): gestor ativo ou o admin do SOMA com a conta de membro
+            const gestor = (LB && LB.conta === 'ativo') || (!(LB && LB.conta && LB.conta !== 'nao_gestor') && DADOS.perfis[0].papel === 'admin');
             const pessoa = (registro, nome, extra = {}) => ({ registro, nome, foto_url:null, email_nro: nome.split(' ')[0].toLowerCase() + '@neurodynamics.dev',
               email_pessoal:null, telefone:'(31) 90000-0000', status:'Ativo', cargo:'Pesquisador(a)', area:'Órtese', trainee:false, gestor:4,
               gestor_nome:'Ana Figueiredo', termo:{ situacao:'pendente', enviado_em:null, conferido_em:null, arquivo:null },
@@ -1076,7 +1080,8 @@
              Trainees e onboarding usam o papel do perfil do stub. ---- */
           if (/^(labbio_(agenda|consulta_decidir|consulta_do_evento|dispositivo_criar|dispositivos|dispositivo_revogar)|sala_(estado|ocupar|liberar)|ps_trainees_pendentes|ps_admitir_trainees|trainees_quadro|trainee_efetivar|trainee_dispensar|onboarding_(meu|marcar|painel))$/.test(nome)){
             (window.__rpcs ||= []).push({ nome, p:args });
-            const LB = (window.__teste || {}).labbio, gestor = LB && LB.conta === 'ativo';
+            const LB = (window.__teste || {}).labbio,
+                  gestor = (LB && LB.conta === 'ativo') || (!(LB && LB.conta && LB.conta !== 'nao_gestor') && DADOS.perfis[0].papel === 'admin');
             const papel = DADOS.perfis[0].papel, gestao = ['admin','pessoal','selecao'].includes(papel);
             const r = d => ({ data:d, error:null });
             const hoje = new Date().toISOString().slice(0, 10);

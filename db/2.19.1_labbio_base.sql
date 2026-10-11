@@ -93,9 +93,12 @@ create or replace function public.conta_externa()
 returns boolean language sql stable security definer set search_path = public as $$
   select auth.uid() is not null and exists (select 1 from labbio_gestores where user_id = auth.uid()) $$;
 
+-- quem pode usar o painel: o gestor ativo e o admin do SOMA (que entra com a conta de membro;
+-- não vira conta externa, porque não está em labbio_gestores)
 create or replace function public.conta_labbio()
 returns boolean language sql stable security definer set search_path = public as $$
-  select auth.uid() is not null and exists (select 1 from labbio_gestores where user_id = auth.uid() and situacao = 'ativo') $$;
+  select auth.uid() is not null and (exists (select 1 from labbio_gestores where user_id = auth.uid() and situacao = 'ativo')
+    or (public.conta_ativa() and public.papel_atual() = 'admin')) $$;
 
 -- conta_ativa(): a da 2.19.0 (membro bloqueado, quiosque), mais a conta externa
 create or replace function public.conta_ativa()
@@ -200,6 +203,12 @@ create or replace function public.labbio_eu_id()
 returns uuid language sql stable security definer set search_path = public as $$
   select id from labbio_gestores where user_id = auth.uid() and situacao = 'ativo' $$;
 
+-- o nome de quem age no painel: o gestor, ou o admin do SOMA que entrou nele
+create or replace function public.labbio_ator_nome()
+returns text language sql stable security definer set search_path = public as $$
+  select coalesce((select nome from labbio_gestores where user_id = auth.uid() and situacao = 'ativo'),
+    (select coalesce(m.nome, p.nome) from perfis p left join membros m on m.registro = p.registro where p.id = auth.uid()) || ' (admin do SOMA)') $$;
+
 create or replace function public.labbio_auditar(p_acao text, p_alvo uuid, p_detalhe jsonb default '{}')
 returns void language sql volatile security definer set search_path = public as $$
   insert into labbio_auditoria (ator_user, ator_reg, acao, alvo, detalhe)
@@ -230,6 +239,11 @@ returns jsonb language plpgsql volatile security definer set search_path = publi
 declare g labbio_gestores;
 begin
   select * into g from labbio_gestores where user_id = auth.uid();
+  -- o admin do SOMA entra no painel com status próprio: o portal só desvia 'ok', 'convidado' e 'revogado'
+  if not found and labbio_admin() then
+    return jsonb_build_object('status', 'admin', 'gestor', jsonb_build_object('id', null, 'nome', labbio_ator_nome(),
+      'email', labbio_email_da_conta(), 'situacao', 'ativo', 'principal', false, 'admin', true));
+  end if;
   if not found then return jsonb_build_object('status', case when auth.uid() is null then 'sem_sessao' else 'nao_gestor' end); end if;
   if g.situacao <> 'ativo' then return jsonb_build_object('status', g.situacao); end if;
   if g.ultimo_acesso is null or g.ultimo_acesso < now() - interval '5 minutes' then
@@ -370,7 +384,7 @@ end $$;
 -- 8. permissões ------------------------------------------------------------------
 do $$ declare f text; begin
   foreach f in array array['labbio_vincular_conta()', 'labbio_auditar(text,uuid,jsonb)', 'labbio_email_da_conta()',
-                           'labbio_gestor_json(labbio_gestores)', 'labbio_eu_id()', 'labbio_envios_lote(integer)',
+                           'labbio_gestor_json(labbio_gestores)', 'labbio_eu_id()', 'labbio_ator_nome()', 'labbio_envios_lote(integer)',
                            'labbio_envios_baixa(jsonb)'] loop
     execute 'revoke execute on function public.' || f || ' from public, anon, authenticated';
   end loop;

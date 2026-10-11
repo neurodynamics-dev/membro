@@ -194,6 +194,7 @@ declare r labbio_revogacoes; g labbio_gestores;
 begin
   if not conta_labbio() then return jsonb_build_object('status', 'sem_permissao'); end if;
   select * into g from labbio_gestores where user_id = auth.uid();
+  g.nome := coalesce(g.nome, labbio_ator_nome());  -- o admin do SOMA não tem linha de gestor
   select * into r from labbio_revogacoes where id = p_id for update;
   if not found then return jsonb_build_object('status', 'nao_encontrado'); end if;
   if r.confirmada_em is not null then return jsonb_build_object('status', 'ok'); end if;

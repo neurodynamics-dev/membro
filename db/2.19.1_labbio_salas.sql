@@ -120,6 +120,7 @@ declare c labbio_consultas; g labbio_gestores; e eventos;
 begin
   if not conta_labbio() then return jsonb_build_object('status', 'sem_permissao'); end if;
   select * into g from labbio_gestores where user_id = auth.uid();
+  g.nome := coalesce(g.nome, labbio_ator_nome());  -- o admin do SOMA não tem linha de gestor
   select * into c from labbio_consultas where id = p_id for update;
   if not found then return jsonb_build_object('status', 'nao_encontrado'); end if;
   if c.situacao = 'invalidada' then return jsonb_build_object('status', 'invalidada'); end if;
