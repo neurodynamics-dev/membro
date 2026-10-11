@@ -206,7 +206,7 @@ async function repEnviar(){
  if(reporte.ocupado)return;
  const r=reporte.aberto.reporte;
  if(r.apontamentos.some(a=>a.sinalizado&&!String(a.justificativa||'').trim())){document.getElementById('rep-enviar')?.blur();return toast('Informe a justificativa dos membros sinalizados.',true);}
- if(!await confirma('Depois de enviado, o reporte não pode ser editado. As publicações entram no feed da equipe e as sinalizações vão para o Pessoal.','Enviar reporte'))return;
+ if(!await confirma('Depois de enviado, o reporte não pode ser editado. As publicações vão para a mesa editorial, onde a gerência decide o que publicar, e as sinalizações vão para o Pessoal.','Enviar reporte'))return;
  r.etapa=3;if(!await repSalvar(true))return;
  reporte.ocupado=true;
  try{await repRPC('reporte_enviar',{p_id:r.id,p_versao:r.versao});toast('Reporte enviado.');reporte.aberto=null;location.hash='#/servicos/reporte';}
@@ -232,7 +232,7 @@ async function repImagem(i,file){
 }
 
 /* ---------------- reporte por liderança direta (2.19.1) ---------------- */
-const REP_ENVIO_LIDER='Ao enviar, as avaliações vão para a ficha de cada pessoa, as sinalizações abrem o acompanhamento no PMO (ou o desligamento, se for a segunda em 60 dias) e as publicações entram no feed.';
+const REP_ENVIO_LIDER='Ao enviar, as avaliações vão para a ficha de cada pessoa, as sinalizações abrem o acompanhamento no PMO (ou o desligamento, se for a segunda em 60 dias) e as publicações vão para a mesa editorial, onde a gerência decide o que publicar.';
 const repPodeEditarLider=()=>repEhLider()&&!repTravado(reporte.aberto)&&!reporte.conflito&&!reporte.mutando;
 function repAvisoLider(d){
  const r=d.reporte,c=d.ciclo;
@@ -424,61 +424,4 @@ async function repPDF(){
  await precisaDocNRO();
  const doc=DocNRO.reporteUnificado(d);DocNRO.baixar(doc,'Reporte semanal '+(reporte.liderPainel||reporte.painel).ciclo.semana+'.pdf');
  }catch(e){falha(e,'Não foi possível gerar o reporte');}
-}
-
-/* ---------------- E: o feed da equipe ---------------- */
-async function pageFeed(){
- reporte.feed=[];
- $('#main').innerHTML=repTopo('Feed da equipe','feed')+layoutLeitura('<div id="feed-lista"></div><button id="feed-mais" class="btn ghost" style="margin-top:28px;width:100%;justify-content:center" onclick="repFeedMais()" hidden>Carregar mais</button>');
- $('#feed-lista').innerHTML=estado.carregando('lista');
- await repFeedMais(true);
-}
-async function repFeedMais(primeira){
- const el=$('#feed-lista'),bt=$('#feed-mais');bt.disabled=true;
- try{const ultimo=reporte.feed.at(-1);const itens=await repRPC('feed_lista',ultimo?{p_antes:ultimo.publicado_em,p_id:ultimo.id}:{});
- if(primeira)el.innerHTML='';
- reporte.feed.push(...itens);bt.hidden=itens.length<20;
- if(!reporte.feed.length)el.innerHTML=estado.vazio({texto:'Nenhuma publicação ainda. O que a liderança envia no reporte semanal aparece aqui.'});
- el.insertAdjacentHTML('beforeend',itens.map(f=>`<article class="artigo"><div class="artigo-meta"><span>${esc(f.autor)}</span><time>${fmtDT(f.publicado_em)}</time>${can()?`<button type="button" class="icbtn sm" style="margin-left:auto" aria-label="Ocultar publicação" onclick="repOcultar('${f.id}')">${ic('x')}</button>`:''}</div>
-  <h2>${esc(f.titulo)}</h2>${f.subtitulo?`<p class="sub">${esc(f.subtitulo)}</p>`:''}${f.imagem_path?`<img id="feed-img-${f.id}" alt="" loading="lazy">`:''}<div class="md">${md(f.texto)}</div></article>`).join(''));
- for(const f of itens.filter(x=>x.imagem_path)){const {data,error}=await sb.storage.from('feed').createSignedUrl(f.imagem_path,300);if(!error&&data?.signedUrl){const img=document.getElementById('feed-img-'+f.id);if(img)img.src=data.signedUrl;}}
- }catch(e){el.innerHTML=estado.erro({texto:'Não foi possível carregar o feed: '+e.message+'.',acao:'<button class="btn ghost mini" onclick="pageFeed()">Tentar de novo</button>'});}finally{bt.disabled=false;}
-}
-async function repOcultar(id){if(!await confirma('A publicação deixará de aparecer no feed.','Ocultar publicação'))return;try{await repRPC('feed_ocultar',{p_id:id});await pageFeed();}catch(e){falha(e,'Não foi possível ocultar a publicação');}}
-
-/* ---------------- newsletters ---------------- */
-async function pageNewsletter(){
- if(!tenhoPapel('lideranca')){location.hash='#/';return;}
- $('#main').innerHTML=repTopo('Newsletters','newsletter')+'<div id="news-lista">Carregando…</div>';
- try{
-  const lista=await repRPC('newsletter_lista');reporte.newsletters=lista;
-  $('#news-lista').innerHTML=`<div class="acts"><button class="btn" onclick="repNewsGerar('semanal')">Gerar boletim semanal</button><button class="btn" onclick="repNewsGerar('mensal')">Gerar boletim mensal</button>
-  ${souAdmin()?'<button class="btn" onclick="repComunidade()">Importar comunidade</button>':''}</div>`+
-  (lista.map(n=>`<article class="card" id="news-${esc(n.id)}"><h2>${esc(n.assunto)}</h2><p class="small muted">${esc(n.status)}. Aprovações: ${n.aprovacoes}/3. Versão ${n.versao}.</p>
-  ${n.itens.map(i=>`<h3>${esc(i.titulo)}</h3><p>${esc(i.subtitulo)}</p><div class="md">${md(i.texto)}</div>`).join('')}
-  ${n.status==='em_aprovacao'?`<div class="acts"><button class="btn" onclick="repNewsEditar('${n.id}')">Revisar conteúdo</button><button class="btn" onclick="repNewsVotar('${n.id}',false)">Recusar</button><button class="btn solid" onclick="repNewsVotar('${n.id}',true)">Aprovar versão ${n.versao}</button></div>`:''}</article>`).join('')||'<div class="vazio">Nenhuma newsletter. O período anterior precisa ter publicações no feed.</div>');
-  const id=location.hash.split('/')[3];if(id)document.getElementById('news-'+id)?.scrollIntoView();
- }catch(e){$('#news-lista').textContent='Não foi possível carregar newsletters: '+e.message+'.';}
-}
-async function repNewsGerar(tipo){try{const d=await repRPC('newsletter_gerar',{p_tipo:tipo});if(!d.id)toast('Nenhuma publicação no período.',true);await pageNewsletter();}catch(e){falha(e,'Não foi possível gerar o boletim');}}
-async function repNewsVotar(id,aprova){
- const n=reporte.newsletters.find(x=>x.id===id);if(!n)return;
- if(!await confirma(aprova?'Aprovar esta versão para envio após três aprovações da liderança?':'Recusar esta versão?',aprova?'Aprovar':'Recusar'))return;
- try{await repRPC('newsletter_decidir',{p_id:id,p_versao:n.versao,p_aprova:aprova});await pageNewsletter();}catch(e){falha(e,'Não foi possível registrar a decisão');}
-}
-function repNewsEditar(id){const n=reporte.newsletters.find(x=>x.id===id);reporte.newsEdit=structuredClone(n);
- abreModal(`<h3>Revisar newsletter</h3><p class="small muted">Salvar remove as aprovações desta versão.</p><div class="fld"><label for="news-assunto">Assunto</label><input id="news-assunto" value="${esc(n.assunto)}"></div>
- ${n.itens.map((x,i)=>['titulo','subtitulo','texto'].map(k=>`<div class="fld"><label for="news-${i}-${k}">${esc(k)}</label><textarea id="news-${i}-${k}" oninput="reporte.newsEdit.itens[${i}].${k}=this.value">${esc(x[k])}</textarea></div>`).join('')).join('')}
- <button class="btn solid" onclick="repNewsSalvar()">Salvar nova versão</button>`);}
-async function repNewsSalvar(){try{await repRPC('newsletter_revisar',{p_id:reporte.newsEdit.id,p_assunto:$('#news-assunto').value,p_itens:reporte.newsEdit.itens});fechaModal();await pageNewsletter();}catch(e){falha(e,'Não foi possível revisar o boletim');}}
-function repComunidade(){if(!souAdmin())return;abreModal(`<h3>Importar comunidade</h3><p class="small muted">Colunas: nome, email, origem. Descadastros anteriores são preservados.</p><input aria-label="Planilha da comunidade" type="file" accept=".xlsx,.xls,.csv" onchange="repComunidadeLer(this.files[0])"><div id="news-importar"></div>`);}
-async function repComunidadeLer(file){try{
- if(!file)return;if(!window.XLSX)await carregarLib('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
- const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});reporte.importar=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
- $('#news-importar').innerHTML=`<p>${reporte.importar.length} registros.</p><button class="btn solid" onclick="repComunidadeSalvar()">Importar</button>`;
- }catch(e){falha(e,'Não foi possível ler a planilha');}}
-async function repComunidadeSalvar(){try{const d=await repRPC('comunidade_importar',{p_itens:reporte.importar});fechaModal();toast(`${d.processados} registros processados.`);}catch(e){falha(e,'Não foi possível importar a comunidade');}}
-
-function repComunidadePagina(){
- $('#sec-emails').innerHTML=`<div class="card"><h2>Comunidade</h2><p>Familiares, professores associados e parceiros que recebem o boletim mensal.</p><div class="acts"><button class="btn solid" onclick="repComunidade()">Importar planilha</button><a class="btn" href="#/equipe/newsletter">Newsletters</a></div>${dica('A planilha deve ter nome e e-mail. A importação não reativa quem se descadastrou. A comunidade recebe somente boletins aprovados por três integrantes da liderança.')}</div>`;
 }

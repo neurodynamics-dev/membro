@@ -388,7 +388,7 @@ function toast(msg, err, acao){ const t=document.createElement('div'); t.classNa
   $('#toast').appendChild(t); setTimeout(()=>t.remove(), acao ? 8000 : 5200); }
 
 const state = {
-  perfil:null, membros:[], itensAcesso:[], avisos:[],
+  perfil:null, membros:[], itensAcesso:[], avisos:[], feedEditor:false,
   eventos:null, presencas:null, statusMembro:[], minhasPresencas:null,
   cal:{ ano:new Date().getFullYear(), mes:new Date().getMonth() },
   agendas:null, ag:null, tipos:null, itens:null, itensMes:null,
@@ -1486,6 +1486,7 @@ async function abrirPortal(){
   carregarGrupoPapeis();
   const grupos = carregarGrupos();   /* os quadros de Atividades são os grupos da pessoa */
   carregarOKRsDoMenu();
+  carregarFeedEditor();
   carregarProjetosEArquivos();
   state.studioPronto = Promise.all([grupos, carregarStudioConfig()]);
   carregarTreinamentoConfig();
@@ -1747,7 +1748,7 @@ function arvoreDoMenu(){
       /* a ficha (#/equipe/<registro>) se abre a partir do quadro */
       ...(podeQuadro() ? [{ sub:'quadro', rot:'Quadro de pessoal', tambem:'^\\d+$' }] : []),
       { sub:'presenca', rot:'Presença' },
-      ...(tenhoPapel('lideranca') ? [{sub:'newsletter',rot:'Newsletters'}] : []),
+      ...(tenhoPapel('lideranca') || state.feedEditor ? [{sub:'newsletter',rot:'Newsletters'}] : []),
       { sub:'feed', rot:'Feed da equipe' }] },
     /* os treinamentos: o que os seus grupos pedem é a primeira tela, e a
        página de um treinamento (#/treinamentos/NRO-TRE-003) acende ela */
@@ -1799,6 +1800,13 @@ function familiaDoOKR(cod){
 }
 /* Os objetivos estratégicos, para o menu. Sem a tabela (migração v8 não
    aplicada), OKRs fica sem subitens e a tela explica o resto. */
+/* 2.19.1 (F1): quem publica no feed (admin ou NRO_MANAGERS) ganha a mesa
+   editorial e a newsletter. Sem a migração, fica falso e nada muda. */
+async function carregarFeedEditor(){
+  const r = await sb.rpc('feed_editor').then(x => x, () => ({ error:true }));
+  const ed = !r.error && r.data === true;
+  if (ed !== state.feedEditor){ state.feedEditor = ed; desenharMenu(); }
+}
 function carregarOKRsDoMenu(){
   return sb.from('okr_objetivos').select('id,codigo,titulo,ordem,nivel,pai_id').eq('nivel', 'estrategico')
     .order('ordem').order('codigo')
@@ -2885,6 +2893,7 @@ async function pageHome(){
         </div>
       </div>
       <aside class="ini-lado" aria-label="Atalhos">
+        <div class="card" id="card-feed"><div class="head"><h3>Últimas publicações</h3><a href="#/equipe/feed">feed completo →</a></div>${spin}</div>
         <div class="card" id="card-links"><div class="head"><h3>Links úteis</h3></div>${spin}</div>
         <div class="card" id="card-recentes"></div>
       </aside>
@@ -2896,6 +2905,7 @@ async function pageHome(){
   carregarPlacarInicio();
   carregarTarefasInicio();
   carregarLinksInicio();
+  carregarFeedInicio();
   desenharRecentes();
 }
 
@@ -2956,6 +2966,20 @@ async function carregarTreinamentosResumo(){
         <span class="tre-prog"><i style="width:${pct}%"></i></span>
         <span class="go">${t.situacao === 'andamento' ? 'Continuar' : t.situacao === 'pendente' ? 'Começar' : 'Refazer'} →</span></a>`; }).join('')}</div>
     ${pend.length > 3 ? `<a class="small tre-inicio-mais" href="#/treinamentos">e mais ${pend.length - 3}…</a>` : ''}</div>`;
+}
+
+/* ---------- as últimas publicações (2.19.1, F1) ----------
+   Quatro linhas, sem imagem nem reação. Sem a migração ou com erro, o card some. */
+async function carregarFeedInicio(){
+  const el = $('#card-feed'); if (!el) return;
+  try{
+    const r = await sb.rpc('feed_lista', { p_limite:4 });
+    if (r.error || !Array.isArray(r.data)){ el.remove(); return; }
+    el.innerHTML = `<div class="head"><h3>Últimas publicações</h3><a href="#/equipe/feed">feed completo →</a></div>`
+      + (r.data.length ? r.data.map(f => `<a class="feed-ini-i" href="#/equipe/feed/${esc(f.id)}"><span class="tag">${f.tipo === 'noticia' ? 'Notícia' : 'Tópico'}</span>
+          <span class="tt">${esc(f.titulo)}</span><span class="dt small muted">${fmtD(f.publicado_em)}</span></a>`).join('')
+        : '<p class="small muted">Nada publicado ainda.</p>');
+  }catch(_){ el.remove(); }
 }
 
 /* ---------- links úteis ----------
@@ -3647,8 +3671,8 @@ function orgRaiz(ativos){
    fichas são de quem tem papel. Um objeto, um lugar — antes isto eram
    duas telas, em dois apps, sobre os mesmos dados. */
 async function pageEquipe(sub){
-  if(sub==='newsletter'){if(!tenhoPapel('lideranca')){location.hash='#/';return;}await carregarModulo('reporte');return pageNewsletter();}
-  if(sub==='feed'){await carregarModulo('reporte');return pageFeed();}
+  if(sub==='newsletter'){if(!(tenhoPapel('lideranca')||state.feedEditor)){location.hash='#/';return;}await carregarModulo('feed');return pageNewsletter();}
+  if(sub==='feed'){await carregarModulo('feed');return pageFeed();}
   if(sub==='reporte'||sub==='apontamento'){
     const resto = location.hash.split('/').slice(3).join('/');
     history.replaceState(null, '', location.pathname + '#/servicos/reporte' + (resto ? '/' + resto : ''));
@@ -3683,7 +3707,7 @@ function abasEquipe(atual){
   const abas = [['', 'Organograma']];
   if (podeQuadro()) abas.push(['quadro', 'Quadro de pessoal']);
   abas.push(['presenca', 'Presença'], ['feed','Feed da equipe']);
-  if(tenhoPapel('lideranca')) abas.push(['newsletter','Newsletters']);
+  if(tenhoPapel('lideranca') || state.feedEditor) abas.push(['newsletter','Newsletters']);
   return navNivel1(abas.map(([s, l]) => [s, l, '#/equipe' + (s ? '/' + s : '')]), atual, 'Equipe');
 }
 

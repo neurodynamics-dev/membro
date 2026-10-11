@@ -24,7 +24,7 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | [T2](T2.md) telas dos trainees | [S] | feita ([O]; o executor pula) | `CONTRATO-TRAINEES.md` |
 | [T3](T3.md) tour com progresso no servidor e painel | [S] | feita ([O]; o executor pula) | `CONTRATO-TRAINEES.md` |
 | F0 feed, notícias, reações e newsletter (banco) | [O] | feita (`db/2.19.1_feed.sql`) | `CONTRATO-FEED.md` |
-| [F1](F1.md) portal: feed, mesa editorial, widget e newsletter | [S] | a fazer (depois da R5: mexe em `mod-reporte.js`) | `CONTRATO-FEED.md` |
+| [F1](F1.md) portal: feed, mesa editorial, widget e newsletter | [S] | feita ([O]; o executor pula) | `CONTRATO-FEED.md` |
 | [F2](F2.md) site: notícias, matéria, inscrição (repositório **website**) | [S] | feita ([O], website `5654a9a`; o executor pula) | `CONTRATO-FEED.md` |
 | [F3](F3.md) `noticia.html`: reagir fora do portal | [S] | feita ([O]; o executor pula) | `CONTRATO-FEED.md` |
 
