@@ -25,11 +25,11 @@ testes e quem executa.
 | D1 | Grupos reais de PMO, Pessoal, Coord. Office e Trainee | Chaves `NRO_PMO`, `NRO_PESSOAL`, `NRO_COORD_OFFICE`, `NRO_TRAINEE` em `grupos.chave`; a migração cria se não existir e o admin confere |
 | D2 | "Fato distinto" na reincidência | Uma ocorrência contável por pessoa e ciclo; dois líderes no mesmo ciclo = uma |
 | D3 | Pendência de sexta no fim de semana | Fica até resolver; não acumula duas semanas (a nova substitui a velha, a velha vira "não enviado") |
-| D4 | Fechamento do ciclo | Segunda 9h (hora da reunião). Envio aceito até lá; cobrança é sexta 16h |
+| D4 | Ciclo e fechamento | A sprint abre na segunda e fecha na sexta; a reunião da gerência é sexta 16h. Cobrança: sexta 16h (a hora da reunião). O ciclo fecha quando a sprint seguinte abre (segunda 0h, America/Sao_Paulo): entre sexta 16h e segunda 0h o envio é aceito e marcado como atrasado |
 | D5 | Campos da ficha visíveis ao LABBIO | Nome, nome civil, foto, e-mail, telefone, situação, cargo, área, gestor, CPF e matrícula (só no pedido de acesso), termo, acesso. Sem bolsa, avaliação, autodeclaração, acessibilidade |
 | D6 | Situações que exigem revogação física | Desligamento e dispensa de trainee. Férias e afastamento: não |
 | D7 | Ocupação temporária do tablet | Compartilhada (servidor), até 30 min, limitada à próxima reserva |
-| D8 | Vínculo trainee | Coluna `membros.vinculo` (`efetivo` / `trainee`), status operacional continua `Ativo` |
+| D8 | Vínculo trainee | Pelo cargo: `membros.cargo = 'Trainee'`, sem coluna nova; status operacional continua `Ativo`. Função `eh_trainee(reg)` centraliza a regra |
 
 ---
 
@@ -48,8 +48,12 @@ a gravação na ficha. `membros.gestor_registro` já existe (usado em
   `(ciclo_id, autor) where modelo = 'lider'`. Reportes antigos ficam como estão.
 - `reportes.pessoas jsonb`: fotografia da cadeia ao abrir
   (`[{registro, nome, origem: 'direto'|'excepcional', justificativa}]`).
-- `reporte_ciclos`: `fecha_em timestamptz` (D4) ao lado do `prazo` (agora só
-  cobrança). `reporte_salvar`/`reporte_enviar` passam a checar `fecha_em`.
+- `reporte_ciclos`: `fecha_em timestamptz` (D4: segunda 0h seguinte) ao lado
+  do `prazo` (sexta 16h, a cobrança e a reunião da gerência).
+  `reporte_salvar`/`reporte_enviar` passam a checar `fecha_em`; `reportes`
+  ganha `atrasado bool` (enviado depois do `prazo`). `reporte_config` passa a
+  ter padrão sexta 16h (`dia_prazo = 5`, `hora_prazo = '16:00'`); a reunião
+  (`dia_reuniao`, `hora_reuniao`) passa a ser sexta 16h também.
 - `reporte_sinalizacoes(id, registro, reporte_id, ciclo_id, autor,
   relato, conversa_confirmada bool not null, criada_em, sequencia_id)` e
   `reporte_sequencias(id, registro, aberta_em, pmo_card, offboarding_em,
@@ -79,7 +83,9 @@ a gravação na ficha. `membros.gestor_registro` já existe (usado em
     (sexta 7h–16h aviso; ≥16h obrigatória até resolver).
   - `reporte_ausente(p_ciclo)` → resolve com `como = 'ausente'`.
   - `reporte_unificado(p_ciclo)` refeito para o modelo líder (mantém o legado
-    para ciclos antigos), com `gerado_em` congelado no retorno.
+    para ciclos antigos), com `gerado_em` congelado no retorno. Gerado para a
+    reunião de sexta 16h; quem enviar depois aparece numa nova geração,
+    marcado como atrasado.
 - Ativação: `reporte_config.modelo_lider_desde date`. Ciclos anteriores não
   geram cobrança (§8.4, sem retroativo).
 - **Teste** `db/testes/2.19.1_reporte.sql`: dias 0/7/31/60/61, reenvio
@@ -236,15 +242,16 @@ motivo, confirmar implantação.
 
 ### T1 [O] Migração `db/2.19.1_trainees.sql`
 
-- `membros.vinculo text not null default 'efetivo' check (in ('efetivo',
-  'trainee'))` (D8). Auditoria dos filtros `status in ('Ativo', ...)`: listar
-  cada função que filtra (`grep` em `db/`) e decidir, uma a uma, se trainee
-  entra (padrão: entra, porque o status continua Ativo).
+- Sem coluna nova (D8): trainee é `membros.cargo = 'Trainee'`, lido só por
+  `eh_trainee(p_reg) returns boolean`. Como o status continua `Ativo`, os
+  filtros existentes (`status in ('Ativo', ...)`) já incluem o trainee;
+  conferir só os pontos que devem **excluir** trainee (ex.: avaliações de
+  efetivos, se houver) e listar no teste.
 - `ps_admitir_trainee(p_candidatos uuid[], p_area, p_gestor, p_grupos int[])`:
   idempotente por candidato (`registro_membro`), cria `membros` com
-  `vinculo = 'trainee'`, põe em `NRO_TRAINEE` + grupos, liga conta por
+  `cargo = 'Trainee'`, status `Ativo`, põe em `NRO_TRAINEE` + grupos, liga conta por
   e-mail se existir; não marca o candidato como integrado.
-- `trainee_efetivar(p_reg)`, `trainee_dispensar(p_reg, p_motivo)` (dispensa
+- `trainee_efetivar(p_reg, p_cargo)` (troca o cargo, tira de `NRO_TRAINEE`), `trainee_dispensar(p_reg, p_motivo)` (dispensa
   cria pendência de revogação LABBIO se houver acesso, L3).
 - `trainees_quadro(p_area_interesse)`.
 - Recadastro/termo: `cadastro_elegivel` já cobre (status Ativo).
