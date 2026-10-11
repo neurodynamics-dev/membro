@@ -111,6 +111,8 @@ psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 | `2.19.1_labbio_acesso.sql` | o pedido de acesso biométrico ao LABBIO: rascunho → Pessoal → LABBIO → concedido (e devolvido, negado, cancelado), com versões (`labbio_pedido_versoes`) e a trilha (`labbio_pedido_eventos`); foto no bucket privado `biometria`; o item do catálogo pela chave `labbio_biometria`; os campos pedidos em `labbio_config`. A triagem do Pessoal (`pessoal_solicitacao_decidir`) encaminha esse subtipo em vez de conceder; os outros pedidos de acesso não mudam. Depende da `2.19.1_labbio_base` e da `2.19.1_recadastro` |
 | `2.19.1_trainees.sql` | trainees no SOMA principal: trainee é quem tem cargo `Trainee` (`eh_trainee`), status Ativo, no grupo NRO_TRAINEE. `ps_trainees_pendentes`, `ps_admitir_trainees` (lote, tudo ou nada, sem duplicar; o candidato continua `trainee` no PS), `trainees_quadro` (área de interesse separada da alocação), `trainee_efetivar` e `trainee_dispensar` (Desligado, card no Pessoal; nada é apagado e nenhum acesso é dado como revogado sozinho) |
 | `2.19.1_labbio_dados.sql` | as consultas do painel do LABBIO (`labbio_inicio`, `labbio_membros`, `labbio_membro`, `labbio_checkins`, `labbio_treinamentos`), só com os campos combinados; a revogação física pendente (`labbio_revogacoes`), criada por gatilho quando quem tem biometria sai (Desligado, Egresso), sem notificação, até o gestor confirmar. Depende da `2.19.1_labbio_acesso`, da `2.19.1_termo` e da `2.19.1_trainees` |
+| `2.19.1_labbio_salas.sql` | a consulta ao LABBIO para a Sala de Reuniões e o Auditório (`espacos.labbio`, `espacos.consulta_labbio`, `labbio_consultas`): nasce por gatilho ao salvar o evento, presa à ocorrência e à versão de local e horário, consultiva (sem resposta, o evento vale); conflito avisa o organizador uma vez; sobreposição sem títulos alheios para o organizador |
+| `2.19.1_labbio_tablets.sql` | os tablets na porta das salas: token por aparelho (só o hash fica), `sala_estado`, `sala_ocupar` (até 30 min, antes da próxima reserva) e `sala_liberar` para o papel anon; a gestão é do painel do LABBIO e do admin |
 
 A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
 2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
@@ -143,10 +145,17 @@ As consultas do LABBIO (25 asserções), depois do pedido de biometria e dos tra
 
 ```sh
 bash testes/preparar-base.sh teste t2191d 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
-     2.19.1_labbio_acesso.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql
+     2.19.1_labbio_acesso.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
+     2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql
 ```
 
-A 2.19.1 inteira, na ordem de aplicação em produção (497 asserções):
+As salas (19) e os tablets (17), depois do LABBIO:
+
+```sh
+bash testes/preparar-base.sh teste t2191tb 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql
+```
+
+A 2.19.1 inteira, na ordem de aplicação em produção (533 asserções):
 
 ```sh
 bash testes/preparar-base.sh teste t2191 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \

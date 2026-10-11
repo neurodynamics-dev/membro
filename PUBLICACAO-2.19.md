@@ -130,4 +130,15 @@ troque a senha se a TV for trocada de lugar.
 # Ordem das migrações da 2.19.1
 
 `2.19.1_labbio_base` → `2.19.1_recadastro` → `2.19.1_termo` →
-`2.19.1_labbio_acesso` → `2.19.1_reporte` → `2.19.1_trainees` → `2.19.1_labbio_dados`.
+`2.19.1_labbio_acesso` → `2.19.1_reporte` → `2.19.1_trainees` → `2.19.1_labbio_dados` →
+`2.19.1_labbio_salas` → `2.19.1_labbio_tablets`.
+
+# 2.19.1: salas e tablets do LABBIO
+
+1. **Aplicar** `db/2.19.1_labbio_salas.sql`. Ela marca, pelo nome, a Sala de
+   Reuniões e o Auditório como espaços do LABBIO com consulta. Confira:
+   `select id, nome, labbio, consulta_labbio from public.espacos order by nome;`
+   e marque outros espaços do LABBIO (sem consulta) com `labbio = true`.
+2. **Aplicar** `db/2.19.1_labbio_tablets.sql`.
+3. Piloto: um tablet por vez. No painel do LABBIO, cadastre o aparelho, copie
+   o endereço (aparece uma vez) e abra no tablet.

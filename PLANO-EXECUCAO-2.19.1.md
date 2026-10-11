@@ -217,7 +217,7 @@ desligar ao sair, fallback de upload), trilha visual no modelo de Arquivos;
 no `/labbio`, fila de pedidos com copiar por campo, baixar foto, negar com
 motivo, confirmar implantação.
 
-### L7 [O] Agenda: consulta de salas
+### L7 [O] Agenda: consulta de salas (feita: `db/2.19.1_labbio_salas.sql`, 19 asserções)
 
 - `espacos.labbio bool`, `espacos.consulta_labbio bool` (Sala de Reuniões,
   Auditório). `labbio_consultas(evento_id, ocorrencia, versao, situacao
@@ -228,7 +228,7 @@ motivo, confirmar implantação.
 
 ### L8 [S] Agenda no `/labbio` e aviso ao organizador.
 
-### L9 [O] Tablets
+### L9 [O] Tablets (feita: `db/2.19.1_labbio_tablets.sql`, 17 asserções; gestão em `labbio_dispositivo_*`)
 
 - `sala_dispositivos(id, espaco_id, rotulo, token_hash, ativo)`,
   `sala_ocupacoes(espaco_id, ate, criada_por_dispositivo)`.

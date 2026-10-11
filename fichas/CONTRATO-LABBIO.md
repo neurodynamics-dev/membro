@@ -109,3 +109,38 @@ Todas exigem gestor ativo; senão `{ status: 'sem_permissao' }`.
 - O termo assinado abre com `sb.storage.from('termos').createSignedUrl(arquivo, 120)`
   (em nova guia).
 - Revogação pendente nunca notifica ninguém: só aparece no início do painel.
+
+## Agenda das salas (L7)
+
+| RPC | Quem | Devolve |
+|---|---|---|
+| `labbio_agenda(p_de, p_ate)` (até 92 dias) | gestor ativo | `{ status, espacos: [{ id, nome, consulta }], eventos: [{ id, titulo, data, hora_inicio, hora_fim, espaco_id, espaco, status, organizador, convidados: [nomes], consulta: { id, situacao, motivo, decidido_em } \| null, sobreposicoes: [{ id, titulo, hora_inicio, hora_fim }] }] }` |
+| `labbio_consulta_decidir(p_id, p_disponivel, p_motivo?)` | gestor ativo | `{ status }`; `motivo_obrigatorio` (conflito), `invalidada` (o evento mudou) |
+| `labbio_consulta_do_evento(p_evento)` | membro (portal) | `{ status, consulta: { situacao, motivo, decidido_em, criada_em } \| null, sobreposicoes: [{ hora_inicio, hora_fim }] }` (sem títulos alheios) |
+
+- `situacao`: `pendente` (sem resposta: o evento vale assim mesmo; nunca
+  escreva "confirmado"), `disponivel`, `conflito`.
+- A consulta nasce sozinha ao salvar um evento na Sala de Reuniões ou no
+  Auditório; mudar data, horário, espaço ou cancelar invalida a anterior.
+- Conflito avisa o organizador uma vez (sino, tipo `agenda`, link para o evento).
+
+## Tablets (L9)
+
+Gestão (gestor ativo ou admin do SOMA):
+
+| RPC | Devolve |
+|---|---|
+| `labbio_dispositivo_criar(p_espaco, p_rotulo)` | `{ status, id, endereco: 'sala.html?d=<token>' }` (o token só aparece aqui, uma vez); `espaco_invalido`, `rotulo_obrigatorio` |
+| `labbio_dispositivos()` | `{ status, dispositivos: [{ id, rotulo, espaco_id, espaco, ativo, criado_em, revogado_em, ultimo_contato }] }` |
+| `labbio_dispositivo_revogar(p_id)` | `{ status }` |
+
+O tablet (sem login, chave pública):
+
+| RPC | Devolve |
+|---|---|
+| `sala_estado(p_token)` | `{ status, sala, rotulo, estado: 'evento'\|'ocupada'\|'livre', agora, evento, proximo, ocupada_ate }` |
+| `sala_ocupar(p_token, p_minutos 5..30)` | o mesmo, com `status` `ok`, `em_evento`, `sem_tempo` ou `invalido` |
+| `sala_liberar(p_token)` | o mesmo |
+
+`evento`/`proximo`: `{ id, titulo ('Reservado' se privado), data, hora_inicio, hora_fim, inicio, fim }`.
+`dispositivo_invalido` quando o token não existe ou foi revogado.
