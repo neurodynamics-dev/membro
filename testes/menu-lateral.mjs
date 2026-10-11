@@ -79,7 +79,7 @@ console.log('\nAberto (admin, 1440px)');
      tomaram o lugar de Meus pedidos, que virou subitem de Serviços */
   confere('os espaços, na ordem (admin vê também Studio, Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Marca|Equipe|Treinamentos|Serviços|Seleção|Administração',
+      'Agenda|Atividades|Equipe|OKRs|Projetos|Arquivos|Studio|Treinamentos|Serviços|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
   confere('Seleção e Administração vêm depois do divisor "Gestão"',
@@ -155,15 +155,16 @@ console.log('\nAberto (admin, 1440px)');
      seu rótulo */
     /* 14 desde a 2.19.1: "Acesso ao LABBIO" em Documentos e acessos (ficha L6) */
   confere('a seta abre Serviços sem navegar',
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 14 && srv.filhos[1] === 'Meus pedidos'
+    /* 2.19.2: Comunicação (o feed e as newsletters) e a Marca entram em Serviços */
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 20 && srv.filhos[1] === 'Meus pedidos'
       && srv.filhos[2] === 'Reporte semanal'
-      && srv.filhos.slice(3, 8).join('|') === 'Declaração de vínculo|Acesso ao LABBIO|Eventos e participações|Cofre de senhas|Meus dados'
-      && srv.rotulos.join('|') === 'Documentos e acessos|Ao Depto. de Pessoal'
+      && srv.filhos.slice(3, 9).join('|') === 'Feed da equipe|Newsletters|Modelos|Assinatura de e-mail|Configurações da marca|Manual da marca'
+      && srv.filhos.slice(9, 14).join('|') === 'Declaração de vínculo|Acesso ao LABBIO|Eventos e participações|Cofre de senhas|Meus dados'
+      && srv.rotulos.join('|') === 'Comunicação|Marca|Documentos e acessos|Ao Depto. de Pessoal'
       && await p.evaluate(() => location.hash) === '#/', srv);
   const equipe = await secao(p, 'equipe');
-  confere('Equipe mantém Feed e Newsletters, sem Reporte semanal (2.19.1)',
-    equipe.filhos.length === 5 && !equipe.filhos.includes('Reporte semanal')
-      && equipe.filhos.includes('Newsletters') && equipe.filhos.includes('Feed da equipe'), equipe);
+  confere('Equipe fica com Organograma, Quadro e Presença: o feed e as newsletters foram para Serviços (2.19.2)',
+    equipe.filhos.join('|') === 'Organograma|Quadro de pessoal|Presença', equipe);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-filho[data-sub="ouvidoria"]');
   await p.waitForTimeout(700);
   confere('o subitem leva à tela', await p.evaluate(() => location.hash) === '#/servicos/ouvidoria');
@@ -209,11 +210,15 @@ console.log('\nAberto (admin, 1440px)');
     return { borda: cs.borderTopColor, fundo: cs.backgroundColor, legenda: getComputedStyle(b.querySelector('span')).opacity,
       atalho: getComputedStyle(b.querySelector('kbd')).opacity, w: Math.round(r.width), ic: Math.round(i.left + i.width / 2),
       marca: getComputedStyle(document.getElementById('lt-marca')).display,
-      simbolo: getComputedStyle(document.querySelector('#lt-recolher .lt-simbolo')).display }; });
+      simbolo: getComputedStyle(document.querySelector('#lt-marca .lt-simbolo')).display,
+      simboloBt: getComputedStyle(document.querySelector('#lt-recolher .lt-simbolo')).display,
+      imagotipo: getComputedStyle(document.querySelector('#lt-marca .lt-imagotipo')).display,
+      expande: getComputedStyle(document.querySelector('#lt-recolher .ic.expande')).display }; });
   confere('no trilho, a busca é só o ícone — sem caixa nem legenda —, no eixo dos outros ícones',
     bus.borda === 'rgba(0, 0, 0, 0)' && bus.fundo === 'rgba(0, 0, 0, 0)' && bus.legenda === '0' && bus.atalho === '0'
     && bus.w <= 48 && bus.ic === 34, bus);
-  confere('no trilho, o símbolo ocupa o lugar do botão de expandir e o imagotipo sai', bus.marca === 'none' && bus.simbolo === 'block', bus);
+  confere('no trilho (2.19.2), o símbolo é a logo e leva ao Início; abrir o menu é um botão à parte',
+    bus.marca === 'flex' && bus.simbolo === 'block' && bus.imagotipo === 'none' && bus.simboloBt === 'none' && bus.expande === 'block', bus);
 
   await p.reload({ waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])'); await p.waitForTimeout(700);

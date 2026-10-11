@@ -107,7 +107,7 @@ try{
     await p.waitForSelector('#tb-membros tbody tr');
     const bruno = p.locator('#tb-membros tr', { hasText:'Bruno Tavares' });
     confere('chip Trainee no quadro', await bruno.locator('.chip', { hasText:'Trainee' }).count() === 1);
-    await p.click('#q-f-trainee');
+    await p.click('#q-fb .fb-btn:has-text("Trainees")'); await p.click('#q-fb [role=option][data-v="sim"]');
     const nomes = await p.locator('#tb-membros tbody td.nome').allInnerTexts();
     confere('filtro Trainees deixa só o trainee', nomes.length === 1 && nomes[0].includes('Bruno Tavares'), nomes);
     await p.evaluate(() => { location.hash = '#/equipe/11'; });

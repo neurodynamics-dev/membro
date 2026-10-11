@@ -180,12 +180,12 @@ confere('os grupos da Carla incluem os de cima dos dois lados da árvore',
 confere('convidar NRO_LEADERSHIP na Agenda convida quem está em MANAGERS', herda.convite.join() === 'Carla Mendonça', herda.convite);
 confere('e o grupo guarda-chuva aparece na lista de grupos, mesmo sem ninguém direto', herda.lista);
 await ir(p, '#/equipe/quadro', 1100);
-const opcoesGrupo = await p.evaluate(() => [...document.querySelectorAll('.filtros select')].at(-1)
-  ? [...[...document.querySelectorAll('.filtros select')].at(-1).options].map(o => o.textContent) : []);
+const opcoesGrupo = await p.evaluate(() => [...document.querySelectorAll('#q-fb .fb-grupo')].find(g => g.querySelector('.fb-btn').textContent.trim() === 'Grupo')
+  ?.querySelectorAll('[role=option]') ? [...[...document.querySelectorAll('#q-fb .fb-grupo')].find(g => g.querySelector('.fb-btn').textContent.trim() === 'Grupo').querySelectorAll('[role=option]')].map(o => o.textContent) : []);
 confere('o filtro de grupo do quadro de pessoal oferece o grupo guarda-chuva', opcoesGrupo.includes('NRO_LEADERSHIP'), opcoesGrupo);
-await p.evaluate(() => { const s = [...document.querySelectorAll('.filtros select')];
-  s[0].value = ''; s[0].dispatchEvent(new Event('change'));
-  s.at(-1).value = 'NRO_LEADERSHIP'; s.at(-1).dispatchEvent(new Event('change')); });
+/* a FilterBar (2.19.2): tira o status padrão (Ativo) e marca o grupo */
+await p.click('#q-fb .fb-btn:has-text("Status")'); await p.click('#q-fb .fb-grupo:has(.fb-btn:has-text("Status")) .limpar');
+await p.click('#q-fb .fb-btn:text-is("Grupo")'); await p.click('#q-fb [role=option][data-v="NRO_LEADERSHIP"]');
 await p.waitForTimeout(300);
 const noQuadro = await p.evaluate(() => [...document.querySelectorAll('.tabela tbody tr')].map(r => r.textContent));
 confere('filtrar por NRO_LEADERSHIP acha a Carla, que está lá por MANAGERS',
