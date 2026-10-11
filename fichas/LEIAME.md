@@ -22,11 +22,11 @@ Antes da primeira, leia `../GUIA-EXECUCAO.md`.
 | [L10](L10.md) tela do tablet (`sala.html`) | [S] | a fazer (depois da L8) | `CONTRATO-LABBIO.md` |
 | T3 onboarding (banco) | [O] | feita (`db/2.19.1_onboarding.sql`) | `CONTRATO-TRAINEES.md` |
 | [T2](T2.md) telas dos trainees | [S] | feita ([O]; o executor pula) | `CONTRATO-TRAINEES.md` |
-| [T3](T3.md) tour com progresso no servidor e painel | [S] | a fazer (depois da T2) | `CONTRATO-TRAINEES.md` |
+| [T3](T3.md) tour com progresso no servidor e painel | [S] | feita ([O]; o executor pula) | `CONTRATO-TRAINEES.md` |
 | F0 feed, notícias, reações e newsletter (banco) | [O] | feita (`db/2.19.1_feed.sql`) | `CONTRATO-FEED.md` |
 | [F1](F1.md) portal: feed, mesa editorial, widget e newsletter | [S] | a fazer (depois da R5: mexe em `mod-reporte.js`) | `CONTRATO-FEED.md` |
 | [F2](F2.md) site: notícias, matéria, inscrição (repositório **website**) | [S] | feita ([O], website `5654a9a`; o executor pula) | `CONTRATO-FEED.md` |
 | [F3](F3.md) `noticia.html`: reagir fora do portal | [S] | feita ([O]; o executor pula) | `CONTRATO-FEED.md` |
 
-Ordem sugerida para o executor: R2 → R3 → R4 → R5 → F1 → L2 → L4 → L6 → L8 → L10 → T3.
+Ordem sugerida para o executor: R2 → R3 → R4 → R5 → F1 → L2 → L4 → L6 → L8 → L10.
 F2 e F3 já foram feitas na branch [O]; traga-as com o merge de `slp/ecstatic-noether-evq50w` antes da próxima ficha.

@@ -47,6 +47,7 @@ const ICONES_ADM = {
   emails:'<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="m4.5 7 7.5 5.4L19.5 7"/><path d="M7 15.5h5"/>',
   auditoria:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.5M4.5 12h.5M4.5 18h.5"/>',
   recadastro:'<path d="M4 20.5v-1a5 5 0 0 1 5-5h2"/><circle cx="10" cy="7.5" r="3.5"/><path d="m14.5 18 2 2 4-4.5"/>',
+  onboarding:'<path d="M5 20V5.5M5 5.5h10l-2 3 2 3H5"/><path d="M9 20h10"/>',
   termo:'<path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M13.5 3.5V8h4.5M9.5 16.5c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3 0"/>',
   links:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/>',
   site:'<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18"/>'
@@ -82,6 +83,7 @@ async function pageAdmin(sub, sub2){
   if (k === 'grupos')     return admCarregarGrupos(sub2);
   if (k === 'acessos')    return admCarregarCatalogo();
   if (k === 'importar')   return pageImportar();
+  if (k === 'onboarding') return admCarregarOnboarding();
 
   /* Um painel por vez: só existe um #sec-* na tela, e carregar os cinco
      juntos fazia quatro deles escreverem em contêiner inexistente. */
@@ -89,6 +91,42 @@ async function pageAdmin(sub, sub2){
                   solicitacoes: admCarregarSols, ouvidoria: admCarregarOuvidoria,
                   agendas: admCarregarAgendas };
   if (carga[k]) await carga[k]();
+}
+
+/* ============================================================
+   ONBOARDING (2.19.1, ficha T3): quem já passou por cada etapa da
+   trilha (onboarding_painel), trainees primeiro, como o banco ordena.
+   ============================================================ */
+const admOnb = { dados:null, soTrainees:false };
+async function admCarregarOnboarding(){
+  const el = $('#sec-onboarding'); if (!el) return;
+  try{
+    const { data, error } = await sb.rpc('onboarding_painel');
+    if (error) throw error;
+    if (data?.status !== 'ok'){ el.innerHTML = `<div class="aviso-box warn">Sem acesso ao painel de onboarding.</div>`; return; }
+    admOnb.dados = data; admDesenharOnboarding();
+  }catch(e){
+    el.innerHTML = `<div class="aviso-box err">Não foi possível carregar o onboarding (${esc(e.message || 'erro')}). Confira se a migração 2.19.1_onboarding foi aplicada.</div>`;
+  }
+}
+function admDesenharOnboarding(){
+  const el = $('#sec-onboarding'); if (!el || !admOnb.dados) return;
+  const ps = (admOnb.dados.pessoas || []).filter(x => !admOnb.soTrainees || x.trainee);
+  const barra = x => `<div class="rec-barra" role="progressbar" aria-valuemin="0" aria-valuemax="${x.total}" aria-valuenow="${x.feitas}"
+      aria-label="${x.feitas} de ${x.total} etapas">${Array.from({ length:x.total }, (_, i) => `<span class="${i < x.feitas ? 'feito' : ''}"></span>`).join('')}</div>`;
+  el.innerHTML = `<div class="filtros" style="margin-bottom:12px">
+      <button type="button" class="chip${admOnb.soTrainees ? ' on' : ''}" aria-pressed="${admOnb.soTrainees}" id="onb-so-trainees"
+        onclick="admOnb.soTrainees=!admOnb.soTrainees;admDesenharOnboarding()">Só trainees</button></div>
+    ${ps.length ? `<div class="card" style="padding:8px 14px"><div class="wrap"><table class="tabela trabalho" id="onb-tabela">
+      <thead><tr><th>Pessoa</th><th>Liderança</th><th style="width:200px">Progresso</th><th>Pendências</th></tr></thead>
+      <tbody>${ps.map(x => `<tr>
+        <td><a href="#/equipe/${x.registro}">${esc(x.nome)}</a>${x.trainee ? ' <span class="chip mini">Trainee</span>' : ''}</td>
+        <td>${esc(x.gestor_nome || '—')}</td>
+        <td>${barra(x)}<span class="small muted">${x.feitas} de ${x.total}</span></td>
+        <td class="small" style="white-space:normal">${(x.pendentes || []).length
+          ? `<ul style="margin:0;padding-left:16px">${x.pendentes.slice(0, 3).map(t => `<li>${esc(t)}</li>`).join('')}</ul>${x.pendentes.length > 3 ? `<span class="muted">e mais ${x.pendentes.length - 3}</span>` : ''}`
+          : '<span class="muted">Nada pendente</span>'}</td></tr>`).join('')}</tbody></table></div></div>`
+      : '<div class="empty">Ninguém com este filtro.</div>'}`;
 }
 
 /* O cabeçalho antigo tinha um contador por aba; agora a contagem vive nos
