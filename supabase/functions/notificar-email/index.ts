@@ -945,13 +945,16 @@ async function enviarProgramados(): Promise<Record<string, unknown>> {
   return { programados: total, programados_falhas: totalFalhas, ...(erroGeral ? { programados_detalhe: erroGeral } : {}) };
 }
 
-export interface BoletimItem { titulo: string; subtitulo: string; texto: string; imagem?: string | null; }
+export interface BoletimItem { titulo: string; subtitulo: string; texto: string; imagem?: string | null; url?: string | null; }
+/* imagem pública do bucket noticias (2.19.1): o banco manda o caminho relativo */
+const imagemPublica = (i?: string | null) => i && /^noticias\//.test(i) ? `${URL_BASE}/storage/v1/object/public/${i}` : (i || null);
 export function montarBoletim(assunto: string, itens: BoletimItem[], descadastro = "") {
   const par = (t: string) => String(t || "").split(/\n{2,}/).map((p) => esc(p.trim()).replace(/\n/g, "<br>")).filter(Boolean);
   const item = (i: BoletimItem) => {
     const img = /^https:\/\//i.test(String(i.imagem || ""))
       ? `<tr><td><img src="${esc(i.imagem)}" width="510" alt="" style="display:block;width:100%;border:0;border-radius:16px"></td></tr>${esp(20)}` : "";
-    return `${img}${titulo(esc(i.titulo), 22)}${i.subtitulo ? esp(8) + texto(esc(i.subtitulo), "#616C68", 13) : ""}${esp(12)}${par(i.texto).map((p) => texto(p) + esp(10)).join("")}${esp(26)}`;
+    const leia = /^https:\/\//i.test(String(i.url || "")) ? texto(lnk(String(i.url), "Ler a matéria completa"), "#2E3533", 14) + esp(10) : "";
+    return `${img}${titulo(esc(i.titulo), 22)}${i.subtitulo ? esp(8) + texto(esc(i.subtitulo), "#616C68", 13) : ""}${esp(12)}${par(i.texto).map((p) => texto(p) + esp(10)).join("")}${leia}${esp(26)}`;
   };
   const rodape = descadastro
     ? "Você recebe este e-mail por fazer parte da comunidade NeuroDynamics."
@@ -959,7 +962,7 @@ export function montarBoletim(assunto: string, itens: BoletimItem[], descadastro
   return {
     html: moldura({ assunto, categoria: "Boletim", preheader: itens[0]?.titulo || assunto, descadastro,
       miolo: titulo(esc(assunto), 28) + esp(24) + itens.map(item).join(""), rodape }),
-    texto: assunto+"\n\n"+itens.map(i=>i.titulo+"\n"+i.subtitulo+"\n"+i.texto).join("\n\n")+(descadastro?"\nDescadastrar: "+descadastro:"")
+    texto: assunto+"\n\n"+itens.map(i=>i.titulo+"\n"+i.subtitulo+"\n"+i.texto+(i.url?"\nLer: "+i.url:"")).join("\n\n")+(descadastro?"\nDescadastrar: "+descadastro:"")
   };
 }
 async function enviarNewsletters(): Promise<Record<string, unknown>> {
@@ -969,7 +972,7 @@ async function enviarNewsletters(): Promise<Record<string, unknown>> {
   let enviadas=0, falhas=0;
   for(const d of lote){
     const url=d.token?`${PORTAL}/descadastrar?t=${encodeURIComponent(d.token)}`:"";
-    const conteudo=montarBoletim(d.assunto,d.itens,url);
+    const conteudo=montarBoletim(d.assunto,(d.itens||[]).map(i=>({...i,imagem:imagemPublica(i.imagem)})),url);
     let erro="";
     try{
       const pedido=montarEnvio(PROVEDOR,DE,DE_NOME,d.email,d.nome,d.assunto,conteudo.html,conteudo.texto);
@@ -985,6 +988,41 @@ async function enviarNewsletters(): Promise<Record<string, unknown>> {
     await rpc("newsletter_baixa",{p_id:d.id,p_erro:erro||null});
   }
   return {newsletters:enviadas,newsletters_falhas:falhas};
+}
+
+/* ------------------------------------------------------------
+   A INSCRIÇÃO NA NEWSLETTER PELO SITE (2.19.1)
+   Um e-mail para confirmar; sem o clique, a pessoa não recebe nada.
+   A fila é comunidade_envios.
+   ------------------------------------------------------------ */
+const SITE = env("SITE_URL") || "https://neurodynamics.dev";
+export function confirmacaoHTML(nome: string, link: string): string {
+  return moldura({ assunto: "Confirme a sua inscrição", categoria: "Newsletter",
+    miolo: titulo(`Olá, ${esc(primeiroNome(nome))}.`) + esp(14)
+      + texto("Recebemos o pedido para você receber as notícias da NeuroDynamics por e-mail. Para confirmar, use o botão abaixo.")
+      + esp(24) + botao(link, "Confirmar a inscrição") + esp(14)
+      + texto("O link vale por 7 dias.", "#2E3533", 14),
+    rodape: "Se não foi você quem pediu, ignore este e-mail: sem a confirmação, nada é enviado." });
+}
+async function enviarConfirmacoes(): Promise<Record<string, unknown>> {
+  let lote: { id: number; email: string; nome: string; token: string }[];
+  try { lote = (await rpc("comunidade_envios_lote", { p_limite: LOTE })) as typeof lote; }
+  catch (e) {
+    return /PGRST202|404|comunidade_envios_lote/.test(String(e)) ? { confirmacoes: "sem_migracao_2191" } : { confirmacoes: "erro", confirmacoes_detalhe: String(e) };
+  }
+  if (!lote?.length) return { confirmacoes: 0 };
+  const enviados: number[] = [], falhas: number[] = []; let erro = "";
+  for (const c of lote) {
+    const link = `${SITE}/#/newsletter/confirmar?t=${encodeURIComponent(c.token)}`;
+    try {
+      const m = await enviarUm(c.email, c.nome, "Confirme a sua inscrição", confirmacaoHTML(c.nome, link),
+        `Olá, ${primeiroNome(c.nome)}.\n\nPara confirmar a inscrição nas notícias da NeuroDynamics: ${link}\n\nSe não foi você, ignore este e-mail.\n`);
+      if (m) { falhas.push(c.id); erro = m; } else { enviados.push(c.id); }
+    } catch (x) { falhas.push(c.id); erro = String(x); }
+  }
+  try { await rpc("comunidade_envios_baixa", { p: { enviados, falhas, erro } }); }
+  catch (x) { return { confirmacoes: enviados.length, confirmacoes_detalhe: "enviou, mas não deu baixa: " + String(x) }; }
+  return { confirmacoes: enviados.length, confirmacoes_falhas: falhas.length, ...(erro ? { confirmacoes_detalhe: erro } : {}) };
 }
 
 async function rpc(nome: string, corpo: unknown): Promise<unknown> {
@@ -1335,7 +1373,8 @@ async function passada(): Promise<[Record<string, unknown>, number]> {
   /* as declarações e a agenda primeiro: saem mesmo que o sino não
      tenha aviso nenhum para ninguém, e o lembrete tem hora */
   const docs = { ...push, ...(await enviarDocumentos()), ...(await enviarAgenda()), ...(await enviarProgramados()),
-                 ...(await enviarPS()), ...(await enviarNewsletters()), ...(await enviarLabbio()) };
+                 ...(await enviarPS()), ...(await enviarNewsletters()), ...(await enviarLabbio()),
+                 ...(await enviarConfirmacoes()) };
 
   let destinos: Destinatario[];
   try {

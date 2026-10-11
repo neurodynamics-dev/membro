@@ -131,7 +131,7 @@ troque a senha se a TV for trocada de lugar.
 
 `2.19.1_labbio_base` → `2.19.1_recadastro` → `2.19.1_termo` →
 `2.19.1_labbio_acesso` → `2.19.1_reporte` → `2.19.1_trainees` → `2.19.1_labbio_dados` →
-`2.19.1_labbio_salas` → `2.19.1_labbio_tablets` → `2.19.1_onboarding`.
+`2.19.1_labbio_salas` → `2.19.1_labbio_tablets` → `2.19.1_onboarding` → `2.19.1_feed`.
 
 # 2.19.1: salas e tablets do LABBIO
 
@@ -142,3 +142,16 @@ troque a senha se a TV for trocada de lugar.
 2. **Aplicar** `db/2.19.1_labbio_tablets.sql`.
 3. Piloto: um tablet por vez. No painel do LABBIO, cadastre o aparelho, copie
    o endereço (aparece uma vez) e abra no tablet.
+
+# 2.19.1: feed, notícias no site e newsletter
+
+1. **Aplicar** `db/2.19.1_feed.sql`. O acervo continua publicado só para a
+   equipe; nada vai para o site sozinho. Os boletins que esperavam votos
+   ficam cancelados (não disparam). A partir de agora, só o que for
+   publicado entra nas próximas edições.
+2. **Publicar de novo** a `notificar-email` (confirmação da inscrição pelo
+   site e o link "Ler a matéria completa" na newsletter). Se o site não for
+   `https://neurodynamics.dev`, defina o segredo `SITE_URL`.
+3. **Conferir** que NRO_MANAGERS tem as pessoas certas: são elas que publicam.
+4. As telas vêm nas fichas F1 a F3; até lá, enviar o reporte deixa a
+   contribuição "pronta" e ninguém a publica.
