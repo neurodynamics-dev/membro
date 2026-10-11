@@ -7,7 +7,7 @@
                a busca da tela abre o caminho; o progresso, o detalhe com
                comentários, o comentar grava; quem é só leitura não cria
                nem desdobra;
-     Seleção — as oito abas têm endereço e acendem no menu; visão geral,
+     Seleção — as nove abas (a 2.19.1 trouxe Trainees) têm endereço e acendem no menu; visão geral,
                candidatos (filtro, seleção em lote, ficha por endereço),
                competências (nome com aspas não quebra), avaliação (grava
                a nota), agenda, dinâmica (sub-abas e a janela com código),
@@ -172,8 +172,9 @@ console.log('\nSeleção (admin)');
     const s = document.querySelector('#lt-nav .lt-sec[data-r="selecao"]');
     return { aberta: s.classList.contains('aberta'), filhos: [...s.querySelectorAll('.lt-filho .nm')].map(x => x.textContent) };
   });
-  confere('no menu, Seleção aberta com as oito abas',
-    menu.aberta && menu.filhos.join('|') === 'Visão geral|Candidatos|Avaliação|Agenda|Dinâmica|Publicações|FAQ|Configurações', menu);
+  /* 2.19.1: Trainees entrou depois de Dinâmica (ficha T2) */
+  confere('no menu, Seleção aberta com as nove abas',
+    menu.aberta && menu.filhos.join('|') === 'Visão geral|Candidatos|Avaliação|Agenda|Dinâmica|Trainees|Publicações|FAQ|Configurações', menu);
   confere('e "Visão geral" marcada', JSON.stringify(await atual(p)) === '["Visão geral"]', await atual(p));
 
   await p.click('.nav1 a:has-text("Candidatos")'); await p.waitForTimeout(800);

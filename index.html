@@ -1036,6 +1036,10 @@ function carregarGrupos(){
           () => {});
 }
 const grupoPorNome = n  => (state.grupos || []).find(g => g.nome === n) || null;
+/* trainee é quem tem o cargo Trainee (2.19.1, sem coluna nova): uma regra
+   só, para o chip aparecer igual no quadro, na ficha e no organograma */
+const ehTrainee = m => /^trainee$/i.test(String(m?.cargo || '').trim());
+const chipTrainee = m => ehTrainee(m) ? ' <span class="chip mini">Trainee</span>' : '';
 const grupoPorId   = id => (state.grupos || []).find(g => g.id === id) || null;
 /* O grupo e os de cima, até a raiz. state.grupos só tem os ativos, então
    um grupo desativado no caminho interrompe a subida — como no banco. */
@@ -1088,7 +1092,7 @@ const GRUPOS_PAINEL = ['Portal','Pessoas','Registro','Conteúdo'];
 /* As abas do Processo Seletivo — também listadas pelo menu antes de o
    módulo de seleção descer. A primeira é a visão geral, em #/selecao. */
 const ABAS_SELECAO = [['','Visão geral'],['candidatos','Candidatos'],['avaliacao','Avaliação'],
-  ['agenda','Agenda'],['dinamica','Dinâmica'],['publicacoes','Publicações'],['faq','FAQ'],
+  ['agenda','Agenda'],['dinamica','Dinâmica'],['trainees','Trainees'],['publicacoes','Publicações'],['faq','FAQ'],
   ['config','Configurações']];
 
 /* ---------------- Studio: o vocabulário (v23) ----------------
@@ -3693,7 +3697,7 @@ function cartaoOrg(m, ativos){
   const lidera = ativos.filter(x=>x.gestor_registro===m.registro).length;
   return `<button class="org-card" onclick="focarOrg(${m.registro})" title="${esc(m.nome)}">
     ${avatarFoto(m, 38, 12)}
-    <span class="tx"><span class="nm">${esc(m.nome)}</span>
+    <span class="tx"><span class="nm">${esc(m.nome)}${chipTrainee(m)}</span>
     <span class="cg">${esc(m.cargo||'—')}${lidera?`, lidera ${lidera}`:''}${m.status!=='Ativo'?', em pausa':''}</span></span></button>`;
 }
 function desenhaOrg(filtro){
@@ -3725,7 +3729,7 @@ function desenhaOrg(filtro){
           onclick="modalFoto(${foco.registro})" title="${foco.foto_url ? 'Trocar a foto' : 'Enviar foto'}"
           aria-label="${foco.foto_url ? 'Trocar a foto' : 'Enviar foto'}">${ic('camera')}</button>` : ''}</span>
         <span class="tx" style="flex:1;white-space:normal">
-          <span class="nm" style="font-size:15px;white-space:normal">${esc(foco.nome)}</span>
+          <span class="nm" style="font-size:15px;white-space:normal">${esc(foco.nome)}${chipTrainee(foco)}</span>
           <span class="cg" style="white-space:normal">${esc(foco.cargo||'—')}${foco.departamento?', '+esc(foco.departamento):''}</span>
           <span class="small" style="display:block;margin-top:3px">${esc(foco.email_nro||foco.email_pessoal||'')}</span>
         </span>

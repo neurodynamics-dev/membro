@@ -29,7 +29,7 @@
 const gestao = {
   pronto: false, apont: null,
   tiposOcorrencia: [],
-  filtros: { q:'', status:'Ativo', dep:'', grupo:'' },
+  filtros: { q:'', status:'Ativo', dep:'', grupo:'', trainee:false },
   ficha: null,
   aud: []
 };
@@ -169,6 +169,7 @@ function membrosFiltrados(){
     (!f.status || m.status === f.status) &&
     (!f.dep || m.departamento === f.dep) &&
     (!f.grupo || gruposEfetivos(m).has(f.grupo)) &&
+    (!f.trainee || ehTrainee(m)) &&
     (!q || norm(m.nome).includes(q) || norm(m.email_nro).includes(q)
         || norm(m.email_pessoal).includes(q) || String(m.registro).includes(q))
   ).sort((a,b) => a.registro - b.registro);
@@ -185,8 +186,10 @@ function filtrosHTML(){
     ${sel('status','Status', STATUS_LIST, f.status)}
     ${sel('dep','Departamento', opcoesDe('departamento'), f.dep)}
     ${sel('grupo','Grupo', todosGrupos(), f.grupo)}
+    <button type="button" class="chip${f.trainee ? ' on' : ''}" aria-pressed="${f.trainee}" id="q-f-trainee"
+      onclick="gestao.filtros.trainee=!gestao.filtros.trainee;this.classList.toggle('on',gestao.filtros.trainee);this.setAttribute('aria-pressed',gestao.filtros.trainee);renderTabelaMembros()">Trainees</button>
     ${ibtn('x','Limpar filtros (volta ao padrão de ativos)',
-      "gestao.filtros={q:'',status:'Ativo',dep:'',grupo:''};renderQuadro()")}
+      "gestao.filtros={q:'',status:'Ativo',dep:'',grupo:'',trainee:false};renderQuadro()")}
   </div>`;
 }
 function renderTabelaMembros(){
@@ -199,7 +202,7 @@ function renderTabelaMembros(){
       <tbody>${ms.map(m=>`<tr class="click" tabindex="0" onclick="abrirFicha(${m.registro})"
         onkeydown="if(event.key==='Enter')abrirFicha(${m.registro})">
         <td class="reg">${pad3(m.registro)}</td>
-        <td class="nome" title="${esc(m.nome)}">${esc(m.nome)}</td>
+        <td class="nome" title="${esc(m.nome)}">${esc(m.nome)}${chipTrainee(m)}</td>
         <td title="${esc(m.departamento||'')}">${esc(m.departamento||'—')}</td>
         <td title="${esc(m.cargo||'')}">${esc(m.cargo||'—')}</td>
         <td title="${esc([...gruposEfetivos(m)].join(', '))}">${chips([...gruposEfetivos(m)],2)}</td>
@@ -507,6 +510,7 @@ function renderFicha(){
     espaco: 'Equipe',
     titulo: m.nome,
     codigo: String(m.registro).padStart(3, '0'),
+    meta: ehTrainee(m) ? '<span class="chip mini">Trainee</span>' : '',
     voltar: podeQuadro() ? ['Quadro de pessoal', '#/equipe/quadro'] : ['Organograma', '#/equipe'],
     acoes: [`<button class="btn ghost" onclick="relatorioDoMembro()">${ic('doc')}Relatório</button>`,
       can() ? `<button class="btn ghost" onclick="gestao.ficha.editando=true;gestao.ficha.tab='dados';renderFicha()">${ic('pencil')}Editar dados</button>` : '']

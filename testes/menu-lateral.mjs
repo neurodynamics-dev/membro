@@ -446,8 +446,9 @@ for (const [papel, esperado] of [
 ]){
   const { ctx, p } = await abrir({ stub: stubDe(papel) });
   const adm = await secao(p, 'admin'), eq = await secao(p, 'equipe'), sel = await secao(p, 'selecao');
-  confere(`${papel}: Seleção ${esperado.selecao ? 'aparece, com as oito abas' : 'não aparece'}`,
-    esperado.selecao ? sel?.filhos.length === 8 : sel === null, sel?.filhos ?? null);
+  /* nove abas desde a 2.19.1 (Trainees, ficha T2) */
+  confere(`${papel}: Seleção ${esperado.selecao ? 'aparece, com as nove abas' : 'não aparece'}`,
+    esperado.selecao ? sel?.filhos.length === 9 : sel === null, sel?.filhos ?? null);
   const okAdm = esperado.admin === null ? adm === null
     : typeof esperado.admin === 'number' ? adm?.filhos.length === esperado.admin
     : adm?.filhos.join('|') === esperado.admin;

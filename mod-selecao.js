@@ -199,7 +199,7 @@ async function desenhaSelecao(){
     ${navNivel1(PS_ABAS.map(([t, l]) => [t, l, '#/selecao' + (t === 'geral' ? '' : '/' + t)]), PS.tab, 'Seleção')}
     <div id="sel-corpo"></div>`;
   ({geral:psGeral, candidatos:psCandidatos, avaliacao:psAvaliacao, agenda:psAgenda,
-    dinamica:psDinamica, publicacoes:psPublicacoes, faq:psFaq, config:psConfig}[PS.tab]||psGeral)();
+    dinamica:psDinamica, trainees:psTrainees, publicacoes:psPublicacoes, faq:psFaq, config:psConfig}[PS.tab]||psGeral)();
 }
 
 /* ============================================================
@@ -498,7 +498,8 @@ function psAbrirFicha(id){
       <button class="btn ghost" onclick="psEmailConfirmacao('${c.id}', true)">${ic('mail')} Escrever e-mail de confirmação</button>
       ${psHr}
       <h3 style="font-size:14px;margin-bottom:6px">Integrar como membro</h3>
-      ${podeIntegrar ? `
+      ${c.status === 'trainee' ? `<p class="small">Para trainees, use <a href="#/selecao/trainees" onclick="fechaModal()">Seleção › Trainees</a>.</p>`
+      : podeIntegrar ? `
         <p class="small muted" style="margin-bottom:12px">Cria o registro no quadro com todos os dados da ficha, grava a ocorrência de ingresso e marca o candidato como integrado.</p>
         <div class="form-grid">
           <div class="fld"><label>Nº de registro</label><input id="ps-int-reg" type="number" value="${proxReg}"></div>
@@ -549,6 +550,198 @@ async function psIntegrarCand(id){
     else if(data?.status==='status_invalido') toast('O candidato precisa estar como trainee ou aprovado no final.', true);
     else toast('Não foi possível integrar: '+(data?.status||''), true);
   }catch(e){ falha(e,'Falha na integração'); }
+}
+
+/* ============================================================
+   TRAINEES (2.19.1, ficha T2; contrato em fichas/CONTRATO-TRAINEES.md)
+   Para admitir: os candidatos em "trainee" que ainda não estão no
+   quadro, com a prévia (área, gestor, grupos, registro) antes de
+   gravar. No quadro: quem tem o cargo Trainee, com efetivar e dispensar.
+   ============================================================ */
+const PS_TR_ERRO = {
+  nao_encontrado:'O candidato não está mais na lista.', status_invalido:'O candidato não está como trainee.',
+  email_de_membro:'Já existe um membro com este e-mail.', registro_em_uso:'Este registro já está em uso.',
+  area_obrigatoria:'Escolha a área de alocação.', gestor_invalido:'Escolha um gestor ativo.',
+  grupo_invalido:'Um dos grupos não existe ou está inativo.'
+};
+const psTr = { pend:null, quadro:null, area:'', sel:new Set(), previa:[] };
+const psTrGestao = () => tenhoPapel('admin') || tenhoPapel('pessoal');
+
+async function psTrainees(){
+  const el = $('#sel-corpo');
+  el.innerHTML = '<div class="carregando"><span class="spin"></span> Carregando os trainees…</div>';
+  try{
+    const [a, b] = await Promise.all([sb.rpc('ps_trainees_pendentes', { p_edicao: PS.ed?.id || null }),
+                                      sb.rpc('trainees_quadro', { p_area_interesse: psTr.area || null })]);
+    if (a.error) throw a.error; if (b.error) throw b.error;
+    psTr.pend = a.data?.status === 'ok' ? a.data : null;
+    psTr.quadro = b.data?.status === 'ok' ? b.data.trainees || [] : [];
+    psTr.sel = new Set([...psTr.sel].filter(id => (psTr.pend?.candidatos || []).some(c => c.id === id && !c.membro_mesmo_email)));
+    psTrDesenhar();
+  }catch(e){
+    el.innerHTML = `<div class="aviso-box err"><b>Não foi possível carregar os trainees.</b> ${esc(e.message || '')}
+      Confira se a migração 2.19.1_trainees foi aplicada.</div><button class="btn ghost" onclick="psTrainees()">Tentar de novo</button>`;
+  }
+}
+
+function psTrDesenhar(){
+  const el = $('#sel-corpo'); if (!el) return;
+  const p = psTr.pend, cands = p?.candidatos || [], semGrupo = p && !p.grupo_trainee;
+  const areas = PS.ed?.areas || [];
+  const linhaCand = c => {
+    const bloq = !!c.membro_mesmo_email;
+    return `<tr id="ps-tr-c-${esc(c.id)}">
+      <td style="width:40px"><input type="checkbox" aria-label="Selecionar ${esc(c.nome)}" ${bloq ? 'disabled' : ''}
+        ${psTr.sel.has(c.id) ? 'checked' : ''} onchange="psTrMarcar('${esc(c.id)}', this.checked)"></td>
+      <td><b>${esc(c.nome)}</b>${bloq ? `<div class="small" style="color:var(--warn-tx);white-space:normal">Já existe um membro com este e-mail (registro ${Number(c.membro_mesmo_email)}): confira antes.</div>` : ''}</td>
+      <td>${esc(c.email)}</td>
+      <td>${(c.areas_interesse || []).map(x => `<span class="chip mini">${esc(x)}</span>`).join(' ') || '—'}</td>
+      <td>${esc(c.curso || '—')}</td></tr>`;
+  };
+  const gestao = psTrGestao();
+  const linhaQ = t => `<tr>
+      <td><a href="#/equipe/${t.registro}">${esc(t.nome)}</a> <span class="chip mini">Trainee</span></td>
+      <td>${(t.areas_interesse || []).map(x => `<span class="chip mini">${esc(x)}</span>`).join(' ') || '—'}</td>
+      <td class="ps-tr-aloc">${esc(t.alocacao || '—')}</td>
+      <td>${esc(t.gestor_nome || '—')}</td>
+      <td>${t.data_ingresso ? fmtD(t.data_ingresso) : '—'}</td>
+      ${gestao ? `<td style="white-space:nowrap"><button class="btn ghost mini" onclick="psTrEfetivar(${t.registro})">Efetivar</button>
+        <button class="btn ghost mini" onclick="psTrDispensar(${t.registro})">Dispensar</button></td>` : ''}</tr>`;
+  el.innerHTML = `
+    ${p ? `<section class="card" style="margin-bottom:18px" aria-labelledby="ps-tr-h1">
+      <h3 id="ps-tr-h1" style="margin-bottom:6px">Para admitir</h3>
+      <p class="small muted" style="margin-bottom:12px">Candidatos com o resultado Trainee que ainda não estão no quadro.</p>
+      ${semGrupo ? `<div class="aviso-box warn">Crie o grupo NRO_TRAINEE em Administração › Grupos antes de admitir.</div>` : ''}
+      ${cands.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th></th><th>Nome</th><th>E-mail</th><th>Áreas de interesse</th><th>Curso</th></tr></thead>
+        <tbody>${cands.map(linhaCand).join('')}</tbody></table></div>
+        <div class="acts"><button class="btn solid" id="ps-tr-admitir" ${semGrupo || !psTr.sel.size ? 'disabled' : ''} onclick="psTrPrevia()">Admitir os selecionados</button></div>`
+      : '<div class="empty">Ninguém esperando admissão.</div>'}
+    </section>` : ''}
+    <section class="card" aria-labelledby="ps-tr-h2">
+      <h3 id="ps-tr-h2" style="margin-bottom:10px">No quadro</h3>
+      <div class="seg" role="group" aria-label="Área de interesse" style="margin-bottom:12px">
+        ${[['', 'Todas'], ...areas.map(a => [a, a])].map(([v, l]) => `<button type="button" class="${psTr.area === v ? 'on' : ''}" aria-pressed="${psTr.area === v}"
+          onclick="psTr.area=${esc(JSON.stringify(v))};psTrainees()">${esc(l)}</button>`).join('')}
+      </div>
+      ${psTr.quadro.length ? `<div class="wrap"><table class="tabela trabalho" id="ps-tr-quadro"><thead><tr><th>Nome</th><th>Área de interesse</th><th>Alocação</th><th>Gestor</th><th>Ingresso</th>${gestao ? '<th></th>' : ''}</tr></thead>
+        <tbody>${psTr.quadro.map(linhaQ).join('')}</tbody></table></div>`
+      : '<div class="empty">Nenhum trainee no quadro com este filtro.</div>'}
+    </section>`;
+}
+function psTrMarcar(id, on){
+  on ? psTr.sel.add(id) : psTr.sel.delete(id);
+  const b = $('#ps-tr-admitir'); if (b) b.disabled = !psTr.sel.size || !psTr.pend?.grupo_trainee;
+}
+
+/* a prévia: uma linha por pessoa, nada é gravado até confirmar */
+function psTrPrevia(){
+  const cands = (psTr.pend?.candidatos || []).filter(c => psTr.sel.has(c.id));
+  if (!cands.length) return;
+  const areas = PS.ed?.areas || [];
+  const gestores = state.membros.filter(m => m.status === 'Ativo').sort((a, b) => a.nome.localeCompare(b.nome));
+  const grupos = (state.grupos || []).map(g => g.nome).filter(n => n !== 'NRO_TRAINEE').sort();
+  psTr.previa = cands.map(c => ({ candidato:c.id, nome:c.nome, area:(c.areas_interesse || []).find(a => areas.includes(a)) || areas[0] || '', gestor:'', grupos:[], registro:'' }));
+  const linha = (x, i) => `<div class="card" id="ps-tr-p-${i}" style="margin-bottom:10px">
+      <h4 style="margin-bottom:8px">${esc(x.nome)}</h4>
+      <div class="form-grid">
+        <div class="fld"><label for="ps-tr-area-${i}">Área de alocação</label>
+          <select id="ps-tr-area-${i}" onchange="psTr.previa[${i}].area=this.value">
+            ${areas.map(a => `<option ${a === x.area ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></div>
+        <div class="fld"><label for="ps-tr-gestor-${i}">Gestor direto</label>
+          <select id="ps-tr-gestor-${i}" onchange="psTr.previa[${i}].gestor=this.value?Number(this.value):''">
+            <option value="">Escolha</option>${gestores.map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</select></div>
+        <div class="fld"><label for="ps-tr-reg-${i}">Registro</label>
+          <input id="ps-tr-reg-${i}" type="number" min="1" placeholder="vazio = o próximo livre" oninput="psTr.previa[${i}].registro=this.value"></div>
+      </div>
+      <fieldset style="border:0;padding:0;margin:8px 0 0;min-width:0"><legend class="small muted" style="margin-bottom:6px">Grupos</legend>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 14px;max-height:140px;overflow:auto">
+          <label class="small"><input type="checkbox" checked disabled> NRO_TRAINEE</label>
+          ${grupos.map(g => `<label class="small"><input type="checkbox" value="${esc(g)}" onchange="psTrGrupo(${i}, this.value, this.checked)"> ${esc(g)}</label>`).join('')}
+        </div></fieldset>
+      <p class="small ps-tr-erro" id="ps-tr-erro-${i}" style="color:var(--bad-tx);margin-top:6px" hidden></p>
+    </div>`;
+  abreModal(`<h3>Admitir ${cands.length === 1 ? 'trainee' : cands.length + ' trainees'}</h3>
+    <p class="small muted" style="margin-bottom:14px">Confira cada pessoa. Nada é gravado até confirmar; se uma linha tiver problema, ninguém entra.</p>
+    ${psTr.previa.map(linha).join('')}
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" id="ps-tr-confirmar" onclick="psTrConfirmar()">Confirmar a admissão</button></div>`, 'largo');
+}
+function psTrGrupo(i, g, on){
+  const l = psTr.previa[i].grupos; on ? l.includes(g) || l.push(g) : l.splice(l.indexOf(g), 1);
+}
+async function psTrConfirmar(){
+  const bt = $('#ps-tr-confirmar'); bt.disabled = true;
+  document.querySelectorAll('.ps-tr-erro').forEach(e => { e.hidden = true; e.textContent = ''; });
+  const itens = psTr.previa.map(x => ({ candidato:x.candidato, area:x.area, gestor:x.gestor || null,
+    grupos:['NRO_TRAINEE', ...x.grupos], ...(String(x.registro).trim() ? { registro:Number(x.registro) } : {}) }));
+  try{
+    const { data, error } = await sb.rpc('ps_admitir_trainees', { p_itens:itens });
+    if (error) throw error;
+    if (data?.status === 'invalido'){
+      for (const er of data.erros || []){
+        const i = psTr.previa.findIndex(x => x.candidato === er.candidato), e = $('#ps-tr-erro-' + i);
+        if (e){ e.hidden = false; e.textContent = (PS_TR_ERRO[er.erro] || 'Não foi possível admitir (' + er.erro + ').') + (er.grupo ? ' (' + er.grupo + ')' : ''); }
+      }
+      return;
+    }
+    if (data?.status === 'sem_grupo_trainee'){ toast('Crie o grupo NRO_TRAINEE em Administração › Grupos antes de admitir.', true); return; }
+    if (data?.status !== 'ok'){ toast(motivoRPC(data, null, 'Não foi possível admitir'), true); return; }
+    const n = (data.admitidos || []).length;
+    fechaModal(); toast(`${n} trainee${n === 1 ? '' : 's'} no quadro.`);
+    psTr.sel.clear();
+    const { data:m } = await sb.from('membros')
+      .select('registro,nome,cargo,departamento,status,grupos,gestor_registro,foto_url,email_nro,email_pessoal,telefone').order('nome');
+    if (m) state.membros = m;
+    psTrainees();
+  }catch(e){ falha(e, 'Falha ao admitir'); }
+  finally{ if (document.body.contains(bt)) bt.disabled = false; }
+}
+
+function psTrEfetivar(reg){
+  const t = psTr.quadro.find(x => x.registro === reg); if (!t) return;
+  const deptos = [...new Set(state.membros.map(m => m.departamento).filter(Boolean))].sort();
+  abreModal(`<h3>Efetivar ${esc(t.nome)}</h3>
+    <p class="small muted" style="margin-bottom:12px">Deixa de ser trainee e passa a membro com o cargo escolhido.</p>
+    <div class="fld"><label for="ps-tr-cargo">Cargo</label><input id="ps-tr-cargo" autocomplete="off"></div>
+    <div class="fld"><label for="ps-tr-dep">Área (opcional)</label>
+      <select id="ps-tr-dep"><option value="">Manter</option>${deptos.map(d => `<option>${esc(d)}</option>`).join('')}</select></div>
+    <p class="small" id="ps-tr-ef-erro" style="color:var(--bad-tx)" hidden></p>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" onclick="psTrEfetivarOk(${reg})">Efetivar</button></div>`);
+}
+async function psTrEfetivarOk(reg){
+  const cargo = $('#ps-tr-cargo').value.trim(), er = $('#ps-tr-ef-erro');
+  const erro = m => { er.hidden = false; er.textContent = m; };
+  if (!cargo || /^trainee$/i.test(cargo)) return erro('Escolha o cargo de membro (não pode ser Trainee).');
+  try{
+    const { data, error } = await sb.rpc('trainee_efetivar', { p_reg:reg, p_cargo:cargo, p_departamento: $('#ps-tr-dep').value || null });
+    if (error) throw error;
+    if (data?.status === 'invalido') return erro('Escolha o cargo de membro (não pode ser Trainee).');
+    if (data?.status !== 'ok') return erro(motivoRPC(data, null, 'Não foi possível efetivar'));
+    fechaModal(); toast('Efetivado.'); psTrainees();
+  }catch(e){ falha(e, 'Falha ao efetivar'); }
+}
+function psTrDispensar(reg){
+  const t = psTr.quadro.find(x => x.registro === reg); if (!t) return;
+  abreModal(`<h3>Dispensar ${esc(t.nome)}</h3>
+    <p class="small muted" style="margin-bottom:12px">A conta perde o acesso ao SOMA na hora. O Pessoal recebe um card para redistribuir as atividades e revogar os acessos; o acesso físico ao LABBIO só sai quando o LABBIO confirmar.</p>
+    <div class="fld"><label for="ps-tr-motivo">Motivo</label><textarea id="ps-tr-motivo" rows="3"></textarea></div>
+    <p class="small" id="ps-tr-di-erro" style="color:var(--bad-tx)" hidden></p>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn danger" onclick="psTrDispensarOk(${reg})">Dispensar</button></div>`);
+}
+async function psTrDispensarOk(reg){
+  const motivo = $('#ps-tr-motivo').value.trim(), er = $('#ps-tr-di-erro');
+  if (!motivo){ er.hidden = false; er.textContent = 'Escreva o motivo da dispensa.'; return; }
+  try{
+    const { data, error } = await sb.rpc('trainee_dispensar', { p_reg:reg, p_motivo:motivo });
+    if (error) throw error;
+    if (data?.status === 'motivo_obrigatorio'){ er.hidden = false; er.textContent = 'Escreva o motivo da dispensa.'; return; }
+    if (data?.status !== 'ok'){ er.hidden = false; er.textContent = motivoRPC(data, null, 'Não foi possível dispensar'); return; }
+    fechaModal(); toast(`Dispensado. O Pessoal recebeu o card ${data.card || ''} para redistribuir as atividades e revogar os acessos.`);
+    const m = state.membros.find(x => x.registro === reg); if (m) m.status = 'Desligado';
+    psTrainees();
+  }catch(e){ falha(e, 'Falha ao dispensar'); }
 }
 
 /* ============================================================

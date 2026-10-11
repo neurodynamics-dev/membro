@@ -227,7 +227,7 @@
     ps_edicoes: [
       { id:'ed1', nome:'Processo Seletivo 2026', slug:'ps-2026', descricao:'Edição do segundo semestre.',
         inscricoes_inicio:'2026-08-01', inscricoes_fim:'2026-08-31', status:'publicada', edital_url:null,
-        areas:['Hardware','Software'], criado_em:'2026-07-20T12:00:00Z' }
+        areas:['Hardware','Software','Mecânica','Simulação','Eletrônica'], criado_em:'2026-07-20T12:00:00Z' }
     ],
     ps_candidatos: [
       { id:'c1', edicao_id:'ed1', numero:1, protocolo:'PS26-001', nome:'Joana Ribeiro', email:'joana@ufmg.br',
