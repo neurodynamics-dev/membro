@@ -53,7 +53,7 @@ try{
       const bg = getComputedStyle(b).backgroundColor; const ref = document.createElement('i'); ref.style.color = 'var(--retina-primary)'; document.body.appendChild(ref);
       return [bg, getComputedStyle(ref).color]; });
     confere('o botão sólido usa a cor Retina', cor[0] === cor[1], cor);
-    await p.evaluate(() => { location.hash = '#/membros'; });
+    await p.evaluate(() => { location.hash = '#/solicitacoes'; });   // a L6 preenche
     await p.waitForFunction(() => document.querySelector('#lb-main').innerText.includes('Em breve'));
     confere('as telas das próximas fichas dizem "Em breve."', true);
 

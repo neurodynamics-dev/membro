@@ -221,15 +221,7 @@ function desenhar(){
   const r = rota(), sec = NAV.some(([k]) => k === r.sec) ? r.sec : '';
   $('#lb-nav').innerHTML = NAV.map(([k, l]) => `<a href="#/${k}"${k === sec ? ' aria-current="page"' : ''}>${esc(l)}</a>`).join('');
   $('#lb-topo').classList.remove('aberto'); $('#lb-menu-bt').setAttribute('aria-expanded', 'false');
-  ({ '':pgInicio, gestores:pgGestores }[sec] || pgEmBreve)(sec);
-}
-function pgInicio(){
-  $('#lb-main').innerHTML = cabecalho({ titulo:'Início', lead:'O que o LABBIO acompanha da equipe da NeuroDynamics.' }) + `
-    <div class="lb-atalhos">
-      <a href="#/membros"><section class="widget"><header><span class="w-rot">Membros</span></header><div class="w-corpo"><p>Quem tem vínculo com o laboratório, o termo e o acesso.</p></div></section></a>
-      <a href="#/solicitacoes"><section class="widget"><header><span class="w-rot">Solicitações</span></header><div class="w-corpo"><p>Os pedidos de acesso biométrico encaminhados pelo Pessoal.</p></div></section></a>
-      <a href="#/gestores"><section class="widget"><header><span class="w-rot">Gestores</span></header><div class="w-corpo"><p>Quem gerencia este painel, convites e a estrela.</p></div></section></a>
-    </div>`;
+  ({ '':pgInicio, gestores:pgGestores, membros:pgMembros, checkins:pgCheckins, treinamentos:pgTreinamentos }[sec] || pgEmBreve)(sec, r.sub);
 }
 function pgEmBreve(sec){
   const rot = (NAV.find(([k]) => k === sec) || [, 'Painel'])[1];
@@ -325,6 +317,280 @@ function labRevogar(id){
       pgGestores();
     } catch(e){ if (e.message !== 'sem_acesso') $('#rv-msg').textContent = 'Não foi possível revogar.'; }
   };
+}
+
+/* ============================================================
+   CONSULTAS (ficha L4): início com as revogações pendentes, membros
+   e perfil, check-ins e a matriz de treinamentos. Só leitura, menos
+   a confirmação de que o acesso biométrico foi retirado.
+   ============================================================ */
+const IC = {
+  relogio:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  doc:'<path d="M7 3.5h7l4 4V20.5H7z"/><path d="M13.5 3.5V8h4.5"/>',
+  selo:'<circle cx="12" cy="10" r="5.5"/><path d="m9.5 10 1.8 1.8 3.2-3.3M8.5 14.5 7 21l5-2.5 5 2.5-1.5-6.5"/>',
+  x:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  ok:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  menos:'<path d="M6 12h12"/>',
+  alerta:'<path d="M12 4 21 19.5H3z"/><path d="M12 10v4M12 17v.5"/>',
+  seta:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+};
+const ic = n => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n] || ''}</svg>`;
+const fmtD = d => d ? new Date(d).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—';
+const isoDia = d => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+const iniciais = n => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+const avatar = (p, t = 30) => p.foto_url
+  ? `<img class="lb-av" src="${esc(p.foto_url)}" alt="" width="${t}" height="${t}" loading="lazy">`
+  : `<span class="lb-av" style="width:${t}px;height:${t}px" aria-hidden="true">${esc(iniciais(p.nome))}</span>`;
+const marcaEstado = (tom, icone, texto) => `<span class="lb-est lb-${tom}">${ic(icone)}<span>${esc(texto)}</span></span>`;
+const TERMO = { pendente:['warn', 'relogio', 'Pendente'], enviado:['info', 'doc', 'Enviado'], conferido:['ok', 'selo', 'Conferido'],
+                devolvido:['err', 'x', 'Devolvido'], sem_campanha:['neutro', 'menos', 'Sem campanha'] };
+const termoHTML = t => { const [tom, i, txt] = TERMO[t?.situacao] || TERMO.sem_campanha; return marcaEstado(tom, i, txt); };
+const SUB_PEDIDO = { pessoal:'no Pessoal', labbio:'no LABBIO', devolvido:'devolvido ao membro', rascunho:'em rascunho' };
+function acessoHTML(a){
+  if (a?.sub === 'revogacao_pendente') return marcaEstado('err', 'alerta', 'Revogação pendente');
+  if (a?.estado === 'possui') return marcaEstado('ok', 'ok', 'Possui');
+  if (a?.estado === 'solicitado') return marcaEstado('info', 'relogio', 'Solicitado' + (SUB_PEDIDO[a.sub] ? ', ' + SUB_PEDIDO[a.sub] : ''));
+  return marcaEstado('neutro', 'menos', 'Não possui');
+}
+const comBiometria = p => p.acesso?.estado === 'possui' && p.acesso?.sub !== 'revogacao_pendente';
+const chipTrainee = p => p.trainee ? ' <span class="pill">Trainee</span>' : '';
+
+/* ---------------- início ---------------- */
+async function pgInicio(){
+  $('#lb-main').innerHTML = cabecalho({ titulo:'Início', lead:'O que o LABBIO acompanha da equipe da NeuroDynamics.' }) + `<div id="lb-ini">${estado.carregando()}</div>`;
+  try {
+    const d = await rpc('labbio_inicio');
+    if (d?.status !== 'ok') throw new Error(d?.status);
+    lab.revogacoes = d.revogacoes || [];
+    const el = $('#lb-ini'); if (!el) return;
+    el.innerHTML = `<div id="lb-rev">${faixasRevogacao()}</div>
+      <div class="lb-atalhos">
+        <a href="#/membros"><section class="widget"><header><span class="w-rot">Membros ativos</span></header><div class="w-corpo"><span class="w-num">${Number(d.membros) || 0}</span></div></section></a>
+        <a href="#/membros"><section class="widget"><header><span class="w-rot">Com biometria</span></header><div class="w-corpo"><span class="w-num">${Number(d.com_acesso) || 0}</span></div></section></a>
+        <a href="#/solicitacoes"><section class="widget"><header><span class="w-rot">Pedidos para analisar</span></header><div class="w-corpo"><span class="w-num">${Number(d.pedidos_abertos) || 0}</span></div></section></a>
+      </div>`;
+  } catch(e){
+    if (e.message === 'sem_acesso') return;
+    $('#lb-ini').innerHTML = estado.erro('Não foi possível carregar o início.', '<button class="btn ghost mini" type="button" onclick="pgInicio()">Tentar de novo</button>');
+  }
+}
+function faixasRevogacao(){
+  return (lab.revogacoes || []).map(v => `<div class="aviso-box warn lb-rev" id="lb-rev-${esc(v.id)}">
+      <span>${esc(v.nome)} saiu da equipe (${esc(v.status_para)}, em ${fmtD(v.criada_em)}). Retire o acesso biométrico na Intelbras e confirme aqui.</span>
+      <button class="btn ghost mini" type="button" onclick="labRevConfirmar('${esc(v.id)}')">Confirmar a retirada</button></div>`).join('');
+}
+function labRevConfirmar(id){
+  const v = (lab.revogacoes || []).find(x => x.id === id); if (!v) return;
+  abreModal(`<h3>Retirada do acesso de ${esc(v.nome)}</h3><p>Confirme só depois de retirar a biometria na Intelbras.</p>
+    <div class="fld"><label for="rvc-obs">Observação (opcional)</label><textarea id="rvc-obs" rows="3"></textarea></div>
+    <p class="lb-msg ruim" id="rvc-msg"></p>
+    <div class="acts"><button class="btn ghost" type="button" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" type="button" id="rvc-ok">Confirmar a retirada</button></div>`);
+  $('#rvc-ok').onclick = async () => {
+    try {
+      const d = await rpc('labbio_revogacao_confirmar', { p_id:id, p_observacao:$('#rvc-obs').value.trim() || null });
+      if (d?.status !== 'ok'){ $('#rvc-msg').textContent = 'Não foi possível confirmar agora.'; return; }
+      fechaModal(); toast('Retirada confirmada.');
+      lab.revogacoes = lab.revogacoes.filter(x => x.id !== id);
+      const el = $('#lb-rev'); if (el) el.innerHTML = faixasRevogacao();
+    } catch(e){ if (e.message !== 'sem_acesso') $('#rvc-msg').textContent = 'Não foi possível confirmar agora.'; }
+  };
+}
+
+/* ---------------- membros ---------------- */
+const FILTROS_MEMBROS = [['todos', 'Todos', () => true], ['com', 'Com biometria', comBiometria],
+  ['pedido', 'Pedido em andamento', p => p.acesso?.estado === 'solicitado'],
+  ['sem', 'Sem biometria', p => p.acesso?.estado === 'nao_possui'],
+  ['termo', 'Termo pendente', p => ['pendente', 'devolvido'].includes(p.termo?.situacao)]];
+const labM = { busca:'', filtro:'todos', lista:[], timer:null, vez:0 };
+async function pgMembros(sec, sub){
+  if (sub) return pgPerfil(Number(sub));
+  $('#lb-main').innerHTML = cabecalho({ titulo:'Membros', lead:'Quem tem vínculo com o laboratório: o termo de sigilo e o acesso biométrico.' }) + `
+    <div class="lb-ferr">
+      <div class="fld lb-busca"><label for="lb-m-busca">Buscar</label><input id="lb-m-busca" type="search" value="${esc(labM.busca)}" placeholder="Nome ou registro" autocomplete="off"></div>
+      <div class="seg" role="group" aria-label="Filtrar membros">${FILTROS_MEMBROS.map(([k, l]) =>
+        `<button type="button" data-f="${k}" aria-pressed="${labM.filtro === k}" class="${labM.filtro === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>
+    </div>
+    <div id="lb-m-lista">${estado.carregando()}</div>`;
+  $('#lb-m-busca').addEventListener('input', e => { labM.busca = e.target.value; clearTimeout(labM.timer); labM.timer = setTimeout(carregarMembros, 300); });
+  document.querySelectorAll('.lb-ferr .seg button').forEach(b => b.onclick = () => {
+    labM.filtro = b.dataset.f;
+    document.querySelectorAll('.lb-ferr .seg button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+    desenharMembros();
+  });
+  await carregarMembros();
+}
+async function carregarMembros(){
+  const vez = ++labM.vez;
+  try {
+    const d = await rpc('labbio_membros', { p_busca: labM.busca.trim() || null });
+    if (vez !== labM.vez) return;
+    if (d?.status !== 'ok') throw new Error(d?.status);
+    labM.lista = d.membros || []; desenharMembros();
+  } catch(e){
+    if (e.message === 'sem_acesso') return;
+    const el = $('#lb-m-lista'); if (el) el.innerHTML = estado.erro('Não foi possível carregar os membros.', '<button class="btn ghost mini" type="button" onclick="carregarMembros()">Tentar de novo</button>');
+  }
+}
+function desenharMembros(){
+  const el = $('#lb-m-lista'); if (!el) return;
+  const f = (FILTROS_MEMBROS.find(([k]) => k === labM.filtro) || FILTROS_MEMBROS[0])[2];
+  const ms = labM.lista.filter(f);
+  el.innerHTML = ms.length ? `<p class="lb-total" aria-live="polite"><b>${ms.length}</b> ${ms.length === 1 ? 'pessoa' : 'pessoas'}</p>
+    <div class="lb-wrap"><table class="lb-tabela" id="lb-m-tabela"><thead><tr><th>Membro</th><th>Área</th><th>Liderança</th><th>Termo</th><th>Acesso</th></tr></thead>
+    <tbody>${ms.map(p => `<tr data-reg="${p.registro}">
+      <td><a class="lb-pessoa" href="#/membros/${p.registro}">${avatar(p)}<span>${esc(p.nome)}</span></a>${chipTrainee(p)}</td>
+      <td>${esc(p.area || '—')}</td><td>${esc(p.gestor_nome || '—')}</td>
+      <td class="c-termo">${termoHTML(p.termo)}</td><td class="c-acesso">${acessoHTML(p.acesso)}</td></tr>`).join('')}</tbody></table></div>`
+    : estado.vazio('Ninguém com este filtro.');
+}
+async function pgPerfil(reg){
+  $('#lb-main').innerHTML = `<a class="lb-voltar" href="#/membros">← Membros</a><div id="lb-perfil">${estado.carregando()}</div>`;
+  try {
+    const d = await rpc('labbio_membro', { p_registro:reg });
+    const el = $('#lb-perfil'); if (!el) return;
+    if (d?.status === 'nao_encontrado'){ el.innerHTML = estado.vazio('Esta pessoa não está na lista do LABBIO.'); return; }
+    if (d?.status !== 'ok') throw new Error(d?.status);
+    const m = d.membro; lab.perfil = m;
+    const spec = (k, v) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`;
+    const termoArq = m.termo?.arquivo && ['enviado', 'conferido'].includes(m.termo?.situacao);
+    el.innerHTML = cabecalho({ titulo:m.nome }) + `<div class="lb-objeto">
+      <div class="lb-principal">
+        <section class="lb-bloco"><h2>Dados</h2><dl class="lb-spec">
+          ${spec('E-mail da NRO', esc(m.email_nro || '—'))}${spec('E-mail pessoal', esc(m.email_pessoal || '—'))}
+          ${spec('Telefone', esc(m.telefone || '—'))}${spec('Área', esc(m.area || '—'))}${spec('Cargo', esc(m.cargo || '—') + chipTrainee(m))}
+          ${spec('Liderança', m.gestor ? `<a href="#/membros/${Number(m.gestor)}">${esc(m.gestor_nome || '—')}</a>` : '—')}
+          ${spec('Liderados', (d.liderados || []).length ? d.liderados.map(l => `<a href="#/membros/${Number(l.registro)}">${esc(l.nome)}</a>`).join(', ') : '—')}
+        </dl></section>
+        <section class="lb-bloco"><h2>Termo de sigilo</h2><p>${termoHTML(m.termo)}
+          ${m.termo?.enviado_em ? `<span class="lb-sub">enviado em ${fmtD(m.termo.enviado_em)}</span>` : ''}
+          ${m.termo?.conferido_em ? `<span class="lb-sub">conferido em ${fmtD(m.termo.conferido_em)}</span>` : ''}</p>
+          ${termoArq ? '<button class="btn ghost mini" type="button" id="lb-termo-abrir">Abrir o termo assinado ↗</button>' : ''}</section>
+        <section class="lb-bloco"><h2>Pedidos de biometria</h2>${(d.pedidos || []).length
+          ? `<ul class="lb-lista">${d.pedidos.map(p => `<li><a href="#/solicitacoes/${esc(p.id)}">${esc(p.protocolo || 'Pedido')}</a> <span class="lb-sub">${esc(p.etapa)}, atualizado em ${fmtD(p.atualizado_em)}</span></li>`).join('')}</ul>`
+          : '<p class="lb-sub">Nenhum pedido.</p>'}</section>
+        <section class="lb-bloco"><h2>Revogações</h2>${(d.revogacoes || []).length
+          ? `<ul class="lb-lista">${d.revogacoes.map(v => `<li>${esc(v.status_de || '')} → ${esc(v.status_para || '')}, em ${fmtD(v.criada_em)}: ${v.confirmada_em
+              ? `retirada confirmada em ${fmtD(v.confirmada_em)}${v.confirmada_por ? ' por ' + esc(v.confirmada_por) : ''}${v.observacao ? ` (${esc(v.observacao)})` : ''}` : '<b>retirada pendente</b>'}</li>`).join('')}</ul>`
+          : '<p class="lb-sub">Nenhuma.</p>'}</section>
+      </div>
+      <aside class="lb-lateral">${avatar(m, 112)}<div class="lb-acesso-dest"><span class="w-rot">Acesso biométrico</span>${acessoHTML(m.acesso)}
+        ${m.acesso?.desde ? `<span class="lb-sub">desde ${fmtD(m.acesso.desde)}</span>` : ''}</div></aside>
+    </div>`;
+    $('#lb-termo-abrir')?.addEventListener('click', () => abrirTermo(m.termo.arquivo));
+  } catch(e){
+    if (e.message === 'sem_acesso') return;
+    const el = $('#lb-perfil'); if (el) el.innerHTML = estado.erro('Não foi possível carregar o perfil.', `<button class="btn ghost mini" type="button" onclick="pgPerfil(${reg})">Tentar de novo</button>`);
+  }
+}
+/* o termo abre em nova guia por um link assinado de 2 minutos; o caminho nunca aparece */
+async function abrirTermo(arquivo){
+  const w = window.open('', '_blank');
+  try {
+    const { data, error } = await sb.storage.from('termos').createSignedUrl(arquivo, 120);
+    if (error || !data?.signedUrl) throw error || new Error('sem link');
+    if (w){ w.opener = null; w.location.href = data.signedUrl; } else location.href = data.signedUrl;
+  } catch(_){ if (w) w.close(); toast('Não foi possível abrir o termo agora.', true); }
+}
+
+/* ---------------- check-ins ---------------- */
+const labC = { de:'', ate:'', reg:'', origem:'', pagina:1, membros:null };
+async function pgCheckins(){
+  if (!labC.de){ const hoje = new Date(); labC.ate = isoDia(hoje); labC.de = isoDia(Date.now() - 7 * 864e5); }
+  if (!labC.membros) try { labC.membros = (await rpc('labbio_membros', {}))?.membros || []; } catch(e){ if (e.message === 'sem_acesso') return; labC.membros = []; }
+  $('#lb-main').innerHTML = cabecalho({ titulo:'Check-ins' }) + `<div class="lb-objeto">
+    <div class="lb-principal">
+      <div class="lb-ferr">
+        <div class="fld"><label for="ck-de">De</label><input id="ck-de" type="date" value="${esc(labC.de)}"></div>
+        <div class="fld"><label for="ck-ate">Até</label><input id="ck-ate" type="date" value="${esc(labC.ate)}"></div>
+        <div class="fld"><label for="ck-reg">Pessoa</label><select id="ck-reg"><option value="">Todas</option>${labC.membros.map(m =>
+          `<option value="${m.registro}"${String(m.registro) === String(labC.reg) ? ' selected' : ''}>${esc(m.nome)}</option>`).join('')}</select></div>
+        <div class="seg" role="group" aria-label="Origem">${[['', 'Todas'], ['quiosque', 'Quiosque'], ['folha', 'Folha']].map(([k, l]) =>
+          `<button type="button" data-o="${k}" aria-pressed="${labC.origem === k}" class="${labC.origem === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      </div>
+      <div id="ck-lista">${estado.carregando()}</div>
+    </div>
+    <aside class="lb-lateral lb-nota"><p>O check-in é o registro de chegada no LABBIO, feito pelo QR que gira no quiosque ou pela folha impressa na entrada. Não é registro da catraca nem acompanhamento contínuo: mostra quando a pessoa disse que chegou.</p></aside>
+  </div>`;
+  const mudou = () => { labC.pagina = 1; carregarCheckins(); };
+  $('#ck-de').onchange = e => { labC.de = e.target.value; mudou(); };
+  $('#ck-ate').onchange = e => { labC.ate = e.target.value; mudou(); };
+  $('#ck-reg').onchange = e => { labC.reg = e.target.value; mudou(); };
+  document.querySelectorAll('[data-o]').forEach(b => b.onclick = () => {
+    labC.origem = b.dataset.o;
+    document.querySelectorAll('[data-o]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+    mudou();
+  });
+  await carregarCheckins();
+}
+async function carregarCheckins(){
+  const el = $('#ck-lista'); if (!el) return;
+  try {
+    const d = await rpc('labbio_checkins', { p_de:labC.de, p_ate:labC.ate, p_registro: labC.reg ? Number(labC.reg) : null,
+      p_origem: labC.origem || null, p_pagina:labC.pagina });
+    if (d?.status === 'invalido'){ el.innerHTML = estado.erro('Confira o período: o fim vem depois do começo, e no máximo um ano.'); return; }
+    if (d?.status !== 'ok') throw new Error(d?.status);
+    const pags = Math.max(1, Math.ceil((d.total || 0) / (d.por_pagina || 50)));
+    el.innerHTML = (d.itens || []).length ? `<p class="lb-total" aria-live="polite"><b>${d.total}</b> check-ins</p>
+      <div class="lb-wrap"><table class="lb-tabela" id="ck-tabela"><thead><tr><th>Pessoa</th><th>Data e hora</th><th>Origem</th></tr></thead>
+      <tbody>${d.itens.map(x => `<tr><td>${esc(x.nome)}</td><td>${fmtDT(x.registrado_em)}</td><td>${x.origem === 'folha' ? 'Folha' : 'Quiosque'}</td></tr>`).join('')}</tbody></table></div>
+      <div class="lb-pag"><button class="btn ghost mini" type="button" id="ck-ant" ${d.pagina <= 1 ? 'disabled' : ''}>Anterior</button>
+        <span id="ck-pag">Página ${d.pagina} de ${pags}</span>
+        <button class="btn ghost mini" type="button" id="ck-prox" ${d.pagina >= pags ? 'disabled' : ''}>Próxima</button></div>`
+      : estado.vazio('Nenhum check-in neste período.');
+    $('#ck-ant')?.addEventListener('click', () => { labC.pagina--; carregarCheckins(); });
+    $('#ck-prox')?.addEventListener('click', () => { labC.pagina++; carregarCheckins(); });
+  } catch(e){
+    if (e.message === 'sem_acesso') return;
+    el.innerHTML = estado.erro('Não foi possível carregar os check-ins.', '<button class="btn ghost mini" type="button" onclick="carregarCheckins()">Tentar de novo</button>');
+  }
+}
+
+/* ---------------- treinamentos ---------------- */
+const SIT_TRE = { concluido:['ok', 'ok', 'Em dia'], andamento:['info', 'relogio', 'Em andamento'], pendente:['warn', 'relogio', 'Pendente'],
+                  nova_revisao:['warn', 'doc', 'Nova revisão'], vencido:['err', 'alerta', 'Vencido'] };
+const labT = { dados:null, area:'', tre:'', soPend:false };
+const pendencia = c => c && c.obrigatorio === true && ['pendente', 'vencido', 'nova_revisao'].includes(c.situacao);
+async function pgTreinamentos(){
+  $('#lb-main').innerHTML = cabecalho({ titulo:'Treinamentos' }) + `<div id="tr-corpo">${estado.carregando()}</div>`;
+  try {
+    const d = await rpc('labbio_treinamentos');
+    if (d?.status !== 'ok') throw new Error(d?.status);
+    labT.dados = d; desenharTreinamentos();
+  } catch(e){
+    if (e.message === 'sem_acesso') return;
+    const el = $('#tr-corpo'); if (el) el.innerHTML = estado.erro('Não foi possível carregar os treinamentos.', '<button class="btn ghost mini" type="button" onclick="pgTreinamentos()">Tentar de novo</button>');
+  }
+}
+function desenharTreinamentos(){
+  const el = $('#tr-corpo'); if (!el || !labT.dados) return;
+  const { treinamentos:ts, pessoas } = labT.dados;
+  const areas = [...new Set(pessoas.map(p => p.area).filter(Boolean))].sort();
+  const cols = ts.filter(t => !labT.tre || t.id === labT.tre);
+  const linhas = pessoas.filter(p => (!labT.area || p.area === labT.area) && (!labT.soPend || cols.some(t => pendencia(p.celulas?.[t.id]))));
+  const celula = (c, t) => {
+    if (!c || !c.situacao) return '<td class="tr-c"><span class="sr">Sem situação</span></td>';
+    const [tom, i, txt] = SIT_TRE[c.situacao] || ['neutro', 'menos', c.situacao];
+    const det = [c.concluido_em ? 'concluído em ' + fmtD(c.concluido_em) : null, c.revisao ? 'revisão ' + c.revisao : null,
+                 c.vence_em ? 'vale até ' + fmtD(c.vence_em) : null].filter(Boolean).join(', ') || txt;
+    return `<td class="tr-c"><span class="lb-est lb-${tom}" tabindex="0" title="${esc(det)}" aria-label="${esc(t.codigo + ': ' + txt + (c.obrigatorio ? ', obrigatório' : '') + '. ' + det)}">${ic(i)}<span>${esc(txt)}</span>${c.obrigatorio
+      ? '<i class="tr-obrig" aria-hidden="true"></i>' : ''}</span></td>`;
+  };
+  el.innerHTML = `<p class="lb-nota-curta">Concluir um módulo de leitura não é certificação. A validade vem do treinamento; o conteúdo e as provas ficam com a equipe da NeuroDynamics.</p>
+    <div class="lb-ferr">
+      <div class="fld"><label for="tr-area">Área</label><select id="tr-area"><option value="">Todas</option>${areas.map(a => `<option${a === labT.area ? ' selected' : ''}>${esc(a)}</option>`).join('')}</select></div>
+      <div class="fld"><label for="tr-tre">Treinamento</label><select id="tr-tre"><option value="">Todos</option>${ts.map(t => `<option value="${esc(t.id)}"${t.id === labT.tre ? ' selected' : ''}>${esc(t.codigo)}</option>`).join('')}</select></div>
+      <button type="button" class="btn ghost mini${labT.soPend ? ' on' : ''}" id="tr-pend" aria-pressed="${labT.soPend}">Só pendências</button>
+    </div>
+    <p class="lb-sub"><i class="tr-obrig" aria-hidden="true"></i> obrigatório para a pessoa</p>
+    ${linhas.length ? `<div class="lb-wrap tr-wrap"><table class="lb-tabela tr-matriz" id="tr-tabela"><thead><tr><th class="tr-fixa">Pessoa</th>${cols.map(t =>
+      `<th title="${esc(t.titulo)}"><abbr title="${esc(t.titulo)}">${esc(t.codigo)}</abbr></th>`).join('')}</tr></thead>
+      <tbody>${linhas.map(p => `<tr data-reg="${p.registro}"><th class="tr-fixa" scope="row"><a href="#/membros/${p.registro}">${esc(p.nome)}</a><span class="lb-sub">${esc(p.area || '')}</span></th>
+        ${cols.map(t => celula(p.celulas?.[t.id], t)).join('')}</tr>`).join('')}</tbody></table></div>`
+      : estado.vazio('Ninguém com este filtro.')}`;
+  $('#tr-area').onchange = e => { labT.area = e.target.value; desenharTreinamentos(); };
+  $('#tr-tre').onchange = e => { labT.tre = e.target.value; desenharTreinamentos(); };
+  $('#tr-pend').onclick = () => { labT.soPend = !labT.soPend; desenharTreinamentos(); };
 }
 
 /* ---------------- os eventos ---------------- */
