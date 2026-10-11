@@ -24,6 +24,7 @@
 --   Retirar tira do site na hora; o navegador apaga as cópias públicas.
 --
 -- REAÇÕES
+--   Só notícia completa (tópico não tem reação).
 --   Um emoji por pessoa e publicação (troca e remove), por conta logada que
 --   tenha registro no quadro, em qualquer status: membro, ex-membro, egresso.
 --   Não depende de conta_ativa(); conta do LABBIO não reage. Publicação
@@ -360,7 +361,7 @@ returns jsonb language sql stable security definer set search_path = public as $
       'texto', case when f.tipo = 'topico' then f.texto end,
       'autor', coalesce(f.autor_texto, (select nome from membros where registro = f.autor)), 'publicado_em', f.publicado_em,
       'imagem', (select 'noticias/' || (i->>'publico_path') from jsonb_array_elements(f.imagens) i where i ? 'publico_path' limit 1),
-      'reacoes', public.feed_reacoes_de(f.id), 'ref', f.id) order by f.publicado_em desc)
+      'reacoes', case when f.tipo = 'noticia' then public.feed_reacoes_de(f.id) end, 'ref', f.id) order by f.publicado_em desc)
     from (select * from feed_itens where estado = 'publicado' and publico
             and (p_antes is null or publicado_em < p_antes) order by publicado_em desc limit least(greatest(p_limite, 1), 30)) f), '[]') $$;
 
@@ -374,12 +375,13 @@ returns jsonb language sql stable security definer set search_path = public as $
     limit 1), jsonb_build_object('status', 'nao_encontrada')) $$;
 
 -- 7. reações ----------------------------------------------------------------------------
--- quem reage: conta logada com registro no quadro (qualquer status), que não seja do LABBIO
+-- quem reage: conta logada com registro no quadro (qualquer status), que não seja do LABBIO;
+-- só a notícia completa recebe reação
 create or replace function public.feed_pode_reagir(p_item feed_itens)
 returns boolean language sql stable security definer set search_path = public as $$
   select auth.uid() is not null and not public.conta_externa()
      and exists (select 1 from perfis where id = auth.uid() and registro is not null)
-     and p_item.estado = 'publicado' and (p_item.publico or public.conta_ativa()) $$;
+     and p_item.estado = 'publicado' and p_item.tipo = 'noticia' and (p_item.publico or public.conta_ativa()) $$;
 
 create or replace function public.feed_reagir(p_ref uuid, p_emoji text)
 returns jsonb language plpgsql volatile security definer set search_path = public as $$

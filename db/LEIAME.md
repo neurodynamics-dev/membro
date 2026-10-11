@@ -114,7 +114,7 @@ psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 | `2.19.1_labbio_salas.sql` | a consulta ao LABBIO para a Sala de Reuniões e o Auditório (`espacos.labbio`, `espacos.consulta_labbio`, `labbio_consultas`): nasce por gatilho ao salvar o evento, presa à ocorrência e à versão de local e horário, consultiva (sem resposta, o evento vale); conflito avisa o organizador uma vez; sobreposição sem títulos alheios para o organizador |
 | `2.19.1_labbio_tablets.sql` | os tablets na porta das salas: token por aparelho (só o hash fica), `sala_estado`, `sala_ocupar` (até 30 min, antes da próxima reserva) e `sala_liberar` para o papel anon; a gestão é do painel do LABBIO e do admin |
 | `2.19.1_onboarding.sql` | a trilha de onboarding versionada (`onboarding_trilhas`, a 1 com as sete etapas do plano) e o progresso no servidor (`onboarding_progresso`); as etapas de fato (dados, termo, treinamentos) o SOMA confere sozinho; `onboarding_meu`, `onboarding_marcar`, `onboarding_painel`, `onboarding_trilha_salvar`. Nada bloqueia o SOMA |
-| `2.19.1_feed.sql` | o feed editorial: estados rascunho, pronto, publicando, publicado e retirado; tópico ou notícia (slug estável, `feed_slugs`); quem publica é NRO_MANAGERS ou admin, sem votação (o reporte só contribui); público no site com as imagens copiadas para o bucket público `noticias` em dois passos; reações (`feed_reacoes`) de quem tem registro no quadro, em qualquer status; newsletter sem votos, com os itens ainda não distribuídos (`newsletter_itens`) e envio na hora (`newsletter_enviar_agora`); inscrição pública confirmada (`comunidade_inscrever`, `comunidade_confirmar`, fila `comunidade_envios`). Depois dela, publique de novo a `notificar-email` |
+| `2.19.1_feed.sql` | o feed editorial: estados rascunho, pronto, publicando, publicado e retirado; tópico ou notícia (slug estável, `feed_slugs`); quem publica é NRO_MANAGERS ou admin, sem votação (o reporte só contribui); público no site com as imagens copiadas para o bucket público `noticias` em dois passos; reações (`feed_reacoes`, só em notícia) de quem tem registro no quadro, em qualquer status; newsletter sem votos, com os itens ainda não distribuídos (`newsletter_itens`) e envio na hora (`newsletter_enviar_agora`); inscrição pública confirmada (`comunidade_inscrever`, `comunidade_confirmar`, fila `comunidade_envios`). Depois dela, publique de novo a `notificar-email` |
 
 A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
 2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
@@ -163,13 +163,13 @@ O onboarding (15 asserções):
 bash testes/preparar-base.sh teste t2191o 2.18.0_soma.sql 2.19.0.sql 2.19.1_recadastro.sql 2.19.1_trainees.sql 2.19.1_onboarding.sql
 ```
 
-O feed e a newsletter (82 asserções):
+O feed e a newsletter (84 asserções):
 
 ```sh
 bash testes/preparar-base.sh teste t2191f 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_reporte.sql 2.19.1_feed.sql
 ```
 
-A 2.19.1 inteira, na ordem de aplicação em produção (630 asserções):
+A 2.19.1 inteira, na ordem de aplicação em produção (632 asserções):
 
 ```sh
 bash testes/preparar-base.sh teste t2191 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \

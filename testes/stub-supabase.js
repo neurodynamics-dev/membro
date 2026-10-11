@@ -1225,7 +1225,8 @@
             if (nome === 'feed_editor') return r(editor);
             if (nome === 'noticias_publicas') return r(publicados().filter(f => f.publico).map(f => ({ tipo:f.tipo, slug:f.slug, titulo:f.titulo,
               resumo:f.subtitulo, texto: f.tipo === 'topico' ? f.texto : null, autor:f.autor, publicado_em:f.publicado_em,
-              imagem: f.imagens.find(i => i.publico_path) ? 'noticias/' + f.imagens.find(i => i.publico_path).publico_path : null, reacoes:f.reacoes, ref:f.id })));
+              imagem: f.imagens.find(i => i.publico_path) ? 'noticias/' + f.imagens.find(i => i.publico_path).publico_path : null,
+              reacoes: f.tipo === 'noticia' ? f.reacoes : null, ref:f.id })));
             if (nome === 'noticia_publica'){
               const f = publicados().find(x => x.publico && x.tipo === 'noticia' && (x.slug === args.p_slug || (args.p_slug === 'nome-antigo' && x.id === 'f1')));
               if (!f) return r({ status:'nao_encontrada' });
@@ -1235,7 +1236,7 @@
             }
             if (nome === 'feed_reagir'){
               const f = FD.itens.find(x => x.id === args.p_ref);
-              if (!f || f.estado !== 'publicado' || FT.semPermissao) return r({ status:'sem_permissao' });
+              if (!f || f.estado !== 'publicado' || f.tipo !== 'noticia' || FT.semPermissao) return r({ status:'sem_permissao' });
               if (args.p_emoji && !['👏','❤️','🎉','💡','🚀','😮'].includes(args.p_emoji)) return r({ status:'invalido' });
               if (f.minha_reacao) f.reacoes[f.minha_reacao] = Math.max(0, (f.reacoes[f.minha_reacao] || 1) - 1);
               if (f.minha_reacao && !f.reacoes[f.minha_reacao]) delete f.reacoes[f.minha_reacao];

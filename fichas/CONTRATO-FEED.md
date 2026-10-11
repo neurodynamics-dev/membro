@@ -26,7 +26,7 @@ anote no PR; não invente RPC nem campo.
 - **Autoria**: `autor` é o texto de autoria (`autor_texto`, se preenchido,
   senão o nome de quem criou). Quem publicou aparece só na mesa editorial
   (`publicado_por`).
-- **Reações**: um emoji por pessoa e publicação, entre
+- **Reações**: só em **notícia** (tópico não tem reação). Um emoji por pessoa e notícia, entre
   `👏 ❤️ 🎉 💡 🚀 😮`. Trocar substitui; mandar `null` remove. Reage quem
   tem conta no SOMA com registro no quadro, **em qualquer status** (membro,
   ex-membro, egresso). Publicação interna só aceita conta ativa. Conta do
@@ -140,7 +140,7 @@ Mantida para o Pessoal (retira sem apagar cópias). A tela nova usa
 
 ### `feed_reagir(p_ref uuid, p_emoji text|null)` → `{status, reacoes?, minha_reacao?}`
 
-`ok` com as contagens novas. `sem_permissao`, `invalido`, `limite` (30
+`ok` com as contagens novas. `sem_permissao` (inclusive para tópico), `invalido`, `limite` (30
 mudanças em 10 minutos: toast "Muitas reações seguidas. Espere alguns
 minutos.").
 
@@ -176,7 +176,8 @@ Até 30 (padrão 12), do mais novo para o mais antigo. Paginação por
 { tipo, slug, titulo, resumo, texto,   // texto só para tópico (notícia: abre a página)
   autor, publicado_em,
   imagem: "noticias/<id>/1.jpg" | null,
-  reacoes: { "👏": 3 }, ref }          // ref = id, para a página de reação
+  reacoes: { "👏": 3 } | null,         // null para tópico
+  ref }                                // ref = id, para a página de reação
 ```
 
 ### `noticia_publica(p_slug text)` → `{status, ...}`

@@ -283,7 +283,7 @@ motivo, confirmar implantação.
 
 Contrato: `fichas/CONTRATO-FEED.md`. Regras: §9 do plano funcional.
 
-### F0 [O] Migração `db/2.19.1_feed.sql` (feita: 82 asserções)
+### F0 [O] Migração `db/2.19.1_feed.sql` (feita: 84 asserções)
 
 - Estados `rascunho → pronto → (publicando) → publicado → retirado`; o
   reporte só contribui (envio deixa `pronto`); publica quem é admin ou está
@@ -294,7 +294,7 @@ Contrato: `fichas/CONTRATO-FEED.md`. Regras: §9 do plano funcional.
 - Imagens: bucket `feed` privado; no site, cópia controlada para o bucket
   público `noticias` em dois passos idempotentes (preparar → copiar →
   confirmar); retirar devolve as cópias a apagar.
-- Reações: um emoji por pessoa, por conta com registro em qualquer status
+- Reações só em notícia completa (tópico não tem): um emoji por pessoa, por conta com registro em qualquer status
   (egresso e desligado reagem ao público), sem conta do LABBIO; limite de
   30 mudanças em 10 minutos.
 - Newsletter sem votos: cada edição congela os itens ainda não enviados

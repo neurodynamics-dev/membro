@@ -169,10 +169,15 @@ begin
   r := public.feed_reagir(v_not, '❤️');
   perform ok(r->'reacoes' = '{"❤️": 1}'::jsonb, 'trocar não duplica');
   perform ok(public.feed_reagir(v_not, '🤡')->>'status' = 'invalido', 'só os emojis da lista');
+  perform ok(public.feed_reagir(current_setting('teste.top')::uuid, '👏')->>'status' = 'sem_permissao', 'tópico não tem reação');
+  perform ok((select x->'reacoes' = 'null'::jsonb from jsonb_array_elements(public.noticias_publicas()) x where x->>'tipo' = 'topico'),
+    'o site não mostra reação de tópico');
   perform eu(45, 'leitura');   -- Kátia, Egresso: conta bloqueada no portal
   perform ok(not public.conta_ativa(), 'egresso não acessa o portal');
   perform ok(public.feed_reagir(v_not, '🎉')->>'status' = 'ok', 'mas reage à notícia pública');
+  update feed_itens set tipo = 'noticia' where id = v_contrib;   -- uma notícia interna, por um instante
   perform ok(public.feed_reagir(v_contrib, '🎉')->>'status' = 'sem_permissao', 'e não à publicação interna');
+  update feed_itens set tipo = 'topico' where id = v_contrib;
   perform eu(44, 'pessoal');   -- Jonas, Desligado
   perform ok(public.feed_reagir(v_not, '🚀')->>'status' = 'ok', 'desligado também reage ao que é público');
   perform set_config('teste.uid', '', false);
