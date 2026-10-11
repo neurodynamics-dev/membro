@@ -3050,3 +3050,8 @@ button.termo-ic{cursor:pointer;border:1px solid transparent} button.termo-ic:hov
 .org-card .nm-linha .nm{min-width:0}
 .ponto-trainee{flex:none;width:8px;height:8px;border-radius:50%;background:var(--plexo-medium);
   box-shadow:0 0 0 3px rgba(255,185,211,.18),0 0 10px 1px var(--plexo-medium)} /* auditar: ok, o brilho do ponto é a cor Plexo médio */
+
+/* o local do check-in pela folha (admin, Equipe > Presença) */
+.pres-local{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.pres-local .tx{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 280px}
+.pres-local .tx span{font-size:12.5px;color:var(--muted);line-height:1.5}

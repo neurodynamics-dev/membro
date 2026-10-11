@@ -31,8 +31,9 @@ function confere(nome, ok, detalhe){
   console.log(`${ok ? '  ok ' : 'FALHA'}  ${nome}${ok || detalhe === undefined ? '' : '  → ' + JSON.stringify(detalhe)}`);
   if (!ok) falhas++;
 }
-async function abrir({ vp = { width:1440, height:960 }, hash = '#/', stub = stubAdmin, busca = '' } = {}){
-  const ctx = await nav.newContext({ viewport: vp, acceptDownloads: true });
+async function abrir({ vp = { width:1440, height:960 }, hash = '#/', stub = stubAdmin, busca = '', geo = null, teste = null, init = null } = {}){
+  /* geo: a posição do celular (a 2.19.2 confere o local no check-in pela folha); sem ela, a permissão fica negada */
+  const ctx = await nav.newContext({ viewport: vp, acceptDownloads: true, ...(geo ? { geolocation: geo, permissions: ['geolocation'] } : {}) });
   const p = await ctx.newPage();
   const erros = []; p.on('pageerror', e => erros.push(e.message));
   await p.route('**/*supabase*.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:stub }));
@@ -40,6 +41,8 @@ async function abrir({ vp = { width:1440, height:960 }, hash = '#/', stub = stub
   await p.route('**/cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:QR }));
   await p.route(/fonts\.googleapis|raw\.githubusercontent/, r => r.abort());
   await p.addInitScript(() => { try { localStorage.setItem('nd.menu', 'aberto'); } catch(e){} });
+  if (init) await p.addInitScript(init);
+  if (teste) await p.addInitScript(t => { window.__teste = { ...(window.__teste || {}), ...t }; }, teste);
   await p.goto('http://localhost:8765/index.html' + busca + hash, { waitUntil:'domcontentloaded' });
   if (!busca) await p.waitForSelector('#hd:not([hidden])');
   await p.waitForTimeout(1100);
@@ -196,19 +199,78 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   await ctx.close();
 }
 {
-  const { ctx, p, erros } = await abrir({ busca:'?t=F-7b1f3c1e-2a4d-4c55-9d7e-0a1b2c3d4e5f', hash:'' });
+  const { ctx, p, erros } = await abrir({ busca:'?t=F-7b1f3c1e-2a4d-4c55-9d7e-0a1b2c3d4e5f', hash:'', geo:{ latitude:-19.870585, longitude:-43.961699, accuracy:20 } });
   await p.waitForTimeout(800);
   const r = (await rpcs(p, 'registrar_checkin_folha')).pop();
   confere('abrir o QR da folha registra pela folha, com o token sem o F-', r?.p_token === '7b1f3c1e-2a4d-4c55-9d7e-0a1b2c3d4e5f', r);
+  confere('e manda a posição do celular, com a imprecisão (2.19.2)', Math.abs(r?.p_lat + 19.870585) < 1e-6 && Math.abs(r?.p_lon + 43.961699) < 1e-6 && r?.p_precisao === 20, r);
   confere('e confirma a presença na tela', /Ana/.test(await texto(p, '.ck-nome')), await texto(p, '#v-checkin'));
   confere('nenhum erro de página (check-in pela folha)', !erros.length, erros);
   await ctx.close();
 }
 {
-  const { ctx, p } = await abrir({ busca:'?t=F-00000000-0000-4000-8000-000000000000', hash:'' });
+  const { ctx, p } = await abrir({ busca:'?t=F-00000000-0000-4000-8000-000000000000', hash:'', geo:{ latitude:-19.870585, longitude:-43.961699, accuracy:20 } });
   await p.waitForTimeout(800);
   confere('folha que não existe ou foi revogada não vale', (await rpcs(p, 'registrar_checkin_folha')).length === 1
     && /folha/i.test(await texto(p, '#v-checkin')) && !/Ana/.test(await texto(p, '.ck-nome')), await texto(p, '#v-checkin'));
+  await ctx.close();
+}
+/* ---- 2.19.2: a folha só vale no LABBIO ---- */
+const FOLHA = '?t=F-7b1f3c1e-2a4d-4c55-9d7e-0a1b2c3d4e5f';
+{
+  const { ctx, p } = await abrir({ busca:FOLHA, hash:'', geo:{ latitude:-19.8796, longitude:-43.9617, accuracy:15 } });  // uns 1 km ao sul
+  await p.waitForTimeout(800);
+  const t = await texto(p, '#v-checkin');
+  confere('longe do LABBIO: recusa, com a distância e o raio', /Você não está no LABBIO/.test(t) && /\b1,0 km|\b9\d\d m/.test(t) && /150 m/.test(t), t);
+  confere('e não registra a presença', !/Bem-vindo/.test(t) && await p.locator('#v-checkin button:has-text("Tentar de novo")').count() === 1);
+  await p.context().setGeolocation({ latitude:-19.870585, longitude:-43.961699, accuracy:20 });
+  await p.click('#v-checkin button:has-text("Tentar de novo")'); await p.waitForTimeout(800);
+  confere('chegando ao LABBIO, "Tentar de novo" registra', /Bem-vindo/.test(await texto(p, '#v-checkin')), await texto(p, '#v-checkin'));
+  await ctx.close();
+}
+{
+  const { ctx, p } = await abrir({ busca:FOLHA, hash:'', geo:{ latitude:-19.870585, longitude:-43.961699, accuracy:500 } });
+  await p.waitForTimeout(800);
+  confere('GPS com erro de 500 m: pede um sinal melhor', /O sinal está fraco/.test(await texto(p, '#v-checkin')) && /200 m/.test(await texto(p, '#v-checkin')), await texto(p, '#v-checkin'));
+  await ctx.close();
+}
+{
+  /* o navegador de teste deixa o pedido pendente; aqui a pessoa nega (código 1) */
+  const negada = () => { navigator.geolocation.getCurrentPosition = (_ok, no) => setTimeout(() => no({ code:1, message:'negada' }), 50); };
+  const { ctx, p } = await abrir({ busca:FOLHA, hash:'', init:negada });
+  await p.waitForTimeout(800);
+  confere('sem liberar a localização: explica e não chama o banco', /Libere a localização/.test(await texto(p, '#v-checkin'))
+    && (await rpcs(p, 'registrar_checkin_folha')).length === 0, await texto(p, '#v-checkin'));
+  confere('e oferece tentar de novo', await p.locator('#v-checkin button:has-text("Tentar de novo")').count() === 1);
+  await ctx.close();
+}
+{
+  const semSinal = () => { navigator.geolocation.getCurrentPosition = (_ok, no) => setTimeout(() => no({ code:2, message:'sem sinal' }), 50); };
+  const { ctx, p } = await abrir({ busca:FOLHA, hash:'', init:semSinal });
+  await p.waitForTimeout(800);
+  confere('sem sinal de GPS: orienta a ligar o GPS e tentar de novo', /Sem sinal de localização/.test(await texto(p, '#v-checkin'))
+    && /GPS/.test(await texto(p, '#v-checkin')) && (await rpcs(p, 'registrar_checkin_folha')).length === 0, await texto(p, '#v-checkin'));
+  await ctx.close();
+}
+{
+  const { ctx, p } = await abrir({ busca:FOLHA, hash:'', geo:{ latitude:-19.8796, longitude:-43.9617, accuracy:15 }, teste:{ checkinLocal:{ ativo:false } } });
+  await p.waitForTimeout(800);
+  confere('conferência desligada pelo admin: a folha vale de qualquer lugar', /Bem-vindo/.test(await texto(p, '#v-checkin')), await texto(p, '#v-checkin'));
+  await ctx.close();
+}
+{
+  const { ctx, p, erros } = await abrir({ hash:'#/equipe/presenca' });
+  await p.waitForSelector('#pres-local-corpo .pres-local');
+  confere('o admin vê o local: ligado, 150 m e as coordenadas do LABBIO', /Conferência ligada/.test(await texto(p, '#pres-local-corpo'))
+    && /150 m/.test(await texto(p, '#pres-local-corpo')) && /-19,87059|-19\.87059/.test(await texto(p, '#pres-local-corpo')), await texto(p, '#pres-local-corpo'));
+  await p.click('#pres-local-corpo button:has-text("Ajustar")'); await p.waitForTimeout(300);
+  await p.fill('#lc-raio', '10'); await p.click('#lc-ok');
+  confere('raio fora do limite: o formulário recusa', /20 a 5000/.test(await texto(p, '#lc-erro')) && (await rpcs(p, 'checkin_local_salvar')).length === 0);
+  await p.fill('#lc-lat', '-19,8706'); await p.fill('#lc-raio', '200'); await p.click('#lc-ok'); await p.waitForTimeout(500);
+  const sv = (await rpcs(p, 'checkin_local_salvar')).pop();
+  confere('salvar manda os números (vírgula vira ponto) e o raio novo', sv?.p_lat === -19.8706 && sv?.p_raio === 200 && sv?.p_ativo === true, sv);
+  confere('e a tela mostra o novo raio', /200 m/.test(await texto(p, '#pres-local-corpo')), await texto(p, '#pres-local-corpo'));
+  confere('nenhum erro de página (local do check-in)', !erros.length, erros);
   await ctx.close();
 }
 {

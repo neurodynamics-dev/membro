@@ -669,6 +669,7 @@ const ICONS = {
   trofeu:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 5.5H5a2.5 2.5 0 0 0 3 3.6M16 5.5h3a2.5 2.5 0 0 1-3 3.6"/><path d="M12 13v3.5M8.5 20h7M9.5 20l.5-3.5h4l.5 3.5"/>',
   fogo:'<path d="M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-3.4 2.4-5.2 3.6-7.8.4 1.6 1.2 2.6 2.4 3.2C11.6 7 13 4.6 15 3c-.3 2.8 1 4.6 2.2 6.2 1 1.4 1.3 2.8 1.3 4.2 0 4.4-2.6 7.6-6.5 7.6z"/><path d="M12 21c-1.5 0-2.7-1.2-2.7-2.8 0-1.7 1.4-2.5 2.7-4.2 1.3 1.7 2.7 2.5 2.7 4.2 0 1.6-1.2 2.8-2.7 2.8z"/>',
   historico:'<path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3.5 4v4h4"/><path d="M12 8v4.3l2.8 1.7"/>',
+  pino:'<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   qr:'<rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18zM18 14h2.5M14 18v2.5"/>',
   mais_zoom:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5M8.5 11h5M11 8.5v5"/>',
   menos_zoom:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5M8.5 11h5"/>',
@@ -3736,19 +3737,45 @@ function telaCheckin(html){
   el.hidden = false;
   el.innerHTML = html;
 }
+/* a posição do aparelho, para a folha (2.19.2): o banco confere se é o LABBIO.
+   Recusa vira { code }: 1 negada, 2 sem sinal, 3 demorou, 0 o navegador não tem. */
+function posicaoAtual(){
+  return new Promise((ok, no) => {
+    if (!navigator.geolocation) return no({ code:0 });
+    navigator.geolocation.getCurrentPosition(ok, no, { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
+  });
+}
+let ckToken = null;   // o token do check-in em andamento, para "Tentar de novo"
 async function registrarCheckin(token){
   const okI = '<svg viewBox="0 0 24 24"><path d="M4.5 12.75l6 6 9-13.5"/></svg>';
   const wI  = '<svg viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M12 3l9 18H3l9-18z"/></svg>';
+  const pinI = '<svg viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
   const volta = '<button class="btn solid" style="margin-top:24px" onclick="sairDoCheckin()">Ir para o portal</button>';
-  telaCheckin('<div class="carregando"><span class="spin"></span> Registrando…</div>');
+  const outra = '<button class="btn ghost" style="margin-top:12px" onclick="registrarCheckin(ckToken)">Tentar de novo</button>';
+  ckToken = token;
+  const tela = (cls, ic, tit, txt, extra) => telaCheckin(
+    `<div class="ck-circ ${cls}">${ic}</div><div class="ck-nome">${tit}</div>
+     <div class="ck-info">${txt}</div>${extra || volta}`);
   /* a folha A4 (v29) traz "F-" antes do token dela, que não gira */
   const folha = /^F-/.test(token || '');
+  let pos = null;
+  if (folha){
+    /* 2.19.2: a folha só vale no LABBIO. A posição vai para o banco, que confere e não a guarda. */
+    telaCheckin(`<div class="carregando"><span class="spin"></span> Conferindo onde você está…</div>
+      <div class="ck-info" style="margin-top:14px">Usamos a sua posição só para saber se você está no LABBIO. Ela não fica guardada.</div>`);
+    try { pos = await posicaoAtual(); }
+    catch(e){
+      const por = { 1:['Libere a localização', 'O check-in pela folha precisa saber se você está no LABBIO. Libere a localização deste site no navegador (o cadeado ao lado do endereço) e tente de novo.'],
+        2:['Sem sinal de localização', 'Não conseguimos achar a sua posição. Ligue o GPS do celular, vá para perto de uma janela e tente de novo.'],
+        3:['A localização demorou', 'O celular não respondeu a tempo. Ligue o GPS, vá para perto de uma janela e tente de novo.'],
+        0:['Localização indisponível', 'Este navegador não consegue informar a posição. Use o QR da tela da entrada ou outro navegador.'] }[e?.code ?? 0] || ['Sem sinal de localização', 'Não conseguimos achar a sua posição. Tente de novo.'];
+      tela('warn', pinI, por[0], esc(por[1]), outra + volta.replace('margin-top:24px', 'margin-top:12px'));
+      return;
+    }
+  } else telaCheckin('<div class="carregando"><span class="spin"></span> Registrando…</div>');
   const { data, error } = folha
-    ? await sb.rpc('registrar_checkin_folha', { p_token: token.slice(2) })
+    ? await sb.rpc('registrar_checkin_folha', { p_token: token.slice(2), p_lat: pos.coords.latitude, p_lon: pos.coords.longitude, p_precisao: pos.coords.accuracy })
     : await sb.rpc('registrar_checkin', { p_token: token });
-  const tela = (cls, ic, tit, txt) => telaCheckin(
-    `<div class="ck-circ ${cls}">${ic}</div><div class="ck-nome">${tit}</div>
-     <div class="ck-info">${txt}</div>${volta}`);
   if (error){ tela('warn', wI, 'Algo falhou', esc(error.message)); return; }
   if (data?.status === 'ok'){
     const mes = new Date().toLocaleDateString('pt-BR',{month:'long'});
@@ -3761,6 +3788,13 @@ async function registrarCheckin(token){
     tela('warn', wI, 'QR expirado', 'Leia de novo o QR da tela da entrada.');
   } else if (data?.status === 'folha_invalida'){
     tela('warn', wI, 'Folha sem validade', 'Esta folha de check-in foi revogada. Use o QR da tela da entrada.');
+  } else if (data?.status === 'fora_do_local'){
+    const d = data.distancia_m >= 1000 ? (data.distancia_m / 1000).toFixed(1).replace('.', ',') + ' km' : data.distancia_m + ' m';
+    tela('warn', pinI, 'Você não está no LABBIO', `Pelo GPS, você está a cerca de <b>${d}</b> do laboratório, e o check-in vale até ${data.raio_m} m. Chegue ao LABBIO e tente de novo.`, outra + volta.replace('margin-top:24px', 'margin-top:12px'));
+  } else if (data?.status === 'localizacao_imprecisa'){
+    tela('warn', pinI, 'O sinal está fraco', `O GPS informou uma margem de erro maior que ${data.precisao_max_m} m. Ligue a localização precisa, vá para perto de uma janela e tente de novo.`, outra + volta.replace('margin-top:24px', 'margin-top:12px'));
+  } else if (data?.status === 'sem_localizacao'){
+    tela('warn', pinI, 'Falta a localização', 'O check-in pela folha precisa da sua posição. Libere a localização e tente de novo.', outra + volta.replace('margin-top:24px', 'margin-top:12px'));
   } else if (data?.status === 'sem_vinculo'){
     tela('warn', wI, 'Conta sem vínculo',
       'Sua conta ainda não está associada a um registro de membro. Fale com o Depto. de Pessoal.');
