@@ -1194,6 +1194,112 @@
               { registro:301, nome:'Sara Lopes', trainee:true, gestor_nome:'Ana Figueiredo', feitas:3, total:7, pendentes:['Assinar o termo de sigilo do LABBIO','Usar o SOMA: tarefas, agenda, presença e Serviços','Treinamentos obrigatórios e segurança no laboratório','Próximos passos com a sua liderança'] },
               { registro:11, nome:'Bruno Tavares', trainee:false, gestor_nome:'Ana Figueiredo', feitas:7, total:7, pendentes:[] }] } : { status:'sem_permissao' });
           }
+          /* ---- 2.19.1: feed editorial, site, reações e newsletter (db/2.19.1_feed.sql).
+             window.__teste.feed = { editor:true|false } (sem ele: editor = admin).
+             Para o site e a página de reação: noticias_publicas, noticia_publica,
+             feed_reagir, comunidade_*. Estado em window.__fd. ---- */
+          if (/^(feed_(lista|editor|editorial|item_salvar|publicar|publicar_confirmar|retirar|reagir)|newsletter_(lista|pendentes|enviar_agora)|noticias_publicas|noticia_publica|comunidade_(inscrever|confirmar))$/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const FT = (window.__teste || {}).feed || {};
+            const editor = FT.editor ?? (DADOS.perfis[0].papel === 'admin');
+            const r = d => ({ data:d, error:null });
+            const longo = 'O protótipo da órtese passou por dez mil ciclos na bancada do LABBIO sem folga nas articulações. '.repeat(5);
+            const FD = window.__fd ||= { itens:[
+              { id:'f1', tipo:'noticia', slug:'ortese-passa-no-teste', titulo:'Órtese passa no teste de bancada', subtitulo:'Dez mil ciclos sem folga',
+                texto:longo, autor:'Equipe de Comunicação', publicado_em:'2026-10-09T15:00:00Z', publico:true, estado:'publicado',
+                imagens:[{ path:'f1/bancada.jpg', legenda:'O protótipo na bancada', publico_path:'f1/1.jpg' }], reacoes:{ '👏':3, '❤️':1 }, minha_reacao:null },
+              { id:'f2', tipo:'topico', slug:null, titulo:'Seminário na sexta', subtitulo:'Às 14h no auditório', texto:'Aberto a todos.', autor:'Ana Figueiredo',
+                publicado_em:'2026-10-08T12:00:00Z', publico:false, estado:'publicado', imagens:[], reacoes:{}, minha_reacao:null },
+              { id:'f3', tipo:'topico', slug:null, titulo:'Prêmio no congresso', subtitulo:'A equipe foi premiada', texto:'Curto.', autor:'Iara Melo',
+                publicado_em:null, publico:false, estado:'pronto', reporte_id:'r9', imagens:[], reacoes:{}, minha_reacao:null }],
+              inscritos:[], envios:[] };
+            const pub = f => ({ id:f.id, tipo:f.tipo, slug:f.slug, titulo:f.titulo, subtitulo:f.subtitulo, texto:f.texto, autor:f.autor,
+              publicado_em:f.publicado_em, publico:f.publico, imagens:f.imagens, reacoes:f.reacoes, minha_reacao:f.minha_reacao });
+            const publicados = () => FD.itens.filter(f => f.estado === 'publicado').sort((a, b) => b.publicado_em.localeCompare(a.publicado_em));
+            if (nome === 'feed_lista') return r(publicados().filter(f => !args.p_tipo || f.tipo === args.p_tipo).map(pub));
+            if (nome === 'feed_editor') return r(editor);
+            if (nome === 'noticias_publicas') return r(publicados().filter(f => f.publico).map(f => ({ tipo:f.tipo, slug:f.slug, titulo:f.titulo,
+              resumo:f.subtitulo, texto: f.tipo === 'topico' ? f.texto : null, autor:f.autor, publicado_em:f.publicado_em,
+              imagem: f.imagens.find(i => i.publico_path) ? 'noticias/' + f.imagens.find(i => i.publico_path).publico_path : null, reacoes:f.reacoes, ref:f.id })));
+            if (nome === 'noticia_publica'){
+              const f = publicados().find(x => x.publico && x.tipo === 'noticia' && (x.slug === args.p_slug || (args.p_slug === 'nome-antigo' && x.id === 'f1')));
+              if (!f) return r({ status:'nao_encontrada' });
+              const { id, ...resto } = pub(f);
+              return r({ status:'ok', ...resto, ref:id, redirecionar: f.slug !== args.p_slug,
+                imagens: f.imagens.filter(i => i.publico_path).map(i => ({ url:'noticias/' + i.publico_path, legenda:i.legenda })) });
+            }
+            if (nome === 'feed_reagir'){
+              const f = FD.itens.find(x => x.id === args.p_ref);
+              if (!f || f.estado !== 'publicado' || FT.semLogin) return r({ status:'sem_permissao' });
+              if (args.p_emoji && !['👏','❤️','🎉','💡','🚀','😮'].includes(args.p_emoji)) return r({ status:'invalido' });
+              if (f.minha_reacao) f.reacoes[f.minha_reacao] = Math.max(0, (f.reacoes[f.minha_reacao] || 1) - 1);
+              if (f.minha_reacao && !f.reacoes[f.minha_reacao]) delete f.reacoes[f.minha_reacao];
+              f.minha_reacao = args.p_emoji || null;
+              if (f.minha_reacao) f.reacoes[f.minha_reacao] = (f.reacoes[f.minha_reacao] || 0) + 1;
+              return r({ status:'ok', reacoes: { ...f.reacoes }, minha_reacao: f.minha_reacao });
+            }
+            if (nome === 'comunidade_inscrever'){
+              const e = String(args.p_email || '').trim().toLowerCase();
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return r({ status:'email_invalido' });
+              if (!String(args.p_nome || '').trim()) return r({ status:'nome_invalido' });
+              if (args.p_consentimento !== true) return r({ status:'consentimento' });
+              FD.inscritos.push(e); return r({ status:'ok' });
+            }
+            if (nome === 'comunidade_confirmar') return r({ status: args.p_token === '11111111-1111-1111-1111-111111111111' ? 'ok' : 'invalido' });
+            if (!editor) return r(nome === 'newsletter_lista' ? [] : { status:'sem_permissao' });
+            if (nome === 'feed_editorial') return r({ status:'ok', itens: FD.itens.filter(f => !args.p_estado || f.estado === args.p_estado)
+              .map(f => ({ ...pub(f), estado:f.estado, reporte_id:f.reporte_id || null, criado_em:'2026-10-07T12:00:00Z', atualizado_em:'2026-10-09T12:00:00Z',
+                publicado_por: f.estado === 'publicado' ? 'Iara Melo' : null, retirado_em:null })) });
+            if (nome === 'feed_item_salvar'){
+              const p = args.p || {}, tipo = p.tipo || 'topico';
+              if (!String(p.titulo || '').trim()) return r({ status:'invalido', campo:'titulo' });
+              if (!String(p.subtitulo || '').trim()) return r({ status:'invalido', campo:'subtitulo' });
+              if (tipo === 'topico' && String(p.texto || '').length > 1200) return r({ status:'invalido', campo:'texto' });
+              const slug = tipo === 'noticia' ? String(p.slug || p.titulo).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) : null;
+              let f = p.id && FD.itens.find(x => x.id === p.id);
+              if (p.id && !f) return r({ status:'nao_encontrado' });
+              if (!f){ if ((p.imagens || []).length) return r({ status:'invalido', campo:'imagens' });
+                f = { id:'f' + (FD.itens.length + 1), estado:'pronto', publico:false, publicado_em:null, reacoes:{}, minha_reacao:null, imagens:[] }; FD.itens.push(f); }
+              if ((p.imagens || []).some(i => !String(i.path || '').startsWith(f.id + '/'))) return r({ status:'invalido', campo:'imagens' });
+              Object.assign(f, { tipo, titulo:p.titulo.trim(), subtitulo:p.subtitulo.trim(), texto:p.texto || '', slug, autor:p.autor_texto || 'Ana Figueiredo',
+                imagens:(p.imagens || []).map(i => ({ path:i.path, legenda:i.legenda || null, ...(f.imagens.find(o => o.path === i.path && o.publico_path) ? { publico_path:f.imagens.find(o => o.path === i.path).publico_path } : {}) })) });
+              return r({ status:'ok', id:f.id, slug });
+            }
+            if (nome === 'feed_publicar'){
+              const f = FD.itens.find(x => x.id === args.p_id); if (!f) return r({ status:'nao_encontrado' });
+              if (f.tipo === 'noticia' && (f.texto.length < 300 || !f.slug)) return r({ status:'noticia_incompleta' });
+              if (!args.p_publico){ Object.assign(f, { estado:'publicado', publico:false, publicado_em: f.publicado_em || new Date().toISOString() }); return r({ status:'ok', estado:'publicado', copiar:[] }); }
+              f.imagens.forEach((i, n) => { i.publico_path = f.id + '/' + (n + 1) + '.' + (i.path.split('.').pop() || 'jpg'); });
+              f.publico = true;
+              if (!f.imagens.length){ Object.assign(f, { estado:'publicado', publicado_em: f.publicado_em || new Date().toISOString() }); return r({ status:'ok', estado:'publicado', slug:f.slug }); }
+              f.estado = 'publicando';
+              return r({ status:'ok', estado:'publicando', copiar: f.imagens.map(i => ({ de:i.path, para:i.publico_path })) });
+            }
+            if (nome === 'feed_publicar_confirmar'){
+              const f = FD.itens.find(x => x.id === args.p_id); if (!f || f.estado !== 'publicando') return r({ status:'invalido' });
+              const falta = f.imagens.map(i => i.publico_path).filter(c => !(window.__uploads || []).some(u => u.bucket === 'noticias' && u.caminho === c));
+              if (falta.length) return r({ status:'imagens_pendentes', faltam:falta });
+              Object.assign(f, { estado:'publicado', publicado_em: f.publicado_em || new Date().toISOString() }); return r({ status:'ok', estado:'publicado', slug:f.slug });
+            }
+            if (nome === 'feed_retirar'){
+              const f = FD.itens.find(x => x.id === args.p_id); if (!f) return r({ status:'nao_encontrado' });
+              f.estado = 'retirado'; return r({ status:'ok', apagar: f.imagens.filter(i => i.publico_path).map(i => i.publico_path) });
+            }
+            const elegiveis = p => publicados().filter(f => (p === 'equipe' || f.publico) && !FD.envios.some(e => e.item === f.id && e.publico === p));
+            if (nome === 'newsletter_pendentes') return r({ status:'ok', equipe: elegiveis('equipe').map(({ id, titulo, tipo, publicado_em }) => ({ id, titulo, tipo, publicado_em })),
+              comunidade: elegiveis('comunidade').map(({ id, titulo, tipo, publicado_em }) => ({ id, titulo, tipo, publicado_em })), inscritos:42 });
+            if (nome === 'newsletter_enviar_agora'){
+              const p = args.p_tipo === 'semanal' ? 'equipe' : 'comunidade', itens = elegiveis(p);
+              if (!itens.length) return r({ status:'vazio' });
+              itens.forEach(f => FD.envios.push({ item:f.id, publico:p }));
+              (FD.edicoes ||= []).unshift({ id:'n' + (FD.edicoes.length + 1), tipo:args.p_tipo, periodo_ini:'2026-10-11', periodo_fim:'2026-10-11',
+                assunto:(p === 'equipe' ? 'Boletim da equipe: ' : 'NeuroDynamics: ') + '11/10/2026', itens: itens.map(pub), status:'aprovada', manual:true,
+                criado_em:new Date().toISOString(), destinatarios: p === 'equipe' ? 12 : 42, enviados:0, falhas:0 });
+              return r({ status:'ok', id:FD.edicoes[0].id, destinatarios:FD.edicoes[0].destinatarios, itens:itens.length });
+            }
+            if (nome === 'newsletter_lista') return r(structuredClone(FD.edicoes || [{ id:'n0', tipo:'semanal', periodo_ini:'2026-09-28', periodo_fim:'2026-10-04',
+              assunto:'Boletim da equipe: 04/10/2026', itens:[], status:'enviada', manual:false, criado_em:'2026-10-05T11:00:00Z', destinatarios:12, enviados:12, falhas:0 }]));
+          }
           /* ---- 2.19.1: reporte por liderança direta (db/2.19.1_reporte.sql).
              Sem window.__teste.reporteLider, o líder não tem reporte nem
              cobrança. As opções: { cobranca:'nenhuma'|'aviso'|'obrigatoria',
