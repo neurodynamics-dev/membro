@@ -35,7 +35,7 @@
 
 const arq = {
   pronto:false, em:0, erro:null, rol:[], emissores:[], padrao:[], pendentes:[], series:[],
-  filtro:{ q:'', status:'', natureza:'', estrutura:'', subtipo:'', classe:'', pend:false },
+  filtro:{ q:'', status:[], natureza:[], estrutura:[], subtipo:[], classe:[], pend:false },
   abertos:new Set(), ordem:{ col:'codigo', dir:1 },
   tela:null, envio:null, cfgFiltro:{ emissor:'', q:'' }
 };
@@ -295,12 +295,13 @@ function arqCompara(a, b){
 function arqFiltra(r){
   const f = arq.filtro, q = norm(f.q);
   return (!q || norm(r.codigo).includes(q) || norm(r.titulo).includes(q))
-    && (!f.status || r.status === f.status) && (!f.natureza || r.natureza === f.natureza)
-    && (!f.estrutura || arqEstrutura(r) === f.estrutura)
-    && (!f.subtipo || r.subtipo === f.subtipo) && (!f.classe || r.classe === f.classe)
+    && (!f.status.length || f.status.includes(r.status)) && (!f.natureza.length || f.natureza.includes(r.natureza))
+    && (!f.estrutura.length || f.estrutura.includes(arqEstrutura(r)))
+    && (!f.subtipo.length || f.subtipo.includes(r.subtipo)) && (!f.classe.length || f.classe.includes(r.classe))
     && (!f.pend || !!arqPendente(r.id));
 }
-const arqFiltroAtivo = () => { const f = arq.filtro; return !!(f.q || f.status || f.natureza || f.estrutura || f.subtipo || f.classe || f.pend); };
+const ARQ_FILTROS = ['status', 'estrutura', 'natureza', 'subtipo', 'classe'];
+const arqFiltroAtivo = () => { const f = arq.filtro; return !!(f.q || f.pend || ARQ_FILTROS.some(k => f[k].length)); };
 
 /* O ROL — a primeira tela de Arquivos: todos os arquivos, como a lista
    do Drive, e o filtro por emissor (#/arquivos/PES é o mesmo rol, já
@@ -319,6 +320,7 @@ function arqLista(pref){
   + arqNavHTML('')
   + arqLegendaHTML(arq.rol.filter(r => r.pn == null && (!pref || r.prefixo === pref)), true)
   + arqFiltrosHTML() + '<div id="arq-rol"></div>';
+  fbDesenhar('arq-fb');
   arqRedesenharRol();
 }
 /* As estruturas, com quantas séries há de cada — a coluna ao lado do
@@ -327,42 +329,56 @@ function arqLista(pref){
 function arqLegendaHTML(cabecas, filtra){
   const n = k => cabecas.filter(r => arqEstrutura(r) === k).length;
   return `<div class="arq-legenda">${Object.entries(ARQ_ESTRUTURAS).filter(([k]) => k !== 'avulso' || n(k)).map(([k, e]) => {
-    const on = !!filtra && arq.filtro.estrutura === k;
+    const on = !!filtra && arq.filtro.estrutura.includes(k);
     const tag = filtra ? 'button' : 'div';
     return `<${tag} class="arq-leg${on ? ' on' : ''}" data-est="${k}" ${filtra ? `aria-pressed="${on}"
-        onclick="arq.filtro.estrutura=arq.filtro.estrutura==='${k}'?'':'${k}';arqLista(arq.rolAtual)"` : ''}>
+        onclick="arqAlternarEstrutura('${k}')"` : ''}>
       <span class="arq-ic ${k === 'registros' ? 'registro' : k === 'unico' ? 'documento' : 'template'}">${ic(k === 'registros' ? 'registro' : k === 'unico' ? 'doc' : 'molde')}</span>
       <span class="tx"><b>${e.rot}</b> <span class="n">${n(k)}</span><span class="fr">${k === 'avulso' ? 'sem frase na coluna: o modelo de base dos outros' : '“' + e.frase + '”'}</span></span></${tag}>`;
   }).join('')}</div>`;
 }
+function arqAlternarEstrutura(k){
+  const e = arq.filtro.estrutura;
+  arq.filtro.estrutura = e.includes(k) ? e.filter(x => x !== k) : [...e, k];
+  arqLista(arq.rolAtual);
+}
+/* os filtros do rol: a FilterBar do sistema de design, com a busca no começo */
 function arqFiltrosHTML(){
   const f = arq.filtro;
-  const sel = (k, rot, ops) => `<div class="fld"><label>${rot}</label><select onchange="arq.filtro.${k}=this.value;arqRedesenharRol()">
-      <option value="">Todos</option>${ops.map(([v, l]) => `<option value="${v}" ${f[k] === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
-  return `<div class="filtros arq-filtros">
-    <div class="fld cresce"><label for="arq-q">Buscar</label><input id="arq-q" value="${esc(f.q)}" placeholder="Código ou título"
-      oninput="arq.filtro.q=this.value;arqRedesenharRol(true)"></div>
-    <div class="fld"><label for="arq-emissor">Emissor</label><select id="arq-emissor"
-        onchange="location.hash = this.value ? '#/arquivos/' + this.value : '#/arquivos'">
-      <option value="">Todos</option>${arq.emissores.map(e => `<option value="${e.prefixo}" ${arq.rolAtual === e.prefixo ? 'selected' : ''}>NRO-${esc(e.prefixo)} ${
-        esc(e.nome.replace(/^Departamento\s+(de|d[oa]s?)\s+/i, ''))}</option>`).join('')}</select></div>
-    ${sel('status', 'Status', Object.entries(ARQ_STATUS).map(([k, v]) => [k, v[0]]))}
-    ${sel('estrutura', 'Estrutura da série', Object.entries(ARQ_ESTRUTURAS).map(([k, v]) => [k, v.rot]))}
-    ${sel('natureza', 'Natureza', [['template', 'Template'], ['documento', 'Documento'], ['registro', 'Registro']])}
-    ${sel('subtipo', 'Subtipo', Object.entries(ARQ_SUBTIPOS))}
-    ${sel('classe', 'Classe', Object.entries(ARQ_CLASSES).map(([k, v]) => [k, v[0]]))}
-    <label class="check" style="align-self:center;margin-bottom:9px"><input type="checkbox" ${f.pend ? 'checked' : ''}
-      onchange="arq.filtro.pend=this.checked;arqRedesenharRol()"> só com versão em revisão</label>
-  </div>`;
+  const g = (k, rot, ops) => ({ k, rot, ops, sel: f[k] });
+  return filtroBarra({ id:'arq-fb', aoMudar: arqFiltroMudou,
+    antes: `<input id="arq-q" class="fb-busca" type="search" value="${esc(f.q)}" placeholder="Buscar por código ou título"
+      aria-label="Buscar por código ou título" oninput="arq.filtro.q=this.value;arqRedesenharRol(true)">`,
+    grupos: [
+      { k:'emissor', rot:'Emissor', unico:true, sel: arq.rolAtual ? [arq.rolAtual] : [],
+        ops: arq.emissores.map(e => [e.prefixo, 'NRO-' + e.prefixo + ' ' + e.nome.replace(/^Departamento\s+(de|d[oa]s?)\s+/i, '')]) },
+      g('status', 'Status', Object.entries(ARQ_STATUS).map(([k, v]) => [k, v[0]])),
+      g('estrutura', 'Estrutura da série', Object.entries(ARQ_ESTRUTURAS).map(([k, v]) => [k, v.rot])),
+      g('natureza', 'Natureza', [['template', 'Template'], ['documento', 'Documento'], ['registro', 'Registro']]),
+      g('subtipo', 'Subtipo', Object.entries(ARQ_SUBTIPOS)),
+      g('classe', 'Classe', Object.entries(ARQ_CLASSES).map(([k, v]) => [k, v[0]])),
+      { k:'pend', rot:'Revisão', unico:true, sel: f.pend ? ['sim'] : [], ops: [['sim', 'Com versão em revisão']] },
+    ] });
+}
+function arqFiltroMudou(k, vals){
+  if (k === 'emissor'){ location.hash = vals[0] ? '#/arquivos/' + vals[0] : '#/arquivos'; return; }
+  if (k === 'pend') arq.filtro.pend = vals[0] === 'sim';
+  else arq.filtro[k] = vals;
+  // a legenda das estruturas também filtra: acompanha a barra
+  if (k === 'estrutura') document.querySelectorAll('.arq-legenda .arq-leg').forEach(b => {
+    const on = vals.includes(b.dataset.est); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  arqRedesenharRol();
 }
 let _arqQ = null;
 function arqRedesenharRol(digitando){
   if (digitando){ clearTimeout(_arqQ); _arqQ = setTimeout(() => arqRedesenharRol(), 120); return; }
   const box = $('#arq-rol'); if (!box) return;
   const doEmissor = arq.rol.filter(r => !arq.rolAtual || r.prefixo === arq.rolAtual);
-  let corpo;
+  let corpo, total = null;
   if (arqFiltroAtivo()){
-    corpo = doEmissor.filter(arqFiltra).sort(arqCompara).map(r => arqLinha(r)).join('');
+    const achados = doEmissor.filter(arqFiltra);
+    corpo = achados.sort(arqCompara).map(r => arqLinha(r)).join('');
+    total = achados.length;
   } else {
     corpo = doEmissor.filter(r => r.pn == null).sort(arqCompara).map(c => arqLinha(c, { caret:true })
       + (arq.abertos.has(c.serie_id)
@@ -372,6 +388,8 @@ function arqRedesenharRol(digitando){
   }
   box.innerHTML = arqTabela(corpo, { ordenar:true, vazio: arqFiltroAtivo()
     ? 'Nenhum arquivo com esse filtro.' : arq.rolAtual ? 'Nenhuma série neste emissor.' : 'Nenhum arquivo no rol.' });
+  const tot = document.querySelector('#arq-fb .fb-total');
+  if (tot){ tot.hidden = total == null; tot.innerHTML = `<b>${total}</b> ${total === 1 ? 'resultado' : 'resultados'}`; }
 }
 
 /* ============================================================

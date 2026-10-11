@@ -757,6 +757,70 @@ function etapas(lista, atual, hrefDe){
     return `<li class="${c}">${hrefDe ? `<a href="${hrefDe(k)}"${n === i ? ' aria-current="step"' : ''}>${dentro}</a>` : `<span class="r"${n === i ? ' aria-current="step"' : ''}>${dentro}</span>`}</li>`;
   }).join('')}</ol>`;
 }
+/* FilterBar (.fb do neuro.css): um botão por grupo abre a lista; OU dentro
+   do grupo, E entre grupos; o que está ativo aparece embaixo como tag
+   removível. Um grupo com unico:true escolhe um valor só (e fecha).
+   grupos: [{ k, rot, ops:[[valor, rótulo]], sel:[valores], unico }];
+   aoMudar(k, valores) recebe cada mudança; antes vai no começo da linha. */
+const FB = {};
+function filtroBarra({ id, grupos, aoMudar, antes = '', total }){
+  FB[id] = { grupos: grupos.map(g => ({ ...g, sel: [...(g.sel || [])] })), aoMudar };
+  return `<div class="fb" id="${id}"><div class="fb-grupos">${antes}${FB[id].grupos.map((g, i) => `<div class="fb-grupo" data-g="${i}">
+      <button type="button" class="fb-btn" aria-haspopup="listbox" aria-expanded="false" onclick="fbAbrir('${id}',${i})"></button>
+      <div class="fb-pop" role="listbox" aria-label="${esc(g.rot)}" aria-multiselectable="${!g.unico}" hidden onkeydown="fbTecla(event,'${id}',${i})">
+        ${g.ops.map(([v, l]) => `<button type="button" role="option" data-v="${esc(v)}" onclick="fbAlternar('${id}',${i},this.dataset.v)">${esc(l)}</button>`).join('')}
+        <hr><div class="acts"><button type="button" class="limpar" onclick="fbLimpar('${id}',${i})">Limpar</button>
+          <button type="button" class="aplicar" onclick="fbFechar()">Aplicar</button></div></div></div>`).join('')}
+    <span class="fb-total"${total == null ? ' hidden' : ''}><b>${total ?? ''}</b> resultados</span></div>
+    <div class="fb-ativos" aria-live="polite"></div></div>`;
+}
+/* depois de pôr o HTML na tela: botões, opções marcadas e tags */
+function fbDesenhar(id){
+  const fb = FB[id], el = document.getElementById(id); if (!fb || !el) return;
+  fb.grupos.forEach((g, i) => {
+    const gr = el.querySelector(`.fb-grupo[data-g="${i}"]`), bt = gr.querySelector('.fb-btn'), n = g.sel.length;
+    bt.classList.toggle('ativo', n > 0);
+    bt.innerHTML = esc(g.rot) + (n && !g.unico ? ` <span class="n">${n}</span>` : '');
+    bt.setAttribute('aria-label', g.rot + (n ? ': ' + g.sel.map(v => (g.ops.find(o => o[0] === v) || [, v])[1]).join(', ') : ''));
+    gr.querySelectorAll('[role=option]').forEach(o => o.setAttribute('aria-selected', g.sel.includes(o.dataset.v)));
+  });
+  const tags = fb.grupos.flatMap((g, i) => g.sel.map(v => [g, i, v]));
+  el.querySelector('.fb-ativos').innerHTML = tags.length ? tags.map(([g, i, v]) => {
+    const l = (g.ops.find(o => o[0] === v) || [, v])[1];
+    return `<span class="fb-tag"><span class="k">${esc(g.rot)}:</span>${esc(l)}<button type="button" data-v="${esc(v)}"
+      aria-label="Tirar ${esc(g.rot)}: ${esc(l)}" onclick="fbAlternar('${id}',${i},this.dataset.v)">×</button></span>`;
+  }).join('') + (tags.length ? `<button type="button" class="fb-limpa" onclick="fbLimparTudo('${id}')">Limpar filtros</button>` : '') : '';
+}
+let _fbAberto = null;
+function fbFechar(){
+  if (!_fbAberto) return;
+  const { gr } = _fbAberto; _fbAberto = null;
+  gr.querySelector('.fb-pop').hidden = true; gr.querySelector('.fb-btn').setAttribute('aria-expanded', 'false');
+}
+function fbAbrir(id, i){
+  const gr = document.querySelector(`#${id} .fb-grupo[data-g="${i}"]`), era = _fbAberto?.gr === gr;
+  fbFechar(); if (era) return;
+  _fbAberto = { id, i, gr };
+  gr.querySelector('.fb-pop').hidden = false; gr.querySelector('.fb-btn').setAttribute('aria-expanded', 'true');
+  (gr.querySelector('[role=option][aria-selected=true]') || gr.querySelector('[role=option]'))?.focus();
+}
+function fbMudou(id, i){
+  const fb = FB[id], g = fb.grupos[i]; fbDesenhar(id); fb.aoMudar(g.k, [...g.sel]);
+}
+function fbAlternar(id, i, v){
+  const g = FB[id].grupos[i];
+  if (g.unico){ g.sel = g.sel[0] === v ? [] : [v]; fbFechar(); }
+  else g.sel = g.sel.includes(v) ? g.sel.filter(x => x !== v) : [...g.sel, v];
+  fbMudou(id, i);
+}
+function fbLimpar(id, i){ FB[id].grupos[i].sel = []; fbMudou(id, i); }
+function fbLimparTudo(id){ FB[id].grupos.forEach((g, i) => { if (g.sel.length){ g.sel = []; fbMudou(id, i); } }); }
+function fbTecla(e, id, i){
+  const ops = [...e.currentTarget.querySelectorAll('button')], at = ops.indexOf(document.activeElement);
+  if (e.key === 'Escape'){ e.preventDefault(); const bt = _fbAberto?.gr.querySelector('.fb-btn'); fbFechar(); bt?.focus(); }
+  else if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); ops[(at + (e.key === 'ArrowDown' ? 1 : -1) + ops.length) % ops.length].focus(); }
+}
+document.addEventListener('mousedown', e => { if (_fbAberto && !_fbAberto.gr.contains(e.target)) fbFechar(); });
 const layoutFluxo = ({ passos = '', corpo = '', salvo = '', acoes = '' } = {}) =>
   `<div class="tpl-f">${passos}<div class="fluxo-corpo">${corpo}</div>
     <div class="barra-acoes">${salvo}<div class="dir">${acoes}</div></div></div>`;
