@@ -147,15 +147,21 @@ console.log('\nAberto (admin, 1440px)');
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-seta');
   await p.waitForTimeout(200);
   let srv = await secao(p, 'servicos');
-  /* doze: todos os serviços, Meus pedidos (desde a v24), o que o SOMA faz
+  /* 2.19.1: o reporte saiu de Equipe e entrou em Serviços, só para liderança.
+     Treze: todos os serviços, Meus pedidos (desde a v24), Reporte semanal, o que o SOMA faz
      sozinho — a declaração, os eventos, o cofre (v25–v27) e Meus dados
      (2.19.1) — e os seis pedidos ao Depto. de Pessoal, cada bloco com o
      seu rótulo */
   confere('a seta abre Serviços sem navegar',
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 12 && srv.filhos[1] === 'Meus pedidos'
-      && srv.filhos.slice(2, 6).join('|') === 'Declaração de vínculo|Eventos e participações|Cofre de senhas|Meus dados'
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 13 && srv.filhos[1] === 'Meus pedidos'
+      && srv.filhos[2] === 'Reporte semanal'
+      && srv.filhos.slice(3, 7).join('|') === 'Declaração de vínculo|Eventos e participações|Cofre de senhas|Meus dados'
       && srv.rotulos.join('|') === 'Documentos e acessos|Ao Depto. de Pessoal'
       && await p.evaluate(() => location.hash) === '#/', srv);
+  const equipe = await secao(p, 'equipe');
+  confere('Equipe mantém Feed e Newsletters, sem Reporte semanal (2.19.1)',
+    equipe.filhos.length === 5 && !equipe.filhos.includes('Reporte semanal')
+      && equipe.filhos.includes('Newsletters') && equipe.filhos.includes('Feed da equipe'), equipe);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-filho[data-sub="ouvidoria"]');
   await p.waitForTimeout(700);
   confere('o subitem leva à tela', await p.evaluate(() => location.hash) === '#/servicos/ouvidoria');
@@ -449,6 +455,9 @@ for (const [papel, esperado] of [
     okAdm, adm?.filhos ?? null);
   confere(`${papel}: "Quadro de pessoal" ${esperado.quadroPessoal ? 'aparece' : 'não aparece'} em Equipe`,
     eq.filhos.includes('Quadro de pessoal') === esperado.quadroPessoal, eq.filhos);
+  const servicos = await secao(p, 'servicos');
+  confere(`${papel}: reporte não aparece sem liderança`,
+    !servicos.filhos.includes('Reporte semanal') && !eq.filhos.includes('Reporte semanal'), servicos);
   await ctx.close();
 }
 

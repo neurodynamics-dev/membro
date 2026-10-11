@@ -2,7 +2,7 @@ import {chromium} from 'playwright';
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const stub=readFileSync(new URL('./stub-supabase.js',import.meta.url),'utf8').replace('rpc: async (nome, args) => {',`rpc: async (nome, args) => {
- if(nome.startsWith('reporte_')||nome.startsWith('feed_'))return window.repStub(nome,args);`);
+ if(nome.startsWith('reporte_')||nome.startsWith('feed_')||nome==='newsletter_lista')return window.repStub(nome,args);`);
 const nav=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
 let checks=0;
 try{
@@ -15,6 +15,7 @@ try{
   let report={id:'r1',frente_id:'f1',versao:1,etapa:1,apontamentos:[{registro:17,assiduidade:'SUFICIENTE',entregas:'SUFICIENTE'}],escalonamentos:[]};
   let feed=[];window.repStub=async(n,p)=>{
    const ok=data=>({data,error:null});
+   if(n==='newsletter_lista')return ok([]);
    if(n==='reporte_painel')return ok({status:'ok',ciclo,frentes:[frente],config:{dia_prazo:4,hora_prazo:'18:00',dia_reuniao:0,hora_reuniao:'09:00'}});
    if(n==='reporte_abrir')return ok({status:'ok',reporte:structuredClone(report),ciclo,grupo:{nome:'Órtese'},feed:structuredClone(feed)});
    if(n==='reporte_salvar'){
@@ -27,15 +28,32 @@ try{
   };
   function assertPayload(p){if(!Array.isArray(p.apontamentos)||!Array.isArray(p.escalonamentos)||!Array.isArray(p.feed))throw Error('Payload incompleto');window.saved=structuredClone(p);}
  });
- await p.goto('http://localhost:8765/#/equipe/reporte');
- /* L: o ciclo da semana, com o cabeçalho único e as seções de Equipe */
+ await p.goto('http://localhost:8765/#/servicos/reporte');
+ /* R2 (2.19.1): o reporte saiu de Equipe e entrou em Serviços, sem as abas de Equipe. */
  await p.getByRole('heading',{name:'Reporte semanal'}).waitFor();
- assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Equipe');checks++;
- assert.ok(await p.locator('#main .nav1').getByRole('link',{name:'Feed da equipe'}).count());checks++;
+ assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Serviços');checks++;
+ assert.equal(await p.locator('#main .nav1').count(),0);checks++;
+ assert.deepEqual(await p.evaluate(()=>acoesDaCasca().find(a=>a.titulo==='Reporte semanal')),
+  {titulo:'Reporte semanal',sub:'Seu reporte da semana',href:'#/servicos/reporte'});checks++;
+ /* Os favoritos antigos mantêm os sufixos e chegam à tela nova. */
+ for(const [antiga,nova,titulo] of [
+  ['#/equipe/reporte','#/servicos/reporte','Reporte semanal'],
+  ['#/equipe/reporte/config','#/servicos/reporte/config','Configurar ciclo'],
+  ['#/equipe/apontamento','#/servicos/reporte','Reporte semanal'],
+  ['#/equipe/reporte/f1/2','#/servicos/reporte/f1/2','Órtese']
+ ]){
+  await p.goto('http://localhost:8765/'+antiga);
+  await p.waitForFunction(hash=>location.hash===hash,nova);
+  await p.locator('#main .cab h1').filter({hasText:titulo}).waitFor();
+  assert.equal(await p.evaluate(()=>location.hash),nova);checks++;
+  assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Serviços');checks++;
+ }
+ await p.goto('http://localhost:8765/#/servicos/reporte');
+ await p.getByRole('link',{name:'Preencher',exact:true}).waitFor();
  await p.getByRole('link',{name:'Preencher',exact:true}).click();
  /* F: tem endereço, etapas (não SectionNav) e o voltar */
  await p.getByRole('heading',{name:'Órtese'}).waitFor();
- assert.match(await p.evaluate(()=>location.hash),/#\/equipe\/reporte\/f1\/1$/);checks++;
+ assert.match(await p.evaluate(()=>location.hash),/#\/servicos\/reporte\/f1\/1$/);checks++;
  assert.equal(await p.locator('#main .etapas li').count(),4);checks++;
  assert.equal(await p.locator('#main .nav1').count(),0);checks++;
  assert.ok(await p.locator('#main .cab-voltar').count());checks++;
@@ -70,6 +88,24 @@ try{
  await p.evaluate(()=>location.hash='#/feed');await p.getByRole('heading',{name:'Ensaio concluído'}).waitFor();assert.equal(await p.locator('#feed-lista strong').innerText(),'validado');checks++;
  assert.equal(await p.locator('#main .cab h1').innerText(),'Feed da equipe');checks++;
  assert.ok(await p.locator('#main .nav1').count());checks++;
+ assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Equipe');checks++;
+ assert.equal(await p.locator('#main .nav1 a[href="#/equipe/reporte"]').count(),0);checks++;
+ await p.evaluate(()=>location.hash='#/equipe/newsletter');
+ await p.getByRole('heading',{name:'Newsletters',exact:true}).waitFor();
+ assert.equal(await p.locator('#main .cab .eyebrow').textContent(),'Equipe');checks++;
+ assert.ok(await p.locator('#main .nav1 a[href="#/equipe/feed"]').count());checks++;
+ /* Leitura não ganha acesso pela rota direta nem pelo endereço antigo. */
+ const leitura=await nav.newPage();const errosLeitura=[];leitura.on('pageerror',e=>errosLeitura.push(e.message));
+ await leitura.route('**/*supabase*.js',r=>r.fulfill({contentType:'application/javascript',
+  body:readFileSync(new URL('./stub-supabase.js',import.meta.url),'utf8').replace("papel:'admin'","papel:'leitura'")}));
+ for(const hash of ['#/servicos/reporte','#/equipe/reporte/config']){
+  await leitura.goto('http://localhost:8765/'+hash);
+  await leitura.waitForSelector('#hd:not([hidden])');
+  await leitura.waitForFunction(()=>location.hash==='#/');
+  assert.equal(await leitura.locator('#lt-nav a[href="#/servicos/reporte"]').count(),0);checks++;
+  assert.ok(!await leitura.evaluate(()=>acoesDaCasca().some(a=>a.titulo==='Reporte semanal')));checks++;
+ }
+ assert.deepEqual(errosLeitura,[]);checks++;await leitura.close();
  assert.deepEqual(errors,[]);checks++;
  console.log(`${checks} verificações passaram.`);
 }finally{await nav.close();}

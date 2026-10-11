@@ -1,9 +1,9 @@
 /* ============================================================
-   Reporte semanal e feed da equipe (Equipe).
+   Reporte semanal (Serviços) e feed da equipe (Equipe).
    Endereços (toda tela tem endereço, PADROES §2):
-     #/equipe/reporte                     o ciclo da semana (Lista)
-     #/equipe/reporte/<frente>/<passo>    preencher ou consultar (Fluxo, 1 a 4)
-     #/equipe/reporte/config              prazo e reunião (Ajustes, admin)
+     #/servicos/reporte                     o ciclo da semana (Lista)
+     #/servicos/reporte/<frente>/<passo>    preencher ou consultar (Fluxo, 1 a 4)
+     #/servicos/reporte/config              prazo e reunião (Ajustes, admin)
    O banco tem três etapas (apontamentos, escalonamentos, feed) e o envio
    exige etapa 3; o passo 4, a Revisão, é só da tela. A permissão e o
    encerramento são conferidos no banco.
@@ -18,7 +18,10 @@ async function repRPC(nome,p={}){
  return data;
 }
 const repPill=(t,c)=>`<span class="pill ${c||''}"><span class="dt ${c==='p-ok'?'dt-ok':c==='p-warn'?'dt-warn':c==='p-bad'?'dt-bad':''}"></span>${esc(t)}</span>`;
-const repTopo=(titulo,secao)=>cabecalho({espaco:'Equipe',titulo,secoes:abasEquipe(secao||'reporte')});
+/* Feed e Newsletters continuam em Equipe; o reporte fica em Serviços (2.19.1). */
+const repTopo=(titulo,secao)=>cabecalho(secao
+ ? {espaco:'Equipe',titulo,secoes:abasEquipe(secao)}
+ : {espaco:'Serviços',titulo});
 const repRota=()=>{const [,,,a,b]=location.hash.split('/');return {a:a||'',b:b||''};};
 const repLimite=ciclo=>(new Date(ciclo.prazo)-Date.now())/36e5;
 const repPrazoPill=ciclo=>{const h=repLimite(ciclo);return h<=0?repPill('Prazo encerrado'):h<24?repPill('Prazo em '+(h<1?'menos de 1 hora':Math.ceil(h)+' h'),'p-warn'):'';};
@@ -29,7 +32,7 @@ async function pageReporte(){
  if(!tenhoPapel('lideranca')){location.hash='#/';return;}
  const {a,b}=repRota();
  if(reporte.sujo&&reporte.aberto)await repSalvar(true);
- $('#main').innerHTML=(a&&a!=='config'?cabecalho({espaco:'Equipe',titulo:'Reporte semanal',voltar:['Reporte semanal','#/equipe/reporte']}):repTopo('Reporte semanal'))+estado.carregando(a&&a!=='config'?null:'lista');
+ $('#main').innerHTML=(a&&a!=='config'?cabecalho({espaco:'Serviços',titulo:'Reporte semanal',voltar:['Reporte semanal','#/servicos/reporte']}):repTopo('Reporte semanal'))+estado.carregando(a&&a!=='config'?null:'lista');
  try{
   reporte.painel=await repRPC('reporte_painel');
   if(a==='config')return repTelaConfig();
@@ -45,10 +48,10 @@ function repTelaLista(){
  const encerrado=c.fechado||new Date(c.prazo)<new Date();
  const linhas=d.frentes.map(f=>{
   const sit=f.enviado_em?repPill('Enviado','p-ok'):encerrado?repPill('Encerrado'):repPill('Pendente','p-warn');
-  const acao=`<a class="btn ghost mini" href="#/equipe/reporte/${esc(f.id)}/1">${f.enviado_em||encerrado?'Consultar':'Preencher'}</a>`;
+  const acao=`<a class="btn ghost mini" href="#/servicos/reporte/${esc(f.id)}/1">${f.enviado_em||encerrado?'Consultar':'Preencher'}</a>`;
   return `<tr><td class="nome">${esc(f.nome)}</td><td>${esc(f.responsavel_nome)}</td><td>${sit}</td><td class="mono">${f.enviado_em?fmtDT(f.enviado_em):"—"}</td><td style="text-align:right">${acao}</td></tr>`;}).join('');
- $('#main').innerHTML=cabecalho({espaco:'Equipe',titulo:'Reporte semanal',meta:[repPrazoPill(c)],secoes:abasEquipe('reporte'),
-   acoes:souAdmin()?[`<button class="btn ghost" onclick="repPDF()">${ic('doc')}Baixar reporte unificado</button>`,`<a class="btn ghost" href="#/equipe/reporte/config">Configurar ciclo</a>`]:[]})
+ $('#main').innerHTML=cabecalho({espaco:'Serviços',titulo:'Reporte semanal',meta:[repPrazoPill(c)],
+   acoes:souAdmin()?[`<button class="btn ghost" onclick="repPDF()">${ic('doc')}Baixar reporte unificado</button>`,`<a class="btn ghost" href="#/servicos/reporte/config">Configurar ciclo</a>`]:[]})
  +`<div class="metricas" style="margin-bottom:18px">${m('Semana de',fmtD(c.semana))}${m('Prazo',fmtDT(c.prazo))}${m('Reunião',fmtDT(c.reuniao_em))}${m('Enviados',`${enviados} de ${d.frentes.length}`)}</div>`
  +(d.frentes.length?`<div class="card" style="padding:0"><div class="wrap"><table class="tabela trabalho"><thead><tr><th>Frente</th><th>Responsável</th><th>Situação</th><th>Enviado em</th><th></th></tr></thead><tbody>${linhas}</tbody></table></div></div>`
   :estado.vazio({texto:'Nenhuma frente atribuída. Cadastre o responsável em Administração, Grupos.',acao:souAdmin()?'<a class="btn ghost mini" href="#/admin/grupos">Abrir Grupos</a>':''}));
@@ -66,11 +69,11 @@ function repRender(){
  const aviso=r.enviado_em?`<div class="aviso-box info" role="status">Reporte enviado em ${fmtDT(r.enviado_em)}.</div>`
   :travado?'<div class="aviso-box warn" role="status">O prazo de envio está encerrado. O reporte está somente para leitura.</div>':'';
  const corpo=[repPassoApont,repPassoEscal,repPassoFeed,repPassoRevisao][n-1](d,travado);
- const rota=k=>`#/equipe/reporte/${esc(r.frente_id)}/${k}`;
+ const rota=k=>`#/servicos/reporte/${esc(r.frente_id)}/${k}`;
  const acoes=[n>1?`<a class="btn ghost" href="${rota(n-1)}">Etapa anterior</a>`:'',
   !travado?'<button class="btn ghost" id="rep-salvar" onclick="repSalvar()">Salvar rascunho</button>':'',
   n<4?`<a class="btn solid" href="${rota(n+1)}">Continuar</a>`:(!travado?'<button class="btn solid" id="rep-enviar" onclick="repEnviar()">Enviar reporte</button>':'')].join('');
- $('#main').innerHTML=cabecalho({espaco:'Equipe',titulo:d.grupo.nome,voltar:['Reporte semanal','#/equipe/reporte'],meta:['Semana de '+fmtD(d.ciclo.semana),repPrazoPill(d.ciclo)]})
+ $('#main').innerHTML=cabecalho({espaco:'Serviços',titulo:d.grupo.nome,voltar:['Reporte semanal','#/servicos/reporte'],meta:['Semana de '+fmtD(d.ciclo.semana),repPrazoPill(d.ciclo)]})
   +aviso+'<div id="rep-aviso"></div>'
   +layoutFluxo({passos:etapas(REP_PASSOS,String(n),rota),corpo,salvo:travado?'<span class="salvo"></span>':'<span class="salvo ok" id="rep-salvo">Rascunho carregado</span>',acoes});
 }
@@ -156,7 +159,7 @@ async function repEnviar(){
  if(!await confirma('Depois de enviado, o reporte não pode ser editado. As publicações entram no feed da equipe e as sinalizações vão para o Pessoal.','Enviar reporte'))return;
  r.etapa=3;if(!await repSalvar(true))return;
  reporte.ocupado=true;
- try{await repRPC('reporte_enviar',{p_id:r.id,p_versao:r.versao});toast('Reporte enviado.');reporte.aberto=null;location.hash='#/equipe/reporte';}
+ try{await repRPC('reporte_enviar',{p_id:r.id,p_versao:r.versao});toast('Reporte enviado.');reporte.aberto=null;location.hash='#/servicos/reporte';}
  catch(e){falha(e,'Não foi possível enviar o reporte');}finally{reporte.ocupado=false;}
 }
 async function repVincular(i,codigo){
@@ -180,18 +183,18 @@ async function repImagem(i,file){
 
 /* ---------------- A: prazo e reunião (admin) ---------------- */
 function repTelaConfig(){
- if(!souAdmin()){location.hash='#/equipe/reporte';return;}
+ if(!souAdmin()){location.hash='#/servicos/reporte';return;}
  const c=reporte.painel.config,dias=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
  const linha=(k,t,dica)=>ajuste({titulo:t,dica,controle:`<div style="display:flex;gap:10px;flex-wrap:wrap"><div class="fld"><label for="rep-dia-${k}">Dia</label><select id="rep-dia-${k}">${dias.map((x,i)=>`<option value="${i}" ${c['dia_'+k]===i?'selected':''}>${x}</option>`).join('')}</select></div>
   <div class="fld"><label for="rep-hora-${k}">Horário</label><input type="time" id="rep-hora-${k}" value="${esc(String(c['hora_'+k]||'').slice(0,5))}"></div></div>`});
- $('#main').innerHTML=cabecalho({espaco:'Equipe',titulo:'Configurar ciclo',voltar:['Reporte semanal','#/equipe/reporte']})
+ $('#main').innerHTML=cabecalho({espaco:'Serviços',titulo:'Configurar ciclo',voltar:['Reporte semanal','#/servicos/reporte']})
   +`<div class="card"><div class="ajustes">${linha('prazo','Prazo de envio','Vale para os próximos ciclos.')}${linha('reuniao','Reunião','Vale para os próximos ciclos.')}
    ${ajuste({titulo:'Frentes e responsáveis',dica:'Quem preenche cada frente.',controle:'<a class="btn ghost mini" href="#/admin/grupos">Abrir Grupos</a>'})}</div>
-   <div class="ajustes-pe"><a class="btn ghost" href="#/equipe/reporte">Cancelar</a><button class="btn solid" onclick="repConfigSalvar()">Salvar</button></div></div>`;
+   <div class="ajustes-pe"><a class="btn ghost" href="#/servicos/reporte">Cancelar</a><button class="btn solid" onclick="repConfigSalvar()">Salvar</button></div></div>`;
 }
 async function repConfigSalvar(){
  try{const p={};for(const k of ['prazo','reuniao']){p['dia_'+k]=Number($('#rep-dia-'+k).value);p['hora_'+k]=$('#rep-hora-'+k).value;}
- await repRPC('reporte_configurar',{p});toast('Ciclo configurado.');location.hash='#/equipe/reporte';}catch(e){falha(e,'Não foi possível configurar o ciclo');}
+ await repRPC('reporte_configurar',{p});toast('Ciclo configurado.');location.hash='#/servicos/reporte';}catch(e){falha(e,'Não foi possível configurar o ciclo');}
 }
 async function repPDF(){
  try{const d=await repRPC('reporte_unificado',{p_ciclo:reporte.painel.ciclo.id});
