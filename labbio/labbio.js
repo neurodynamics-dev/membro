@@ -221,7 +221,7 @@ function desenhar(){
   const r = rota(), sec = NAV.some(([k]) => k === r.sec) ? r.sec : '';
   $('#lb-nav').innerHTML = NAV.map(([k, l]) => `<a href="#/${k}"${k === sec ? ' aria-current="page"' : ''}>${esc(l)}</a>`).join('');
   $('#lb-topo').classList.remove('aberto'); $('#lb-menu-bt').setAttribute('aria-expanded', 'false');
-  ({ '':pgInicio, gestores:pgGestores, membros:pgMembros, checkins:pgCheckins, treinamentos:pgTreinamentos }[sec] || pgEmBreve)(sec, r.sub);
+  ({ '':pgInicio, gestores:pgGestores, membros:pgMembros, checkins:pgCheckins, treinamentos:pgTreinamentos, solicitacoes:pgSolicitacoes }[sec] || pgEmBreve)(sec, r.sub);
 }
 function pgEmBreve(sec){
   const rot = (NAV.find(([k]) => k === sec) || [, 'Painel'])[1];
@@ -591,6 +591,107 @@ function desenharTreinamentos(){
   $('#tr-area').onchange = e => { labT.area = e.target.value; desenharTreinamentos(); };
   $('#tr-tre').onchange = e => { labT.tre = e.target.value; desenharTreinamentos(); };
   $('#tr-pend').onclick = () => { labT.soPend = !labT.soPend; desenharTreinamentos(); };
+}
+
+/* ============================================================
+   SOLICITAÇÕES (ficha L6): os pedidos de biometria que o Pessoal
+   encaminhou. O gestor copia os dados e a foto para a Intelbras,
+   confirma o cadastro, devolve ou nega.
+   ============================================================ */
+const ETAPA_EVENTO = { pessoal:'Enviado ao Pessoal', labbio:'Encaminhado ao LABBIO', devolvido:'Devolvido para correção',
+  negado_pessoal:'Negado', negado_labbio:'Negado', concedido:'Acesso cadastrado', cancelado:'Cancelado', rascunho:'Em rascunho' };
+const ETAPA_PEDIDO = { rascunho:'Em rascunho', pessoal:'No Pessoal', labbio:'No LABBIO', concedido:'Acesso cadastrado', devolvido:'Devolvido ao membro',
+  negado_pessoal:'Negado pelo Pessoal', negado_labbio:'Negado pelo LABBIO', cancelado:'Cancelado' };
+const ROTULO_DADO = { nome_civil:'Nome civil', cpf:'CPF', matricula:'Matrícula', nome:'Nome', confirmado_em:'Dados conferidos em' };
+function trilhaPedido(p){
+  const ev = p.eventos || [];
+  if (!ev.length) return '<p class="lb-sub">Nenhum movimento ainda.</p>';
+  return `<ol class="lb-trilha">${ev.map((e, i) => `<li${i === ev.length - 1 ? ' class="atual" aria-current="step"' : ''}>
+    <b>${esc(ETAPA_EVENTO[e.para] || e.para)}</b> <span class="lb-sub">${esc(e.ator_nome || e.ator || '')}, ${fmtDT(e.quando)}</span>
+    ${e.motivo ? `<div class="lb-sub" style="margin:2px 0 0">${esc(e.motivo)}</div>` : ''}</li>`).join('')}</ol>`;
+}
+const labP = { filtro:'abertos' };
+async function pgSolicitacoes(sec, sub){
+  if (sub) return pgPedido(sub);
+  $('#lb-main').innerHTML = cabecalho({ titulo:'Solicitações', lead:'Pedidos de acesso biométrico que o Pessoal encaminhou ao LABBIO.' }) + `
+    <div class="seg" role="group" aria-label="Situação" style="margin-bottom:14px">${[['abertos', 'Abertos'], ['encerrados', 'Encerrados'], ['todos', 'Todos']].map(([k, l]) =>
+      `<button type="button" class="${labP.filtro === k ? 'on' : ''}" aria-pressed="${labP.filtro === k}" onclick="labP.filtro='${k}';pgSolicitacoes()">${l}</button>`).join('')}</div>
+    <div id="sol-lista">${estado.carregando()}</div>`;
+  try {
+    const d = await rpc('labbio_solicitacoes', { p_situacao:labP.filtro });
+    if (d?.status !== 'ok') throw new Error(d?.status);
+    const el = $('#sol-lista'); if (!el) return;
+    el.innerHTML = (d.pedidos || []).length ? `<div class="lb-wrap"><table class="lb-tabela" id="sol-tabela"><thead><tr><th>Membro</th><th>Protocolo</th><th>Versão</th><th>Encaminhado em</th><th>Etapa</th></tr></thead>
+      <tbody>${d.pedidos.map(p => `<tr><td><a href="#/solicitacoes/${esc(p.id)}">${esc(p.nome)}</a></td><td>${esc(p.protocolo || '—')}</td><td>${Number(p.versao) || 1}</td>
+        <td>${fmtDT(p.encaminhado_em)}</td><td>${esc(ETAPA_PEDIDO[p.etapa] || p.etapa)}</td></tr>`).join('')}</tbody></table></div>`
+      : estado.vazio('Nenhum pedido neste filtro.');
+  } catch(e){
+    if (e.message === 'sem_acesso') return;
+    const el = $('#sol-lista'); if (el) el.innerHTML = estado.erro('Não foi possível carregar as solicitações.', '<button class="btn ghost mini" type="button" onclick="pgSolicitacoes()">Tentar de novo</button>');
+  }
+}
+async function pgPedido(id){
+  $('#lb-main').innerHTML = `<a class="lb-voltar" href="#/solicitacoes">← Solicitações</a><div id="ped-corpo">${estado.carregando()}</div>`;
+  try {
+    const d = await rpc('labbio_pedido_ler', { p_id:id });
+    const el = $('#ped-corpo'); if (!el) return;
+    if (d?.status !== 'ok'){ el.innerHTML = estado.vazio('Este pedido não está disponível.'); return; }
+    const p = d.pedido; lab.pedido = p;
+    const env = p.enviada || {}, dados = env.dados || {};
+    const linha = (k, v) => `<div class="lb-dado"><dt>${esc(ROTULO_DADO[k] || k)}</dt><dd>${esc(k === 'confirmado_em' ? fmtDT(v) : v)}</dd>
+      ${k === 'confirmado_em' ? '' : `<button type="button" class="btn ghost mini" onclick="labCopiar(${JSON.stringify(String(v)).replace(/"/g, '&quot;')})">Copiar</button>`}</div>`;
+    const aberto = p.etapa === 'labbio';
+    el.innerHTML = cabecalho({ titulo:`${p.nome}, ${p.protocolo || 'pedido'}`, lead:`Etapa: ${ETAPA_PEDIDO[p.etapa] || p.etapa}. Versão ${Number(p.versao) || 1}.` }) + `
+      <div class="lb-objeto"><div class="lb-principal">
+        <section class="lb-bloco"><h2>Dados para o cadastro</h2><dl class="lb-dados">${Object.entries(dados).filter(([, v]) => v != null && v !== '').map(([k, v]) => linha(k, v)).join('') || '<p class="lb-sub">Sem dados.</p>'}</dl></section>
+        <section class="lb-bloco"><h2>Pedido</h2><dl class="lb-spec"><div><dt>Justificativa</dt><dd>${esc(p.justificativa || '—')}</dd></div><div><dt>Tempo</dt><dd>${esc(p.tempo || '—')}</dd></div></dl></section>
+        <section class="lb-bloco"><h2>Movimentos</h2>${trilhaPedido(p)}</section>
+        ${aberto ? `<section class="lb-bloco"><h2>Decisão</h2>
+          <div class="acts" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn solid" type="button" id="ped-ok" onclick="labPedidoConfirmar()">Confirmar o cadastro na biometria</button>
+          <button class="btn ghost" type="button" onclick="labPedidoMotivo('devolver')">Devolver para correção</button>
+          <button class="btn ghost" type="button" onclick="labPedidoMotivo('negar')">Negar</button></div></section>` : ''}
+      </div><aside class="lb-lateral"><div id="ped-foto"><p class="lb-sub">Carregando a foto…</p></div></aside></div>`;
+    if (env.foto_path) try {
+      const { data, error } = await sb.storage.from('biometria').createSignedUrl(env.foto_path, 120);
+      if (error || !data?.signedUrl) throw error || new Error('sem link');
+      const f = $('#ped-foto'); if (f) f.innerHTML = `<img src="${esc(data.signedUrl)}" alt="Foto enviada por ${esc(p.nome)}" style="width:220px;max-width:100%;border-radius:12px">
+        <a class="btn ghost mini" href="${esc(data.signedUrl)}" download="foto-${esc(p.registro)}.jpg">Baixar a foto</a>`;
+    } catch(_){ const f = $('#ped-foto'); if (f) f.innerHTML = '<p class="lb-sub">Não foi possível abrir a foto agora.</p>'; }
+    else $('#ped-foto').innerHTML = '<p class="lb-sub">Sem foto.</p>';
+  } catch(e){
+    if (e.message === 'sem_acesso') return;
+    const el = $('#ped-corpo'); if (el) el.innerHTML = estado.erro('Não foi possível carregar o pedido.', `<button class="btn ghost mini" type="button" onclick="pgPedido('${esc(id)}')">Tentar de novo</button>`);
+  }
+}
+function labCopiar(v){ navigator.clipboard?.writeText(v).then(() => toast('Copiado.'), () => toast('Não foi possível copiar.', true)); }
+const MOTIVO_DECIDIR = { conflito:'O pedido mudou em outra tela. Recarregue.', encerrado:'Este pedido já foi decidido.', motivo_obrigatorio:'Escreva o motivo.' };
+async function labDecidir(acao, motivo){
+  const p = lab.pedido;
+  const d = await rpc('labbio_pedido_decidir', { p_id:p.id, p_versao:p.versao, p_acao:acao, p_motivo:motivo || null });
+  return d;
+}
+async function labPedidoConfirmar(){
+  if (!await confirma('Confirme só depois de cadastrar na Intelbras. O acesso passa a constar na ficha da pessoa.', 'Confirmar o cadastro')) return;
+  try {
+    const d = await labDecidir('implantado');
+    if (d?.status !== 'ok') return toast(MOTIVO_DECIDIR[d?.status] || 'Não foi possível confirmar agora.', true);
+    toast('Cadastro confirmado.'); pgPedido(lab.pedido.id);
+  } catch(e){ if (e.message !== 'sem_acesso') toast('Não foi possível confirmar agora.', true); }
+}
+function labPedidoMotivo(acao){
+  const rot = acao === 'negar' ? 'Negar o pedido' : 'Devolver para correção';
+  abreModal(`<h3>${rot}</h3><div class="fld"><label for="pm-motivo">Motivo (obrigatório)</label><textarea id="pm-motivo" rows="3"></textarea></div>
+    <p class="lb-msg ruim" id="pm-msg"></p><div class="acts"><button class="btn ghost" type="button" onclick="fechaModal()">Cancelar</button>
+    <button class="btn ${acao === 'negar' ? 'danger' : 'solid'}" type="button" id="pm-ok">${rot}</button></div>`);
+  $('#pm-ok').onclick = async () => {
+    const m = $('#pm-motivo').value.trim();
+    if (!m){ $('#pm-msg').textContent = 'Escreva o motivo.'; return; }
+    try {
+      const d = await labDecidir(acao, m);
+      if (d?.status !== 'ok'){ $('#pm-msg').textContent = MOTIVO_DECIDIR[d?.status] || 'Não foi possível registrar agora.'; return; }
+      fechaModal(); toast(acao === 'negar' ? 'Pedido negado.' : 'Pedido devolvido.'); pgPedido(lab.pedido.id);
+    } catch(e){ if (e.message !== 'sem_acesso') $('#pm-msg').textContent = 'Não foi possível registrar agora.'; }
+  };
 }
 
 /* ---------------- os eventos ---------------- */

@@ -141,3 +141,13 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 .aviso-box.err{background:rgba(var(--bad-rgb),.09);border-color:rgba(var(--bad-rgb),.35);color:var(--bad-tx)}
 .aviso-box.info{background:rgba(var(--info-rgb),.07);border-color:rgba(var(--info-rgb),.3);color:var(--info-tx)}
 .lb-rev{margin-bottom:10px}
+
+/* ---------- solicitações (ficha L6) ---------- */
+.lb-dados{margin:0;display:flex;flex-direction:column}
+.lb-dado{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.lb-dado:first-child{border-top:0}
+.lb-dado dt{width:160px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-family:var(--fd);font-weight:600}
+.lb-dado dd{margin:0;flex:1;font-family:var(--fm);overflow-wrap:anywhere}
+.lb-trilha{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--line);padding-left:14px}
+.lb-trilha li.atual{border-left:2px solid var(--syn);margin-left:-16px;padding-left:14px}
+.lb-trilha li.atual b{color:var(--syn-tx)}
