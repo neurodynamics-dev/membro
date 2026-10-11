@@ -108,6 +108,7 @@ psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 | `2.19.1_termo.sql` | o termo de sigilo do LABBIO como serviço à parte: `termo_campanhas`, `termo_pendencias`, o bucket privado `termos`; `termo_emitir` só com dados conferidos há até 180 dias (e guarda quais saíram no termo), `termo_registrar_envio` só para um termo emitido com a última conferência; `termo_painel` e `termo_conferir` para o Pessoal. Depende da `2.19.1_recadastro.sql` |
 | `2.19.1_reporte.sql` | o reporte por liderança direta: um por líder e semana (`reportes.modelo = 'lider'`, a lista fotografada em `pessoas`), cobrança de sexta 16h (`reporte_cobrancas`, `reporte_cobranca_estado`, `reporte_ausente`), fechamento na segunda 0h (`reporte_ciclos.fecha_em`), avaliações na ficha (`membro_reporte_avaliacoes`), sinalizações com PMO e offboarding (`reporte_sinalizacoes`, `reporte_sequencias`), consolidado para admin e NRO_MANAGERS. Os ciclos por frente continuam como estavam. Independente do recadastro e do termo |
 | `2.19.1_labbio_base.sql` | os gestores do LABBIO com conta própria, que não é membro: convite por e-mail (fila `labbio_envios`, mandada pela `notificar-email`), aceite, a estrela do responsável principal, revogação. A conta externa fica fechada em quatro camadas: a porta da API (`api_pre_request`, configurada em `pgrst.db_pre_request` do papel `authenticator`; só passa `/rpc/labbio_*`), `conta_ativa()` falsa, `papeis_atuais()` vazio e uma política restritiva no Storage. Depende da `2.19.0_quiosque.sql`. Depois dela, publique de novo a `notificar-email` |
+| `2.19.1_labbio_acesso.sql` | o pedido de acesso biométrico ao LABBIO: rascunho → Pessoal → LABBIO → concedido (e devolvido, negado, cancelado), com versões (`labbio_pedido_versoes`) e a trilha (`labbio_pedido_eventos`); foto no bucket privado `biometria`; o item do catálogo pela chave `labbio_biometria`; os campos pedidos em `labbio_config`. A triagem do Pessoal (`pessoal_solicitacao_decidir`) encaminha esse subtipo em vez de conceder; os outros pedidos de acesso não mudam. Depende da `2.19.1_labbio_base` e da `2.19.1_recadastro` |
 
 A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
 2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
@@ -122,6 +123,12 @@ O LABBIO, identidade e segurança (52 asserções):
 
 ```sh
 bash testes/preparar-base.sh teste t2191l 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql
+```
+
+O pedido de acesso biométrico (48 asserções), depois do LABBIO e do recadastro:
+
+```sh
+bash testes/preparar-base.sh teste t2191a 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql 2.19.1_labbio_acesso.sql
 ```
 
 O reporte (70 asserções, mais o teste da 2.18.0 do reporte de novo):

@@ -98,9 +98,23 @@ troque a senha se a TV for trocada de lugar.
 4. **Conferir**: logado como membro, o portal funciona como antes. Uma conta
    de gestor (depois do convite) não lê nada do portal: qualquer chamada fora
    de `labbio_*` volta "Esta conta é do painel do LABBIO".
-5. O primeiro gestor é convidado pelo admin, no SOMA (Administração ›
-   LABBIO, ficha L2) ou, até a tela existir, pelo SQL Editor não: o convite
-   precisa de um admin logado. Espere a tela.
+5. O primeiro gestor é convidado por um admin logado no SOMA, em
+   Administração › LABBIO (a tela vem na ficha L2). O SQL Editor não serve:
+   o convite precisa saber quem convidou.
 
 **Plano de volta**: `alter role authenticator reset pgrst.db_pre_request; notify pgrst, 'reload config';`
 (as contas de gestor continuam sem ler tabelas, pela `conta_ativa()`).
+
+# 2.19.1: pedido de acesso biométrico ao LABBIO
+
+1. **Aplicar** `db/2.19.1_labbio_acesso.sql` (depois da `2.19.1_labbio_base`
+   e da `2.19.1_recadastro`). Ela cria o item "Acesso biométrico ao LABBIO"
+   no catálogo com a chave `labbio_biometria`. Se já havia um item para isso,
+   mova a chave para ele (instrução no fim da migração).
+2. **Confirmar com o LABBIO** os campos que a Intelbras pede:
+   `update public.labbio_config set campos = '{nome_civil,cpf,matricula}' where id;`
+   (só campos de Meus dados). A foto é obrigatória.
+3. **Publicar de novo** a `notificar-email` (o aviso ao responsável principal).
+4. A triagem do Pessoal continua igual: "Aprovar" num pedido de biometria
+   encaminha ao LABBIO e não concede nada; o acesso entra quando o gestor
+   confirma o cadastro no painel.

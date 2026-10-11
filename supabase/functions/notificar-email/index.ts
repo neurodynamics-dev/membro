@@ -620,12 +620,23 @@ export interface EnvioLabbio {
   para_email: string;
   para_nome: string;
   assunto: string;
-  dados: { caminho?: string; expira_em?: string; convidado_por?: string | null };
+  dados: { caminho?: string; expira_em?: string; convidado_por?: string | null; membro?: string; versao?: number };
 }
 
 export function labbioHTML(e: EnvioLabbio): string {
   const d = e.dados || {};
   const url = linkDe(d.caminho || "/labbio/");
+  if (e.tipo === "pedido") {
+    const miolo = titulo(`Olá, ${esc(primeiroNome(e.para_nome))}.`) + esp(14) + texto(
+      `O Depto. de Pessoal encaminhou o pedido de acesso biométrico de <b style="font-weight:500">${esc(d.membro || "")}</b>
+      ${d.versao && d.versao > 1 ? "(corrigido, versão " + esc(String(d.versao)) + ")" : ""}. No painel estão os dados, a foto e
+      os botões para negar, devolver ou confirmar o cadastro na biometria.`) + esp(24) +
+      botao(url, "Abrir o pedido");
+    return moldura({
+      assunto: e.assunto, categoria: "LABBIO", miolo,
+      rodape: "Você recebe este e-mail por ser o responsável principal do painel do LABBIO.",
+    });
+  }
   const miolo = titulo(`Olá, ${esc(primeiroNome(e.para_nome))}.`) + esp(14) + texto(
     `${d.convidado_por ? esc(d.convidado_por) + " convidou você" : "Você foi convidado"} para o
     <b style="font-weight:500">painel do LABBIO</b>, onde a gestão do laboratório acompanha os membros da NeuroDynamics,
@@ -640,6 +651,12 @@ export function labbioHTML(e: EnvioLabbio): string {
 
 export function labbioTexto(e: EnvioLabbio): string {
   const d = e.dados || {};
+  if (e.tipo === "pedido") {
+    return `Olá, ${primeiroNome(e.para_nome)}.\n\n`
+      + `O Depto. de Pessoal encaminhou o pedido de acesso biométrico de ${d.membro || ""}`
+      + `${d.versao && d.versao > 1 ? " (corrigido, versão " + d.versao + ")" : ""}.\n\n`
+      + `Abrir o pedido: ${linkDe(d.caminho || "/labbio/")}\n\n—\nNeuroDynamics PD&I\n`;
+  }
   return `Olá, ${primeiroNome(e.para_nome)}.\n\n`
     + `${d.convidado_por ? d.convidado_por + " convidou você" : "Você foi convidado"} para o painel do LABBIO.\n\n`
     + `Aceitar o convite: ${linkDe(d.caminho || "/labbio/")}\n\n`

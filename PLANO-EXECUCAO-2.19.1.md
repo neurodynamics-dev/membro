@@ -194,7 +194,7 @@ Membros (tabela com busca/filtros, ícone + texto para termo e acesso),
 perfil, check-ins (paginado, painel lateral explicando as origens),
 treinamentos (matriz com filtros), faixa de revogações no início.
 
-### L5 [O] Solicitação de acesso biométrico
+### L5 [O] Solicitação de acesso biométrico (feita: `db/2.19.1_labbio_acesso.sql`, 48 asserções)
 
 - `portal_solicitacoes` ganha subtipo pelo id estável do catálogo
   (`acessos.chave = 'labbio_biometria'`); estados novos
