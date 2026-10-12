@@ -37,7 +37,33 @@ async function pageSala(sub){
   $('#main').innerHTML = `<div class="salam" id="salam">${estado.carregando()}</div>`;
   await salaCarregar();
   // enquanto a tela estiver aberta, a situação se atualiza a cada minuto
-  salaM.timer = setInterval(() => { if (!document.getElementById('salam')) return clearInterval(salaM.timer); if (!document.hidden) salaCarregar(true); }, 60000);
+  salaM.timer = setInterval(() => { if (!document.getElementById('salam')) return salaSair(); if (!document.hidden) salaCarregar(true); }, 60000);
+}
+
+/* tempo real: um canal de broadcast por sala (sala-<id>), o mesmo do tablet da porta. Ouve a sala aberta e as
+   outras da lista; quem muda uma sala avisa o canal dela e todos consultam de novo, sem esperar o minuto. */
+salaM.canais = new Map();
+function salaOuvir(ids){
+  if (!sb.channel) return;
+  const quero = new Set(ids.filter(Boolean).map(Number));
+  for (const [id, c] of salaM.canais) if (!quero.has(id)){ sb.removeChannel(c); salaM.canais.delete(id); }
+  for (const id of quero) if (!salaM.canais.has(id)){
+    salaM.canais.set(id, sb.channel('sala-' + id).on('broadcast', { event:'mudou' }, () => {
+      if (!document.getElementById('salam')) return salaSair();
+      clearTimeout(salaM.rajada); salaM.rajada = setTimeout(() => salaCarregar(true), 300);
+    }).subscribe());
+  }
+}
+function salaAvisar(){ try { salaM.canais.get(salaM.id)?.send({ type:'broadcast', event:'mudou', payload:{} }); } catch(_){} }
+/* fora da tela da sala, os canais e o relógio param */
+function salaSair(){ clearInterval(salaM.timer); clearTimeout(salaM.virada); for (const c of salaM.canais.values()) sb.removeChannel(c); salaM.canais.clear(); }
+window.addEventListener('hashchange', () => { if (!/^#\/sala\//.test(location.hash)) salaSair(); });
+/* a virada: quando a reserva acaba, a próxima começa ou a ocupação vence, a tela muda na hora certa */
+function salaAgendarVirada(){
+  clearTimeout(salaM.virada);
+  const s = salaM.dados?.sala; if (!s) return;
+  const marcos = [s.evento?.fim, s.proximo?.inicio, s.ocupada_ate].filter(Boolean).map(v => new Date(v).getTime()).filter(t => t > Date.now());
+  if (marcos.length && Math.min(...marcos) - Date.now() < 6 * 36e5) salaM.virada = setTimeout(() => salaCarregar(true), Math.min(...marcos) - Date.now() + 1500);
 }
 
 async function salaCarregar(silencioso){
@@ -50,7 +76,8 @@ async function salaCarregar(silencioso){
       : estado.erro({ texto:'Não foi possível consultar a sala agora.', acao:'<button class="btn ghost mini" type="button" onclick="salaCarregar()">Tentar de novo</button>' }));
     return;
   }
-  salaM.dados = data; salaDesenhar();
+  salaM.dados = data; salaDesenhar(); salaAgendarVirada();
+  salaOuvir([salaM.id, ...(data.outras || []).map(o => o.id)]);
 }
 
 function salaDesenhar(msg = ''){
@@ -106,7 +133,8 @@ async function salaAcao(nome, args, ok){
       salaM.dados.sala = { ...salaM.dados.sala, ...data, id:salaM.dados.sala.id, nome:salaM.dados.sala.nome };
     }
     salaM.ocupado = false;
-    salaDesenhar(data.status === 'ok' ? ok : (SALA_MOTIVO[data.status] || 'Não foi possível agora.'));
+    if (data.status === 'ok') salaAvisar();   // o tablet da porta muda na hora
+    salaDesenhar(data.status === 'ok' ? ok : (SALA_MOTIVO[data.status] || 'Não foi possível agora.')); salaAgendarVirada();
   } catch(e){ salaM.ocupado = false; toast('Não foi possível falar com o servidor. Tente de novo.', true); salaDesenhar(); }
 }
 const salaOcupar = min => salaAcao('sala_ocupar_membro', { p_espaco:salaM.id, p_minutos:min }, 'Pronto: a sala está com você.');

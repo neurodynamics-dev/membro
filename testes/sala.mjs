@@ -110,6 +110,28 @@ try {
     confere('recupera ao voltar à aba com rede', await f.p.locator('#sala-offline').isHidden()); await fechar(f);
   }
 
+  console.log('Tempo real');
+  {
+    const t = await abrir('livre'), { p } = t;
+    await p.clock.runFor(50);
+    confere('o tablet ouve o canal da sala', await p.evaluate(() => (window.__canais?.['sala-2'] || []).length === 1));
+    const n0 = await p.evaluate(() => window.__rpcs.filter(x => x.nome === 'sala_estado').length);
+    // alguém ocupa pelo celular: o celular (ou o banco) avisa o canal, e o tablet muda sem recarregar
+    await p.evaluate(() => { Object.assign(window.__teste.sala, { estado:'ocupada', por:'Carla Mendonça' }); window.__canalDispara('sala-2'); window.__canalDispara('sala-2'); });
+    await p.clock.runFor(400);
+    await p.waitForFunction(() => document.getElementById('sala-status').textContent === 'Ocupada');
+    confere('o aviso muda a tela na hora, sem esperar o minuto', await p.locator('#sala-ocupada-quem').innerText() === 'Ocupada por Carla Mendonça, pelo celular');
+    confere('dois avisos seguidos viram uma consulta só', await p.evaluate(n => window.__rpcs.filter(x => x.nome === 'sala_estado').length, n0) === n0 + 1);
+    await p.evaluate(() => { window.__teste.sala.estado = 'livre'; window.__teste.sala.por = null; window.__canalDispara('sala-2'); });
+    await p.clock.runFor(400);
+    await p.waitForFunction(() => document.getElementById('sala-status').textContent === 'Livre');
+    confere('e volta quando liberam pelo celular', true);
+    await p.getByRole('button', { name:'Opções da sala' }).click(); await p.locator('.sala-opcao[data-min="30"]').click();
+    await p.waitForFunction(() => document.getElementById('sala-status').textContent === 'Ocupada');
+    confere('ocupar no tablet avisa o canal (o celular aberto muda junto)', await p.evaluate(() => (window.__enviados || []).some(e => e.topico === 'sala-2' && e.event === 'mudou')));
+    await fechar(t);
+  }
+
   console.log('Dia e tela inteira');
   {
     const t = await abrir('livre', undefined, TOKEN, { semProximo:true }), { p } = t;

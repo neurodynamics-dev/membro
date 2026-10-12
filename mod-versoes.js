@@ -52,6 +52,7 @@ const NOTAS_VERSAO = [
     ['correcao', 'O cartão **Acesso ao LABBIO** em Serviços tinha o ícone gigante.'],
     ['correcao', 'Iniciar o **recadastro** falhava com "UPDATE requires a WHERE clause".'],
     ['correcao', 'O formulário de **andamento** em Bugs e sugestões agora mostra "Registrado agora" e fecha o botão até haver nova alteração.'],
+    ['melhoria', '**Salas em tempo real**: o tablet da porta e a sala no celular mudam sozinhos quando alguém ocupa, libera ou reserva, por qualquer um dos dois, pela agenda ou pelo LABBIO. Também viram na hora certa quando uma reserva começa ou acaba e quando a ocupação vence.'],
     ['novo', '**Tablet da sala** redesenhado: a tela inteira na cor da situação, em tons suaves, com a barra de luz embaixo, quem reservou, as reservas de hoje e o "até" sempre com o dia. Toque duas vezes para tela inteira. Ocupar por 30 min, 1 h ou o resto do dia fica no botão do canto; liberar é arrastar até o fim.'],
     ['novo', '**A sala no celular**: o QR do tablet abre a sala no SOMA, com as outras salas, usar agora, reservar um horário (a agenda já com a sala) e liberar.'],
     ['novo', '**Reservas do LABBIO**: o LABBIO tem a própria agenda das salas, fora da agenda do SOMA. Elas ocupam a sala no tablet e no celular, e o conflito com um evento nosso avisa os dois lados.'],
