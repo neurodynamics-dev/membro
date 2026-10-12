@@ -823,6 +823,19 @@ function fbTecla(e, id, i){
   else if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); ops[(at + (e.key === 'ArrowDown' ? 1 : -1) + ops.length) % ops.length].focus(); }
 }
 document.addEventListener('mousedown', e => { if (_fbAberto && !_fbAberto.gr.contains(e.target)) fbFechar(); });
+/* A barra de ações (.barra-acoes) é transparente em repouso e vira vidro (.flutua) só quando está presa ao rodapé da
+   tela, flutuando sobre o conteúdo. Um ponto logo depois dela marca onde ela ficaria: se ele está abaixo da tela, ela flutua. */
+(function(){
+  if (!('IntersectionObserver' in window)) return;
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    e.target.previousElementSibling?.classList.toggle('flutua', !e.isIntersecting && e.boundingClientRect.top > 0);
+  }));
+  let tick = 0;
+  const varre = () => { tick = 0; document.querySelectorAll('.barra-acoes:not([data-obs])').forEach(b => {
+    b.dataset.obs = '1'; const ponto = document.createElement('div'); ponto.className = 'barra-ponto'; ponto.setAttribute('aria-hidden', 'true');
+    b.after(ponto); io.observe(ponto); }); };
+  new MutationObserver(() => { if (!tick) tick = requestAnimationFrame(varre); }).observe(document.documentElement, { childList:true, subtree:true });
+})();
 const layoutFluxo = ({ passos = '', corpo = '', salvo = '', acoes = '' } = {}) =>
   `<div class="tpl-f">${passos}<div class="fluxo-corpo">${corpo}</div>
     <div class="barra-acoes">${salvo}<div class="dir">${acoes}</div></div></div>`;
