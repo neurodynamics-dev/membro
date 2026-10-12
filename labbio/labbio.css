@@ -257,3 +257,15 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 @media(max-width:980px){.lb-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.lb-dash,.lb-eq{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:420px){.lb-kpi .w-num{font-size:36px}.lb-serie ol{gap:3px}.lb-col-n{font-size:9px}}
 @media (prefers-reduced-motion:reduce){.lb-kpi .widget{transition:none}}
+
+/* membros: a seleção e a lista de e-mails dos marcados (2.19.2) */
+.lb-tabela .c-sel{width:36px;padding-right:0}
+.lb-tabela .c-sel input{width:18px;height:18px;accent-color:var(--syn);cursor:pointer}
+.lb-tabela tr.sel td{background:rgba(var(--syn-rgb),.06)}
+.lb-selbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 12px;padding:12px 14px;border:1px solid var(--syn-borda);border-radius:var(--r-md);background:var(--card)}
+.lb-selbar-n{font-size:13.5px;margin-right:4px}
+.lb-selbar .fld{margin:0}
+.lb-selbar select{min-height:34px}
+.lb-selbar .btn .ic{width:14px;height:14px}
+.lb-selbar-sem{width:100%;margin:0;font-size:12.5px;color:var(--warn-tx)}
+.lb-selbar-lista{width:100%;box-sizing:border-box;font-family:var(--fm);font-size:12.5px;resize:vertical;min-height:44px;padding:8px 10px;border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--campo);color:var(--ink)}

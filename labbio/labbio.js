@@ -372,6 +372,9 @@ function acessoHTML(a){
   return marcaEstado('neutro', 'menos', 'Não possui');
 }
 const comBiometria = p => p.acesso?.estado === 'possui' && p.acesso?.sub !== 'revogacao_pendente';
+/* o status no quadro, como marca de estado (no lugar da liderança, que fica no perfil) */
+const STATUS_MEMBRO = { 'Ativo':['ok', 'ok'], 'Em pausa / avaliação':['warn', 'relogio'], 'Desligado':['neutro', 'menos'], 'Egresso':['neutro', 'menos'] };
+const statusHTML = s => { const [tom, i] = STATUS_MEMBRO[s] || ['neutro', 'menos']; return marcaEstado(tom, i, s || '—'); };
 const chipTrainee = p => p.trainee ? ' <span class="lb-sub">Trainee</span>' : '';
 
 /* ---------------- início: o dashboard (2.19.2) ----------------
@@ -518,7 +521,7 @@ const FILTROS_MEMBROS = [['todos', 'Todos', () => true], ['com', 'Com biometria'
   ['pedido', 'Pedido em andamento', p => p.acesso?.estado === 'solicitado'],
   ['sem', 'Sem biometria', p => p.acesso?.estado === 'nao_possui'],
   ['termo', 'Termo pendente', p => ['pendente', 'devolvido'].includes(p.termo?.situacao)]];
-const labM = { busca:'', filtro:'todos', lista:[], timer:null, vez:0 };
+const labM = { busca:'', filtro:'todos', lista:[], timer:null, vez:0, sel:new Set(), pessoas:new Map(), tipoEmail:'nro' };
 async function pgMembros(sec, sub){
   if (sub) return pgPerfil(Number(sub));
   $('#lb-main').innerHTML = cabecalho({ titulo:'Membros', lead:'Quem tem vínculo com o laboratório: o termo de sigilo e o acesso biométrico.' }) + `
@@ -552,13 +555,64 @@ function desenharMembros(){
   const el = $('#lb-m-lista'); if (!el) return;
   const f = (FILTROS_MEMBROS.find(([k]) => k === labM.filtro) || FILTROS_MEMBROS[0])[2];
   const ms = labM.lista.filter(f);
+  labM.lista.forEach(p => labM.pessoas.set(p.registro, p));   // a seleção vale entre buscas e filtros
+  const marcados = ms.filter(p => labM.sel.has(p.registro)).length;
   el.innerHTML = ms.length ? `<p class="lb-total" aria-live="polite"><b>${ms.length}</b> ${ms.length === 1 ? 'pessoa' : 'pessoas'}</p>
-    <div class="lb-wrap"><table class="lb-tabela" id="lb-m-tabela"><thead><tr><th>Membro</th><th>Área</th><th>Liderança</th><th>Termo</th><th>Acesso</th></tr></thead>
-    <tbody>${ms.map(p => `<tr data-reg="${p.registro}">
+    <div id="lb-m-sel">${barraSelecao()}</div>
+    <div class="lb-wrap"><table class="lb-tabela" id="lb-m-tabela"><thead><tr>
+      <th class="c-sel"><input type="checkbox" id="lb-m-todos" aria-label="Selecionar todos desta lista"${marcados && marcados === ms.length ? ' checked' : ''}></th><th>Membro</th><th>Área</th><th>Status</th><th>Termo</th><th>Acesso</th></tr></thead>
+    <tbody>${ms.map(p => `<tr data-reg="${p.registro}"${labM.sel.has(p.registro) ? ' class="sel"' : ''}>
+      <td class="c-sel"><input type="checkbox" data-sel="${p.registro}" aria-label="Selecionar ${esc(p.nome)}"${labM.sel.has(p.registro) ? ' checked' : ''}></td>
       <td><a class="lb-pessoa" href="#/membros/${p.registro}">${avatar(p)}<span>${esc(p.nome)}</span></a>${chipTrainee(p)}</td>
-      <td>${esc(p.area || '—')}</td><td>${esc(p.gestor_nome || '—')}</td>
+      <td>${esc(p.area || '—')}</td><td class="c-status">${statusHTML(p.status)}</td>
       <td class="c-termo">${termoHTML(p.termo)}</td><td class="c-acesso">${acessoHTML(p.acesso)}</td></tr>`).join('')}</tbody></table></div>`
     : estado.vazio('Ninguém com este filtro.');
+  const todos = $('#lb-m-todos'); if (todos) todos.indeterminate = marcados > 0 && marcados < ms.length;
+  if (!el.dataset.ligado){
+    el.dataset.ligado = '1';
+    el.addEventListener('change', e => {
+      const c = e.target;
+      if (c.id === 'lb-m-todos'){
+        const f2 = (FILTROS_MEMBROS.find(([k]) => k === labM.filtro) || FILTROS_MEMBROS[0])[2];
+        labM.lista.filter(f2).forEach(p => c.checked ? labM.sel.add(p.registro) : labM.sel.delete(p.registro));
+        desenharMembros();
+      } else if (c.dataset.sel){
+        const r = Number(c.dataset.sel); c.checked ? labM.sel.add(r) : labM.sel.delete(r);
+        c.closest('tr')?.classList.toggle('sel', c.checked);
+        const t = $('#lb-m-todos'), vis = [...el.querySelectorAll('[data-sel]')], n = vis.filter(x => x.checked).length;
+        if (t){ t.checked = n === vis.length; t.indeterminate = n > 0 && n < vis.length; }
+        $('#lb-m-sel').innerHTML = barraSelecao();
+      } else if (c.id === 'lb-m-tipo'){ labM.tipoEmail = c.value; $('#lb-m-sel').innerHTML = barraSelecao(); }
+    });
+    el.addEventListener('click', e => {
+      const b = e.target.closest('[data-sel-acao]'); if (!b) return;
+      const { lista } = emailsSelecionados();
+      if (b.dataset.selAcao === 'copiar') labCopiar(lista.join(', '));
+      else if (b.dataset.selAcao === 'limpar'){ labM.sel.clear(); desenharMembros(); }
+    });
+  }
+}
+/* a lista de e-mails dos marcados: o da NRO, o pessoal ou os dois; quem não tem o e-mail escolhido aparece à parte */
+function emailsSelecionados(){
+  const ps = [...labM.sel].map(r => labM.pessoas.get(r)).filter(Boolean);
+  const de = p => labM.tipoEmail === 'pessoal' ? [p.email_pessoal] : labM.tipoEmail === 'ambos' ? [p.email_nro, p.email_pessoal] : [p.email_nro];
+  const lista = [...new Set(ps.flatMap(p => de(p).filter(Boolean).map(x => String(x).trim().toLowerCase())))];
+  const sem = ps.filter(p => !de(p).some(Boolean)).map(p => p.nome);
+  return { ps, lista, sem };
+}
+function barraSelecao(){
+  const { ps, lista, sem } = emailsSelecionados();
+  if (!ps.length) return '';
+  const mailto = 'mailto:?bcc=' + encodeURIComponent(lista.join(','));
+  return `<div class="lb-selbar" role="region" aria-label="Membros selecionados">
+    <span class="lb-selbar-n"><b>${ps.length}</b> ${ps.length === 1 ? 'selecionado' : 'selecionados'}</span>
+    <div class="fld"><label for="lb-m-tipo" class="lb-sr">Qual e-mail</label><select id="lb-m-tipo">
+      ${[['nro', 'E-mail da NRO'], ['pessoal', 'E-mail pessoal'], ['ambos', 'Os dois']].map(([k, r]) => `<option value="${k}"${labM.tipoEmail === k ? ' selected' : ''}>${r}</option>`).join('')}</select></div>
+    <button type="button" class="btn solid mini" data-sel-acao="copiar"${lista.length ? '' : ' disabled'}>${ic('copiar')} Copiar ${lista.length} ${lista.length === 1 ? 'e-mail' : 'e-mails'}</button>
+    ${lista.length ? `<a class="btn ghost mini" href="${esc(mailto)}">Escrever para eles (Cco)</a>` : ''}
+    <button type="button" class="btn ghost mini" data-sel-acao="limpar">Limpar a seleção</button>
+    ${sem.length ? `<p class="lb-selbar-sem">Sem esse e-mail: ${esc(sem.join(', '))}.</p>` : ''}
+    ${lista.length ? `<textarea class="lb-selbar-lista" readonly rows="2" aria-label="Lista de e-mails">${esc(lista.join(', '))}</textarea>` : ''}</div>`;
 }
 async function pgPerfil(reg){
   $('#lb-main').innerHTML = `<a class="lb-voltar" href="#/membros">← Membros</a><div id="lb-perfil">${estado.carregando()}</div>`;
