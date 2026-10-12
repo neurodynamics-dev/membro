@@ -343,9 +343,21 @@ const ic = n => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="current
 const fmtD = d => d ? new Date(d).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—';
 const isoDia = d => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
 const iniciais = n => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
-const avatar = (p, t = 30) => p.foto_url
-  ? `<img class="lb-av" src="${esc(p.foto_url)}" alt="" width="${t}" height="${t}" loading="lazy">`
-  : `<span class="lb-av" style="width:${t}px;height:${t}px" aria-hidden="true">${esc(iniciais(p.nome))}</span>`;
+/* a foto: a da ficha (foto_url) ou, sem ela, a do repositório de fotos (nro-pessoal/fotos/<registro>.jpg, .jpeg, .png ou
+   .webp), a mesma cascata do portal; sem nenhuma, ficam as iniciais, que já estão por baixo da imagem */
+const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
+const FOTO_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
+function lbFotoErro(img){
+  const i = Number(img.dataset.ext || 0) + 1, reg = img.dataset.reg;
+  if (reg && i < FOTO_EXTS.length){ img.dataset.ext = i; img.src = FOTOS_BASE + reg + '.' + FOTO_EXTS[i]; }
+  else img.remove();
+}
+const avatar = (p, t = 30) => {
+  const u = p.foto_url || (p.registro != null ? FOTOS_BASE + p.registro + '.jpg' : null);
+  const cascata = !p.foto_url && p.registro != null ? ` data-reg="${esc(p.registro)}" data-ext="0"` : '';
+  return `<span class="lb-av" style="width:${t}px;height:${t}px" aria-hidden="true">${esc(iniciais(p.nome))}${u
+    ? `<img src="${esc(u)}" alt="" loading="lazy"${cascata} onerror="lbFotoErro(this)">` : ''}</span>`;
+};
 const marcaEstado = (tom, icone, texto) => `<span class="lb-est lb-${tom}">${ic(icone)}<span>${esc(texto)}</span></span>`;
 const TERMO = { pendente:['warn', 'relogio', 'Pendente'], enviado:['info', 'doc', 'Enviado'], conferido:['ok', 'selo', 'Conferido'],
                 devolvido:['err', 'x', 'Devolvido'], sem_campanha:['neutro', 'menos', 'Sem campanha'] };

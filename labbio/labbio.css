@@ -174,3 +174,7 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 @media(max-width:600px){.lb-ag-evento{grid-template-columns:minmax(0,1fr);gap:6px}.lb-ag-tablets .cab-linha{align-items:flex-start}}
 .pill.p-bad{color:var(--bad-tx);border-color:rgba(var(--bad-rgb),.35)}
 .pill.p-bad .dt{background:var(--bad)}
+
+/* a foto por cima das iniciais (2.19.2): se ela não carregar, as iniciais aparecem */
+.lb-av{position:relative;overflow:hidden;flex:none}
+.lb-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}

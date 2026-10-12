@@ -197,7 +197,7 @@ function renderTabelaMembros(){
   const ms = membrosFiltrados();
   const el = $('#tb-membros'); if (!el) return;
   el.innerHTML = ms.length ? `
-    <div class="wrap"><table class="tabela trabalho fixa">
+    <div class="wrap"><table class="tabela trabalho fixa" style="--tab-min:900px">
       <thead><tr><th style="width:64px">Reg.</th><th>Nome</th><th>Departamento</th>
         <th>Cargo</th><th style="width:150px">Grupos</th><th style="width:132px">Status</th>${gestao.termo ? '<th style="width:64px" title="Termo de sigilo do LABBIO">Termo</th>' : ''}</tr></thead>
       <tbody>${ms.map(m=>`<tr class="click" tabindex="0" onclick="abrirFicha(${m.registro})"
@@ -940,7 +940,7 @@ function renderTabelaAud(){
       .some(v => v && norm(v).includes(q))));
   const OP = {INSERT:'Criação', UPDATE:'Alteração', DELETE:'Exclusão'};
   $('#tb-aud').innerHTML = rows.length ? `
-    <div class="wrap"><table class="tabela trabalho fixa">
+    <div class="wrap"><table class="tabela trabalho fixa" style="--tab-min:1100px">
       <thead><tr><th style="width:132px">Quando</th><th>Responsável</th><th style="width:110px">Tabela</th>
         <th>Registro</th><th style="width:92px">Ação</th><th>Campo</th><th>De</th><th>Para</th></tr></thead>
       <tbody>${rows.slice(0,200).map(r => {

@@ -60,6 +60,21 @@ try{
     await fechar(t);
   }
   {
+    /* 2.19.2: as fotos do repositório (nro-pessoal/fotos), como no portal: o Bruno (11) só tem .png lá; a Lia (46), nenhuma */
+    const t = await abrir('#/membros'), { p } = t;
+    const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+    await p.unroute(/fonts\.googleapis|raw\.githubusercontent/);
+    await p.route(/fonts\.googleapis/, r => r.abort());
+    await p.route('**/raw.githubusercontent.com/**', r => /\/fotos\/11\.png$/.test(r.request().url())
+      ? r.fulfill({ contentType:'image/png', body:PNG }) : r.fulfill({ status:404, body:'' }));
+    await p.reload({ waitUntil:'domcontentloaded' });
+    await p.waitForSelector('tr[data-reg="11"] .lb-av img[src$="/fotos/11.png"]');
+    confere('sem foto na ficha, o painel busca no repositório de fotos e acha a .png', await p.locator('tr[data-reg="11"] .lb-av img').evaluate(i => i.complete && i.naturalWidth > 0));
+    await p.waitForFunction(() => !document.querySelector('tr[data-reg="46"] .lb-av img'));
+    confere('sem foto nenhuma, ficam as iniciais', /^[A-Z]{1,2}$/.test((await p.locator('tr[data-reg="46"] .lb-av').innerText()).trim()));
+    await fechar(t);
+  }
+  {
     const t = await abrir('#/membros/4'), { p } = t;
     await p.waitForSelector('#lb-termo-abrir');
     confere('perfil: liderados com link', await p.locator('.lb-spec a[href="#/membros/11"]').count() === 1);
