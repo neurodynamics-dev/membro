@@ -15,7 +15,7 @@ Nada aqui grava no banco nem guarda credencial.
    que não é https, repetido, sem fonte, tipo inválido, fontes de acesso não autorizado.
 4. **SQL.** `node curadoria.mjs sql respostas.aprovados.json > novos.sql`. Leia, confira as
    fontes e rode no Supabase. Os itens entram "Ainda não testada" e "Curadoria"; nunca como
-   "Padrão da NRO".
+   "NRO Standard".
 
 Para rodar toda semana, agende o passo 2 (uma rotina do Claude Code, por exemplo) e abra os
 resultados para revisão. O contexto da equipe está em `contexto.md`: edite-o quando mudar o foco.

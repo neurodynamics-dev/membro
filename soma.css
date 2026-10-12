@@ -3194,8 +3194,10 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 /* ============================================================
    Recursos (2.19.2, mod-recursos.js): galeria com filtros na lateral, página do recurso e formulário
    ============================================================ */
-.rcs-layout{display:grid;grid-template-columns:268px minmax(0,1fr);gap:var(--s6);align-items:start}
-.rcs-filtros{position:sticky;top:76px;max-height:calc(100dvh - 96px);overflow:auto;padding:0 6px 16px 0;display:flex;flex-direction:column;gap:var(--s4)}
+.rcs-layout{display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:var(--s6);align-items:start}
+.rcs-layout>.rcs-corpo{grid-column:1;grid-row:1}
+.rcs-layout>.rcs-filtros{grid-column:2;grid-row:1}
+.rcs-filtros{position:sticky;top:76px;max-height:calc(100dvh - 96px);overflow:auto;padding:0 0 16px 6px;display:flex;flex-direction:column;gap:var(--s4)}
 .rcs-corpo{min-width:0}
 .rcs-topo{display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;margin-bottom:var(--s4)}
 .rcs-topo .total{font-size:var(--fs-sm);color:var(--muted)}
@@ -3214,7 +3216,7 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .rcs-meta{grid-area:meta;align-self:end;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:var(--s3);padding-top:var(--s3);border-top:1px solid var(--line)}
 .rcs-tipo{font-family:var(--fd);font-weight:600;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
 .rcs-marcas{grid-area:marcas;display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--s2)}
-.rcs-padrao{display:inline-block;padding:2px 7px;border-radius:var(--r-badge);background:var(--syn);color:var(--bg);font-family:var(--fd);font-weight:600;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.rcs-padrao{display:inline-block;padding:2px 7px;border-radius:var(--r-badge);background:linear-gradient(135deg,var(--pia-light),var(--pia-primary) 55%,var(--pia-medium));color:var(--sulco-medium);font-family:var(--fd);font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;box-shadow:inset 0 0 0 1px var(--pia-primary)}
 .rcs-inativo{display:inline-block;padding:2px 7px;border-radius:var(--r-badge);border:1px solid var(--line2);color:var(--muted);font-family:var(--fd);font-weight:600;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
 /* a logo: o ícone sobre uma superfície clara (a maioria dos ícones é feita para fundo claro); sem imagem, as iniciais */
 .rcs-logo{position:relative;display:inline-grid;place-items:center;width:var(--px,52px);height:var(--px,52px);flex:none;border-radius:var(--r-md);overflow:hidden;
@@ -3230,6 +3232,7 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .rcs-est-cheia{position:absolute;inset:0 auto 0 0;overflow:hidden;white-space:nowrap;color:var(--syn)}
 .rcs-est-tx b{color:var(--ink);font-weight:600}
 .rcs-est.vazia .rcs-est-tx{color:var(--dim)}
+.rcs-est-um{width:14px;height:14px;fill:rgba(var(--tom),.2)}
 /* os filtros */
 .rcs-grupo{border:0;margin:0;padding:0;min-width:0}
 .rcs-grupo legend{padding:0;margin-bottom:6px;font-family:var(--fd);font-weight:600;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
@@ -3308,6 +3311,7 @@ a.rcs-tag:hover{border-color:var(--syn-borda);color:var(--ink)}
 .rcs-padrao-op{align-items:flex-start;margin-top:var(--s3)}
 @media(max-width:900px){
   .rcs-layout{grid-template-columns:minmax(0,1fr)}
+  .rcs-layout>.rcs-corpo,.rcs-layout>.rcs-filtros{grid-column:1;grid-row:auto}
   .rcs-filtros{position:static;max-height:none;overflow:visible;padding:0}
   .rcs-filtros #rcs-fac{display:none}
   .rcs-filtros.aberto #rcs-fac{display:flex;flex-direction:column;gap:var(--s4);padding:var(--s4);border:1px solid var(--line);border-radius:var(--r)}

@@ -120,7 +120,7 @@ export function validar(itens, catalogo){
   return { aprovados, rejeitados };
 }
 
-/* mesmo corpo da semente: idempotente por endereço, e nunca marca "Padrão da NRO" */
+/* mesmo corpo da semente: idempotente por endereço, e nunca marca "NRO Standard" */
 export function gerarSQL(aprovados){
   const limpos = aprovados.map(({ por_que, fonte, ...r }) => ({ ...r, padrao_nro: false }));
   return `-- Itens propostos pela curadoria. REVISE antes de rodar: cada um é "Ainda não testada".

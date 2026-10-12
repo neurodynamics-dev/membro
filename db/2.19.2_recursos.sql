@@ -9,7 +9,7 @@
 --   - editar os recursos (instruções de download e de uso, tags, status);
 --   - avaliar de 1 a 5 estrelas (uma avaliação por pessoa, que se troca);
 --   - comentar (e apagar o próprio comentário).
--- Só a gestão (admin, Depto. de Pessoal e liderança) marca "Padrão da NRO".
+-- Só a gestão (admin, Depto. de Pessoal e liderança) marca "NRO Standard".
 -- Quem editou por último e quando fica à vista no item.
 --
 -- Tudo por função (as tabelas não são legíveis pela API):
@@ -79,7 +79,7 @@ create or replace function public.recursos_pode()
 returns boolean language sql stable security definer set search_path = public as $$
   select public.portal_registro_atual() is not null and public.conta_ativa() $$;
 
--- quem marca "Padrão da NRO" e apaga comentário alheio
+-- quem marca "NRO Standard" e apaga comentário alheio
 create or replace function public.recursos_gestao()
 returns boolean language sql stable security definer set search_path = public as $$
   select public.recursos_pode() and (public.papel_atual() in ('admin', 'pessoal') or public.tenho_papel('lideranca')) $$;
@@ -146,7 +146,7 @@ begin
   return jsonb_build_object('status', 'ok', 'gestao', public.recursos_gestao(), 'recurso', public.recurso_json(r, true));
 end $$;
 
--- 3. criar e editar (qualquer membro; "Padrão da NRO" só a gestão) --------------------------
+-- 3. criar e editar (qualquer membro; "NRO Standard" só a gestão) --------------------------
 create or replace function public.recurso_salvar(p jsonb)
 returns jsonb language plpgsql volatile security definer set search_path = public as $$
 declare

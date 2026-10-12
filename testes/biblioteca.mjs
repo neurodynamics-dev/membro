@@ -33,8 +33,11 @@ try {
     confere('o menu tem Biblioteca, acesa nesta tela', await p.locator('#lt-nav .lt-sec[data-r="biblioteca"]').count() === 1);
     confere('só os ativos aparecem de início (7 de 8)', await total(p) === 7 && !(await nomes(p)).includes('Ferramenta antiga'));
     confere('o cartão mostra nome, publicador e logo', (await p.locator('.rcs-card').first().innerText()).includes('Microsoft') && await p.locator('.rcs-card .rcs-logo').count() === 7);
-    confere('"em destaque" começa pelo padrão da NRO', (await nomes(p)).slice(0, 2).sort().join() === 'Git Bash (Git for Windows),Visual Studio Code'
+    confere('"em destaque" começa pelo NRO Standard', (await nomes(p)).slice(0, 2).sort().join() === 'Git Bash (Git for Windows),Visual Studio Code'
       && (await p.locator('.rcs-card .rcs-padrao').count()) === 2);
+    confere('os filtros ficam à direita', await p.evaluate(() => document.querySelector('#rcs-filtros').getBoundingClientRect().left > document.querySelector('.rcs-corpo').getBoundingClientRect().left));
+    confere('sem avaliação: uma estrela e "?"', await p.locator('.rcs-card .rcs-est.vazia').count() > 0 && await p.locator('.rcs-card .rcs-est.vazia svg').count() === await p.locator('.rcs-card .rcs-est.vazia').count() && (await p.locator('.rcs-card .rcs-est.vazia .rcs-est-tx').first().innerText()).trim() === '?');
+    confere('o selo é NRO STANDARD', (await p.locator('.rcs-card .rcs-padrao').first().innerText()).toUpperCase() === 'NRO STANDARD');
     confere('com as estrelas e a contagem', (await p.locator('.rcs-card').first().innerText()).match(/\d,\d/) !== null);
     // busca
     await p.fill('#rcs-q', 'esp'); await p.waitForTimeout(100);
@@ -53,7 +56,7 @@ try {
     await p.locator('.rcs-limpar').click(); await p.waitForTimeout(100);
     confere('Limpar os filtros volta ao começo', await total(p) === 7);
     await marcar(p, 'rcs-padrao');
-    confere('Só o padrão da NRO', await total(p) === 2);
+    confere('Só o NRO Standard', await total(p) === 2);
     await p.locator('#rcs-padrao').uncheck();
     await p.locator('#rcs-status-todos').check(); await p.waitForTimeout(80);
     confere('Situação "Todos" mostra também o inativo, marcado', await total(p) === 8 && (await p.locator('.rcs-card.inativo .rcs-inativo').count()) === 1);
@@ -78,7 +81,7 @@ try {
     const t = await abrir('#/biblioteca/visual-studio-code'), { p } = t;
     await p.waitForSelector('#rcs-faz');
     confere('diz o que faz, logo no começo', (await p.locator('#rcs-faz').innerText()).includes('IDE padrão da equipe') && await p.locator('#main h1').innerText() === 'Visual Studio Code');
-    confere('o padrão da NRO e o publicador à vista', (await p.locator('.cab-meta').innerText()).toLowerCase().includes('padrão da nro') && (await p.locator('.cab-meta').innerText()).includes('Microsoft'));
+    confere('o NRO Standard e o publicador à vista', (await p.locator('.cab-meta').innerText()).toLowerCase().includes('nro standard') && (await p.locator('.cab-meta').innerText()).includes('Microsoft'));
     confere('instruções com passos numerados', await p.locator('#rcs-baixar ol li').count() === 2);
     confere('um comando sozinho vira bloco com Copiar', await p.locator('#rcs-usar .rcs-cod code').first().innerText() === 'git --version' && await p.locator('#rcs-usar .rcs-cod button').count() === 1);
     confere('e listas com traço', await p.locator('#rcs-usar ul li').count() === 2);
@@ -135,7 +138,7 @@ try {
     await p.fill('#rcs-tag-novo', 'Gravação'); await p.press('#rcs-tag-novo', 'Enter');
     await p.fill('#rcs-tag-novo', 'gravação'); await p.press('#rcs-tag-novo', 'Enter');
     confere('as tags: reaproveita a grafia que existe e não repete', (await p.locator('#rcs-tags-ed .rcs-tag').allInnerTexts()).map(x => x.replace('×', '').trim()).join() === 'ESP32,Gravação');
-    confere('sem a gestão marcada por engano: o padrão da NRO existe só para a gestão (aqui há)', await p.locator('#rcs-padrao_nro').count() === 1);
+    confere('sem a gestão marcada por engano: o NRO Standard existe só para a gestão (aqui há)', await p.locator('#rcs-padrao_nro').count() === 1);
     await p.fill('#rcs-instrucoes_usar', '1. Instale o pacote.\n`pio run`');
     await p.click('#rcs-salvar'); await p.waitForSelector('#rcs-faz');
     confere('salvou e abriu a página do recurso novo', await p.evaluate(() => location.hash) === '#/biblioteca/arduino-core-para-esp32' && await p.locator('#main h1').innerText() === 'Arduino core para ESP32'
@@ -166,7 +169,7 @@ try {
   {
     const t = await abrir('#/biblioteca/novo', { teste:{ recursos:{ gestao:false } } }), { p } = t;
     await p.waitForSelector('#rcs-form');
-    confere('quem não é da gestão não vê "Padrão da NRO"', await p.locator('#rcs-padrao_nro').count() === 0);
+    confere('quem não é da gestão não vê "NRO Standard"', await p.locator('#rcs-padrao_nro').count() === 0);
     await fim(t);
   }
 

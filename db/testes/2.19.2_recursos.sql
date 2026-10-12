@@ -18,12 +18,14 @@ begin
 
   raise notice 'A semente';
   select count(*) into v_n from recursos;
-  perform ok(v_n >= 100, 'a semente trouxe os recursos (' || v_n || ')');
-  perform ok((select count(*) from recursos where padrao_nro) = 2 and (select padrao_nro from recursos where slug = 'visual-studio-code'), 'só VS Code e Git Bash são padrão da NRO');
+  perform ok(v_n >= 250, 'a semente trouxe os recursos (' || v_n || ')');
+  perform ok((select count(*) from recursos where padrao_nro) = 2 and (select padrao_nro from recursos where slug = 'visual-studio-code'), 'só VS Code e Git Bash são NRO Standard');
   perform ok(exists (select 1 from recursos where slug = 'ghidra' and tipo = 'repositorio') and exists (select 1 from recursos where slug = 'figma' and 'estudante' = any(acesso)), 'Ghidra e Figma estão lá');
   perform ok(not exists (select 1 from recursos where length(funcao) = 0 or url !~ '^https?://' or tipo is null), 'todo recurso diz o que faz e tem endereço');
   perform ok((select count(*) from recursos where tipo = 'extensao') >= 10 and (select count(*) from recursos where tipo = 'base') >= 10, 'extensões e bases de pesquisa entram na biblioteca');
   perform ok((select count(*) from recursos where slug in ('pubmed','pedro')) >= 1 or (select count(*) from recursos where tipo = 'base' and nome ilike '%pubmed%') = 1, 'PubMed está na biblioteca');
+  perform ok(exists (select 1 from recursos where nome = 'Miro' and 'estudante' = any(acesso)) and exists (select 1 from recursos where nome = 'PlantUML') and (select count(*) from recursos where 'Livro' = any(tags)) >= 20, 'ferramentas online, licenças de estudante e livros');
+  perform ok(not exists (select 1 from recursos where nome ilike '%@ufmg.br%'), 'sem um item genérico do e-mail da UFMG');
   perform ok((select count(*) from recursos where nome ilike '%sci-hub%' or url ilike '%sci-hub%') = 0, 'sem fontes de acesso não autorizado');
   perform ok((select count(*) from recursos where 'Gravação' = any(tags)) >= 15, 'a gravação de microcontroladores tem o seu conjunto');
   perform ok((select count(*) from jsonb_array_elements(public.recursos_listar()->'recursos')) = v_n, 'a lista traz todos');
@@ -34,7 +36,7 @@ begin
   perform ok(r->>'status' = 'ok' and r->>'slug' = 'ferramenta-de-exemplo', 'qualquer membro adiciona (slug pelo nome)');
   v_slug := r->>'slug';
   perform ok((select tags from recursos where slug = v_slug) = array['Teste', 'Outra tag'], 'tags limpas: sem repetir, sem vazios, espaços ajustados');
-  perform ok(not (select padrao_nro from recursos where slug = v_slug), 'membro comum não marca "Padrão da NRO"');
+  perform ok(not (select padrao_nro from recursos where slug = v_slug), 'membro comum não marca "NRO Standard"');
   perform ok((select criado_por from recursos where slug = v_slug) = 11, 'guarda quem adicionou');
   r := public.recurso_salvar(jsonb_build_object('url', 'HTTPS://www.exemplo.com/ferramenta/', 'nome', 'Outro nome', 'funcao', 'Repetido.'));
   perform ok(r->>'status' = 'duplicado' and r->>'slug' = v_slug, 'o mesmo endereço (mesmo com www, maiúsculas e barra) não repete');
@@ -55,7 +57,7 @@ begin
   perform ok((public.recursos_listar()->>'gestao')::boolean, 'o admin é gestão');
   r := public.recurso_salvar(jsonb_build_object('id', (select id from recursos where slug = v_slug), 'url', 'https://exemplo.com/ferramenta', 'nome', 'Ferramenta de Exemplo',
          'funcao', 'Faz uma coisa útil.', 'padrao_nro', true));
-  perform ok((select padrao_nro from recursos where slug = v_slug), 'a gestão marca "Padrão da NRO"');
+  perform ok((select padrao_nro from recursos where slug = v_slug), 'a gestão marca "NRO Standard"');
   perform eu(11, 'leitura');
   r := public.recurso_salvar(jsonb_build_object('id', (select id from recursos where slug = v_slug), 'url', 'https://exemplo.com/ferramenta', 'nome', 'Ferramenta de Exemplo', 'funcao', 'Só texto.'));
   perform ok((select padrao_nro from recursos where slug = v_slug), 'uma edição sem o campo não derruba o padrão');

@@ -3,7 +3,7 @@
    A Biblioteca, o catálogo colaborativo de ferramentas da equipe: softwares, repositórios,
    serviços, benefícios de estudante e a gravação de microcontroladores.
    Qualquer membro adiciona itens, edita, avalia (1 a 5 estrelas) e comenta; só a
-   gestão marca "Padrão da NRO". O banco é db/2.19.2_recursos.sql.
+   gestão marca "NRO Standard". O banco é db/2.19.2_recursos.sql.
 
      #/biblioteca                galeria, com os filtros na lateral
      #/biblioteca/novo           adicionar (basta o endereço, o nome e o que faz)
@@ -53,10 +53,11 @@ const rcsNum = n => Number(n).toLocaleString('pt-BR', { minimumFractionDigits:1,
 /* as estrelas: média em cinco estrelas preenchidas por partes, mais o texto */
 function rcsEstrelas(media, n, { texto = true } = {}){
   const m = Number(media) || 0, pct = Math.round(m / 5 * 100);
+  if (!n) return `<span class="rcs-est vazia" role="img" aria-label="Ainda sem avaliações"><svg class="rcs-est-um" viewBox="0 0 24 24" aria-hidden="true"><path d="${RCS_ESTRELA}"/></svg><span class="rcs-est-tx">?</span></span>`;
   const cinco = `<span class="rcs-cinco" aria-hidden="true">${Array.from({ length:5 }, () => `<svg viewBox="0 0 24 24"><path d="${RCS_ESTRELA}"/></svg>`).join('')}</span>`;
-  const rot = n ? `Nota ${rcsNum(m)} de 5, ${n} ${n === 1 ? 'avaliação' : 'avaliações'}` : 'Ainda sem avaliações';
-  return `<span class="rcs-est${n ? '' : ' vazia'}" role="img" aria-label="${rot}"><span class="rcs-est-f"><span class="rcs-est-base">${cinco}</span><span class="rcs-est-cheia" style="width:${n ? pct : 0}%">${cinco}</span></span>${texto
-    ? `<span class="rcs-est-tx">${n ? `<b>${rcsNum(m)}</b> (${n})` : 'sem nota'}</span>` : ''}</span>`;
+  const rot = `Nota ${rcsNum(m)} de 5, ${n} ${n === 1 ? 'avaliação' : 'avaliações'}`;
+  return `<span class="rcs-est" role="img" aria-label="${rot}"><span class="rcs-est-f"><span class="rcs-est-base">${cinco}</span><span class="rcs-est-cheia" style="width:${pct}%">${cinco}</span></span>${texto
+    ? `<span class="rcs-est-tx"><b>${rcsNum(m)}</b> (${n})</span>` : ''}</span>`;
 }
 /* o texto das instruções: passos numerados, listas com "-", `código` e endereços; uma linha só de código vira bloco com Copiar */
 function rcsTexto(t){
@@ -170,7 +171,7 @@ function rcsAtualizar(painel, foco){
   if (painel) rcsFacetas(foco);
 }
 function rcsCartao(r){
-  const marcas = [r.padrao_nro ? '<span class="rcs-padrao">Padrão da NRO</span>' : '', r.status === 'inativo' ? '<span class="rcs-inativo">Inativo</span>' : ''].filter(Boolean).join('');
+  const marcas = [r.padrao_nro ? '<span class="rcs-padrao">NRO Standard</span>' : '', r.status === 'inativo' ? '<span class="rcs-inativo">Inativo</span>' : ''].filter(Boolean).join('');
   return `<a class="rcs-card${r.status === 'inativo' ? ' inativo' : ''}" href="#/biblioteca/${encodeURIComponent(r.slug)}">
     ${rcsLogo(r, 52)}
     <span class="rcs-nome">${esc(r.nome)}</span>
@@ -195,7 +196,7 @@ function rcsFacetas(foco){
   el.innerHTML = `
     <fieldset class="rcs-grupo"><legend>Situação</legend><div class="rcs-seg" role="radiogroup" aria-label="Situação">${[['ativo', 'Ativos'], ['inativo', 'Inativos'], ['todos', 'Todos']].map(([v, l]) =>
       `<label><input type="radio" name="rcs-status" id="rcs-status-${v}" data-rcs-g="status" value="${v}"${f.status === v ? ' checked' : ''}><span>${l}</span></label>`).join('')}</div>
-      <label class="rcs-op"><input type="checkbox" id="rcs-padrao" data-rcs-g="padrao"${f.padrao ? ' checked' : ''}><span>Só o padrão da NRO</span><span class="n">${rcsM.lista.filter(r => r.padrao_nro && rcsPassa(r, f, 'padrao')).length}</span></label></fieldset>
+      <label class="rcs-op"><input type="checkbox" id="rcs-padrao" data-rcs-g="padrao"${f.padrao ? ' checked' : ''}><span>Só o NRO Standard</span><span class="n">${rcsM.lista.filter(r => r.padrao_nro && rcsPassa(r, f, 'padrao')).length}</span></label></fieldset>
     ${grupo('tipo', 'Tipo', RCS_TIPOS, nTipo, f.tipo)}
     ${grupo('acesso', 'Acesso', RCS_ACESSO, nAc, f.acesso)}
     ${grupo('plat', 'Plataforma', plats.map(p => [p, p]), nPl, f.plat)}
@@ -231,7 +232,7 @@ function rcsDesenharPagina(){
   const secao = (id, titulo, corpo, extra = '') => `<section class="card rcs-sec" id="${id}" aria-labelledby="${id}-t"><div class="rcs-sec-cab"><h2 id="${id}-t">${titulo}</h2>${extra}</div>${corpo}</section>`;
   const vazioInstr = '<p class="rcs-nada">Ainda sem instruções. Sabe como se faz? <a href="#/biblioteca/' + encodeURIComponent(r.slug) + '/editar">Edite e conte para a equipe</a>.</p>';
   const meta = [`<span>${esc(r.publicador || rcsHost(r.url))}</span>`, `<span>${esc(rcsRot(RCS_TIPOS, r.tipo))}</span>`,
-    r.padrao_nro ? '<span class="rcs-padrao">Padrão da NRO</span>' : '', r.status === 'inativo' ? '<span class="rcs-inativo">Inativo</span>' : ''].filter(Boolean);
+    r.padrao_nro ? '<span class="rcs-padrao">NRO Standard</span>' : '', r.status === 'inativo' ? '<span class="rcs-inativo">Inativo</span>' : ''].filter(Boolean);
   const principal = `
     ${secao('rcs-faz', 'O que faz', `<p class="rcs-faz">${esc(r.funcao)}</p>`)}
     ${secao('rcs-baixar', 'Como baixar ou acessar', r.instrucoes_baixar ? `<div class="rcs-texto">${rcsTexto(r.instrucoes_baixar)}</div>` : vazioInstr)}
@@ -350,7 +351,7 @@ async function rcsFormulario(slug){
         'Configuração inicial, o primeiro uso e as armadilhas que você já encontrou.')}
       <details class="rcs-mais-opc"><summary>Mais opções</summary>
         ${campo('logo_url', 'Logo (opcional)', `<input id="rcs-logo_url" type="url" inputmode="url" placeholder="https://..." value="${esc(r.logo_url || '')}" autocomplete="off">`, 'Só se a logo automática não ficar boa. Precisa ser um endereço https de uma imagem.')}
-        ${rcsM.gestao ? `<label class="rcs-op rcs-padrao-op"><input type="checkbox" id="rcs-padrao_nro"${r.padrao_nro ? ' checked' : ''}><span><b>Padrão da NRO</b>: é a ferramenta que a equipe adota como padrão. Só a gestão marca.</span></label>` : ''}
+        ${rcsM.gestao ? `<label class="rcs-op rcs-padrao-op"><input type="checkbox" id="rcs-padrao_nro"${r.padrao_nro ? ' checked' : ''}><span><b>NRO Standard</b>: é a ferramenta que a equipe adota como padrão. Só a gestão marca.</span></label>` : ''}
       </details>
       <p class="aviso-box err" id="rcs-erro" role="alert" hidden></p>
       <div class="barra-acoes"><span></span><div class="dir"><a class="btn ghost" href="${slug ? '#/biblioteca/' + encodeURIComponent(slug) : '#/biblioteca'}">Cancelar</a>
