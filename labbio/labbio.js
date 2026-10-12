@@ -234,8 +234,9 @@ function pgEmBreve(sec){
 }
 
 /* gestores: a lista, o convite, a estrela e a revogação */
-const SIT = { ativo:['Ativo', 'p-ok'], convidado:['Convidado', 'p-warn'], revogado:['Revogado', ''] };
-const pillSit = s => { const [t, c] = SIT[s] || [s, '']; return `<span class="pill ${c}"><span class="dt"></span>${esc(t)}</span>`; };
+/* a situação como marca de estado (ícone e texto), sem pill: o mesmo marcador do quadro de membros */
+const SIT = { ativo:['ok', 'ok', 'Ativo'], convidado:['warn', 'relogio', 'Convidado'], revogado:['neutro', 'menos', 'Revogado'] };
+const pillSit = s => { const [tom, i, t] = SIT[s] || ['neutro', 'menos', s]; return marcaEstado(tom, i, t); };
 async function pgGestores(){
   $('#lb-main').innerHTML = cabecalho({ titulo:'Gestores', lead:'Quem gerencia o painel do LABBIO. A estrela marca o responsável principal.' })
     + `<div id="lb-gest">${estado.carregando()}</div>`;
@@ -337,7 +338,8 @@ const IC = {
   ok:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   menos:'<path d="M6 12h12"/>',
   alerta:'<path d="M12 4 21 19.5H3z"/><path d="M12 10v4M12 17v.5"/>',
-  seta:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+  seta:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  copiar:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>'
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n] || ''}</svg>`;
 const fmtD = d => d ? new Date(d).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—';
@@ -370,26 +372,123 @@ function acessoHTML(a){
   return marcaEstado('neutro', 'menos', 'Não possui');
 }
 const comBiometria = p => p.acesso?.estado === 'possui' && p.acesso?.sub !== 'revogacao_pendente';
-const chipTrainee = p => p.trainee ? ' <span class="pill">Trainee</span>' : '';
+const chipTrainee = p => p.trainee ? ' <span class="lb-sub">Trainee</span>' : '';
 
-/* ---------------- início ---------------- */
+/* ---------------- início: o dashboard (2.19.2) ----------------
+   Uma chamada (labbio_inicio) e quatro blocos: os números do dia, o que espera resposta do LABBIO (pedidos de
+   biometria e consultas de sala), o dia no laboratório (eventos e check-ins) e a equipe (presença de 14 dias,
+   biometria, termo e treinamentos). As revogações pendentes ficam no alto, antes de tudo. */
+const fmtHora = d => new Date(d).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+const fmtDiaCurto = s => { const [a, m, d] = String(s).slice(0, 10).split('-'); return `${d}/${m}`; };
+const DIAS_SEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+function haQuanto(d){
+  const dias = Math.floor((Date.now() - new Date(d).getTime()) / 864e5);
+  return dias <= 0 ? 'hoje' : dias === 1 ? 'há 1 dia' : `há ${dias} dias`;
+}
+function quandoConsulta(c, hoje){
+  const amanha = labAgSomar(hoje, 1);
+  const dia = c.data === hoje ? 'Hoje' : c.data === amanha ? 'Amanhã' : `${DIAS_SEM[new Date(c.data + 'T12:00:00').getDay()]}, ${fmtDiaCurto(c.data)}`;
+  return dia + (c.hora_inicio ? `, ${c.hora_inicio}${c.hora_fim ? '–' + c.hora_fim : ''}` : '');
+}
+const CONSULTA_EST = { pendente:['warn', 'Consulta sem resposta'], disponivel:['ok', 'Disponível'], conflito:['err', 'Conflito'] };
+
+/* um número do topo: rótulo, valor, apoio e o destino */
+const kpi = (href, rot, num, apoio, tom = '') => `<a class="lb-kpi${tom ? ' ' + tom : ''}" href="${href}"><section class="widget">
+  <header><span class="w-rot">${esc(rot)}</span></header><div class="w-corpo"><span class="w-num">${num}</span>${apoio ? `<span class="lb-kpi-apoio">${apoio}</span>` : ''}</div></section></a>`;
+
+/* barra empilhada com legenda (biometria, termo) */
+function empilhada(id, rot, partes){
+  const total = partes.reduce((t, [, n]) => t + n, 0);
+  if (!total) return '';
+  return `<div class="lb-emp" id="${id}"><p class="lb-emp-rot">${esc(rot)}</p>
+    <div class="lb-emp-barra" role="img" aria-label="${esc(rot + ': ' + partes.map(([n, v]) => `${v} ${n.toLowerCase()}`).join(', '))}">${
+      partes.filter(([, n]) => n).map(([, n, tom]) => `<span class="lb-${tom}" style="flex:${n}"></span>`).join('')}</div>
+    <ul class="lb-emp-leg">${partes.map(([n, v, tom]) => `<li><i class="lb-${tom}" aria-hidden="true"></i>${esc(n)} <b>${v}</b></li>`).join('')}</ul></div>`;
+}
+
+/* presença dos últimos 14 dias, em colunas (com a tabela para leitor de tela) */
+function seriePresenca(serie){
+  if (!serie?.length) return '';
+  const max = Math.max(1, ...serie.map(x => Number(x.pessoas) || 0));
+  const col = x => { const n = Number(x.pessoas) || 0, d = new Date(x.dia + 'T12:00:00'), fds = [0, 6].includes(d.getDay());
+    return `<li class="${fds ? 'fds' : ''}" title="${esc(fmtDiaCurto(x.dia))}: ${n} ${n === 1 ? 'pessoa' : 'pessoas'}">
+      <span class="lb-col-n">${n || ''}</span><span class="lb-col" style="height:${Math.round(n / max * 100)}%"></span>
+      <span class="lb-col-d">${d.getDate()}</span></li>`; };
+  const media = serie.reduce((t, x) => t + (Number(x.pessoas) || 0), 0) / serie.length;
+  return `<div class="lb-serie"><ol aria-hidden="true">${serie.map(col).join('')}</ol>
+    <p class="lb-serie-pe">Média de ${media.toLocaleString('pt-BR', { maximumFractionDigits:1 })} ${media === 1 ? 'pessoa' : 'pessoas'} por dia, contando fins de semana.</p>
+    <table class="lb-sr"><caption>Pessoas por dia</caption><tbody>${serie.map(x => `<tr><th>${esc(fmtDiaCurto(x.dia))}</th><td>${Number(x.pessoas) || 0}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
 async function pgInicio(){
-  $('#lb-main').innerHTML = cabecalho({ titulo:'Início', lead:'O que o LABBIO acompanha da equipe da NeuroDynamics.' }) + `<div id="lb-ini">${estado.carregando()}</div>`;
+  $('#lb-main').innerHTML = cabecalho({ titulo:'Início', lead:'O dia no LABBIO: o que espera resposta, quem está no laboratório e a situação da equipe.' })
+    + `<div id="lb-ini">${estado.carregando()}</div>`;
   try {
     const d = await rpc('labbio_inicio');
     if (d?.status !== 'ok') throw new Error(d?.status);
     lab.revogacoes = d.revogacoes || [];
     const el = $('#lb-ini'); if (!el) return;
-    el.innerHTML = `<div id="lb-rev">${faixasRevogacao()}</div>
-      <div class="lb-atalhos">
-        <a href="#/membros"><section class="widget"><header><span class="w-rot">Membros ativos</span></header><div class="w-corpo"><span class="w-num">${Number(d.membros) || 0}</span></div></section></a>
-        <a href="#/membros"><section class="widget"><header><span class="w-rot">Com biometria</span></header><div class="w-corpo"><span class="w-num">${Number(d.com_acesso) || 0}</span></div></section></a>
-        <a href="#/solicitacoes"><section class="widget"><header><span class="w-rot">Pedidos para analisar</span></header><div class="w-corpo"><span class="w-num">${Number(d.pedidos_abertos) || 0}</span></div></section></a>
-      </div>`;
+    el.innerHTML = dashboard(d);
   } catch(e){
     if (e.message === 'sem_acesso') return;
     $('#lb-ini').innerHTML = estado.erro('Não foi possível carregar o início.', '<button class="btn ghost mini" type="button" onclick="pgInicio()">Tentar de novo</button>');
   }
+}
+function dashboard(d){
+  const n = v => Number(v) || 0;
+  const hoje = d.hoje_data || isoDia(new Date()), h = d.hoje || {};
+  const membros = n(d.membros), comAcesso = n(d.com_acesso), ped = n(d.pedidos_abertos), cons = n(d.consultas_pendentes), pres = n(h.presentes);
+  const pedidos = d.pedidos || [], consultas = d.consultas || [], eventos = h.eventos || [], ultimos = h.ultimos || [];
+
+  const kpis = `<div class="lb-kpis">
+    ${kpi('#/solicitacoes', 'Pedidos para analisar', ped, ped ? 'Esperando o LABBIO' : 'Nada pendente', ped ? 'atencao' : '')}
+    ${kpi('#/agenda', 'Consultas de sala', cons, cons ? 'Sem resposta' : 'Todas respondidas', cons ? 'atencao' : '')}
+    ${kpi('#/checkins', 'No LABBIO hoje', pres, pres === 1 ? 'pessoa com check-in' : 'pessoas com check-in')}
+    ${kpi('#/membros', 'Com biometria', comAcesso, `de ${membros} ${membros === 1 ? 'membro ativo' : 'membros ativos'}`)}
+  </div>`;
+
+  const itensPedido = pedidos.map(p => `<li><a class="lb-fila-item" href="#/solicitacoes/${esc(p.id)}">${avatar(p, 32)}
+      <span class="lb-fila-tx"><b>${esc(p.nome)}</b><small>Acesso biométrico, encaminhado ${esc(haQuanto(p.encaminhado_em))}</small></span>${ic('seta')}</a></li>`);
+  const itensConsulta = consultas.map(c => `<li><a class="lb-fila-item" href="#/agenda"><span class="lb-fila-ic" aria-hidden="true">${ic('relogio')}</span>
+      <span class="lb-fila-tx"><b>${esc(c.titulo)}</b><small>${esc(c.espaco)}, ${esc(quandoConsulta(c, hoje))}</small></span>${ic('seta')}</a></li>`);
+  const restoPed = ped - pedidos.length, restoCons = cons - consultas.length;
+  const fila = `<section class="card lb-bloco" aria-labelledby="lb-b-fila"><header class="lb-bloco-cab"><h2 id="lb-b-fila">Para responder</h2>
+      ${ped + cons ? `<span class="lb-bloco-total">${ped + cons} ${ped + cons === 1 ? 'item' : 'itens'}</span>` : ''}</header>
+    ${ped + cons === 0 ? `<p class="lb-vazio">${ic('ok')} Nada esperando o LABBIO.</p>` : `
+      ${pedidos.length ? `<h3 class="lb-bloco-sub">Pedidos de biometria</h3><ul class="lb-fila">${itensPedido.join('')}</ul>
+        ${restoPed > 0 ? `<a class="lb-mais" href="#/solicitacoes">Mais ${restoPed} ${restoPed === 1 ? 'pedido' : 'pedidos'}</a>` : ''}` : ''}
+      ${consultas.length ? `<h3 class="lb-bloco-sub">Consultas de sala</h3><ul class="lb-fila">${itensConsulta.join('')}</ul>
+        ${restoCons > 0 ? `<a class="lb-mais" href="#/agenda">Mais ${restoCons} ${restoCons === 1 ? 'consulta' : 'consultas'}</a>` : ''}` : ''}`}
+  </section>`;
+
+  const evHTML = eventos.length ? `<ul class="lb-dia">${eventos.map(e => { const [tom, txt] = CONSULTA_EST[e.consulta] || [];
+      return `<li><span class="mono lb-dia-hora">${esc(e.hora_inicio || 'Dia todo')}${e.hora_fim ? '<br>' + esc(e.hora_fim) : ''}</span>
+        <span class="lb-fila-tx"><b>${esc(e.titulo)}</b><small>${esc(e.espaco)}${tom ? ` <span class="lb-est lb-${tom}">${esc(txt)}</span>` : ''}</small></span></li>`; }).join('')}</ul>`
+    : '<p class="lb-vazio">Nenhum evento hoje nas salas do LABBIO.</p>';
+  const chegadas = ultimos.length ? `<ul class="lb-chegadas">${ultimos.map(u => `<li><a href="#/membros/${esc(u.registro)}">${avatar(u, 28)}<span>${esc(u.nome)}</span><time class="mono">${esc(fmtHora(u.registrado_em))}</time></a></li>`).join('')}</ul>
+      ${pres > ultimos.length ? `<a class="lb-mais" href="#/checkins">Ver os ${pres} check-ins de hoje</a>` : ''}`
+    : '<p class="lb-vazio">Ninguém fez check-in hoje.</p>';
+  const dia = `<section class="card lb-bloco" aria-labelledby="lb-b-dia"><header class="lb-bloco-cab"><h2 id="lb-b-dia">Hoje no LABBIO</h2>
+      <a class="lb-bloco-link" href="#/agenda">Agenda</a></header>
+    <h3 class="lb-bloco-sub">Salas</h3>${evHTML}
+    <h3 class="lb-bloco-sub">Últimos check-ins</h3>${chegadas}</section>`;
+
+  const ac = d.acesso || {}, te = d.termo, trein = n(d.treinamentos_pendentes);
+  const equipe = `<section class="card lb-bloco lb-larga" aria-labelledby="lb-b-eq"><header class="lb-bloco-cab"><h2 id="lb-b-eq">Equipe</h2>
+      <a class="lb-bloco-link" href="#/membros">Membros</a></header>
+    <div class="lb-eq">
+      <div><h3 class="lb-bloco-sub">Presença nos últimos 14 dias</h3>${seriePresenca(d.serie) || '<p class="lb-vazio">Sem dados de presença.</p>'}</div>
+      <div class="lb-eq-dir">
+        ${empilhada('lb-emp-bio', 'Acesso biométrico', [['Possui', n(ac.possui), 'ok'], ['Pedido em andamento', n(ac.solicitado), 'info'], ['Não possui', n(ac.nao_possui), 'neutro']])}
+        ${te ? empilhada('lb-emp-termo', 'Termo de sigilo', [['Conferido', n(te.conferido), 'ok'], ['Enviado', n(te.enviado), 'info'], ['Pendente', n(te.pendente), 'warn'], ['Devolvido', n(te.devolvido), 'err']])
+             : '<p class="lb-vazio">Sem campanha do termo de sigilo aberta.</p>'}
+        <a class="lb-trein${trein ? ' atencao' : ''}" href="#/treinamentos">${ic(trein ? 'alerta' : 'selo')}<span>${trein
+          ? `<b>${trein}</b> ${trein === 1 ? 'pessoa com treinamento obrigatório em aberto' : 'pessoas com treinamento obrigatório em aberto'}`
+          : 'Treinamentos obrigatórios em dia'}</span>${ic('seta')}</a>
+      </div>
+    </div></section>`;
+
+  return `<div id="lb-rev">${faixasRevogacao()}</div>${kpis}<div class="lb-dash">${fila}${dia}${equipe}</div>`;
 }
 function faixasRevogacao(){
   return (lab.revogacoes || []).map(v => `<div class="aviso-box warn lb-rev" id="lb-rev-${esc(v.id)}">
@@ -473,9 +572,12 @@ async function pgPerfil(reg){
     const termoArq = m.termo?.arquivo && ['enviado', 'conferido'].includes(m.termo?.situacao);
     el.innerHTML = cabecalho({ titulo:m.nome }) + `<div class="lb-objeto">
       <div class="lb-principal">
-        <section class="lb-bloco"><h2>Dados</h2><dl class="lb-spec">
-          ${spec('E-mail da NRO', esc(m.email_nro || '—'))}${spec('E-mail pessoal', esc(m.email_pessoal || '—'))}
-          ${spec('Telefone', esc(m.telefone || '—'))}${spec('Área', esc(m.area || '—'))}${spec('Cargo', esc(m.cargo || '—') + chipTrainee(m))}
+        <section class="lb-bloco"><h2>Contato</h2><dl class="lb-dados">
+          ${campoCopiar('Nome', m.nome, { mono:false })}${campoCopiar('Registro', String(m.registro).padStart(3, '0'))}
+          ${campoCopiar('E-mail da NRO', m.email_nro)}${campoCopiar('E-mail pessoal', m.email_pessoal)}${campoCopiar('Telefone', m.telefone)}
+        </dl></section>
+        <section class="lb-bloco"><h2>Na equipe</h2><dl class="lb-spec">
+          ${spec('Área', esc(m.area || '—'))}${spec('Cargo', esc(m.cargo || '—') + chipTrainee(m))}
           ${spec('Liderança', m.gestor ? `<a href="#/membros/${Number(m.gestor)}">${esc(m.gestor_nome || '—')}</a>` : '—')}
           ${spec('Liderados', (d.liderados || []).length ? d.liderados.map(l => `<a href="#/membros/${Number(l.registro)}">${esc(l.nome)}</a>`).join(', ') : '—')}
         </dl></section>
@@ -655,8 +757,7 @@ async function pgPedido(id){
     if (d?.status !== 'ok'){ el.innerHTML = estado.vazio('Este pedido não está disponível.'); return; }
     const p = d.pedido; lab.pedido = p;
     const env = p.enviada || {}, dados = env.dados || {};
-    const linha = (k, v) => `<div class="lb-dado"><dt>${esc(ROTULO_DADO[k] || k)}</dt><dd>${esc(k === 'confirmado_em' ? fmtDT(v) : v)}</dd>
-      ${k === 'confirmado_em' ? '' : `<button type="button" class="btn ghost mini" onclick="labCopiar(${JSON.stringify(String(v)).replace(/"/g, '&quot;')})">Copiar</button>`}</div>`;
+    const linha = (k, v) => campoCopiar(ROTULO_DADO[k] || k, k === 'confirmado_em' ? fmtDT(v) : v, { copiavel: k !== 'confirmado_em' });
     const aberto = p.etapa === 'labbio';
     el.innerHTML = cabecalho({ titulo:`${p.nome}, ${p.protocolo || 'pedido'}`, lead:`Etapa: ${ETAPA_PEDIDO[p.etapa] || p.etapa}. Versão ${Number(p.versao) || 1}.` }) + `
       <div class="lb-objeto"><div class="lb-principal">
@@ -679,6 +780,12 @@ async function pgPedido(id){
     if (e.message === 'sem_acesso') return;
     const el = $('#ped-corpo'); if (el) el.innerHTML = estado.erro('Não foi possível carregar o pedido.', `<button class="btn ghost mini" type="button" onclick="pgPedido('${esc(id)}')">Tentar de novo</button>`);
   }
+}
+/* um dado numa linha: rótulo, valor (inteiro, sem quebrar no meio) e o botão de copiar, com ícone */
+function campoCopiar(rot, valor, { mono = true, copiavel = true } = {}){
+  const v = valor == null || valor === '' ? '' : String(valor);
+  return `<div class="lb-dado"><dt>${esc(rot)}</dt><dd class="${mono ? 'mono' : ''}" title="${esc(v)}">${v ? esc(v) : '—'}</dd>${v && copiavel
+    ? `<button type="button" class="btn ghost mini lb-copiar" onclick="labCopiar(${esc(JSON.stringify(v))})" aria-label="Copiar ${esc(rot.toLowerCase())}" title="Copiar">${ic('copiar')}<span>Copiar</span></button>` : '<span class="lb-copiar-vazio"></span>'}</div>`;
 }
 function labCopiar(v){ navigator.clipboard?.writeText(v).then(() => toast('Copiado.'), () => toast('Não foi possível copiar.', true)); }
 const MOTIVO_DECIDIR = { conflito:'O pedido mudou em outra tela. Recarregue.', encerrado:'Este pedido já foi decidido.', motivo_obrigatorio:'Escreva o motivo.' };
@@ -764,12 +871,12 @@ function labAgDesenhar(){
  const eventos=a.dados.eventos.filter(e=>!a.espaco||String(e.espaco_id)===a.espaco).sort((x,y)=>(x.data+(x.hora_inicio||'')).localeCompare(y.data+(y.hora_inicio||'')));
  let dia='';
  $('#lb-ag-eventos').innerHTML=eventos.length?eventos.map(e=>{
-  const c=e.consulta,sit={pendente:['Sem resposta',''],disponivel:['Disponível','p-ok'],conflito:['Conflito','p-bad']}[c?.situacao];
+  const c=e.consulta,sit={pendente:['warn','relogio','Sem resposta'],disponivel:['ok','ok','Disponível'],conflito:['err','alerta','Conflito']}[c?.situacao];
   const nomes=e.convidados||[],convidados=nomes.slice(0,3).join(', ')+(nomes.length>3?' e mais '+(nomes.length-3):'');
   const cab=dia!==e.data?`<h2 class="sub-h lb-ag-dia">${esc(new Date(e.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'}))}</h2>`:'';dia=e.data;
   return cab+`<article class="lb-ag-evento" data-evento="${esc(e.id)}"><p class="mono lb-ag-hora">${esc(e.hora_inicio||'Dia inteiro')}${e.hora_fim?' às '+esc(e.hora_fim):''}</p>
    <div class="lb-ag-descricao"><h3>${esc(e.titulo)}</h3><p>${esc(e.espaco)}. Organização: ${esc(e.organizador||'Não informada')}</p>${convidados?`<p>Convidados: ${esc(convidados)}</p>`:''}
-   ${sit?`<div class="lb-ag-consulta"><span class="pill ${sit[1]}"><span class="dt"></span>${sit[0]}</span>${c.situacao==='conflito'?`<span>${esc(c.motivo)}</span>`:''}
+   ${sit?`<div class="lb-ag-consulta">${marcaEstado(sit[0],sit[1],sit[2]).replace('class="lb-est','class="lb-est lb-ag-sit')}${c.situacao==='conflito'?`<span>${esc(c.motivo)}</span>`:''}
     ${c.situacao==='pendente'?`<button class="btn ghost mini" onclick="labAgDecidir('${esc(c.id)}',true)">Disponível</button><button class="btn ghost mini" onclick="labAgConflito('${esc(c.id)}')">Conflito</button>`:''}</div>`:''}
    ${(e.sobreposicoes||[]).map(o=>`<div class="aviso-box warn">Cruza com ${esc(o.titulo)} (${esc(o.hora_inicio)}–${esc(o.hora_fim)}).</div>`).join('')}</div></article>`;
  }).join(''):estado.vazio('Nenhum evento nesta semana para este espaço.');

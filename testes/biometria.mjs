@@ -82,6 +82,11 @@ try{
     await p.waitForSelector('.bio-trilha');
     confere('a trilha com "Encaminhado ao LABBIO" em destaque', (await p.locator('.bio-trilha li.atual').innerText()).includes('Encaminhado ao LABBIO')
       && await p.getByRole('button', { name:'Cancelar o pedido' }).count() === 1);
+    /* 2.19.2: a barra de progresso da análise */
+    const prog = await p.evaluate(() => ({ pct:document.querySelector('.bio-prog-barra')?.getAttribute('aria-valuenow'),
+      atual:document.querySelector('.bio-prog li.atual')?.textContent, feitas:[...document.querySelectorAll('.bio-prog li.feita')].map(l => l.textContent) }));
+    confere('a barra de progresso: no LABBIO, com Enviado e Pessoal feitos', prog.pct === '67' && prog.atual === 'LABBIO'
+      && prog.feitas.join('|') === 'Enviado|Depto. de Pessoal', prog);
     await fechar(t);
   }
   {
@@ -91,11 +96,17 @@ try{
     await fechar(t);
   }
   {
+    /* 2.19.2: a solicitação de acesso começa pela escolha do tipo; a biometria do LABBIO vai para o pedido próprio */
     const t = await abrir('#/servicos/acesso'), { p } = t;
+    await p.waitForSelector('.srv-escolha');
+    confere('primeiro, o tipo de acesso: o comum e o biométrico do LABBIO', await p.locator('.srv-escolha a[href="#/servicos/acesso/geral"]').count() === 1
+      && await p.locator('.srv-escolha a[href="#/servicos/biometria"]').count() === 1);
+    await p.click('.srv-escolha a[href="#/servicos/acesso/geral"]');
     await p.waitForSelector('#f-item');
-    const id = await p.evaluate(() => state.itensAcesso.find(i => i.chave === 'labbio_biometria').id);
-    await p.selectOption('#f-item', id);
-    confere('o item da biometria aponta para o pedido próprio', await p.locator('#f-bio-aviso a[href="#/servicos/biometria"]').isVisible() && await p.locator('#f-enviar').isHidden());
+    const ops = await p.evaluate(() => [...document.querySelectorAll('#f-item option')].map(o => o.value));
+    const bioId = await p.evaluate(() => state.itensAcesso.find(i => i.chave === 'labbio_biometria').id);
+    confere('o formulário comum não oferece a biometria (ela tem pedido próprio)', ops.length > 1 && !ops.includes(bioId), ops);
+    confere('e volta para os tipos de acesso', await p.locator('.form-card a.voltar[href="#/servicos/acesso"]').count() === 1);
     await fechar(t);
   }
 

@@ -332,6 +332,8 @@ const marcados = (cls)=> [...document.querySelectorAll('input.'+cls+':checked')]
 const MOTIVO_RPC = {
   sem_registro:   'Conta sem vínculo com um registro de membro. O vínculo é feito em Administração › Contas.',
   sem_permissao:  'Sem permissão para esta ação.',
+  proprio_pedido: 'Este pedido é seu: outra pessoa do Depto. de Pessoal decide (só o admin decide o próprio).',
+  biometria_pelo_labbio: 'O acesso biométrico ao LABBIO não é concedido aqui: ele tem pedido próprio, com foto, e quem cadastra é o LABBIO.',
   nao_encontrado: 'Item não encontrado.',
   nao_encontrada: 'Item não encontrado.',
   invalido:       'Verifique os campos.',
@@ -1740,6 +1742,8 @@ const ROTAS = {
   marca: {desenha:'pageMarca',modulo:'marca'},
   home:        { desenha:'pageHome' },
   agenda:      { desenha:'pageAgenda', modulo:'agenda' },
+  /* a sala do LABBIO no celular: o QR do tablet da porta abre aqui (fora do menu) */
+  sala:        { desenha:'pageSala', modulo:'sala' },
   atividades:  { desenha:'pageAtividades', modulo:'atividades' },
   equipe:      { desenha:'pageEquipe' },   /* carrega mod-gestao por dentro, conforme a aba */
   servicos:    { desenha:'pageServicos' },
@@ -2442,6 +2446,21 @@ function fecharMenu(){
   if (estava && MQ_MOVEL.matches) b?.focus({ preventScroll:true });
 }
 MQ_MOVEL.addEventListener('change', () => { fecharMenu(); sincronizarGaveta(); });
+/* a barra de topo do celular some ao rolar para baixo e volta ao rolar para cima (2.19.2). Ela sempre aparece perto do
+   topo, com a gaveta aberta e ao trocar de tela; os 12 px de folga evitam piscar com o tremor do dedo. */
+(function(){
+  let y0 = window.scrollY, acc = 0;
+  const mostra = () => { document.body.classList.remove('topo-oculto'); acc = 0; };
+  addEventListener('scroll', () => {
+    const y = Math.max(0, window.scrollY), d = y - y0; y0 = y;
+    if (!MQ_MOVEL.matches || document.body.classList.contains('menu-open') || y < 60) return mostra();
+    acc = Math.sign(d) === Math.sign(acc) ? acc + d : d;
+    if (acc > 12) document.body.classList.add('topo-oculto');
+    else if (acc < -12) document.body.classList.remove('topo-oculto');
+  }, { passive:true });
+  addEventListener('hashchange', mostra);
+  document.addEventListener('focusin', e => { if (e.target.closest?.('#topo-m')) mostra(); });
+})();
 
 /* O que aparece com a sessão aberta — e sai de cena no check-in. */
 function mostrarCasca(sim){
@@ -4038,6 +4057,8 @@ async function pageServicos(sub, sub2){
     }
     return window[mod[1]](sub2);
   }
+  /* 2.19.2: a solicitação de acesso começa pela escolha do tipo; o acesso ao LABBIO tem pedido próprio */
+  if (sub === 'acesso' && sub2 !== 'geral') return escolherAcesso();
   if (sub) return formServico(sub);
   const semReg = !state.perfil.registro;
   $('#main').innerHTML = cabecalho({ espaco:'Serviços', titulo:'Pedidos e documentos',
@@ -4113,6 +4134,24 @@ async function pageServicos(sub, sub2){
 }
 
 const srvState = { tempo:null, catAcesso:'', urg:null };
+function escolherAcesso(){
+  $('#main').innerHTML = cabecalho({ espaco:'Serviços', titulo:'Solicitação de acesso', voltar:['Todos os serviços', '#/servicos'],
+      lead:'Escolha o tipo de acesso. Cada um tem o seu pedido e a sua análise.' }) + `
+    <div class="srv-grid srv-escolha">
+      <a class="srv agora" href="#/servicos/acesso/geral">
+        <span class="lb">${ic('cofre')} Depto. de Pessoal</span>
+        <h3>Sistema, documento ou plataforma</h3>
+        <p>Drive, repositório, conta de ferramenta, pasta ou local, com justificativa e prazo. O Pessoal analisa e concede.</p>
+        <span class="go">Pedir →</span>
+      </a>
+      <a class="srv agora" href="#/servicos/biometria">
+        <span class="lb">${ic('selo')} Com foto</span>
+        <h3>Acesso biométrico ao LABBIO</h3>
+        <p>Seus dados e uma foto. O Pessoal analisa e encaminha; o LABBIO cadastra a biometria e confirma.</p>
+        <span class="go">Pedir →</span>
+      </a>
+    </div>`;
+}
 function formServico(tipo){
   srvState.tempo = null; srvState.urg = null; srvState.catAcesso = '';
   const semReg = !state.perfil.registro;
@@ -4121,8 +4160,10 @@ function formServico(tipo){
         Fale com o Depto. de Pessoal para liberar as solicitações.</div>` : '';
   let corpo = '';
   if (tipo==='acesso'){
-    const cats = [...new Set(state.itensAcesso.map(i=>i.categoria))];
-    const temCatalogo = state.itensAcesso.length > 0;
+    /* o acesso biométrico ao LABBIO tem pedido próprio (2.19.2): não entra na lista comum */
+    const itens = state.itensAcesso.filter(i => i.chave !== 'labbio_biometria');
+    const cats = [...new Set(itens.map(i=>i.categoria))];
+    const temCatalogo = itens.length > 0;
     corpo = `
       <h2>Solicitação de acesso</h2>
       <p class="desc">Documento, sistema, plataforma ou local. Analisada pelo Depto. de Pessoal.</p>
@@ -4130,7 +4171,7 @@ function formServico(tipo){
       <div class="fld"><label>Acesso</label>
         <select id="f-item" onchange="srvItemMudou(this)">
           ${cats.map(c=>`<optgroup label="${esc(CAT_ACESSO[c]||c||'Outros')}">
-            ${state.itensAcesso.filter(i=>i.categoria===c).map(i=>
+            ${itens.filter(i=>i.categoria===c).map(i=>
               `<option value="${esc(i.id)}">${esc(i.nome)}</option>`).join('')}
           </optgroup>`).join('')}
           <option value="__outro">Outro (não está na lista)</option>
@@ -4231,7 +4272,7 @@ function formServico(tipo){
     <div style="max-width:640px;margin:26px auto 0">
       ${bloqueio}
       <div class="form-card">
-        <a class="voltar" href="#/servicos">← Todos os serviços</a>
+        <a class="voltar" href="${tipo === 'acesso' ? '#/servicos/acesso' : '#/servicos'}">← ${tipo === 'acesso' ? 'Tipos de acesso' : 'Todos os serviços'}</a>
         ${corpo}
         <div class="acts">
           <button class="btn solid" id="f-enviar" ${semReg && tipo!=='ouvidoria' ? 'disabled' : ''}

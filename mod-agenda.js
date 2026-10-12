@@ -10,7 +10,7 @@
      #/agenda/dia|semana/AAAA-MM-DD
      #/agenda/mes/AAAA-MM
      #/agenda/evento/<id>              um evento: ver, responder, editar
-     #/agenda/novo[/AAAA-MM-DD[THH:MM[~HH:MM]]]
+     #/agenda/novo[/AAAA-MM-DD[THH:MM[~HH:MM]][@sala]]
      #/agenda/config[/predefinidos|google]
 
    Camadas, como as agendas da coluna do Google: os eventos, o
@@ -596,8 +596,10 @@ async function agEventoNovo(s){
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span></div>`;
   await agPreparar();
   const f = agModeloVazio();
-  const m = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2})(?:~(\d{2}:\d{2}))?)?$/.exec(s || '');
-  if (m){ f.data = m[1]; if (m[2]){ f.hi = m[2]; f.hf = m[3] || minHHMM(Math.min(hhmmMin(m[2]) + 60, 24*60 - 1)); } else f.dia_inteiro = true; }
+  /* @<id> no fim já escolhe a sala (2.19.2: o "Reservar um horário" da sala no celular) */
+  const m = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2})(?:~(\d{2}:\d{2}))?)?(?:@(\d+))?$/.exec(s || '');
+  if (m){ f.data = m[1]; if (m[2]){ f.hi = m[2]; f.hf = m[3] || minHHMM(Math.min(hhmmMin(m[2]) + 60, 24*60 - 1)); } else f.dia_inteiro = true;
+    if (m[4] && (agenda.espacos || []).some(e => String(e.id) === m[4])) f.espaco_id = m[4]; }
   else { const a = new Date(); const ini = Math.min(Math.ceil((a.getHours() * 60 + a.getMinutes()) / 30) * 30, 22*60); f.hi = minHHMM(ini); f.hf = minHHMM(ini + 60); }
   const eu = (state.membros || []).find(x => x.registro === agEu());
   agenda.ev = { novo:true, pode:true, f, orig:null, conv:new Map([[agEu(), { nome: eu?.nome || 'Você', opcional:false, resposta:'vou' }]]),

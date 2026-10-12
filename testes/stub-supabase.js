@@ -1021,8 +1021,21 @@
             if (nome === 'labbio_pedido_ler' && !gestor && ['admin','pessoal'].includes(DADOS.perfis[0].papel)) return r({ status:'ok', pedido: structuredClone(PED) });
             // o lado do LABBIO
             if (!gestor) return r({ status:'sem_permissao' });
-            if (nome === 'labbio_inicio') return r({ status:'ok', membros:12, com_acesso:7, pedidos_abertos: PED.etapa === 'labbio' ? 1 : 0,
-              revogacoes: REV.filter(x => !x.confirmada_em).map(({ id, registro, nome, status_para, criada_em }) => ({ id, registro, nome, status_para, criada_em })) });
+            if (nome === 'labbio_inicio'){
+              const dia = n => { const x = new Date(); x.setDate(x.getDate() + n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+              const agora = n => new Date(Date.now() - n * 60000).toISOString();
+              return r({ status:'ok', hoje_data: dia(0), membros:12, com_acesso:7, pedidos_abertos: PED.etapa === 'labbio' ? 1 : 0,
+                revogacoes: REV.filter(x => !x.confirmada_em).map(({ id, registro, nome, status_para, criada_em }) => ({ id, registro, nome, status_para, criada_em })),
+                pedidos: PED.etapa === 'labbio' ? [{ id: PED.id, registro: 11, nome:'Bruno Tavares', encaminhado_em: new Date(Date.now() - 3 * 864e5).toISOString() }] : [],
+                consultas_pendentes: 2, consultas: [{ id:'cq1', evento_id:'ev1', titulo:'Banca de TCC', data: dia(1), hora_inicio:'14:00', hora_fim:'16:00', espaco:'Auditório' },
+                                                    { id:'cq2', evento_id:'ev2', titulo:'Reunião com parceiros', data: dia(3), hora_inicio:'10:00', hora_fim:'11:00', espaco:'Sala de Reuniões' }],
+                hoje: { presentes: 3, ultimos: [{ registro: 4, nome:'Ana Figueiredo', registrado_em: agora(15) }, { registro: 17, nome:'Carla Mendonça', registrado_em: agora(70) },
+                                                { registro: 11, nome:'Bruno Tavares', registrado_em: agora(130) }],
+                        eventos: [{ id:'ev0', titulo:'Seminário interno', hora_inicio:'09:00', hora_fim:'10:30', espaco:'Auditório', consulta:'disponivel' }] },
+                serie: Array.from({ length:14 }, (_, i) => ({ dia: dia(i - 13), pessoas: [0, 6].includes(new Date(dia(i - 13) + 'T12:00:00').getDay()) ? i % 3 : [4, 6, 5, 7, 6, 8, 5, 7, 6, 9, 3, 5, 8, 3][i] })),
+                acesso: { possui:7, solicitado: PED.etapa === 'labbio' ? 1 : 0, nao_possui: PED.etapa === 'labbio' ? 4 : 5 },
+                termo: { pendente:3, enviado:2, conferido:6, devolvido:1 }, treinamentos_pendentes: 2 });
+            }
             const listaMembros = () => [pessoa(4, 'Ana Figueiredo', { acesso:{ estado:'possui', sub:null, desde:'2026-03-01' },
                                termo:{ situacao:'conferido', enviado_em:'2026-10-05T12:00:00Z', conferido_em:'2026-10-06T12:00:00Z', arquivo:'labbio-2026/4/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.pdf' } }),
                              pessoa(11, 'Bruno Tavares', { acesso:{ estado:'solicitado', sub: PED.etapa } }),
@@ -1078,7 +1091,7 @@
              window.__teste.labbio.conta === 'ativo'; sala_* é do tablet (sem
              conta): window.__teste.sala = { token, estado:'livre'|'evento'|'ocupada' }.
              Trainees e onboarding usam o papel do perfil do stub. ---- */
-          if (/^(labbio_(agenda|consulta_decidir|consulta_do_evento|dispositivo_criar|dispositivos|dispositivo_revogar)|sala_(estado|ocupar|liberar)|ps_trainees_pendentes|ps_admitir_trainees|trainees_quadro|trainee_efetivar|trainee_dispensar|onboarding_(meu|marcar|painel))$/.test(nome)){
+          if (/^(labbio_(agenda|consulta_decidir|consulta_do_evento|dispositivo_criar|dispositivos|dispositivo_revogar)|sala_(estado|ocupar|liberar|painel|ocupar_membro|liberar_membro)|ps_trainees_pendentes|ps_admitir_trainees|trainees_quadro|trainee_efetivar|trainee_dispensar|onboarding_(meu|marcar|painel))$/.test(nome)){
             (window.__rpcs ||= []).push({ nome, p:args });
             const LB = (window.__teste || {}).labbio,
                   gestor = (LB && LB.conta === 'ativo') || (!(LB && LB.conta && LB.conta !== 'nao_gestor') && DADOS.perfis[0].papel === 'admin');
@@ -1099,18 +1112,44 @@
               return r({ status:'ok', consulta: e?.consulta ? { situacao:e.consulta.situacao, motivo:e.consulta.motivo, decidido_em:e.consulta.decidido_em, criada_em:hoje } : null,
                 sobreposicoes: (e?.sobreposicoes || []).map(({ hora_inicio, hora_fim }) => ({ hora_inicio, hora_fim })) });
             }
+            // a sala no celular (membro logado): window.__salaM guarda a ocupação
+            if (/^sala_(painel|ocupar_membro|liberar_membro)$/.test(nome)){
+              const M = window.__salaM ||= { estado: ((window.__teste || {}).salaM || {}).estado || 'livre', ate:null, por:null };
+              if (![1, 2, 3].includes(Number(args.p_espaco))) return r({ status:'nao_encontrado' });
+              const fimDia = new Date(); fimDia.setHours(24, 0, 0, 0);
+              const prox = { id:'ev3', origem:'soma', titulo:'Seminário', organizador:'Ana Figueiredo', data:hoje, hora_inicio:'14:00', hora_fim:'15:00', inicio:hoje + 'T17:00:00Z', fim:hoje + 'T18:00:00Z' };
+              const lab = { id:'rl1', origem:'labbio', titulo:'Aula de bioengenharia', organizador:'Prof. Helena', data:hoje, hora_inicio:'16:00', hora_fim:'17:30', inicio:hoje + 'T19:00:00Z', fim:hoje + 'T20:30:00Z' };
+              const atual = { id:'ev9', origem:'soma', titulo:'Defesa de TCC', organizador:'Bruno Tavares', data:hoje, hora_inicio:'09:00', hora_fim:'12:00', inicio:hoje + 'T12:00:00Z', fim:hoje + 'T15:00:00Z' };
+              const sit = () => ({ espaco_id:2, estado:M.estado, evento: M.estado === 'evento' ? atual : null, proximo:prox,
+                ocupada_ate: M.estado === 'ocupada' ? M.ate : null, ocupada_por: M.estado === 'ocupada' ? M.por : null,
+                hoje: [...(M.estado === 'evento' ? [atual] : []), prox, lab] });
+              if (nome === 'sala_ocupar_membro'){
+                if (M.estado === 'evento') return r({ status:'em_evento', ...sit() });
+                if (!(args.p_minutos >= 5 && args.p_minutos <= 1440)) return r({ status:'invalido', ...sit() });
+                Object.assign(M, { estado:'ocupada', por:'Ana Figueiredo', ate:new Date(Math.min(Date.now() + args.p_minutos * 6e4, fimDia.getTime(), Date.parse(prox.inicio))).toISOString() });
+                return r({ status:'ok', ...sit() });
+              }
+              if (nome === 'sala_liberar_membro'){ Object.assign(M, { estado:'livre', ate:null, por:null }); return r({ status:'ok', ...sit() }); }
+              return r({ status:'ok', sala:{ id:2, nome:'Auditório', ...sit() },
+                outras:[{ id:1, nome:'Sala de reuniões', espaco_id:1, estado:'evento', evento:{ ...lab, titulo:'Banca', organizador:'Diego Prado', fim:hoje + 'T16:00:00Z' }, proximo:null, hoje:[] },
+                        { id:3, nome:'Bancada 2', espaco_id:3, estado:'livre', evento:null, proximo:null, hoje:[] }] });
+            }
             // o tablet
             if (/^sala_/.test(nome)){
               const S = (window.__teste || {}).sala;
               if (!S || args.p_token !== S.token) return r({ status:'dispositivo_invalido' });
-              const prox = { id:'ev3', titulo:'Seminário', data:hoje, hora_inicio:'14:00', hora_fim:'15:00', inicio:hoje + 'T17:00:00Z', fim:hoje + 'T18:00:00Z' };
-              const est = () => ({ status:'ok', sala:'Auditório', rotulo:'Porta do auditório', estado:S.estado, agora:new Date().toISOString(),
-                evento: S.estado === 'evento' ? { id:'ev9', titulo:'Defesa de TCC', data:hoje, hora_inicio:'09:00', hora_fim:'12:00', inicio:hoje + 'T12:00:00Z', fim:hoje + 'T15:00:00Z' } : null,
-                proximo: prox, ocupada_ate: S.estado === 'ocupada' ? S.ate : null });
+              const prox = S.semProximo ? null : { id:'ev3', origem:'soma', titulo:'Seminário', organizador:'Ana Figueiredo', data:hoje, hora_inicio:'14:00', hora_fim:'15:00', inicio:hoje + 'T17:00:00Z', fim:hoje + 'T18:00:00Z' };
+              const atual = { id:'ev9', origem:'soma', titulo:'Defesa de TCC', organizador:'Bruno Tavares', data:hoje, hora_inicio:'09:00', hora_fim:'12:00', inicio:hoje + 'T12:00:00Z', fim:hoje + 'T15:00:00Z' };
+              const lab = { id:'rl1', origem:'labbio', titulo:'Aula de bioengenharia', organizador:'Prof. Helena', data:hoje, hora_inicio:'16:00', hora_fim:'17:30', inicio:hoje + 'T19:00:00Z', fim:hoje + 'T20:30:00Z' };
+              const est = () => ({ status:'ok', sala:'Auditório', rotulo:'Porta do auditório', espaco_id:2, estado:S.estado, agora:new Date().toISOString(),
+                evento: S.estado === 'evento' ? atual : null,
+                proximo: prox, ocupada_ate: S.estado === 'ocupada' ? S.ate : null, ocupada_por: S.estado === 'ocupada' ? (S.por || null) : null,
+                hoje: [...(S.estado === 'evento' ? [atual] : []), ...(prox ? [prox, lab] : [])] });
               if (nome === 'sala_ocupar'){
                 if (S.estado === 'evento') return r({ ...est(), status:'em_evento' });
-                if (!(args.p_minutos >= 5 && args.p_minutos <= 30)) return r({ ...est(), status:'invalido' });
-                S.estado = 'ocupada'; S.ate = new Date(Date.now() + args.p_minutos * 6e4).toISOString();
+                if (!(args.p_minutos >= 5 && args.p_minutos <= 1440)) return r({ ...est(), status:'invalido' });
+                const fimDia = new Date(); fimDia.setHours(24, 0, 0, 0);
+                S.estado = 'ocupada'; S.por = null; S.ate = new Date(Math.min(Date.now() + args.p_minutos * 6e4, fimDia.getTime(), prox ? Date.parse(prox.inicio) : Infinity)).toISOString();
               }
               if (nome === 'sala_liberar' && S.estado === 'ocupada'){ S.estado = 'livre'; S.ate = null; }
               return r(est());

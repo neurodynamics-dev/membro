@@ -620,12 +620,25 @@ export interface EnvioLabbio {
   para_email: string;
   para_nome: string;
   assunto: string;
-  dados: { caminho?: string; expira_em?: string; convidado_por?: string | null; membro?: string; versao?: number };
+  dados: { caminho?: string; expira_em?: string; convidado_por?: string | null; membro?: string; versao?: number;
+    /* conflito_sala (2.19.2): uma reserva do LABBIO cruza um evento da agenda do SOMA na mesma sala */
+    sala?: string; data?: string; reserva?: string; reserva_horario?: string; evento?: string; evento_horario?: string; organizador?: string | null };
 }
 
 export function labbioHTML(e: EnvioLabbio): string {
   const d = e.dados || {};
   const url = linkDe(d.caminho || "/labbio/");
+  if (e.tipo === "conflito_sala") {
+    const miolo = titulo(`Olá, ${esc(primeiroNome(e.para_nome))}.`) + esp(14) + texto(
+      `Há um conflito na <b style="font-weight:500">${esc(d.sala || "sala")}</b> em ${esc(dataExtensa(d.data) || d.data || "")}:
+      a reserva do LABBIO <b style="font-weight:500">${esc(d.reserva || "")}</b> (${esc(d.reserva_horario || "")}) cruza com o evento
+      <b style="font-weight:500">${esc(d.evento || "")}</b> (${esc(d.evento_horario || "")})${d.organizador ? ", organizado por " + esc(d.organizador) : ""}.
+      Quem organizou o evento também foi avisado.`) + esp(24) + botao(url, "Ver a disponibilidade das salas");
+    return moldura({
+      assunto: e.assunto, categoria: "LABBIO", miolo,
+      rodape: "Você recebe este e-mail por ser o responsável principal do painel do LABBIO.",
+    });
+  }
   if (e.tipo === "pedido") {
     const miolo = titulo(`Olá, ${esc(primeiroNome(e.para_nome))}.`) + esp(14) + texto(
       `O Depto. de Pessoal encaminhou o pedido de acesso biométrico de <b style="font-weight:500">${esc(d.membro || "")}</b>
@@ -651,6 +664,12 @@ export function labbioHTML(e: EnvioLabbio): string {
 
 export function labbioTexto(e: EnvioLabbio): string {
   const d = e.dados || {};
+  if (e.tipo === "conflito_sala") {
+    return `Olá, ${primeiroNome(e.para_nome)}.\n\n`
+      + `Há um conflito na ${d.sala || "sala"} em ${dataExtensa(d.data) || d.data || ""}: a reserva do LABBIO "${d.reserva || ""}" (${d.reserva_horario || ""}) `
+      + `cruza com o evento "${d.evento || ""}" (${d.evento_horario || ""})${d.organizador ? ", organizado por " + d.organizador : ""}.\n`
+      + `Quem organizou o evento também foi avisado.\n\nVer a disponibilidade das salas: ${linkDe(d.caminho || "/labbio/")}\n\n—\nNeuroDynamics PD&I\n`;
+  }
   if (e.tipo === "pedido") {
     return `Olá, ${primeiroNome(e.para_nome)}.\n\n`
       + `O Depto. de Pessoal encaminhou o pedido de acesso biométrico de ${d.membro || ""}`

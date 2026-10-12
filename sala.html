@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-tema="claro">
+<html lang="pt-BR" data-tema="escuro">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="robots" content="noindex">
 <meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#050807"> <!-- auditar: ok, theme-color exige valor literal -->
 <title>Sala | LABBIO</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,39 +13,85 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="ds/tokens.css">
 <link rel="stylesheet" href="ds/neuro.css">
+<link rel="stylesheet" href="deslizar.css">
 <link rel="stylesheet" href="sala.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script defer src="vendor/qrcode-generator-1.4.4.js"></script>
+<script defer src="deslizar.js"></script>
 <script defer src="sala.js"></script>
 </head>
-<body class="sala labbio">
-<main class="sala-pagina">
-  <header class="sala-topo"><span class="lb-logo" role="img" aria-label="LABBIO"></span><time id="sala-relogio" aria-label="Hora atual"></time></header>
-  <h1 id="sala-nome">Sala</h1>
-  <p id="sala-offline" class="aviso-box warn" role="alert" hidden></p>
-  <section id="sala-estado" class="sala-estado" aria-live="polite" aria-atomic="true">
-    <div class="sala-situacao"><svg id="sala-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><h2 id="sala-status">Consultando</h2></div>
-    <p id="sala-evento" class="sala-titulo" hidden></p>
-    <p id="sala-ate" class="sala-ate" hidden></p>
-    <p id="sala-mensagem" role="status" hidden></p>
-    <div id="sala-acoes" class="sala-acoes" hidden>
-      <button class="btn solid" id="sala-15" type="button">Ocupar por 15 min</button>
-      <button class="btn ghost" id="sala-30" type="button">Ocupar por 30 min</button>
-      <button class="btn ghost" id="sala-liberar" type="button" hidden>Liberar</button>
+<body class="sala" data-estado="carregando">
+<div class="sala-fundo" aria-hidden="true"></div>
+<main class="sala-tela" id="sala-tela">
+  <header class="sala-topo">
+    <span class="lb-logo" role="img" aria-label="LABBIO"></span>
+    <div class="sala-topo-dir">
+      <time id="sala-relogio" class="sala-relogio" aria-label="Hora atual"></time>
+      <button id="sala-menu-bt" class="sala-menu-bt" type="button" aria-haspopup="dialog" aria-controls="sala-opcoes" aria-expanded="false" aria-label="Opções da sala" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+      </button>
     </div>
-  </section>
-  <footer id="sala-proxima" class="sala-proxima" hidden>
-    <div class="sala-reserva"><h3 class="eyebrow">Próxima reserva</h3><p id="sala-proximo-titulo"></p><p id="sala-proximo-horario" class="mono"></p></div>
-    <button id="sala-opcoes-bt" class="btn ghost sala-opcoes-bt" type="button" aria-haspopup="dialog" aria-controls="sala-opcoes" hidden>Opções</button>
-  </footer>
-  <div id="sala-veu" class="veu" hidden></div>
-  <section id="sala-opcoes" class="dlg sala-opcoes" role="dialog" aria-modal="true" aria-labelledby="sala-opcoes-tit" hidden>
-    <h3 id="sala-opcoes-tit">Opções</h3>
-    <div id="sala-detalhes" class="sala-detalhes" hidden><div id="sala-qr" role="img" aria-label="QR para abrir os detalhes da reserva no portal"></div>
-      <p>Aponte a câmera do celular para ver os detalhes da reserva no portal.</p></div>
-    <div class="acts"><button class="btn ghost" id="sala-atualizar" type="button">Atualizar agora</button>
-      <button class="btn solid" id="sala-opcoes-fechar" type="button">Fechar</button></div>
-  </section>
+  </header>
+
+  <div class="sala-corpo">
+    <aside class="sala-cartao sala-info" id="sala-info">
+      <div class="sala-id">
+      <div class="sala-selo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 20.5V4.8a1 1 0 0 1 .8-1l10-1.6a1 1 0 0 1 1.2 1v17.3"/><path d="M3 20.5h18"/><path d="M13.5 12v.5"/></svg></div>
+      <h1 id="sala-nome">Sala</h1>
+      <p id="sala-rotulo" class="sala-rotulo" hidden></p>
+      </div>
+      <section class="sala-hoje" id="sala-hoje" aria-labelledby="sala-hoje-tit" hidden>
+        <h2 id="sala-hoje-tit">Hoje</h2>
+        <ol id="sala-hoje-lista"></ol>
+      </section>
+    </aside>
+
+    <section class="sala-cartao sala-principal" id="sala-estado" aria-live="polite" aria-atomic="true">
+      <p class="sala-rot" id="sala-rot">Sala</p>
+      <h2 id="sala-status" class="sala-status">Consultando</h2>
+      <p id="sala-ate" class="sala-ate" hidden></p>
+      <div id="sala-evento" class="sala-evento" hidden>
+        <p id="sala-evento-titulo" class="sala-evento-titulo"></p>
+        <p id="sala-evento-quem" class="sala-quem"></p>
+        <div class="sala-andamento" id="sala-andamento" role="progressbar" aria-label="Andamento da reserva" aria-valuemin="0" aria-valuemax="100"><span></span></div>
+      </div>
+      <p id="sala-ocupada-quem" class="sala-quem" hidden></p>
+      <p id="sala-offline" class="sala-aviso" role="alert" hidden></p>
+      <p id="sala-mensagem" class="sala-mensagem" role="status" hidden></p>
+      <div id="sala-deslizar" class="sala-deslizar-lugar" hidden></div>
+      <button id="sala-celular-bt" class="sala-celular-bt" type="button" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18zM18 14h2.5M14 18v2.5"/></svg>
+        <span>Reservar ou liberar pelo celular</span>
+      </button>
+    </section>
+  </div>
 </main>
+<div class="sala-luz" aria-hidden="true"></div>
+
+<div id="sala-veu" class="sala-veu" hidden></div>
+<section id="sala-opcoes" class="sala-opcoes" role="dialog" aria-modal="true" aria-labelledby="sala-opcoes-tit" hidden>
+  <header class="sala-opcoes-cab"><h2 id="sala-opcoes-tit">Opções da sala</h2>
+    <button class="sala-fechar" id="sala-opcoes-fechar" type="button" aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+  <div class="sala-opcoes-corpo">
+    <section id="sala-usar" class="sala-usar" aria-labelledby="sala-usar-tit" hidden>
+      <h3 id="sala-usar-tit">Usar agora, sem reserva</h3>
+      <div class="sala-usar-bts">
+        <button type="button" class="sala-opcao" data-min="30"><b>30 min</b><span id="sala-ate-30"></span></button>
+        <button type="button" class="sala-opcao" data-min="60"><b>1 hora</b><span id="sala-ate-60"></span></button>
+        <button type="button" class="sala-opcao" data-min="1440"><b>Resto do dia</b><span id="sala-ate-dia"></span></button>
+      </div>
+      <p class="sala-nota">Termina antes da próxima reserva. A agenda não muda.</p>
+    </section>
+    <section class="sala-qr-bloco" aria-labelledby="sala-qr-tit">
+      <div id="sala-qr" role="img" aria-label="QR para abrir a sala no celular"></div>
+      <div><h3 id="sala-qr-tit">No celular</h3>
+        <p>Aponte a câmera para ver esta e as outras salas, reservar um horário, ocupar agora ou liberar.</p></div>
+    </section>
+  </div>
+  <footer class="sala-opcoes-pe">
+    <button class="sala-link" id="sala-tela-cheia" type="button">Tela inteira</button>
+    <button class="sala-link" id="sala-atualizar" type="button">Atualizar agora</button>
+  </footer>
+</section>
 </body>
 </html>

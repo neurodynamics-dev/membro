@@ -1,0 +1,14 @@
+/* "Arraste para liberar" (deslizar.js, 2.19.2): o tablet da sala usa as cores da situação (--s-*);
+   no SOMA, sem elas, valem as do tema. */
+.deslizar{--p:0;position:relative;height:68px;border-radius:var(--r-sm);background:rgba(255,255,255,.1);border:1px solid var(--s-borda,var(--line2));overflow:hidden;touch-action:none}
+.deslizar-rot{position:absolute;inset:0;display:grid;place-items:center;padding-left:56px;font:500 17px var(--f);color:var(--s-suave,var(--muted));
+  opacity:calc(1 - var(--p) * 1.6);pointer-events:none}
+.deslizar-trilho{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:var(--r-sm);background:color-mix(in oklab,var(--s-luz,var(--syn)) 32%,transparent);pointer-events:none}
+.deslizar-bt{position:absolute;left:4px;top:4px;width:58px;height:58px;border-radius:var(--r-sm);border:0;display:grid;place-items:center;cursor:grab;
+  background:var(--s-luz,var(--syn));color:var(--s-b,var(--sulco-dark));box-shadow:0 6px 18px rgba(0,0,0,.25);touch-action:none}
+.deslizar-bt svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.deslizar.ativo .deslizar-bt{cursor:grabbing}
+.deslizar.volta .deslizar-bt,.deslizar.volta .deslizar-trilho{transition:transform .25s ease,width .25s ease}
+.deslizar.feito{opacity:.7}
+.deslizar-bt:focus-visible{outline:3px solid var(--s-tinta,var(--ink));outline-offset:2px}
+
