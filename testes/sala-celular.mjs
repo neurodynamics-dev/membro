@@ -52,6 +52,23 @@ try {
     await fim(t);
   }
   {
+    const t = await abrir('#/sala/2'), { p } = t;
+    await p.waitForSelector('.salam-cartao'); await p.clock.runFor(50);
+    confere('o celular ouve a sala aberta e as outras da lista', await p.evaluate(() => ['sala-2', 'sala-1', 'sala-3'].every(k => (window.__canais?.[k] || []).length === 1)));
+    // ocupam pelo tablet da porta: o canal avisa e a tela do celular muda sozinha
+    await p.evaluate(() => { Object.assign(window.__salaM, { estado:'ocupada', por:null, ate:new Date(Date.now() + 18e5).toISOString() }); window.__canalDispara('sala-2'); });
+    await p.clock.runFor(400);
+    await p.waitForFunction(() => document.querySelector('.salam-status')?.textContent === 'Ocupada');
+    confere('o aviso muda o celular sem recarregar', (await p.locator('.salam-quem').innerText()).includes('Ocupada na porta'));
+    await p.evaluate(() => { window.__enviados = []; });
+    await p.locator('.deslizar-bt').focus(); for (let i = 0; i < 4; i++) await p.keyboard.press('ArrowRight');
+    await p.waitForFunction(() => document.querySelector('.salam-status')?.textContent === 'Livre');
+    confere('liberar pelo celular avisa o canal (o tablet muda junto)', await p.evaluate(() => (window.__enviados || []).some(e => e.topico === 'sala-2')));
+    await p.evaluate(() => { location.hash = '#/'; }); await p.waitForTimeout(200);
+    confere('fora da tela da sala, os canais fecham', await p.evaluate(() => Object.values(window.__canais || {}).every(l => !l.length)));
+    await fim(t);
+  }
+  {
     const t = await abrir('#/sala/2', 'evento'), { p } = t;
     await p.waitForSelector('.salam-cartao');
     confere('em uso: o título e quem reservou, sem usar agora', (await p.locator('.salam-ev').innerText()).includes('Reservado por Bruno Tavares')

@@ -275,17 +275,38 @@ const CAMPOS_MEMBRO = [
   {k:'bolsa', l:'Bolsa', t:'text'},
   {k:'data_encerramento', l:'Data de encerramento da bolsa', t:'date'}
 ];
+/* a aba "Dados pessoais": tudo o que o recadastro (Meus dados) grava, em grupos (2.19.2).
+   O endereço aparece numa linha, montado das partes; na edição, vão as partes. */
 const CAMPOS_PESS = [
-  {k:'cpf', l:'CPF'}, {k:'data_nascimento', l:'Data de nascimento', t:'date'}, {k:'genero', l:'Gênero'},
-  {k:'endereco', l:'Endereço', full:true}, {k:'cidade_origem', l:'Cidade de origem'},
+  {g:'Identificação'},
+  {k:'nome_civil', l:'Nome civil', full:true}, {k:'cpf', l:'CPF'}, {k:'data_nascimento', l:'Data de nascimento', t:'date'},
+  {k:'rg', l:'Carteira de identidade'}, {k:'rg_orgao', l:'Órgão expedidor'}, {k:'nacionalidade', l:'Nacionalidade'},
+  {k:'estado_civil', l:'Estado civil'}, {k:'genero', l:'Gênero'}, {k:'autodeclaracao_racial', l:'Autodeclaração racial'},
+  {g:'Contato e endereço'},
+  {k:'telefone', l:'Telefone'}, {k:'cidade_origem', l:'Cidade de origem'},
+  {k:'endereco', l:'Endereço', full:true, so:'ver'},
+  {k:'end_logradouro', l:'Rua, avenida ou praça', full:true, so:'editar'}, {k:'end_numero', l:'Número', so:'editar'},
+  {k:'end_complemento', l:'Complemento', so:'editar'}, {k:'end_bairro', l:'Bairro', so:'editar'}, {k:'end_cep', l:'CEP', so:'editar'},
+  {k:'end_cidade', l:'Cidade', so:'editar'}, {k:'end_uf', l:'UF', so:'editar'},
+  {g:'Vínculo acadêmico'},
   {k:'instituicao', l:'Instituição de ensino'}, {k:'curso', l:'Curso'}, {k:'matricula', l:'Matrícula'},
   {k:'periodo_ingresso', l:'Período de ingresso'}, {k:'tempo_deslocamento', l:'Tempo de deslocamento'},
-  {k:'autodeclaracao_racial', l:'Autodeclaração racial'}, {k:'situacao_fump', l:'Situação junto à FUMP'},
-  {k:'acessibilidade', l:'Necessidades de acessibilidade', full:true},
+  {k:'situacao_fump', l:'Situação junto à FUMP'},
+  {g:'Perfil'},
   {k:'background', l:'Background', t:'textarea', full:true},
   {k:'lattes', l:'Currículo Lattes', full:true}, {k:'instagram', l:'Instagram'}, {k:'github', l:'GitHub'},
+  {k:'acessibilidade', l:'Necessidades de acessibilidade', full:true},
   {k:'autorizacao_imagem', l:'Autorização de uso de imagem', t:'bool'}
 ];
+const camposPess = modo => CAMPOS_PESS.filter(c => c.k && c.so !== (modo === 'ver' ? 'editar' : 'ver'));
+/* o endereço de uma linha: das partes, quando existem (o recadastro), senão o que veio da planilha */
+function enderecoPess(p){
+  if (!p?.end_logradouro) return p?.endereco || null;
+  const cep = String(p.end_cep || '').replace(/\D/g, '');
+  return [`${p.end_logradouro}, ${p.end_numero || 's/n'}${p.end_complemento ? ' ' + p.end_complemento : ''}`, p.end_bairro,
+    [p.end_cidade, p.end_uf].filter(Boolean).join('/'), cep.length === 8 ? `CEP ${cep.slice(0, 5)}-${cep.slice(5)}` : ''].filter(Boolean).join(', ');
+}
+
 
 function datalistsHTML(){
   const dl = (id, vals) => `<datalist id="${id}">${vals.map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`;
@@ -862,8 +883,9 @@ function renderTabPess(){
   const p = gestao.ficha.pess;
   if (gestao.ficha.editando){
     $('#ficha-body').innerHTML = `<div class="card"><h3>Editar dados pessoais</h3>
-      <div class="form-grid" style="margin-top:16px">${CAMPOS_PESS.map(c =>
-        `<div class="fld ${c.full?'full':''}"><label>${c.l}</label>${campoInput(c, p ? p[c.k] : null, null)}</div>`).join('')}</div>
+      <div class="form-grid" style="margin-top:16px">${CAMPOS_PESS.filter(c => !c.k || c.so !== 'ver').map(c => c.g
+        ? `<h4 class="full pess-grupo">${esc(c.g)}</h4>`
+        : `<div class="fld ${c.full?'full':''}"><label>${c.l}</label>${campoInput(c, p ? p[c.k] : null, null)}</div>`).join('')}</div>
       <div class="acts" style="justify-content:flex-end">
         <button class="btn ghost" onclick="gestao.ficha.editando=false;renderFicha()">Cancelar</button>
         <button class="btn solid" onclick="salvarPess()">Salvar</button></div></div>`;
@@ -875,8 +897,9 @@ function renderTabPess(){
       ${can() ? ibtn('pencil','Editar dados pessoais', "gestao.ficha.editando=true;renderFicha()", 'sm') : ''}</div>
     <div class="aviso-box warn">Dados sensíveis (LGPD), visíveis apenas para a Diretoria, o Depto. de Pessoal e a liderança.
       Não inclua estes campos em relatórios ou comunicações.</div>
-    ${p ? `<div class="dl">${CAMPOS_PESS.map(c => {
-        let v = p[c.k];
+    ${p ? `<div class="dl">${CAMPOS_PESS.filter(c => !c.k || c.so !== 'editar').map(c => {
+        if (c.g) return `<h4 class="full pess-grupo">${esc(c.g)}</h4>`;
+        let v = c.k === 'endereco' ? enderecoPess(p) : p[c.k];
         if (c.t === 'date') v = v ? fmtD(v) : null;
         if (c.t === 'bool') v = v === true ? 'Sim' : v === false ? 'Não' : null;
         return `<div class="it${c.full?' full':''}"><dt>${c.l}</dt>
@@ -887,7 +910,8 @@ function renderTabPess(){
 }
 async function salvarPess(){
   try{
-    const o = lerCampos(CAMPOS_PESS); o.registro = gestao.ficha.reg;
+    const o = lerCampos(camposPess('editar')); o.registro = gestao.ficha.reg;
+    if (o.end_logradouro) o.endereco = enderecoPess(o);   // a linha única acompanha as partes, como no recadastro
     const { error } = await sb.from('dados_pessoais').upsert(o, { onConflict:'registro' });
     if (error) throw error;
     gestao.ficha.editando = false;

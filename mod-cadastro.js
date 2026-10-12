@@ -48,6 +48,10 @@ function cadDesenhar(){
   const sel = (k, rot, opcoes, vazio) => `<div class="fld${er[k] ? ' erro' : ''}"><label for="t-${k}">${esc(rot)}</label>
     <select id="t-${k}">${vazio ? `<option value="">${esc(vazio)}</option>` : ''}${opcoes.map(o => `<option${o === d[k] ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>
     ${er[k] ? `<span class="msg">${esc(er[k])}</span>` : ''}</div>`;
+  const area = (k, rot, ajuda = '') => `<div class="fld${er[k] ? ' erro' : ''}"><label for="t-${k}">${esc(rot)}</label>
+    <textarea id="t-${k}" rows="3" aria-invalid="${!!er[k]}">${esc(d[k] ?? '')}</textarea>
+    ${er[k] ? `<span class="msg">${esc(er[k])}</span>` : ajuda ? `<span class="hint">${ajuda}</span>` : ''}</div>`;
+  if (typeof d.autorizacao_imagem === 'boolean') d.autorizacao_imagem = d.autorizacao_imagem ? 'Sim' : 'Não';
   const foto = d.foto ? '' : `<div class="aviso-box info termo-foto"><b>Sugestão: coloque uma foto de perfil.</b>
     Rosto de frente, fundo neutro e claro, sem óculos escuros. Ela aparece no menu, nos cartões e no placar.
     <a href="#" onclick="modalFoto(state.perfil?.registro);return false">Enviar foto</a></div>`;
@@ -84,6 +88,26 @@ function cadDesenhar(){
         ${campo('matricula', 'Matrícula', d.sem_matricula ? 'disabled' : '')}
         <label class="check" style="align-self:end"><input type="checkbox" id="t-sem_matricula" ${d.sem_matricula ? 'checked' : ''}
           onchange="$('#t-matricula').disabled=this.checked"> Não tenho matrícula</label>
+        ${campo('periodo_ingresso', 'Período de ingresso (opcional)', 'placeholder="2024/1"')}
+        ${campo('tempo_deslocamento', 'Tempo de deslocamento até a universidade (opcional)', 'placeholder="40 min"')}
+        ${campo('situacao_fump', 'Situação junto à FUMP (opcional)')}
+      </div>
+      <h3 class="termo-sec">Contato e perfil</h3>
+      <div class="fgrid">
+        ${campo('email_pessoal', 'E-mail pessoal (opcional)', 'type="email" inputmode="email" autocomplete="email"')}
+        ${campo('lattes', 'Currículo Lattes (opcional)', 'inputmode="url" placeholder="lattes.cnpq.br/..."')}
+        ${campo('instagram', 'Instagram (opcional)', 'placeholder="@usuario"')}
+        ${campo('github', 'GitHub (opcional)', 'placeholder="usuario"')}
+        <div class="full">${area('background', 'Background (opcional)', 'Formação, experiências e áreas de interesse, em poucas linhas.')}</div>
+      </div>
+      <h3 class="termo-sec">Sobre você</h3>
+      <p class="small muted termo-antigo">Opcionais. Ficam sob a LGPD, visíveis só para a Diretoria, o Depto. de Pessoal e a liderança.</p>
+      <div class="fgrid">
+        ${campo('genero', 'Gênero (opcional)')}
+        ${campo('cidade_origem', 'Cidade de origem (opcional)')}
+        ${campo('autodeclaracao_racial', 'Autodeclaração racial (opcional)')}
+        ${sel('autorizacao_imagem', 'Autoriza o uso da sua imagem?', ['Sim', 'Não'], 'Não informado')}
+        <div class="full">${area('acessibilidade', 'Necessidades de acessibilidade (opcional)')}</div>
       </div>
       <p class="small muted termo-antigo">Os dados de bolsa ficam com o Depto. de Pessoal e não aparecem aqui.</p>
       <div class="barra-acoes"><span class="salvo"></span><div class="dir">
@@ -96,9 +120,13 @@ async function cadConfirmar(ev){
   const v = id => ($('#t-' + id)?.value ?? '').trim();
   const p = {};
   ['nome_civil','cpf','data_nascimento','rg','rg_orgao','nacionalidade','estado_civil','telefone','end_cep','end_numero','end_logradouro',
-   'end_complemento','end_bairro','end_cidade','end_uf','instituicao','curso','matricula'].forEach(k => p[k] = v(k));
+   'end_complemento','end_bairro','end_cidade','end_uf','instituicao','curso','matricula',
+   // os demais campos da ficha (2.19.2): o recadastro atualiza todos
+   'periodo_ingresso','tempo_deslocamento','situacao_fump','email_pessoal','lattes','instagram','github','background',
+   'genero','cidade_origem','autodeclaracao_racial','acessibilidade'].forEach(k => p[k] = v(k));
+  const aut = v('autorizacao_imagem'); p.autorizacao_imagem = aut === 'Sim' ? 'true' : aut === 'Não' ? 'false' : '';
   p.sem_matricula = $('#t-sem_matricula').checked;
-  Object.assign(cadM.dados, p);
+  Object.assign(cadM.dados, p, { autorizacao_imagem: aut });
   const b = $('#termo-ok'); b.disabled = true;
   try {
     const { data, error } = await sb.rpc('cadastro_confirmar', { p });
@@ -108,6 +136,7 @@ async function cadConfirmar(ev){
     if (data.status !== 'ok') throw new Error(data.status);
     cadM.erros = {};
     Object.assign(cadM.dados, data.dados, { confirmado_em: new Date().toISOString() });
+    if (typeof cadM.dados.autorizacao_imagem === 'boolean') cadM.dados.autorizacao_imagem = cadM.dados.autorizacao_imagem ? 'Sim' : 'Não';
     await atualizarRecadastro();
     toast('Dados confirmados. Obrigado!');
     if (cadM.volta === 'recadastro') location.hash = '#/servicos/recadastro';

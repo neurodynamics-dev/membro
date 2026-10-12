@@ -55,6 +55,10 @@ console.log('Liderança');
   const abas = await p.evaluate(() => [...document.querySelectorAll('#main nav.nav1[aria-label="Ficha"] button')].map(a => a.textContent.trim()));
   confere('a ficha abre, com dados pessoais e avaliações', abas.some(a => /Dados pessoais/.test(a)) && abas.some(a => /Avaliações/.test(a)), abas);
   confere('sem a aba de ocorrências', !abas.some(a => /Ocorrências/.test(a)), abas);
+  await p.locator('#main nav.nav1[aria-label="Ficha"] button', { hasText:'Dados pessoais' }).click(); await p.waitForTimeout(500);
+  const grupos = await p.evaluate(() => [...document.querySelectorAll('#ficha-body .pess-grupo')].map(h => h.textContent));
+  confere('a aba Dados pessoais mostra tudo o que o recadastro grava, em grupos', grupos.join('|') === 'Identificação|Contato e endereço|Vínculo acadêmico|Perfil'
+    || (await p.locator('#ficha-body .empty').count()) === 1, grupos);
   confere('e sem editar a ficha', await p.locator('#main button:has-text("Editar dados")').count() === 0);
   confere('sem erro de página', erros.length === 0, erros);
   await ctx.close();

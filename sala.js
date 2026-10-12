@@ -120,7 +120,8 @@
 
  /* ---------------- o servidor ---------------- */
  async function consultar(nome = 'sala_estado', args = {}){
-  if (st.ocupado || st.invalido) return;
+  if (st.invalido) return;
+  if (st.ocupado){ if (nome === 'sala_estado') st.denovo = true; return; }   // chegou um aviso no meio: consulta de novo ao terminar
   if (!token) return invalido();
   st.ocupado = true; opcoes(); let timer;
   try {
@@ -132,11 +133,38 @@
    if (!['ok', 'em_evento', 'sem_tempo', 'invalido'].includes(data.status) || !['livre', 'evento', 'ocupada'].includes(data.estado)) throw new Error('indisponivel');
    // ocupar e liberar devolvem a situação; sala e rótulo vêm da consulta inicial
    st.dados = { ...st.dados, ...data }; st.online = true; st.ultima = new Date();
+   ouvir(data.espaco_id); agendarVirada();
+   if (nome !== 'sala_estado' && data.status === 'ok') avisar();   // o celular e o painel abertos nesta sala atualizam na hora
    if (data.estado !== 'ocupada'){ barra = null; $('sala-deslizar').replaceChildren(); }
    desenhar(({ em_evento:'A sala já está em uso por uma reserva.', sem_tempo:'A próxima reserva está prestes a começar.', invalido:'Não foi possível ocupar por esse período.' })[data.status]
      || (nome === 'sala_liberar' ? 'Sala liberada.' : ''));
   } catch(_){ st.online = false; desenhar(); }
-  finally { clearTimeout(timer); st.ocupado = false; opcoes(); }
+  finally { clearTimeout(timer); st.ocupado = false; opcoes(); if (st.denovo){ st.denovo = false; consultar(); } }
+ }
+
+ /* ---------------- tempo real ----------------
+    Cada sala tem um canal de broadcast do Supabase (sala-<id>): sem ler tabela nenhuma, ele só diz "mudou".
+    Quem muda a sala (este tablet, o celular, o banco quando muda um evento, uma reserva do LABBIO ou uma
+    ocupação) avisa; quem está ouvindo consulta de novo. O minuto a minuto continua como rede de segurança. */
+ let canal = null, canalId = null, rajada = null;
+ function ouvir(id){
+  if (!id || !sb?.channel || canalId === id) return;
+  if (canal) sb.removeChannel(canal);
+  canalId = id;
+  canal = sb.channel('sala-' + id).on('broadcast', { event:'mudou' }, () => {
+   clearTimeout(rajada); rajada = setTimeout(() => consultar(), 300);   // avisos em rajada viram uma consulta só
+  }).subscribe(s => { if (s === 'SUBSCRIBED') consultar(); });   // ao (re)conectar, confere o que pode ter perdido
+ }
+ function avisar(){ try { canal?.send({ type:'broadcast', event:'mudou', payload:{} }); } catch(_){} }
+ /* a virada: quando a reserva acaba, a próxima começa ou a ocupação vence, a tela muda na hora certa */
+ let virada = null;
+ function agendarVirada(){
+  clearTimeout(virada);
+  const d = st.dados; if (!d) return;
+  const marcos = [d.evento?.fim, d.proximo?.inicio, d.ocupada_ate].filter(Boolean).map(v => new Date(v).getTime()).filter(t => t > Date.now());
+  if (!marcos.length) return;
+  const espera = Math.min(...marcos) - Date.now() + 1500;
+  if (espera < 6 * 36e5) virada = setTimeout(() => consultar(), espera);
  }
 
  /* ---------------- gestos e botões ---------------- */

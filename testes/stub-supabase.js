@@ -817,6 +817,18 @@
   window.supabase = {
     createClient(){
       return {
+        /* Realtime (2.19.2, as salas): canais de broadcast de mentira. window.__canais guarda os inscritos por
+           tópico; window.__canalDispara(topico) entrega um "mudou" como se viesse de outro aparelho ou do banco;
+           window.__enviados guarda o que esta página avisou. */
+        channel: topico => {
+          const c = { topico, ouvintes: [],
+            on(tipo, filtro, cb){ this.ouvintes.push({ tipo, evento: filtro && filtro.event, cb }); return this; },
+            subscribe(cb){ ((window.__canais ||= {})[topico] ||= []).push(c); if (cb) setTimeout(() => cb('SUBSCRIBED'), 0); return this; },
+            send(m){ (window.__enviados ||= []).push({ topico, ...m }); return Promise.resolve('ok'); } };
+          window.__canalDispara ||= t => ((window.__canais || {})[t] || []).forEach(x => x.ouvintes.forEach(o => o.cb({ event:'mudou', payload:{} })));
+          return c;
+        },
+        removeChannel: c => { const l = (window.__canais || {})[c.topico]; if (l) window.__canais[c.topico] = l.filter(x => x !== c); return Promise.resolve('ok'); },
         /* toda tabela lida e toda RPC chamada, em ordem (window.__tabelas, window.__chamadas) */
         from: (t, ...resto) => { (window.__tabelas ||= []).push(t); return builder(t, ...resto); },
         rpc: async (nome, args) => {

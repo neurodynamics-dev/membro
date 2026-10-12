@@ -106,7 +106,13 @@ console.log('\nDados, termo e envio, pelo recadastro');
     end_bairro:'Pampulha', end_cidade:'Belo Horizonte', instituicao:'UFMG', curso:'Engenharia Elétrica', matricula:'2021012345' };
   for (const [k, x] of Object.entries(v)) await p.fill('#t-' + k, x);
   await p.selectOption('#t-estado_civil', 'solteiro(a)'); await p.selectOption('#t-end_uf', 'MG');
+  // 2.19.2: o recadastro atualiza todos os dados pessoais da ficha
+  confere('Meus dados traz também os demais campos da ficha', await p.locator('#t-genero, #t-cidade_origem, #t-autodeclaracao_racial, #t-acessibilidade, #t-periodo_ingresso, #t-tempo_deslocamento, #t-situacao_fump, #t-email_pessoal, #t-lattes, #t-instagram, #t-github, #t-background, #t-autorizacao_imagem').count() === 13);
+  await p.fill('#t-genero', 'Feminino'); await p.fill('#t-email_pessoal', 'ana@exemplo.com'); await p.selectOption('#t-autorizacao_imagem', 'Sim');
   await p.click('#termo-ok'); await p.waitForTimeout(800);
+  const env = await p.evaluate(() => (window.__rpcs || []).filter(x => x.nome === 'cadastro_confirmar').at(-1)?.p?.p);
+  confere('e manda todos ao confirmar (os opcionais em branco também, para apagar)', env?.genero === 'Feminino' && env?.email_pessoal === 'ana@exemplo.com'
+    && env?.autorizacao_imagem === 'true' && env?.github === '' && 'background' in env, env);
   confere('dados válidos: volta ao recadastro com o passo 1 feito', await p.evaluate(() => location.hash) === '#/servicos/recadastro'
     && await p.locator('.rec-passo.feito h3').first().textContent() === 'Confirme seus dados'
     && await p.locator('.rec-barra span.feito').count() === 1);
