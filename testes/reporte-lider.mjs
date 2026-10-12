@@ -29,6 +29,8 @@ try{
  console.log('Apontamentos, teclado, sinalização e participantes');
  {
   const t=await abrir({participanteAtivo:true}),{p}=t;
+  confere('a grade: Pessoa, Assiduidade, Entregas (2.19.2)',await p.locator('.rep-g-cab [role=columnheader]').allInnerTexts().then(v=>v.slice(0,3).map(x=>x.trim().toLowerCase()).join('|')==='pessoa|assiduidade|entregas')
+    &&await p.locator('#rep-pessoa-0 [role=cell]').count()===4&&(await p.locator('#rep-pessoa-0 .chave').first().getAttribute('aria-label')).startsWith('Assiduidade'));
   confere('abre com duas pessoas e quatro chaves',await p.locator('[id^="rep-pessoa-"]').count()===2&&await p.locator('#main .chave').count()===4);
   confere('todas começam suficientes e com uma opção acessível pelo Tab',await p.locator('.chave [aria-checked="true"]').allTextContents().then(v=>v.every(t=>t==='Suficiente'))&&await p.locator('.chave [tabindex="0"]').count()===4);
   confere('cabeçalho fica em Serviços',await p.locator('#main .cab .eyebrow').textContent()==='Serviços');

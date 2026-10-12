@@ -812,7 +812,9 @@ function origemSolicitacao(o){
     ${o.resposta ? `<div class="aviso-box" style="margin-top:14px"><b>Resposta:</b>
       ${esc(o.resposta)}<br><span class="small muted">${esc(o.respondido_por || '')}${
         o.respondido_em ? ', ' + fmtD(String(o.respondido_em).slice(0,10)) : ''}</span></div>` : ''}
-    ${(o.dados || {}).labbio_pedido_id ? blocoBiometria(o.dados.labbio_pedido_id) : can() ? formDecisao(o, fechada) : (fechada ? '' :
+    ${o.registro === state.perfil?.registro && state.perfil?.papel !== 'admin' && !fechada
+      ? `<p class="sub" style="margin-top:14px">Este pedido é seu: outra pessoa do Depto. de Pessoal decide.</p>`
+      : (o.dados || {}).labbio_pedido_id ? blocoBiometria(o.dados.labbio_pedido_id) : can() ? formDecisao(o, fechada) : (fechada ? '' :
       `<p class="sub" style="margin-top:14px">Só o Depto de Pessoal decide esta solicitação.</p>`)}
   </div>`;
 }
@@ -825,7 +827,8 @@ function blocoBiometria(id){
   return `<div id="bio-pessoal" style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px"><div class="carregando"><span class="spin"></span> Carregando o pedido…</div></div>`;
 }
 function formDecisao(o, fechada){
-  const itens = (state.itensAcesso || []);
+  /* a biometria do LABBIO não é concedida por aqui (2.19.2): tem pedido próprio */
+  const itens = (state.itensAcesso || []).filter(i => i.chave !== 'labbio_biometria');
   const jaAtivo = new Set((o.acessos || []).filter(x => x.ativo).map(x => x.item_id));
   const pedido  = (o.dados || {}).item_id || null;
   /* o pedido ainda não concedido vem marcado: é a resposta mais provável */

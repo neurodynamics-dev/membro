@@ -266,6 +266,8 @@ begin
   if not (conta_ativa() and papel_atual() in ('admin', 'pessoal')) then return jsonb_build_object('status', 'sem_permissao'); end if;
   select * into p from labbio_pedidos where id = p_id for update;
   if not found then return jsonb_build_object('status', 'nao_encontrado'); end if;
+  -- 2.19.2: ninguém decide o próprio pedido, a não ser o admin
+  if p.registro = portal_registro_atual() and papel_atual() <> 'admin' then return jsonb_build_object('status', 'proprio_pedido'); end if;
   if p.etapa <> 'pessoal' then return jsonb_build_object('status', 'encerrado'); end if;
   if p_versao is distinct from p.versao then return jsonb_build_object('status', 'conflito'); end if;
   if p_acao not in ('encaminhar', 'negar', 'devolver') then return jsonb_build_object('status', 'invalido', 'campo', 'acao'); end if;
@@ -407,10 +409,21 @@ begin
    where id = (p->>'solicitacao_id')::uuid for update;
   if not found then return jsonb_build_object('status','nao_encontrada'); end if;
 
+  -- 2.19.2: ninguém decide o próprio pedido, a não ser o admin (nem quem é do Pessoal)
+  if v_sol.registro = v_reg and public.papel_atual() <> 'admin' then
+    return jsonb_build_object('status','proprio_pedido');
+  end if;
+
   -- 2.19.1: o pedido de biometria do LABBIO segue o fluxo dele (aprovar
   -- encaminha ao LABBIO; não concede nada aqui)
   if exists (select 1 from labbio_pedidos where solicitacao_id = v_sol.id) then
     return public.labbio_pedido_pela_triagem(v_sol.id, v_dec, v_resp);
+  end if;
+
+  -- 2.19.2: o acesso biométrico ao LABBIO só nasce pelo pedido próprio (com foto, cadastrado pelo LABBIO);
+  -- a triagem comum não o concede, nem por engano
+  if exists (select 1 from itens_de_acesso where id = any(v_conc) and chave = 'labbio_biometria') then
+    return jsonb_build_object('status','biometria_pelo_labbio');
   end if;
 
   select nome into v_quem from membros where registro = v_reg;

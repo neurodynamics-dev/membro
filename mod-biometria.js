@@ -56,9 +56,24 @@ async function pageBiometria(sub2){
   }
 }
 
+/* a barra de progresso da análise (2.19.2): enviado, Pessoal, LABBIO, acesso cadastrado */
+const BIO_PROGRESSO = [['enviado', 'Enviado'], ['pessoal', 'Depto. de Pessoal'], ['labbio', 'LABBIO'], ['concedido', 'Acesso cadastrado']];
+function bioProgresso(p){
+  const atual = { pessoal:'pessoal', labbio:'labbio', concedido:'concedido', negado_pessoal:'pessoal', negado_labbio:'labbio',
+    devolvido: p.devolvido_por === 'labbio' ? 'labbio' : 'pessoal' }[p.etapa] || 'enviado';
+  const i = BIO_PROGRESSO.findIndex(([k]) => k === atual), parado = /^negado|devolvido/.test(p.etapa);
+  const pct = Math.round((p.etapa === 'concedido' ? 1 : i / (BIO_PROGRESSO.length - 1)) * 100);
+  const msg = { pessoal:'O Depto. de Pessoal está analisando o pedido.', labbio:'Aprovado pelo Pessoal. O LABBIO vai cadastrar a sua biometria.',
+    concedido:'O LABBIO cadastrou a sua biometria.', negado_pessoal:'Negado pelo Depto. de Pessoal.', negado_labbio:'Negado pelo LABBIO.',
+    devolvido:'Devolvido para correção.' }[p.etapa] || '';
+  return `<div class="bio-prog${parado ? ' parado' : ''}" role="group" aria-label="Andamento do pedido">
+    <div class="bio-prog-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-valuetext="${esc(msg)}"><span style="width:${pct}%"></span></div>
+    <ol>${BIO_PROGRESSO.map(([k, rot], j) => `<li class="${j < i || p.etapa === 'concedido' ? 'feita' : j === i ? 'atual' : ''}"${j === i ? ' aria-current="step"' : ''}>${esc(rot)}</li>`).join('')}</ol>
+    <p class="small">${esc(msg)}</p></div>`;
+}
 function bioAcompanhar(topo, p){
   $('#main').innerHTML = topo + layoutLeitura(`
-    <p class="lead">Pedido ${esc(p.protocolo || '')}: ${esc(BIO_EVENTO[p.etapa] || p.etapa)}.</p>${bioTrilha(p)}
+    <p class="lead">Pedido ${esc(p.protocolo || '')}: ${esc(BIO_EVENTO[p.etapa] || p.etapa)}.</p>${bioProgresso(p)}${bioTrilha(p)}
     <div class="acts"><button class="btn ghost" type="button" onclick="bioCancelar('${esc(p.id)}')">Cancelar o pedido</button></div>`);
 }
 async function bioCancelar(id){
@@ -220,7 +235,9 @@ async function bioPessoalBloco(id){
     if (error || data?.status !== 'ok') throw error || new Error(data?.status);
     const p = data.pedido, env = p.enviada || {}, dados = env.dados || {};
     bio.pedidoPessoal = p;
-    const acoes = p.etapa === 'pessoal' ? `<p class="small muted">Encaminhar não concede o acesso: o LABBIO cadastra a biometria e confirma no painel dele.</p>
+    const meu = p.registro === state.perfil?.registro && state.perfil?.papel !== 'admin';
+    const acoes = p.etapa === 'pessoal' && meu ? `<p class="small muted">Este pedido é seu: outra pessoa do Depto. de Pessoal decide.</p>`
+      : p.etapa === 'pessoal' ? `<p class="small muted">Encaminhar não concede o acesso: o LABBIO cadastra a biometria e confirma no painel dele.</p>
       <div class="acts"><button class="btn solid" type="button" onclick="bioPessoalAcao('encaminhar')">Encaminhar ao LABBIO</button>
         <button class="btn ghost" type="button" onclick="bioPessoalAcao('devolver')">Devolver para correção</button>
         <button class="btn ghost" type="button" onclick="bioPessoalAcao('negar')">Negar</button></div>`

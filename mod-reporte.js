@@ -275,22 +275,27 @@ function repRenderLider(){
   +repAvisoLider(d)+'<div id="rep-aviso"></div>'
   +layoutFluxo({passos:etapas(REP_PASSOS,String(n),rota),corpo,salvo:travado?'<span class="salvo"></span>':'<span class="salvo ok" id="rep-salvo">Rascunho carregado</span>',acoes});
 }
+/* 2.19.2: uma grade, uma linha por pessoa: Pessoa, Assiduidade, Entregas e Sinalizar. No celular, cada linha vira um
+   cartão (o nome em cima, as duas chaves lado a lado com o rótulo, a sinalização embaixo). */
 function repChaveLider(p,a,i,k,travado){
  const rot=k==='entregas'?'Entregas':'Assiduidade';
- return `<div class="stack" style="gap:var(--s2)"><span class="rotulo">${rot}</span><div class="chave" role="radiogroup" aria-label="${rot} de ${esc(p.nome)}" onkeydown="repTeclaLider(event,${i},'${k}')">${['SUFICIENTE','INSUFICIENTE'].map((v,j)=>
+ return `<div role="cell" class="rep-g-chave" data-rot="${rot}"><div class="chave" role="radiogroup" aria-label="${rot} de ${esc(p.nome)}" onkeydown="repTeclaLider(event,${i},'${k}')">${['SUFICIENTE','INSUFICIENTE'].map((v,j)=>
   `<button type="button" role="radio" aria-checked="${a[k]===v}" tabindex="${a[k]===v?'0':'-1'}" class="${j?'st-caution':'st-nominal'}" ${travado?'disabled':''} onclick="repApontLider(${i},'${k}','${v}')">${j?'Insuficiente':'Suficiente'}</button>`).join('')}</div></div>`;
 }
 function repLinhaLider(p,i,travado){
  const a=reporte.lider.reporte.apontamentos.find(x=>x.registro===p.registro);
- return `<div class="ajuste" id="rep-pessoa-${i}"><div style="display:flex;align-items:center;gap:var(--s3)">${avatarFoto(repMembro(p.registro),36,12)}<div><h3>${esc(p.nome)}</h3>
-  <p>${p.origem==='direto'?'Liderado direto':'Participante: '+esc(p.justificativa||'')}</p></div>
-  ${p.origem==='excepcional'&&!travado?`<button class="icon-btn icbtn" aria-label="Remover participante ${esc(p.nome)}" onclick="repRetirarParticipante(${i})">${ic('x')}</button>`:''}</div>
-  <div class="controle"><div style="display:flex;gap:var(--s4);flex-wrap:wrap">${['entregas','assiduidade'].map(k=>repChaveLider(p,a,i,k,travado)).join('')}</div>
-  ${a.sinalizacao?`${repPill('Sinalizado','p-warn')}<button class="btn ghost mini" onclick="repSinalizarLider(${i})">${travado?'Ver sinalização':'Ver ou retirar'}</button>`
+ return `<div class="rep-g-linha" role="row" id="rep-pessoa-${i}">
+  <div role="cell" class="rep-g-pessoa">${avatarFoto(repMembro(p.registro),36,12)}<div class="tx"><b>${esc(p.nome)}</b>
+   <span>${p.origem==='direto'?'Liderado direto':'Participante: '+esc(p.justificativa||'')}</span></div>
+   ${p.origem==='excepcional'&&!travado?`<button class="icon-btn icbtn" aria-label="Remover participante ${esc(p.nome)}" onclick="repRetirarParticipante(${i})">${ic('x')}</button>`:''}</div>
+  ${['assiduidade','entregas'].map(k=>repChaveLider(p,a,i,k,travado)).join('')}
+  <div role="cell" class="rep-g-sinal">${a.sinalizacao?`${repPill('Sinalizado','p-warn')}<button class="btn ghost mini" onclick="repSinalizarLider(${i})">${travado?'Ver sinalização':'Ver ou retirar'}</button>`
    :travado?'':`<button class="btn ghost mini" onclick="repSinalizarLider(${i})">Sinalizar</button>`}</div></div>`;
 }
 function repPassoLider(d,travado){
- return (d.reporte.pessoas.length?`<div class="ajustes">${d.reporte.pessoas.map((p,i)=>repLinhaLider(p,i,travado)).join('')}</div>`
+ return (d.reporte.pessoas.length?`<div class="rep-grade" role="table" aria-label="Apontamentos da equipe">
+   <div class="rep-g-cab" role="row"><span role="columnheader">Pessoa</span><span role="columnheader">Assiduidade</span><span role="columnheader">Entregas</span><span role="columnheader"><span class="sr">Sinalização</span></span></div>
+   ${d.reporte.pessoas.map((p,i)=>repLinhaLider(p,i,travado)).join('')}</div>`
   :estado.vazio({texto:'Você não tem liderados diretos no quadro. Siga para escalonar ou divulgar.'}))
   +(travado?'':'<button class="btn ghost" onclick="repAdicionarParticipante()">'+ic('plus')+'Adicionar participante</button>');
 }

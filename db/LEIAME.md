@@ -116,6 +116,8 @@ psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 | `2.19.1_onboarding.sql` | a trilha de onboarding versionada (`onboarding_trilhas`, a 1 com as sete etapas do plano) e o progresso no servidor (`onboarding_progresso`); as etapas de fato (dados, termo, treinamentos) o SOMA confere sozinho; `onboarding_meu`, `onboarding_marcar`, `onboarding_painel`, `onboarding_trilha_salvar`. Nada bloqueia o SOMA |
 | `2.19.1_feed.sql` | o feed editorial: estados rascunho, pronto, publicando, publicado e retirado; tópico ou notícia (slug estável, `feed_slugs`); quem publica é NRO_MANAGERS ou admin, sem votação (o reporte só contribui); público no site com as imagens copiadas para o bucket público `noticias` em dois passos; reações (`feed_reacoes`, só em notícia) de quem tem registro no quadro, em qualquer status; newsletter sem votos, com os itens ainda não distribuídos (`newsletter_itens`) e envio na hora (`newsletter_enviar_agora`); inscrição pública confirmada (`comunidade_inscrever`, `comunidade_confirmar`, fila `comunidade_envios`). Depois dela, publique de novo a `notificar-email` |
 | `2.19.1_labbio_admin.sql` | o admin do SOMA entra no painel `/labbio/` com a própria conta de membro e faz o que um gestor ativo faz: `conta_labbio()` passa a valer para ele, `labbio_eu()` responde `admin` (o portal não o desvia) e as decisões ficam com "Nome (admin do SOMA)" (`labbio_ator_nome()`). Ele não vira conta externa: o SOMA e a porta da API não mudam. Depois da `2.19.1_labbio_base`, `_acesso`, `_dados` e `_salas` |
+| `2.19.2_checkin_local.sql` | o check-in pela folha confere a posição: `checkin_local` (centro do LABBIO, raio de 150 m, imprecisão máxima de 200 m), `registrar_checkin_folha(token, lat, lon, precisão)` (a versão só com o token é apagada), `checkin_local_ler` e `checkin_local_salvar` (admin). As coordenadas não ficam guardadas |
+| `2.19.2_solicitacoes.sql` | a triagem dos pedidos de acesso: ninguém decide o próprio pedido (`proprio_pedido`, só o admin pode), nem pela triagem do LABBIO (`labbio_pedido_pessoal`) nem pela comum (`pessoal_solicitacao_decidir`); a triagem comum não concede o acesso biométrico (`biometria_pelo_labbio`), que só sai pelo LABBIO. Traz a consulta para conferir onde cada pedido parou. Depois da `2.19.1_labbio_acesso` |
 
 A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
 2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
@@ -177,6 +179,15 @@ A 2.19.1 inteira, na ordem de aplicação em produção (632 asserções):
 bash testes/preparar-base.sh teste t2191 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
      2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
      2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql
+```
+
+A 2.19.2 sobre a 2.19.1 inteira (o check-in com local e a triagem dos pedidos de acesso):
+
+```sh
+bash testes/preparar-base.sh teste t2192 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
+     2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
+     2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql \
+     2.19.1_labbio_admin.sql 2.19.2_checkin_local.sql 2.19.2_solicitacoes.sql
 ```
 
 O reporte (70 asserções, mais o teste da 2.18.0 do reporte de novo):

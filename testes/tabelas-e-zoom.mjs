@@ -95,6 +95,26 @@ try{
     await fim(t);
   }
 
+  console.log('Barra de topo do celular');
+  {
+    const t = await abrir('#/equipe/quadro', { celular:true }), { p } = t;
+    await p.waitForSelector('#tb-membros tbody tr');
+    const topo = () => p.evaluate(() => Math.round(document.getElementById('topo-m').getBoundingClientRect().bottom));
+    confere('aparece no topo', await topo() > 40);
+    await p.evaluate(() => { document.body.style.minHeight = '3000px'; });
+    const espera = f => p.waitForFunction(f, null, { timeout:3000 }).catch(() => {});
+    for (let y = 100; y <= 700; y += 100){ await p.evaluate(v => window.scrollTo({ top:v, behavior:'instant' }), y); await p.waitForTimeout(30); }
+    await espera(() => document.body.classList.contains('topo-oculto') && document.getElementById('topo-m').getBoundingClientRect().bottom <= 0);
+    confere('rolando para baixo, ela some', await topo() <= 0 && await p.evaluate(() => document.body.classList.contains('topo-oculto')));
+    for (let y = 650; y >= 550; y -= 25){ await p.evaluate(v => window.scrollTo({ top:v, behavior:'instant' }), y); await p.waitForTimeout(30); }
+    await espera(() => document.getElementById('topo-m').getBoundingClientRect().bottom > 40);
+    confere('rolando para cima, ela volta', await topo() > 40, await p.evaluate(() => [scrollY, document.body.className, document.activeElement?.id, location.hash]));
+    await p.click('#burger'); await p.waitForTimeout(400);
+    const marca = await p.evaluate(() => [...document.querySelectorAll('#lt-marca img')].filter(i => getComputedStyle(i).display !== 'none').map(i => i.className));
+    confere('na gaveta, só a logo inteira (sem o símbolo ao lado)', JSON.stringify(marca) === '["lt-imagotipo"]', marca);
+    await fim(t);
+  }
+
   console.log('Sem zoom');
   {
     const t = await abrir('#/', { celular:true }), { p } = t;

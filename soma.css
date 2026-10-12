@@ -3096,3 +3096,49 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 /* 2.19.2: todo ícone tem um tamanho mínimo de partida. Sem isto, um ic() fora de um contêiner que lhe desse tamanho
    saía no tamanho padrão do SVG (enorme). :where() deixa a prioridade em zero: qualquer regra específica continua valendo. */
 :where(svg.ic){width:1.2em;height:1.2em}
+
+/* 2.19.2: no celular a gaveta mostra só a logo inteira; o símbolo é do trilho recolhido do computador */
+@media (max-width:900px){body.lt-recolhida .lt-marca>.lt-simbolo{display:none}}
+
+/* 2.19.2: no celular, a barra de topo some ao rolar para baixo e volta ao rolar para cima (como no Instagram) */
+@media (max-width:900px){
+  #topo-m{transition:transform .25s var(--ease)}
+  body.topo-oculto #topo-m{transform:translateY(calc(-100% - 12px))}
+}
+@media (prefers-reduced-motion:reduce){#topo-m{transition:none}}
+
+/* o reporte do líder (2.19.2): a grade Pessoa, Assiduidade, Entregas, Sinalizar */
+.rep-grade{border:1px solid var(--line);border-radius:var(--r);background:var(--card);margin-bottom:var(--s4)}
+.rep-g-cab,.rep-g-linha{display:grid;grid-template-columns:minmax(200px,1.5fr) auto auto minmax(150px,1fr);align-items:center;gap:var(--s4);padding:12px 18px}
+.rep-g-cab{font-family:var(--fd);font-weight:600;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line)}
+.rep-g-linha+.rep-g-linha{border-top:1px solid var(--line)}
+.rep-g-pessoa{display:flex;align-items:center;gap:12px;min-width:0}
+.rep-g-pessoa .tx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.rep-g-pessoa b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rep-g-pessoa .tx span{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rep-g-sinal{display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:760px){
+  .rep-g-cab{display:none}
+  .rep-g-linha{grid-template-columns:1fr 1fr;gap:12px;padding:14px}
+  .rep-g-pessoa,.rep-g-sinal{grid-column:1/-1}
+  .rep-g-sinal{justify-content:flex-start}
+  .rep-g-chave::before{content:attr(data-rot);display:block;margin-bottom:6px;font-family:var(--fd);font-weight:600;font-size:10px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .rep-g-chave .chave{display:flex;width:100%}
+  .rep-g-chave .chave button{flex:1;min-width:0;padding:0 6px;font-size:12px}
+}
+
+/* a escolha do tipo de acesso (2.19.2) */
+.srv-escolha{margin-top:var(--s4)}
+/* o andamento do pedido de biometria (2.19.2): a barra e as quatro etapas */
+.bio-prog{margin:4px 0 18px;display:flex;flex-direction:column;gap:10px}
+.bio-prog-barra{height:6px;border-radius:6px;background:rgba(var(--tom),.08);overflow:hidden}
+.bio-prog-barra span{display:block;height:100%;border-radius:6px;background:var(--syn);transition:width .4s var(--ease)}
+.bio-prog.parado .bio-prog-barra span{background:var(--warn)}
+.bio-prog ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;font-size:12px;color:var(--dim)}
+.bio-prog li{position:relative;padding-top:12px}
+.bio-prog li::before{content:'';position:absolute;top:0;left:0;width:8px;height:8px;border-radius:50%;background:rgba(var(--tom),.18)}
+.bio-prog li.feita{color:var(--muted)} .bio-prog li.feita::before{background:var(--syn)}
+.bio-prog li.atual{color:var(--ink);font-weight:600} .bio-prog li.atual::before{background:var(--syn);box-shadow:0 0 0 3px rgba(var(--syn-rgb),.25)}
+.bio-prog.parado li.atual::before{background:var(--warn);box-shadow:0 0 0 3px rgba(var(--warn-rgb),.25)}
+.bio-prog p{margin:0;color:var(--muted)}

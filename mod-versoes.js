@@ -51,7 +51,13 @@ const NOTAS_VERSAO = [
     ['melhoria', 'A **barra de ações** dos fluxos em passos deixa de ser uma faixa preta e passa a ser de vidro.'],
     ['correcao', 'O cartão **Acesso ao LABBIO** em Serviços tinha o ícone gigante.'],
     ['correcao', 'Iniciar o **recadastro** falhava com "UPDATE requires a WHERE clause".'],
-    ['correcao', 'O formulário de **andamento** em Bugs e sugestões agora mostra "Registrado agora" e fecha o botão até haver nova alteração.']
+    ['correcao', 'O formulário de **andamento** em Bugs e sugestões agora mostra "Registrado agora" e fecha o botão até haver nova alteração.'],
+    ['novo', '**Solicitação de acesso** em duas telas: primeiro o tipo (sistema, documento ou plataforma; ou o acesso biométrico ao LABBIO), depois o pedido.'],
+    ['novo', '**Acesso ao LABBIO** com barra de progresso: enviado, Depto. de Pessoal, LABBIO e acesso cadastrado.'],
+    ['melhoria', '**Reporte semanal** da liderança em grade: uma coluna com os nomes, uma de assiduidade, uma de entregas e uma com o botão de sinalizar.'],
+    ['melhoria', 'No **celular**, a barra de topo some ao rolar para baixo e volta ao rolar para cima.'],
+    ['correcao', 'No **celular**, a gaveta do menu mostrava o símbolo ao lado da logo.'],
+    ['correcao', 'Ninguém aprova o **próprio pedido de acesso**, mesmo no Depto. de Pessoal (só o admin). O acesso biométrico ao LABBIO sai só pelo LABBIO: a triagem comum não o concede mais direto.']
   ]},
   { v:'2.19.1', data:'2026-10-11', titulo:'Reporte por liderança, feed editorial, LABBIO e trainees', itens:[
     ['novo', '**Reporte semanal** por liderança direta, com cobrança na sexta às 16h, painel da semana e PDF em tabelas.'],
