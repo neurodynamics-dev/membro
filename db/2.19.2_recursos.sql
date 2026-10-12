@@ -32,7 +32,7 @@ create table if not exists public.recursos (
   url_chave        text not null unique,      -- o endereço sem esquema, "www" e barra final: não repete recurso
   publicador       text,
   logo_url         text,                      -- vazio: a tela deduz do endereço (avatar do GitHub, favicon)
-  tipo             text not null default 'software' check (tipo in ('software', 'repositorio', 'servico', 'beneficio', 'referencia')),
+  tipo             text not null default 'software' check (tipo in ('software', 'extensao', 'repositorio', 'servico', 'base', 'beneficio', 'referencia')),
   funcao           text not null check (length(btrim(funcao)) > 0),   -- o que ele faz, em poucas linhas
   instrucoes_baixar text,
   instrucoes_usar  text,
@@ -72,6 +72,9 @@ do $$ declare t text; begin
 end $$;
 
 -- 1. peças ----------------------------------------------------------------------------
+alter table public.recursos drop constraint if exists recursos_tipo_check;
+alter table public.recursos add constraint recursos_tipo_check check (tipo in ('software', 'extensao', 'repositorio', 'servico', 'base', 'beneficio', 'referencia'));
+
 create or replace function public.recursos_pode()
 returns boolean language sql stable security definer set search_path = public as $$
   select public.portal_registro_atual() is not null and public.conta_ativa() $$;
@@ -159,7 +162,7 @@ begin
   if v_url !~* '^https?://[^\s/]+\.[^\s/]+' or length(v_url) > 500 then return jsonb_build_object('status', 'invalido', 'campo', 'url'); end if;
   if length(v_nome) = 0 or length(v_nome) > 120 then return jsonb_build_object('status', 'invalido', 'campo', 'nome'); end if;
   if length(v_funcao) = 0 or length(v_funcao) > 600 then return jsonb_build_object('status', 'invalido', 'campo', 'funcao'); end if;
-  if v_tipo not in ('software', 'repositorio', 'servico', 'beneficio', 'referencia') then return jsonb_build_object('status', 'invalido', 'campo', 'tipo'); end if;
+  if v_tipo not in ('software', 'extensao', 'repositorio', 'servico', 'base', 'beneficio', 'referencia') then return jsonb_build_object('status', 'invalido', 'campo', 'tipo'); end if;
   if v_status not in ('ativo', 'inativo') then return jsonb_build_object('status', 'invalido', 'campo', 'status'); end if;
   if not (v_acesso <@ array['gratis', 'freemium', 'pago', 'estudante', 'labbio']) then return jsonb_build_object('status', 'invalido', 'campo', 'acesso'); end if;
   if length(coalesce(p->>'instrucoes_baixar', '')) > 8000 or length(coalesce(p->>'instrucoes_usar', '')) > 8000 then

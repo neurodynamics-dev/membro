@@ -1,4 +1,4 @@
-/* 2.19.2: Recursos, o catálogo colaborativo de ferramentas (#/recursos).
+/* 2.19.2: a Biblioteca, o catálogo colaborativo de ferramentas (#/biblioteca).
    Galeria com os filtros na lateral, a página do recurso (função, instruções, estrelas, comentários), adicionar e editar. */
 import { chromium } from 'playwright';
 import { readFileSync, mkdirSync } from 'node:fs';
@@ -28,9 +28,9 @@ const marcar = async (p, sel) => { await p.locator(sel.startsWith('#') || sel.st
 try {
   console.log('A galeria');
   {
-    const t = await abrir('#/recursos'), { p } = t;
+    const t = await abrir('#/biblioteca'), { p } = t;
     await p.waitForSelector('.rcs-card');
-    confere('o menu tem Recursos, acesa nesta tela', await p.locator('#lt-nav .lt-sec[data-r="recursos"]').count() === 1);
+    confere('o menu tem Biblioteca, acesa nesta tela', await p.locator('#lt-nav .lt-sec[data-r="biblioteca"]').count() === 1);
     confere('só os ativos aparecem de início (7 de 8)', await total(p) === 7 && !(await nomes(p)).includes('Ferramenta antiga'));
     confere('o cartão mostra nome, publicador e logo', (await p.locator('.rcs-card').first().innerText()).includes('Microsoft') && await p.locator('.rcs-card .rcs-logo').count() === 7);
     confere('"em destaque" começa pelo padrão da NRO', (await nomes(p)).slice(0, 2).sort().join() === 'Git Bash (Git for Windows),Visual Studio Code'
@@ -75,7 +75,7 @@ try {
 
   console.log('A página do recurso');
   {
-    const t = await abrir('#/recursos/visual-studio-code'), { p } = t;
+    const t = await abrir('#/biblioteca/visual-studio-code'), { p } = t;
     await p.waitForSelector('#rcs-faz');
     confere('diz o que faz, logo no começo', (await p.locator('#rcs-faz').innerText()).includes('IDE padrão da equipe') && await p.locator('#main h1').innerText() === 'Visual Studio Code');
     confere('o padrão da NRO e o publicador à vista', (await p.locator('.cab-meta').innerText()).toLowerCase().includes('padrão da nro') && (await p.locator('.cab-meta').innerText()).includes('Microsoft'));
@@ -96,25 +96,31 @@ try {
     await p.locator('#rcs-lista [data-rcs-apagar]').last().click(); await p.waitForTimeout(150);
     confere('apagar o próprio comentário', (await p.locator('#rcs-conta').innerText()) === '1');
     await p.locator('.rcs-tags .rcs-tag').first().click(); await p.waitForTimeout(500);
-    confere('clicar numa tag leva à galeria já filtrada', await p.evaluate(() => location.hash) === '#/recursos' && await p.locator('.rcs-card').count() >= 1
+    confere('clicar numa tag leva à galeria já filtrada', await p.evaluate(() => location.hash) === '#/biblioteca' && await p.locator('.rcs-card').count() >= 1
       && await p.locator('.fb-tag, #rcs-fac [data-rcs-g="tags"]:checked').count() === 1);
     await fim(t);
   }
   {
-    const t = await abrir('#/recursos/git-bash-git-for-windows'), { p } = t;
+    const t = await abrir('#/biblioteca/git-bash-git-for-windows'), { p } = t;
     await p.waitForSelector('#rcs-faz');
     confere('sem instruções, convida a completar', (await p.locator('#rcs-baixar').innerText()).includes('Ainda sem instruções') && await p.locator('#rcs-baixar a[href$="/editar"]').count() === 1);
     await fim(t);
   }
   {
-    const t = await abrir('#/recursos/nao-existe'), { p } = t;
+    const t = await abrir('#/biblioteca/nao-existe'), { p } = t;
     await p.waitForSelector('.vazio');
     confere('recurso que não existe', (await p.locator('.vazio').innerText()).includes('não existe')); await fim(t);
   }
 
   console.log('Adicionar e editar');
   {
-    const t = await abrir('#/recursos/novo'), { p } = t;
+    const t = await abrir('#/recursos/visual-studio-code'), { p } = t;
+    await p.waitForSelector('#main h1');
+    confere('o endereço antigo (#/recursos/…) abre o item na Biblioteca', (await p.locator('#main h1').innerText()).includes('Visual Studio Code'));
+    await fim(t);
+  }
+  {
+    const t = await abrir('#/biblioteca/novo'), { p } = t;
     await p.waitForSelector('#rcs-form');
     await p.fill('#rcs-url', 'https://github.com/espressif/arduino-esp32');
     confere('colar o endereço sugere o nome e o publicador (GitHub)', await p.inputValue('#rcs-nome') === 'arduino-esp32' && await p.inputValue('#rcs-publicador') === 'espressif');
@@ -132,33 +138,33 @@ try {
     confere('sem a gestão marcada por engano: o padrão da NRO existe só para a gestão (aqui há)', await p.locator('#rcs-padrao_nro').count() === 1);
     await p.fill('#rcs-instrucoes_usar', '1. Instale o pacote.\n`pio run`');
     await p.click('#rcs-salvar'); await p.waitForSelector('#rcs-faz');
-    confere('salvou e abriu a página do recurso novo', await p.evaluate(() => location.hash) === '#/recursos/arduino-core-para-esp32' && await p.locator('#main h1').innerText() === 'Arduino core para ESP32'
+    confere('salvou e abriu a página do recurso novo', await p.evaluate(() => location.hash) === '#/biblioteca/arduino-core-para-esp32' && await p.locator('#main h1').innerText() === 'Arduino core para ESP32'
       && await p.locator('.rcs-tags .rcs-tag').count() === 2 && await p.locator('#rcs-usar .rcs-cod').count() === 1);
     confere('o servidor recebeu tudo', await p.evaluate(() => { const x = window.__rpcs.filter(y => y.nome === 'recurso_salvar').at(-1)?.p.p; return x.tipo === 'repositorio' && x.tags.length === 2 && x.plataformas.join() === 'Windows' && x.acesso.join() === 'gratis'; }));
     // o novo aparece na galeria
-    await p.evaluate(() => { location.hash = '#/recursos'; }); await p.waitForSelector('.rcs-card');
+    await p.evaluate(() => { location.hash = '#/biblioteca'; }); await p.waitForSelector('.rcs-card');
     confere('e já está na galeria', (await nomes(p)).includes('Arduino core para ESP32'));
     await fim(t);
   }
   {
-    const t = await abrir('#/recursos/novo'), { p } = t;
+    const t = await abrir('#/biblioteca/novo'), { p } = t;
     await p.waitForSelector('#rcs-form');
     await p.fill('#rcs-url', 'https://www.CODE.visualstudio.com/'); await p.fill('#rcs-nome', 'Outro VS Code'); await p.fill('#rcs-funcao', 'Repetido.');
     await p.click('#rcs-salvar'); await p.waitForSelector('#rcs-erro:not([hidden])');
-    confere('o mesmo endereço já está no catálogo: leva ao existente', (await p.locator('#rcs-erro').innerText()).includes('já está no catálogo') && await p.locator('#rcs-erro a[href="#/recursos/visual-studio-code"]').count() === 1);
+    confere('o mesmo endereço já está na Biblioteca: leva ao existente', (await p.locator('#rcs-erro').innerText()).includes('já está na Biblioteca') && await p.locator('#rcs-erro a[href="#/biblioteca/visual-studio-code"]').count() === 1);
     await fim(t);
   }
   {
-    const t = await abrir('#/recursos/figma/editar'), { p } = t;
+    const t = await abrir('#/biblioteca/figma/editar'), { p } = t;
     await p.waitForSelector('#rcs-form');
     confere('editar traz os valores', await p.inputValue('#rcs-nome') === 'Figma' && (await p.locator('#rcs-tags-ed .rcs-tag').count()) === 2 && await p.locator('input[name="rcs-acesso"][value="estudante"]').isChecked());
     await p.fill('#rcs-funcao', 'Design de interfaces e protótipos, colaborativo e no navegador.'); await p.selectOption('#rcs-status', 'inativo');
     await p.click('#rcs-salvar'); await p.waitForSelector('#rcs-faz');
-    confere('salva e volta à página', await p.evaluate(() => location.hash) === '#/recursos/figma' && (await p.locator('#rcs-faz').innerText()).includes('colaborativo') && (await p.locator('.cab-meta').innerText()).toLowerCase().includes('inativo'));
+    confere('salva e volta à página', await p.evaluate(() => location.hash) === '#/biblioteca/figma' && (await p.locator('#rcs-faz').innerText()).includes('colaborativo') && (await p.locator('.cab-meta').innerText()).toLowerCase().includes('inativo'));
     await fim(t);
   }
   {
-    const t = await abrir('#/recursos/novo', { teste:{ recursos:{ gestao:false } } }), { p } = t;
+    const t = await abrir('#/biblioteca/novo', { teste:{ recursos:{ gestao:false } } }), { p } = t;
     await p.waitForSelector('#rcs-form');
     confere('quem não é da gestão não vê "Padrão da NRO"', await p.locator('#rcs-padrao_nro').count() === 0);
     await fim(t);
@@ -166,7 +172,7 @@ try {
 
   console.log('No celular');
   {
-    const t = await abrir('#/recursos', { celular:true }), { p } = t;
+    const t = await abrir('#/biblioteca', { celular:true }), { p } = t;
     await p.waitForSelector('.rcs-card');
     confere('a busca fica à mostra e os filtros atrás do botão', await p.locator('#rcs-q').isVisible() && await p.locator('#rcs-fac').isHidden() && await p.locator('#rcs-abre').isVisible());
     await p.click('#rcs-abre');
@@ -174,14 +180,14 @@ try {
     await p.locator('#rcs-tipo-software').check(); await p.waitForTimeout(100);
     confere('e filtra', (await p.locator('#rcs-nf').innerText()).includes('1'));
     await fim(t);
-    const u = await abrir('#/recursos/visual-studio-code', { celular:true });
+    const u = await abrir('#/biblioteca/visual-studio-code', { celular:true });
     await u.p.waitForSelector('#rcs-faz');
     confere('a página no celular: tudo numa coluna', await u.p.locator('.objeto-lateral').boundingBox().then(b => b.width <= 390));
     await fim(u);
   }
   if (process.env.RCS_CAPTURAS){
     mkdirSync(process.env.RCS_CAPTURAS, { recursive:true });
-    for (const [n, h, c] of [['galeria', '#/recursos', false], ['item', '#/recursos/visual-studio-code', false], ['form', '#/recursos/novo', false], ['galeria-cel', '#/recursos', true]]){
+    for (const [n, h, c] of [['galeria', '#/biblioteca', false], ['item', '#/biblioteca/visual-studio-code', false], ['form', '#/biblioteca/novo', false], ['galeria-cel', '#/biblioteca', true]]){
       const t = await abrir(h, { celular:c }); await t.p.waitForTimeout(700); await t.p.screenshot({ path:`${process.env.RCS_CAPTURAS}/rcs-${n}.png`, fullPage:true }); await t.ctx.close();
     }
   }

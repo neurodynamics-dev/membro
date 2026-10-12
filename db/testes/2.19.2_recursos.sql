@@ -18,10 +18,13 @@ begin
 
   raise notice 'A semente';
   select count(*) into v_n from recursos;
-  perform ok(v_n >= 55, 'a semente trouxe os recursos (' || v_n || ')');
+  perform ok(v_n >= 100, 'a semente trouxe os recursos (' || v_n || ')');
   perform ok((select count(*) from recursos where padrao_nro) = 2 and (select padrao_nro from recursos where slug = 'visual-studio-code'), 'só VS Code e Git Bash são padrão da NRO');
   perform ok(exists (select 1 from recursos where slug = 'ghidra' and tipo = 'repositorio') and exists (select 1 from recursos where slug = 'figma' and 'estudante' = any(acesso)), 'Ghidra e Figma estão lá');
   perform ok(not exists (select 1 from recursos where length(funcao) = 0 or url !~ '^https?://' or tipo is null), 'todo recurso diz o que faz e tem endereço');
+  perform ok((select count(*) from recursos where tipo = 'extensao') >= 10 and (select count(*) from recursos where tipo = 'base') >= 10, 'extensões e bases de pesquisa entram na biblioteca');
+  perform ok((select count(*) from recursos where slug in ('pubmed','pedro')) >= 1 or (select count(*) from recursos where tipo = 'base' and nome ilike '%pubmed%') = 1, 'PubMed está na biblioteca');
+  perform ok((select count(*) from recursos where nome ilike '%sci-hub%' or url ilike '%sci-hub%') = 0, 'sem fontes de acesso não autorizado');
   perform ok((select count(*) from recursos where 'Gravação' = any(tags)) >= 15, 'a gravação de microcontroladores tem o seu conjunto');
   perform ok((select count(*) from jsonb_array_elements(public.recursos_listar()->'recursos')) = v_n, 'a lista traz todos');
 

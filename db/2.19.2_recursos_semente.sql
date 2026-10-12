@@ -1,10 +1,12 @@
 -- ============================================================
 -- SOMA 2.19.2: a semente do catálogo de Recursos
 --
--- Popula o catálogo com 61 recursos: os padrões da equipe (VS Code e Git
+-- Popula a Biblioteca com 109 itens: os padrões da equipe (VS Code e Git
 -- Bash), softwares (Figma, Altium, Fusion, SOLIDWORKS, Affinity, KiCad,
 -- GitHub Desktop), a gravação de microcontroladores pelo VS Code (ESP32,
--- STM32, ATSAM, Raspberry Pi, Arduino), os benefícios de estudante (GitHub
+-- STM32, ATSAM, Raspberry Pi, Arduino), extensões do VS Code e do navegador, as
+-- bases e ferramentas de pesquisa em saúde (PubMed, PEDro, CAPES, Zotero), os
+-- benefícios de estudante (GitHub
 -- Student Developer Pack e parceiros), repositórios da NSA e as ferramentas
 -- indicadas pela equipe (para o Claude Code e outras).
 --
@@ -1447,6 +1449,1104 @@ begin
    "Web"
   ],
   "acesso": [],
+  "padrao_nro": false
+ },
+ {
+  "nome": "GitLens",
+  "url": "https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens",
+  "publicador": "GitKraken",
+  "tipo": "extensao",
+  "funcao": "Mostra o Git dentro do editor: quem mudou cada linha e quando (blame), o histórico de cada arquivo e de cada linha, e permite explorar e comparar commits e branches. Os recursos básicos são gratuitos; alguns avançados dependem de plano.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"GitLens\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install eamodio.gitlens`",
+  "instrucoes_usar": "- Em cada linha, uma nota discreta mostra quem escreveu, quando e o commit. Passe o mouse para ver o detalhe e abrir a mudança.\n- A barra lateral do GitLens tem as visões de Commits, Branches, Remotes, Stashes e Tags.\n- Clique com o botão direito num arquivo > \"Open File History\" para ver as versões, ou compare duas branches na visão de Branches.\nPara ver o grafo de branches de forma visual, use junto o Git Graph.",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Git",
+   "Controle de versão",
+   "Visualização"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Git Graph",
+  "url": "https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph",
+  "publicador": "mhutchie",
+  "tipo": "extensao",
+  "funcao": "Mostra o repositório como um grafo: os commits, as branches e os merges desenhados, para entender de relance o que aconteceu e onde cada branch está. Dá para fazer checkout, merge, cherry-pick e criar branches com o clique do botão direito.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Git Graph\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install mhutchie.git-graph`",
+  "instrucoes_usar": "1. Clique em \"Git Graph\" na barra de status (rodapé do VS Code), ou use o comando \"Git Graph: View Git Graph\".\n2. Cada linha é um commit; as cores e as linhas mostram as branches. Clique num commit para ver os arquivos que mudou.\n3. Botão direito num commit ou numa branch: Checkout, Merge, Cherry Pick, Create Branch...\nCombine com o GitLens: o Git Graph dá a visão geral, o GitLens dá o detalhe linha a linha.",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Git",
+   "Controle de versão",
+   "Visualização"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Wokwi Simulator",
+  "url": "https://marketplace.visualstudio.com/items?itemName=wokwi.wokwi-vscode",
+  "publicador": "Wokwi",
+  "tipo": "extensao",
+  "funcao": "Simula ESP32, Arduino, Raspberry Pi Pico e STM32 dentro do VS Code, com LEDs, botões, displays e sensores virtuais, sem a placa na mão. Bom para testar o firmware antes de gravar. Pede uma licença gratuita de uso.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Wokwi Simulator\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install wokwi.wokwi-vscode`",
+  "instrucoes_usar": "1. Crie, na pasta do projeto, o arquivo `wokwi.toml` apontando para o firmware compilado, e o `diagram.json` com os componentes e as ligações (dá para montar o diagrama no site wokwi.com e copiar).\n2. Compile o projeto (por exemplo, com o PlatformIO).\n3. Comando \"Wokwi: Start Simulator\" (Ctrl+Shift+P). Na primeira vez, peça a licença gratuita com \"Wokwi: Request a New License\".\n4. A simulação abre ao lado do código; o monitor serial aparece no terminal.",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Microcontroladores",
+   "Simulação",
+   "ESP32",
+   "Arduino",
+   "Raspberry Pi"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "freemium"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Teleplot",
+  "url": "https://marketplace.visualstudio.com/items?itemName=alexnesnes.teleplot",
+  "publicador": "Alexandre Nesnas",
+  "tipo": "extensao",
+  "funcao": "Desenha gráficos em tempo real a partir do que a placa escreve na porta serial. Ideal para ver sinais (sensores, filtros, biossinais) enquanto o firmware roda, sem programa extra.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Teleplot\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install alexnesnes.teleplot`",
+  "instrucoes_usar": "No firmware, escreva na serial uma linha por valor, no formato `>nome:valor` (uma linha por amostra). Exemplo em C: `printf(\">temperatura:%.2f\\n\", t);`\nAbra o Teleplot pela barra lateral, escolha a porta serial e a velocidade (baud) e conecte: cada nome vira uma curva. Para vários sinais, mande uma linha por sinal.",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Microcontroladores",
+   "Visualização",
+   "Sinais biomédicos",
+   "Depuração"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Draw.io Integration",
+  "url": "https://marketplace.visualstudio.com/items?itemName=hediet.vscode-drawio",
+  "publicador": "Henning Dieterichs",
+  "tipo": "extensao",
+  "funcao": "Edita diagramas do draw.io (.drawio) dentro do VS Code: fluxogramas, diagramas de blocos e de arquitetura, que ficam versionados junto do código.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Draw.io Integration\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install hediet.vscode-drawio`",
+  "instrucoes_usar": "Crie um arquivo com a extensão `.drawio` (ou `.drawio.svg` / `.drawio.png`, que também aparecem como imagem nos READMEs) e abra: o editor do draw.io aparece. Salve como qualquer arquivo e faça commit no Git.",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Diagramas",
+   "Documentação"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Live Share",
+  "url": "https://marketplace.visualstudio.com/items?itemName=ms-vsliveshare.vsliveshare",
+  "publicador": "Microsoft",
+  "tipo": "extensao",
+  "funcao": "Edição e depuração colaborativas: você compartilha a sessão do seu VS Code e outra pessoa abre o mesmo projeto, vendo e editando junto, em tempo real.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Live Share\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install ms-vsliveshare.vsliveshare`",
+  "instrucoes_usar": "1. Entre com a conta do GitHub ou da Microsoft quando o VS Code pedir.\n2. Clique em \"Live Share\" na barra de status e envie o link a quem vai participar.\n3. Quem recebe abre o link no VS Code. Você controla o que é compartilhado (somente leitura ou edição).",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Colaboração"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Error Lens",
+  "url": "https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens",
+  "publicador": "Alexander",
+  "tipo": "extensao",
+  "funcao": "Mostra os erros e avisos do compilador e do linter na própria linha do código, em vez de só no painel de problemas.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Error Lens\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install usernamehw.errorlens`",
+  "instrucoes_usar": "Instale e abra um arquivo com erro: a mensagem aparece à direita da linha. Dá para ajustar o que aparece em Settings > \"errorLens\".",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Editor",
+   "Depuração"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Todo Tree",
+  "url": "https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree",
+  "publicador": "Gruntfuggly",
+  "tipo": "extensao",
+  "funcao": "Reúne numa árvore todos os TODO, FIXME e outras marcações deixadas nos comentários do código, para a equipe não esquecer o que ficou pendente.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Todo Tree\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install Gruntfuggly.todo-tree`",
+  "instrucoes_usar": "Escreva comentários como `// TODO: calibrar o ganho` ou `# FIXME: trata erro de leitura`. O ícone do Todo Tree na barra lateral lista tudo, por arquivo.",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Editor",
+   "Organização"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Remote - SSH",
+  "url": "https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh",
+  "publicador": "Microsoft",
+  "tipo": "extensao",
+  "funcao": "Abre uma pasta de outro computador (como uma Raspberry Pi ou um servidor do laboratório) no VS Code, por SSH: você edita, compila e roda lá, como se fosse local.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Remote - SSH\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install ms-vscode-remote.remote-ssh`",
+  "instrucoes_usar": "1. Tenha o SSH funcionando para a máquina (veja o item do Git Bash para criar a chave).\n2. Comando \"Remote-SSH: Connect to Host...\" e informe `usuario@endereco`.\n3. Abra a pasta pelo File > Open Folder. As extensões que você instalar rodam do lado remoto.",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Raspberry Pi",
+   "Linha de comando",
+   "Servidores"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Markdown All in One",
+  "url": "https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one",
+  "publicador": "Yu Zhang",
+  "tipo": "extensao",
+  "funcao": "Ajuda a escrever Markdown (README, documentação): atalhos, pré-visualização, índice automático e listas.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Markdown All in One\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install yzhang.markdown-all-in-one`",
+  "instrucoes_usar": "Abra um arquivo `.md` e use Ctrl+Shift+V para a pré-visualização. O comando \"Markdown All in One: Create Table of Contents\" gera o índice do documento.",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Documentação",
+   "Editor"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Serial Monitor",
+  "url": "https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-serial-monitor",
+  "publicador": "Microsoft",
+  "tipo": "extensao",
+  "funcao": "Monitor da porta serial dentro do VS Code: ler o que a placa escreve e enviar comandos, sem outro programa.",
+  "instrucoes_baixar": "No VS Code, abra Extensions (Ctrl+Shift+X), procure \"Serial Monitor\" e clique em Install. Ou abra a busca rápida (Ctrl+P) e rode:\n`ext install ms-vscode.vscode-serial-monitor`",
+  "instrucoes_usar": "Abra o painel \"Serial Monitor\" (aba ao lado do Terminal), escolha a porta e a velocidade (baud rate) e clique em \"Start Monitoring\". Feche o monitor antes de gravar a placa, porque a porta é uma só.",
+  "tags": [
+   "Extensão",
+   "VS Code",
+   "Microcontroladores",
+   "Depuração",
+   "Gravação"
+  ],
+  "plataformas": [
+   "VS Code"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Zotero Connector",
+  "url": "https://www.zotero.org/download/connectors",
+  "publicador": "Zotero",
+  "tipo": "extensao",
+  "funcao": "Extensão de navegador que salva com um clique a referência (e o PDF, quando acessível) do artigo, livro ou página que você está vendo direto no Zotero, com os dados já preenchidos.",
+  "instrucoes_baixar": "1. Instale o Zotero (veja o item Zotero).\n2. Abra zotero.org/download/connectors e instale a extensão do seu navegador (Chrome, Firefox, Edge ou Safari).\n3. Deixe o Zotero aberto no computador.",
+  "instrucoes_usar": "Numa página de artigo (PubMed, SciELO, periódicos, Google Scholar), o ícone do Zotero muda conforme o tipo de item. Clique nele para salvar a referência na coleção que estiver aberta. Em páginas comuns, ele salva o endereço como \"página da web\".",
+  "tags": [
+   "Extensão",
+   "Navegador",
+   "Referências",
+   "Pesquisa",
+   "Citações"
+  ],
+  "plataformas": [
+   "Chrome",
+   "Firefox",
+   "Edge",
+   "Safari"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Unpaywall",
+  "url": "https://unpaywall.org/products/extension",
+  "publicador": "OurResearch",
+  "tipo": "extensao",
+  "funcao": "Extensão de navegador que avisa quando existe uma versão legal e gratuita do artigo que você está lendo (repositórios institucionais, preprints, acesso aberto) e leva direto ao texto.",
+  "instrucoes_baixar": "Instale pela loja de extensões do Chrome ou do Firefox (a página acima tem os links).",
+  "instrucoes_usar": "Ao abrir um artigo que tem DOI, uma abinha verde (cadeado aberto) aparece na lateral quando há versão gratuita legal: clique para abrir o PDF. Se for cinza, não há versão aberta conhecida; tente o Portal de Periódicos CAPES.",
+  "tags": [
+   "Extensão",
+   "Navegador",
+   "Pesquisa",
+   "Acesso aberto",
+   "Periódicos"
+  ],
+  "plataformas": [
+   "Chrome",
+   "Firefox"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Open Access Button",
+  "url": "https://openaccessbutton.org",
+  "publicador": "Open Access Button",
+  "tipo": "extensao",
+  "funcao": "Procura versões de acesso aberto de um artigo pelo DOI ou pelo título e, se não houver, ajuda a pedir o texto aos autores.",
+  "instrucoes_baixar": "Use no site openaccessbutton.org ou instale a extensão pela loja do navegador.",
+  "instrucoes_usar": "Cole o DOI, o título ou o endereço do artigo na busca. Se houver cópia aberta, ela aparece; se não, o serviço oferece pedir ao autor.",
+  "tags": [
+   "Extensão",
+   "Navegador",
+   "Pesquisa",
+   "Acesso aberto",
+   "Periódicos"
+  ],
+  "plataformas": [
+   "Web",
+   "Chrome",
+   "Firefox"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Better BibTeX para Zotero",
+  "url": "https://retorque.re/zotero-better-bibtex/",
+  "publicador": "Emiliano Heyns",
+  "tipo": "extensao",
+  "funcao": "Complemento do Zotero para quem escreve em LaTeX: gera chaves de citação estáveis e mantém um arquivo .bib sempre atualizado com a sua biblioteca.",
+  "instrucoes_baixar": "1. Baixe o arquivo .xpi na página do projeto.\n2. No Zotero: Tools > Plugins (ou Add-ons), clique na engrenagem > \"Install Plugin From File\" e escolha o arquivo.",
+  "instrucoes_usar": "Clique com o botão direito numa coleção > \"Export Collection\" > \"Better BibTeX\" e marque \"Keep updated\": o .bib é atualizado quando a biblioteca muda. No LaTeX, cite com `\\cite{chave}`.",
+  "tags": [
+   "Extensão",
+   "Referências",
+   "LaTeX",
+   "Citações"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "PubMed",
+  "url": "https://pubmed.ncbi.nlm.nih.gov",
+  "publicador": "NIH / NLM",
+  "tipo": "base",
+  "funcao": "Base gratuita de literatura biomédica da Biblioteca Nacional de Medicina dos EUA, com mais de 35 milhões de referências (MEDLINE e outras). Ponto de partida para achar artigos em saúde, engenharia biomédica e reabilitação.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador. Para o texto completo de revistas pagas, entre pelo Portal de Periódicos CAPES (veja o item).",
+  "instrucoes_usar": "1. Busque por termos; use o vocabulário controlado MeSH para resultados mais precisos, por exemplo: `(\"Stroke\"[MeSH Terms]) AND rehabilitation`\n2. Refine pelos filtros à esquerda (tipo de artigo: ensaio clínico, revisão sistemática; ano; texto completo gratuito).\n3. Salve referências com \"Save\" ou \"Send to\" (Clipboard, Citation manager). Com uma conta My NCBI dá para criar alertas de novas publicações para uma busca.\n4. Com o Zotero Connector, a referência vai direto para o Zotero.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Base de dados",
+   "Evidência clínica",
+   "Periódicos"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "PEDro",
+  "url": "https://pedro.org.au",
+  "publicador": "PEDro (Universidade de Sydney)",
+  "tipo": "base",
+  "funcao": "Base gratuita de evidências em fisioterapia: ensaios clínicos, revisões sistemáticas e diretrizes, cada ensaio com uma nota de qualidade metodológica (escala PEDro, de 0 a 10). Útil para projetos de reabilitação e dispositivos de apoio.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador (há interface em português).",
+  "instrucoes_usar": "1. Use a \"Busca avançada\" para combinar o problema, a parte do corpo, o tipo de terapia e o método (ensaio clínico, revisão, diretriz).\n2. Ordene ou filtre pela nota PEDro: ensaios com nota alta têm melhor qualidade metodológica.\n3. Cada registro traz o resumo e, quando existir, o link para o texto completo.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Base de dados",
+   "Evidência clínica",
+   "Reabilitação"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Portal de Periódicos CAPES",
+  "url": "https://www.periodicos.capes.gov.br",
+  "publicador": "CAPES",
+  "tipo": "base",
+  "funcao": "Acesso a texto completo de milhares de revistas científicas e bases de dados pagas (como Web of Science, Scopus, IEEE, ScienceDirect e outras), liberado a quem tem vínculo com instituições participantes, inclusive a UFMG.",
+  "instrucoes_baixar": "Não há o que baixar. O acesso é pelo portal, com o login da universidade, de dentro ou de fora da rede da UFMG.",
+  "instrucoes_usar": "1. Abra o portal e use \"Acesso CAFe\" (ou \"Meu espaço\").\n2. Escolha a instituição (UFMG) e entre com o login institucional.\n3. Busque no \"Acervo\" por título, assunto ou base. Os resultados trazem o link de acesso ao texto completo.\n4. Se um artigo pedir pagamento fora do portal, volte ao portal e busque o título por lá.\nConfira no site da biblioteca da UFMG as orientações atuais de acesso remoto.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Base de dados",
+   "Periódicos",
+   "UFMG"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "estudante"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "SciELO",
+  "url": "https://www.scielo.org",
+  "publicador": "SciELO",
+  "tipo": "base",
+  "funcao": "Biblioteca eletrônica de periódicos científicos de acesso aberto da América Latina, Portugal e Espanha. A melhor fonte para literatura científica em português, inclusive em saúde.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Busque em \"Pesquisa\" por assunto, autor ou revista; filtre por área (Ciências da Saúde, Engenharias) e idioma. Todos os textos são gratuitos, com PDF e HTML.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Base de dados",
+   "Periódicos",
+   "Acesso aberto"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "BVS Saúde e LILACS",
+  "url": "https://bvsalud.org",
+  "publicador": "BIREME / OPAS",
+  "tipo": "base",
+  "funcao": "Portal da Biblioteca Virtual em Saúde, que reúne a LILACS (literatura científica da América Latina e Caribe em saúde), a MEDLINE e outras fontes, com interface em português.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Busque no campo principal; use os filtros à esquerda (base de dados, assunto principal, tipo de estudo, idioma). Os descritores DeCS (equivalentes ao MeSH, em português) melhoram a busca.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Base de dados",
+   "Evidência clínica",
+   "Periódicos"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Europe PMC",
+  "url": "https://europepmc.org",
+  "publicador": "EMBL-EBI",
+  "tipo": "base",
+  "funcao": "Repositório e buscador gratuito de literatura em ciências da vida, com texto completo de acesso aberto, preprints e anotações de dados e de genes.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Busque como no PubMed e use o filtro \"Free full text\" para ver só o que dá para ler de graça. A busca também inclui preprints (bioRxiv, medRxiv).",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Base de dados",
+   "Acesso aberto",
+   "Periódicos"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "ClinicalTrials.gov",
+  "url": "https://clinicaltrials.gov",
+  "publicador": "NIH / NLM",
+  "tipo": "base",
+  "funcao": "Registro de ensaios clínicos feito no mundo todo, mantido pelos EUA: mostra o que está sendo testado, em que fase, com quem e com quais resultados. Serve para saber o que já foi feito antes de planejar um estudo.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Busque por condição, intervenção ou dispositivo e filtre por situação (recrutando, concluído) e país. Cada registro traz o protocolo e, quando houver, os resultados.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Base de dados",
+   "Evidência clínica",
+   "Ensaios clínicos"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "ReBEC (Registro Brasileiro de Ensaios Clínicos)",
+  "url": "https://ensaiosclinicos.gov.br",
+  "publicador": "Fiocruz / Ministério da Saúde",
+  "tipo": "base",
+  "funcao": "Plataforma brasileira de registro e consulta de ensaios clínicos. Pesquisas clínicas feitas no Brasil são registradas aqui, o que também é exigido por muitas revistas para publicar.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Para consultar, busque por condição ou intervenção. Para registrar um estudo, crie uma conta de pesquisador e siga o formulário (confira os prazos e as regras com o seu orientador e com o comitê de ética).",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Base de dados",
+   "Ensaios clínicos"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "DOAJ (Directory of Open Access Journals)",
+  "url": "https://doaj.org",
+  "publicador": "DOAJ",
+  "tipo": "base",
+  "funcao": "Diretório de revistas científicas de acesso aberto avaliadas por critérios de qualidade. Ajuda a escolher onde publicar e a identificar revistas confiáveis.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Busque por revistas ou por artigos; filtre por assunto, país e idioma. Antes de enviar um trabalho a uma revista nova, confira se ela está no DOAJ.",
+  "tags": [
+   "Pesquisa",
+   "Base de dados",
+   "Periódicos",
+   "Acesso aberto"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Google Acadêmico",
+  "url": "https://scholar.google.com",
+  "publicador": "Google",
+  "tipo": "base",
+  "funcao": "Buscador de artigos, teses, livros e patentes de qualquer área, com contagem de citações e o botão para citar nos principais formatos.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Busque entre aspas para frases exatas. \"Citado por\" mostra quem usou o trabalho depois; \"Artigos relacionados\" amplia a busca. O botão de aspas (\") gera a citação (inclusive em BibTeX). Configure \"Links da biblioteca\" para a UFMG, se disponível, para ver o acesso institucional.",
+  "tags": [
+   "Pesquisa",
+   "Base de dados",
+   "Periódicos",
+   "Citações"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Semantic Scholar",
+  "url": "https://www.semanticscholar.org",
+  "publicador": "Allen Institute for AI",
+  "tipo": "base",
+  "funcao": "Buscador acadêmico gratuito com recursos de IA: resumos curtos de cada artigo, as citações mais influentes e artigos relacionados.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Busque por tema; use os filtros de área, ano e \"Has PDF\". O resumo curto (TLDR) ajuda a triar rápido. Crie uma conta para salvar bibliotecas e alertas.",
+  "tags": [
+   "Pesquisa",
+   "Base de dados",
+   "Periódicos",
+   "IA"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Lens.org",
+  "url": "https://www.lens.org",
+  "publicador": "Cambia",
+  "tipo": "base",
+  "funcao": "Busca unificada de artigos científicos e de patentes, ligando uma pesquisa à tecnologia patenteada. Útil para avaliar o estado da arte e a liberdade de operar em PD&I.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Escolha \"Scholarly Works\" ou \"Patents\"; combine termos e classificações; salve coleções e exporte os resultados (a conta gratuita permite várias exportações).",
+  "tags": [
+   "Pesquisa",
+   "Base de dados",
+   "Patentes",
+   "Inovação"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "freemium"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Google Patents",
+  "url": "https://patents.google.com",
+  "publicador": "Google",
+  "tipo": "base",
+  "funcao": "Busca gratuita de patentes de vários países, com o texto, os desenhos, as citações e o estado jurídico. Ponto de partida para o estado da arte em dispositivos.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Busque por palavras-chave e refine por país, data e classificação (CPC). Abra uma patente para ver as reivindicações (claims), que definem o que é protegido.",
+  "tags": [
+   "Pesquisa",
+   "Base de dados",
+   "Patentes",
+   "Inovação"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "INPI: busca de patentes (Brasil)",
+  "url": "https://busca.inpi.gov.br/pePI/",
+  "publicador": "INPI",
+  "tipo": "base",
+  "funcao": "Base oficial do Instituto Nacional da Propriedade Industrial: consulta de patentes, marcas e programas de computador registrados no Brasil.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Entre como visitante, escolha \"Patente\", busque por palavras do título ou do resumo, ou pelo número do pedido. Para dúvidas de proteção da propriedade intelectual, consulte o núcleo de inovação da UFMG.",
+  "tags": [
+   "Pesquisa",
+   "Base de dados",
+   "Patentes",
+   "Inovação"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "PhysioNet",
+  "url": "https://physionet.org",
+  "publicador": "MIT Laboratory for Computational Physiology",
+  "tipo": "base",
+  "funcao": "Repositório de bancos de dados abertos de sinais fisiológicos (ECG, EEG, sinais de UTI) e de softwares para analisá-los. Fonte de dados para testar algoritmos de biossinais sem coletar do zero.",
+  "instrucoes_baixar": "Os dados e as ferramentas são baixados pelo site de cada projeto. Alguns conjuntos exigem cadastro e treinamento em ética de pesquisa antes de liberar o acesso.",
+  "instrucoes_usar": "Procure em \"Data\" por tipo de sinal. Cada banco traz a descrição, a licença e o modo de acesso. A biblioteca WFDB (Python e C) lê os formatos usados.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Base de dados",
+   "Sinais biomédicos",
+   "Dados abertos"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Plataforma Brasil",
+  "url": "https://plataformabrasil.saude.gov.br",
+  "publicador": "Ministério da Saúde (CEP/CONEP)",
+  "tipo": "servico",
+  "funcao": "Sistema nacional onde se registra e se submete à análise ética toda pesquisa com seres humanos feita no Brasil, pelos comitês de ética em pesquisa (CEP) e pela CONEP.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador, com cadastro.",
+  "instrucoes_usar": "Pesquisas com participantes humanos (inclusive testes de dispositivos) precisam de aprovação do CEP antes de começar. Fale com o seu orientador e com o CEP da UFMG para saber a documentação (projeto, TCLE e outros) e os prazos.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Ética em pesquisa"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "EQUATOR Network",
+  "url": "https://www.equator-network.org",
+  "publicador": "EQUATOR Network",
+  "tipo": "referencia",
+  "funcao": "Biblioteca de diretrizes para relatar pesquisas em saúde (CONSORT para ensaios, STROBE para observacionais, PRISMA para revisões, STARD para testes diagnósticos e outras), com listas de verificação.",
+  "instrucoes_baixar": "Não há o que baixar: acesse pelo navegador.",
+  "instrucoes_usar": "Use \"Library for health research reporting\" para achar a diretriz do seu tipo de estudo e baixe a lista de verificação. Revistas pedem a diretriz seguida na submissão.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Evidência clínica",
+   "Escrita científica"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "PRISMA",
+  "url": "https://www.prisma-statement.org",
+  "publicador": "PRISMA",
+  "tipo": "referencia",
+  "funcao": "Diretriz e fluxograma para relatar revisões sistemáticas e meta-análises. Referência obrigatória para quem faz revisão sistemática.",
+  "instrucoes_baixar": "Não há o que baixar: o site traz a lista de verificação e o diagrama de fluxo para uso.",
+  "instrucoes_usar": "Use a lista de verificação (27 itens, na versão 2020) para escrever e conferir a revisão, e o diagrama de fluxo para mostrar quantos estudos foram encontrados, triados e incluídos.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Revisão sistemática",
+   "Escrita científica"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Web of Science",
+  "url": "https://www.webofscience.com",
+  "publicador": "Clarivate",
+  "tipo": "base",
+  "funcao": "Base de dados de citações de artigos científicos, com métricas de periódicos. Acesso pago, liberado pelo Portal de Periódicos CAPES para a UFMG.",
+  "instrucoes_baixar": "Acesse pelo Portal de Periódicos CAPES (login institucional), na lista de bases.",
+  "instrucoes_usar": "Busque por tema, autor ou revista; ordene por citações para achar os trabalhos mais influentes e use \"Citation Report\" para ver o impacto.",
+  "tags": [
+   "Pesquisa",
+   "Base de dados",
+   "Periódicos",
+   "Citações"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "pago",
+   "estudante"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Scopus",
+  "url": "https://www.scopus.com",
+  "publicador": "Elsevier",
+  "tipo": "base",
+  "funcao": "Base de dados de resumos e citações da Elsevier, com perfis de autores e métricas. Acesso pago, liberado pelo Portal de Periódicos CAPES para a UFMG.",
+  "instrucoes_baixar": "Acesse pelo Portal de Periódicos CAPES (login institucional), na lista de bases.",
+  "instrucoes_usar": "Busque por tema e refine por área, tipo de documento e ano; use as ferramentas de análise para ver tendências e autores.",
+  "tags": [
+   "Pesquisa",
+   "Base de dados",
+   "Periódicos",
+   "Citações"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "pago",
+   "estudante"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Zotero",
+  "url": "https://www.zotero.org",
+  "publicador": "Corporation for Digital Scholarship",
+  "tipo": "software",
+  "funcao": "Gerenciador de referências gratuito e de código aberto: guarda os artigos e os PDFs, organiza em coleções e insere citações e a lista de referências no Word, no LibreOffice e no Google Docs, em estilos como ABNT e Vancouver.",
+  "instrucoes_baixar": "1. Baixe em zotero.org/download e instale.\n2. Instale também o Zotero Connector no navegador (veja o item).\n3. Crie uma conta gratuita no Zotero para sincronizar a biblioteca entre computadores (o armazenamento de arquivos é limitado no plano gratuito; as referências, não).",
+  "instrucoes_usar": "- Salve referências com o Connector, ou arraste um PDF para o Zotero (ele lê os dados).\n- Estilos: Edit > Settings > Cite. Para ABNT, baixe o estilo em zotero.org/styles.\n- No Word ou no LibreOffice, a aba Zotero tem \"Add/Edit Citation\" e \"Add/Edit Bibliography\". No Google Docs, instale o conector pelo Zotero.\n- Trabalhos em grupo: crie uma \"Group Library\" para dividir referências com a equipe.",
+  "tags": [
+   "Pesquisa",
+   "Referências",
+   "Citações",
+   "Código aberto"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Mendeley Reference Manager",
+  "url": "https://www.mendeley.com/reference-manager",
+  "publicador": "Elsevier",
+  "tipo": "software",
+  "funcao": "Gerenciador de referências e leitor de PDF com anotações, da Elsevier. Alternativa ao Zotero para quem já usa o Mendeley.",
+  "instrucoes_baixar": "Baixe em mendeley.com/reference-manager e entre com uma conta Mendeley ou Elsevier.",
+  "instrucoes_usar": "Importe PDFs, anote, organize em pastas e use o Mendeley Cite no Word para inserir citações. O armazenamento gratuito é limitado.",
+  "tags": [
+   "Pesquisa",
+   "Referências",
+   "Citações"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux",
+   "Web"
+  ],
+  "acesso": [
+   "freemium"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Rayyan",
+  "url": "https://www.rayyan.ai",
+  "publicador": "Rayyan",
+  "tipo": "servico",
+  "funcao": "Ferramenta para triagem de artigos em revisões sistemáticas: duas pessoas decidem, de forma independente, o que incluir ou excluir, com sugestões por IA e controle de conflitos.",
+  "instrucoes_baixar": "Não há o que baixar: use no navegador, com conta gratuita.",
+  "instrucoes_usar": "Crie uma revisão, importe as referências (exportadas do PubMed, do Zotero ou de outras bases), convide quem vai triar, e cada pessoa marca \"Include\", \"Exclude\" ou \"Maybe\". No fim, resolva os conflitos e exporte.",
+  "tags": [
+   "Pesquisa",
+   "Revisão sistemática",
+   "Colaboração",
+   "Evidência clínica"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "freemium"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Connected Papers",
+  "url": "https://www.connectedpapers.com",
+  "publicador": "Connected Papers",
+  "tipo": "servico",
+  "funcao": "Mostra um mapa visual de artigos relacionados a um trabalho de partida, para descobrir a literatura ao redor sem depender só de palavras-chave.",
+  "instrucoes_baixar": "Não há o que baixar: use no navegador. O plano gratuito limita o número de grafos por mês.",
+  "instrucoes_usar": "Cole o título, o DOI ou o endereço de um artigo-chave: o grafo agrupa trabalhos parecidos e mostra os mais citados e os mais recentes.",
+  "tags": [
+   "Pesquisa",
+   "Visualização",
+   "Periódicos"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "freemium"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "ResearchRabbit",
+  "url": "https://www.researchrabbit.ai",
+  "publicador": "ResearchRabbit",
+  "tipo": "servico",
+  "funcao": "Descoberta de literatura por coleções: você monta uma coleção de artigos e a ferramenta sugere trabalhos parecidos, autores e redes de citação, com alertas.",
+  "instrucoes_baixar": "Não há o que baixar: use no navegador, com conta.",
+  "instrucoes_usar": "Importe artigos (do Zotero, por exemplo) numa coleção e explore \"Similar Work\", \"Earlier Work\" e \"Later Work\".",
+  "tags": [
+   "Pesquisa",
+   "Visualização",
+   "Periódicos"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "freemium"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "REDCap",
+  "url": "https://projectredcap.org",
+  "publicador": "REDCap Consortium (Vanderbilt)",
+  "tipo": "software",
+  "funcao": "Sistema web para coleta e gestão de dados de pesquisa: formulários, bancos de dados, questionários e acompanhamento de participantes, com controle de acesso e trilha de auditoria. Instalado e oferecido por instituições do consórcio.",
+  "instrucoes_baixar": "O REDCap não é de uso direto: cada instituição o instala. Verifique se a UFMG, a Faculdade de Medicina ou o hospital universitário oferece uma instalação e como pedir acesso.",
+  "instrucoes_usar": "Com acesso, crie um projeto, desenhe os formulários (instrumentos) e defina os eventos. Cuide dos dados pessoais conforme a LGPD e o que o comitê de ética aprovou.",
+  "tags": [
+   "Saúde",
+   "Pesquisa",
+   "Coleta de dados",
+   "A confirmar"
+  ],
+  "plataformas": [
+   "Web"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "3D Slicer",
+  "url": "https://www.slicer.org",
+  "publicador": "Slicer Community",
+  "tipo": "software",
+  "funcao": "Plataforma gratuita e de código aberto para visualizar, segmentar e analisar imagens médicas (tomografia, ressonância, ultrassom), inclusive para gerar modelos 3D de órgãos.",
+  "instrucoes_baixar": "Baixe a versão estável em slicer.org e instale. Para recursos extras, use o \"Extension Manager\" dentro do programa.",
+  "instrucoes_usar": "Carregue um exame (DICOM) pelo botão \"DICOM\" ou \"Add Data\", use o módulo \"Segment Editor\" para marcar as estruturas e exporte o modelo em STL para impressão 3D. Imagens reais de pacientes exigem autorização e anonimização.",
+  "tags": [
+   "Saúde",
+   "Imagens médicas",
+   "Código aberto",
+   "Modelagem 3D"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "Fiji (ImageJ)",
+  "url": "https://imagej.net/software/fiji/",
+  "publicador": "ImageJ / Fiji",
+  "tipo": "software",
+  "funcao": "Programa gratuito de análise de imagens científicas (microscopia, histologia, radiografias), com milhares de plugins e macros para medir, contar e processar.",
+  "instrucoes_baixar": "Baixe o pacote em imagej.net/software/fiji, descompacte e execute (não precisa instalar).",
+  "instrucoes_usar": "Abra uma imagem (File > Open), calibre a escala (Analyze > Set Scale), meça (Analyze > Measure) e use Process para filtros. Grave sequências de ações como macros para repetir em várias imagens.",
+  "tags": [
+   "Saúde",
+   "Imagens médicas",
+   "Código aberto"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "NeuroKit2",
+  "url": "https://github.com/neuropsychology/NeuroKit",
+  "publicador": "neuropsychology",
+  "tipo": "repositorio",
+  "funcao": "Biblioteca em Python para processar biossinais (ECG, EEG, EMG, EDA, respiração, PPG): limpa, detecta picos e calcula medidas como a variabilidade da frequência cardíaca.",
+  "instrucoes_baixar": "`pip install neurokit2`",
+  "instrucoes_usar": "Simule um sinal e processe:\n`import neurokit2 as nk`\n`ecg = nk.ecg_simulate(duration=10, sampling_rate=250)`\n`sinais, info = nk.ecg_process(ecg, sampling_rate=250)`\n`nk.ecg_plot(sinais, info)`\nO repositório tem tutoriais para cada tipo de sinal.",
+  "tags": [
+   "Saúde",
+   "Sinais biomédicos",
+   "Python",
+   "Código aberto"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "MNE-Python",
+  "url": "https://github.com/mne-tools/mne-python",
+  "publicador": "MNE",
+  "tipo": "repositorio",
+  "funcao": "Biblioteca em Python para analisar EEG e MEG: filtragem, remoção de artefatos, épocas, espectros e mapas topográficos.",
+  "instrucoes_baixar": "`pip install mne`",
+  "instrucoes_usar": "`import mne`\n`raw = mne.io.read_raw_edf(\"registro.edf\", preload=True)`\n`raw.filter(1, 40)`\n`raw.plot()`\nO site mne.tools tem tutoriais passo a passo e conjuntos de dados de exemplo.",
+  "tags": [
+   "Saúde",
+   "Sinais biomédicos",
+   "Python",
+   "EEG",
+   "Código aberto"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "EEGLAB",
+  "url": "https://sccn.ucsd.edu/eeglab/",
+  "publicador": "Swartz Center for Computational Neuroscience",
+  "tipo": "software",
+  "funcao": "Caixa de ferramentas gratuita para MATLAB (e Octave) de análise de EEG: ICA para remover artefatos, análise tempo-frequência e visualização.",
+  "instrucoes_baixar": "Baixe em sccn.ucsd.edu/eeglab, descompacte, adicione a pasta ao caminho do MATLAB e rode `eeglab`.",
+  "instrucoes_usar": "File > Import data para carregar o registro; use Tools > Filter, Run ICA e Plot para limpar e inspecionar os sinais. Há tutoriais no site.",
+  "tags": [
+   "Saúde",
+   "Sinais biomédicos",
+   "EEG",
+   "MATLAB"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "JASP",
+  "url": "https://jasp-stats.org",
+  "publicador": "JASP Team (Universidade de Amsterdã)",
+  "tipo": "software",
+  "funcao": "Programa de estatística gratuito e de código aberto, com interface gráfica parecida com o SPSS: testes t, ANOVA, regressão, correlações e estatística bayesiana, com a saída pronta para artigo.",
+  "instrucoes_baixar": "Baixe o instalador em jasp-stats.org e instale.",
+  "instrucoes_usar": "Abra um arquivo (CSV, planilha), escolha a análise na barra superior, arraste as variáveis e marque as opções. As tabelas e os gráficos podem ser copiados para o texto.",
+  "tags": [
+   "Pesquisa",
+   "Estatística",
+   "Código aberto"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux"
+  ],
+  "acesso": [
+   "gratis"
+  ],
+  "padrao_nro": false
+ },
+ {
+  "nome": "jamovi",
+  "url": "https://www.jamovi.org",
+  "publicador": "jamovi",
+  "tipo": "software",
+  "funcao": "Programa de estatística gratuito e de código aberto, com planilha e análises em janelas, construído sobre o R. Alternativa ao SPSS.",
+  "instrucoes_baixar": "Baixe o instalador em jamovi.org e instale.",
+  "instrucoes_usar": "Abra os dados, use a aba Analyses (Exploration, T-Tests, ANOVA, Regression...) e arraste as variáveis. O resultado se atualiza ao mudar as opções.",
+  "tags": [
+   "Pesquisa",
+   "Estatística",
+   "Código aberto"
+  ],
+  "plataformas": [
+   "Windows",
+   "macOS",
+   "Linux"
+  ],
+  "acesso": [
+   "gratis"
+  ],
   "padrao_nro": false
  }
 ]

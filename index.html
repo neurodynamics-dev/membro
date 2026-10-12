@@ -1743,8 +1743,8 @@ const ROTAS = {
   marca: {desenha:'pageMarca',modulo:'marca'},
   home:        { desenha:'pageHome' },
   agenda:      { desenha:'pageAgenda', modulo:'agenda' },
-  /* Recursos (2.19.2): o catálogo colaborativo de ferramentas da equipe */
-  recursos:    { desenha:'pageRecursos', modulo:'recursos' },
+  /* Biblioteca (2.19.2): o catálogo colaborativo de ferramentas da equipe (o módulo e o banco se chamam recursos) */
+  biblioteca:  { desenha:'pageRecursos', modulo:'recursos' },
   /* a sala do LABBIO no celular: o QR do tablet da porta abre aqui (fora do menu) */
   sala:        { desenha:'pageSala', modulo:'sala' },
   atividades:  { desenha:'pageAtividades', modulo:'atividades' },
@@ -1778,6 +1778,7 @@ const ROTAS = {
 const ALIAS = {
   brand:['marca',null],assinatura:['marca','assinatura'],
   feed:        ()    => ['equipe', 'feed'],
+  recursos:    (sub) => ['biblioteca', sub],   /* o primeiro nome da Biblioteca (2.19.2) */
   calendario:  (sub) => ['agenda', sub],
   organizacao: ()    => ['equipe', null],
   quadro:      (sub) => ['equipe', sub || 'quadro'],
@@ -1937,10 +1938,10 @@ function arvoreDoMenu(){
       { sub:'todos', rot:'Todos os treinamentos' },
       { sub:'certificados', rot:'Meus certificados', tambem:'^certificado$' },
       ...(gereTreinamentos() ? [{ sep:true }, { sub:'config', rot:'Configurações', tambem:'^(novo|gestao)$' }] : [])] },
-    /* Recursos: o catálogo colaborativo de ferramentas (padrões, softwares, gravação de placas, benefícios de estudante) */
-    { r:'recursos', rot:'Recursos', ic:'recursos', filhos: [
-      { sub:'', rot:'Todos os recursos', tambem:'^(?!novo$).+' },
-      { sub:'novo', rot:'Adicionar recurso' }] },
+    /* Biblioteca: o catálogo colaborativo de ferramentas (padrões, softwares, extensões, gravação de placas, saúde e pesquisa) */
+    { r:'biblioteca', rot:'Biblioteca', ic:'recursos', filhos: [
+      { sub:'', rot:'Todos os itens', tambem:'^(?!novo$).+' },
+      { sub:'novo', rot:'Adicionar item' }] },
     /* Meus pedidos mora aqui desde a v24: o décimo primeiro espaço não
        cabia, e o acompanhamento do que se pediu é parte de pedir. O
        que o SOMA faz sozinho, sem pedido a ninguém — a declaração, o

@@ -1,23 +1,23 @@
 /* ============================================================
-   MÓDULO · RECURSOS (2.19.2)
-   O catálogo colaborativo de ferramentas da equipe: softwares, repositórios,
+   MÓDULO · BIBLIOTECA (2.19.2)
+   A Biblioteca, o catálogo colaborativo de ferramentas da equipe: softwares, repositórios,
    serviços, benefícios de estudante e a gravação de microcontroladores.
-   Qualquer membro adiciona, edita, avalia (1 a 5 estrelas) e comenta; só a
+   Qualquer membro adiciona itens, edita, avalia (1 a 5 estrelas) e comenta; só a
    gestão marca "Padrão da NRO". O banco é db/2.19.2_recursos.sql.
 
-     #/recursos                galeria, com os filtros na lateral
-     #/recursos/novo           adicionar (basta o endereço, o nome e o que faz)
-     #/recursos/<slug>         a página do recurso
-     #/recursos/<slug>/editar  editar
+     #/biblioteca                galeria, com os filtros na lateral
+     #/biblioteca/novo           adicionar (basta o endereço, o nome e o que faz)
+     #/biblioteca/<slug>         a página do item
+     #/biblioteca/<slug>/editar  editar
 
    Depende da casca para: sb, $, esc, state, toast, cabecalho, estado, ic,
    layoutObjeto, spec, fmtD, fmtDT, VERSAO.
    Os nomes daqui começam com rcs (nenhum outro módulo usa).
    ============================================================ */
 
-const RCS_TIPOS = [['software', 'Software'], ['repositorio', 'Repositório'], ['servico', 'Serviço'], ['beneficio', 'Benefício'], ['referencia', 'Referência']];
+const RCS_TIPOS = [['software', 'Software'], ['extensao', 'Extensão'], ['repositorio', 'Repositório'], ['servico', 'Serviço'], ['base', 'Base de pesquisa'], ['beneficio', 'Benefício'], ['referencia', 'Referência']];
 const RCS_ACESSO = [['gratis', 'Gratuito'], ['freemium', 'Plano gratuito'], ['pago', 'Pago'], ['estudante', 'Grátis para estudantes'], ['labbio', 'Licença do LABBIO']];
-const RCS_PLATS = ['Windows', 'macOS', 'Linux', 'Web', 'VS Code', 'Android', 'iOS'];
+const RCS_PLATS = ['Windows', 'macOS', 'Linux', 'Web', 'VS Code', 'Chrome', 'Firefox', 'Edge', 'Safari', 'Android', 'iOS'];
 const RCS_ORDENS = [['destaque', 'Em destaque'], ['nome', 'Nome'], ['nota', 'Melhor avaliados'], ['comentarios', 'Mais comentados'], ['recentes', 'Mais recentes']];
 const RCS_ESTRELA = 'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z';
 const rcsRot = (lista, k) => (lista.find(([v]) => v === k) || [, k])[1];
@@ -116,21 +116,21 @@ function rcsOrdenar(lista, ordem){
   return l.sort((a, b) => (b.padrao_nro - a.padrao_nro) || (Number(b.media) || 0) * Math.min(b.avaliacoes, 3) - (Number(a.media) || 0) * Math.min(a.avaliacoes, 3) || nome(a, b));
 }
 async function rcsGaleria(){
-  $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Recursos', lead:'As ferramentas que a equipe usa, conhece e quer testar: os padrões, os softwares, a gravação de placas, os benefícios de estudante. Qualquer pessoa pode adicionar, avaliar e comentar.' }) + estado.carregando();
+  $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Biblioteca', lead:'As ferramentas que a equipe usa, conhece e quer testar: os padrões, os softwares, a gravação de placas, os benefícios de estudante. Qualquer pessoa pode adicionar, avaliar e comentar.' }) + estado.carregando();
   if (!await rcsCarregar(true)){
-    $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Recursos' }) + estado.erro({ texto:'Não foi possível carregar os recursos agora.',
+    $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Biblioteca' }) + estado.erro({ texto:'Não foi possível carregar a Biblioteca agora.',
       acao:'<button class="btn ghost mini" type="button" onclick="rcsGaleria()">Tentar de novo</button>' });
     return;
   }
-  $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Recursos',
+  $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Biblioteca',
       lead:'As ferramentas que a equipe usa, conhece e quer testar: os padrões, os softwares, a gravação de placas, os benefícios de estudante. Qualquer pessoa pode adicionar, avaliar e comentar.',
-      acoes:'<a class="btn solid" href="#/recursos/novo" id="rcs-novo">' + ic('plus') + ' Adicionar recurso</a>' }) + `
+      acoes:'<a class="btn solid" href="#/biblioteca/novo" id="rcs-novo">' + ic('plus') + ' Adicionar item</a>' }) + `
     <div class="rcs-layout">
-      <aside class="rcs-filtros${rcsM.painel ? ' aberto' : ''}" id="rcs-filtros" aria-label="Filtros dos recursos">
+      <aside class="rcs-filtros${rcsM.painel ? ' aberto' : ''}" id="rcs-filtros" aria-label="Filtros da Biblioteca">
         <div class="fld busca"><label for="rcs-q">Buscar</label><input id="rcs-q" type="search" placeholder="Nome, tag ou o que faz" autocomplete="off" value="${esc(rcsM.f.q)}"></div>
         <div id="rcs-fac"></div>
       </aside>
-      <section class="rcs-corpo" aria-label="Recursos">
+      <section class="rcs-corpo" aria-label="Itens da Biblioteca">
         <div class="rcs-topo"><button type="button" class="btn ghost mini rcs-abre" id="rcs-abre" aria-expanded="${rcsM.painel}" aria-controls="rcs-filtros">Filtros <span id="rcs-nf"></span></button>
           <span class="total" id="rcs-total" aria-live="polite"></span>
           <div class="fld rcs-ord"><label for="rcs-ordem">Ordenar</label><select id="rcs-ordem">${RCS_ORDENS.map(([k, l]) => `<option value="${k}"${rcsM.f.ordem === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div></div>
@@ -162,16 +162,16 @@ function rcsAtualizar(painel, foco){
   const f = rcsM.f, todos = rcsM.lista;
   const vis = rcsOrdenar(todos.filter(r => rcsPassa(r, f)), f.ordem);
   const grade = $('#rcs-grade'); if (!grade) return;
-  $('#rcs-total').innerHTML = `<b>${vis.length}</b> ${vis.length === 1 ? 'recurso' : 'recursos'}`;
+  $('#rcs-total').innerHTML = `<b>${vis.length}</b> ${vis.length === 1 ? 'item' : 'itens'}`;
   const ativos = f.tipo.length + f.acesso.length + f.plat.length + f.tags.length + (f.padrao ? 1 : 0) + (f.nota ? 1 : 0) + (f.status !== 'ativo' ? 1 : 0);
   $('#rcs-nf').textContent = ativos ? `(${ativos})` : '';
-  grade.innerHTML = vis.length ? vis.map(rcsCartao).join('') : `<div class="rcs-vazio">${estado.vazio({ texto:'Nenhum recurso com estes filtros.',
+  grade.innerHTML = vis.length ? vis.map(rcsCartao).join('') : `<div class="rcs-vazio">${estado.vazio({ texto:'Nenhum item com estes filtros.',
     acao:'<button type="button" class="btn ghost mini" data-rcs="limpar" onclick="document.querySelector(\'#rcs-filtros [data-rcs=limpar]\')?.click()">Limpar os filtros</button>' })}</div>`;
   if (painel) rcsFacetas(foco);
 }
 function rcsCartao(r){
   const marcas = [r.padrao_nro ? '<span class="rcs-padrao">Padrão da NRO</span>' : '', r.status === 'inativo' ? '<span class="rcs-inativo">Inativo</span>' : ''].filter(Boolean).join('');
-  return `<a class="rcs-card${r.status === 'inativo' ? ' inativo' : ''}" href="#/recursos/${encodeURIComponent(r.slug)}">
+  return `<a class="rcs-card${r.status === 'inativo' ? ' inativo' : ''}" href="#/biblioteca/${encodeURIComponent(r.slug)}">
     ${rcsLogo(r, 52)}
     <span class="rcs-nome">${esc(r.nome)}</span>
     <span class="rcs-pub">${esc(r.publicador || rcsHost(r.url))}</span>
@@ -215,11 +215,11 @@ function rcsFacetas(foco){
    A PÁGINA DO RECURSO
    ============================================================ */
 async function rcsPagina(slug){
-  $('#main').innerHTML = cabecalho({ espaco:'Recursos', titulo:'Recurso', voltar:['Recursos', '#/recursos'] }) + estado.carregando();
+  $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo:'Item', voltar:['Biblioteca', '#/biblioteca'] }) + estado.carregando();
   const { data, error } = await sb.rpc('recurso_ler', { p_slug:slug });
   if (error || data?.status !== 'ok'){
-    $('#main').innerHTML = cabecalho({ espaco:'Recursos', titulo:'Recurso', voltar:['Recursos', '#/recursos'] }) + (data?.status === 'nao_encontrado'
-      ? estado.vazio({ texto:'Este recurso não existe (ou foi renomeado).', acao:'<a class="btn ghost mini" href="#/recursos">Ver todos os recursos</a>' })
+    $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo:'Item', voltar:['Biblioteca', '#/biblioteca'] }) + (data?.status === 'nao_encontrado'
+      ? estado.vazio({ texto:'Este item não existe (ou foi renomeado).', acao:'<a class="btn ghost mini" href="#/biblioteca">Ver toda a Biblioteca</a>' })
       : estado.erro({ texto:'Não foi possível carregar o recurso agora.', acao:`<button class="btn ghost mini" type="button" onclick="rcsPagina('${esc(slug)}')">Tentar de novo</button>` }));
     return;
   }
@@ -229,7 +229,7 @@ async function rcsPagina(slug){
 function rcsDesenharPagina(){
   const r = rcsM.item; if (!r) return;
   const secao = (id, titulo, corpo, extra = '') => `<section class="card rcs-sec" id="${id}" aria-labelledby="${id}-t"><div class="rcs-sec-cab"><h2 id="${id}-t">${titulo}</h2>${extra}</div>${corpo}</section>`;
-  const vazioInstr = '<p class="rcs-nada">Ainda sem instruções. Sabe como se faz? <a href="#/recursos/' + encodeURIComponent(r.slug) + '/editar">Edite e conte para a equipe</a>.</p>';
+  const vazioInstr = '<p class="rcs-nada">Ainda sem instruções. Sabe como se faz? <a href="#/biblioteca/' + encodeURIComponent(r.slug) + '/editar">Edite e conte para a equipe</a>.</p>';
   const meta = [`<span>${esc(r.publicador || rcsHost(r.url))}</span>`, `<span>${esc(rcsRot(RCS_TIPOS, r.tipo))}</span>`,
     r.padrao_nro ? '<span class="rcs-padrao">Padrão da NRO</span>' : '', r.status === 'inativo' ? '<span class="rcs-inativo">Inativo</span>' : ''].filter(Boolean);
   const principal = `
@@ -250,9 +250,9 @@ function rcsDesenharPagina(){
       ['Endereço', `<a href="${esc(r.url)}" target="_blank" rel="noopener" class="rcs-url">${esc(rcsHost(r.url) + (new URL(r.url).pathname.length > 1 ? '/…' : ''))}</a>`],
       ['Adicionado', r.criado_por_nome ? esc(r.criado_por_nome) + ', ' + fmtD(r.criado_em) : fmtD(r.criado_em)],
       ['Editado', r.atualizado_por_nome ? esc(r.atualizado_por_nome) + ', ' + fmtD(r.atualizado_em) : fmtD(r.atualizado_em)]])}
-    ${(r.tags || []).length ? `<div class="rcs-tags" aria-label="Tags">${r.tags.map(t => `<a class="rcs-tag" href="#/recursos" data-rcs-tag="${esc(t)}">${esc(t)}</a>`).join('')}</div>` : ''}`;
-  $('#main').innerHTML = cabecalho({ espaco:'Recursos', titulo:r.nome, voltar:['Recursos', '#/recursos'], meta,
-    acoes:`<a class="btn ghost" href="#/recursos/${encodeURIComponent(r.slug)}/editar" id="rcs-editar">${ic('pencil')} Editar</a>` }) + layoutObjeto(principal, lateral);
+    ${(r.tags || []).length ? `<div class="rcs-tags" aria-label="Tags">${r.tags.map(t => `<a class="rcs-tag" href="#/biblioteca" data-rcs-tag="${esc(t)}">${esc(t)}</a>`).join('')}</div>` : ''}`;
+  $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo:r.nome, voltar:['Biblioteca', '#/biblioteca'], meta,
+    acoes:`<a class="btn ghost" href="#/biblioteca/${encodeURIComponent(r.slug)}/editar" id="rcs-editar">${ic('pencil')} Editar</a>` }) + layoutObjeto(principal, lateral);
 }
 /* a avaliação: a média de todos e as cinco estrelas para dar a sua */
 function rcsAvaliacaoHTML(r){
@@ -302,12 +302,12 @@ async function rcsApagarComentario(id){
    ADICIONAR E EDITAR
    ============================================================ */
 async function rcsFormulario(slug){
-  const titulo = slug ? 'Editar recurso' : 'Adicionar recurso';
-  $('#main').innerHTML = cabecalho({ espaco:'Recursos', titulo, voltar:['Recursos', slug ? '#/recursos/' + encodeURIComponent(slug) : '#/recursos'] }) + estado.carregando();
+  const titulo = slug ? 'Editar item' : 'Adicionar item';
+  $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo, voltar:['Biblioteca', slug ? '#/biblioteca/' + encodeURIComponent(slug) : '#/biblioteca'] }) + estado.carregando();
   let r = { id:null, url:'', nome:'', publicador:'', logo_url:'', tipo:'software', funcao:'', instrucoes_baixar:'', instrucoes_usar:'', tags:[], plataformas:[], acesso:[], status:'ativo', padrao_nro:false };
   if (slug){
     const { data, error } = await sb.rpc('recurso_ler', { p_slug:slug });
-    if (error || data?.status !== 'ok'){ $('#main').innerHTML = cabecalho({ espaco:'Recursos', titulo, voltar:['Recursos', '#/recursos'] }) + estado.vazio({ texto:'Este recurso não existe.' }); return; }
+    if (error || data?.status !== 'ok'){ $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo, voltar:['Biblioteca', '#/biblioteca'] }) + estado.vazio({ texto:'Este recurso não existe.' }); return; }
     r = { ...r, ...data.recurso }; rcsM.gestao = !!data.gestao;
   } else await rcsCarregar();
   const sugestoes = [...new Set((rcsM.lista || []).flatMap(x => x.tags || []))].sort((a, b) => a.localeCompare(b, 'pt', { sensitivity:'base' }));
@@ -315,7 +315,7 @@ async function rcsFormulario(slug){
   const f = rcsM.form;
   const plats = [...new Set([...RCS_PLATS, ...(r.plataformas || [])])];
   const campo = (id, rot, corpo, ajuda = '') => `<div class="fld" id="rcs-f-${id}"><label for="rcs-${id}">${rot}</label>${corpo}${ajuda ? `<span class="hint">${ajuda}</span>` : ''}<span class="msg" id="rcs-e-${id}" role="alert"></span></div>`;
-  $('#main').innerHTML = cabecalho({ espaco:'Recursos', titulo, voltar:['Recursos', slug ? '#/recursos/' + encodeURIComponent(slug) : '#/recursos'],
+  $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo, voltar:['Biblioteca', slug ? '#/biblioteca/' + encodeURIComponent(slug) : '#/biblioteca'],
     lead: slug ? 'Qualquer pessoa pode melhorar a descrição, as instruções e as tags. A alteração fica registrada com o seu nome.' : 'Cole o endereço da ferramenta, diga o nome e o que ela faz. O resto (instruções, tags) dá para completar agora ou depois, e qualquer pessoa pode melhorar.' }) + `
     <form class="rcs-form" id="rcs-form" onsubmit="rcsSalvar(event)" novalidate>
       <div class="rcs-form-topo">
@@ -353,8 +353,8 @@ async function rcsFormulario(slug){
         ${rcsM.gestao ? `<label class="rcs-op rcs-padrao-op"><input type="checkbox" id="rcs-padrao_nro"${r.padrao_nro ? ' checked' : ''}><span><b>Padrão da NRO</b>: é a ferramenta que a equipe adota como padrão. Só a gestão marca.</span></label>` : ''}
       </details>
       <p class="aviso-box err" id="rcs-erro" role="alert" hidden></p>
-      <div class="barra-acoes"><span></span><div class="dir"><a class="btn ghost" href="${slug ? '#/recursos/' + encodeURIComponent(slug) : '#/recursos'}">Cancelar</a>
-        <button class="btn solid" type="submit" id="rcs-salvar">${slug ? 'Salvar' : 'Adicionar ao catálogo'}</button></div></div>
+      <div class="barra-acoes"><span></span><div class="dir"><a class="btn ghost" href="${slug ? '#/biblioteca/' + encodeURIComponent(slug) : '#/biblioteca'}">Cancelar</a>
+        <button class="btn solid" type="submit" id="rcs-salvar">${slug ? 'Salvar' : 'Adicionar à Biblioteca'}</button></div></div>
     </form>`;
   rcsDesenharTags();
   const url = $('#rcs-url');
@@ -415,7 +415,7 @@ async function rcsSalvar(ev){
     const { data, error } = await sb.rpc('recurso_salvar', { p });
     if (error) throw error;
     if (data.status === 'duplicado'){
-      $('#rcs-erro').innerHTML = `Este endereço já está no catálogo: <a href="#/recursos/${encodeURIComponent(data.slug)}">${esc(data.nome)}</a>. Abra o recurso e edite por lá.`; $('#rcs-erro').hidden = false; return;
+      $('#rcs-erro').innerHTML = `Este endereço já está na Biblioteca: <a href="#/biblioteca/${encodeURIComponent(data.slug)}">${esc(data.nome)}</a>. Abra o item e edite por lá.`; $('#rcs-erro').hidden = false; return;
     }
     if (data.status === 'invalido'){
       const rot = { url:'Confira o endereço.', nome:'Confira o nome.', funcao:'Confira o texto de "O que faz" (até 600 caracteres).', logo_url:'A logo precisa ser um endereço https.', instrucoes:'As instruções passam de 8000 caracteres.', acesso:'Confira o acesso.', tipo:'Confira o tipo.' };
@@ -424,8 +424,8 @@ async function rcsSalvar(ev){
     }
     if (data.status !== 'ok') throw new Error(data.status);
     rcsM.lista = null; rcsM.item = null;
-    toast(f.slug ? 'Recurso atualizado.' : 'Recurso adicionado ao catálogo.');
-    location.hash = '#/recursos/' + encodeURIComponent(data.slug);
+    toast(f.slug ? 'Item atualizado.' : 'Item adicionado à Biblioteca.');
+    location.hash = '#/biblioteca/' + encodeURIComponent(data.slug);
   } catch(e){ $('#rcs-erro').textContent = 'Não foi possível salvar agora. Tente de novo.'; $('#rcs-erro').hidden = false; }
   finally { const bb = $('#rcs-salvar'); if (bb) bb.disabled = false; }
 }
