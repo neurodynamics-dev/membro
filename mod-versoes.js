@@ -44,7 +44,8 @@ const NOTAS_VERSAO = [
     ['novo', '**Foto do acesso ao LABBIO** com verificação ao vivo na câmera: rosto, enquadramento, iluminação e contraste, no próprio aparelho. Quem prefere pode enviar um arquivo, sem verificação, com os requisitos à vista.'],
     ['melhoria', 'A **barra de ações** dos fluxos em passos deixa de ser uma faixa preta e passa a ser de vidro.'],
     ['correcao', 'O cartão **Acesso ao LABBIO** em Serviços tinha o ícone gigante.'],
-    ['correcao', 'Iniciar o **recadastro** falhava com "UPDATE requires a WHERE clause".']
+    ['correcao', 'Iniciar o **recadastro** falhava com "UPDATE requires a WHERE clause".'],
+    ['correcao', 'O formulário de **andamento** em Bugs e sugestões agora mostra "Registrado agora" e fecha o botão até haver nova alteração.']
   ]},
   { v:'2.19.1', data:'2026-10-11', titulo:'Reporte por liderança, feed editorial, LABBIO e trainees', itens:[
     ['novo', '**Reporte semanal** por liderança direta, com cobrança na sexta às 16h, painel da semana e PDF em tabelas.'],
@@ -514,7 +515,7 @@ async function telaRelato(id, semCarregar){
             <div class="it"><dt>Aparelho</dt><dd>${esc(f.aparelho || '—')}</dd></div>
           </dl>
         </div>
-        ${adm ? `<div class="card">
+        ${adm ? `<div class="card" id="rd-card" oninput="relatoSujo()" onchange="relatoSujo()">
           <h3>Andamento</h3>
           <div class="fld" style="margin-top:12px"><label for="rd-st">Situação</label>
             <select id="rd-st" onchange="relatoDecidirCampos()">${Object.entries(FB_STATUS).map(([k, [l]]) =>
@@ -530,11 +531,23 @@ async function telaRelato(id, semCarregar){
           <div class="fld"><label for="rd-resp">Resposta</label>
             <textarea id="rd-resp" rows="3" placeholder="O que foi feito, ou por que não">${esc(f.resposta || '')}</textarea></div>
           <p class="err-msg" id="rd-erro"></p>
-          <div class="acts"><button class="btn solid" id="rd-btn" onclick="relatoDecidir(${f.id})">Registrar</button></div>
+          <div class="acts" style="align-items:center;justify-content:space-between">
+            <span class="salvo ok" id="rd-salvo" role="status">${versoes.registrado === f.id ? 'Registrado agora' : 'Sem alterações'}</span>
+            <button class="btn solid" id="rd-btn" onclick="relatoDecidir(${f.id})" disabled>Registrar</button></div>
         </div>` : ''}
       </div>
     </div>`;
-  if (adm) relatoDecidirCampos();
+  if (adm){ relatoDecidirCampos(); versoes.rdBase = relatoForm(); }
+  versoes.registrado = null;
+}
+/* o que está no formulário de andamento; o botão só abre quando difere do que foi registrado */
+function relatoForm(){
+  return JSON.stringify(['#rd-st', '#rd-versao', '#rd-dup', '#rd-tipo', '#rd-resp'].map(s => $(s)?.value ?? ''));
+}
+function relatoSujo(){
+  const sujo = relatoForm() !== versoes.rdBase, bt = $('#rd-btn'), sv = $('#rd-salvo');
+  if (bt) bt.disabled = !sujo;
+  if (sv){ sv.classList.toggle('ok', !sujo); sv.textContent = sujo ? 'Alterações não registradas' : 'Sem alterações'; }
 }
 function relatoDecidirCampos(){
   const st = $('#rd-st')?.value;
@@ -555,6 +568,7 @@ async function relatoDecidir(id){
     return;
   }
   toast('Andamento registrado.');
+  versoes.registrado = id;   // a tela redesenha com "Registrado agora" e o botão fechado
   await vsCarregar(true); telaRelato(id, true);
 }
 async function relatoComentar(id){
