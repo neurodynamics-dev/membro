@@ -234,7 +234,7 @@ begin
  },
  {
   "nome": "HeyPCB",
-  "url": "https://heypcb.com",
+  "url": "https://heypcb.ai",
   "publicador": "HeyPCB",
   "tipo": "software",
   "funcao": "Ferramenta de projeto de placas de circuito impresso (PCB) citada pela equipe. Ainda não foi testada: quem a conhece pode completar esta descrição, as instruções e o link.",

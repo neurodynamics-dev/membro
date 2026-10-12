@@ -16,7 +16,7 @@
    ============================================================ */
 
 const RCS_TIPOS = [['software', 'Software'], ['extensao', 'Extensão'], ['repositorio', 'Repositório'], ['servico', 'Serviço'], ['base', 'Base de pesquisa'], ['beneficio', 'Benefício'], ['referencia', 'Referência']];
-const RCS_ACESSO = [['gratis', 'Gratuito'], ['freemium', 'Plano gratuito'], ['pago', 'Pago'], ['estudante', 'Grátis para estudantes'], ['labbio', 'Licença do LABBIO']];
+const RCS_ACESSO = [['gratis', 'Gratuito'], ['freemium', 'Plano gratuito'], ['pago', 'Pago'], ['estudante', 'Grátis para estudantes'], ['labbio', 'Licença NRO/LABBIO']];
 const RCS_PLATS = ['Windows', 'macOS', 'Linux', 'Web', 'VS Code', 'Chrome', 'Firefox', 'Edge', 'Safari', 'Android', 'iOS'];
 const RCS_ORDENS = [['destaque', 'Em destaque'], ['nome', 'Nome'], ['nota', 'Melhor avaliados'], ['comentarios', 'Mais comentados'], ['recentes', 'Mais recentes']];
 const RCS_ESTRELA = 'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z';
