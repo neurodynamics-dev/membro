@@ -49,6 +49,8 @@ try{
   console.log('Foto');
   {
     const t = await abrir('#/servicos/biometria', { nav:com, bio:{ etapa:'rascunho' } }), { p } = t;
+    /* a verificação do rosto (2.19.2) tem teste próprio, em biometria-rosto.mjs; aqui ela não carrega, e a câmera segue sem ela */
+    await p.route('**/vendor/mediapipe/**', r => r.abort());
     await p.waitForSelector('#bio-just'); await p.locator('#bio-tempo .chip').first().click();
     await p.evaluate(() => { location.hash = '#/servicos/biometria/foto'; });
     await p.waitForFunction(() => { const b = document.querySelector('#bio-tirar'); return b && !b.disabled; });
@@ -70,7 +72,7 @@ try{
     const t = await abrir('#/servicos/biometria/foto', { bio:{ etapa:'rascunho' } }), { p } = t;
     await p.waitForSelector('#bio-sem-camera:not([hidden])');
     confere('sem câmera: a mensagem e o campo de arquivo', (await p.locator('#bio-sem-camera').innerText()).includes('Não conseguimos usar a câmera')
-      && await p.locator('#bio-arq[capture]').count() === 1);
+      && await p.locator('#bio-arq').count() === 1 && await p.locator('#bio-arq[capture]').count() === 0);
     await fechar(t);
   }
 
