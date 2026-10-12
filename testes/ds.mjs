@@ -13,7 +13,7 @@ for (const f of ['tokens.css', 'neuro.css', 'casca.css', 'casca.js', 'select.css
   if (/\.(css|js)$/.test(f) && existsSync(u)) confere(`ds/${f} veio do brand`, readFileSync(u, 'utf8').startsWith('/* NRO DS '));
 }
 const index = readFileSync(new URL('index.html', raiz), 'utf8');
-const ordem = ['ds/tokens.css', 'ds/neuro.css', 'ds/casca.css', 'soma.css'].map(f => index.indexOf(`href="${f}"`));
+const ordem = ['ds/tokens.css', 'ds/neuro.css', 'ds/casca.css', 'soma.css'].map(f => index.indexOf(`href="${f}?v=`));
 confere('index.html carrega tokens, neuro, casca e só depois o soma.css', ordem.every(i => i > 0) && ordem.every((v, i) => !i || v > ordem[i - 1]), ordem.join(','));
 confere('index.html não tem mais <style> de componentes', !/<style>[\s\S]{2000,}<\/style>/.test(index));
 const brand = new URL('../../brand/scripts/distribuir.mjs', import.meta.url);

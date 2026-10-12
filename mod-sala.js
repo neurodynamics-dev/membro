@@ -32,8 +32,8 @@ async function pageSala(sub){
   const id = Number(sub);
   if (!Number.isInteger(id) || id <= 0){ $('#main').innerHTML = cabecalho({ espaco:'LABBIO', titulo:'Sala' }) + estado.vazio({ texto:'Abra pelo QR do tablet na porta da sala.' }); return; }
   salaM.id = id; salaM.barra = null;
-  if (!document.querySelector('link[href^="deslizar.css"]')) document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="deslizar.css?v=${VERSAO}">`);
-  if (!window.deslizar) await carregarScript(`deslizar.js?v=${VERSAO}`).catch(() => {});
+  if (!document.querySelector('link[href^="deslizar.css"]')) document.head.insertAdjacentHTML('beforeend', `<link rel="stylesheet" href="deslizar.css?v=${CARIMBO}">`);
+  if (!window.deslizar) await carregarScript(`deslizar.js?v=${CARIMBO}`).catch(() => {});
   $('#main').innerHTML = `<div class="salam" id="salam">${estado.carregando()}</div>`;
   await salaCarregar();
   // enquanto a tela estiver aberta, a situação se atualiza a cada minuto
