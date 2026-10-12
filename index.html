@@ -615,6 +615,7 @@ const ICONS = {
   inicio:'<path d="M4 10.2 12 4l8 6.2V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/>',
   agenda:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8 14h2M14 14h2M8 17h2"/>',
   quadro:'<rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M8.5 7.5v7M12 7.5v4M15.5 7.5v9"/>',
+  recursos:'<rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><path d="m16.75 13.5 1.2 2.4 2.55.4-1.85 1.8.45 2.6-2.35-1.25-2.35 1.25.45-2.6-1.85-1.8 2.55-.4z"/>',
   livro:'<path d="M12 6.5c-1.6-1.4-4-2-7.5-2v14c3.5 0 5.9.6 7.5 2 1.6-1.4 4-2 7.5-2v-14c-3.5 0-5.9.6-7.5 2z"/><path d="M12 6.5v14"/>',
   servicos:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 10h6M9 13.5h6M9 17h3.5"/>',
   pedidos:'<path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/><path d="M6 5h12l2.5 8.5v5A1.5 1.5 0 0 1 19 20H5a1.5 1.5 0 0 1-1.5-1.5v-5z"/>',
@@ -1742,6 +1743,8 @@ const ROTAS = {
   marca: {desenha:'pageMarca',modulo:'marca'},
   home:        { desenha:'pageHome' },
   agenda:      { desenha:'pageAgenda', modulo:'agenda' },
+  /* Biblioteca (2.19.2): o catálogo colaborativo de ferramentas da equipe (o módulo e o banco se chamam recursos) */
+  biblioteca:  { desenha:'pageRecursos', modulo:'recursos' },
   /* a sala do LABBIO no celular: o QR do tablet da porta abre aqui (fora do menu) */
   sala:        { desenha:'pageSala', modulo:'sala' },
   atividades:  { desenha:'pageAtividades', modulo:'atividades' },
@@ -1775,6 +1778,7 @@ const ROTAS = {
 const ALIAS = {
   brand:['marca',null],assinatura:['marca','assinatura'],
   feed:        ()    => ['equipe', 'feed'],
+  recursos:    (sub) => ['biblioteca', sub],   /* o primeiro nome da Biblioteca (2.19.2) */
   calendario:  (sub) => ['agenda', sub],
   organizacao: ()    => ['equipe', null],
   quadro:      (sub) => ['equipe', sub || 'quadro'],
@@ -1934,6 +1938,10 @@ function arvoreDoMenu(){
       { sub:'todos', rot:'Todos os treinamentos' },
       { sub:'certificados', rot:'Meus certificados', tambem:'^certificado$' },
       ...(gereTreinamentos() ? [{ sep:true }, { sub:'config', rot:'Configurações', tambem:'^(novo|gestao)$' }] : [])] },
+    /* Biblioteca: o catálogo colaborativo de ferramentas (padrões, softwares, extensões, gravação de placas, saúde e pesquisa) */
+    { r:'biblioteca', rot:'Biblioteca', ic:'recursos', filhos: [
+      { sub:'', rot:'Todos os itens', tambem:'^(?!novo$).+' },
+      { sub:'novo', rot:'Adicionar item' }] },
     /* Meus pedidos mora aqui desde a v24: o décimo primeiro espaço não
        cabia, e o acompanhamento do que se pediu é parte de pedir. O
        que o SOMA faz sozinho, sem pedido a ninguém — a declaração, o

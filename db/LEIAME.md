@@ -123,6 +123,8 @@ psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 | `2.19.2_labbio_biometria_existente.sql` | o acesso biométrico que já existia (registros 001, 002, 009, 011, 012, 016, 018, 030, 032, 043 e 056) passa a constar, sem aviso; quem já saiu da equipe ou não existe é só relatado |
 | `2.19.2_salas_tempo_real.sql` | o banco avisa o canal de broadcast da sala (`sala-<id>`, Supabase Realtime, só "mudou", sem dado) quando muda a ocupação, um evento numa sala do LABBIO ou uma reserva do LABBIO; o tablet e o celular consultam de novo na hora. Sem `realtime.send`, ou se o envio falhar, a gravação segue. Depois da `2.19.2_salas` |
 | `2.19.2_recadastro_completo.sql` | o recadastro (`cadastro_confirmar`, `cadastro_meus_dados`) atualiza todos os dados pessoais da ficha: os campos opcionais (gênero, cidade de origem, período de ingresso, deslocamento, FUMP, acessibilidade, background, Lattes, Instagram, GitHub, autorização de imagem), o endereço de uma linha montado das partes e o e-mail pessoal (em `membros`). Campo que não vem fica como estava; em branco apaga. Depois da `2.19.1_recadastro` |
+| `2.19.2_recursos.sql` | Recursos, o catálogo colaborativo de ferramentas da equipe: `recursos`, `recurso_avaliacoes` e `recurso_comentarios`, só por função (`recursos_listar`, `recurso_ler`, `recurso_salvar`, `recurso_avaliar`, `recurso_comentar`, `recurso_comentario_apagar`). Qualquer membro com conta ativa adiciona, edita, avalia (1 a 5) e comenta; só a gestão (admin, Pessoal e liderança) marca "NRO Standard". O mesmo endereço não entra duas vezes |
+| `2.19.2_recursos_semente.sql` | a semente da Biblioteca, 283 itens (padrões VS Code e Git Bash, softwares, extensões do VS Code e do navegador, bases de pesquisa em saúde, gravação de microcontroladores, benefícios de estudante, repositórios da NSA e as indicações da equipe), com a função e, nos softwares, as instruções de baixar e usar. Não repete: o que já existe pelo endereço fica como está. Depois da `2.19.2_recursos` |
 
 A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
 2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
@@ -194,7 +196,7 @@ bash testes/preparar-base.sh teste t2192 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbi
      2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql \
      2.19.1_labbio_admin.sql 2.19.2_checkin_local.sql 2.19.2_solicitacoes.sql 2.19.2_salas.sql \
      2.19.2_labbio_painel.sql 2.19.2_labbio_biometria_existente.sql 2.19.2_salas_tempo_real.sql \
-     2.19.2_recadastro_completo.sql
+     2.19.2_recadastro_completo.sql 2.19.2_recursos.sql 2.19.2_recursos_semente.sql
 ```
 
 O reporte (70 asserções, mais o teste da 2.18.0 do reporte de novo):

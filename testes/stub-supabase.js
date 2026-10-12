@@ -833,6 +833,63 @@
         from: (t, ...resto) => { (window.__tabelas ||= []).push(t); return builder(t, ...resto); },
         rpc: async (nome, args) => {
           (window.__chamadas ||= []).push(nome);
+          /* ---- 2.19.2: Recursos (catálogo colaborativo). window.__teste.recursos = { gestao:false } tira a gestão. ---- */
+          if (/^recursos?_/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const T = (window.__teste || {}).recursos || {};
+            const gestao = T.gestao !== undefined ? T.gestao : DADOS.perfis[0].papel === 'admin';
+            const ok = d => ({ data:d, error:null });
+            const DB = window.__rcsDB ||= (() => {
+              const mk = (slug, nome, url, pub, tipo, funcao, extra = {}) => ({ id:'id-' + slug, slug, nome, url, publicador:pub, logo_url:null, tipo, funcao,
+                instrucoes_baixar:null, instrucoes_usar:null, tags:[], plataformas:['Windows'], acesso:['gratis'], status:'ativo', padrao_nro:false,
+                criado_em:'2026-10-01T12:00:00Z', atualizado_em:'2026-10-01T12:00:00Z', criado_por_nome:'Ana Figueiredo', atualizado_por_nome:'Ana Figueiredo', notas:{}, comentarios_lista:[], ...extra });
+              return { lista:[
+                mk('visual-studio-code', 'Visual Studio Code', 'https://code.visualstudio.com', 'Microsoft', 'software', 'Editor de código e IDE padrão da equipe.',
+                  { padrao_nro:true, tags:['IDE', 'Editor', 'VS Code'], plataformas:['Windows', 'macOS', 'Linux'], instrucoes_baixar:'1. Abra code.visualstudio.com.\n2. Instale.', 
+                    instrucoes_usar:'Use o Git Bash como terminal:\n`git --version`\n- Extensão C/C++\n- Extensão PlatformIO', notas:{ 11:5, 17:4 },
+                    comentarios_lista:[{ id:'c1', registro:11, autor:'Bruno Tavares', texto:'Settings Sync salvou a minha vida.', criado_em:'2026-10-05T12:00:00Z' }] }),
+                mk('git-bash-git-for-windows', 'Git Bash (Git for Windows)', 'https://gitforwindows.org', 'Git for Windows', 'software', 'Controle de versão e terminal no Windows.',
+                  { padrao_nro:true, tags:['Git', 'Terminal', 'Controle de versão'] }),
+                mk('figma', 'Figma', 'https://www.figma.com', 'Figma', 'software', 'Design de interfaces e protótipos.', { tags:['Design', 'Estudante'], plataformas:['Web', 'macOS'], acesso:['freemium', 'estudante'], notas:{ 11:4 } }),
+                mk('platformio-ide', 'PlatformIO IDE', 'https://platformio.org', 'PlatformIO Labs', 'software', 'Compila e grava microcontroladores pelo VS Code.',
+                  { tags:['Gravação', 'Microcontroladores', 'ESP32', 'STM32', 'VS Code'], plataformas:['VS Code', 'Windows', 'Linux'], notas:{ 11:5, 17:5, 23:3 } }),
+                mk('esptool', 'esptool', 'https://github.com/espressif/esptool', 'Espressif', 'software', 'Grava e apaga a flash de ESP32.', { tags:['Gravação', 'Microcontroladores', 'ESP32'], plataformas:['Windows', 'macOS', 'Linux'] }),
+                mk('ghidra', 'Ghidra', 'https://github.com/NationalSecurityAgency/ghidra', 'NSA', 'repositorio', 'Engenharia reversa de software.', { tags:['NSA', 'Engenharia reversa', 'Ainda não testada'], plataformas:['Windows', 'macOS', 'Linux'] }),
+                mk('github-student-developer-pack', 'GitHub Student Developer Pack', 'https://education.github.com/pack', 'GitHub', 'beneficio', 'Ofertas gratuitas para estudantes.', { tags:['Estudante', 'Domínio', 'Hospedagem'], plataformas:['Web'], acesso:['estudante'], notas:{ 11:5 } }),
+                mk('ferramenta-antiga', 'Ferramenta antiga', 'https://antiga.example.com', 'Alguém', 'software', 'Descontinuada.', { status:'inativo', tags:['Legado'] })],
+                prox:100 };
+            })();
+            const resumo = (x, completo) => { const v = Object.values(x.notas || {}); const n = v.length;
+              const base = { id:x.id, slug:x.slug, nome:x.nome, url:x.url, publicador:x.publicador, logo_url:x.logo_url, tipo:x.tipo, funcao:x.funcao, tags:x.tags, plataformas:x.plataformas,
+                acesso:x.acesso, status:x.status, padrao_nro:x.padrao_nro, criado_em:x.criado_em, atualizado_em:x.atualizado_em, media: n ? Math.round(v.reduce((a, b) => a + b, 0) / n * 100) / 100 : null,
+                avaliacoes:n, comentarios:x.comentarios_lista.length, minha:(x.notas || {})[4] ?? null };
+              return completo ? { ...base, instrucoes_baixar:x.instrucoes_baixar, instrucoes_usar:x.instrucoes_usar, criado_por_nome:x.criado_por_nome, atualizado_por_nome:x.atualizado_por_nome,
+                comentarios_lista:x.comentarios_lista.map(c => ({ ...c, meu:c.registro === 4, pode_apagar:c.registro === 4 || gestao })) } : base; };
+            const chave = u => String(u).toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/[\/#?]+$/, '');
+            const achar = slug => DB.lista.find(x => x.slug === slug);
+            if (nome === 'recursos_listar') return ok({ status:'ok', gestao, recursos:DB.lista.map(x => resumo(x, false)) });
+            if (nome === 'recurso_ler'){ const x = achar(args.p_slug); return ok(x ? { status:'ok', gestao, recurso:resumo(x, true) } : { status:'nao_encontrado' }); }
+            if (nome === 'recurso_avaliar'){ const x = achar(args.p_slug); if (!x) return ok({ status:'nao_encontrado' });
+              if (!args.p_estrelas) delete x.notas[4]; else x.notas[4] = args.p_estrelas; return ok({ status:'ok', recurso:resumo(x, false) }); }
+            if (nome === 'recurso_comentar'){ const x = achar(args.p_slug); if (!x) return ok({ status:'nao_encontrado' }); const t = String(args.p_texto || '').trim(); if (!t) return ok({ status:'invalido' });
+              x.comentarios_lista.push({ id:'c' + (DB.prox++), registro:4, autor:'Ana Figueiredo', texto:t, criado_em:'2026-10-12T12:00:00Z' });
+              return ok({ status:'ok', comentarios_lista:resumo(x, true).comentarios_lista }); }
+            if (nome === 'recurso_comentario_apagar'){ for (const x of DB.lista){ const i = x.comentarios_lista.findIndex(c => c.id === args.p_id); if (i >= 0){ x.comentarios_lista.splice(i, 1); return ok({ status:'ok', comentarios_lista:resumo(x, true).comentarios_lista }); } } return ok({ status:'nao_encontrado' }); }
+            if (nome === 'recurso_salvar'){
+              const p = args.p || {};
+              if (!/^https?:\/\/[^\s/]+\.[^\s/]+/i.test(p.url || '')) return ok({ status:'invalido', campo:'url' });
+              if (!String(p.nome || '').trim()) return ok({ status:'invalido', campo:'nome' });
+              if (!String(p.funcao || '').trim()) return ok({ status:'invalido', campo:'funcao' });
+              const dup = DB.lista.find(x => chave(x.url) === chave(p.url) && x.id !== p.id); if (dup) return ok({ status:'duplicado', slug:dup.slug, nome:dup.nome });
+              const campos = { url:p.url, nome:p.nome, publicador:p.publicador || null, logo_url:p.logo_url || null, tipo:p.tipo, funcao:p.funcao, instrucoes_baixar:p.instrucoes_baixar || null,
+                instrucoes_usar:p.instrucoes_usar || null, tags:p.tags || [], plataformas:p.plataformas || [], acesso:p.acesso || [], status:p.status || 'ativo' };
+              if (p.id){ const x = DB.lista.find(y => y.id === p.id); Object.assign(x, campos, { atualizado_por_nome:'Ana Figueiredo' }); if (gestao && 'padrao_nro' in p) x.padrao_nro = !!p.padrao_nro; return ok({ status:'ok', slug:x.slug }); }
+              const slug = String(p.nome).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+              DB.lista.push({ id:'id-' + slug, slug, ...campos, padrao_nro:gestao && !!p.padrao_nro, criado_em:'2026-10-12T12:00:00Z', atualizado_em:'2026-10-12T12:00:00Z',
+                criado_por_nome:'Ana Figueiredo', atualizado_por_nome:'Ana Figueiredo', notas:{}, comentarios_lista:[] });
+              return ok({ status:'ok', slug });
+            }
+          }
           if (nome === 'notificacoes_marcar_lidas') return { data: 1, error: null };
           /* ---- v32: o sino que não empilha, a fila e o aparelho ---- */
           if (nome === 'notificacoes_limpar'){

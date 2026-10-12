@@ -54,6 +54,31 @@ try{
     await p.waitForSelector('#lb-m-tabela');
     confere('quatro linhas, com a Lia', await p.locator('#lb-m-tabela tbody tr').count() === 4
       && (await p.locator('#lb-m-tabela').innerText()).includes('Lia Moura'));
+    confere('a coluna de status no lugar da liderança', (await p.locator('#lb-m-tabela thead th').allTextContents()).map(x => x.trim()).filter(Boolean).slice(-5).join('|') === 'Membro|Área|Status|Termo|Acesso'
+      && (await p.locator('#lb-m-tabela tr[data-reg="46"] .c-status').innerText()).includes('Desligado')
+      && (await p.locator('#lb-m-tabela tr[data-reg="4"] .c-status').innerText()).includes('Ativo'));
+    // selecionar e gerar a lista de e-mails dos selecionados
+    await p.evaluate(() => { window.__copiado = null; navigator.clipboard.writeText = v => { window.__copiado = v; return Promise.resolve(); }; });
+    confere('sem seleção, sem barra', await p.locator('.lb-selbar').count() === 0);
+    await p.check('#lb-m-tabela [data-sel="4"]'); await p.check('#lb-m-tabela [data-sel="11"]');
+    confere('marcar mostra quantos e a lista', (await p.locator('.lb-selbar-n').innerText()).includes('2 selecionados')
+      && await p.locator('.lb-selbar-lista').inputValue() === 'ana@neurodynamics.dev, bruno@neurodynamics.dev');
+    await p.locator('[data-sel-acao="copiar"]').click();
+    confere('copiar leva a lista dos selecionados', await p.evaluate(() => window.__copiado) === 'ana@neurodynamics.dev, bruno@neurodynamics.dev');
+    confere('escrever para eles abre o e-mail em cópia oculta', (await p.locator('.lb-selbar a[href^="mailto:"]').getAttribute('href')).startsWith('mailto:?bcc=ana%40neurodynamics.dev'));
+    await p.selectOption('#lb-m-tipo', 'pessoal');
+    confere('o e-mail pessoal: quem não tem aparece à parte', (await p.locator('.lb-selbar-sem').innerText()).includes('Ana Figueiredo')
+      && await p.locator('[data-sel-acao="copiar"]').isDisabled());
+    await p.selectOption('#lb-m-tipo', 'nro');
+    const todos = p.locator('#lb-m-todos');
+    confere('o "todos" fica indeterminado com parte marcada', await todos.evaluate(e => e.indeterminate));
+    await todos.check();
+    confere('marcar todos marca a lista inteira', (await p.locator('.lb-selbar-n').innerText()).includes('4 selecionados'));
+    await p.fill('#lb-m-busca', 'Bruno'); await p.waitForTimeout(700);
+    confere('a seleção continua ao buscar', (await p.locator('.lb-selbar-n').innerText()).includes('4 selecionados'));
+    await p.locator('[data-sel-acao="limpar"]').click();
+    confere('limpar desmarca tudo', await p.locator('.lb-selbar').count() === 0 && await p.locator('#lb-m-tabela [data-sel]:checked').count() === 0);
+    await p.fill('#lb-m-busca', ''); await p.waitForTimeout(700);
     const textos = await p.evaluate(() => [...document.querySelectorAll('.c-termo, .c-acesso')].map(c => c.innerText.trim()));
     confere('termo e acesso sempre com texto', textos.every(Boolean), textos);
     confere('Lia com "Revogação pendente" e Bruno "Solicitado, no LABBIO"',

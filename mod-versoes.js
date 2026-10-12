@@ -32,6 +32,8 @@
    antiga; os itens são [tipo, texto em Markdown]. */
 const NOTAS_VERSAO = [
   { v:'2.19.2', data:'2026-10-11', titulo:'Menu reorganizado, filtros novos e ajustes da tela inicial', itens:[
+    ['novo', '**Biblioteca**: catálogo colaborativo de ferramentas, extensões, livros, bases de pesquisa e licenças de estudante, em galeria com filtros. Qualquer pessoa adiciona (basta o link), avalia e comenta; o selo NRO STANDARD marca o que a equipe adota.'],
+    ['melhoria', '**Painel do LABBIO, Membros**: a coluna de liderança dá lugar ao status do membro, e dá para marcar pessoas (uma a uma ou a lista inteira) e copiar os e-mails dos marcados (da NRO, pessoal ou os dois), ou escrever para eles em cópia oculta.'],
     ['novo', '**Ensaio do onboarding**: em Administração › Onboarding, "Testar a jornada" abre o tour com uma pessoa simulada (visitante, conta sem vínculo, membro novo, no meio do caminho ou tudo feito). Dá para criar a conta, simular a confirmação do e-mail e o vínculo, marcar as leituras e ligar cada fato, sem gravar nada no SOMA.'],
     ['melhoria', '**Feed da equipe**, **Newsletters** e **Marca** passam para Serviços. Os endereços antigos do feed e das newsletters continuam funcionando.'],
     ['melhoria', '**Equipe** sobe no menu, antes de OKRs.'],
