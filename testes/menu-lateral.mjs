@@ -79,7 +79,7 @@ console.log('\nAberto (admin, 1440px)');
      tomaram o lugar de Meus pedidos, que virou subitem de Serviços */
   confere('os espaços, na ordem (admin vê também Studio, Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Agenda|Atividades|Equipe|OKRs|Projetos|Arquivos|Studio|Treinamentos|Serviços|Seleção|Administração',
+      'Agenda|Atividades|Equipe|OKRs|Projetos|Arquivos|Studio|Treinamentos|Recursos|Serviços|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
   confere('Seleção e Administração vêm depois do divisor "Gestão"',

@@ -32,6 +32,7 @@
    antiga; os itens são [tipo, texto em Markdown]. */
 const NOTAS_VERSAO = [
   { v:'2.19.2', data:'2026-10-11', titulo:'Menu reorganizado, filtros novos e ajustes da tela inicial', itens:[
+    ['novo', '**Recursos**: o catálogo colaborativo de ferramentas da equipe, em galeria, com filtros na lateral (tipo, acesso, plataforma, tags, avaliação, situação). Reúne os padrões (VS Code e Git Bash), softwares, a gravação de ESP32, STM32, ATSAM, Raspberry Pi e Arduino pelo VS Code, os benefícios de estudante, repositórios da NSA e as indicações da equipe. Cada recurso diz o que faz, como baixar e como começar a usar. Qualquer pessoa adiciona (basta o link), edita, avalia de 1 a 5 estrelas e comenta; só a gestão marca "Padrão da NRO".'],
     ['melhoria', '**Painel do LABBIO, Membros**: a coluna de liderança dá lugar ao status do membro, e dá para marcar pessoas (uma a uma ou a lista inteira) e copiar os e-mails dos marcados (da NRO, pessoal ou os dois), ou escrever para eles em cópia oculta.'],
     ['novo', '**Ensaio do onboarding**: em Administração › Onboarding, "Testar a jornada" abre o tour com uma pessoa simulada (visitante, conta sem vínculo, membro novo, no meio do caminho ou tudo feito). Dá para criar a conta, simular a confirmação do e-mail e o vínculo, marcar as leituras e ligar cada fato, sem gravar nada no SOMA.'],
     ['melhoria', '**Feed da equipe**, **Newsletters** e **Marca** passam para Serviços. Os endereços antigos do feed e das newsletters continuam funcionando.'],
