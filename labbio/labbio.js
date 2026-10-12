@@ -234,8 +234,9 @@ function pgEmBreve(sec){
 }
 
 /* gestores: a lista, o convite, a estrela e a revogação */
-const SIT = { ativo:['Ativo', 'p-ok'], convidado:['Convidado', 'p-warn'], revogado:['Revogado', ''] };
-const pillSit = s => { const [t, c] = SIT[s] || [s, '']; return `<span class="pill ${c}"><span class="dt"></span>${esc(t)}</span>`; };
+/* a situação como marca de estado (ícone e texto), sem pill: o mesmo marcador do quadro de membros */
+const SIT = { ativo:['ok', 'ok', 'Ativo'], convidado:['warn', 'relogio', 'Convidado'], revogado:['neutro', 'menos', 'Revogado'] };
+const pillSit = s => { const [tom, i, t] = SIT[s] || ['neutro', 'menos', s]; return marcaEstado(tom, i, t); };
 async function pgGestores(){
   $('#lb-main').innerHTML = cabecalho({ titulo:'Gestores', lead:'Quem gerencia o painel do LABBIO. A estrela marca o responsável principal.' })
     + `<div id="lb-gest">${estado.carregando()}</div>`;
@@ -337,7 +338,8 @@ const IC = {
   ok:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   menos:'<path d="M6 12h12"/>',
   alerta:'<path d="M12 4 21 19.5H3z"/><path d="M12 10v4M12 17v.5"/>',
-  seta:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+  seta:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  copiar:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>'
 };
 const ic = n => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n] || ''}</svg>`;
 const fmtD = d => d ? new Date(d).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—';
@@ -370,7 +372,7 @@ function acessoHTML(a){
   return marcaEstado('neutro', 'menos', 'Não possui');
 }
 const comBiometria = p => p.acesso?.estado === 'possui' && p.acesso?.sub !== 'revogacao_pendente';
-const chipTrainee = p => p.trainee ? ' <span class="pill">Trainee</span>' : '';
+const chipTrainee = p => p.trainee ? ' <span class="lb-sub">Trainee</span>' : '';
 
 /* ---------------- início: o dashboard (2.19.2) ----------------
    Uma chamada (labbio_inicio) e quatro blocos: os números do dia, o que espera resposta do LABBIO (pedidos de
@@ -451,7 +453,7 @@ function dashboard(d){
       <span class="lb-fila-tx"><b>${esc(c.titulo)}</b><small>${esc(c.espaco)}, ${esc(quandoConsulta(c, hoje))}</small></span>${ic('seta')}</a></li>`);
   const restoPed = ped - pedidos.length, restoCons = cons - consultas.length;
   const fila = `<section class="card lb-bloco" aria-labelledby="lb-b-fila"><header class="lb-bloco-cab"><h2 id="lb-b-fila">Para responder</h2>
-      ${ped + cons ? `<span class="pill p-warn">${ped + cons}</span>` : ''}</header>
+      ${ped + cons ? `<span class="lb-bloco-total">${ped + cons} ${ped + cons === 1 ? 'item' : 'itens'}</span>` : ''}</header>
     ${ped + cons === 0 ? `<p class="lb-vazio">${ic('ok')} Nada esperando o LABBIO.</p>` : `
       ${pedidos.length ? `<h3 class="lb-bloco-sub">Pedidos de biometria</h3><ul class="lb-fila">${itensPedido.join('')}</ul>
         ${restoPed > 0 ? `<a class="lb-mais" href="#/solicitacoes">Mais ${restoPed} ${restoPed === 1 ? 'pedido' : 'pedidos'}</a>` : ''}` : ''}
@@ -570,9 +572,12 @@ async function pgPerfil(reg){
     const termoArq = m.termo?.arquivo && ['enviado', 'conferido'].includes(m.termo?.situacao);
     el.innerHTML = cabecalho({ titulo:m.nome }) + `<div class="lb-objeto">
       <div class="lb-principal">
-        <section class="lb-bloco"><h2>Dados</h2><dl class="lb-spec">
-          ${spec('E-mail da NRO', esc(m.email_nro || '—'))}${spec('E-mail pessoal', esc(m.email_pessoal || '—'))}
-          ${spec('Telefone', esc(m.telefone || '—'))}${spec('Área', esc(m.area || '—'))}${spec('Cargo', esc(m.cargo || '—') + chipTrainee(m))}
+        <section class="lb-bloco"><h2>Contato</h2><dl class="lb-dados">
+          ${campoCopiar('Nome', m.nome, { mono:false })}${campoCopiar('Registro', String(m.registro).padStart(3, '0'))}
+          ${campoCopiar('E-mail da NRO', m.email_nro)}${campoCopiar('E-mail pessoal', m.email_pessoal)}${campoCopiar('Telefone', m.telefone)}
+        </dl></section>
+        <section class="lb-bloco"><h2>Na equipe</h2><dl class="lb-spec">
+          ${spec('Área', esc(m.area || '—'))}${spec('Cargo', esc(m.cargo || '—') + chipTrainee(m))}
           ${spec('Liderança', m.gestor ? `<a href="#/membros/${Number(m.gestor)}">${esc(m.gestor_nome || '—')}</a>` : '—')}
           ${spec('Liderados', (d.liderados || []).length ? d.liderados.map(l => `<a href="#/membros/${Number(l.registro)}">${esc(l.nome)}</a>`).join(', ') : '—')}
         </dl></section>
@@ -752,8 +757,7 @@ async function pgPedido(id){
     if (d?.status !== 'ok'){ el.innerHTML = estado.vazio('Este pedido não está disponível.'); return; }
     const p = d.pedido; lab.pedido = p;
     const env = p.enviada || {}, dados = env.dados || {};
-    const linha = (k, v) => `<div class="lb-dado"><dt>${esc(ROTULO_DADO[k] || k)}</dt><dd>${esc(k === 'confirmado_em' ? fmtDT(v) : v)}</dd>
-      ${k === 'confirmado_em' ? '' : `<button type="button" class="btn ghost mini" onclick="labCopiar(${JSON.stringify(String(v)).replace(/"/g, '&quot;')})">Copiar</button>`}</div>`;
+    const linha = (k, v) => campoCopiar(ROTULO_DADO[k] || k, k === 'confirmado_em' ? fmtDT(v) : v, { copiavel: k !== 'confirmado_em' });
     const aberto = p.etapa === 'labbio';
     el.innerHTML = cabecalho({ titulo:`${p.nome}, ${p.protocolo || 'pedido'}`, lead:`Etapa: ${ETAPA_PEDIDO[p.etapa] || p.etapa}. Versão ${Number(p.versao) || 1}.` }) + `
       <div class="lb-objeto"><div class="lb-principal">
@@ -776,6 +780,12 @@ async function pgPedido(id){
     if (e.message === 'sem_acesso') return;
     const el = $('#ped-corpo'); if (el) el.innerHTML = estado.erro('Não foi possível carregar o pedido.', `<button class="btn ghost mini" type="button" onclick="pgPedido('${esc(id)}')">Tentar de novo</button>`);
   }
+}
+/* um dado numa linha: rótulo, valor (inteiro, sem quebrar no meio) e o botão de copiar, com ícone */
+function campoCopiar(rot, valor, { mono = true, copiavel = true } = {}){
+  const v = valor == null || valor === '' ? '' : String(valor);
+  return `<div class="lb-dado"><dt>${esc(rot)}</dt><dd class="${mono ? 'mono' : ''}" title="${esc(v)}">${v ? esc(v) : '—'}</dd>${v && copiavel
+    ? `<button type="button" class="btn ghost mini lb-copiar" onclick="labCopiar(${esc(JSON.stringify(v))})" aria-label="Copiar ${esc(rot.toLowerCase())}" title="Copiar">${ic('copiar')}<span>Copiar</span></button>` : '<span class="lb-copiar-vazio"></span>'}</div>`;
 }
 function labCopiar(v){ navigator.clipboard?.writeText(v).then(() => toast('Copiado.'), () => toast('Não foi possível copiar.', true)); }
 const MOTIVO_DECIDIR = { conflito:'O pedido mudou em outra tela. Recarregue.', encerrado:'Este pedido já foi decidido.', motivo_obrigatorio:'Escreva o motivo.' };
@@ -861,12 +871,12 @@ function labAgDesenhar(){
  const eventos=a.dados.eventos.filter(e=>!a.espaco||String(e.espaco_id)===a.espaco).sort((x,y)=>(x.data+(x.hora_inicio||'')).localeCompare(y.data+(y.hora_inicio||'')));
  let dia='';
  $('#lb-ag-eventos').innerHTML=eventos.length?eventos.map(e=>{
-  const c=e.consulta,sit={pendente:['Sem resposta',''],disponivel:['Disponível','p-ok'],conflito:['Conflito','p-bad']}[c?.situacao];
+  const c=e.consulta,sit={pendente:['warn','relogio','Sem resposta'],disponivel:['ok','ok','Disponível'],conflito:['err','alerta','Conflito']}[c?.situacao];
   const nomes=e.convidados||[],convidados=nomes.slice(0,3).join(', ')+(nomes.length>3?' e mais '+(nomes.length-3):'');
   const cab=dia!==e.data?`<h2 class="sub-h lb-ag-dia">${esc(new Date(e.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'}))}</h2>`:'';dia=e.data;
   return cab+`<article class="lb-ag-evento" data-evento="${esc(e.id)}"><p class="mono lb-ag-hora">${esc(e.hora_inicio||'Dia inteiro')}${e.hora_fim?' às '+esc(e.hora_fim):''}</p>
    <div class="lb-ag-descricao"><h3>${esc(e.titulo)}</h3><p>${esc(e.espaco)}. Organização: ${esc(e.organizador||'Não informada')}</p>${convidados?`<p>Convidados: ${esc(convidados)}</p>`:''}
-   ${sit?`<div class="lb-ag-consulta"><span class="pill ${sit[1]}"><span class="dt"></span>${sit[0]}</span>${c.situacao==='conflito'?`<span>${esc(c.motivo)}</span>`:''}
+   ${sit?`<div class="lb-ag-consulta">${marcaEstado(sit[0],sit[1],sit[2]).replace('class="lb-est','class="lb-est lb-ag-sit')}${c.situacao==='conflito'?`<span>${esc(c.motivo)}</span>`:''}
     ${c.situacao==='pendente'?`<button class="btn ghost mini" onclick="labAgDecidir('${esc(c.id)}',true)">Disponível</button><button class="btn ghost mini" onclick="labAgConflito('${esc(c.id)}')">Conflito</button>`:''}</div>`:''}
    ${(e.sobreposicoes||[]).map(o=>`<div class="aviso-box warn">Cruza com ${esc(o.titulo)} (${esc(o.hora_inicio)}–${esc(o.hora_fim)}).</div>`).join('')}</div></article>`;
  }).join(''):estado.vazio('Nenhum evento nesta semana para este espaço.');

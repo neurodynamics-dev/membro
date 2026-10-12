@@ -43,9 +43,9 @@ try{
   confere('sem motivo não chama a RPC',await p.locator('#lb-ag-motivo-erro').innerText()==='Informe o motivo do conflito.'&&(await rpcs(p,'labbio_consulta_decidir')).length===antes);
   await p.fill('#lb-ag-motivo','A sala estará em manutenção');await p.getByRole('button',{name:'Apontar conflito',exact:true}).click();
   await evento(p,'ev1').getByText('A sala estará em manutenção',{exact:true}).waitFor();
-  confere('conflito envia o motivo e atualiza a pill',(await rpcs(p,'labbio_consulta_decidir')).at(-1).p.p_disponivel===false&&await evento(p,'ev1').locator('.pill').textContent()==='Conflito');
+  confere('conflito envia o motivo e atualiza a situação',(await rpcs(p,'labbio_consulta_decidir')).at(-1).p.p_disponivel===false&&await evento(p,'ev1').locator('.lb-ag-sit').textContent()==='Conflito');
   await evento(p,'ev3').getByRole('button',{name:'Disponível',exact:true}).click();
-  await evento(p,'ev3').locator('.pill.p-ok').waitFor();
+  await evento(p,'ev3').locator('.lb-ag-sit.lb-ok').waitFor();
   confere('Disponível envia a decisão positiva',(await rpcs(p,'labbio_consulta_decidir')).at(-1).p.p_disponivel===true);
   await p.getByRole('button',{name:'Cadastrar tablet',exact:true}).click();
   await p.locator('#lb-modal').getByRole('button',{name:'Cadastrar tablet',exact:true}).click();

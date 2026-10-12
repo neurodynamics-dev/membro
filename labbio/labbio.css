@@ -114,14 +114,14 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 .lb-sub{display:inline-block;font-size:12px;color:var(--muted);margin-left:6px}
 .lb-voltar{display:inline-flex;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:14px}
 .lb-voltar:hover{color:var(--ink)}
-.lb-objeto{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;align-items:start}
+.lb-objeto{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:24px;align-items:start}
 @media (max-width:900px){.lb-objeto{grid-template-columns:minmax(0,1fr)}}
 .lb-principal{min-width:0;display:flex;flex-direction:column;gap:18px}
 .lb-bloco{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:16px 18px}
 .lb-bloco h2{font-family:var(--fd);font-size:15px;font-weight:600;margin-bottom:10px}
-.lb-spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 18px;margin:0}
+.lb-spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px 24px;margin:0}
 .lb-spec dt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-family:var(--fd);font-weight:600}
-.lb-spec dd{margin:2px 0 0;overflow-wrap:anywhere}
+.lb-spec dd{margin:4px 0 0;overflow-wrap:break-word}
 .lb-lista{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
 .lb-lateral{border:1px solid var(--line);border-radius:var(--r);background:var(--card);padding:18px;display:flex;flex-direction:column;gap:14px;align-items:flex-start}
 .lb-acesso-dest{display:flex;flex-direction:column;gap:6px}
@@ -148,10 +148,21 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 
 /* ---------- solicitações (ficha L6) ---------- */
 .lb-dados{margin:0;display:flex;flex-direction:column}
-.lb-dado{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.lb-dado{display:grid;grid-template-columns:150px minmax(0,1fr) auto;align-items:center;gap:16px;padding:10px 0;border-top:1px solid var(--line)}
 .lb-dado:first-child{border-top:0}
-.lb-dado dt{width:160px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-family:var(--fd);font-weight:600}
-.lb-dado dd{margin:0;flex:1;font-family:var(--fm);overflow-wrap:anywhere}
+.lb-dado dt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-family:var(--fd);font-weight:600}
+.lb-dado dd{margin:0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.lb-dado dd.mono{font-family:var(--fm);font-size:13.5px}
+.lb-copiar{display:inline-flex;align-items:center;gap:6px}
+.lb-copiar .ic{width:15px;height:15px}
+.lb-copiar-vazio{width:1px}
+/* no celular: rótulo em cima, o valor inteiro e o copiar ao lado (só o ícone) */
+@media(max-width:600px){
+  .lb-dado{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px}
+  .lb-dado dt{grid-column:1 / -1}
+  .lb-dado dd{white-space:normal;overflow-wrap:anywhere}
+  .lb-copiar span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+}
 .lb-trilha{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;border-left:2px solid var(--line);padding-left:14px}
 .lb-trilha li.atual{border-left:2px solid var(--syn);margin-left:-16px;padding-left:14px}
 .lb-trilha li.atual b{color:var(--syn-tx)}
@@ -194,7 +205,7 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 .lb-larga{grid-column:1 / -1}
 .lb-bloco-cab{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .lb-bloco-cab h2{font-size:17px;font-weight:600;margin:0}
-.lb-bloco-cab .pill{margin-left:2px}
+.lb-bloco-total{font-family:var(--fm);font-size:12px;color:var(--warn-tx)}
 .lb-bloco-link{margin-left:auto;font-size:12.5px;color:var(--muted)}
 .lb-bloco .lb-bloco-sub{font-family:var(--fd);font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:16px 0 8px}
 .lb-vazio{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);margin:12px 0 0}

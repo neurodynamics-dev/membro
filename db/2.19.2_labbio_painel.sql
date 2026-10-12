@@ -15,7 +15,7 @@
 --
 -- Só leitura, com as mesmas regras de antes: só gestor ativo ou o admin do
 -- SOMA (conta_labbio()), e só os campos combinados (nome e foto, sem dados
--- pessoais). Depois da 2.19.1_labbio_dados e da 2.19.1_labbio_salas. Pode
+-- pessoais). Depois da 2.19.1_labbio_dados e da 2.19.2_salas. Pode
 -- rodar de novo.
 -- ============================================================
 

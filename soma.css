@@ -3142,3 +3142,47 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .bio-prog li.atual{color:var(--ink);font-weight:600} .bio-prog li.atual::before{background:var(--syn);box-shadow:0 0 0 3px rgba(var(--syn-rgb),.25)}
 .bio-prog.parado li.atual::before{background:var(--warn);box-shadow:0 0 0 3px rgba(var(--warn-rgb),.25)}
 .bio-prog p{margin:0;color:var(--muted)}
+
+/* a sala do LABBIO no celular (2.19.2, mod-sala.js): o cartão grande na cor da situação, como o tablet da porta */
+.salam{max-width:640px}
+.salam .cab-voltar{margin-bottom:14px}
+.salam-cartao{--s-a:var(--sulco-primary);--s-b:var(--sulco-dark);--s-luz:var(--pia-primary);--s-tinta:var(--pia-light);
+  --s-borda:rgba(255,255,255,.14);--s-suave:rgba(232,237,235,.74);
+  position:relative;overflow:hidden;border-radius:24px;padding:22px 22px 26px;color:var(--s-tinta);
+  background:radial-gradient(120% 90% at 0% 0%,color-mix(in oklab,var(--s-a) 100%,white 6%) 0%,transparent 60%),linear-gradient(160deg,var(--s-a),var(--s-b))}
+.salam-cartao::after{content:'';position:absolute;left:24%;right:24%;bottom:8px;height:4px;border-radius:2px;background:var(--s-luz);
+  box-shadow:0 0 14px 2px color-mix(in oklab,var(--s-luz) 70%,transparent)}
+.salam-cartao[data-estado="livre"]{--s-a:var(--cortex-primary);--s-b:var(--cortex-dark);--s-luz:var(--ion-medium)}
+.salam-cartao[data-estado="evento"]{--s-a:color-mix(in oklab,var(--impulso-dark) 78%,var(--plexo-dark));--s-b:color-mix(in oklab,var(--impulso-dark) 45%,var(--sulco-dark));--s-luz:var(--impulso-medium)}
+.salam-cartao[data-estado="ocupada"]{--s-a:var(--ritmo-dark);--s-b:color-mix(in oklab,var(--ritmo-dark) 50%,var(--sulco-dark));--s-luz:var(--ritmo-medium)}
+.salam-topo{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.salam-nome{font-family:var(--fd);font-weight:600;font-size:18px}
+.salam-rot{font-family:var(--fd);font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--s-suave)}
+.salam-status{font-family:var(--fd);font-size:56px;font-weight:600;letter-spacing:-.03em;line-height:1;margin:22px 0 6px;color:var(--s-tinta)}
+.salam-ate{font-size:18px;margin:0}
+.salam-ev{display:flex;flex-direction:column;gap:4px;margin-top:16px;padding-top:14px;border-top:1px solid var(--s-borda)}
+.salam-ev b{font-family:var(--fd);font-size:20px;font-weight:500}
+.salam-ev span{font-size:14px;color:var(--s-suave)}
+.salam-quem{font-size:14.5px;color:var(--s-suave);margin:10px 0 0}
+.salam-deslizar{margin-top:16px}
+.salam-msg{margin:14px 0 0;font-size:14px;color:var(--s-tinta)}
+.salam-bloco{margin-top:22px}
+.salam-bloco h2{font-family:var(--fd);font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:0 0 10px}
+.salam-usar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.salam-usar .btn{min-height:48px;justify-content:center}
+.salam-reservar{width:100%;min-height:50px;justify-content:center}
+.salam-nota{font-size:13px;color:var(--muted);margin:8px 0 0}
+.salam-hoje,.salam-outras{list-style:none;margin:0;padding:0}
+.salam-hoje li{display:flex;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
+.salam-hoje .mono{font-size:12.5px;color:var(--muted);min-width:92px;padding-top:2px}
+.salam-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.salam-tx b{font-weight:600;font-size:14.5px}
+.salam-tx small{font-size:12.5px;color:var(--muted)}
+.salam-outras li+li{margin-top:8px}
+.salam-outras a{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;color:var(--ink);text-decoration:none;background:var(--card)}
+.salam-outras a:hover{border-color:var(--line2)}
+.salam-ponto{width:10px;height:10px;border-radius:50%;flex:none;background:var(--pia-primary)}
+.salam-outras [data-estado="livre"] .salam-ponto{background:var(--ion-primary)}
+.salam-outras [data-estado="evento"] .salam-ponto{background:var(--impulso-primary)}
+.salam-outras [data-estado="ocupada"] .salam-ponto{background:var(--ritmo-primary)}
+.salam-seta{margin-left:auto;color:var(--dim)}

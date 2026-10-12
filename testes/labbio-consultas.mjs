@@ -89,6 +89,11 @@ try{
     const t = await abrir('#/membros/4'), { p } = t;
     await p.waitForSelector('#lb-termo-abrir');
     confere('perfil: liderados com link', await p.locator('.lb-spec a[href="#/membros/11"]').count() === 1);
+    await p.evaluate(() => { window.__copiado = null; navigator.clipboard.writeText = v => { window.__copiado = v; return Promise.resolve(); }; });
+    confere('perfil: nome, registro, e-mails e telefone, cada um com copiar', await p.locator('.lb-dado .lb-copiar').count() >= 4);
+    await p.locator('.lb-dado', { hasText:'E-mail da NRO' }).getByRole('button').click();
+    confere('copiar leva o valor inteiro', /@/.test(await p.evaluate(() => window.__copiado) || ''), await p.evaluate(() => window.__copiado));
+    confere('perfil: os valores não quebram linha', await p.locator('.lb-dado dd').evaluateAll(ds => ds.every(d => d.getClientRects().length === 1 && d.offsetHeight < 30)));
     const [aba] = await Promise.all([p.context().waitForEvent('page'), p.click('#lb-termo-abrir')]);
     await p.waitForFunction(() => (window.__baixados || []).some(b => b.bucket === 'termos'));
     const b = await p.evaluate(() => window.__baixados.find(x => x.bucket === 'termos'));
