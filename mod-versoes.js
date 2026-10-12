@@ -52,6 +52,7 @@ const NOTAS_VERSAO = [
     ['correcao', 'O cartão **Acesso ao LABBIO** em Serviços tinha o ícone gigante.'],
     ['correcao', 'Iniciar o **recadastro** falhava com "UPDATE requires a WHERE clause".'],
     ['correcao', 'O formulário de **andamento** em Bugs e sugestões agora mostra "Registrado agora" e fecha o botão até haver nova alteração.'],
+    ['novo', '**Painel do LABBIO** com início em dashboard: os números do dia, os pedidos de biometria e as consultas de sala esperando resposta, os eventos e check-ins de hoje, a presença dos últimos 14 dias e a situação da biometria, do termo e dos treinamentos.'],
     ['novo', '**Solicitação de acesso** em duas telas: primeiro o tipo (sistema, documento ou plataforma; ou o acesso biométrico ao LABBIO), depois o pedido.'],
     ['novo', '**Acesso ao LABBIO** com barra de progresso: enviado, Depto. de Pessoal, LABBIO e acesso cadastrado.'],
     ['melhoria', '**Reporte semanal** da liderança em grade: uma coluna com os nomes, uma de assiduidade, uma de entregas e uma com o botão de sinalizar.'],

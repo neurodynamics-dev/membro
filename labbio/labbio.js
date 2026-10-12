@@ -372,24 +372,121 @@ function acessoHTML(a){
 const comBiometria = p => p.acesso?.estado === 'possui' && p.acesso?.sub !== 'revogacao_pendente';
 const chipTrainee = p => p.trainee ? ' <span class="pill">Trainee</span>' : '';
 
-/* ---------------- início ---------------- */
+/* ---------------- início: o dashboard (2.19.2) ----------------
+   Uma chamada (labbio_inicio) e quatro blocos: os números do dia, o que espera resposta do LABBIO (pedidos de
+   biometria e consultas de sala), o dia no laboratório (eventos e check-ins) e a equipe (presença de 14 dias,
+   biometria, termo e treinamentos). As revogações pendentes ficam no alto, antes de tudo. */
+const fmtHora = d => new Date(d).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+const fmtDiaCurto = s => { const [a, m, d] = String(s).slice(0, 10).split('-'); return `${d}/${m}`; };
+const DIAS_SEM = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+function haQuanto(d){
+  const dias = Math.floor((Date.now() - new Date(d).getTime()) / 864e5);
+  return dias <= 0 ? 'hoje' : dias === 1 ? 'há 1 dia' : `há ${dias} dias`;
+}
+function quandoConsulta(c, hoje){
+  const amanha = labAgSomar(hoje, 1);
+  const dia = c.data === hoje ? 'Hoje' : c.data === amanha ? 'Amanhã' : `${DIAS_SEM[new Date(c.data + 'T12:00:00').getDay()]}, ${fmtDiaCurto(c.data)}`;
+  return dia + (c.hora_inicio ? `, ${c.hora_inicio}${c.hora_fim ? '–' + c.hora_fim : ''}` : '');
+}
+const CONSULTA_EST = { pendente:['warn', 'Consulta sem resposta'], disponivel:['ok', 'Disponível'], conflito:['err', 'Conflito'] };
+
+/* um número do topo: rótulo, valor, apoio e o destino */
+const kpi = (href, rot, num, apoio, tom = '') => `<a class="lb-kpi${tom ? ' ' + tom : ''}" href="${href}"><section class="widget">
+  <header><span class="w-rot">${esc(rot)}</span></header><div class="w-corpo"><span class="w-num">${num}</span>${apoio ? `<span class="lb-kpi-apoio">${apoio}</span>` : ''}</div></section></a>`;
+
+/* barra empilhada com legenda (biometria, termo) */
+function empilhada(id, rot, partes){
+  const total = partes.reduce((t, [, n]) => t + n, 0);
+  if (!total) return '';
+  return `<div class="lb-emp" id="${id}"><p class="lb-emp-rot">${esc(rot)}</p>
+    <div class="lb-emp-barra" role="img" aria-label="${esc(rot + ': ' + partes.map(([n, v]) => `${v} ${n.toLowerCase()}`).join(', '))}">${
+      partes.filter(([, n]) => n).map(([, n, tom]) => `<span class="lb-${tom}" style="flex:${n}"></span>`).join('')}</div>
+    <ul class="lb-emp-leg">${partes.map(([n, v, tom]) => `<li><i class="lb-${tom}" aria-hidden="true"></i>${esc(n)} <b>${v}</b></li>`).join('')}</ul></div>`;
+}
+
+/* presença dos últimos 14 dias, em colunas (com a tabela para leitor de tela) */
+function seriePresenca(serie){
+  if (!serie?.length) return '';
+  const max = Math.max(1, ...serie.map(x => Number(x.pessoas) || 0));
+  const col = x => { const n = Number(x.pessoas) || 0, d = new Date(x.dia + 'T12:00:00'), fds = [0, 6].includes(d.getDay());
+    return `<li class="${fds ? 'fds' : ''}" title="${esc(fmtDiaCurto(x.dia))}: ${n} ${n === 1 ? 'pessoa' : 'pessoas'}">
+      <span class="lb-col-n">${n || ''}</span><span class="lb-col" style="height:${Math.round(n / max * 100)}%"></span>
+      <span class="lb-col-d">${d.getDate()}</span></li>`; };
+  const media = serie.reduce((t, x) => t + (Number(x.pessoas) || 0), 0) / serie.length;
+  return `<div class="lb-serie"><ol aria-hidden="true">${serie.map(col).join('')}</ol>
+    <p class="lb-serie-pe">Média de ${media.toLocaleString('pt-BR', { maximumFractionDigits:1 })} ${media === 1 ? 'pessoa' : 'pessoas'} por dia, contando fins de semana.</p>
+    <table class="lb-sr"><caption>Pessoas por dia</caption><tbody>${serie.map(x => `<tr><th>${esc(fmtDiaCurto(x.dia))}</th><td>${Number(x.pessoas) || 0}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
 async function pgInicio(){
-  $('#lb-main').innerHTML = cabecalho({ titulo:'Início', lead:'O que o LABBIO acompanha da equipe da NeuroDynamics.' }) + `<div id="lb-ini">${estado.carregando()}</div>`;
+  $('#lb-main').innerHTML = cabecalho({ titulo:'Início', lead:'O dia no LABBIO: o que espera resposta, quem está no laboratório e a situação da equipe.' })
+    + `<div id="lb-ini">${estado.carregando()}</div>`;
   try {
     const d = await rpc('labbio_inicio');
     if (d?.status !== 'ok') throw new Error(d?.status);
     lab.revogacoes = d.revogacoes || [];
     const el = $('#lb-ini'); if (!el) return;
-    el.innerHTML = `<div id="lb-rev">${faixasRevogacao()}</div>
-      <div class="lb-atalhos">
-        <a href="#/membros"><section class="widget"><header><span class="w-rot">Membros ativos</span></header><div class="w-corpo"><span class="w-num">${Number(d.membros) || 0}</span></div></section></a>
-        <a href="#/membros"><section class="widget"><header><span class="w-rot">Com biometria</span></header><div class="w-corpo"><span class="w-num">${Number(d.com_acesso) || 0}</span></div></section></a>
-        <a href="#/solicitacoes"><section class="widget"><header><span class="w-rot">Pedidos para analisar</span></header><div class="w-corpo"><span class="w-num">${Number(d.pedidos_abertos) || 0}</span></div></section></a>
-      </div>`;
+    el.innerHTML = dashboard(d);
   } catch(e){
     if (e.message === 'sem_acesso') return;
     $('#lb-ini').innerHTML = estado.erro('Não foi possível carregar o início.', '<button class="btn ghost mini" type="button" onclick="pgInicio()">Tentar de novo</button>');
   }
+}
+function dashboard(d){
+  const n = v => Number(v) || 0;
+  const hoje = d.hoje_data || isoDia(new Date()), h = d.hoje || {};
+  const membros = n(d.membros), comAcesso = n(d.com_acesso), ped = n(d.pedidos_abertos), cons = n(d.consultas_pendentes), pres = n(h.presentes);
+  const pedidos = d.pedidos || [], consultas = d.consultas || [], eventos = h.eventos || [], ultimos = h.ultimos || [];
+
+  const kpis = `<div class="lb-kpis">
+    ${kpi('#/solicitacoes', 'Pedidos para analisar', ped, ped ? 'Esperando o LABBIO' : 'Nada pendente', ped ? 'atencao' : '')}
+    ${kpi('#/agenda', 'Consultas de sala', cons, cons ? 'Sem resposta' : 'Todas respondidas', cons ? 'atencao' : '')}
+    ${kpi('#/checkins', 'No LABBIO hoje', pres, pres === 1 ? 'pessoa com check-in' : 'pessoas com check-in')}
+    ${kpi('#/membros', 'Com biometria', comAcesso, `de ${membros} ${membros === 1 ? 'membro ativo' : 'membros ativos'}`)}
+  </div>`;
+
+  const itensPedido = pedidos.map(p => `<li><a class="lb-fila-item" href="#/solicitacoes/${esc(p.id)}">${avatar(p, 32)}
+      <span class="lb-fila-tx"><b>${esc(p.nome)}</b><small>Acesso biométrico, encaminhado ${esc(haQuanto(p.encaminhado_em))}</small></span>${ic('seta')}</a></li>`);
+  const itensConsulta = consultas.map(c => `<li><a class="lb-fila-item" href="#/agenda"><span class="lb-fila-ic" aria-hidden="true">${ic('relogio')}</span>
+      <span class="lb-fila-tx"><b>${esc(c.titulo)}</b><small>${esc(c.espaco)}, ${esc(quandoConsulta(c, hoje))}</small></span>${ic('seta')}</a></li>`);
+  const restoPed = ped - pedidos.length, restoCons = cons - consultas.length;
+  const fila = `<section class="card lb-bloco" aria-labelledby="lb-b-fila"><header class="lb-bloco-cab"><h2 id="lb-b-fila">Para responder</h2>
+      ${ped + cons ? `<span class="pill p-warn">${ped + cons}</span>` : ''}</header>
+    ${ped + cons === 0 ? `<p class="lb-vazio">${ic('ok')} Nada esperando o LABBIO.</p>` : `
+      ${pedidos.length ? `<h3 class="lb-bloco-sub">Pedidos de biometria</h3><ul class="lb-fila">${itensPedido.join('')}</ul>
+        ${restoPed > 0 ? `<a class="lb-mais" href="#/solicitacoes">Mais ${restoPed} ${restoPed === 1 ? 'pedido' : 'pedidos'}</a>` : ''}` : ''}
+      ${consultas.length ? `<h3 class="lb-bloco-sub">Consultas de sala</h3><ul class="lb-fila">${itensConsulta.join('')}</ul>
+        ${restoCons > 0 ? `<a class="lb-mais" href="#/agenda">Mais ${restoCons} ${restoCons === 1 ? 'consulta' : 'consultas'}</a>` : ''}` : ''}`}
+  </section>`;
+
+  const evHTML = eventos.length ? `<ul class="lb-dia">${eventos.map(e => { const [tom, txt] = CONSULTA_EST[e.consulta] || [];
+      return `<li><span class="mono lb-dia-hora">${esc(e.hora_inicio || 'Dia todo')}${e.hora_fim ? '<br>' + esc(e.hora_fim) : ''}</span>
+        <span class="lb-fila-tx"><b>${esc(e.titulo)}</b><small>${esc(e.espaco)}${tom ? ` <span class="lb-est lb-${tom}">${esc(txt)}</span>` : ''}</small></span></li>`; }).join('')}</ul>`
+    : '<p class="lb-vazio">Nenhum evento hoje nas salas do LABBIO.</p>';
+  const chegadas = ultimos.length ? `<ul class="lb-chegadas">${ultimos.map(u => `<li><a href="#/membros/${esc(u.registro)}">${avatar(u, 28)}<span>${esc(u.nome)}</span><time class="mono">${esc(fmtHora(u.registrado_em))}</time></a></li>`).join('')}</ul>
+      ${pres > ultimos.length ? `<a class="lb-mais" href="#/checkins">Ver os ${pres} check-ins de hoje</a>` : ''}`
+    : '<p class="lb-vazio">Ninguém fez check-in hoje.</p>';
+  const dia = `<section class="card lb-bloco" aria-labelledby="lb-b-dia"><header class="lb-bloco-cab"><h2 id="lb-b-dia">Hoje no LABBIO</h2>
+      <a class="lb-bloco-link" href="#/agenda">Agenda</a></header>
+    <h3 class="lb-bloco-sub">Salas</h3>${evHTML}
+    <h3 class="lb-bloco-sub">Últimos check-ins</h3>${chegadas}</section>`;
+
+  const ac = d.acesso || {}, te = d.termo, trein = n(d.treinamentos_pendentes);
+  const equipe = `<section class="card lb-bloco lb-larga" aria-labelledby="lb-b-eq"><header class="lb-bloco-cab"><h2 id="lb-b-eq">Equipe</h2>
+      <a class="lb-bloco-link" href="#/membros">Membros</a></header>
+    <div class="lb-eq">
+      <div><h3 class="lb-bloco-sub">Presença nos últimos 14 dias</h3>${seriePresenca(d.serie) || '<p class="lb-vazio">Sem dados de presença.</p>'}</div>
+      <div class="lb-eq-dir">
+        ${empilhada('lb-emp-bio', 'Acesso biométrico', [['Possui', n(ac.possui), 'ok'], ['Pedido em andamento', n(ac.solicitado), 'info'], ['Não possui', n(ac.nao_possui), 'neutro']])}
+        ${te ? empilhada('lb-emp-termo', 'Termo de sigilo', [['Conferido', n(te.conferido), 'ok'], ['Enviado', n(te.enviado), 'info'], ['Pendente', n(te.pendente), 'warn'], ['Devolvido', n(te.devolvido), 'err']])
+             : '<p class="lb-vazio">Sem campanha do termo de sigilo aberta.</p>'}
+        <a class="lb-trein${trein ? ' atencao' : ''}" href="#/treinamentos">${ic(trein ? 'alerta' : 'selo')}<span>${trein
+          ? `<b>${trein}</b> ${trein === 1 ? 'pessoa com treinamento obrigatório em aberto' : 'pessoas com treinamento obrigatório em aberto'}`
+          : 'Treinamentos obrigatórios em dia'}</span>${ic('seta')}</a>
+      </div>
+    </div></section>`;
+
+  return `<div id="lb-rev">${faixasRevogacao()}</div>${kpis}<div class="lb-dash">${fila}${dia}${equipe}</div>`;
 }
 function faixasRevogacao(){
   return (lab.revogacoes || []).map(v => `<div class="aviso-box warn lb-rev" id="lb-rev-${esc(v.id)}">

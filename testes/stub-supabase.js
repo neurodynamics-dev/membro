@@ -1021,8 +1021,21 @@
             if (nome === 'labbio_pedido_ler' && !gestor && ['admin','pessoal'].includes(DADOS.perfis[0].papel)) return r({ status:'ok', pedido: structuredClone(PED) });
             // o lado do LABBIO
             if (!gestor) return r({ status:'sem_permissao' });
-            if (nome === 'labbio_inicio') return r({ status:'ok', membros:12, com_acesso:7, pedidos_abertos: PED.etapa === 'labbio' ? 1 : 0,
-              revogacoes: REV.filter(x => !x.confirmada_em).map(({ id, registro, nome, status_para, criada_em }) => ({ id, registro, nome, status_para, criada_em })) });
+            if (nome === 'labbio_inicio'){
+              const dia = n => { const x = new Date(); x.setDate(x.getDate() + n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+              const agora = n => new Date(Date.now() - n * 60000).toISOString();
+              return r({ status:'ok', hoje_data: dia(0), membros:12, com_acesso:7, pedidos_abertos: PED.etapa === 'labbio' ? 1 : 0,
+                revogacoes: REV.filter(x => !x.confirmada_em).map(({ id, registro, nome, status_para, criada_em }) => ({ id, registro, nome, status_para, criada_em })),
+                pedidos: PED.etapa === 'labbio' ? [{ id: PED.id, registro: 11, nome:'Bruno Tavares', encaminhado_em: new Date(Date.now() - 3 * 864e5).toISOString() }] : [],
+                consultas_pendentes: 2, consultas: [{ id:'cq1', evento_id:'ev1', titulo:'Banca de TCC', data: dia(1), hora_inicio:'14:00', hora_fim:'16:00', espaco:'Auditório' },
+                                                    { id:'cq2', evento_id:'ev2', titulo:'Reunião com parceiros', data: dia(3), hora_inicio:'10:00', hora_fim:'11:00', espaco:'Sala de Reuniões' }],
+                hoje: { presentes: 3, ultimos: [{ registro: 4, nome:'Ana Figueiredo', registrado_em: agora(15) }, { registro: 17, nome:'Carla Mendonça', registrado_em: agora(70) },
+                                                { registro: 11, nome:'Bruno Tavares', registrado_em: agora(130) }],
+                        eventos: [{ id:'ev0', titulo:'Seminário interno', hora_inicio:'09:00', hora_fim:'10:30', espaco:'Auditório', consulta:'disponivel' }] },
+                serie: Array.from({ length:14 }, (_, i) => ({ dia: dia(i - 13), pessoas: [0, 6].includes(new Date(dia(i - 13) + 'T12:00:00').getDay()) ? i % 3 : [4, 6, 5, 7, 6, 8, 5, 7, 6, 9, 3, 5, 8, 3][i] })),
+                acesso: { possui:7, solicitado: PED.etapa === 'labbio' ? 1 : 0, nao_possui: PED.etapa === 'labbio' ? 4 : 5 },
+                termo: { pendente:3, enviado:2, conferido:6, devolvido:1 }, treinamentos_pendentes: 2 });
+            }
             const listaMembros = () => [pessoa(4, 'Ana Figueiredo', { acesso:{ estado:'possui', sub:null, desde:'2026-03-01' },
                                termo:{ situacao:'conferido', enviado_em:'2026-10-05T12:00:00Z', conferido_em:'2026-10-06T12:00:00Z', arquivo:'labbio-2026/4/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.pdf' } }),
                              pessoa(11, 'Bruno Tavares', { acesso:{ estado:'solicitado', sub: PED.etapa } }),
