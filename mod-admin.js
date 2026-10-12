@@ -191,9 +191,10 @@ function admDesenharOnboarding(){
   const ps = (admOnb.dados.pessoas || []).filter(x => !admOnb.soTrainees || x.trainee);
   const barra = x => `<div class="rec-barra" role="progressbar" aria-valuemin="0" aria-valuemax="${x.total}" aria-valuenow="${x.feitas}"
       aria-label="${x.feitas} de ${x.total} etapas">${Array.from({ length:x.total }, (_, i) => `<span class="${i < x.feitas ? 'feito' : ''}"></span>`).join('')}</div>`;
-  el.innerHTML = `<div class="filtros" style="margin-bottom:12px">
+  el.innerHTML = `<div class="filtros" style="margin-bottom:12px;align-items:center">
       <button type="button" class="chip${admOnb.soTrainees ? ' on' : ''}" aria-pressed="${admOnb.soTrainees}" id="onb-so-trainees"
-        onclick="admOnb.soTrainees=!admOnb.soTrainees;admDesenharOnboarding()">Só trainees</button></div>
+        onclick="admOnb.soTrainees=!admOnb.soTrainees;admDesenharOnboarding()">Só trainees</button>
+      <a class="btn ghost mini" style="margin-left:auto" href="tour.html?ensaio" target="_blank" rel="noopener" id="onb-ensaio">Testar a jornada (ensaio)</a></div>
     ${ps.length ? `<div class="card" style="padding:8px 14px"><div class="wrap"><table class="tabela trabalho" id="onb-tabela">
       <thead><tr><th>Pessoa</th><th>Liderança</th><th style="width:200px">Progresso</th><th>Pendências</th></tr></thead>
       <tbody>${ps.map(x => `<tr>

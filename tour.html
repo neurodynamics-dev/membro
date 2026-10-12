@@ -698,6 +698,8 @@ footer{border-top:1px solid var(--line)}
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- tour.html?ensaio: a jornada de quem chega, com uma pessoa simulada e sem tocar no banco (tour-ensaio.js) -->
+<script>if (/[?&]ensaio(=|&|$)/.test(location.search)) document.write('<script src="tour-ensaio.js"><\/script>');</script>
 <script>
 /* ============================================================
    TOUR DO SOMA — membro.neurodynamics.dev/tour
@@ -756,8 +758,10 @@ const fmtD = iso => { if (!iso) return '—'; const [a, m, d] = String(iso).slic
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const mesAtual = () => MESES[new Date().getMonth()];
 const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
-function ler(k, padrao){ try { const v = localStorage.getItem(k); return v == null ? padrao : JSON.parse(v); } catch(e){ return padrao; } }
-function gravar(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ /* navegação privada: vale até fechar */ } }
+/* no ensaio (tour-ensaio.js), as marcas deste navegador ficam à parte, com o prefixo "ensaio:" */
+const MARCA = k => (window.__ensaio ? 'ensaio:' : '') + k;
+function ler(k, padrao){ try { const v = localStorage.getItem(MARCA(k)); return v == null ? padrao : JSON.parse(v); } catch(e){ return padrao; } }
+function gravar(k, v){ try { localStorage.setItem(MARCA(k), JSON.stringify(v)); } catch(e){ /* navegação privada: vale até fechar */ } }
 function toast(msg){ const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
   $('#toast').appendChild(t); setTimeout(() => t.remove(), 5200); }
 async function copiar(texto){
@@ -1375,7 +1379,7 @@ function ligarConta(){
     a.dataset.ligado = '1';
     a.addEventListener('click', e => {
       const m = e.target.closest('[data-modo]');
-      if (m){ if (m.hasAttribute('data-limpa')){ conta.email = ''; try { localStorage.removeItem('nd.tour.cadastro'); } catch(_){} }
+      if (m){ if (m.hasAttribute('data-limpa')){ conta.email = ''; try { localStorage.removeItem(MARCA('nd.tour.cadastro')); } catch(_){} }
         conta.aviso = null; mudarModo(m.dataset.modo); return; }
       const v = e.target.closest('[data-ver]');
       if (v){ const inp = v.parentNode.querySelector('input'); const mostra = inp.type === 'password';
@@ -2359,7 +2363,7 @@ let mudando = null;
 async function aoMudarSessao(aviso){
   mudando ||= (async () => {
     await carregarBase();
-    try { localStorage.removeItem('nd.tour.cadastro'); } catch(e){}
+    try { localStorage.removeItem(MARCA('nd.tour.cadastro')); } catch(e){}
     conta.aviso = null;
     desenharCabecalho();
     ir(false);
@@ -2381,7 +2385,7 @@ document.addEventListener('click', e => {
   const c = e.target.closest('[data-copiar]'); if (c){ copiar(c.dataset.copiar); return; }
   const ob = e.target.closest('[data-onb]'); if (ob){ marcarTrilha(ob.dataset.onb, ob.dataset.feita === '1', ob); return; }
   const mk = e.target.closest('[data-marcar]'); if (mk){ gravar(mk.dataset.marcar, true); mk.remove(); atualizarMissao(); toast('Passo marcado como feito.'); return; }
-  if (e.target.closest('[data-recomecar]')){ try { localStorage.removeItem('nd.tour.vistas'); localStorage.removeItem('nd.tour.ultima'); } catch(_){} }
+  if (e.target.closest('[data-recomecar]')){ try { localStorage.removeItem(MARCA('nd.tour.vistas')); localStorage.removeItem(MARCA('nd.tour.ultima')); } catch(_){} }
   if (e.target.closest('[data-fecha]')) fecharGaveta();
 });
 $('#hd-etapas').addEventListener('click', () => $('#gaveta').hidden ? abrirGaveta() : fecharGaveta());
