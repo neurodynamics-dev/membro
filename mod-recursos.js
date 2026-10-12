@@ -125,7 +125,7 @@ async function rcsGaleria(){
   }
   $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Biblioteca',
       lead:'As ferramentas que a equipe usa, conhece e quer testar: os padrões, os softwares, a gravação de placas, os benefícios de estudante. Qualquer pessoa pode adicionar, avaliar e comentar.',
-      acoes:'<a class="btn solid" href="#/biblioteca/novo" id="rcs-novo">' + ic('plus') + ' Adicionar item</a>' }) + `
+      acoes:'<a class="btn solid rcs-mais" href="#/biblioteca/novo" id="rcs-novo" title="Adicionar item" aria-label="Adicionar item">' + ic('plus') + '</a>' }) + `
     <div class="rcs-layout">
       <aside class="rcs-filtros${rcsM.painel ? ' aberto' : ''}" id="rcs-filtros" aria-label="Filtros da Biblioteca">
         <div class="fld busca"><label for="rcs-q">Buscar</label><input id="rcs-q" type="search" placeholder="Nome, tag ou o que faz" autocomplete="off" value="${esc(rcsM.f.q)}"></div>
