@@ -86,8 +86,10 @@ async function pagePresenca(){
       <p class="small muted" style="margin-top:10px">Férias e afastamento: <a href="#/agenda" style="text-decoration:underline">Agenda</a> › Criar › Ausência.</p>`}</div>
     ${can() ? `<div class="card"><div class="head"><h3>Folhas de check-in ${dica('O QR Code fixo, impresso em A4, vale como o do quiosque quando ele está desligado. Só existe uma folha ativa: gerar outra invalida a anterior, e o PDF só pode ser baixado na hora de gerar.')}</h3>
       ${state.perfil?.papel === 'admin' ? `<button class="btn solid mini" onclick="presNovaFolha()">${ic('qr')} Gerar nova folha</button>` : ''}</div><div id="pres-folhas"></div></div>` : ''}
+    ${state.perfil?.papel === 'admin' ? `<div class="card" id="pres-local"><div class="head"><h3>Local do check-in ${dica('O check-in pela folha só vale perto do centro configurado. O celular manda a posição, o banco confere a distância (descontando a imprecisão do GPS, até 100 m) e não guarda as coordenadas.')}</h3></div><div id="pres-local-corpo"></div></div>` : ''}
   </div>`;
   if (can()) presFolhas();
+  if (state.perfil?.papel === 'admin') presLocal();
 }
 
 /* ---------- status e intervalos ---------- */
@@ -127,6 +129,59 @@ async function presRemover(id){
   const { error } = await sb.from('agenda_ausencias').delete().eq('id', id);
   if (error) return toast('Não foi possível remover: ' + error.message, true);
   toast('Removido.'); pagePresenca();
+}
+
+/* ---------- o local do check-in pela folha (admin, 2.19.2) ---------- */
+async function presLocal(){
+  const el = $('#pres-local-corpo'); if (!el) return;
+  const { data, error } = await sb.rpc('checkin_local_ler');
+  if (error || data?.status !== 'ok'){
+    el.innerHTML = `<p class="small muted">${error && /checkin_local_ler/.test(error.message) ? 'Falta aplicar a migração db/2.19.2_checkin_local.sql.' : esc(motivoRPC(data, error, 'Não foi possível ler o local.'))}</p>`;
+    return;
+  }
+  presenca.local = data;
+  if (!data.configurado){ el.innerHTML = `<p class="small muted">Sem local configurado: a folha vale de qualquer lugar.</p>
+    <button class="btn ghost mini" onclick="presEditarLocal()">Configurar</button>`; return; }
+  el.innerHTML = `<div class="pres-local">
+    <span class="tx"><b>${data.ativo ? 'Conferência ligada' : 'Conferência desligada'}</b>
+      <span>${data.ativo ? `Vale até ${data.raio_m} m do ponto ${Number(data.latitude).toFixed(5)}, ${Number(data.longitude).toFixed(5)}; recusa se o GPS tiver erro maior que ${data.precisao_max_m} m.` : 'A folha vale de qualquer lugar.'}
+      Última mudança${data.atualizado_por ? ' por ' + esc(data.atualizado_por) : ''} em ${fmtD(String(data.atualizado_em).slice(0, 10))}.</span></span>
+    <button class="btn ghost mini" onclick="presEditarLocal()">Ajustar</button></div>`;
+}
+function presEditarLocal(){
+  const d = presenca.local || {};
+  abreModal(`<h3>Local do check-in</h3>
+    <label class="check"><input type="checkbox" id="lc-ativo" ${d.ativo !== false ? 'checked' : ''}> Conferir a posição no check-in pela folha</label>
+    <div class="dupla"><div class="fld"><label for="lc-lat">Latitude</label><input id="lc-lat" inputmode="decimal" value="${d.latitude ?? ''}"></div>
+      <div class="fld"><label for="lc-lon">Longitude</label><input id="lc-lon" inputmode="decimal" value="${d.longitude ?? ''}"></div></div>
+    <button class="btn ghost mini" type="button" id="lc-aqui" onclick="presLocalAqui()">${ic('pino')} Usar a minha posição agora</button>
+    <div class="dupla" style="margin-top:12px"><div class="fld"><label for="lc-raio">Raio (m)</label><input id="lc-raio" type="number" min="20" max="5000" value="${d.raio_m ?? 150}"></div>
+      <div class="fld"><label for="lc-prec">Erro máximo do GPS (m)</label><input id="lc-prec" type="number" min="20" max="2000" value="${d.precisao_max_m ?? 200}"></div></div>
+    <p class="small muted">Dica: no Google Maps, toque e segure no ponto e copie os dois números.</p>
+    <p class="err-msg" id="lc-erro"></p>
+    <div class="acts"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" id="lc-ok" onclick="presSalvarLocal()">Salvar</button></div>`);
+}
+async function presLocalAqui(){
+  const b = $('#lc-aqui'), er = $('#lc-erro'); er.textContent = ''; b.disabled = true;
+  try{
+    const p = await posicaoAtual();
+    $('#lc-lat').value = p.coords.latitude.toFixed(6); $('#lc-lon').value = p.coords.longitude.toFixed(6);
+    if (p.coords.accuracy > 50) er.textContent = `Erro de ${Math.round(p.coords.accuracy)} m nesta medida: confira o ponto antes de salvar.`;
+  }catch(_){ er.textContent = 'Não foi possível pegar a posição. Libere a localização no navegador ou digite os números.'; }
+  b.disabled = false;
+}
+async function presSalvarLocal(){
+  const num = id => Number(String($(id).value).replace(',', '.').trim());
+  const lat = num('#lc-lat'), lon = num('#lc-lon'), raio = Math.round(num('#lc-raio')), prec = Math.round(num('#lc-prec')), er = $('#lc-erro');
+  if (!$('#lc-lat').value.trim() || !$('#lc-lon').value.trim() || !isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180)
+    return er.textContent = 'Informe a latitude e a longitude em graus (por exemplo, -19,8705).';
+  if (!(raio >= 20 && raio <= 5000)) return er.textContent = 'O raio vai de 20 a 5000 m.';
+  if (!(prec >= 20 && prec <= 2000)) return er.textContent = 'O erro máximo do GPS vai de 20 a 2000 m.';
+  $('#lc-ok').disabled = true;
+  const { data, error } = await sb.rpc('checkin_local_salvar', { p_ativo: $('#lc-ativo').checked, p_lat: lat, p_lon: lon, p_raio: raio, p_precisao_max: prec });
+  if (error || data?.status !== 'ok'){ $('#lc-ok').disabled = false; return er.textContent = motivoRPC(data, error, 'Não foi possível salvar.'); }
+  fechaModal(); toast('Local do check-in salvo.'); presLocal();
 }
 
 /* ---------- as folhas de check-in (gestão) ---------- */

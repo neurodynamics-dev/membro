@@ -151,3 +151,17 @@ O tablet (sem login, chave pública):
 
 `evento`/`proximo`: `{ id, titulo ('Reservado' se privado), data, hora_inicio, hora_fim, inicio, fim }`.
 `dispositivo_invalido` quando o token não existe ou foi revogado.
+
+
+## Foto do pedido de biometria (2.19.2)
+
+O passo da foto (`#/servicos/biometria/foto`) tem duas saídas, com os mesmos requisitos à vista:
+
+- **Câmera, com verificação ao vivo** (`mod-biometria-rosto.js`, MediaPipe em `vendor/mediapipe`, no aparelho):
+  rosto (um só), enquadramento (dentro do oval, tamanho certo), iluminação (nem escuro, nem estourado, nem de um
+  lado só, nem contraluz) e contraste com o fundo. O botão "Tirar a foto" só abre depois de três conferências
+  boas seguidas. Se a biblioteca não carregar, a câmera segue sem verificação, com aviso.
+- **Arquivo, sem verificação**: JPEG ou PNG de até 5 MB, recortado ao quadrado central. O Pessoal e o LABBIO conferem
+  e podem devolver o pedido.
+
+A conferência é uma ajuda a quem tira a foto, não uma garantia. O servidor não olha a imagem.

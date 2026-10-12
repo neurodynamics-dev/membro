@@ -40,7 +40,11 @@ const NOTAS_VERSAO = [
     ['melhoria', '**Organograma**: trainee aparece com um ponto Plexo ao lado do nome.'],
     ['melhoria', '**Quadro de avisos** só em rodízio; o botão de grade saiu.'],
     ['melhoria', '**Painel do LABBIO**: o admin do SOMA entra com a própria conta. A logo do LABBIO perde o fundo preto e, em telas pequenas, fica só a palavra "labbio".'],
-    ['correcao', 'O cartão **Acesso ao LABBIO** em Serviços tinha o ícone gigante.']
+    ['novo', '**Check-in pela folha** confere a localização: o celular manda a posição e o banco confere se você está a até 150 m do LABBIO. A posição não fica guardada. A administração ajusta o local em Equipe › Presença.'],
+    ['novo', '**Foto do acesso ao LABBIO** com verificação ao vivo na câmera: rosto, enquadramento, iluminação e contraste, no próprio aparelho. Quem prefere pode enviar um arquivo, sem verificação, com os requisitos à vista.'],
+    ['melhoria', 'A **barra de ações** dos fluxos em passos deixa de ser uma faixa preta e passa a ser de vidro.'],
+    ['correcao', 'O cartão **Acesso ao LABBIO** em Serviços tinha o ícone gigante.'],
+    ['correcao', 'Iniciar o **recadastro** falhava com "UPDATE requires a WHERE clause".']
   ]},
   { v:'2.19.1', data:'2026-10-11', titulo:'Reporte por liderança, feed editorial, LABBIO e trainees', itens:[
     ['novo', '**Reporte semanal** por liderança direta, com cobrança na sexta às 16h, painel da semana e PDF em tabelas.'],

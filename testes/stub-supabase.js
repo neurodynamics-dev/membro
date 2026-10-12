@@ -2566,10 +2566,35 @@
             const f = DADOS.checkin_folhas.find(x => x.id === args.p_id); if (!f) return { data:{ status:'nao_encontrado' }, error:null };
             f.revogada_em = new Date().toISOString(); return { data:{ status:'ok' }, error:null };
           }
+          /* 2.19.2: o local do check-in pela folha (db/2.19.2_checkin_local.sql). window.__teste.checkinLocal
+             sobrescreve a configuração; a regra é a do banco: distância menos a imprecisão (no máximo 100 m) cabe no raio. */
+          const LOCAL = () => ({ ativo:true, latitude:-19.870585008331524, longitude:-43.96169940068524, raio_m:150, precisao_max_m:200,
+            atualizado_em:'2026-10-11T12:00:00Z', atualizado_por:'Migração 2.19.2', configurado:true, ...((window.__teste || {}).checkinLocal || {}) });
+          if (nome === 'checkin_local_ler'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            return { data: DADOS.perfis[0].papel === 'admin' ? { status:'ok', ...LOCAL() } : { status:'sem_permissao' }, error:null };
+          }
+          if (nome === 'checkin_local_salvar'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
+            (window.__teste ||= {}).checkinLocal = { ativo:args.p_ativo, latitude:args.p_lat, longitude:args.p_lon, raio_m:args.p_raio,
+              precisao_max_m:args.p_precisao_max, atualizado_por:'Ana Figueiredo', atualizado_em:new Date().toISOString() };
+            return { data:{ status:'ok' }, error:null };
+          }
           if (nome === 'registrar_checkin_folha'){
             (window.__rpcs ||= []).push({ nome, p:args });
             const f = DADOS.checkin_folhas.find(x => x.token === args.p_token && !x.revogada_em);
             if (!f) return { data:{ status:'folha_invalida' }, error:null };
+            const c = LOCAL();
+            if (c.ativo){
+              const { p_lat:la, p_lon:lo, p_precisao:pr } = args;
+              if (typeof la !== 'number' || typeof lo !== 'number' || !isFinite(la) || !isFinite(lo)) return { data:{ status:'sem_localizacao' }, error:null };
+              if (typeof pr !== 'number' || !isFinite(pr) || pr > c.precisao_max_m) return { data:{ status:'localizacao_imprecisa', precisao_max_m:c.precisao_max_m }, error:null };
+              const rad = x => x * Math.PI / 180, a = Math.sin(rad(la - c.latitude) / 2) ** 2
+                + Math.cos(rad(c.latitude)) * Math.cos(rad(la)) * Math.sin(rad(lo - c.longitude) / 2) ** 2;
+              const d = 2 * 6371000 * Math.asin(Math.sqrt(a));
+              if (d - Math.min(pr, 100) > c.raio_m) return { data:{ status:'fora_do_local', distancia_m:Math.round(d), raio_m:c.raio_m }, error:null };
+            }
             f.usos++; return { data:{ status:'ok', nome:'Ana Figueiredo', visitas_mes:13, anterior:null }, error:null };
           }
           if (nome === 'portal_agenda_ocupacao'){

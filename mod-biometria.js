@@ -8,7 +8,8 @@
    fmtDT, ic, cabecalho, estado, etapas, layoutFluxo, layoutLeitura,
    spec, TEMPOS, motivoRPC.
    ============================================================ */
-const bio = { d:null, passo:'pedido', just:'', tempo:'', stream:null, blob:null, enviando:false };
+const bio = { d:null, passo:'pedido', just:'', tempo:'', stream:null, blob:null, enviando:false,
+  vez:0, timer:null, origem:null, semVerificacao:false };   // 2.19.2: a verificação ao vivo (mod-biometria-rosto.js)
 const BIO_PASSOS = [['pedido', 'Pedido'], ['dados', 'Dados'], ['foto', 'Foto']];
 const BIO_EVENTO = { pessoal:'Enviado ao Pessoal', labbio:'Encaminhado ao LABBIO', devolvido:'Devolvido para correção', negado_pessoal:'Negado',
   negado_labbio:'Negado', concedido:'Acesso cadastrado', cancelado:'Cancelado', rascunho:'Em rascunho' };
@@ -28,6 +29,7 @@ function bioTrilha(p){
 function bioParar(){
   try { bio.stream?.getTracks().forEach(t => t.stop()); } catch(_){}
   bio.stream = null;
+  clearTimeout(bio.timer); bio.vez++;   // para a verificação ao vivo
 }
 window.addEventListener('hashchange', bioParar);
 
@@ -117,29 +119,50 @@ function bioPassoDados(){
     <p class="small muted">Conferidos em ${fmtDT(d.confirmado_em)}. <a href="#/servicos/dados?de=biometria">Corrigir</a></p>`;
 }
 
-/* a foto: câmera, quadro quadrado no centro, prévia, refazer ou usar */
+/* a foto: câmera com verificação ao vivo, ou um arquivo sem verificação; prévia, refazer ou usar */
+const BIO_REQUISITOS = ['Rosto de frente, inteiro, sem óculos escuros, boné ou máscara.',
+  'Fundo claro e liso, de cor diferente da pele e do cabelo.',
+  'Luz de frente, sem sombra de um lado só e sem contraluz.',
+  'Só uma pessoa, sem filtros nem edição.',
+  'JPEG ou PNG, até 5 MB. O centro da foto é recortado em um quadrado.'];
 function bioPassoFoto(){
   return `<div class="bio-foto"><div class="bio-cena" id="bio-cena">
       <video id="bio-video" autoplay playsinline muted aria-label="Câmera"></video><span class="bio-guia" aria-hidden="true"></span>
       <canvas id="bio-canvas" width="720" height="720" hidden></canvas></div>
-    <div class="bio-lado"><p><b>Como tirar</b></p><p class="small muted">Rosto de frente, sem óculos escuros, boné ou máscara. Fundo claro e liso. Luz de frente.</p>
-      <div class="acts" id="bio-acoes"><button class="btn solid" type="button" id="bio-tirar" onclick="bioTirar()" disabled>Tirar a foto</button></div>
-      <div id="bio-sem-camera" hidden><div class="aviso-box warn">Não conseguimos usar a câmera. Libere o acesso no navegador ou continue em outro aparelho (o pedido fica salvo).</div>
-        <div class="fld"><label for="bio-arq">Ou envie uma foto</label><input id="bio-arq" type="file" accept="image/jpeg,image/png" capture="user" onchange="bioArquivo(this.files[0])"></div></div>
+    <div class="bio-lado">
+      <div class="bio-req"><p><b>Requisitos da foto</b></p><ul>${BIO_REQUISITOS.map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>
+      <div id="bio-pela-camera"><p><b>Pela câmera</b></p>
+        <div id="bio-sem-camera" hidden><div class="aviso-box warn">Não conseguimos usar a câmera. Libere o acesso no navegador, ou envie uma foto abaixo (o pedido fica salvo).</div></div>
+        <div id="bio-verif"><p class="small muted">A câmera confere o rosto, o enquadramento, a luz e o contraste, no seu aparelho: a imagem não sai dele.</p>
+          <div id="bio-checklist"></div><p class="small" id="bio-verif-nota" role="status"></p></div>
+        <div class="acts" id="bio-acoes"><button class="btn solid" type="button" id="bio-tirar" onclick="bioTirar()" disabled>Tirar a foto</button></div></div>
+      <div class="bio-upload" id="bio-upload"><p><b>Ou envie uma foto</b></p>
+        <p class="small muted">Sem verificação automática: o Pessoal e o LABBIO conferem os requisitos acima e podem devolver o pedido se a foto não servir.</p>
+        <div class="fld"><label for="bio-arq">Escolher um arquivo</label><input id="bio-arq" type="file" accept="image/jpeg,image/png" onchange="bioArquivo(this.files[0])"></div></div>
       <p class="err-msg" id="bio-erro" role="alert"></p></div></div>`;
 }
 async function bioCamera(){
-  bio.blob = null;
+  bio.blob = null; bio.origem = null; bio.semVerificacao = false;
   try{
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('sem câmera');
     const s = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' } });
     const v = $('#bio-video');
     if (!v || bio.passo !== 'foto'){ s.getTracks().forEach(t => t.stop()); return; }
     bio.stream = s; v.srcObject = s; await v.play().catch(() => {});
-    const b = $('#bio-tirar'); if (b) b.disabled = false;
   }catch(_){
     $('#bio-sem-camera')?.removeAttribute('hidden');
-    const b = $('#bio-tirar'); if (b) b.hidden = true;
+    $('#bio-verif')?.setAttribute('hidden', ''); $('#bio-acoes')?.setAttribute('hidden', '');
+    return;
+  }
+  /* a verificação ao vivo vem num módulo à parte; se ele não carregar, a câmera segue sem ela */
+  try{
+    await carregarModulo('biometria-rosto');
+    $('#bio-checklist').innerHTML = bioChecklistHTML();
+    bioVerificar();
+  }catch(_){
+    bio.semVerificacao = true;
+    const n = $('#bio-verif-nota'); if (n) n.textContent = 'Não foi possível ligar a verificação automática. Confira os requisitos ao lado e tire a foto: o Pessoal e o LABBIO analisam o pedido.';
+    const b = $('#bio-tirar'); if (b) b.disabled = false;
   }
 }
 function bioQuadro(origem, w, h){
@@ -149,17 +172,23 @@ function bioQuadro(origem, w, h){
 function bioPrevia(){
   const c = $('#bio-canvas'), v = $('#bio-video'); if (!c) return;
   v.hidden = true; c.hidden = false; $('#bio-cena')?.classList.add('previa');
-  $('#bio-acoes').innerHTML = `<button class="btn ghost" type="button" onclick="bioRefazer()">Refazer</button>
+  ['#bio-verif', '#bio-upload', '#bio-sem-camera'].forEach(s => { const e = $(s); if (e) e.hidden = true; });
+  const nota = bio.origem === 'arquivo' ? 'Foto enviada por arquivo, sem verificação automática. Confira os requisitos: o Pessoal e o LABBIO podem devolver o pedido se ela não servir.'
+    : bio.semVerificacao ? 'Foto tirada sem a verificação automática. Confira os requisitos antes de usar.' : 'Foto tirada pela câmera, depois da verificação.';
+  const a = $('#bio-acoes'); a.hidden = false;
+  a.innerHTML = `<p class="small muted" id="bio-origem-nota" style="flex-basis:100%;margin:0 0 6px">${esc(nota)}</p>
+    <button class="btn ghost" type="button" onclick="bioRefazer()">Refazer</button>
     <button class="btn solid" type="button" id="bio-usar" onclick="bioUsar()">Usar esta foto</button>`;
 }
 function bioTirar(){
   const v = $('#bio-video'); if (!v?.videoWidth) { $('#bio-erro').textContent = 'A câmera ainda não está pronta. Espere um instante.'; return; }
-  bioQuadro(v, v.videoWidth, v.videoHeight); bioParar(); bioPrevia();
+  bio.origem = 'camera'; bioQuadro(v, v.videoWidth, v.videoHeight); bioParar(); bioPrevia();
 }
 function bioArquivo(f){
   if (!f) return;
   if (!['image/jpeg', 'image/png'].includes(f.type) || f.size > 5 * 1024 * 1024){ $('#bio-erro').textContent = 'Use JPEG ou PNG de até 5 MB.'; return; }
-  const img = new Image(); img.onload = () => { bioQuadro(img, img.naturalWidth, img.naturalHeight); URL.revokeObjectURL(img.src); bioPrevia(); };
+  bioParar();   // o arquivo não passa pela verificação: a câmera e o laço ao vivo param
+  const img = new Image(); img.onload = () => { bio.origem = 'arquivo'; bioQuadro(img, img.naturalWidth, img.naturalHeight); URL.revokeObjectURL(img.src); bioPrevia(); };
   img.onerror = () => { $('#bio-erro').textContent = 'Não foi possível ler a imagem.'; };
   img.src = URL.createObjectURL(f);
 }

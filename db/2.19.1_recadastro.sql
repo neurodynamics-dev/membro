@@ -301,8 +301,10 @@ begin
   if coalesce(btrim(p_id), '') = '' or coalesce(btrim(p_titulo), '') = '' then return jsonb_build_object('status', 'invalido'); end if;
   insert into recadastro_campanhas(id, titulo, termo) values (btrim(p_id), btrim(p_titulo), nullif(p_termo, ''))
   on conflict (id) do update set titulo = excluded.titulo, termo = excluded.termo;
+  -- com WHERE: o Supabase (safeupdate) recusa UPDATE sem ele. Só a campanha ativa e a escolhida mudam; as outras já estão desligadas.
   update recadastro_campanhas set ativa = (id = btrim(p_id)),
-         ativada_em = case when id = btrim(p_id) then coalesce(ativada_em, clock_timestamp()) else ativada_em end;
+         ativada_em = case when id = btrim(p_id) then coalesce(ativada_em, clock_timestamp()) else ativada_em end
+   where ativa or id = btrim(p_id);
   select array_agg(m.registro) into regs from membros m
    where m.status in ('Ativo', 'Em pausa / avaliação') and not public.ausencia_vigente(m.registro);
   corpo := case when nullif(p_termo, '') is null then 'Confira e atualize seus dados no SOMA.'

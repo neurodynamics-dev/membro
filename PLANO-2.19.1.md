@@ -36,7 +36,7 @@ existe precisa mudar de comportamento).
 | Studio: setas | defeito confirmado: `.icon-btn.cima` gira +90° um chevron à esquerda, `.baixo` gira −90° um chevron à direita: os dois apontam para cima (`soma.css`) | corrigir a rotação | navegador |
 | Studio: selects estreitos | defeito confirmado: `ds/select.js` embrulha o select em `span.nro-select` sem largura; as regras de largura do `soma.css` miram o select escondido | largura no embrulho | navegador |
 | Studio: arrastar lâminas | ausente | arrastar e soltar, com os botões como alternativa | navegador |
-| Check-in da folha com localização | ausente: `registrar_checkin_folha(p_token uuid)` só recebe o token | nova assinatura com coordenadas; a antiga deixa de servir | banco |
+| Check-in da folha com localização | **feito na 2.19.2** (`db/2.19.2_checkin_local.sql`): `registrar_checkin_folha(token, lat, lon, precisao)`, raio de 150 m no LABBIO, a versão antiga deixou de existir | nova assinatura com coordenadas; a antiga deixa de servir | banco |
 | Painel LABBIO em `/labbio` | ausente | entrada estática própria, Retina, logo LABBIO | navegador |
 | Gestores do LABBIO (conta sem membro) | ausente; `conta_ativa()` não barra conta sem registro | capacidade própria, negada no portal principal pelo servidor | banco |
 | Recadastro semestral | ausente | **feito**: Meus dados (`#/servicos/dados`), campanha semestral com painel de passos na entrada, uma dispensa, pausa nas férias; passo no onboarding | banco (44) + navegador |
