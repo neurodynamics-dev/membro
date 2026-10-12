@@ -42,6 +42,7 @@ const NOTAS_VERSAO = [
     ['melhoria', '**Painel do LABBIO**: o admin do SOMA entra com a própria conta. A logo do LABBIO perde o fundo preto e, em telas pequenas, fica só a palavra "labbio".'],
     ['novo', '**Check-in pela folha** confere a localização: o celular manda a posição e o banco confere se você está a até 150 m do LABBIO. A posição não fica guardada. A administração ajusta o local em Equipe › Presença.'],
     ['novo', '**Foto do acesso ao LABBIO** com verificação ao vivo na câmera: rosto, enquadramento, iluminação e contraste, no próprio aparelho. Quem prefere pode enviar um arquivo, sem verificação, com os requisitos à vista.'],
+    ['melhoria', 'O **quadro de avisos** tem a altura do maior aviso o tempo todo: nada muda de tamanho quando o rodízio passa.'],
     ['melhoria', 'A **barra de ações** dos fluxos em passos deixa de ser uma faixa preta e passa a ser de vidro.'],
     ['correcao', 'O cartão **Acesso ao LABBIO** em Serviços tinha o ícone gigante.'],
     ['correcao', 'Iniciar o **recadastro** falhava com "UPDATE requires a WHERE clause".'],

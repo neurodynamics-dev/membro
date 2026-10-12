@@ -48,6 +48,9 @@ insert into public.migracoes(id, descricao) values('2.19.0_avisos',
  'SOMA 2.19.0: quadro de avisos com os layouts hero, numero, contagem, lista, citacao e progresso; colunas familia e valor')
 on conflict(id) do nothing;
 
+-- o PostgREST (a API) lê o esquema em cache: sem isto, "Could not find the 'familia' column ... in the schema cache"
+notify pgrst, 'reload schema';
+
 -- CONFERIR (somente leitura)
 -- select id, aplicada_em from public.migracoes where id='2.19.0_avisos';
 -- select column_name from information_schema.columns where table_name='portal_avisos' and column_name in ('familia','valor');
