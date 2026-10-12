@@ -139,10 +139,17 @@ console.log('\nBugs e sugestões');
   await p.fill('#rl-com', 'Reproduzi no **Chrome** também.'); await p.click('#rl-com-btn'); await p.waitForTimeout(700);
   confere('comentar grava e aparece', (await rpcs(p, 'feedback_comentar'))[0]?.corpo === 'Reproduzi no **Chrome** também.'
     && await p.evaluate(() => document.querySelectorAll('.cd-coments .cm').length) === 2);
+  confere('andamento sem mudança: botão fechado e "Sem alterações"', await p.locator('#rd-btn').isDisabled() && /Sem alterações/.test(await texto(p, '#rd-salvo')));
   await p.selectOption('#rd-st', 'feito'); await p.waitForTimeout(100);
+  confere('mexeu no andamento: o botão abre e avisa "Alterações não registradas"', await p.locator('#rd-btn').isEnabled() && /Alterações não registradas/.test(await texto(p, '#rd-salvo')));
   confere('"Feito" pede a versão', await p.isVisible('#rd-versao') && !(await p.isVisible('#rd-dup')));
   await p.fill('#rd-resp', 'Corrigido.'); await p.click('#rd-btn'); await p.waitForTimeout(800);
   const dec = (await rpcs(p, 'feedback_decidir'))[0];
+  confere('depois de registrar: "Registrado agora" e o botão fechado de novo', /Registrado agora/.test(await texto(p, '#rd-salvo')) && await p.locator('#rd-btn').isDisabled());
+  await p.fill('#rd-resp', 'Corrigido de novo.');
+  confere('e voltando a editar, ele abre outra vez', await p.locator('#rd-btn').isEnabled() && /Alterações não registradas/.test(await texto(p, '#rd-salvo')));
+  await p.fill('#rd-resp', 'Corrigido.');
+  confere('desfazer a edição fecha o botão', await p.locator('#rd-btn').isDisabled());
   confere('registrar o andamento vai ao banco com a versão no ar', dec?.status === 'feito' && dec?.versao_feito === NO_AR && dec?.resposta === 'Corrigido.', dec);
   confere('e a página mostra a resposta', /Corrigido\./.test(await texto(p, '.fb-resposta')) && new RegExp('Feito na ' + NO_AR_RE).test(await texto(p, '.fb-resposta .quem')), await texto(p, '.fb-resposta'));
 

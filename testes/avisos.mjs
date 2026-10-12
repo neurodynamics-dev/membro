@@ -52,6 +52,14 @@ for (const tema of ['escuro', 'claro']){
   const html = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('#board .slide')].map(s => [s.querySelector('.sl-base').className.match(/sl-(?!base)(\w+)/)[1], s.innerHTML])));
   const n = await p.locator('#board .slide').count();
   confere('onze avisos, onze slides, rodízio por padrão', n === 11 && await p.locator('#board.grade').count() === 0 && await p.locator('[data-dot]').count() === 11);
+  /* 2.19.2: todos os avisos têm o mesmo tamanho; o quadro não muda de altura quando o rodízio passa */
+  const alturas = await p.evaluate(async () => { const out = { quadro:[], slides:new Set() };
+    for (let i = 0; i < state.avisos.length; i++){ mostrarSlide(i); await new Promise(r => setTimeout(r, 80));
+      out.quadro.push(Math.round(document.getElementById('board').getBoundingClientRect().height));
+      document.querySelectorAll('#board .slide').forEach(s => out.slides.add(Math.round(s.getBoundingClientRect().height))); }
+    mostrarSlide(0); return { quadro:[...new Set(out.quadro)], slides:[...out.slides] }; });
+  confere('a altura do quadro é a mesma em todos os avisos', alturas.quadro.length === 1, alturas);
+  confere('e todos os avisos têm essa altura (o maior define)', alturas.slides.length === 1 && alturas.slides[0] === alturas.quadro[0], alturas);
   confere('hero: *palavra* vira Synapse, com as manchas da marca e o botão', /<em>novo<\/em>/.test(html.hero) && /class="blob b1"/.test(html.hero) && /btn solid/.test(html.hero));
   confere('contagem: cinco dias, na família Ion', /<div class="w-num">5<small>dias<\/small>/.test(html.contagem) && /f-ion/.test(html.contagem));
   confere('número: o valor grande e a família Lumen', /<div class="w-num">42<\/div>/.test(html.numero) && /f-lumen/.test(html.numero));
@@ -86,6 +94,9 @@ for (const tema of ['escuro', 'claro']){
       if (lateral) confere(`${modo}, slide ${i}: sem rolagem lateral`, false);
     }
     confere(`${modo}: sem rolagem lateral`, !(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)));
+    const h = await p.evaluate(async () => { const hs = new Set(); for (let i = 0; i < state.avisos.length; i++){ mostrarSlide(i); await new Promise(r => setTimeout(r, 80));
+      hs.add(Math.round(document.getElementById('board').getBoundingClientRect().height)); } return [...hs]; });
+    confere(`${modo}: no celular o quadro também não muda de altura`, h.length === 1, h);
   }
   await ctx.close();
 }
