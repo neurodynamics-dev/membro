@@ -1476,9 +1476,15 @@ button.pub-row.on{border-color:var(--syn-borda);background:rgba(var(--syn-rgb),.
   text-transform:uppercase;color:var(--dim);white-space:nowrap}
 .arq-cls .ic{width:11px;height:11px}
 .arq-cls.confidencial{color:var(--bad)} .arq-cls.controlado{color:var(--warn)}
-th.ord{cursor:pointer;user-select:none}
-th.ord:hover{color:var(--ink)}
-th.ord[aria-sort="ascending"]::after{content:' ↑'} th.ord[aria-sort="descending"]::after{content:' ↓'}
+/* ordenar por coluna: o Arquivo (th.ord, com ordem própria) e todas as outras tabelas (th.ord-auto, em index.html) */
+th.ord,th.ord-auto{cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap}
+th.ord:hover,th.ord-auto:hover{color:var(--ink)}
+th.ord-auto:focus-visible{outline:2px solid var(--syn-borda);outline-offset:-2px}
+th[aria-sort="ascending"]::after,th[aria-sort="descending"]::after{content:'';display:inline-block;margin-left:7px;vertical-align:middle;
+  border:4px solid transparent}
+th[aria-sort="ascending"]::after{border-top-width:0;border-bottom-color:currentColor}
+th[aria-sort="descending"]::after{border-bottom-width:0;border-top-color:currentColor}
+th[aria-sort="ascending"],th[aria-sort="descending"]{color:var(--ink)}
 /* FilterBar (filtroBarra): a busca na mesma linha, na altura dos botões; as opções são botões */
 .fb-busca{height:32px;width:min(260px,100%);padding:0 12px;border-radius:8px;border:1px solid var(--line);
   background:rgba(var(--tom),.02);color:var(--ink);font:inherit;font-size:12.5px}
@@ -3075,3 +3081,18 @@ button.termo-ic{cursor:pointer;border:1px solid transparent} button.termo-ic:hov
 .pres-local{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
 .pres-local .tx{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 280px}
 .pres-local .tx span{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+/* 2.19.2, no celular: a tabela de layout fixo rola na horizontal em vez de espremer as colunas (o nome sumia) */
+@media (max-width:760px){
+  .tabela.trabalho.fixa{min-width:var(--tab-min,880px)}
+  .wrap{-webkit-overflow-scrolling:touch}
+}
+/* 2.19.2: sem zoom sem querer. O iOS dá zoom ao focar um campo com menos de 16 px; o toque duplo também dá. */
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+@media (hover:none) and (pointer:coarse){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]),select,textarea{font-size:16px}
+}
+
+/* 2.19.2: todo ícone tem um tamanho mínimo de partida. Sem isto, um ic() fora de um contêiner que lhe desse tamanho
+   saía no tamanho padrão do SVG (enorme). :where() deixa a prioridade em zero: qualquer regra específica continua valendo. */
+:where(svg.ic){width:1.2em;height:1.2em}

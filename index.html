@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#050807"> <!-- auditar: ok, theme-color exige valor literal -->
 <script>/* o tema escolhido vale antes de a página pintar — sem piscar */
@@ -823,6 +823,63 @@ function fbTecla(e, id, i){
   else if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); ops[(at + (e.key === 'ArrowDown' ? 1 : -1) + ops.length) % ops.length].focus(); }
 }
 document.addEventListener('mousedown', e => { if (_fbAberto && !_fbAberto.gr.contains(e.target)) fbFechar(); });
+/* Sem zoom por gesto (2.19.2). O iOS ignora user-scalable=no no Safari, mas respeita estes eventos; o zoom ao focar
+   um campo é tratado no CSS (campos de 16 px) e o do toque duplo, com touch-action. Quem precisa ampliar usa o zoom do sistema. */
+['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), { passive:false }));
+document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault(); }, { passive:false });
+
+/* Ordenar qualquer tabela (.tabela) por coluna, clicando no cabeçalho (2.19.2): crescente, decrescente e de volta à ordem
+   de origem. Números, datas (dd/mm/aaaa) e textos; vazio ("—") vai sempre para o fim. Quem tem ordem própria (th.ord, como o
+   Arquivo) ou data-sem-ord fica de fora, assim como tabela com linha de colspan (estado vazio, linhas aninhadas). A escolha
+   fica lembrada ao redesenhar a tela (filtros, recarga). Em tabelas cortadas em 200 linhas, ordena as que estão na tela. */
+(function(){
+  const estados = new Map(), cmp = new Intl.Collator('pt', { numeric:true, sensitivity:'base' });
+  const vazio = t => t === '' || t === '—' || t === '-';
+  const num = t => { const x = t.replace(/\s/g, '').replace(/^R\$/, '').replace(/%$/, '');
+    return /^-?\d{1,3}(\.\d{3})+(,\d+)?$|^-?\d+(,\d+)?$/.test(x) ? parseFloat(x.replace(/\./g, '').replace(',', '.')) : NaN; };
+  const data = t => { const m = t.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\D+(\d{2}):(\d{2}))?/);
+    return m ? Date.UTC(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)) : NaN; };
+  const texto = (r, c) => (r.cells[c]?.dataset.ord ?? r.cells[c]?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  const chaveDe = tab => { const cont = tab.closest('[id]'), irmas = cont ? [...cont.querySelectorAll('table.tabela')] : [tab];
+    return location.hash.split('?')[0] + '|' + (cont?.id || '') + '|' + irmas.indexOf(tab); };
+  const elegivel = tab => {
+    if (tab.hasAttribute('data-sem-ord') || tab.querySelector('th.ord') || !tab.tHead || !tab.tBodies[0]) return false;
+    const linhas = [...tab.tBodies[0].rows], ths = tab.tHead.rows[0]?.cells;
+    return !!ths && linhas.length >= 2 && linhas.every(r => r.cells.length === ths.length && ![...r.cells].some(c => c.colSpan > 1));
+  };
+  function ordena(tab, col, dir){
+    const tb = tab.tBodies[0], rows = [...tb.rows];
+    if (!dir){ rows.sort((a, b) => a.dataset.i0 - b.dataset.i0); tb.append(...rows); return; }
+    const ts = rows.map(r => texto(r, col)), cheios = ts.filter(t => !vazio(t));
+    const tipo = cheios.length && cheios.every(t => !isNaN(num(t))) ? 'num' : cheios.length && cheios.every(t => !isNaN(data(t))) ? 'data' : 'txt';
+    const chave = t => tipo === 'num' ? num(t) : tipo === 'data' ? data(t) : t;
+    const idx = rows.map((_, i) => i).sort((a, b) => {
+      const va = vazio(ts[a]), vb = vazio(ts[b]); if (va || vb) return va === vb ? a - b : va ? 1 : -1;
+      const c = tipo === 'txt' ? cmp.compare(ts[a], ts[b]) : chave(ts[a]) - chave(ts[b]); return c ? c * dir : a - b; });
+    tb.append(...idx.map(i => rows[i]));
+  }
+  function marca(tab, st){
+    [...tab.tHead.rows[0].cells].forEach((th, i) => { if (th.classList.contains('ord-auto')) th.setAttribute('aria-sort', st && st.col === i ? (st.dir > 0 ? 'ascending' : 'descending') : 'none'); });
+  }
+  function liga(tab){
+    tab.dataset.ordem = '1'; [...tab.tBodies[0].rows].forEach((r, i) => { r.dataset.i0 = i; });
+    [...tab.tHead.rows[0].cells].forEach(th => { if (th.textContent.trim()){ th.classList.add('ord-auto'); th.tabIndex = 0; th.setAttribute('aria-sort', 'none'); } });
+    const st = estados.get(chaveDe(tab));
+    if (st){ ordena(tab, st.col, st.dir); marca(tab, st); }
+  }
+  function alterna(th){
+    const tab = th.closest('table'), col = th.cellIndex, chave = chaveDe(tab), at = estados.get(chave);
+    const dir = at && at.col === col ? (at.dir === 1 ? -1 : 0) : 1, st = dir ? { col, dir } : null;
+    st ? estados.set(chave, st) : estados.delete(chave);
+    ordena(tab, col, dir); marca(tab, st);
+  }
+  document.addEventListener('click', e => { const th = e.target.closest?.('th.ord-auto'); if (th && !e.target.closest('button,a,input,select')) alterna(th); });
+  document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('th.ord-auto')){ e.preventDefault(); alterna(e.target); } });
+  let tick = 0;
+  const varre = () => { tick = 0; document.querySelectorAll('table.tabela:not([data-ordem])').forEach(t => { if (elegivel(t)) liga(t); }); };
+  new MutationObserver(() => { if (!tick) tick = requestAnimationFrame(varre); }).observe(document.documentElement, { childList:true, subtree:true });
+})();
+
 /* A barra de ações (.barra-acoes) é transparente em repouso e vira vidro (.flutua) só quando está presa ao rodapé da
    tela, flutuando sobre o conteúdo. Um ponto logo depois dela marca onde ela ficaria: se ele está abaixo da tela, ela flutua. */
 (function(){

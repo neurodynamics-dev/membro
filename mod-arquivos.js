@@ -1231,7 +1231,7 @@ function arqCfgSeries(){
         <option value="">Todos</option>${arq.emissores.map(e => `<option value="${e.prefixo}" ${f.emissor === e.prefixo ? 'selected' : ''}>${esc(e.prefixo)} ${esc(e.nome)}</option>`).join('')}</select></div>
       <button class="btn solid mini" style="align-self:flex-end;margin-bottom:2px" onclick="arqModalSerie(null, arq.cfgFiltro.emissor)">${ic('plus')} Nova série</button>
     </div>
-    <div class="card" style="padding:0"><div class="wrap" style="max-height:none"><table class="tabela trabalho fixa">
+    <div class="card" style="padding:0"><div class="wrap" style="max-height:none"><table class="tabela trabalho fixa" style="--tab-min:1060px">
       <thead><tr><th style="width:120px">Série</th><th>Título</th><th style="width:190px">Estrutura</th><th style="width:120px">Classe</th>
         <th style="width:170px">Revisa</th><th style="width:170px">Lê também</th><th style="width:56px"></th></tr></thead>
       <tbody>${lista.map(s => `<tr>
