@@ -3186,3 +3186,7 @@ html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 .salam-outras [data-estado="evento"] .salam-ponto{background:var(--impulso-primary)}
 .salam-outras [data-estado="ocupada"] .salam-ponto{background:var(--ritmo-primary)}
 .salam-seta{margin-left:auto;color:var(--dim)}
+
+/* a aba "Dados pessoais" da ficha, em grupos (2.19.2) */
+.pess-grupo{grid-column:1 / -1;margin:18px 0 2px;font-family:var(--fd);font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.dl .pess-grupo:first-child,.form-grid .pess-grupo:first-child{margin-top:0}

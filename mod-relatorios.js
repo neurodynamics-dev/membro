@@ -265,7 +265,7 @@ async function gerarRelatorioMembro(){
       f.aponts.map(a=>[fmtD(a.data), a.apont?.grupo||'—', a.assiduidade||'—', a.entregas||'—',
         a.sinalizado?(a.tratado?'Sinalizado, tratado':'Sinalizado, pendente'):'—']));
     if(temPess){
-      const pess = CAMPOS_PESS.map(c=>{ let v = f.pess[c.k];
+      const pess = camposPess('ver').map(c=>{ let v = c.k==='endereco' ? enderecoPess(f.pess) : f.pess[c.k];
         if(c.t==='date') v = v? fmtD(v) : '';
         if(c.t==='bool') v = v===true?'Sim':(v===false?'Não':'');
         return [c.l, v||'—']; });

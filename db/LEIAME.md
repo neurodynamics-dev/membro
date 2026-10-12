@@ -122,6 +122,7 @@ psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 | `2.19.2_labbio_painel.sql` | o início do painel do LABBIO vira um dashboard: `labbio_inicio()` mantém os campos de antes e passa a trazer os pedidos no LABBIO (até 6, do mais antigo), as consultas de sala sem resposta, quem fez check-in hoje, os eventos de hoje nas salas do LABBIO, a presença dos últimos 14 dias, a biometria e o termo por situação e quantos têm treinamento obrigatório em aberto. Só leitura, só nome e foto. Depois da `2.19.1_labbio_dados` e da `_salas` |
 | `2.19.2_labbio_biometria_existente.sql` | o acesso biométrico que já existia (registros 001, 002, 009, 011, 012, 016, 018, 030, 032, 043 e 056) passa a constar, sem aviso; quem já saiu da equipe ou não existe é só relatado |
 | `2.19.2_salas_tempo_real.sql` | o banco avisa o canal de broadcast da sala (`sala-<id>`, Supabase Realtime, só "mudou", sem dado) quando muda a ocupação, um evento numa sala do LABBIO ou uma reserva do LABBIO; o tablet e o celular consultam de novo na hora. Sem `realtime.send`, ou se o envio falhar, a gravação segue. Depois da `2.19.2_salas` |
+| `2.19.2_recadastro_completo.sql` | o recadastro (`cadastro_confirmar`, `cadastro_meus_dados`) atualiza todos os dados pessoais da ficha: os campos opcionais (gênero, cidade de origem, período de ingresso, deslocamento, FUMP, acessibilidade, background, Lattes, Instagram, GitHub, autorização de imagem), o endereço de uma linha montado das partes e o e-mail pessoal (em `membros`). Campo que não vem fica como estava; em branco apaga. Depois da `2.19.1_recadastro` |
 
 A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
 2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
@@ -192,7 +193,8 @@ bash testes/preparar-base.sh teste t2192 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbi
      2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
      2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql \
      2.19.1_labbio_admin.sql 2.19.2_checkin_local.sql 2.19.2_solicitacoes.sql 2.19.2_salas.sql \
-     2.19.2_labbio_painel.sql 2.19.2_labbio_biometria_existente.sql 2.19.2_salas_tempo_real.sql
+     2.19.2_labbio_painel.sql 2.19.2_labbio_biometria_existente.sql 2.19.2_salas_tempo_real.sql \
+     2.19.2_recadastro_completo.sql
 ```
 
 O reporte (70 asserções, mais o teste da 2.18.0 do reporte de novo):
