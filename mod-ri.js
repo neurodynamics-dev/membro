@@ -1,12 +1,14 @@
 /* ============================================================
    2.19.2: Relações institucionais (RI) — só NRO_RELAC e NRO_COORD_OFFICE.
    Rotas:
-     #/ri                 o mapa (a rede de contatos)
+     #/ri                 a galeria de entrada: Conexões, Missões, Financiamento
+     #/ri/conexoes        o mapa (a rede de contatos)
      #/ri/tabela          a tabela de todos
      #/ri/kanban          o kanban pela qualidade da conexão
      #/ri/<id>            a ficha de uma pessoa ou organização
      #/ri/<id>/editar     editar ,  #/ri/novo  novo contato
-     #/ri/eventos         os eventos de RI ,  #/ri/eventos/<id|novo>
+     #/ri/missoes         as missões (eventos, visitas e encontros de RI),  #/ri/missoes/<id|novo>
+     #/ri/financiamento   os editais e as submissões (mod-ri-financiamento.js)
      #/ri/indicacoes      as indicações que os membros fazem pelos Serviços
    O banco é db/2.19.2_ri.sql: tudo passa pelas funções ri_*.
    Mapa, tabela e kanban são o mesmo dado (ri_dados) visto de jeitos diferentes,
@@ -69,7 +71,15 @@ const riErro = e => { $('#main').innerHTML = cabecalho({ espaco:'Relações inst
   + estado.erro({ texto:'Não foi possível carregar agora (' + (e?.message || 'erro') + ').', acao:'<button class="btn ghost mini" onclick="render(route())">Tentar de novo</button>' }); };
 
 async function pageRI(sub, sub2){
-  if (sub === 'eventos') return sub2 ? riEvento(sub2) : riEventos();
+  if (!sub) return riGaleria();
+  if (sub === 'financiamento'){
+    if (typeof pageRIFin !== 'function'){
+      $('#main').innerHTML = estado.carregando();
+      try { await carregarModulo('ri-financiamento'); } catch(e){ return riErro(e); }
+    }
+    return pageRIFin(sub2);
+  }
+  if (sub === 'missoes') return sub2 ? riMissao(sub2) : riMissoes();
   if (sub === 'indicacoes') return riIndicacoes();
   if (sub === 'novo') return riFormulario(null);
   if (/^\d+$/.test(sub || '')) return sub2 === 'editar' ? riFormulario(+sub) : riFicha(+sub);
@@ -77,17 +87,48 @@ async function pageRI(sub, sub2){
   return riPainel();
 }
 
+/* ---------- a entrada: uma galeria com as três áreas ---------- */
+async function riGaleria(){
+  const cab = (x = {}) => cabecalho({ espaco:'Relações institucionais', titulo:'Relações institucionais',
+    lead:'As conexões da NRO, as missões em que a equipe a representa e o financiamento que buscamos. Informação sensível: só o NRO_RELAC e o NRO_COORD_OFFICE veem.', ...x });
+  $('#main').innerHTML = cab() + estado.carregando();
+  const { data:r, error } = await sb.rpc('ri_resumo');
+  if (error || r?.status !== 'ok') return r?.status === 'sem_permissao' ? riSemPermissao() : riErro(error || { message:r?.status });
+  const n = (v, um, varios) => `<b>${v}</b> ${v === 1 ? um : varios}`;
+  const area = (href, icone, titulo, texto, linhas, id) => `<a class="ri-area" href="${href}" id="${id}">
+    <span class="ri-area-ic">${ic(icone)}</span><h2>${titulo}</h2><p>${texto}</p>
+    <span class="ri-area-nums">${linhas.filter(Boolean).map(l => `<span>${l}</span>`).join('')}</span><span class="go">Abrir →</span></a>`;
+  $('#main').innerHTML = cab({ acoes:r.indicacoes_abertas ? `<a class="btn ghost" href="#/ri/indicacoes">Indicações <span class="ri-n">${r.indicacoes_abertas}</span></a>` : '' }) + `
+    <div class="ri-areas">
+      ${area('#/ri/conexoes', 'rede', 'Conexões', 'Pessoas e organizações, as relações entre elas e o histórico de cada conversa. Em mapa, tabela ou kanban.',
+        [n(r.contatos, 'contato ativo', 'contatos ativos'), n(r.organizacoes, 'organização', 'organizações'),
+         r.passos_atrasados ? `<span class="ri-frio">${n(r.passos_atrasados, 'próximo passo atrasado', 'próximos passos atrasados')}</span>` : null], 'ri-a-conexoes')}
+      ${area('#/ri/missoes', 'evento', 'Missões', 'Eventos, visitas e encontros em que a equipe representa a NRO: para conhecer stakeholders, apresentar e alinhar interesses.',
+        [n(r.missoes_proximas, 'missão por vir', 'missões por vir'), n(r.missoes_realizadas, 'realizada', 'realizadas')], 'ri-a-missoes')}
+      ${area('#/ri/financiamento', 'doc', 'Financiamento', 'Editais de financiamento e o acompanhamento de cada submissão: cronograma, checklist e o arranjo de cada um.',
+        [n(r.editais_ativos, 'edital em aberto', 'editais em aberto'),
+         r.prazos_30 ? `<span class="ri-frio">${n(r.prazos_30, 'prazo em 30 dias', 'prazos em 30 dias')}</span>` : null,
+         n(r.em_execucao, 'aprovado ou em execução', 'aprovados ou em execução')], 'ri-a-financiamento')}
+    </div>
+    <div class="ri-atalhos">
+      <a class="btn ghost mini" href="#/ri/novo">${ic('plus')} Novo contato</a>
+      <a class="btn ghost mini" href="#/ri/missoes/novo">${ic('plus')} Nova missão</a>
+      <a class="btn ghost mini" href="#/ri/financiamento/importar">${ic('doc')} Importar edital</a>
+      <a class="btn ghost mini" href="#/ri/indicacoes">Indicações dos membros</a>
+    </div>`;
+}
+
 /* ---------- o painel: abas, filtros e a vista ---------- */
 async function riPainel(){
-  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo:'Contatos' }) + estado.carregando();
+  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo:'Conexões', voltar:['Relações institucionais', '#/ri'] }) + estado.carregando();
   try { await riCarregar(true); } catch(e){ return e.message === 'sem_permissao' ? riSemPermissao() : riErro(e); }
   const n = RI.d.indicacoes_novas;
-  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo:'Contatos',
+  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo:'Conexões', voltar:['Relações institucionais', '#/ri'],
       lead:'Pessoas e organizações com que a equipe se relaciona. Informação sensível: registre só o necessário à finalidade institucional.',
       acoes:(n ? `<a class="btn ghost" href="#/ri/indicacoes">Indicações <span class="ri-n">${n}</span></a>` : '')
         + `<a class="btn solid ri-mais" href="#/ri/novo" id="ri-novo" title="Novo contato" aria-label="Novo contato">${ic('plus')}</a>` }) + `
     <div class="ri-barra">
-      <nav class="seg" aria-label="Vista">${[['mapa', 'Mapa', '#/ri'], ['tabela', 'Tabela', '#/ri/tabela'], ['kanban', 'Kanban', '#/ri/kanban']]
+      <nav class="seg" aria-label="Vista">${[['mapa', 'Mapa', '#/ri/conexoes'], ['tabela', 'Tabela', '#/ri/tabela'], ['kanban', 'Kanban', '#/ri/kanban']]
         .map(([k, l, h]) => `<a href="${h}" class="${RI.vista === k ? 'on' : ''}"${RI.vista === k ? ' aria-current="page"' : ''}>${l}</a>`).join('')}</nav>
       <div class="fld busca ri-q"><label for="ri-q" class="sr">Buscar</label><input id="ri-q" type="search" placeholder="Buscar por nome, organização ou tag" autocomplete="off" value="${esc(RI.f.q)}"></div>
       <button type="button" class="btn ghost mini" id="ri-abre-f" aria-expanded="${RI.painel}" aria-controls="ri-filtros">Filtros <span id="ri-nf"></span></button>
@@ -276,7 +317,7 @@ function riDesenharMapa(){
       : `<circle r="${r}" style="fill:${cor};fill-opacity:${op};stroke:${cor}"/>`;
     return `<g class="ri-no${c.ativo ? '' : ' inativo'}" data-id="${c.id}" transform="translate(${p.x},${p.y})" tabindex="0" role="button"
         aria-label="${esc(c.nome)}, ${esc(riRot(RI_FUNCOES, c.funcao))}, proximidade ${c.proximidade}">${forma}
-      <text y="${r + 13}">${esc(c.nome.length > 26 ? c.nome.slice(0, 25) + '…' : c.nome)}</text></g>`; }).join('');
+      <text y="${r}" dy="1.15em">${esc(c.nome.length > 26 ? c.nome.slice(0, 25) + '…' : c.nome)}</text></g>`; }).join('');
   riMapaFiltrar();
 }
 function riMapaFiltrar(){
@@ -293,6 +334,7 @@ function riMapaFiltrar(){
 function riAplicarVista(){
   const v = RI.vistaMapa, m = $('#ri-mundo'); if (!m || !v) return;
   m.setAttribute('transform', `translate(${v.x},${v.y}) scale(${v.k})`);
+  m.style.setProperty('--k', v.k);      // os nomes mantêm o tamanho na tela, com qualquer zoom
   const pc = $('#ri-pct'); if (pc) pc.textContent = Math.round(v.k * 100) + '%';
   $('#ri-tela')?.classList.toggle('longe', v.k < .55);      // longe, os nomes somem (menos os em foco)
 }
@@ -584,7 +626,7 @@ function riKanban(){
 
 /* ---------- a ficha de uma pessoa ou organização ---------- */
 async function riFicha(id){
-  const cab = t => cabecalho({ espaco:'Relações institucionais', titulo:t, voltar:['Contatos', '#/ri'] });
+  const cab = t => cabecalho({ espaco:'Relações institucionais', titulo:t, voltar:['Conexões', '#/ri/conexoes'] });
   $('#main').innerHTML = cab('Contato') + estado.carregando();
   try { await riCarregar(); } catch(e){ return e.message === 'sem_permissao' ? riSemPermissao() : riErro(e); }
   const { data, error } = await sb.rpc('ri_contato_ler', { p_id:id });
@@ -600,7 +642,7 @@ async function riFicha(id){
     <section class="card ri-sec"><div class="ri-sec-cab"><h2>Histórico de interações <span class="n">${data.interacoes.length}</span></h2>
       <button type="button" class="btn ghost mini" id="ri-f-inter">${ic('plus')} Registrar</button></div>
       ${data.interacoes.length ? `<ol class="ri-linha">${data.interacoes.map((i, n) => `<li>
-        <div class="ri-linha-cab"><b>${esc(riRot(RI_INTER, i.tipo))}</b>, ${fmtD(i.data)}${i.evento ? `, <a href="#/ri/eventos/${i.evento_id}">${esc(i.evento)}</a>` : ''}
+        <div class="ri-linha-cab"><b>${esc(riRot(RI_INTER, i.tipo))}</b>, ${fmtD(i.data)}${i.missao ? `, <a href="#/ri/missoes/${i.missao_id}">${esc(i.missao)}</a>` : ''}
           <span class="dim">, ${esc(i.autor_nome || '—')}</span>
           <button type="button" class="ri-mini" data-inter="${n}" aria-label="Editar a interação">${ic('pencil')}</button></div>
         <p class="ri-texto">${esc(i.resumo)}</p>
@@ -617,9 +659,9 @@ async function riFicha(id){
     ${org ? `<section class="card ri-sec"><h2>Pessoas desta organização <span class="n">${data.membros.length}</span></h2>
       ${data.membros.length ? `<ul class="ri-rels">${data.membros.map(m => `<li><a href="#/ri/${m.id}">${esc(m.nome)}</a> <span class="dim">${esc(m.cargo || '')}</span></li>`).join('')}</ul>`
         : '<p class="dim">Ninguém ligado ainda. Na ficha de uma pessoa, escolha esta organização.</p>'}</section>` : ''}
-    <section class="card ri-sec"><h2>Eventos <span class="n">${data.eventos.length}</span></h2>
-      ${data.eventos.length ? `<ul class="ri-rels">${data.eventos.map(e => `<li><a href="#/ri/eventos/${e.id}">${esc(e.nome)}</a> <span class="dim">${e.inicio ? fmtD(e.inicio) : ''}, ${esc(riRot(RI_EV_STATUS, e.status))}</span></li>`).join('')}</ul>`
-        : '<p class="dim">Em nenhum evento de RI.</p>'}</section>
+    <section class="card ri-sec"><h2>Missões <span class="n">${data.missoes.length}</span></h2>
+      ${data.missoes.length ? `<ul class="ri-rels">${data.missoes.map(e => `<li><a href="#/ri/missoes/${e.id}">${esc(e.nome)}</a> <span class="dim">${e.inicio ? fmtD(e.inicio) : ''}, ${esc(riRot(RI_EV_STATUS, e.status))}</span></li>`).join('')}</ul>`
+        : '<p class="dim">Em nenhuma missão.</p>'}</section>
     ${c.notas ? `<section class="card ri-sec"><h2>Notas</h2><p class="ri-texto">${esc(c.notas)}</p></section>` : ''}`;
   const lateral = `
     <div class="ri-ficha-marca"><span class="ri-bola g${org ? ' q' : ''}" style="background:${riCor(c.funcao)};opacity:${riOpac(c.proximidade)}"></span>
@@ -634,8 +676,8 @@ async function riFicha(id){
     ${c.canais.length ? `<h3 class="ri-lat-tit">Contatos</h3><ul class="ri-canais">${c.canais.map(k => `<li><span class="dim">${esc(riRot(RI_CANAIS, k.tipo))}</span>
       <span class="v">${riCanalLink(k)}</span><button type="button" class="ri-mini" data-copiar="${esc(k.valor)}" aria-label="Copiar">${ic('copy')}</button></li>`).join('')}</ul>` : ''}
     ${(c.tags || []).length ? `<h3 class="ri-lat-tit">Interesses</h3><div class="ri-tags">${c.tags.map(t => `<span class="ri-tag">${esc(t)}</span>`).join('')}</div>` : ''}`;
-  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo:c.nome, voltar:['Contatos', '#/ri'],
-      meta:[esc(riRot(RI_FUNCOES, c.funcao)), esc(riRot(RI_ESTAGIOS, c.estagio)), !org && c.organizacao ? esc(c.organizacao) : null].filter(Boolean),
+  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo:c.nome, voltar:['Conexões', '#/ri/conexoes'],
+      meta:[riRot(RI_FUNCOES, c.funcao), riRot(RI_ESTAGIOS, c.estagio), !org && c.organizacao ? c.organizacao : null].filter(Boolean).map(x => `<span>${esc(x)}</span>`),
       acoes:`<a class="btn ghost" href="#/ri/${id}/editar" id="ri-editar">${ic('pencil')} Editar</a>` }) + layoutObjeto(principal, lateral);
   $('#ri-f-inter').addEventListener('click', () => riInteracaoModal([id]));
   $('#ri-f-rel').addEventListener('click', () => riEscolherPar(id));
@@ -669,20 +711,20 @@ function riEscolherPar(id){
 /* ---------- o formulário de contato ---------- */
 async function riFormulario(id){
   const titulo = id ? 'Editar contato' : 'Novo contato';
-  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Contatos', '#/ri'] }) + estado.carregando();
+  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Conexões', '#/ri/conexoes'] }) + estado.carregando();
   try { await riCarregar(); } catch(e){ return e.message === 'sem_permissao' ? riSemPermissao() : riErro(e); }
   let c = { natureza:'pessoa', nome:'', cargo:'', organizacao_id:null, funcao:'stakeholder', proximidade:2, estagio:'identificado', influencia:null, interesse:null,
     tags:[], canais:[], cidade:'', resumo:'', notas:'', origem:'', responsavel:state.perfil?.registro || null, proximo_passo:'', proximo_em:null, ativo:true };
   if (id){
     const { data } = await sb.rpc('ri_contato_ler', { p_id:id });
-    if (data?.status !== 'ok'){ $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Contatos', '#/ri'] }) + estado.vazio({ texto:'Este contato não existe.' }); return; }
+    if (data?.status !== 'ok'){ $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Conexões', '#/ri/conexoes'] }) + estado.vazio({ texto:'Este contato não existe.' }); return; }
     c = data.contato;
   }
   const orgs = RI.d.contatos.filter(o => o.natureza === 'organizacao' && o.id !== id).sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
   const op = (lista, v) => lista.map(([k, l]) => `<option value="${esc(k)}"${String(v ?? '') === String(k) ? ' selected' : ''}>${esc(l)}</option>`).join('');
   const escala = (idc, v, rots) => `<select id="${idc}"><option value="">—</option>${[1, 2, 3, 4, 5].map(n => `<option value="${n}"${v === n ? ' selected' : ''}>${n}${rots ? ' (' + rots[n] + ')' : ''}</option>`).join('')}</select>`;
   let tags = [...(c.tags || [])], canais = (c.canais || []).map(x => ({ ...x }));
-  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Contatos', id ? '#/ri/' + id : '#/ri'] }) + `
+  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Conexões', '#/ri/conexoes'] }) + `
     <form class="ri-form" id="ri-form" novalidate>
       <div class="seg" role="radiogroup" aria-label="Natureza" id="ri-nat">${[['pessoa', 'Pessoa'], ['organizacao', 'Organização']].map(([k, l]) =>
         `<button type="button" role="radio" data-v="${k}" class="${c.natureza === k ? 'on' : ''}" aria-checked="${c.natureza === k}">${l}</button>`).join('')}</div>
@@ -721,7 +763,7 @@ async function riFormulario(id){
       <p class="aviso-box err" id="ri-erro" hidden></p>
       <div class="ri-form-pe">
         ${id ? `<button type="button" class="btn ghost" id="ri-excluir">${ic('trash')} Excluir de vez</button>` : '<span></span>'}
-        <span style="display:flex;gap:8px"><a class="btn ghost" href="${id ? '#/ri/' + id : '#/ri'}">Cancelar</a><button type="submit" class="btn solid" id="ri-salvar">Salvar</button></span>
+        <span style="display:flex;gap:8px"><a class="btn ghost" href="${id ? '#/ri/' + id : '#/ri/conexoes'}">Cancelar</a><button type="submit" class="btn solid" id="ri-salvar">Salvar</button></span>
       </div>
     </form>`;
   const pintarTags = () => { $('#ri-tags').innerHTML = tags.map(t => `<span class="ri-chip">${esc(t)}<button type="button" aria-label="Tirar ${esc(t)}" data-x="${esc(t)}">×</button></span>`).join(''); };
@@ -760,52 +802,52 @@ async function riFormulario(id){
   $('#ri-excluir')?.addEventListener('click', async () => {
     if (!confirm(`Excluir ${c.nome} de vez? Somem a ficha, as relações e a participação nas interações e nos eventos. Use quando a pessoa pedir (LGPD) ou o registro não tiver mais finalidade. Para só tirar das vistas, desmarque "Ativo".`)) return;
     const { data } = await sb.rpc('ri_contato_excluir', { p_id:id });
-    if (data?.status === 'ok'){ RI.d = null; if (RI.pos) { delete RI.pos[id]; riPosGuardar(); } toast('Contato excluído.'); location.replace('#/ri'); }
+    if (data?.status === 'ok'){ RI.d = null; if (RI.pos) { delete RI.pos[id]; riPosGuardar(); } toast('Contato excluído.'); location.replace('#/ri/conexoes'); }
   });
 }
 
 /* ---------- eventos de RI ---------- */
-async function riEventos(){
-  const cab = (x = {}) => cabecalho({ espaco:'Relações institucionais', titulo:'Eventos de RI',
-    lead:'Eventos para conhecer stakeholders, apresentar a NRO e alinhar interesses: onde vale estar e o que rendeu.', ...x });
+async function riMissoes(){
+  const cab = (x = {}) => cabecalho({ espaco:'Relações institucionais', titulo:'Missões', voltar:['Relações institucionais', '#/ri'],
+    lead:'Eventos, visitas e encontros em que a equipe representa a NRO, para conhecer stakeholders, apresentar e alinhar interesses: onde vale estar e o que rendeu.', ...x });
   $('#main').innerHTML = cab() + estado.carregando();
-  const { data, error } = await sb.rpc('ri_eventos_listar');
+  const { data, error } = await sb.rpc('ri_missoes_listar');
   if (error || data?.status !== 'ok') return data?.status === 'sem_permissao' ? riSemPermissao() : riErro(error || { message:data?.status });
-  RI.evs = data.eventos;
+  RI.evs = data.missoes;
   const hoje = hojeISO();
   const grupos = [
     ['Próximos', e => ['confirmado', 'prospectado', 'avaliando'].includes(e.status) && (!e.inicio || (e.fim || e.inicio) >= hoje)],
     ['Realizados', e => e.status === 'participou' || (e.status === 'confirmado' && (e.fim || e.inicio) < hoje)],
     ['Passaram sem a equipe', e => ['prospectado', 'avaliando'].includes(e.status) && e.inicio && (e.fim || e.inicio) < hoje],
     ['Descartados', e => e.status === 'descartado']];
-  const card = e => `<a class="ri-ev" href="#/ri/eventos/${e.id}">
+  const card = e => `<a class="ri-ev" href="#/ri/missoes/${e.id}">
     <span class="ri-ev-data">${e.inicio ? fmtD(e.inicio) + (e.fim && e.fim !== e.inicio ? ' a ' + fmtD(e.fim) : '') : 'Sem data'}</span>
     <b>${esc(e.nome)}</b>
     <span class="sub">${esc([riRot(RI_EV_TIPOS, e.tipo), e.local, e.modalidade !== 'presencial' ? (e.modalidade === 'online' ? 'Online' : 'Híbrido') : null].filter(Boolean).join(', '))}</span>
     <span class="ri-ev-pe"><span class="pill">${esc(riRot(RI_EV_STATUS, e.status))}</span>
       <span class="dim">${e.participantes.length} da equipe, ${e.contatos.length} contatos${e.avaliacao ? ', nota ' + e.avaliacao + ' de 5' : ''}</span></span></a>`;
-  $('#main').innerHTML = cab({ acoes:`<a class="btn solid ri-mais" href="#/ri/eventos/novo" title="Novo evento" aria-label="Novo evento">${ic('plus')}</a>` })
+  $('#main').innerHTML = cab({ acoes:`<a class="btn solid ri-mais" href="#/ri/missoes/novo" title="Nova missão" aria-label="Nova missão">${ic('plus')}</a>` })
     + (RI.evs.length ? grupos.map(([t, f]) => { const l = RI.evs.filter(f); return l.length ? `<h2 class="srv-bloco">${t} <span class="n">${l.length}</span></h2><div class="ri-evs">${l.map(card).join('')}</div>` : ''; }).join('')
-      : estado.vazio({ texto:'Nenhum evento de RI registrado.', acao:'<a class="btn ghost mini" href="#/ri/eventos/novo">Registrar o primeiro</a>' }));
+      : estado.vazio({ texto:'Nenhuma missão registrada.', acao:'<a class="btn ghost mini" href="#/ri/missoes/novo">Registrar a primeira</a>' }));
 }
-async function riEvento(sub){
+async function riMissao(sub){
   const novo = sub === 'novo', id = novo ? null : +sub;
-  const titulo = novo ? 'Novo evento de RI' : 'Evento de RI';
-  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Eventos de RI', '#/ri/eventos'] }) + estado.carregando();
+  const titulo = novo ? 'Nova missão' : 'Missão';
+  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Missões', '#/ri/missoes'] }) + estado.carregando();
   try { await riCarregar(); } catch(e){ return e.message === 'sem_permissao' ? riSemPermissao() : riErro(e); }
   let e = { nome:'', tipo:'congresso', status:'prospectado', inicio:null, fim:null, local:'', modalidade:'presencial', link:'', organizador:'', objetivos:[],
     publico:'', custo:null, participantes:[], contatos:[], resultados:'', avaliacao:null, notas:'' };
   if (!novo){
-    if (!RI.evs){ const { data } = await sb.rpc('ri_eventos_listar'); RI.evs = data?.eventos || []; }
+    if (!RI.evs){ const { data } = await sb.rpc('ri_missoes_listar'); RI.evs = data?.missoes || []; }
     const achado = RI.evs.find(x => x.id === id);
-    if (!achado){ $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Eventos de RI', '#/ri/eventos'] }) + estado.vazio({ texto:'Este evento não existe.' }); return; }
+    if (!achado){ $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo, voltar:['Missões', '#/ri/missoes'] }) + estado.vazio({ texto:'Esta missão não existe.' }); return; }
     e = achado;
   }
   const op = (lista, v) => lista.map(([k, l]) => `<option value="${esc(k)}"${String(v ?? '') === String(k) ? ' selected' : ''}>${esc(l)}</option>`).join('');
   const membros = (state.membros || []).filter(m => ['Ativo', 'Em pausa / avaliação'].includes(m.status)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
   const contatos = RI.d.contatos.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
   const parts = new Set(e.participantes), cs = new Set(e.contatos), objs = new Set(e.objetivos);
-  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo:novo ? titulo : e.nome, voltar:['Eventos de RI', '#/ri/eventos'] }) + `
+  $('#main').innerHTML = cabecalho({ espaco:'Relações institucionais', titulo:novo ? titulo : e.nome, voltar:['Missões', '#/ri/missoes'] }) + `
     <form class="ri-form" id="ri-ev-form" novalidate>
       <div class="fld"><label for="ri-ev-nome">Nome</label><input id="ri-ev-nome" maxlength="200" value="${esc(e.nome)}"></div>
       <div class="ri-tres">
@@ -859,24 +901,24 @@ async function riEvento(sub){
       objetivos:[...document.querySelectorAll('[data-obj]:checked')].map(x => x.value), publico:v('#ri-ev-publico'),
       participantes:[...parts], contatos:[...cs], resultados:v('#ri-ev-res'), avaliacao:v('#ri-ev-av') ? +v('#ri-ev-av') : null, notas:v('#ri-ev-notas') };
     const erro = t => { $('#ri-ev-erro').textContent = t; $('#ri-ev-erro').hidden = false; };
-    if (!p.nome.trim()) return erro('Escreva o nome do evento.');
+    if (!p.nome.trim()) return erro('Escreva o nome da missão.');
     if (p.inicio && p.fim && p.fim < p.inicio) return erro('O fim vem antes do início.');
     if (p.link && !/^https?:\/\//i.test(p.link)) return erro('A página do evento precisa começar por https://');
-    const { data, error } = await sb.rpc('ri_evento_salvar', { p });
+    const { data, error } = await sb.rpc('ri_missao_salvar', { p });
     if (error || data?.status !== 'ok') return erro('Não foi possível salvar' + (data?.campo ? ': confira "' + data.campo + '"' : '') + '.');
-    RI.evs = null; toast(novo ? 'Evento registrado.' : 'Evento atualizado.');
-    location.replace('#/ri/eventos');
+    RI.evs = null; toast(novo ? 'Missão registrada.' : 'Missão atualizada.');
+    location.replace('#/ri/missoes');
   });
   $('#ri-ev-excluir')?.addEventListener('click', async () => {
-    if (!confirm('Excluir este evento?')) return;
-    const { data } = await sb.rpc('ri_evento_excluir', { p_id:id });
-    if (data?.status === 'ok'){ RI.evs = null; toast('Evento excluído.'); location.replace('#/ri/eventos'); }
+    if (!confirm('Excluir esta missão?')) return;
+    const { data } = await sb.rpc('ri_missao_excluir', { p_id:id });
+    if (data?.status === 'ok'){ RI.evs = null; toast('Missão excluída.'); location.replace('#/ri/missoes'); }
   });
 }
 
 /* ---------- as indicações dos membros ---------- */
 async function riIndicacoes(){
-  const cab = () => cabecalho({ espaco:'Relações institucionais', titulo:'Indicações',
+  const cab = () => cabecalho({ espaco:'Relações institucionais', titulo:'Indicações', voltar:['Relações institucionais', '#/ri'],
     lead:'Contatos e eventos que os membros indicam pelos Serviços. Quem indicou é avisado a cada passo.' });
   $('#main').innerHTML = cab() + estado.carregando();
   const { data, error } = await sb.rpc('ri_indicacoes_listar');
@@ -894,11 +936,11 @@ async function riIndicacoes(){
         i.tipo === 'contato' ? ['Como contatar', esc(d.contato || '')] : ['Página', d.link ? `<a href="${esc(d.link)}" target="_blank" rel="noopener">${esc(d.link)}</a>` : ''],
         i.tipo === 'contato' ? ['Sabe da indicação', d.sabe ? 'Sim' : 'Não informado'] : null])}
       ${i.resposta ? `<p class="small"><b>Resposta:</b> ${esc(i.resposta)}</p>` : ''}
-      ${i.contato_id ? `<p><a href="#/ri/${i.contato_id}">Abrir o contato criado →</a></p>` : i.evento_id ? `<p><a href="#/ri/eventos/${i.evento_id}">Abrir o evento criado →</a></p>` : ''}
+      ${i.contato_id ? `<p><a href="#/ri/${i.contato_id}">Abrir o contato criado →</a></p>` : i.missao_id ? `<p><a href="#/ri/missoes/${i.missao_id}">Abrir a missão criada →</a></p>` : ''}
       ${aberta ? `<div class="fld"><label for="ri-ind-r-${i.id}">Resposta para quem indicou</label><textarea id="ri-ind-r-${i.id}" rows="2" maxlength="1000"></textarea></div>
         <div class="acts">${i.status === 'nova' ? `<button type="button" class="btn ghost mini" data-acao="em_analise">Pegar para analisar</button>` : ''}
           <button type="button" class="btn ghost mini" data-acao="recusar">Recusar</button>
-          <button type="button" class="btn solid mini" data-acao="aceitar">Aceitar e criar ${i.tipo === 'contato' ? 'o contato' : 'o evento'}</button></div>
+          <button type="button" class="btn solid mini" data-acao="aceitar">Aceitar e criar ${i.tipo === 'contato' ? 'o contato' : 'a missão'}</button></div>
         <p class="aviso-box err" hidden></p>` : ''}
     </article>`; };
   $('#main').innerHTML = cab() + (RI.inds.length
@@ -913,7 +955,7 @@ async function riIndicacoes(){
     RI.d = null;
     toast(b.dataset.acao === 'aceitar' ? 'Aceita. Quem indicou foi avisado.' : b.dataset.acao === 'recusar' ? 'Recusada. Quem indicou foi avisado.' : 'Em análise. Quem indicou foi avisado.');
     if (d2.contato_id) location.hash = '#/ri/' + d2.contato_id + '/editar';
-    else if (d2.evento_id) location.hash = '#/ri/eventos/' + d2.evento_id;
+    else if (d2.missao_id) location.hash = '#/ri/missoes/' + d2.missao_id;
     else riIndicacoes();
   }));
 }

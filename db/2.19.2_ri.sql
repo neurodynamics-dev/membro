@@ -1,9 +1,12 @@
 -- ============================================================
 -- SOMA 2.19.2: Relações institucionais (RI)
 --
--- O registro dos contatos da equipe (pessoas e organizações), das relações
--- entre eles, das interações (o histórico) e dos eventos de RI, mais as
--- indicações que qualquer membro faz pelos Serviços.
+-- Três áreas, mais as indicações que qualquer membro faz pelos Serviços:
+--   Conexões: os contatos (pessoas e organizações), as relações entre eles e
+--     as interações (o histórico).
+--   Missões: eventos, visitas e encontros em que a equipe representa a NRO
+--     (o nome separa estes dos eventos da Agenda e dos eventos com certificado).
+--   Financiamento: os editais e o acompanhamento de cada submissão.
 --
 -- Quem vê: só quem está no NRO_RELAC ou no NRO_COORD_OFFICE (com a herança
 -- de grupos de esta_no_grupo). Nenhuma tabela é legível pela API: tudo passa
@@ -72,7 +75,7 @@ create table if not exists public.ri_relacoes (
   atualizado_em timestamptz not null default now(),
   check (a < b), unique (a, b));
 
-create table if not exists public.ri_eventos (
+create table if not exists public.ri_missoes (
   id            bigint generated always as identity primary key,
   nome          text not null check (length(btrim(nome)) between 1 and 200),
   tipo          text not null default 'outro',
@@ -103,7 +106,7 @@ create table if not exists public.ri_interacoes (
   tipo          text not null default 'reuniao',
   resumo        text not null check (length(btrim(resumo)) between 1 and 4000),
   contatos      bigint[] not null default '{}',
-  evento_id     bigint references public.ri_eventos(id) on delete set null,
+  missao_id     bigint references public.ri_missoes(id) on delete set null,
   autor         integer references public.membros(registro) on delete set null,
   criado_em     timestamptz not null default now());
 create index if not exists ri_interacoes_contatos on public.ri_interacoes using gin (contatos);
@@ -118,11 +121,11 @@ create table if not exists public.ri_indicacoes (
   analisado_por integer references public.membros(registro) on delete set null,
   analisado_em  timestamptz,
   contato_id    bigint references public.ri_contatos(id) on delete set null,
-  evento_id     bigint references public.ri_eventos(id) on delete set null,
+  missao_id     bigint references public.ri_missoes(id) on delete set null,
   criado_em     timestamptz not null default now());
 
 do $$ declare t text; begin
-  foreach t in array array['ri_contatos', 'ri_relacoes', 'ri_eventos', 'ri_interacoes', 'ri_indicacoes'] loop
+  foreach t in array array['ri_contatos', 'ri_relacoes', 'ri_missoes', 'ri_interacoes', 'ri_indicacoes'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on public.%I from anon, authenticated', t);
   end loop;
@@ -136,8 +139,8 @@ returns text[] language sql immutable as $$
                              'empresa', 'mentor', 'imprensa', 'fornecedor', 'membro', 'ex_membro', 'apoiador', 'concorrente']
     when 'estagio' then array['identificado', 'primeiro_contato', 'conhecendo', 'interesses_definidos', 'colaborando', 'parceria', 'pausado']
     when 'interacao' then array['reuniao', 'email', 'ligacao', 'mensagem', 'evento', 'visita', 'apresentacao', 'outro']
-    when 'evento_tipo' then array['congresso', 'feira', 'rodada', 'pitch', 'reuniao', 'visita', 'workshop', 'premiacao', 'edital', 'outro']
-    when 'evento_status' then array['prospectado', 'avaliando', 'confirmado', 'participou', 'descartado']
+    when 'missao_tipo' then array['congresso', 'feira', 'rodada', 'pitch', 'reuniao', 'visita', 'workshop', 'premiacao', 'edital', 'outro']
+    when 'missao_status' then array['prospectado', 'avaliando', 'confirmado', 'participou', 'descartado']
     when 'canal' then array['email', 'telefone', 'linkedin', 'site', 'instagram', 'outro']
   end $$;
 
@@ -205,14 +208,14 @@ begin
     'contato', public.ri_contato_json(c) || jsonb_build_object('canais', c.canais, 'notas', c.notas, 'origem', c.origem,
       'criado_em', c.criado_em, 'criado_por_nome', public.ri_nome(c.criado_por), 'atualizado_por_nome', public.ri_nome(c.atualizado_por)),
     'interacoes', coalesce((select jsonb_agg(jsonb_build_object('id', i.id, 'data', i.data, 'tipo', i.tipo, 'resumo', i.resumo,
-        'contatos', to_jsonb(i.contatos), 'evento_id', i.evento_id, 'evento', (select nome from ri_eventos e where e.id = i.evento_id),
+        'contatos', to_jsonb(i.contatos), 'missao_id', i.missao_id, 'missao', (select nome from ri_missoes e where e.id = i.missao_id),
         'autor', i.autor, 'autor_nome', public.ri_nome(i.autor)) order by i.data desc, i.id desc)
         from ri_interacoes i where i.contatos @> array[c.id]), '[]'),
     'relacoes', coalesce((select jsonb_agg(public.ri_relacao_json(r) order by r.forca desc) from ri_relacoes r where c.id in (r.a, r.b)), '[]'),
     'membros', coalesce((select jsonb_agg(jsonb_build_object('id', m.id, 'nome', m.nome, 'cargo', m.cargo) order by m.nome)
         from ri_contatos m where m.organizacao_id = c.id), '[]'),
-    'eventos', coalesce((select jsonb_agg(jsonb_build_object('id', e.id, 'nome', e.nome, 'inicio', e.inicio, 'status', e.status) order by e.inicio desc nulls last)
-        from ri_eventos e where e.contatos @> array[c.id]), '[]'));
+    'missoes', coalesce((select jsonb_agg(jsonb_build_object('id', e.id, 'nome', e.nome, 'inicio', e.inicio, 'status', e.status) order by e.inicio desc nulls last)
+        from ri_missoes e where e.contatos @> array[c.id]), '[]'));
 end $$;
 
 -- 6. contatos --------------------------------------------------------------------------------
@@ -276,7 +279,7 @@ begin
   if not exists (select 1 from ri_contatos where id = p_id) then return jsonb_build_object('status', 'nao_encontrado'); end if;
   update ri_interacoes set contatos = array_remove(contatos, p_id) where contatos @> array[p_id];
   delete from ri_interacoes where cardinality(contatos) = 0;
-  update ri_eventos set contatos = array_remove(contatos, p_id) where contatos @> array[p_id];
+  update ri_missoes set contatos = array_remove(contatos, p_id) where contatos @> array[p_id];
   delete from ri_contatos where id = p_id;
   return jsonb_build_object('status', 'ok');
 end $$;
@@ -311,7 +314,7 @@ end $$;
 -- 8. interações ----------------------------------------------------------------------------------
 create or replace function public.ri_interacao_salvar(p jsonb)
 returns jsonb language plpgsql volatile security definer set search_path = public as $$
-declare v_id bigint := nullif(p->>'id', '')::bigint; v_cs bigint[]; v_ev bigint := nullif(p->>'evento_id', '')::bigint;
+declare v_id bigint := nullif(p->>'id', '')::bigint; v_cs bigint[]; v_ev bigint := nullif(p->>'missao_id', '')::bigint;
         v_tipo text := coalesce(nullif(p->>'tipo', ''), 'reuniao'); v_res text := btrim(coalesce(p->>'resumo', ''));
 begin
   if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
@@ -320,12 +323,12 @@ begin
     return jsonb_build_object('status', 'invalido', 'campo', 'contatos'); end if;
   if v_tipo <> all(public.ri_vocab('interacao')) then return jsonb_build_object('status', 'invalido', 'campo', 'tipo'); end if;
   if length(v_res) = 0 or length(v_res) > 4000 then return jsonb_build_object('status', 'invalido', 'campo', 'resumo'); end if;
-  if v_ev is not null and not exists (select 1 from ri_eventos where id = v_ev) then return jsonb_build_object('status', 'invalido', 'campo', 'evento_id'); end if;
+  if v_ev is not null and not exists (select 1 from ri_missoes where id = v_ev) then return jsonb_build_object('status', 'invalido', 'campo', 'missao_id'); end if;
   if v_id is null then
-    insert into ri_interacoes (data, tipo, resumo, contatos, evento_id, autor)
+    insert into ri_interacoes (data, tipo, resumo, contatos, missao_id, autor)
     values (coalesce(nullif(p->>'data', '')::date, current_date), v_tipo, v_res, v_cs, v_ev, public.portal_registro_atual()) returning id into v_id;
   else
-    update ri_interacoes set data = coalesce(nullif(p->>'data', '')::date, data), tipo = v_tipo, resumo = v_res, contatos = v_cs, evento_id = v_ev
+    update ri_interacoes set data = coalesce(nullif(p->>'data', '')::date, data), tipo = v_tipo, resumo = v_res, contatos = v_cs, missao_id = v_ev
      where id = v_id;
     if not found then return jsonb_build_object('status', 'nao_encontrado'); end if;
   end if;
@@ -346,8 +349,8 @@ begin
   return jsonb_build_object('status', case when found then 'ok' else 'nao_encontrado' end);
 end $$;
 
--- 9. eventos de RI -------------------------------------------------------------------------------
-create or replace function public.ri_evento_json(e ri_eventos)
+-- 9. missões: eventos, visitas e encontros em que a equipe representa a NRO -------------------------------------------------------------------------------
+create or replace function public.ri_missao_json(e ri_missoes)
 returns jsonb language sql stable security definer set search_path = public as $$
   select jsonb_build_object('id', e.id, 'nome', e.nome, 'tipo', e.tipo, 'status', e.status, 'inicio', e.inicio, 'fim', e.fim,
     'local', e.local, 'modalidade', e.modalidade, 'link', e.link, 'organizador', e.organizador, 'objetivos', to_jsonb(e.objetivos),
@@ -358,24 +361,24 @@ returns jsonb language sql stable security definer set search_path = public as $
                                   from ri_contatos c where c.id = any(e.contatos)), '[]'),
     'resultados', e.resultados, 'avaliacao', e.avaliacao, 'notas', e.notas, 'atualizado_em', e.atualizado_em) $$;
 
-create or replace function public.ri_eventos_listar()
+create or replace function public.ri_missoes_listar()
 returns jsonb language plpgsql stable security definer set search_path = public as $$
 begin
   if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
-  return jsonb_build_object('status', 'ok', 'eventos',
-    coalesce((select jsonb_agg(public.ri_evento_json(e) order by e.inicio desc nulls first, e.id desc) from ri_eventos e), '[]'));
+  return jsonb_build_object('status', 'ok', 'missoes',
+    coalesce((select jsonb_agg(public.ri_missao_json(e) order by e.inicio desc nulls first, e.id desc) from ri_missoes e), '[]'));
 end $$;
 
-create or replace function public.ri_evento_salvar(p jsonb)
+create or replace function public.ri_missao_salvar(p jsonb)
 returns jsonb language plpgsql volatile security definer set search_path = public as $$
-declare v_id bigint := nullif(p->>'id', '')::bigint; v_nome text := btrim(coalesce(p->>'nome', '')); e ri_eventos;
+declare v_id bigint := nullif(p->>'id', '')::bigint; v_nome text := btrim(coalesce(p->>'nome', '')); e ri_missoes;
         v_ini date := nullif(p->>'inicio', '')::date; v_fim date := nullif(p->>'fim', '')::date;
         v_parts integer[]; v_cs bigint[];
 begin
   if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
   if length(v_nome) = 0 or length(v_nome) > 200 then return jsonb_build_object('status', 'invalido', 'campo', 'nome'); end if;
-  if coalesce(p->>'tipo', 'outro') <> all(public.ri_vocab('evento_tipo')) then return jsonb_build_object('status', 'invalido', 'campo', 'tipo'); end if;
-  if coalesce(p->>'status', 'prospectado') <> all(public.ri_vocab('evento_status')) then return jsonb_build_object('status', 'invalido', 'campo', 'status'); end if;
+  if coalesce(p->>'tipo', 'outro') <> all(public.ri_vocab('missao_tipo')) then return jsonb_build_object('status', 'invalido', 'campo', 'tipo'); end if;
+  if coalesce(p->>'status', 'prospectado') <> all(public.ri_vocab('missao_status')) then return jsonb_build_object('status', 'invalido', 'campo', 'status'); end if;
   if coalesce(p->>'modalidade', 'presencial') not in ('presencial', 'online', 'hibrido') then return jsonb_build_object('status', 'invalido', 'campo', 'modalidade'); end if;
   if v_fim < v_ini then return jsonb_build_object('status', 'invalido', 'campo', 'fim'); end if;
   if (p->>'avaliacao') is not null and (p->>'avaliacao')::int not between 1 and 5 then return jsonb_build_object('status', 'invalido', 'campo', 'avaliacao'); end if;
@@ -385,10 +388,10 @@ begin
   select coalesce(array_agg(distinct x::bigint), '{}') into v_cs from jsonb_array_elements_text(coalesce(p->'contatos', '[]')) x
    where x::bigint in (select id from ri_contatos);
   if v_id is null then
-    insert into ri_eventos (nome, criado_por) values (v_nome, public.portal_registro_atual()) returning id into v_id;
-  elsif not exists (select 1 from ri_eventos where id = v_id) then return jsonb_build_object('status', 'nao_encontrado');
+    insert into ri_missoes (nome, criado_por) values (v_nome, public.portal_registro_atual()) returning id into v_id;
+  elsif not exists (select 1 from ri_missoes where id = v_id) then return jsonb_build_object('status', 'nao_encontrado');
   end if;
-  update ri_eventos set nome = v_nome, tipo = coalesce(nullif(p->>'tipo', ''), 'outro'), status = coalesce(nullif(p->>'status', ''), 'prospectado'),
+  update ri_missoes set nome = v_nome, tipo = coalesce(nullif(p->>'tipo', ''), 'outro'), status = coalesce(nullif(p->>'status', ''), 'prospectado'),
     inicio = v_ini, fim = v_fim, local = nullif(btrim(coalesce(p->>'local', '')), ''), modalidade = coalesce(nullif(p->>'modalidade', ''), 'presencial'),
     link = nullif(btrim(coalesce(p->>'link', '')), ''), organizador = nullif(btrim(coalesce(p->>'organizador', '')), ''),
     objetivos = public.ri_lista_limpar(p->'objetivos', 12), publico = nullif(btrim(coalesce(p->>'publico', '')), ''),
@@ -396,14 +399,14 @@ begin
     resultados = nullif(btrim(coalesce(p->>'resultados', '')), ''), avaliacao = (p->>'avaliacao')::int,
     notas = nullif(btrim(coalesce(p->>'notas', '')), ''), atualizado_por = public.portal_registro_atual(), atualizado_em = now()
    where id = v_id returning * into e;
-  return jsonb_build_object('status', 'ok', 'id', e.id, 'evento', public.ri_evento_json(e));
+  return jsonb_build_object('status', 'ok', 'id', e.id, 'evento', public.ri_missao_json(e));
 end $$;
 
-create or replace function public.ri_evento_excluir(p_id bigint)
+create or replace function public.ri_missao_excluir(p_id bigint)
 returns jsonb language plpgsql volatile security definer set search_path = public as $$
 begin
   if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
-  delete from ri_eventos where id = p_id;
+  delete from ri_missoes where id = p_id;
   return jsonb_build_object('status', case when found then 'ok' else 'nao_encontrado' end);
 end $$;
 
@@ -413,7 +416,7 @@ returns jsonb language sql stable security definer set search_path = public as $
   select jsonb_build_object('id', i.id, 'tipo', i.tipo, 'dados', i.dados, 'status', i.status, 'resposta', i.resposta,
     'analisado_em', i.analisado_em, 'criado_em', i.criado_em)
     || case when p_completa then jsonb_build_object('autor', i.autor, 'autor_nome', public.ri_nome(i.autor),
-         'analisado_por_nome', public.ri_nome(i.analisado_por), 'contato_id', i.contato_id, 'evento_id', i.evento_id)
+         'analisado_por_nome', public.ri_nome(i.analisado_por), 'contato_id', i.contato_id, 'missao_id', i.missao_id)
        else '{}'::jsonb end $$;
 
 create or replace function public.ri_indicar(p jsonb)
@@ -481,14 +484,14 @@ begin
       returning id into v_novo;
       update ri_indicacoes set contato_id = v_novo where id = i.id;
     else
-      insert into ri_eventos (nome, inicio, local, link, organizador, notas, status, criado_por, atualizado_por)
+      insert into ri_missoes (nome, inicio, local, link, organizador, notas, status, criado_por, atualizado_por)
       values (left(btrim(d->>'nome'), 200), case when d->>'data' ~ '^\d{4}-\d{2}-\d{2}$' then (d->>'data')::date end,
               nullif(btrim(coalesce(d->>'local', '')), ''),
               case when d->>'link' ~* '^https?://' then d->>'link' end, nullif(btrim(coalesce(d->>'organizador', '')), ''),
               'Indicação de ' || coalesce(public.ri_nome(i.autor), 'um membro') || ': ' || coalesce(d->>'por_que', ''),
               'avaliando', v_eu, v_eu)
       returning id into v_novo;
-      update ri_indicacoes set evento_id = v_novo where id = i.id;
+      update ri_indicacoes set missao_id = v_novo where id = i.id;
     end if;
   end if;
   update ri_indicacoes set status = case p_acao when 'em_analise' then 'em_analise' when 'aceitar' then 'aceita' else 'recusada' end,
@@ -500,19 +503,221 @@ begin
     'Relações institucionais: ' || coalesce(d->>'nome', 'indicação') || coalesce('. ' || nullif(btrim(coalesce(p_resposta, '')), ''), '.'),
     '#/servicos/indicar');
   return jsonb_build_object('status', 'ok', 'contato_id', case when i.tipo = 'contato' then v_novo end,
-                                            'evento_id', case when i.tipo = 'evento' then v_novo end);
+                                            'missao_id', case when i.tipo = 'evento' then v_novo end);
 end $$;
 
--- 11. permissões -------------------------------------------------------------------------------------
+-- 11. financiamento: os editais e o acompanhamento das submissões ----------------------------
+-- Cada edital nasce de um texto em Markdown (o mesmo jeito dos treinamentos e do Studio): o
+-- cabeçalho dá os campos, "## Cronograma", "## Checklist" e "## Arranjo" viram listas, e o resto
+-- é a descrição. O arranjo é livre (cada edital funciona de um jeito); os campos que todo edital
+-- tem (quem submete, se é pela UFMG, se envolve outro grupo ou empresa, quem financia) são colunas,
+-- para filtrar e para o cartão.
+create table if not exists public.ri_editais (
+  id               bigint generated always as identity primary key,
+  codigo           text unique,
+  titulo           text not null check (length(btrim(titulo)) between 1 and 240),
+  financiador      text,
+  financiador_id   bigint references public.ri_contatos(id) on delete set null,
+  chamada          text,
+  link             text,
+  resumo           text,
+  tipo             text not null default 'pesquisa',
+  status           text not null default 'radar',
+  valor_maximo     numeric(14, 2),
+  valor_solicitado numeric(14, 2),
+  valor_aprovado   numeric(14, 2),
+  contrapartida    text,
+  abertura         date,
+  prazo            date,
+  resultado        date,
+  duracao_meses    integer check (duracao_meses between 1 and 240),
+  proponente       text not null default 'coordenador',
+  responsavel_submissao text,
+  responsavel      integer references public.membros(registro) on delete set null,
+  pela_ufmg        boolean,
+  outro_grupo      text,
+  empresa          text,
+  temas            text[] not null default '{}',
+  arranjo          jsonb not null default '[]',   -- [{rotulo, valor}]
+  cronograma       jsonb not null default '[]',   -- [{data, etapa, feito}]
+  checklist        jsonb not null default '[]',   -- [{item, feito}]
+  corpo            text,
+  fonte_md         text,
+  contatos         bigint[] not null default '{}',
+  equipe           integer[] not null default '{}',
+  notas            text,
+  criado_por       integer references public.membros(registro) on delete set null,
+  criado_em        timestamptz not null default now(),
+  atualizado_por   integer references public.membros(registro) on delete set null,
+  atualizado_em    timestamptz not null default now());
+alter table public.ri_editais enable row level security;
+revoke all on public.ri_editais from anon, authenticated;
+create sequence if not exists public.ri_editais_codigo_seq;
+
+create or replace function public.ri_vocab_fin(p text)
+returns text[] language sql immutable as $$
+  select case p
+    when 'tipo' then array['pesquisa', 'inovacao', 'subvencao', 'bolsa', 'infraestrutura', 'evento', 'premio', 'aceleracao', 'outro']
+    when 'status' then array['radar', 'avaliando', 'preparando', 'submetido', 'aprovado', 'nao_aprovado', 'execucao', 'prestacao', 'encerrado', 'descartado']
+    when 'proponente' then array['coordenador', 'fundacao', 'ufmg', 'outro_grupo', 'empresa', 'nro', 'outro']
+  end $$;
+
+-- as listas do texto: só objetos com os campos esperados, com limites
+create or replace function public.ri_fin_lista(p jsonb, p_tipo text)
+returns jsonb language sql immutable as $$
+  select coalesce(jsonb_agg(x), '[]') from (
+    select case p_tipo
+      when 'arranjo' then jsonb_build_object('rotulo', left(btrim(e->>'rotulo'), 120), 'valor', left(btrim(coalesce(e->>'valor', '')), 600))
+      when 'cronograma' then jsonb_build_object('data', case when e->>'data' ~ '^\d{4}-\d{2}-\d{2}$' then e->>'data' end,
+                                                'etapa', left(btrim(e->>'etapa'), 300), 'feito', coalesce((e->>'feito')::boolean, false))
+      when 'checklist' then jsonb_build_object('item', left(btrim(e->>'item'), 300), 'feito', coalesce((e->>'feito')::boolean, false))
+    end x
+    from jsonb_array_elements(case when jsonb_typeof(p) = 'array' then p else '[]' end) with ordinality t(e, n)
+   where jsonb_typeof(e) = 'object' and length(btrim(coalesce(e->>(case p_tipo when 'arranjo' then 'rotulo' when 'cronograma' then 'etapa' else 'item' end), ''))) > 0
+   order by n limit 80) s $$;
+
+create or replace function public.ri_edital_json(e ri_editais, p_completo boolean)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('id', e.id, 'codigo', e.codigo, 'titulo', e.titulo, 'financiador', e.financiador, 'financiador_id', e.financiador_id,
+    'chamada', e.chamada, 'link', e.link, 'resumo', e.resumo, 'tipo', e.tipo, 'status', e.status,
+    'valor_maximo', e.valor_maximo, 'valor_solicitado', e.valor_solicitado, 'valor_aprovado', e.valor_aprovado, 'contrapartida', e.contrapartida,
+    'abertura', e.abertura, 'prazo', e.prazo, 'resultado', e.resultado, 'duracao_meses', e.duracao_meses,
+    'proponente', e.proponente, 'responsavel_submissao', e.responsavel_submissao, 'responsavel', e.responsavel,
+    'responsavel_nome', public.ri_nome(e.responsavel), 'pela_ufmg', e.pela_ufmg, 'outro_grupo', e.outro_grupo, 'empresa', e.empresa,
+    'temas', to_jsonb(e.temas), 'cronograma', e.cronograma,
+    'checklist_total', jsonb_array_length(e.checklist), 'checklist_feitos', (select count(*) from jsonb_array_elements(e.checklist) c where (c->>'feito')::boolean),
+    'proxima_etapa', (select c from jsonb_array_elements(e.cronograma) c where not coalesce((c->>'feito')::boolean, false) and c->>'data' is not null
+                       order by c->>'data' limit 1),
+    'atualizado_em', e.atualizado_em)
+  || case when p_completo then jsonb_build_object('arranjo', e.arranjo, 'checklist', e.checklist, 'corpo', e.corpo, 'fonte_md', e.fonte_md,
+       'contatos', to_jsonb(e.contatos), 'equipe', to_jsonb(e.equipe), 'notas', e.notas,
+       'contatos_lista', coalesce((select jsonb_agg(jsonb_build_object('id', c.id, 'nome', c.nome, 'funcao', c.funcao) order by c.nome) from ri_contatos c where c.id = any(e.contatos)), '[]'),
+       'equipe_nomes', coalesce((select jsonb_agg(jsonb_build_object('registro', m.registro, 'nome', m.nome) order by m.nome) from membros m where m.registro = any(e.equipe)), '[]'),
+       'atualizado_por_nome', public.ri_nome(e.atualizado_por), 'criado_em', e.criado_em)
+     else '{}'::jsonb end $$;
+
+create or replace function public.ri_editais_listar()
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
+  return jsonb_build_object('status', 'ok', 'editais',
+    coalesce((select jsonb_agg(public.ri_edital_json(e, false) order by e.prazo nulls last, e.id desc) from ri_editais e), '[]'),
+    'equipe', coalesce((select jsonb_agg(jsonb_build_object('registro', m.registro, 'nome', m.nome) order by m.nome)
+                          from membros m where m.registro in (select public.ri_equipe())), '[]'));
+end $$;
+
+create or replace function public.ri_edital_ler(p_id bigint)
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare e ri_editais;
+begin
+  if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
+  select * into e from ri_editais where id = p_id;
+  if not found then return jsonb_build_object('status', 'nao_encontrado'); end if;
+  return jsonb_build_object('status', 'ok', 'edital', public.ri_edital_json(e, true));
+end $$;
+
+create or replace function public.ri_edital_salvar(p jsonb)
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+declare v_id bigint := nullif(p->>'id', '')::bigint; v_tit text := btrim(coalesce(p->>'titulo', '')); e ri_editais;
+        v_tipo text := coalesce(nullif(p->>'tipo', ''), 'pesquisa'); v_st text := coalesce(nullif(p->>'status', ''), 'radar');
+        v_prop text := coalesce(nullif(p->>'proponente', ''), 'coordenador'); v_fin bigint := nullif(p->>'financiador_id', '')::bigint;
+        v_cs bigint[]; v_eq integer[];
+begin
+  if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
+  if length(v_tit) = 0 or length(v_tit) > 240 then return jsonb_build_object('status', 'invalido', 'campo', 'titulo'); end if;
+  if v_tipo <> all(public.ri_vocab_fin('tipo')) then return jsonb_build_object('status', 'invalido', 'campo', 'tipo'); end if;
+  if v_st <> all(public.ri_vocab_fin('status')) then return jsonb_build_object('status', 'invalido', 'campo', 'status'); end if;
+  if v_prop <> all(public.ri_vocab_fin('proponente')) then return jsonb_build_object('status', 'invalido', 'campo', 'proponente'); end if;
+  if nullif(p->>'link', '') is not null and (p->>'link') !~* '^https?://' then return jsonb_build_object('status', 'invalido', 'campo', 'link'); end if;
+  if length(coalesce(p->>'fonte_md', '')) > 100000 or length(coalesce(p->>'corpo', '')) > 100000 then return jsonb_build_object('status', 'invalido', 'campo', 'texto'); end if;
+  if (p->>'duracao_meses') is not null and (p->>'duracao_meses')::int not between 1 and 240 then return jsonb_build_object('status', 'invalido', 'campo', 'duracao_meses'); end if;
+  if v_fin is not null and not exists (select 1 from ri_contatos where id = v_fin) then v_fin := null; end if;
+  select coalesce(array_agg(distinct x::bigint), '{}') into v_cs from jsonb_array_elements_text(coalesce(p->'contatos', '[]')) x where x::bigint in (select id from ri_contatos);
+  select coalesce(array_agg(distinct x::int), '{}') into v_eq from jsonb_array_elements_text(coalesce(p->'equipe', '[]')) x where x::int in (select registro from membros);
+  if v_id is null then
+    insert into ri_editais (titulo, codigo, criado_por) values (v_tit, 'EDT-' || lpad(nextval('ri_editais_codigo_seq')::text, 3, '0'), public.portal_registro_atual())
+    returning id into v_id;
+  elsif not exists (select 1 from ri_editais where id = v_id) then return jsonb_build_object('status', 'nao_encontrado');
+  end if;
+  update ri_editais set titulo = v_tit,
+    financiador = nullif(btrim(coalesce(p->>'financiador', '')), ''), financiador_id = v_fin, chamada = nullif(btrim(coalesce(p->>'chamada', '')), ''),
+    link = nullif(btrim(coalesce(p->>'link', '')), ''), resumo = left(nullif(btrim(coalesce(p->>'resumo', '')), ''), 1200), tipo = v_tipo, status = v_st,
+    valor_maximo = nullif(p->>'valor_maximo', '')::numeric, valor_solicitado = nullif(p->>'valor_solicitado', '')::numeric,
+    valor_aprovado = nullif(p->>'valor_aprovado', '')::numeric, contrapartida = nullif(btrim(coalesce(p->>'contrapartida', '')), ''),
+    abertura = nullif(p->>'abertura', '')::date, prazo = nullif(p->>'prazo', '')::date, resultado = nullif(p->>'resultado', '')::date,
+    duracao_meses = nullif(p->>'duracao_meses', '')::int, proponente = v_prop,
+    responsavel_submissao = nullif(btrim(coalesce(p->>'responsavel_submissao', '')), ''), responsavel = nullif(p->>'responsavel', '')::int,
+    pela_ufmg = (p->>'pela_ufmg')::boolean, outro_grupo = nullif(btrim(coalesce(p->>'outro_grupo', '')), ''), empresa = nullif(btrim(coalesce(p->>'empresa', '')), ''),
+    temas = public.ri_lista_limpar(p->'temas', 20), arranjo = public.ri_fin_lista(p->'arranjo', 'arranjo'),
+    cronograma = public.ri_fin_lista(p->'cronograma', 'cronograma'), checklist = public.ri_fin_lista(p->'checklist', 'checklist'),
+    corpo = nullif(p->>'corpo', ''), fonte_md = nullif(p->>'fonte_md', ''), contatos = v_cs, equipe = v_eq,
+    notas = nullif(btrim(coalesce(p->>'notas', '')), ''), atualizado_por = public.portal_registro_atual(), atualizado_em = now()
+   where id = v_id returning * into e;
+  return jsonb_build_object('status', 'ok', 'id', e.id, 'edital', public.ri_edital_json(e, true));
+end $$;
+
+-- o dia a dia: mudar a situação e marcar um item do checklist ou uma etapa do cronograma
+create or replace function public.ri_edital_status(p_id bigint, p_status text)
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+begin
+  if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
+  if p_status <> all(public.ri_vocab_fin('status')) then return jsonb_build_object('status', 'invalido', 'campo', 'status'); end if;
+  update ri_editais set status = p_status, atualizado_por = public.portal_registro_atual(), atualizado_em = now() where id = p_id;
+  return jsonb_build_object('status', case when found then 'ok' else 'nao_encontrado' end);
+end $$;
+
+create or replace function public.ri_edital_marcar(p_id bigint, p_lista text, p_indice integer, p_feito boolean)
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+declare v jsonb;
+begin
+  if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
+  if p_lista not in ('checklist', 'cronograma') then return jsonb_build_object('status', 'invalido', 'campo', 'lista'); end if;
+  select case p_lista when 'checklist' then checklist else cronograma end into v from ri_editais where id = p_id for update;
+  if not found then return jsonb_build_object('status', 'nao_encontrado'); end if;
+  if p_indice is null or p_indice < 0 or p_indice >= jsonb_array_length(v) then return jsonb_build_object('status', 'invalido', 'campo', 'indice'); end if;
+  v := jsonb_set(v, array[p_indice::text, 'feito'], to_jsonb(coalesce(p_feito, false)));
+  if p_lista = 'checklist' then update ri_editais set checklist = v, atualizado_por = public.portal_registro_atual(), atualizado_em = now() where id = p_id;
+  else update ri_editais set cronograma = v, atualizado_por = public.portal_registro_atual(), atualizado_em = now() where id = p_id; end if;
+  return jsonb_build_object('status', 'ok');
+end $$;
+
+create or replace function public.ri_edital_excluir(p_id bigint)
+returns jsonb language plpgsql volatile security definer set search_path = public as $$
+begin
+  if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
+  delete from ri_editais where id = p_id;
+  return jsonb_build_object('status', case when found then 'ok' else 'nao_encontrado' end);
+end $$;
+
+-- a galeria de entrada: os números de cada área
+create or replace function public.ri_resumo()
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.ri_pode() then return jsonb_build_object('status', 'sem_permissao'); end if;
+  return jsonb_build_object('status', 'ok',
+    'contatos', (select count(*) from ri_contatos where ativo),
+    'organizacoes', (select count(*) from ri_contatos where ativo and natureza = 'organizacao'),
+    'passos_atrasados', (select count(*) from ri_contatos where ativo and proximo_em < current_date),
+    'missoes_proximas', (select count(*) from ri_missoes where status in ('prospectado', 'avaliando', 'confirmado') and coalesce(fim, inicio, current_date) >= current_date),
+    'missoes_realizadas', (select count(*) from ri_missoes where status = 'participou'),
+    'editais_ativos', (select count(*) from ri_editais where status in ('radar', 'avaliando', 'preparando', 'submetido')),
+    'prazos_30', (select count(*) from ri_editais where status in ('radar', 'avaliando', 'preparando') and prazo between current_date and current_date + 30),
+    'em_execucao', (select count(*) from ri_editais where status in ('aprovado', 'execucao', 'prestacao')),
+    'indicacoes_abertas', (select count(*) from ri_indicacoes where status in ('nova', 'em_analise')));
+end $$;
+
+-- 12. permissões -------------------------------------------------------------------------------------
 do $$ declare f text; begin
-  foreach f in array array['ri_equipe()', 'ri_nome(integer)', 'ri_contato_json(ri_contatos)', 'ri_evento_json(ri_eventos)',
-                           'ri_indicacao_json(ri_indicacoes,boolean)'] loop
+  foreach f in array array['ri_equipe()', 'ri_nome(integer)', 'ri_contato_json(ri_contatos)', 'ri_missao_json(ri_missoes)',
+                           'ri_indicacao_json(ri_indicacoes,boolean)', 'ri_edital_json(ri_editais,boolean)'] loop
     execute 'revoke execute on function public.' || f || ' from public, anon, authenticated';
   end loop;
   foreach f in array array['ri_pode()', 'ri_dados()', 'ri_contato_ler(bigint)', 'ri_contato_salvar(jsonb)', 'ri_contato_estagio(bigint,text)',
                            'ri_contato_excluir(bigint)', 'ri_relacao_salvar(jsonb)', 'ri_relacao_excluir(bigint)', 'ri_interacao_salvar(jsonb)',
-                           'ri_interacao_excluir(bigint)', 'ri_eventos_listar()', 'ri_evento_salvar(jsonb)', 'ri_evento_excluir(bigint)',
-                           'ri_indicar(jsonb)', 'ri_minhas_indicacoes()', 'ri_indicacoes_listar()', 'ri_indicacao_decidir(bigint,text,text,boolean)'] loop
+                           'ri_interacao_excluir(bigint)', 'ri_missoes_listar()', 'ri_missao_salvar(jsonb)', 'ri_missao_excluir(bigint)',
+                           'ri_indicar(jsonb)', 'ri_minhas_indicacoes()', 'ri_indicacoes_listar()', 'ri_indicacao_decidir(bigint,text,text,boolean)',
+                           'ri_editais_listar()', 'ri_edital_ler(bigint)', 'ri_edital_salvar(jsonb)', 'ri_edital_status(bigint,text)',
+                           'ri_edital_marcar(bigint,text,integer,boolean)', 'ri_edital_excluir(bigint)', 'ri_resumo()'] loop
     execute 'revoke execute on function public.' || f || ' from public, anon';
     execute 'grant execute on function public.' || f || ' to authenticated';
   end loop;
@@ -520,7 +725,7 @@ end $$;
 select public.conta_ativa_travar();
 
 insert into public.migracoes(id, descricao) values('2.19.2_ri',
- 'SOMA 2.19.2: Relações institucionais (contatos, organizações, relações, interações, eventos de RI e indicações pelos Serviços), só para NRO_RELAC e NRO_COORD_OFFICE')
+ 'SOMA 2.19.2: Relações institucionais (conexões: contatos, organizações, relações e interações; missões; financiamento: editais e submissões; indicações pelos Serviços), só para NRO_RELAC e NRO_COORD_OFFICE')
 on conflict(id) do nothing;
 
 -- CONFERIR (somente leitura)

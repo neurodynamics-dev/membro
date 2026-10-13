@@ -125,6 +125,7 @@ psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 | `2.19.2_recadastro_completo.sql` | o recadastro (`cadastro_confirmar`, `cadastro_meus_dados`) atualiza todos os dados pessoais da ficha: os campos opcionais (gênero, cidade de origem, período de ingresso, deslocamento, FUMP, acessibilidade, background, Lattes, Instagram, GitHub, autorização de imagem), o endereço de uma linha montado das partes e o e-mail pessoal (em `membros`). Campo que não vem fica como estava; em branco apaga. Depois da `2.19.1_recadastro` |
 | `2.19.2_recursos.sql` | Recursos, o catálogo colaborativo de ferramentas da equipe: `recursos`, `recurso_avaliacoes` e `recurso_comentarios`, só por função (`recursos_listar`, `recurso_ler`, `recurso_salvar`, `recurso_avaliar`, `recurso_comentar`, `recurso_comentario_apagar`). Qualquer membro com conta ativa adiciona, edita, avalia (1 a 5) e comenta; só a gestão (admin, Pessoal e liderança) marca "NRO Standard". O mesmo endereço não entra duas vezes |
 | `2.19.2_recursos_semente.sql` | a semente da Biblioteca, 283 itens (padrões VS Code e Git Bash, softwares, extensões do VS Code e do navegador, bases de pesquisa em saúde, gravação de microcontroladores, benefícios de estudante, repositórios da NSA e as indicações da equipe), com a função e, nos softwares, as instruções de baixar e usar. Não repete: o que já existe pelo endereço fica como está. Depois da `2.19.2_recursos` |
+| `2.19.2_ri.sql` | Relações institucionais, só para NRO_RELAC e NRO_COORD_OFFICE: conexões (`ri_contatos`, `ri_relacoes`, `ri_interacoes`), missões (`ri_missoes`), financiamento (`ri_editais`: cronograma, checklist e arranjo de cada edital) e as indicações que qualquer membro faz pelos Serviços (`ri_indicacoes`, com aviso a quem indicou). Tudo por função (`ri_*`); nenhuma tabela é legível pela API. Teste: `testes/2.19.2_ri.sql`. |
 
 A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
 2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
@@ -196,7 +197,7 @@ bash testes/preparar-base.sh teste t2192 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbi
      2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql \
      2.19.1_labbio_admin.sql 2.19.2_checkin_local.sql 2.19.2_solicitacoes.sql 2.19.2_salas.sql \
      2.19.2_labbio_painel.sql 2.19.2_labbio_biometria_existente.sql 2.19.2_salas_tempo_real.sql \
-     2.19.2_recadastro_completo.sql 2.19.2_recursos.sql 2.19.2_recursos_semente.sql
+     2.19.2_recadastro_completo.sql 2.19.2_recursos.sql 2.19.2_recursos_semente.sql 2.19.2_ri.sql
 ```
 
 O reporte (70 asserções, mais o teste da 2.18.0 do reporte de novo):

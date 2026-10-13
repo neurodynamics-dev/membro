@@ -156,10 +156,11 @@ console.log('\nAberto (admin, 1440px)');
     /* 14 desde a 2.19.1: "Acesso ao LABBIO" em Documentos e acessos (ficha L6) */
   confere('a seta abre Serviços sem navegar',
     /* 2.19.2: Comunicação (o feed e as newsletters) e a Marca entram em Serviços */
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 20 && srv.filhos[1] === 'Meus pedidos'
+    /* 2.19.2: "Indicar contato ou evento" em Comunicação */
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 21 && srv.filhos[1] === 'Meus pedidos'
       && srv.filhos[2] === 'Reporte semanal'
-      && srv.filhos.slice(3, 9).join('|') === 'Feed da equipe|Newsletters|Modelos|Assinatura de e-mail|Configurações da marca|Manual da marca'
-      && srv.filhos.slice(9, 14).join('|') === 'Declaração de vínculo|Acesso ao LABBIO|Eventos e participações|Cofre de senhas|Meus dados'
+      && srv.filhos.slice(3, 10).join('|') === 'Feed da equipe|Indicar contato ou evento|Newsletters|Modelos|Assinatura de e-mail|Configurações da marca|Manual da marca'
+      && srv.filhos.slice(10, 15).join('|') === 'Declaração de vínculo|Acesso ao LABBIO|Eventos e participações|Cofre de senhas|Meus dados'
       && srv.rotulos.join('|') === 'Comunicação|Marca|Documentos e acessos|Ao Depto. de Pessoal'
       && await p.evaluate(() => location.hash) === '#/', srv);
   const equipe = await secao(p, 'equipe');

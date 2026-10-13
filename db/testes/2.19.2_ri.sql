@@ -71,15 +71,15 @@ begin
   perform ok(jsonb_array_length(public.ri_contato_ler(v_org)->'membros') = 1, 'a organização lista as pessoas dela');
 
   raise notice 'Eventos';
-  r := public.ri_evento_salvar(jsonb_build_object('nome', 'Feira Hospitalar', 'tipo', 'feira', 'status', 'confirmado', 'inicio', '2026-11-10', 'fim', '2026-11-12',
+  r := public.ri_missao_salvar(jsonb_build_object('nome', 'Feira Hospitalar', 'tipo', 'feira', 'status', 'confirmado', 'inicio', '2026-11-10', 'fim', '2026-11-12',
         'objetivos', jsonb_build_array('Conhecer stakeholders', 'Apresentar'), 'participantes', jsonb_build_array(41, 42, 99999), 'contatos', jsonb_build_array(v_p1)));
   v_ev := (r->>'id')::bigint;
   perform ok(r->>'status' = 'ok' and jsonb_array_length(r->'evento'->'participantes') = 2 and jsonb_array_length(r->'evento'->'contatos_lista') = 1,
     'cria o evento (participante inexistente fica de fora)');
-  perform ok(public.ri_evento_salvar('{"nome":"X","inicio":"2026-11-10","fim":"2026-11-01"}')->>'campo' = 'fim'
-         and public.ri_evento_salvar('{"nome":"X","link":"javascript:alert(1)"}')->>'campo' = 'link', 'valida datas e link');
-  perform ok(jsonb_array_length(public.ri_contato_ler(v_p1)->'eventos') = 1, 'o evento aparece na ficha do contato');
-  perform ok(jsonb_array_length(public.ri_eventos_listar()->'eventos') = 1, 'lista os eventos');
+  perform ok(public.ri_missao_salvar('{"nome":"X","inicio":"2026-11-10","fim":"2026-11-01"}')->>'campo' = 'fim'
+         and public.ri_missao_salvar('{"nome":"X","link":"javascript:alert(1)"}')->>'campo' = 'link', 'valida datas e link');
+  perform ok(jsonb_array_length(public.ri_contato_ler(v_p1)->'missoes') = 1, 'o evento aparece na ficha do contato');
+  perform ok(jsonb_array_length(public.ri_missoes_listar()->'missoes') = 1, 'lista os eventos');
 
   raise notice 'Indicações';
   perform eu(11, 'leitura');
@@ -104,13 +104,40 @@ begin
   r := public.ri_indicar('{"tipo":"evento","dados":{"nome":"Demo Day","por_que":"Investidores","data":"2026-12-01","link":"https://x.org"}}');
   perform eu(42, 'leitura');
   r := public.ri_indicacao_decidir((r->>'id')::bigint, 'aceitar');
-  perform ok((select status from ri_eventos where id = (r->>'evento_id')::bigint) = 'avaliando', 'evento indicado vira evento em avaliação');
+  perform ok((select status from ri_missoes where id = (r->>'missao_id')::bigint) = 'avaliando', 'evento indicado vira evento em avaliação');
+
+  raise notice 'Financiamento';
+  perform eu(11, 'leitura');
+  perform ok(public.ri_editais_listar()->>'status' = 'sem_permissao' and public.ri_resumo()->>'status' = 'sem_permissao', 'membro comum não vê editais');
+  perform eu(42, 'leitura');
+  r := public.ri_edital_salvar(jsonb_build_object('titulo', 'Centelha MG', 'financiador', 'FAPEMIG', 'tipo', 'inovacao', 'status', 'avaliando',
+        'prazo', (current_date + 20)::text, 'valor_maximo', '80000', 'proponente', 'fundacao', 'responsavel_submissao', 'FUNDEP', 'pela_ufmg', true,
+        'outro_grupo', 'Grupo X', 'temas', jsonb_build_array('Saúde', 'Saúde'),
+        'arranjo', jsonb_build_array(jsonb_build_object('rotulo', 'TRL mínimo', 'valor', '3'), jsonb_build_object('rotulo', '', 'valor', 'x'), '"lixo"'::jsonb),
+        'cronograma', jsonb_build_array(jsonb_build_object('data', (current_date + 20)::text, 'etapa', 'Submissão'), jsonb_build_object('data', 'amanhã', 'etapa', 'Resultado')),
+        'checklist', jsonb_build_array(jsonb_build_object('item', 'Carta de anuência'), jsonb_build_object('item', 'Plano de trabalho', 'feito', true)),
+        'corpo', '## Elegibilidade' || chr(10) || 'Startups.', 'fonte_md', '---' || chr(10) || 'titulo: Centelha MG' || chr(10) || '---'));
+  v_n := (r->>'id')::int;
+  perform ok(r->>'status' = 'ok' and r->'edital'->>'codigo' like 'EDT-%', 'cria o edital com código');
+  perform ok(jsonb_array_length(r->'edital'->'arranjo') = 1 and r->'edital'->'cronograma'->1->>'data' is null and (r->'edital'->>'checklist_feitos')::int = 1
+         and jsonb_array_length(r->'edital'->'temas') = 1, 'limpa arranjo, datas inválidas e temas repetidos');
+  perform ok(r->'edital'->'proxima_etapa'->>'etapa' = 'Submissão', 'a próxima etapa é a de data mais perto');
+  perform ok(public.ri_edital_salvar('{"titulo":"X","status":"sonho"}')->>'campo' = 'status' and public.ri_edital_salvar('{"titulo":"X","proponente":"tio"}')->>'campo' = 'proponente'
+         and public.ri_edital_salvar('{"titulo":"X","link":"ftp://x"}')->>'campo' = 'link' and public.ri_edital_salvar('{"titulo":""}')->>'campo' = 'titulo', 'valida situação, proponente, link e título');
+  r := public.ri_edital_marcar(v_n, 'checklist', 0, true);
+  perform ok(r->>'status' = 'ok' and (public.ri_edital_ler(v_n)->'edital'->>'checklist_feitos')::int = 2, 'marca um item do checklist');
+  perform ok(public.ri_edital_marcar(v_n, 'checklist', 9, true)->>'campo' = 'indice', 'índice fora da lista não marca');
+  r := public.ri_edital_status(v_n, 'preparando');
+  perform ok(r->>'status' = 'ok' and (select status from ri_editais where id = v_n) = 'preparando', 'muda a situação');
+  r := public.ri_resumo();
+  perform ok((r->>'editais_ativos')::int = 1 and (r->>'prazos_30')::int = 1, 'a galeria conta editais ativos e prazos em 30 dias');
+  perform ok(public.ri_edital_excluir(v_n)->>'status' = 'ok', 'exclui o edital');
 
   raise notice 'Excluir (LGPD)';
   perform eu(41, 'leitura');
   r := public.ri_contato_excluir(v_p1);
   perform ok(r->>'status' = 'ok' and not exists (select 1 from ri_relacoes)
-         and (select contatos from ri_eventos where id = v_ev) = '{}' and (select contatos from ri_interacoes limit 1) = array[v_p2],
+         and (select contatos from ri_missoes where id = v_ev) = '{}' and (select contatos from ri_interacoes limit 1) = array[v_p2],
     'excluir leva relações e tira o contato de eventos e interações');
   r := public.ri_contato_excluir(v_p2);
   perform ok(r->>'status' = 'ok' and not exists (select 1 from ri_interacoes), 'a interação sem ninguém some');

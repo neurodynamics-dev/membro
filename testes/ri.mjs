@@ -50,9 +50,23 @@ try {
     await fim(t);
   }
 
-  console.log('O mapa');
+  console.log('A galeria');
   {
     const t = await abrir('#/ri'), { p } = t;
+    await p.waitForSelector('.ri-area');
+    confere('a entrada é uma galeria com Conexões, Missões e Financiamento', (await p.locator('.ri-area h2').allInnerTexts()).join() === 'Conexões,Missões,Financiamento');
+    confere('com os números de cada área', (await p.locator('#ri-a-conexoes').innerText()).includes('4 contatos ativos') && (await p.locator('#ri-a-financiamento').innerText()).includes('1 edital em aberto'));
+    confere('e o atalho para as indicações', await p.locator('.cab-acoes a[href="#/ri/indicacoes"] .ri-n').innerText() === '1');
+    await p.click('#ri-a-conexoes'); await p.waitForSelector('.ri-no');
+    confere('Conexões abre o mapa', (await p.evaluate(() => location.hash)) === '#/ri/conexoes');
+    await p.click('#main a[data-voltar]'); await p.waitForSelector('.ri-area');
+    confere('e volta à galeria', (await p.evaluate(() => location.hash)) === '#/ri');
+    await fim(t);
+  }
+
+  console.log('O mapa');
+  {
+    const t = await abrir('#/ri/conexoes'), { p } = t;
     await p.waitForSelector('.ri-no');
     confere('o menu tem Relações institucionais', await p.locator('#lt-nav .lt-sec[data-r="ri"]').count() === 1);
     confere('um ponto por contato', await p.locator('.ri-no').count() === 5);
@@ -138,7 +152,7 @@ try {
     await p.fill('#ri-cidade', 'Belo Horizonte'); await p.click('#ri-salvar'); await p.waitForSelector('#ri-editar');
     confere('editar salva e volta à ficha', (await p.evaluate(() => location.hash)) === '#/ri/2' && (await db(p)).contatos.find(c => c.id === 2).cidade === 'Belo Horizonte');
     await p.click('#main a[data-voltar]'); await p.waitForSelector('.ri-no');
-    confere('o voltar da ficha vai ao mapa, sem passar pelo formulário', (await p.evaluate(() => location.hash)) === '#/ri');
+    confere('o voltar da ficha vai ao mapa, sem passar pelo formulário', (await p.evaluate(() => location.hash)) === '#/ri/conexoes');
     await fim(t);
   }
   {
@@ -158,17 +172,17 @@ try {
 
   console.log('Eventos e indicações');
   {
-    const t = await abrir('#/ri/eventos'), { p } = t;
+    const t = await abrir('#/ri/missoes'), { p } = t;
     await p.waitForSelector('.ri-ev');
     confere('o evento confirmado aparece em "Próximos"', (await p.locator('#main').innerText()).toLowerCase().includes('próximos') && (await p.locator('.ri-ev').first().innerText()).includes('Feira Hospitalar'));
-    await p.click('a[href="#/ri/eventos/novo"]'); await p.waitForSelector('#ri-ev-form');
+    await p.click('a[href="#/ri/missoes/novo"]'); await p.waitForSelector('#ri-ev-form');
     await p.fill('#ri-ev-nome', 'Rodada de investimento'); await p.selectOption('#ri-ev-tipo', 'rodada');
     await p.fill('#ri-ev-ini', '2099-05-10'); await p.fill('#ri-ev-fim', '2099-05-01'); await p.click('#ri-ev-salvar');
     confere('evento: o fim não vem antes do início', (await p.locator('#ri-ev-erro').innerText()).includes('fim'));
     await p.fill('#ri-ev-fim', '2099-05-11'); await p.check('[data-obj][value="Captar recursos"]');
     await p.fill('#ri-ev-c', 'Bruno Lima'); await p.dispatchEvent('#ri-ev-c', 'change');
     await p.click('#ri-ev-salvar'); await p.waitForSelector('.ri-ev');
-    const ev = (await db(p)).eventos.find(e => e.nome === 'Rodada de investimento');
+    const ev = (await db(p)).missoes.find(e => e.nome === 'Rodada de investimento');
     confere('cria o evento com objetivo e contato', ev && ev.objetivos.includes('Captar recursos') && ev.contatos.join() === '3', ev);
     await p.evaluate(() => { location.hash = '#/ri/indicacoes'; }); await p.waitForSelector('.ri-ind');
     confere('as indicações abertas aparecem', (await p.locator('.ri-ind').first().innerText()).includes('Tio Carlos'));
@@ -179,9 +193,53 @@ try {
     await fim(t);
   }
 
+  console.log('Financiamento');
+  {
+    const t = await abrir('#/ri/financiamento'), { p } = t;
+    await p.waitForSelector('.fin-card');
+    const card = await p.locator('.fin-card').first().innerText();
+    confere('o edital aparece em "Em aberto" com prazo, valor, quem submete e checklist', (await p.locator('#main').innerText()).toLowerCase().includes('em aberto')
+      && card.includes('Centelha MG') && card.includes('Faltam') && card.includes('80.000') && card.includes('FUNDEP') && card.includes('Checklist 1 de 2'));
+    await p.click('.fin-card'); await p.waitForSelector('#fin-status');
+    confere('o cartão mostra cronograma, checklist, arranjo e descrição', await p.locator('.fin-crono li').count() === 2 && await p.locator('.fin-check li').count() === 2
+      && (await p.locator('#main').innerText()).toLowerCase().includes('trl mínimo') && (await p.locator('.fin-corpo').innerText()).includes('Startups'));
+    await p.check('[data-marca="checklist"][data-i="0"]'); await p.waitForSelector('.fin-check li:first-child input:checked');
+    confere('marcar um item do checklist salva', (await db(p)).editais[0].checklist[0].feito === true);
+    await p.selectOption('#fin-status', 'submetido'); await p.waitForTimeout(250);
+    confere('mudar a situação salva', (await db(p)).editais[0].status === 'submetido');
+    await p.click('#fin-editar'); await p.waitForSelector('#fin-ed-txt');
+    const txt = await p.locator('#fin-ed-txt').inputValue();
+    confere('"Editar texto" devolve o formato, com o que foi marcado', txt.startsWith('---') && txt.includes('- [x] Carta de anuência') && txt.includes('situacao: submetido') && txt.includes('prazo: 30/11/2099'));
+    await p.fill('#fin-ed-txt', txt.replace('- [x] Carta de anuência', '- [x] Carta de anuência\n- [ ] Orçamento'));
+    await p.click('#fin-ed-salvar'); await p.waitForTimeout(300);
+    confere('e salvar refaz o cartão', (await db(p)).editais[0].checklist.length === 3 && await p.locator('.fin-check li').count() === 3);
+    await fim(t);
+  }
+  {
+    const t = await abrir('#/ri/financiamento/importar'), { p } = t;
+    await p.waitForSelector('#fin-texto');
+    const md = ['---', 'titulo: Programa Startups Saúde', 'financiador: Fundação X', 'chamada: 02/2027', 'link: https://x.org/edital', 'tipo: subvencao',
+      'valor_maximo: R$ 150.000,00', 'contrapartida: 10%', 'prazo: 15/03/2099', 'proponente: Fundação de apoio (FUNDEP)', 'responsavel_submissao: FUNDEP',
+      'pela_ufmg: sim', 'outro_grupo: não', 'empresa: Bioengenharia S.A.', 'temas: Saúde; Dispositivos', 'cnpj: obrigatório', '---', '', 'Financia dispositivos médicos.', '',
+      '## Cronograma', '- 15/03/2099: Submissão', '- 01/02/2099: Anuência da UFMG', '- Resultado (30/06/2099)', '', '## Checklist', '- [ ] Carta de anuência', '- [x] Cadastro',
+      '', '## Arranjo', '- TRL mínimo: 4', '', '## Elegibilidade', 'Grupos da UFMG.'].join('\n');
+    await p.fill('#fin-texto', md); await p.waitForTimeout(100);
+    const prev = await p.locator('#fin-prev').innerText();
+    confere('a prévia mostra o cartão e o aviso do campo desconhecido', prev.includes('Programa Startups Saúde') && prev.includes('cnpj') && prev.includes('150.000'));
+    await p.click('#fin-criar'); await p.waitForSelector('#fin-status');
+    const e = (await db(p)).editais.find(x => x.titulo === 'Programa Startups Saúde');
+    confere('cria com os campos lidos (valor, data, proponente, sim/não, empresa)', e && e.valor_maximo === 150000 && e.prazo === '2099-03-15' && e.proponente === 'fundacao'
+      && e.pela_ufmg === true && !e.outro_grupo && e.empresa === 'Bioengenharia S.A.' && e.temas.join() === 'Saúde,Dispositivos', e);
+    confere('cronograma em ordem de data, checklist, arranjo e o campo extra no arranjo', e.cronograma.map(c => c.etapa).join('|') === 'Anuência da UFMG|Submissão|Resultado'
+      && e.checklist.length === 2 && e.checklist[1].feito && e.arranjo.some(a => a.rotulo === 'TRL mínimo') && e.arranjo.some(a => a.rotulo === 'cnpj'));
+    confere('o resumo e a descrição', e.resumo === 'Financia dispositivos médicos.' && e.corpo.startsWith('## Elegibilidade'));
+    confere('o README para agentes está à mão', await p.evaluate(() => typeof FIN_README === 'string' && FIN_README.includes('## Cronograma')));
+    await fim(t);
+  }
+
   console.log('No celular');
   {
-    const t = await abrir('#/ri', { celular:true }), { p } = t;
+    const t = await abrir('#/ri/conexoes', { celular:true }), { p } = t;
     await p.waitForSelector('.ri-no');
     confere('o mapa cabe na tela', await p.locator('#ri-tela').boundingBox().then(b => b.width <= 390));
     await p.evaluate(() => { location.hash = '#/ri/2'; }); await p.waitForSelector('#ri-editar');
@@ -190,8 +248,8 @@ try {
   }
   if (process.env.RI_CAPTURAS){
     mkdirSync(process.env.RI_CAPTURAS, { recursive:true });
-    for (const [n, h, c] of [['mapa', '#/ri', false], ['tabela', '#/ri/tabela', false], ['kanban', '#/ri/kanban', false], ['ficha', '#/ri/2', false],
-                             ['eventos', '#/ri/eventos', false], ['indicacoes', '#/ri/indicacoes', false], ['indicar', '#/servicos/indicar', false], ['mapa-cel', '#/ri', true]]){
+    for (const [n, h, c] of [['galeria', '#/ri', false], ['mapa', '#/ri/conexoes', false], ['financiamento', '#/ri/financiamento', false], ['edital', '#/ri/financiamento/1', false], ['importar', '#/ri/financiamento/importar', false], ['tabela', '#/ri/tabela', false], ['kanban', '#/ri/kanban', false], ['ficha', '#/ri/2', false],
+                             ['missoes', '#/ri/missoes', false], ['indicacoes', '#/ri/indicacoes', false], ['indicar', '#/servicos/indicar', false], ['mapa-cel', '#/ri/conexoes', true]]){
       const t = await abrir(h, { celular:c }); await t.p.waitForTimeout(800);
       if (n === 'mapa'){ const c2 = await centro(t.p, '.ri-no[data-id="2"] circle'); await t.p.mouse.click(c2.x, c2.y); await t.p.waitForTimeout(200); }
       await t.p.screenshot({ path:`${process.env.RI_CAPTURAS}/ri-${n}.png`, fullPage:n !== 'mapa' && n !== 'mapa-cel' }); await t.ctx.close();

@@ -179,15 +179,15 @@
       deliberacoes:null, status:'Preparação', owner_registro:4, recorrencia:'Única',
       grupos:['Órtese'], visibilidade:'equipe' }],
     evento_participantes: [
-      { id:'pp1', evento_id:'e1', registro:11, resposta:'vou', presente:null,
+      { id:'pp1', missao_id:'e1', registro:11, resposta:'vou', presente:null,
         membro:{ nome:'Bruno Tavares', cargo:'Pesquisador' } },
-      { id:'pp2', evento_id:'e1', registro:17, resposta:'talvez', presente:null,
+      { id:'pp2', missao_id:'e1', registro:17, resposta:'talvez', presente:null,
         membro:{ nome:'Carla Mendonça', cargo:'Desenvolvedora' } }
     ],
     evento_checklist: [
-      { id:'ck1', evento_id:'e1', item:'Reservar o auditório pelo SisCAS', feito:true, ordem:10 },
-      { id:'ck2', evento_id:'e1', item:'Enviar convite com RSVP', feito:true, ordem:20 },
-      { id:'ck3', evento_id:'e1', item:'Imprimir a lista de presença', feito:false, ordem:30 }
+      { id:'ck1', missao_id:'e1', item:'Reservar o auditório pelo SisCAS', feito:true, ordem:10 },
+      { id:'ck2', missao_id:'e1', item:'Enviar convite com RSVP', feito:true, ordem:20 },
+      { id:'ck3', missao_id:'e1', item:'Imprimir a lista de presença', feito:false, ordem:30 }
     ],
     portal_avisos: [],
     portal_documentos: [
@@ -544,52 +544,52 @@
       aprovado_em:null, motivo:null }
   ];
   DADOS.eventos_ext_participantes = [
-    { id:'pt1', evento_id:'ev1', registro:4, nome:'Ana Figueiredo', email:null, papel:'Apresentador(a) de trabalho', horas:null, ordem:1, declaracao:'K7QD-2M9X-P4TR' },
-    { id:'pt2', evento_id:'ev1', registro:null, nome:'Helena Prado', email:'helena.prado@exemplo.org', papel:'Coautor(a)', horas:16, ordem:2, declaracao:'3HVN-8Z2C-QW6E' },
-    { id:'pt3', evento_id:'ev2', registro:11, nome:'Bruno Tavares', email:null, papel:'Palestrante', horas:null, ordem:1, declaracao:null },
-    { id:'pt4', evento_id:'ev2', registro:17, nome:'Carla Mendonça', email:null, papel:null, horas:2, ordem:2, declaracao:null },
-    { id:'pt5', evento_id:'ev3', registro:4, nome:'Ana Figueiredo', email:null, papel:'Expositor(a)', horas:null, ordem:1, declaracao:null },
-    { id:'pt6', evento_id:'ev4', registro:11, nome:'Bruno Tavares', email:null, papel:null, horas:null, ordem:1, declaracao:null }
+    { id:'pt1', missao_id:'ev1', registro:4, nome:'Ana Figueiredo', email:null, papel:'Apresentador(a) de trabalho', horas:null, ordem:1, declaracao:'K7QD-2M9X-P4TR' },
+    { id:'pt2', missao_id:'ev1', registro:null, nome:'Helena Prado', email:'helena.prado@exemplo.org', papel:'Coautor(a)', horas:16, ordem:2, declaracao:'3HVN-8Z2C-QW6E' },
+    { id:'pt3', missao_id:'ev2', registro:11, nome:'Bruno Tavares', email:null, papel:'Palestrante', horas:null, ordem:1, declaracao:null },
+    { id:'pt4', missao_id:'ev2', registro:17, nome:'Carla Mendonça', email:null, papel:null, horas:2, ordem:2, declaracao:null },
+    { id:'pt5', missao_id:'ev3', registro:4, nome:'Ana Figueiredo', email:null, papel:'Expositor(a)', horas:null, ordem:1, declaracao:null },
+    { id:'pt6', missao_id:'ev4', registro:11, nome:'Bruno Tavares', email:null, papel:null, horas:null, ordem:1, declaracao:null }
   ];
   DADOS.eventos_ext_aprovacoes = [
-    { evento_id:'ev1', versao:1, registro:17, nome:'Carla Mendonça', decisao:'aprovada', parecer:null, criado_em:dvDia(-16) },
-    { evento_id:'ev1', versao:1, registro:11, nome:'Bruno Tavares', decisao:'aprovada', parecer:'Confere com a programação.', criado_em:dvDia(-15) },
-    { evento_id:'ev2', versao:1, registro:17, nome:'Carla Mendonça', decisao:'aprovada', parecer:null, criado_em:dvDia(-1) }
+    { missao_id:'ev1', versao:1, registro:17, nome:'Carla Mendonça', decisao:'aprovada', parecer:null, criado_em:dvDia(-16) },
+    { missao_id:'ev1', versao:1, registro:11, nome:'Bruno Tavares', decisao:'aprovada', parecer:'Confere com a programação.', criado_em:dvDia(-15) },
+    { missao_id:'ev2', versao:1, registro:17, nome:'Carla Mendonça', decisao:'aprovada', parecer:null, criado_em:dvDia(-1) }
   ];
   DADOS.eventos_ext_historico = [
-    { evento_id:'ev1', nome:'Ana Figueiredo', acao:'criou', detalhe:null, criado_em:dvDia(-17) },
-    { evento_id:'ev1', nome:'Ana Figueiredo', acao:'enviou', detalhe:'Versão 1', criado_em:dvDia(-17) },
-    { evento_id:'ev1', nome:'Carla Mendonça', acao:'aprovou', detalhe:'Versão 1 · 1 de 2', criado_em:dvDia(-16) },
-    { evento_id:'ev1', nome:'Bruno Tavares', acao:'aprovou', detalhe:'Versão 1 · 2 de 2 — Confere com a programação.', criado_em:dvDia(-15) },
-    { evento_id:'ev1', nome:'Bruno Tavares', acao:'emitiu', detalhe:'2 declarações de participação', criado_em:dvDia(-15) },
-    { evento_id:'ev2', nome:'Bruno Tavares', acao:'criou', detalhe:null, criado_em:dvDia(-2) },
-    { evento_id:'ev2', nome:'Bruno Tavares', acao:'enviou', detalhe:'Versão 1', criado_em:dvDia(-2) },
-    { evento_id:'ev2', nome:'Carla Mendonça', acao:'aprovou', detalhe:'Versão 1 · 1 de 2', criado_em:dvDia(-1) },
-    { evento_id:'ev3', nome:'Ana Figueiredo', acao:'criou', detalhe:null, criado_em:dvDia(-1) },
-    { evento_id:'ev4', nome:'Bruno Tavares', acao:'criou', detalhe:null, criado_em:dvDia(-4) }
+    { missao_id:'ev1', nome:'Ana Figueiredo', acao:'criou', detalhe:null, criado_em:dvDia(-17) },
+    { missao_id:'ev1', nome:'Ana Figueiredo', acao:'enviou', detalhe:'Versão 1', criado_em:dvDia(-17) },
+    { missao_id:'ev1', nome:'Carla Mendonça', acao:'aprovou', detalhe:'Versão 1 · 1 de 2', criado_em:dvDia(-16) },
+    { missao_id:'ev1', nome:'Bruno Tavares', acao:'aprovou', detalhe:'Versão 1 · 2 de 2 — Confere com a programação.', criado_em:dvDia(-15) },
+    { missao_id:'ev1', nome:'Bruno Tavares', acao:'emitiu', detalhe:'2 declarações de participação', criado_em:dvDia(-15) },
+    { missao_id:'ev2', nome:'Bruno Tavares', acao:'criou', detalhe:null, criado_em:dvDia(-2) },
+    { missao_id:'ev2', nome:'Bruno Tavares', acao:'enviou', detalhe:'Versão 1', criado_em:dvDia(-2) },
+    { missao_id:'ev2', nome:'Carla Mendonça', acao:'aprovou', detalhe:'Versão 1 · 1 de 2', criado_em:dvDia(-1) },
+    { missao_id:'ev3', nome:'Ana Figueiredo', acao:'criou', detalhe:null, criado_em:dvDia(-1) },
+    { missao_id:'ev4', nome:'Bruno Tavares', acao:'criou', detalhe:null, criado_em:dvDia(-4) }
   ];
   const DV_EV1 = { codigo:'EXT-1', nome:DADOS.eventos_ext[0].nome, descricao:DADOS.eventos_ext[0].descricao, modalidade:'presencial',
     local:DADOS.eventos_ext[0].local, data_inicio:dvData(-20), data_fim:dvData(-18), hora_inicio:null, hora_fim:null };
   DADOS.doc_emitidos = [
     { codigo:'Q8RT-5WZN-2KDH', tipo:'vinculo', documento:'NRO-DIR-004-4', revisao:'B', titulo:'Declaração de vínculo', emissor:'Diretoria',
-      registro:4, titular:'Ana Figueiredo', evento_id:null, participante_id:null, controle:'4F1A9C2E', emitido_em:dvDia(-30),
+      registro:4, titular:'Ana Figueiredo', missao_id:null, participante_id:null, controle:'4F1A9C2E', emitido_em:dvDia(-30),
       emitido_por:4, emitido_nome:'Ana Figueiredo', revogado_em:null, revogado_nome:null, revogado_motivo:null, consultas:2, consultado_em:dvDia(-28),
       dados:{ nome:'Ana Figueiredo', cpf:'000.000.000-00', cargo:'Gerente de projeto', departamento:'Engenharia', status:'Ativo', vigente:true,
         desde:'2024-03-01', ate:null, cidade:'Belo Horizonte', data:dvData(-30), texto_instituicao:DV_TEXTO, treinamentos:[], eventos:[] } },
     { codigo:'K7QD-2M9X-P4TR', tipo:'participacao', documento:'NRO-DIR-006-1', revisao:'A', titulo:'Declaração de participação', emissor:'Diretoria',
-      registro:4, titular:'Ana Figueiredo', evento_id:'ev1', participante_id:'pt1', controle:'B03D77A1', emitido_em:dvDia(-15),
+      registro:4, titular:'Ana Figueiredo', missao_id:'ev1', participante_id:'pt1', controle:'B03D77A1', emitido_em:dvDia(-15),
       emitido_por:11, emitido_nome:'Bruno Tavares', revogado_em:null, revogado_nome:null, revogado_motivo:null, consultas:0, consultado_em:null,
       dados:{ nome:'Ana Figueiredo', membro:true, papel:'Apresentador(a) de trabalho', horas:24, evento:DV_EV1, cidade:'Belo Horizonte',
         data:dvData(-15), texto_instituicao:DV_TEXTO } },
     { codigo:'3HVN-8Z2C-QW6E', tipo:'participacao', documento:'NRO-DIR-006-1', revisao:'A', titulo:'Declaração de participação', emissor:'Diretoria',
-      registro:null, titular:'Helena Prado', evento_id:'ev1', participante_id:'pt2', controle:'77C0E5D9', emitido_em:dvDia(-15),
+      registro:null, titular:'Helena Prado', missao_id:'ev1', participante_id:'pt2', controle:'77C0E5D9', emitido_em:dvDia(-15),
       emitido_por:11, emitido_nome:'Bruno Tavares', revogado_em:null, revogado_nome:null, revogado_motivo:null, consultas:1, consultado_em:dvDia(-10),
       dados:{ nome:'Helena Prado', membro:false, papel:'Coautor(a)', horas:16, evento:DV_EV1, cidade:'Belo Horizonte',
         data:dvData(-15), texto_instituicao:DV_TEXTO } }
   ];
   /* uma revogada, para a validação pública dizer isso */
   DADOS.doc_emitidos.push({ codigo:'M4TX-7RPD-9KCE', tipo:'vinculo', documento:'NRO-DIR-004-4', revisao:'B', titulo:'Declaração de vínculo',
-    emissor:'Diretoria', registro:4, titular:'Ana Figueiredo', evento_id:null, participante_id:null, controle:'0B9E44D1', emitido_em:dvDia(-60),
+    emissor:'Diretoria', registro:4, titular:'Ana Figueiredo', missao_id:null, participante_id:null, controle:'0B9E44D1', emitido_em:dvDia(-60),
     emitido_por:4, emitido_nome:'Ana Figueiredo', revogado_em:dvDia(-59), revogado_nome:'Ana Figueiredo',
     revogado_motivo:'Emitida antes de a ficha ser atualizada.', consultas:0, consultado_em:null,
     dados:{ ...DADOS.doc_emitidos[0].dados, data:dvData(-60), cargo:'Desenvolvedora' } });
@@ -718,14 +718,14 @@
       recorrencia:'Única', serie_id:null, visibilidade:'equipe', cor:'#F5C36A', predefinido_id:null, lembretes:[] }
   ];
   DADOS.evento_participantes = [
-    { evento_id:'e1', registro:4, papel:'obrigatorio', resposta:'vou' }, { evento_id:'e1', registro:11, papel:'obrigatorio', resposta:'vou' },
-    { evento_id:'e1', registro:17, papel:'obrigatorio', resposta:'talvez' },
-    { evento_id:'e2', registro:11, papel:'obrigatorio', resposta:'vou' }, { evento_id:'e2', registro:4, papel:'obrigatorio', resposta:'pendente' },
-    { evento_id:'e3', registro:4, papel:'obrigatorio', resposta:'vou' },
-    { evento_id:'e4', registro:4, papel:'obrigatorio', resposta:'vou' }, { evento_id:'e4', registro:11, papel:'opcional', resposta:'pendente' },
-    { evento_id:'e5', registro:17, papel:'obrigatorio', resposta:'vou' }
+    { missao_id:'e1', registro:4, papel:'obrigatorio', resposta:'vou' }, { missao_id:'e1', registro:11, papel:'obrigatorio', resposta:'vou' },
+    { missao_id:'e1', registro:17, papel:'obrigatorio', resposta:'talvez' },
+    { missao_id:'e2', registro:11, papel:'obrigatorio', resposta:'vou' }, { missao_id:'e2', registro:4, papel:'obrigatorio', resposta:'pendente' },
+    { missao_id:'e3', registro:4, papel:'obrigatorio', resposta:'vou' },
+    { missao_id:'e4', registro:4, papel:'obrigatorio', resposta:'vou' }, { missao_id:'e4', registro:11, papel:'opcional', resposta:'pendente' },
+    { missao_id:'e5', registro:17, papel:'obrigatorio', resposta:'vou' }
   ];
-  DADOS.evento_externos = [{ id:'x1', evento_id:'e3', email:'contato@parceiro.com', nome:'Dra. Lima', resposta:'vou' }];
+  DADOS.evento_externos = [{ id:'x1', missao_id:'e3', email:'contato@parceiro.com', nome:'Dra. Lima', resposta:'vou' }];
   DADOS.calendario_itens = [{ id:'m1', titulo:'Prazo UFMG: trancamento parcial', tipo:'prazo', data_inicio:agDia(4), data_fim:agDia(4), observacao:null, registro:null }];
   DADOS.agenda_ausencias = [{ id:'au1', registro:17, tipo:'ferias', inicio:agDia(8) + 'T03:00:00Z', fim:agDia(12) + 'T03:00:00Z', dia_inteiro:true, observacao:null }];
   DADOS.atividades = [
@@ -856,8 +856,8 @@
                   c(4, 'Fundação Apoio', { natureza:'organizacao', funcao:'fomento', proximidade:1, estagio:'identificado' }),
                   c(5, 'Carla Dias', { funcao:'mentor', proximidade:5, estagio:'parceria', ativo:false })],
                 relacoes:[{ id:1, a:2, b:3, tags:['Amizade'], sinal:'positiva', forca:4, nota:null }],
-                interacoes:[{ id:1, data:'2026-07-01', tipo:'reuniao', resumo:'Apresentação.', contatos:[2], evento_id:null, autor:4 }],
-                eventos:[{ id:1, nome:'Feira Hospitalar', tipo:'feira', status:'confirmado', inicio:'2099-11-10', fim:'2099-11-12', local:'São Paulo', modalidade:'presencial',
+                interacoes:[{ id:1, data:'2026-07-01', tipo:'reuniao', resumo:'Apresentação.', contatos:[2], missao_id:null, autor:4 }],
+                missoes:[{ id:1, nome:'Feira Hospitalar', tipo:'feira', status:'confirmado', inicio:'2099-11-10', fim:'2099-11-12', local:'São Paulo', modalidade:'presencial',
                   link:null, organizador:null, objetivos:['Conhecer stakeholders'], publico:null, custo:null, participantes:[4], contatos:[2], resultados:null, avaliacao:null, notas:null }],
                 indicacoes:[{ id:1, tipo:'contato', autor:11, dados:{ nome:'Tio Carlos', por_que:'Potencial investidor', relacao:'tio' }, status:'nova', resposta:null, criado_em:'2026-10-10T12:00:00Z' }] };
             })();
@@ -876,7 +876,7 @@
               const c = D.contatos.find(x => x.id === a.p_id); if (!c) return { data:{ status:'nao_encontrado' }, error:null };
               return ok({ contato:json(c), interacoes:D.interacoes.filter(i => i.contatos.includes(c.id)).map(i => ({ ...i, autor_nome:nm(i.autor) })),
                 relacoes:D.relacoes.filter(r => r.a === c.id || r.b === c.id), membros:D.contatos.filter(m => m.organizacao_id === c.id),
-                eventos:D.eventos.filter(e => e.contatos.includes(c.id)) });
+                missoes:D.missoes.filter(e => e.contatos.includes(c.id)) });
             }
             if (nome === 'ri_contato_salvar'){
               const p = a.p; if (!String(p.nome || '').trim()) return { data:{ status:'invalido', campo:'nome' }, error:null };
@@ -896,18 +896,18 @@
             if (nome === 'ri_interacao_salvar'){
               const p = a.p; let i = p.id ? D.interacoes.find(x => x.id === p.id) : null;
               if (!i){ i = { id:++D.seq, autor:4 }; D.interacoes.push(i); }
-              Object.assign(i, { data:p.data, tipo:p.tipo, resumo:p.resumo, contatos:p.contatos, evento_id:p.evento_id || null });
+              Object.assign(i, { data:p.data, tipo:p.tipo, resumo:p.resumo, contatos:p.contatos, missao_id:p.missao_id || null });
               if (p.proximo_passo) D.contatos.filter(c => p.contatos.includes(c.id)).forEach(c => { c.proximo_passo = p.proximo_passo; c.proximo_em = p.proximo_em; });
               return ok({ id:i.id });
             }
             if (nome === 'ri_interacao_excluir'){ D.interacoes = D.interacoes.filter(i => i.id !== a.p_id); return ok(); }
-            if (nome === 'ri_eventos_listar') return ok({ eventos:D.eventos.map(ev) });
-            if (nome === 'ri_evento_salvar'){
-              const p = a.p; let e = p.id ? D.eventos.find(x => x.id === p.id) : null;
-              if (!e){ e = { id:++D.seq }; D.eventos.push(e); }
+            if (nome === 'ri_missoes_listar') return ok({ missoes:D.missoes.map(ev) });
+            if (nome === 'ri_missao_salvar'){
+              const p = a.p; let e = p.id ? D.missoes.find(x => x.id === p.id) : null;
+              if (!e){ e = { id:++D.seq }; D.missoes.push(e); }
               Object.assign(e, { ...p, id:e.id }); return ok({ id:e.id, evento:ev(e) });
             }
-            if (nome === 'ri_evento_excluir'){ D.eventos = D.eventos.filter(e => e.id !== a.p_id); return ok(); }
+            if (nome === 'ri_missao_excluir'){ D.missoes = D.missoes.filter(e => e.id !== a.p_id); return ok(); }
             if (nome === 'ri_indicacoes_listar') return ok({ indicacoes:D.indicacoes.map(i => ({ ...i, autor_nome:nm(i.autor) })) });
             if (nome === 'ri_indicacao_decidir'){
               const i = D.indicacoes.find(x => x.id === a.p_id);
@@ -917,6 +917,33 @@
                 estagio:'identificado', tags:[], canais:[], ativo:true, responsavel:4, origem:'Indicação' }; D.contatos.push(c); i.contato_id = c.id; return ok({ contato_id:c.id }); }
               return ok();
             }
+            /* financiamento */
+            D.editais ||= [{ id:1, codigo:'EDT-001', titulo:'Centelha MG', financiador:'FAPEMIG', financiador_id:null, chamada:'05/2026', link:'https://fapemig.br/centelha',
+              resumo:'Ideias inovadoras.', tipo:'inovacao', status:'preparando', valor_maximo:80000, valor_solicitado:null, valor_aprovado:null, contrapartida:null,
+              abertura:'2026-10-01', prazo:'2099-11-30', resultado:null, duracao_meses:12, proponente:'fundacao', responsavel_submissao:'FUNDEP', responsavel:4,
+              pela_ufmg:true, outro_grupo:null, empresa:null, temas:['Saúde'], arranjo:[{ rotulo:'TRL mínimo', valor:'3' }],
+              cronograma:[{ data:'2026-10-01', etapa:'Abertura', feito:true }, { data:'2099-11-30', etapa:'Submissão', feito:false }],
+              checklist:[{ item:'Carta de anuência', feito:false }, { item:'Plano de trabalho', feito:true }], corpo:'## Elegibilidade\nStartups.', fonte_md:null,
+              contatos:[1], equipe:[4], notas:null, atualizado_em:'2026-10-10T12:00:00Z' }];
+            const edj = e => ({ ...e, responsavel_nome:nm(e.responsavel), checklist_total:e.checklist.length, checklist_feitos:e.checklist.filter(c => c.feito).length,
+              proxima_etapa:e.cronograma.filter(c => !c.feito && c.data).sort((x, y) => x.data.localeCompare(y.data))[0] || null,
+              contatos_lista:e.contatos.map(i => ({ id:i, nome:D.contatos.find(c => c.id === i)?.nome })), equipe_nomes:e.equipe.map(r => ({ registro:r, nome:nm(r) })) });
+            if (nome === 'ri_resumo') return ok({ contatos:D.contatos.filter(c => c.ativo).length, organizacoes:D.contatos.filter(c => c.ativo && c.natureza === 'organizacao').length,
+              passos_atrasados:0, missoes_proximas:D.missoes.length, missoes_realizadas:0, editais_ativos:D.editais.filter(e => ['radar', 'avaliando', 'preparando', 'submetido'].includes(e.status)).length,
+              prazos_30:0, em_execucao:0, indicacoes_abertas:D.indicacoes.filter(i => ['nova', 'em_analise'].includes(i.status)).length });
+            if (nome === 'ri_editais_listar') return ok({ editais:D.editais.map(edj), equipe:[{ registro:4, nome:'Ana Figueiredo' }] });
+            if (nome === 'ri_edital_ler'){ const e = D.editais.find(x => x.id === a.p_id); return e ? ok({ edital:edj(e) }) : { data:{ status:'nao_encontrado' }, error:null }; }
+            if (nome === 'ri_edital_salvar'){
+              const p = a.p; if (!String(p.titulo || '').trim()) return { data:{ status:'invalido', campo:'titulo' }, error:null };
+              let e = p.id ? D.editais.find(x => x.id === p.id) : null;
+              if (!e){ e = { id:++D.seq, codigo:'EDT-' + String(D.editais.length + 1).padStart(3, '0') }; D.editais.push(e); }
+              Object.assign(e, { tipo:'pesquisa', status:'radar', proponente:'coordenador', temas:[], arranjo:[], cronograma:[], checklist:[], contatos:[], equipe:[], ...p, id:e.id, codigo:e.codigo,
+                cronograma:(p.cronograma || []).map(c => ({ ...c, feito:!!c.feito })), checklist:(p.checklist || []).map(c => ({ ...c, feito:!!c.feito })), atualizado_em:new Date().toISOString() });
+              return ok({ id:e.id, edital:edj(e) });
+            }
+            if (nome === 'ri_edital_status'){ D.editais.find(x => x.id === a.p_id).status = a.p_status; return ok(); }
+            if (nome === 'ri_edital_marcar'){ D.editais.find(x => x.id === a.p_id)[a.p_lista][a.p_indice].feito = a.p_feito; return ok(); }
+            if (nome === 'ri_edital_excluir'){ D.editais = D.editais.filter(x => x.id !== a.p_id); return ok(); }
             return { data:null, error:{ message:'stub ri: ' + nome } };
           }
           /* ---- 2.19.2: Recursos (catálogo colaborativo). window.__teste.recursos = { gestao:false } tira a gestão. ---- */
@@ -1182,8 +1209,8 @@
               return r({ status:'ok', hoje_data: dia(0), membros:12, com_acesso:7, pedidos_abertos: PED.etapa === 'labbio' ? 1 : 0,
                 revogacoes: REV.filter(x => !x.confirmada_em).map(({ id, registro, nome, status_para, criada_em }) => ({ id, registro, nome, status_para, criada_em })),
                 pedidos: PED.etapa === 'labbio' ? [{ id: PED.id, registro: 11, nome:'Bruno Tavares', encaminhado_em: new Date(Date.now() - 3 * 864e5).toISOString() }] : [],
-                consultas_pendentes: 2, consultas: [{ id:'cq1', evento_id:'ev1', titulo:'Banca de TCC', data: dia(1), hora_inicio:'14:00', hora_fim:'16:00', espaco:'Auditório' },
-                                                    { id:'cq2', evento_id:'ev2', titulo:'Reunião com parceiros', data: dia(3), hora_inicio:'10:00', hora_fim:'11:00', espaco:'Sala de Reuniões' }],
+                consultas_pendentes: 2, consultas: [{ id:'cq1', missao_id:'ev1', titulo:'Banca de TCC', data: dia(1), hora_inicio:'14:00', hora_fim:'16:00', espaco:'Auditório' },
+                                                    { id:'cq2', missao_id:'ev2', titulo:'Reunião com parceiros', data: dia(3), hora_inicio:'10:00', hora_fim:'11:00', espaco:'Sala de Reuniões' }],
                 hoje: { presentes: 3, ultimos: [{ registro: 4, nome:'Ana Figueiredo', registrado_em: agora(15) }, { registro: 17, nome:'Carla Mendonça', registrado_em: agora(70) },
                                                 { registro: 11, nome:'Bruno Tavares', registrado_em: agora(130) }],
                         eventos: [{ id:'ev0', titulo:'Seminário interno', hora_inicio:'09:00', hora_fim:'10:30', espaco:'Auditório', consulta:'disponivel' }] },
@@ -2290,15 +2317,15 @@
             const aprovadores = () => DADOS.membros.filter(m => ['Ativo','Em pausa / avaliação','Sob demanda'].includes(m.status)
               && (cfgE.grupos_aprovadores || []).some(id => gruposDe(m.registro).has(id))).map(m => m.registro);
             const gere = e => e.criado_por === eu || gestao;
-            const parts = e => DADOS.eventos_ext_participantes.filter(p => p.evento_id === e.id).sort((a, b) => a.ordem - b.ordem);
-            const vale = e => new Set(DADOS.eventos_ext_aprovacoes.filter(a => a.evento_id === e.id && a.versao === e.versao
+            const parts = e => DADOS.eventos_ext_participantes.filter(p => p.missao_id === e.id).sort((a, b) => a.ordem - b.ordem);
+            const vale = e => new Set(DADOS.eventos_ext_aprovacoes.filter(a => a.missao_id === e.id && a.versao === e.versao
               && a.decisao === 'aprovada').map(a => a.registro)).size;
-            const jaAprovei = e => DADOS.eventos_ext_aprovacoes.some(a => a.evento_id === e.id && a.versao === e.versao
+            const jaAprovei = e => DADOS.eventos_ext_aprovacoes.some(a => a.missao_id === e.id && a.versao === e.versao
               && a.registro === eu && a.decisao === 'aprovada');
             const ve = e => (e.status === 'aprovado' && eu != null) || gestao || e.criado_por === eu
               || parts(e).some(p => p.registro === eu) || (['aprovacao','aprovado'].includes(e.status) && aprova());
             const veEmails = e => gestao || aprova() || e.criado_por === eu;
-            const hist = (e, acao, detalhe) => DADOS.eventos_ext_historico.push({ evento_id:e.id, nome:'Ana Figueiredo', acao,
+            const hist = (e, acao, detalhe) => DADOS.eventos_ext_historico.push({ missao_id:e.id, nome:'Ana Figueiredo', acao,
               detalhe: detalhe ?? null, criado_em:new Date().toISOString() });
             const porCod = c => DADOS.doc_emitidos.find(d => d.codigo === String(c || '').toUpperCase().replace(/[^0-9A-Z]/g, '')
               .replace(/O/g, '0').replace(/[IL]/g, '1').replace(/^(.{4})(.{4})(.{4})$/, '$1-$2-$3'));
@@ -2314,7 +2341,7 @@
               return `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8)}`; };
             const emitir = (tipo, documento, revisao, titulo, registro, titular, dados, e, pt) => {
               const d = { codigo:novoCod(), tipo, documento, revisao, titulo, emissor:'Diretoria', registro, titular,
-                evento_id:e?.id || null, participante_id:pt?.id || null, dados,
+                missao_id:e?.id || null, participante_id:pt?.id || null, dados,
                 controle: Math.floor(Math.random() * 0xFFFFFFFF).toString(16).toUpperCase().padStart(8, '0'),
                 emitido_em:new Date().toISOString(), emitido_por:eu, emitido_nome:'Ana Figueiredo',
                 revogado_em:null, revogado_nome:null, revogado_motivo:null, consultas:0, consultado_em:null };
@@ -2328,7 +2355,7 @@
                 treinamentos: DADOS.treinamento_conclusoes.filter(c => c.registro === reg).map(c => ({ codigo:c.codigo, titulo:c.titulo,
                   revisao:c.revisao, carga_horaria_min:c.carga_horaria_min, concluido_em:String(c.concluido_em).slice(0, 10), certificado:c.certificado })),
                 eventos: DADOS.eventos_ext_participantes.filter(p => p.registro === reg)
-                  .map(p => [p, DADOS.eventos_ext.find(e => e.id === p.evento_id)]).filter(([, e]) => e?.status === 'aprovado')
+                  .map(p => [p, DADOS.eventos_ext.find(e => e.id === p.missao_id)]).filter(([, e]) => e?.status === 'aprovado')
                   .map(([p, e]) => ({ codigo:e.codigo, nome:e.nome, data_inicio:e.data_inicio, data_fim:e.data_fim, local:e.local,
                     modalidade:e.modalidade, papel:p.papel, horas:p.horas ?? e.horas })) }; };
             const podeVinculo = reg => reg != null && (reg === eu || gestao);
@@ -2362,10 +2389,10 @@
                 .map(d => ({ codigo:d.codigo, tipo:d.tipo, documento:d.documento, revisao:d.revisao, titulo:d.titulo, titular:d.titular,
                   emitido_em:d.emitido_em, emitido_nome:d.emitido_nome, revogado_em:d.revogado_em, revogado_motivo:d.revogado_motivo,
                   consultas:d.consultas, consultado_em:d.consultado_em,
-                  evento_codigo: DADOS.eventos_ext.find(e => e.id === d.evento_id)?.codigo || null })), error:null };
+                  evento_codigo: DADOS.eventos_ext.find(e => e.id === d.missao_id)?.codigo || null })), error:null };
             }
             if (nome === 'doc_emitido_ler'){
-              const d = porCod(args.p_codigo), e = d && DADOS.eventos_ext.find(x => x.id === d.evento_id);
+              const d = porCod(args.p_codigo), e = d && DADOS.eventos_ext.find(x => x.id === d.missao_id);
               if (!d || !(d.registro === eu || d.emitido_por === eu || gestao || (d.tipo === 'participacao' && e && veEmails(e))))
                 return st('nao_encontrado');
               return ok(json(d, false));
@@ -2401,8 +2428,8 @@
                   return { id:p.id, registro:p.registro, nome:p.nome, email: vm || p.registro === eu ? p.email : null, papel:p.papel, horas:p.horas,
                     declaracao: vm || p.registro === eu ? p.declaracao : null, enviado_em: vm ? env?.enviado_em || null : null,
                     envio_erro: vm ? env?.erro || null : null }; }),
-                aprovacoes: DADOS.eventos_ext_aprovacoes.filter(a => a.evento_id === e.id),
-                historico: DADOS.eventos_ext_historico.filter(h => h.evento_id === e.id),
+                aprovacoes: DADOS.eventos_ext_aprovacoes.filter(a => a.missao_id === e.id),
+                historico: DADOS.eventos_ext_historico.filter(h => h.missao_id === e.id),
                 aprovacoes_validas:vale(e), aprovacoes_minimas:cfgE.aprovacoes_minimas,
                 pode:{ editar: g && ['rascunho','aprovacao'].includes(e.status), enviar: g && e.status === 'rascunho' && eu != null,
                   cancelar: g && ['rascunho','aprovacao'].includes(e.status),
@@ -2443,8 +2470,8 @@
               else { nova = e.status === 'aprovacao'; if (nova) e.versao++; hist(e, 'editou', nova ? `Versão ${e.versao} — as aprovações recomeçam` : null); }
               Object.assign(e, { nome:nm, descricao:String(p.descricao || '').trim() || null, modalidade:mod, local:String(p.local || '').trim() || null,
                 data_inicio:p.data_inicio, data_fim:fim, hora_inicio:p.hora_inicio || null, hora_fim:p.hora_fim || null, horas:Math.round(h * 100) / 100 });
-              DADOS.eventos_ext_participantes = DADOS.eventos_ext_participantes.filter(x => x.evento_id !== e.id).concat(ps.map((x, i) => ({
-                id:`${e.id}-p${i + 1}-${Date.now()}`, evento_id:e.id, registro:x.registro ?? null,
+              DADOS.eventos_ext_participantes = DADOS.eventos_ext_participantes.filter(x => x.missao_id !== e.id).concat(ps.map((x, i) => ({
+                id:`${e.id}-p${i + 1}-${Date.now()}`, missao_id:e.id, registro:x.registro ?? null,
                 nome: x.registro != null ? DADOS.membros.find(m => m.registro === x.registro).nome : String(x.nome).trim(),
                 email: x.registro != null ? null : String(x.email).trim().toLowerCase(), papel:String(x.papel || '').trim() || null,
                 horas: x.horas === '' || x.horas == null ? null : Number(x.horas), ordem:i + 1, declaracao:null })));
@@ -2471,7 +2498,7 @@
               if (e.status !== 'aprovacao') return st('fora_de_aprovacao');
               if (e.enviado_por === eu) return st('propria');
               if (jaAprovei(e)) return st('ja_aprovou');
-              DADOS.eventos_ext_aprovacoes.push({ evento_id:e.id, versao:e.versao, registro:eu, nome:'Ana Figueiredo',
+              DADOS.eventos_ext_aprovacoes.push({ missao_id:e.id, versao:e.versao, registro:eu, nome:'Ana Figueiredo',
                 decisao: p.decisao === 'aprovar' ? 'aprovada' : 'devolvida', parecer: String(p.parecer || '').trim() || null, criado_em:new Date().toISOString() });
               if (p.decisao === 'devolver'){ Object.assign(e, { status:'rascunho', motivo:p.parecer.trim() }); hist(e, 'devolveu', p.parecer.trim());
                 return ok({ situacao:'rascunho' }); }
@@ -2506,7 +2533,7 @@
               if (e.status !== 'aprovado') return st('nao_aprovado');
               if (!String(args.p_motivo || '').trim()) return st('invalido', { campo:'motivo' });
               let n = 0;
-              DADOS.doc_emitidos.filter(d => d.evento_id === e.id && !d.revogado_em).forEach(d => { n++;
+              DADOS.doc_emitidos.filter(d => d.missao_id === e.id && !d.revogado_em).forEach(d => { n++;
                 Object.assign(d, { revogado_em:new Date().toISOString(), revogado_nome:'Ana Figueiredo', revogado_motivo:`${e.codigo} reaberto para correção: ${args.p_motivo.trim()}` }); });
               parts(e).forEach(pt => { pt.declaracao = null; });
               Object.assign(e, { status:'rascunho', versao:e.versao + 1, aprovado_em:null, motivo:args.p_motivo.trim() });
@@ -2515,7 +2542,7 @@
             }
             if (nome === 'evento_ext_reenviar'){
               const pt = DADOS.eventos_ext_participantes.find(x => x.id === args.p_participante);
-              const e = pt && DADOS.eventos_ext.find(x => x.id === pt.evento_id);
+              const e = pt && DADOS.eventos_ext.find(x => x.id === pt.missao_id);
               if (!pt) return st('nao_encontrado');
               if (!veEmails(e)) return st('sem_permissao');
               if (e.status !== 'aprovado' || !pt.declaracao) return st('nao_aprovado');
@@ -2656,13 +2683,13 @@
           /* ---- v28: a agenda ---- */
           const agReg = () => DADOS.perfis[0].registro, agGestor = () => ['admin','pessoal'].includes(DADOS.perfis[0].papel);
           const agVe = e => e.visibilidade === 'equipe' || agGestor() || e.owner_registro === agReg()
-            || DADOS.evento_participantes.some(p => p.evento_id === e.id && p.registro === agReg());
+            || DADOS.evento_participantes.some(p => p.missao_id === e.id && p.registro === agReg());
           if (nome === 'agenda_manter_series') return { data:0, error:null };
           if (nome === 'agenda_itens'){
             (window.__rpcs ||= []).push({ nome, p:args });
             const de = args.p_de, ate = args.p_ate, eu = agReg();
             const evs = DADOS.eventos.filter(e => e.status !== 'Cancelado' && e.data <= ate && (e.data_fim || e.data) >= de && agVe(e)).map(e => {
-              const ps = DADOS.evento_participantes.filter(p => p.evento_id === e.id), meu = ps.find(p => p.registro === eu);
+              const ps = DADOS.evento_participantes.filter(p => p.missao_id === e.id), meu = ps.find(p => p.registro === eu);
               const pd = DADOS.agenda_predefinidos.find(x => x.id === e.predefinido_id);
               return { id:'ev:' + e.id, origem:'evento', ref:e.id, tipo:e.tipo, titulo:e.titulo, cor:e.cor || pd?.cor || '#2DD4BF',
                 data_inicio:e.data, data_fim:e.data_fim || e.data, hora_inicio:e.hora_inicio, hora_fim:e.hora_fim, dia_inteiro:!e.hora_inicio,
@@ -2687,12 +2714,12 @@
             if (!e || !agVe(e)) return { data:{ status:'nao_encontrado' }, error:null };
             const nomeDe = r => DADOS.membros.find(m => m.registro === r)?.nome;
             const pode = agGestor() || e.owner_registro === agReg();
-            return { data:{ status:'ok', pode_editar:pode, minha_resposta:DADOS.evento_participantes.find(p => p.evento_id === e.id && p.registro === agReg())?.resposta || null,
+            return { data:{ status:'ok', pode_editar:pode, minha_resposta:DADOS.evento_participantes.find(p => p.missao_id === e.id && p.registro === agReg())?.resposta || null,
               evento:{ ...e, hora_inicio:e.hora_inicio?.slice(0, 5) || null, hora_fim:e.hora_fim?.slice(0, 5) || null, descricao:e.pauta,
                 cor:e.cor || DADOS.agenda_predefinidos.find(x => x.id === e.predefinido_id)?.cor || '#2DD4BF', cor_propria:e.cor || null,
                 organizador:nomeDe(e.owner_registro), cancelado:e.status === 'Cancelado', serie_ate:null },
-              participantes:DADOS.evento_participantes.filter(p => p.evento_id === e.id).map(p => ({ ...p, nome:nomeDe(p.registro) })),
-              externos:DADOS.evento_externos.filter(x => x.evento_id === e.id).map(x => pode ? x : { nome:x.nome, resposta:x.resposta }) }, error:null };
+              participantes:DADOS.evento_participantes.filter(p => p.missao_id === e.id).map(p => ({ ...p, nome:nomeDe(p.registro) })),
+              externos:DADOS.evento_externos.filter(x => x.missao_id === e.id).map(x => pode ? x : { nome:x.nome, resposta:x.resposta }) }, error:null };
           }
           if (nome === 'agenda_evento_salvar'){
             const p = args?.p || {};
@@ -2716,17 +2743,17 @@
             let entraram = 0;
             if ('obrigatorios' in p || 'opcionais' in p){
               const todos = [...new Set([...(p.obrigatorios || []), ...(p.opcionais || []), e.owner_registro])];
-              const velhos = DADOS.evento_participantes.filter(x => x.evento_id === e.id);
+              const velhos = DADOS.evento_participantes.filter(x => x.missao_id === e.id);
               entraram = todos.filter(r => !velhos.some(v => v.registro === r)).length;
-              DADOS.evento_participantes = DADOS.evento_participantes.filter(x => x.evento_id !== e.id || todos.includes(x.registro));
-              todos.forEach(r => { let x = DADOS.evento_participantes.find(y => y.evento_id === e.id && y.registro === r);
-                if (!x){ x = { evento_id:e.id, registro:r, resposta:r === e.owner_registro ? 'vou' : 'pendente' }; DADOS.evento_participantes.push(x); }
+              DADOS.evento_participantes = DADOS.evento_participantes.filter(x => x.missao_id !== e.id || todos.includes(x.registro));
+              todos.forEach(r => { let x = DADOS.evento_participantes.find(y => y.missao_id === e.id && y.registro === r);
+                if (!x){ x = { missao_id:e.id, registro:r, resposta:r === e.owner_registro ? 'vou' : 'pendente' }; DADOS.evento_participantes.push(x); }
                 x.papel = (p.opcionais || []).includes(r) ? 'opcional' : 'obrigatorio'; });
             }
-            if ('externos' in p){ DADOS.evento_externos = DADOS.evento_externos.filter(x => x.evento_id !== e.id);
-              (p.externos || []).forEach((x, i) => DADOS.evento_externos.push({ id:'x' + e.id + i, evento_id:e.id, email:x.email, nome:x.nome, resposta:'pendente' })); }
+            if ('externos' in p){ DADOS.evento_externos = DADOS.evento_externos.filter(x => x.missao_id !== e.id);
+              (p.externos || []).forEach((x, i) => DADOS.evento_externos.push({ id:'x' + e.id + i, missao_id:e.id, email:x.email, nome:x.nome, resposta:'pendente' })); }
             const mudou = antes ? [antes.data !== e.data && 'data', (antes.hora_inicio !== e.hora_inicio || antes.hora_fim !== e.hora_fim) && 'horário'].filter(Boolean) : [];
-            return { data:{ status:'ok', id:e.id, numero:e.numero, convidados:DADOS.evento_participantes.filter(x => x.evento_id === e.id).length,
+            return { data:{ status:'ok', id:e.id, numero:e.numero, convidados:DADOS.evento_participantes.filter(x => x.missao_id === e.id).length,
               entraram, mudou, eventos:1, ocorrencias:0 }, error:null };
           }
           if (nome === 'agenda_evento_excluir'){
@@ -2736,7 +2763,7 @@
           }
           if (nome === 'agenda_responder'){
             (window.__rpcs ||= []).push({ nome, p:args });
-            const x = DADOS.evento_participantes.find(y => y.evento_id === args.p_id && y.registro === agReg());
+            const x = DADOS.evento_participantes.find(y => y.missao_id === args.p_id && y.registro === agReg());
             if (!x) return { data:{ status:'nao_convidado' }, error:null };
             x.resposta = args.p_resposta; return { data:{ status:'ok', resposta:args.p_resposta }, error:null };
           }
