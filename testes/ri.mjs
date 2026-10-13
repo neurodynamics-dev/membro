@@ -170,6 +170,29 @@ try {
     await fim(t);
   }
 
+  {
+    const t = await abrir('#/ri/novo'), { p } = t;
+    await p.waitForSelector('#ri-eq');
+    await p.fill('#ri-eq', 'Bruno Tavares (011)'); await p.waitForTimeout(80);
+    confere('buscar um membro preenche nome, cargo, função, proximidade e e-mail', await p.inputValue('#ri-nome') === 'Bruno Tavares' && await p.inputValue('#ri-cargo') === 'Pesquisador'
+      && await p.inputValue('#ri-funcao') === 'membro' && await p.inputValue('#ri-prox') === '5' && await p.inputValue('#ri-estagio') === 'parceria'
+      && await p.inputValue('#ri-canais input') === 'bruno@neurodynamics.dev' && (await p.inputValue('#ri-origem')).includes('registro 011'));
+    await p.fill('#ri-eq', ''); await p.fill('#ri-eq', '23'); await p.waitForTimeout(80);
+    confere('pelo registro também; quem saiu vira ex-membro', await p.inputValue('#ri-nome') === 'Diego Prado' && await p.inputValue('#ri-funcao') === 'ex_membro'
+      && (await p.locator('#ri-eq-msg').innerText()).includes('saiu da equipe'));
+    await p.click('#ri-nat [data-v="organizacao"]');
+    confere('organização não tem a busca de membro', await p.locator('#ri-eq-fld[hidden]').count() === 1);
+    await p.click('#ri-nat [data-v="pessoa"]'); await p.click('#ri-salvar'); await p.waitForSelector('#ri-editar');
+    confere('e o contato é salvo com os dados da ficha', (await db(p)).contatos.some(c => c.nome === 'Diego Prado' && c.funcao === 'ex_membro'));
+    await fim(t);
+  }
+  {
+    const t = await abrir('#/ri/2/editar'), { p } = t;
+    await p.waitForSelector('#ri-form');
+    confere('editar não mostra a busca de membro', await p.locator('#ri-eq').count() === 0);
+    await fim(t);
+  }
+
   console.log('Eventos e indicações');
   {
     const t = await abrir('#/ri/missoes'), { p } = t;
