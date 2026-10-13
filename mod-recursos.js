@@ -53,8 +53,8 @@ const rcsNum = n => Number(n).toLocaleString('pt-BR', { minimumFractionDigits:1,
 /* as estrelas: média em cinco estrelas preenchidas por partes, mais o texto */
 function rcsEstrelas(media, n, { texto = true } = {}){
   const m = Number(media) || 0, pct = Math.round(m / 5 * 100);
-  if (!n) return `<span class="rcs-est vazia" role="img" aria-label="Ainda sem avaliações"><svg class="rcs-est-um" viewBox="0 0 24 24" aria-hidden="true"><path d="${RCS_ESTRELA}"/></svg><span class="rcs-est-tx">?</span></span>`;
-  const cinco = `<span class="rcs-cinco" aria-hidden="true">${Array.from({ length:5 }, () => `<svg viewBox="0 0 24 24"><path d="${RCS_ESTRELA}"/></svg>`).join('')}</span>`;
+  if (!n) return `<span class="rcs-est vazia" role="img" aria-label="Ainda sem avaliações"><svg class="rcs-est-um" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="${RCS_ESTRELA}"/></svg><span class="rcs-est-tx">?</span></span>`;
+  const cinco = `<span class="rcs-cinco" aria-hidden="true">${Array.from({ length:5 }, () => `<svg width="14" height="14" viewBox="0 0 24 24"><path d="${RCS_ESTRELA}"/></svg>`).join('')}</span>`;
   const rot = `Nota ${rcsNum(m)} de 5, ${n} ${n === 1 ? 'avaliação' : 'avaliações'}`;
   return `<span class="rcs-est" role="img" aria-label="${rot}"><span class="rcs-est-f"><span class="rcs-est-base">${cinco}</span><span class="rcs-est-cheia" style="width:${pct}%">${cinco}</span></span>${texto
     ? `<span class="rcs-est-tx"><b>${rcsNum(m)}</b> (${n})</span>` : ''}</span>`;
@@ -260,7 +260,7 @@ function rcsAvaliacaoHTML(r){
   const minha = r.minha || 0;
   return `<div class="rcs-aval-media">${rcsEstrelas(r.media, r.avaliacoes)}</div>
     <div class="rcs-aval-minha" role="radiogroup" aria-label="Sua avaliação"><span class="rcs-aval-rot">${minha ? 'Sua nota' : 'Dê a sua nota'}</span>
-      <span class="rcs-aval-bts">${[1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${minha === n}" aria-label="${n} ${n === 1 ? 'estrela' : 'estrelas'}" class="rcs-estr${n <= minha ? ' on' : ''}" data-rcs-nota="${n}"><svg viewBox="0 0 24 24"><path d="${RCS_ESTRELA}"/></svg></button>`).join('')}</span>
+      <span class="rcs-aval-bts">${[1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${minha === n}" aria-label="${n} ${n === 1 ? 'estrela' : 'estrelas'}" class="rcs-estr${n <= minha ? ' on' : ''}" data-rcs-nota="${n}"><svg width="22" height="22" viewBox="0 0 24 24"><path d="${RCS_ESTRELA}"/></svg></button>`).join('')}</span>
       ${minha ? '<button type="button" class="rcs-tirar" data-rcs-nota="0">Tirar a minha nota</button>' : ''}</div>`;
 }
 function rcsComentarios(lista){

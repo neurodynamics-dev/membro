@@ -8,6 +8,18 @@ Uma casca (`index.html`) e módulos carregados sob demanda — é para aqui que 
 SOMA · Gestão está sendo trazido, conforme o
 [plano de unificação](PLANO-UNIFICACAO.md).
 
+## Antes de publicar: o carimbo dos arquivos
+
+Todo CSS e JS do portal é carregado com `?v=<carimbo>`, um hash do conteúdo de
+todos eles. Sem isso, o navegador podia juntar o JS novo de um deploy com o CSS
+antigo em cache (telas sem estilo). Depois de mexer em qualquer CSS ou JS, rode:
+
+```
+node scripts/carimbar.mjs
+```
+
+e inclua os `.html` alterados no commit. `node testes/carimbo.mjs` acusa o carimbo velho.
+
 ## O que o portal faz
 
 - **Início** — o quadro de avisos (quando há aviso publicado), o que espera

@@ -21,13 +21,13 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- design system (cópia gerada pelo brand: scripts/distribuir.mjs) e o CSS próprio do SOMA -->
-<link rel="stylesheet" href="ds/tokens.css">
-<link rel="stylesheet" href="ds/neuro.css">
-<link rel="stylesheet" href="ds/casca.css">
-<link rel="stylesheet" href="ds/select.css">
-<link rel="stylesheet" href="soma.css">
-<script defer src="ds/select.js"></script>
-<script src="ds/casca.js"></script>
+<link rel="stylesheet" href="ds/tokens.css?v=960ab0b5bc">
+<link rel="stylesheet" href="ds/neuro.css?v=960ab0b5bc">
+<link rel="stylesheet" href="ds/casca.css?v=960ab0b5bc">
+<link rel="stylesheet" href="ds/select.css?v=960ab0b5bc">
+<link rel="stylesheet" href="soma.css?v=960ab0b5bc">
+<script defer src="ds/select.js?v=960ab0b5bc"></script>
+<script src="ds/casca.js?v=960ab0b5bc"></script>
 </head>
 <body>
 
@@ -267,6 +267,10 @@ const CONFIG = {
    um deploy não deixar módulo velho em cache, e as notas de cada versão
    moram em mod-versoes.js (#/versoes). */
 const VERSAO = '2.19.2';
+/* O carimbo dos arquivos (scripts/carimbar.mjs): um hash do conteúdo de todo
+   CSS e JS. Vai na query de tudo que o portal carrega, para um deploy nunca
+   misturar arquivo novo com arquivo velho em cache. */
+const CARIMBO = '960ab0b5bc';
 const LOGO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
 const LOGO_BRANCO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
@@ -1329,9 +1333,9 @@ function carregarScript(src){
   _scripts.set(src, p);
   return p;
 }
-/* VERSAO acompanha a query para o GitHub Pages não servir módulo velho
-   depois de um deploy. Suba junto com a versão do portal. */
-const carregarModulo = nome => carregarScript(`mod-${nome}.js?v=${VERSAO}`);
+/* O CARIMBO vai na query para o GitHub Pages não servir módulo velho
+   depois de um deploy. */
+const carregarModulo = nome => carregarScript(`mod-${nome}.js?v=${CARIMBO}`);
 const carregarLib    = carregarScript;
 /* O modelo de documento da NRO (doc-nro.js): a declaração de vínculo, a
    de participação, o registro escrito no portal e a exportação do cofre
@@ -1339,7 +1343,7 @@ const carregarLib    = carregarScript;
    via com ele também —, e por isso desce como biblioteca, com a versão
    do portal na query. Quem o chama é o módulo, na hora de desenhar. */
 async function precisaDocNRO(){
-  if (!window.DocNRO) await carregarLib(`doc-nro.js?v=${VERSAO}`);
+  if (!window.DocNRO) await carregarLib(`doc-nro.js?v=${CARIMBO}`);
   await DocNRO.precisa();
 }
 
