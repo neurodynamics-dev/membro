@@ -133,6 +133,19 @@ try{
     await fechar(t);
   }
   {
+    /* 2.19.2: o admin envia o termo assinado por um membro, pelo perfil */
+    const t = await abrir('labbio/index.html#/membros/11'), { p } = t;
+    await p.waitForSelector('#lb-termo-arq', { state:'attached' });
+    confere('o admin vê o envio do termo no perfil', await p.locator('.lb-termo-up').count() === 1 && await p.locator('#lb-termo-enviar').isDisabled());
+    await p.setInputFiles('#lb-termo-arq', { name:'termo.txt', mimeType:'text/plain', buffer:Buffer.from('nao e pdf') }); await p.waitForTimeout(150);
+    confere('só PDF', (await p.locator('#lb-termo-nome').innerText()).includes('não é um PDF') && await p.locator('#lb-termo-enviar').isDisabled());
+    await p.setInputFiles('#lb-termo-arq', { name:'termo.pdf', mimeType:'application/pdf', buffer:Buffer.from('%PDF-1.7\n% conteudo') }); await p.waitForTimeout(150);
+    await p.click('#lb-termo-enviar'); await p.waitForTimeout(500);
+    const r = await p.evaluate(() => (window.__rpcs || []).filter(x => x.nome === 'termo_registrar_envio_admin').pop()?.p);
+    confere('envia pelo registro, com o hash e marcando que já existia', r && r.p_registro === 11 && /^[0-9a-f]{64}$/.test(r.p_sha256) && r.p_existente === true && r.p_arquivo.startsWith('labbio-2026/11/'), r);
+    await fechar(t);
+  }
+  {
     const t = await abrir('index.html#/admin/labbio'), { p } = t;
     await p.waitForSelector('#adm-lb-tabela');
     confere('no portal, o admin não é desviado para o painel', !p.url().includes('/labbio/'));

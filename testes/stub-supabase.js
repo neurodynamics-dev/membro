@@ -1665,6 +1665,8 @@
               pessoas:[{ registro:4, nome:'Ana Figueiredo', confirmado_em:'2026-10-10T10:00:00Z', concluido_em:'2026-10-10T10:30:00Z' },
                        { registro:11, nome:'Bruno Tavares', confirmado_em:null, concluido_em:null }] }, error:null };
             if (nome === 'recadastro_campanha_ativar') return { data:{ status:'ok', avisados:9 }, error:null };
+            if (nome === 'termo_admin_caminho') return { data:{ status:'ok', caminho:'labbio-2026/' + args.p_registro + '/cccccccc-cccc-cccc-cccc-cccccccccccc.pdf' }, error:null };
+            if (nome === 'termo_registrar_envio_admin') return { data:{ status:'ok' }, error:null };
             if (nome === 'termo_estado') return { data: termoEst(), error:null };
             if (!T) return { data:{ status:'sem_permissao' }, error:null };
             if (nome === 'termo_emitir'){
@@ -1672,7 +1674,7 @@
               T.emitido = '2026-10-11T12:05:00Z';
               return { data:{ status:'ok', modelo:'termos/termo_sigilo_labbio_3.pdf', modelo_sha256: T.sha, dados: T.dados, dia:11, mes:'outubro', ano:2026, registro:4 }, error:null };
             }
-            if (nome === 'termo_registrar_envio'){ if (!T.emitido) return { data:{ status:'nao_emitido' }, error:null };
+            if (nome === 'termo_registrar_envio'){ if (args.p_existente ? !T.confirmado : !T.emitido) return { data:{ status: args.p_existente ? 'dados_pendentes' : 'nao_emitido' }, error:null };
               T.enviado = '2026-10-11T12:30:00Z'; T.devolvido = null; T.envio = args; return { data:{ status:'ok' }, error:null }; }
             if (nome === 'termo_painel') return { data:{ status:'ok', campanha:'labbio-2026', pessoas:[
               { registro:11, nome:'Bruno Tavares', situacao:'enviado', enviado_em:'2026-10-11T10:00:00Z', arquivo:'labbio-2026/11/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.pdf' },

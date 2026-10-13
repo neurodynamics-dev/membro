@@ -269,3 +269,9 @@ body.labbio{background:var(--bg);color:var(--ink);font-family:var(--f);min-heigh
 .lb-selbar .btn .ic{width:14px;height:14px}
 .lb-selbar-sem{width:100%;margin:0;font-size:12.5px;color:var(--warn-tx)}
 .lb-selbar-lista{width:100%;box-sizing:border-box;font-family:var(--fm);font-size:12.5px;resize:vertical;min-height:44px;padding:8px 10px;border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--campo);color:var(--ink)}
+
+/* 2.19.2: o admin envia o termo por um membro */
+.lb-termo-up{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.lb-termo-up .lb-sub{flex-basis:100%}
+.lb-termo-up #lb-termo-nome{flex-basis:auto}
+.lb-check{display:inline-flex;align-items:center;gap:7px;font-size:13px}

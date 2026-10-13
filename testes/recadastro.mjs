@@ -135,11 +135,21 @@ console.log('\nDados, termo e envio, pelo recadastro');
   await p.waitForTimeout(600);
   confere('depois de baixar, continua no recadastro, no passo de assinar', await p.evaluate(() => location.hash) === '#/servicos/recadastro'
     && await p.locator('.rec-passo.atual h3').textContent() === 'Assine via gov.br');
+  confere('o painel do recadastro traz a pasta dos termos e o aviso de testemunhas', await p.locator('.rec-ja a[href*="drive.google.com/drive/folders/1ZVVSVLobECM1G92qcdBjGSKzTYkAIbHq4ANVNKt5-FvcWJQcYf9gy4nRuThkOIq00HDUFwXG"]').count() === 1
+    && (await p.locator('.rec-ja').innerText()).includes('testemunhas não precisa ser preenchido') && (await p.locator('.rec-passos').innerText()).includes('testemunhas não precisa'));
   await p.click('.rec-passo a:has-text("Enviar o assinado")'); await p.waitForSelector('#t-arquivo', { state:'attached' });
   await p.setInputFiles('#t-arquivo', { name:'termo.pdf', mimeType:'application/pdf', buffer: bytes });
   await p.waitForTimeout(300);
   confere('PDF sem assinatura digital é recusado, com o motivo', await p.locator('#termo-enviar').isDisabled()
     && /não tem assinatura digital/.test(await p.locator('#termo-arquivo').innerText()));
+  /* 2.19.2: quem já tem o termo preenchido e assinado pode enviar esse mesmo arquivo */
+  await p.click('.termo-qual button:has-text("já tinha")'); await p.waitForTimeout(150);
+  confere('"O termo que eu já tinha": mostra a pasta e o aviso de testemunhas', await p.locator('#main a[href*="drive.google.com/drive/folders/1ZVVSVLobECM1G92qcdBjGSKzTYkAIbHq4ANVNKt5-FvcWJQcYf9gy4nRuThkOIq00HDUFwXG"]').count() >= 1
+    && (await p.locator('#main').innerText()).includes('testemunhas não precisa ser preenchido'));
+  await p.setInputFiles('#t-arquivo', { name:'termo.pdf', mimeType:'application/pdf', buffer: bytes }); await p.waitForTimeout(300);
+  confere('o termo que já existia é aceito mesmo sem assinatura digital, para o Pessoal conferir', !(await p.locator('#termo-enviar').isDisabled())
+    && /Pessoal confere/.test(await p.locator('#termo-arquivo').innerText()));
+  await p.click('.termo-qual button:has-text("baixei agora")'); await p.waitForTimeout(150);
   const assinado = Buffer.concat([bytes, Buffer.from('\n% assinatura\n1 0 obj << /Type /Sig /Filter /Adobe.PPKLite /SubFilter /ETSI.CAdES.detached /ByteRange [0 100 200 300] >> endobj\n')]);
   await p.setInputFiles('#t-arquivo', { name:'termo-assinado.pdf', mimeType:'application/pdf', buffer: assinado });
   await p.waitForTimeout(300);

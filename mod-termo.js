@@ -20,7 +20,16 @@
 const TERMO_PASSOS = [['baixar', 'Baixar'], ['assinar', 'Assinar no gov.br'], ['enviar', 'Enviar o assinado']];
 const PDFLIB_URL = 'vendor/pdf-lib-1.17.1.min.js';   /* local, como o jsPDF */
 const ASSINADOR_URL = 'https://assinador.iti.br/';
-const termoM = { estado: null, arquivo: null };
+/* 2.19.2: a pasta com os termos que alguns membros já preencheram e assinaram */
+const TERMO_PASTA_URL = 'https://drive.google.com/drive/folders/1ZVVSVLobECM1G92qcdBjGSKzTYkAIbHq4ANVNKt5-FvcWJQcYf9gy4nRuThkOIq00HDUFwXG?usp=drive_link';
+const TERMO_AVISO_TESTEMUNHAS = 'O campo de testemunhas não precisa ser preenchido.';
+const termoM = { estado: null, arquivo: null, existente: false };
+/* o aviso de quem já tem o termo, igual no recadastro e no fluxo do termo */
+const termoAvisoExistente = () => `<div class="aviso-box info termo-ja">
+  <b>Já tem o termo preenchido e assinado?</b> Alguns membros já têm: procure o seu na
+  <a href="${TERMO_PASTA_URL}" target="_blank" rel="noopener">pasta dos termos ↗</a>. Se ele estiver conforme (os seus dados de hoje e a
+  assinatura na linha do receptor da informação), envie esse mesmo arquivo em <a href="#/servicos/termo/enviar?ja=1">Enviar o assinado</a>; não precisa baixar um novo.
+  ${TERMO_AVISO_TESTEMUNHAS}</div>`;
 
 /* como cada campo sai no termo (os nomes são os do formulário do PDF) */
 function termoCampos(d, data){
@@ -57,7 +66,7 @@ async function pageTermo(sub){
 
 function termoCab(){
   return cabecalho({ espaco: 'Serviços', titulo: TERMO_TIT,
-    lead: 'Todos os membros refazem o termo de sigilo do LABBIO, mesmo quem já tinha um: baixe, assine no gov.br e envie o arquivo assinado.' });
+    lead: 'Todos os membros regularizam o termo de sigilo do LABBIO: baixe, assine no gov.br e envie o arquivo assinado. Quem já tem o termo preenchido e assinado pode enviar esse mesmo arquivo, se estiver conforme.' });
 }
 
 function termoDesenhar(passo){
@@ -73,7 +82,7 @@ function termoDesenhar(passo){
   }
   const rota = k => `#/servicos/termo/${k}`;
   const corpo = { baixar: termoPrevia, assinar: termoAssinar, enviar: termoEnviar }[passo]();
-  $('#main').innerHTML = termoCab() + aviso + layoutFluxo({ passos: etapas(TERMO_PASSOS, passo, rota), corpo: corpo.html,
+  $('#main').innerHTML = termoCab() + aviso + (passo !== 'enviar' ? termoAvisoExistente() : '') + layoutFluxo({ passos: etapas(TERMO_PASSOS, passo, rota), corpo: corpo.html,
     salvo: corpo.salvo || '', acoes: corpo.acoes || '' });
 }
 
@@ -132,7 +141,7 @@ function termoAssinar(){
         <li><b>Abra o assinador do gov.br</b> e entre com a sua conta gov.br (nível prata ou ouro).
           <a href="${ASSINADOR_URL}" target="_blank" rel="noopener">assinador.iti.br ↗</a></li>
         <li><b>Escolha o arquivo</b> que você baixou: “Termo de sigilo LABBIO - seu nome.pdf”. Não abra nem salve o PDF em outro programa antes, para não alterar o arquivo.</li>
-        <li><b>Posicione a assinatura</b> sobre a linha “RECEPTOR DA INFORMAÇÃO”, na última página, e confirme com o código que chega no seu celular.</li>
+        <li><b>Posicione a assinatura</b> sobre a linha “RECEPTOR DA INFORMAÇÃO”, na última página, e confirme com o código que chega no seu celular. ${TERMO_AVISO_TESTEMUNHAS}</li>
         <li><b>Baixe o arquivo assinado</b>. É ele que você envia na próxima etapa.</li></ol>
       <p class="small muted termo-antigo">Perdeu o arquivo? <a href="#/servicos/termo/baixar">Baixe o termo de novo</a>.</p>`,
     acoes: `<a class="btn ghost" href="#/servicos/termo/baixar">Voltar</a><a class="btn solid" href="#/servicos/termo/enviar">Já assinei</a>`
@@ -142,16 +151,25 @@ function termoAssinar(){
 /* ---------- 4. enviar ---------- */
 function termoEnviar(){
   const e = termoM.estado;
-  if (!e.emitido_em) return { html: `<p>Primeiro, baixe o termo com os seus dados.</p>`, acoes: `<a class="btn solid" href="#/servicos/termo/baixar">Baixar o termo</a>` };
+  /* quem chega de "Já tem o termo?" (ou não baixou um novo) envia o que já tinha */
+  if (/[?&]ja=1/.test(location.hash) || !e.emitido_em) termoM.existente = true;
+  const ex = termoM.existente;
   return {
-    html: `<p class="termo-lead">Envie o PDF que o assinador do gov.br devolveu. O arquivo é guardado exatamente como chega.</p>
+    html: `<div class="seg termo-qual" role="radiogroup" aria-label="Qual termo você envia">
+        <button type="button" role="radio" aria-checked="${!ex}" class="${ex ? '' : 'on'}" onclick="termoQual(false)"${e.emitido_em ? '' : ' disabled title="Baixe o termo primeiro"'}>O termo que baixei agora</button>
+        <button type="button" role="radio" aria-checked="${ex}" class="${ex ? 'on' : ''}" onclick="termoQual(true)">O termo que eu já tinha</button></div>
+      <p class="termo-lead">${ex
+        ? `Envie o termo que você já tinha, preenchido e assinado (está na <a href="${TERMO_PASTA_URL}" target="_blank" rel="noopener">pasta dos termos ↗</a>).
+           Ele precisa estar conforme: os seus dados de hoje e a assinatura na linha do receptor da informação. O Pessoal confere e, se algo não estiver certo, devolve com o motivo.`
+        : 'Envie o PDF que o assinador do gov.br devolveu. O arquivo é guardado exatamente como chega.'} ${TERMO_AVISO_TESTEMUNHAS}</p>
       <label class="termo-drop" id="termo-drop"><input type="file" id="t-arquivo" accept="application/pdf,.pdf" onchange="termoEscolheu(this)">
         <span>${ic('subir')} <b>Escolher o PDF assinado</b><small>Até 10 MB</small></span></label>
       <p class="termo-arquivo" id="termo-arquivo" role="status"></p>`,
-    acoes: `<a class="btn ghost" href="#/servicos/termo/assinar">Voltar</a>
+    acoes: `<a class="btn ghost" href="#/servicos/termo/${ex ? 'baixar' : 'assinar'}">Voltar</a>
       <button class="btn solid" id="termo-enviar" onclick="termoEnviarArquivo()" disabled>Enviar o termo assinado</button>`
   };
 }
+function termoQual(ex){ termoM.existente = ex; termoM.arquivo = null; termoDesenhar('enviar'); }
 /* um PDF assinado traz /ByteRange e a assinatura (/Sig, PKCS#7 ou CAdES) */
 function termoAssinado(bytes){
   const t = new TextDecoder('latin1').decode(bytes);
@@ -165,9 +183,11 @@ async function termoEscolheu(input){
   const falha = msg => { out.textContent = msg; out.classList.add('erro'); };
   if (f.size > 10 * 1024 * 1024) return falha('O arquivo passa de 10 MB.');
   if (String.fromCharCode(...bytes.slice(0, 5)) !== '%PDF-') return falha('Este arquivo não é um PDF.');
-  if (!termoAssinado(bytes)) return falha('Este PDF não tem assinatura digital. Assine no gov.br e envie o arquivo que o assinador devolveu.');
+  const digital = termoAssinado(bytes);
+  /* o termo novo vem do assinador do gov.br; o que já existia pode ter sido assinado de outro jeito, e o Pessoal confere */
+  if (!digital && !termoM.existente) return falha('Este PDF não tem assinatura digital. Assine no gov.br e envie o arquivo que o assinador devolveu.');
   termoM.arquivo = { f, bytes };
-  out.textContent = `${f.name}, ${(f.size / 1024).toFixed(0)} KB, assinado digitalmente.`; out.classList.add('ok');
+  out.textContent = `${f.name}, ${(f.size / 1024).toFixed(0)} KB, ${digital ? 'assinado digitalmente' : 'sem assinatura digital: o Pessoal confere a assinatura'}.`; out.classList.add('ok');
   b.disabled = false;
 }
 async function termoEnviarArquivo(){
@@ -178,7 +198,7 @@ async function termoEnviarArquivo(){
     const caminho = `${termoM.estado.campanha}/${state.perfil.registro}/${crypto.randomUUID()}.pdf`;
     const up = await sb.storage.from('termos').upload(caminho, a.f, { contentType: 'application/pdf', upsert: false });
     if (up.error) throw up.error;
-    const { data, error } = await sb.rpc('termo_registrar_envio', { p_arquivo: caminho, p_sha256: sha, p_bytes: a.bytes.length });
+    const { data, error } = await sb.rpc('termo_registrar_envio', { p_arquivo: caminho, p_sha256: sha, p_bytes: a.bytes.length, p_existente: !!termoM.existente });
     if (error) throw error;
     if (data.status !== 'ok') throw new Error({ nao_emitido: 'baixe o termo com os dados atuais antes de enviar',
       dados_pendentes: 'confirme seus dados primeiro', arquivo_ausente: 'o arquivo não chegou ao servidor' }[data.status] || data.status);
@@ -207,7 +227,7 @@ async function painelTermo(el){
     <div class="wrap"><table class="tabela trabalho"><thead><tr><th>Membro</th><th>Situação</th><th>Enviado</th><th></th></tr></thead><tbody>
     ${ps.map(p => { const [l, c] = TERMO_SITUACAO[p.situacao] || [p.situacao, ''];
       return `<tr><td>${esc(p.nome)}${p.pausado ? ' <span class="pill">de férias</span>' : ''}</td>
-        <td><span class="pill ${c}">${esc(l)}</span>${p.motivo && p.situacao === 'devolvido' ? `<small class="muted"> ${esc(p.motivo)}</small>` : ''}</td>
+        <td><span class="pill ${c}">${esc(l)}</span>${p.existente ? ' <span class="pill" title="O membro enviou um termo que já tinha">Termo que já tinha</span>' : ''}${p.motivo && p.situacao === 'devolvido' ? `<small class="muted"> ${esc(p.motivo)}</small>` : ''}</td>
         <td class="num">${p.enviado_em ? fmtDT(p.enviado_em) : ''}</td>
         <td class="acoes">${p.arquivo ? `<button class="btn ghost mini" onclick="termoAbrir('${esc(p.arquivo)}')">Abrir PDF</button>` : ''}
           ${p.situacao === 'enviado' ? `<button class="btn ghost mini" onclick="termoConferir(${p.registro},true)">Conferido</button>
