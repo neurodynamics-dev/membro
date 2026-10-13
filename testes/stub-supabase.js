@@ -618,6 +618,12 @@
     DADOS.ps_envios.push({ id:1, tipo:'confirmacao', candidato_id:'c5', slot_id:'s3', criado_em:'2026-09-27T12:00:00Z',
       enviado_em:'2026-09-27T12:05:00Z', tentativas:0, erro:null });
   }
+  /* ---- 2.19.2: Relações institucionais. Com window.__teste.ri, a Ana entra no NRO_RELAC. ---- */
+  if ((window.__teste || {}).ri){
+    DADOS.grupos.push({ id:90, nome:'NRO_RELAC', prefixo:'REL', ativo:true, cor:null, chave:null, reservado:false, ordem:9,
+      pai_id:null, quadro:false, responsaveis:[], descricao:'Relações institucionais' });
+    DADOS.membros[0].grupos.push('NRO_RELAC');
+  }
   if ((window.__teste || {}).dir){
     DADOS.doc_emissores.push({ prefixo:'DIR', nome:'Diretoria', grupo_id:null, ordem:3 });
     DADOS.doc_series.push(
@@ -833,6 +839,86 @@
         from: (t, ...resto) => { (window.__tabelas ||= []).push(t); return builder(t, ...resto); },
         rpc: async (nome, args) => {
           (window.__chamadas ||= []).push(nome);
+          /* ---- 2.19.2: Relações institucionais (window.__riDB). Sem window.__teste.ri, só a indicação funciona. ---- */
+          if (/^ri_/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const ok = d => ({ data:{ status:'ok', ...(d || {}) }, error:null }), nega = { data:{ status:'sem_permissao' }, error:null };
+            const pode = !!(window.__teste || {}).ri;
+            const D = window.__riDB ||= (() => {
+              const c = (id, nome, extra) => ({ id, natureza:'pessoa', nome, cargo:null, organizacao_id:null, funcao:'stakeholder', proximidade:2, estagio:'identificado',
+                influencia:null, interesse:null, tags:[], cidade:null, resumo:null, responsavel:4, proximo_passo:null, proximo_em:null, ativo:true,
+                atualizado_em:'2026-10-01T12:00:00Z', canais:[], notas:null, origem:null, ...extra });
+              return { seq:100, contatos:[
+                  c(1, 'Hospital das Clínicas', { natureza:'organizacao', cargo:'Hospital', funcao:'saude', proximidade:3, estagio:'conhecendo' }),
+                  c(2, 'Ana Souza', { cargo:'Diretora clínica', organizacao_id:1, funcao:'parceiro', proximidade:4, estagio:'colaborando', influencia:5, interesse:4,
+                    tags:['Reabilitação'], resumo:'Abre portas no HC.', canais:[{ tipo:'email', valor:'ana@hc.br' }] }),
+                  c(3, 'Bruno Lima', { funcao:'investidor', proximidade:2, estagio:'primeiro_contato' }),
+                  c(4, 'Fundação Apoio', { natureza:'organizacao', funcao:'fomento', proximidade:1, estagio:'identificado' }),
+                  c(5, 'Carla Dias', { funcao:'mentor', proximidade:5, estagio:'parceria', ativo:false })],
+                relacoes:[{ id:1, a:2, b:3, tags:['Amizade'], sinal:'positiva', forca:4, nota:null }],
+                interacoes:[{ id:1, data:'2026-07-01', tipo:'reuniao', resumo:'Apresentação.', contatos:[2], evento_id:null, autor:4 }],
+                eventos:[{ id:1, nome:'Feira Hospitalar', tipo:'feira', status:'confirmado', inicio:'2099-11-10', fim:'2099-11-12', local:'São Paulo', modalidade:'presencial',
+                  link:null, organizador:null, objetivos:['Conhecer stakeholders'], publico:null, custo:null, participantes:[4], contatos:[2], resultados:null, avaliacao:null, notas:null }],
+                indicacoes:[{ id:1, tipo:'contato', autor:11, dados:{ nome:'Tio Carlos', por_que:'Potencial investidor', relacao:'tio' }, status:'nova', resposta:null, criado_em:'2026-10-10T12:00:00Z' }] };
+            })();
+            const nm = r => DADOS.membros.find(m => m.registro === r)?.nome || null;
+            const json = c => ({ ...c, organizacao:D.contatos.find(o => o.id === c.organizacao_id)?.nome || null, responsavel_nome:nm(c.responsavel),
+              ultima_interacao:D.interacoes.filter(i => i.contatos.includes(c.id)).map(i => i.data).sort().at(-1) || null,
+              n_interacoes:D.interacoes.filter(i => i.contatos.includes(c.id)).length });
+            const ev = e => ({ ...e, participantes_nomes:e.participantes.map(nm), contatos_lista:e.contatos.map(i => ({ id:i, nome:D.contatos.find(c => c.id === i)?.nome })) });
+            const a = args || {};
+            if (nome === 'ri_indicar'){ const id = ++D.seq; D.indicacoes.unshift({ id, tipo:a.p.tipo, autor:4, dados:a.p.dados, status:'nova', resposta:null, criado_em:new Date().toISOString() }); return ok({ id }); }
+            if (nome === 'ri_minhas_indicacoes') return ok({ indicacoes:D.indicacoes.filter(i => i.autor === 4) });
+            if (!pode) return nega;
+            if (nome === 'ri_dados') return ok({ contatos:D.contatos.map(json), relacoes:D.relacoes, equipe:[{ registro:4, nome:'Ana Figueiredo' }],
+              indicacoes_novas:D.indicacoes.filter(i => ['nova', 'em_analise'].includes(i.status)).length });
+            if (nome === 'ri_contato_ler'){
+              const c = D.contatos.find(x => x.id === a.p_id); if (!c) return { data:{ status:'nao_encontrado' }, error:null };
+              return ok({ contato:json(c), interacoes:D.interacoes.filter(i => i.contatos.includes(c.id)).map(i => ({ ...i, autor_nome:nm(i.autor) })),
+                relacoes:D.relacoes.filter(r => r.a === c.id || r.b === c.id), membros:D.contatos.filter(m => m.organizacao_id === c.id),
+                eventos:D.eventos.filter(e => e.contatos.includes(c.id)) });
+            }
+            if (nome === 'ri_contato_salvar'){
+              const p = a.p; if (!String(p.nome || '').trim()) return { data:{ status:'invalido', campo:'nome' }, error:null };
+              let c = p.id ? D.contatos.find(x => x.id === p.id) : null;
+              if (!c){ c = { id:++D.seq }; D.contatos.push(c); }
+              Object.assign(c, { ...p, id:c.id, nome:p.nome.trim(), atualizado_em:new Date().toISOString() });
+              return ok({ id:c.id, contato:json(c) });
+            }
+            if (nome === 'ri_contato_estagio'){ const c = D.contatos.find(x => x.id === a.p_id); c.estagio = a.p_estagio; return ok(); }
+            if (nome === 'ri_contato_excluir'){ D.contatos = D.contatos.filter(x => x.id !== a.p_id); D.relacoes = D.relacoes.filter(r => r.a !== a.p_id && r.b !== a.p_id); return ok(); }
+            if (nome === 'ri_relacao_salvar'){
+              const p = a.p, x = Math.min(p.a, p.b), y = Math.max(p.a, p.b);
+              let r = D.relacoes.find(r2 => r2.a === x && r2.b === y); if (!r){ r = { id:++D.seq, a:x, b:y }; D.relacoes.push(r); }
+              Object.assign(r, { tags:p.tags || [], sinal:p.sinal, forca:p.forca, nota:p.nota || null }); return ok({ relacao:r });
+            }
+            if (nome === 'ri_relacao_excluir'){ D.relacoes = D.relacoes.filter(r => r.id !== a.p_id); return ok(); }
+            if (nome === 'ri_interacao_salvar'){
+              const p = a.p; let i = p.id ? D.interacoes.find(x => x.id === p.id) : null;
+              if (!i){ i = { id:++D.seq, autor:4 }; D.interacoes.push(i); }
+              Object.assign(i, { data:p.data, tipo:p.tipo, resumo:p.resumo, contatos:p.contatos, evento_id:p.evento_id || null });
+              if (p.proximo_passo) D.contatos.filter(c => p.contatos.includes(c.id)).forEach(c => { c.proximo_passo = p.proximo_passo; c.proximo_em = p.proximo_em; });
+              return ok({ id:i.id });
+            }
+            if (nome === 'ri_interacao_excluir'){ D.interacoes = D.interacoes.filter(i => i.id !== a.p_id); return ok(); }
+            if (nome === 'ri_eventos_listar') return ok({ eventos:D.eventos.map(ev) });
+            if (nome === 'ri_evento_salvar'){
+              const p = a.p; let e = p.id ? D.eventos.find(x => x.id === p.id) : null;
+              if (!e){ e = { id:++D.seq }; D.eventos.push(e); }
+              Object.assign(e, { ...p, id:e.id }); return ok({ id:e.id, evento:ev(e) });
+            }
+            if (nome === 'ri_evento_excluir'){ D.eventos = D.eventos.filter(e => e.id !== a.p_id); return ok(); }
+            if (nome === 'ri_indicacoes_listar') return ok({ indicacoes:D.indicacoes.map(i => ({ ...i, autor_nome:nm(i.autor) })) });
+            if (nome === 'ri_indicacao_decidir'){
+              const i = D.indicacoes.find(x => x.id === a.p_id);
+              if (a.p_acao === 'recusar' && !a.p_resposta) return { data:{ status:'resposta_obrigatoria' }, error:null };
+              i.status = { em_analise:'em_analise', aceitar:'aceita', recusar:'recusada' }[a.p_acao]; i.resposta = a.p_resposta || i.resposta;
+              if (a.p_acao === 'aceitar' && i.tipo === 'contato'){ const c = { id:++D.seq, natureza:'pessoa', nome:i.dados.nome, funcao:'stakeholder', proximidade:1,
+                estagio:'identificado', tags:[], canais:[], ativo:true, responsavel:4, origem:'Indicação' }; D.contatos.push(c); i.contato_id = c.id; return ok({ contato_id:c.id }); }
+              return ok();
+            }
+            return { data:null, error:{ message:'stub ri: ' + nome } };
+          }
           /* ---- 2.19.2: Recursos (catálogo colaborativo). window.__teste.recursos = { gestao:false } tira a gestão. ---- */
           if (/^recursos?_/.test(nome)){
             (window.__rpcs ||= []).push({ nome, p:args });
