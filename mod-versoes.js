@@ -29,14 +29,14 @@
    ============================================================ */
 
 /* A entrada mais nova fica em cima. "antes" é o número da numeração
-   antiga; os itens são [tipo, texto em Markdown]. */
+   antiga; os itens são [tipo, texto em Markdown]. O que é novo (uma tela,
+   um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
+   2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
-  { v:'2.19.2', data:'2026-10-11', titulo:'Menu reorganizado, filtros novos e ajustes da tela inicial', itens:[
+  { v:'2.19.2', data:'2026-10-11', titulo:'Menu reorganizado, filtros e ajustes', itens:[
+    ['melhoria', '**Relações institucionais, Conexões**: ao criar um contato, dá para buscar um membro da equipe e trazer os dados da ficha.'],
     ['correcao', 'Depois de uma atualização do portal, o navegador podia juntar arquivos novos com antigos e mostrar telas sem estilo. Agora cada atualização troca o endereço de todos os arquivos.'],
-    ['novo', '**Relações institucionais**, para o NRO_RELAC e o NRO_COORD_OFFICE: **Conexões** (pessoas e organizações em mapa, tabela ou kanban, com relações, histórico e próximos passos), **Missões** (eventos, visitas e encontros em que a equipe representa a NRO) e **Financiamento** (editais importados de um texto em Markdown, com cronograma, checklist e o arranjo de cada um). Em Serviços, qualquer membro indica um contato ou um evento e é avisado da análise.'],
-    ['novo', '**Biblioteca**: catálogo colaborativo de ferramentas, extensões, livros, bases de pesquisa e licenças de estudante, em galeria com filtros. Qualquer pessoa adiciona (basta o link), avalia e comenta; o selo NRO STANDARD marca o que a equipe adota.'],
     ['melhoria', '**Painel do LABBIO, Membros**: a coluna de liderança dá lugar ao status do membro, e dá para marcar pessoas (uma a uma ou a lista inteira) e copiar os e-mails dos marcados (da NRO, pessoal ou os dois), ou escrever para eles em cópia oculta.'],
-    ['novo', '**Ensaio do onboarding**: em Administração › Onboarding, "Testar a jornada" abre o tour com uma pessoa simulada (visitante, conta sem vínculo, membro novo, no meio do caminho ou tudo feito). Dá para criar a conta, simular a confirmação do e-mail e o vínculo, marcar as leituras e ligar cada fato, sem gravar nada no SOMA.'],
     ['melhoria', '**Feed da equipe**, **Newsletters** e **Marca** passam para Serviços. Os endereços antigos do feed e das newsletters continuam funcionando.'],
     ['melhoria', '**Equipe** sobe no menu, antes de OKRs.'],
     ['melhoria', '**Menu lateral recolhido**: a logo volta a levar ao início, e abrir o menu é um botão à parte.'],
@@ -45,9 +45,6 @@ const NOTAS_VERSAO = [
     ['melhoria', '**Organograma**: trainee aparece com um ponto Plexo ao lado do nome.'],
     ['melhoria', '**Quadro de avisos** só em rodízio; o botão de grade saiu.'],
     ['melhoria', '**Painel do LABBIO**: o admin do SOMA entra com a própria conta. A logo do LABBIO perde o fundo preto e, em telas pequenas, fica só a palavra "labbio".'],
-    ['novo', '**Check-in pela folha** confere a localização: o celular manda a posição e o banco confere se você está a até 150 m do LABBIO. A posição não fica guardada. A administração ajusta o local em Equipe › Presença.'],
-    ['novo', '**Foto do acesso ao LABBIO** com verificação ao vivo na câmera: rosto, enquadramento, iluminação e contraste, no próprio aparelho. Quem prefere pode enviar um arquivo, sem verificação, com os requisitos à vista.'],
-    ['novo', '**Ordenar tabelas por coluna**: clique no cabeçalho para ordenar de A a Z, de Z a A e voltar à ordem original. Números e datas ordenam pelo valor; a escolha continua ao filtrar.'],
     ['correcao', 'No **celular**, as tabelas (Quadro de pessoal, Auditoria e outras) rolam para o lado em vez de esconder o nome e as outras colunas.'],
     ['correcao', 'Ícones sem tamanho definido (como em "Você já tem acesso biométrico") não aparecem mais gigantes.'],
     ['correcao', 'O **painel do LABBIO** mostra as fotos de perfil do repositório de fotos, como o portal.'],
@@ -57,31 +54,37 @@ const NOTAS_VERSAO = [
     ['correcao', 'O cartão **Acesso ao LABBIO** em Serviços tinha o ícone gigante.'],
     ['correcao', 'Iniciar o **recadastro** falhava com "UPDATE requires a WHERE clause".'],
     ['correcao', 'O formulário de **andamento** em Bugs e sugestões agora mostra "Registrado agora" e fecha o botão até haver nova alteração.'],
-    ['correcao', 'O **recadastro** atualiza todos os dados pessoais da ficha: além dos documentos e do endereço, os campos opcionais (gênero, cidade de origem, período de ingresso, deslocamento, FUMP, acessibilidade, background, Lattes, Instagram, GitHub, autorização de imagem e e-mail pessoal). O endereço da ficha passa a acompanhar o recadastro, e a aba Dados pessoais mostra tudo, em grupos.'],
+    ['correcao', 'O **recadastro** atualiza todos os dados pessoais da ficha: além dos documentos e do endereço, os campos opcionais (gênero, cidade de origem, período de ingresso, deslocamento, FUMP, acessibilidade, background, Lattes, Instagram, GitHub, autorização de imagem e e-mail pessoal). O endereço da ficha passa a acompanhar o recadastro, e a aba Dados pessoais mostra tudo, em grupos.']
+  ]},
+  { v:'2.19.1', data:'2026-10-11', titulo:'Ajustes do LABBIO, dos pedidos de acesso e do celular', itens:[
     ['melhoria', '**Salas em tempo real**: o tablet da porta e a sala no celular mudam sozinhos quando alguém ocupa, libera ou reserva, por qualquer um dos dois, pela agenda ou pelo LABBIO. Também viram na hora certa quando uma reserva começa ou acaba e quando a ocupação vence.'],
-    ['novo', '**Tablet da sala** redesenhado: a tela inteira na cor da situação, em tons suaves, com a barra de luz embaixo, quem reservou, as reservas de hoje e o "até" sempre com o dia. Toque duas vezes para tela inteira. Ocupar por 30 min, 1 h ou o resto do dia fica no botão do canto; liberar é arrastar até o fim.'],
-    ['novo', '**A sala no celular**: o QR do tablet abre a sala no SOMA, com as outras salas, usar agora, reservar um horário (a agenda já com a sala) e liberar.'],
-    ['novo', '**Reservas do LABBIO**: o LABBIO tem a própria agenda das salas, fora da agenda do SOMA. Elas ocupam a sala no tablet e no celular, e o conflito com um evento nosso avisa os dois lados.'],
     ['melhoria', '**Ficha da pessoa no painel do LABBIO**: nome, registro, e-mails e telefone com o botão de copiar, sem quebrar linha.'],
-    ['novo', '**Painel do LABBIO** com início em dashboard: os números do dia, os pedidos de biometria e as consultas de sala esperando resposta, os eventos e check-ins de hoje, a presença dos últimos 14 dias e a situação da biometria, do termo e dos treinamentos.'],
-    ['novo', '**Solicitação de acesso** em duas telas: primeiro o tipo (sistema, documento ou plataforma; ou o acesso biométrico ao LABBIO), depois o pedido.'],
-    ['novo', '**Acesso ao LABBIO** com barra de progresso: enviado, Depto. de Pessoal, LABBIO e acesso cadastrado.'],
     ['melhoria', '**Reporte semanal** da liderança em grade: uma coluna com os nomes, uma de assiduidade, uma de entregas e uma com o botão de sinalizar.'],
     ['melhoria', 'No **celular**, a barra de topo some ao rolar para baixo e volta ao rolar para cima.'],
     ['correcao', 'No **celular**, a gaveta do menu mostrava o símbolo ao lado da logo.'],
     ['correcao', 'Ninguém aprova o **próprio pedido de acesso**, mesmo no Depto. de Pessoal (só o admin). O acesso biométrico ao LABBIO sai só pelo LABBIO: a triagem comum não o concede mais direto.']
   ]},
-  { v:'2.19.1', data:'2026-10-11', titulo:'Reporte por liderança, feed editorial, LABBIO e trainees', itens:[
+  { v:'2.19.0', data:'2026-10-10', titulo:'Design system v3, LABBIO, Relações institucionais, Biblioteca e mais', itens:[
+    ['novo', '**Design system v3** em todo o SOMA: um cabeçalho único em todas as telas (rótulo, título e voltar), templates de tela, estados de carregando, vazio e erro, e o catálogo em `#/dev/templates`.'],
+    ['novo', '**Quiosque** com conta de serviço: o segredo deixa de ficar no código. Dois layouts (o padrão e `?layout=b`), widgets que giram, a chegada de quem faz check-in e a hora do dia.'],
+    ['novo', '**Quadro de avisos** com onze layouts, vindos das bandas e dos widgets da marca: hero, contagem, número, progresso, lista e citação entram. Cada aviso pode ter uma das doze cores, e quem lê escolhe entre rodízio e grade.'],
     ['novo', '**Reporte semanal** por liderança direta, com cobrança na sexta às 16h, painel da semana e PDF em tabelas.'],
     ['novo', '**Feed editorial**: publicação por NRO_MANAGERS, notícias no site, reações e newsletter sem votos.'],
     ['novo', '**LABBIO**: painel próprio para os gestores do laboratório, pedido de acesso biométrico, consulta das salas e tablets na porta.'],
     ['novo', '**Trainees** no SOMA, com admissão em lote, e trilha de **onboarding**.'],
-    ['novo', '**Recadastro** semestral e termo de sigilo do LABBIO.']
-  ]},
-  { v:'2.19.0', data:'2026-10-10', titulo:'Design system v3, quiosque com conta própria e quadro de avisos novo', itens:[
-    ['novo', '**Design system v3** em todo o SOMA: um cabeçalho único em todas as telas (rótulo, título e voltar), templates de tela, estados de carregando, vazio e erro, e o catálogo em `#/dev/templates`.'],
-    ['novo', '**Quiosque** com conta de serviço: o segredo deixa de ficar no código. Dois layouts (o padrão e `?layout=b`), widgets que giram, a chegada de quem faz check-in e a hora do dia.'],
-    ['novo', '**Quadro de avisos** com onze layouts, vindos das bandas e dos widgets da marca: hero, contagem, número, progresso, lista e citação entram. Cada aviso pode ter uma das doze cores, e quem lê escolhe entre rodízio e grade.'],
+    ['novo', '**Recadastro** semestral e termo de sigilo do LABBIO.'],
+    ['novo', '**Relações institucionais**, para o NRO_RELAC e o NRO_COORD_OFFICE: **Conexões** (pessoas e organizações em mapa, tabela ou kanban, com relações, histórico e próximos passos), **Missões** (eventos, visitas e encontros em que a equipe representa a NRO) e **Financiamento** (editais importados de um texto em Markdown, com cronograma, checklist e o arranjo de cada um). Em Serviços, qualquer membro indica um contato ou um evento e é avisado da análise.'],
+    ['novo', '**Biblioteca**: catálogo colaborativo de ferramentas, extensões, livros, bases de pesquisa e licenças de estudante, em galeria com filtros. Qualquer pessoa adiciona (basta o link), avalia e comenta; o selo NRO STANDARD marca o que a equipe adota.'],
+    ['novo', '**Ensaio do onboarding**: em Administração › Onboarding, "Testar a jornada" abre o tour com uma pessoa simulada (visitante, conta sem vínculo, membro novo, no meio do caminho ou tudo feito). Dá para criar a conta, simular a confirmação do e-mail e o vínculo, marcar as leituras e ligar cada fato, sem gravar nada no SOMA.'],
+    ['novo', '**Check-in pela folha** confere a localização: o celular manda a posição e o banco confere se você está a até 150 m do LABBIO. A posição não fica guardada. A administração ajusta o local em Equipe › Presença.'],
+    ['novo', '**Foto do acesso ao LABBIO** com verificação ao vivo na câmera: rosto, enquadramento, iluminação e contraste, no próprio aparelho. Quem prefere pode enviar um arquivo, sem verificação, com os requisitos à vista.'],
+    ['novo', '**Ordenar tabelas por coluna**: clique no cabeçalho para ordenar de A a Z, de Z a A e voltar à ordem original. Números e datas ordenam pelo valor; a escolha continua ao filtrar.'],
+    ['novo', '**Tablet da sala** redesenhado: a tela inteira na cor da situação, em tons suaves, com a barra de luz embaixo, quem reservou, as reservas de hoje e o "até" sempre com o dia. Toque duas vezes para tela inteira. Ocupar por 30 min, 1 h ou o resto do dia fica no botão do canto; liberar é arrastar até o fim.'],
+    ['novo', '**A sala no celular**: o QR do tablet abre a sala no SOMA, com as outras salas, usar agora, reservar um horário (a agenda já com a sala) e liberar.'],
+    ['novo', '**Reservas do LABBIO**: o LABBIO tem a própria agenda das salas, fora da agenda do SOMA. Elas ocupam a sala no tablet e no celular, e o conflito com um evento nosso avisa os dois lados.'],
+    ['novo', '**Painel do LABBIO** com início em dashboard: os números do dia, os pedidos de biometria e as consultas de sala esperando resposta, os eventos e check-ins de hoje, a presença dos últimos 14 dias e a situação da biometria, do termo e dos treinamentos.'],
+    ['novo', '**Solicitação de acesso** em duas telas: primeiro o tipo (sistema, documento ou plataforma; ou o acesso biométrico ao LABBIO), depois o pedido.'],
+    ['novo', '**Acesso ao LABBIO** com barra de progresso: enviado, Depto. de Pessoal, LABBIO e acesso cadastrado.'],
     ['melhoria', '**Reporte semanal** reconstruído: endereços próprios e um fluxo de quatro passos, com revisão antes de enviar.'],
     ['melhoria', '**Marca** fica no SOMA só com o que exige login (assinatura de e-mail, modelos controlados e configurações). Logos, wallpapers e o kit de interface estão no manual da marca, refeito do zero.'],
     ['melhoria', '**Menu lateral** mais limpo: a logo leva ao início, o botão de recolher fica ao lado dela, e no menu recolhido o símbolo vira o botão de expandir.'],
