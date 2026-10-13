@@ -34,6 +34,8 @@
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
   { v:'2.19.2', data:'2026-10-11', titulo:'Menu reorganizado, filtros e ajustes', itens:[
+    ['melhoria', '**Recadastro e termo de sigilo**: quem já tem o termo preenchido e assinado pode enviar esse mesmo arquivo, se estiver conforme (o link da pasta dos termos está no recadastro e no envio). O campo de testemunhas não precisa ser preenchido. O envio fica marcado como "termo que já tinha" para o Pessoal conferir.'],
+    ['melhoria', '**Painel do LABBIO**: o admin do SOMA envia o termo assinado de um membro direto do perfil dele; a pessoa é avisada e o Pessoal confere.'],
     ['melhoria', '**Relações institucionais, Conexões**: ao criar um contato, dá para buscar um membro da equipe e trazer os dados da ficha.'],
     ['correcao', 'Depois de uma atualização do portal, o navegador podia juntar arquivos novos com antigos e mostrar telas sem estilo. Agora cada atualização troca o endereço de todos os arquivos.'],
     ['melhoria', '**Painel do LABBIO, Membros**: a coluna de liderança dá lugar ao status do membro, e dá para marcar pessoas (uma a uma ou a lista inteira) e copiar os e-mails dos marcados (da NRO, pessoal ou os dois), ou escrever para eles em cópia oculta.'],

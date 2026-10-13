@@ -20,6 +20,8 @@
 const ESTADOS_CIVIS = ['solteiro(a)', 'casado(a)', 'divorciado(a)', 'viúvo(a)', 'separado(a) judicialmente', 'em união estável'];
 const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 const ASSINADOR_GOVBR = 'https://assinador.iti.br/';
+/* 2.19.2: a pasta com os termos que alguns membros já preencheram e assinaram (a mesma de mod-termo) */
+const REC_TERMO_PASTA = 'https://drive.google.com/drive/folders/1ZVVSVLobECM1G92qcdBjGSKzTYkAIbHq4ANVNKt5-FvcWJQcYf9gy4nRuThkOIq00HDUFwXG?usp=drive_link';
 const cadM = { dados: null, erros: {}, volta: null };
 
 /* ============================================================
@@ -170,10 +172,10 @@ function recPassos(r){
         acao: `<button class="btn ${baixado ? 'ghost' : 'solid'}" onclick="recBaixar()" ${dadosOk ? '' : 'disabled'}>${baixado ? 'Baixar de novo' : 'Baixar o termo'}</button>`,
         quando: baixado ? 'Baixado em ' + fmtD(t.emitido_em) : '' },
       { k: 'assinar', n: 3, t: 'Assine via gov.br', feito: enviado, bloq: !baixado && !enviado,
-        p: 'No assinador do gov.br, com a sua conta gov.br. Posicione a assinatura na linha do RECEPTOR DA INFORMAÇÃO, na última página.',
+        p: 'No assinador do gov.br, com a sua conta gov.br. Posicione a assinatura na linha do RECEPTOR DA INFORMAÇÃO, na última página. O campo de testemunhas não precisa ser preenchido.',
         acao: `<a class="btn ${baixado && !enviado ? 'solid' : 'ghost'}" href="${ASSINADOR_GOVBR}" target="_blank" rel="noopener">Abrir o assinador ↗</a>`,
         quando: '<span class="rec-link">assinador.iti.br</span>' },
-      { k: 'enviar', n: 4, t: 'Faça o upload', feito: enviado, bloq: !baixado && !enviado,
+      { k: 'enviar', n: 4, t: 'Faça o upload', feito: enviado, bloq: !dadosOk && !enviado,
         p: t.status === 'devolvido' ? `O Pessoal devolveu o termo: ${esc(t.motivo || '')}` : 'Envie o PDF que o assinador devolveu, sem abrir nem salvar em outro programa.',
         acao: `<a class="btn ${baixado && !enviado ? 'solid' : 'ghost'}" href="#/servicos/termo/enviar">${enviado ? 'Ver o envio' : 'Enviar o assinado'}</a>`,
         quando: enviado ? (t.status === 'conferido' ? 'Conferido pelo Pessoal' : 'Enviado em ' + fmtD(t.enviado_em)) : '' });
@@ -185,7 +187,7 @@ function recPassos(r){
 function recPainelHTML(r, { modal } = {}){
   const passos = recPassos(r), feitos = passos.filter(x => x.feito).length, termo = passos.length > 1;
   const titulo = termo ? 'Confira seus dados e regularize o termo de sigilo do LABBIO' : 'Confira seus dados';
-  const lead = termo ? 'Todo semestre, cada membro confere os próprios dados no SOMA. Desta vez, aproveitamos para refazer o termo de sigilo do LABBIO de todos, mesmo de quem já tinha um. São quatro passos, uns dez minutos.'
+  const lead = termo ? 'Todo semestre, cada membro confere os próprios dados no SOMA. Desta vez, aproveitamos para regularizar o termo de sigilo do LABBIO de todos. São quatro passos, uns dez minutos.'
     : 'Todo semestre, cada membro confere os próprios dados no SOMA. Leva uns cinco minutos.';
   const aviso = r.bloqueia ? '<p class="rec-aviso">Para continuar usando o SOMA, conclua os passos abaixo.</p>' : '';
   return `<div class="rec-painel${modal ? ' modal' : ''}" role="${modal ? 'dialog' : 'region'}" aria-labelledby="rec-tit"${modal ? ' aria-modal="true"' : ''}>
@@ -196,6 +198,8 @@ function recPainelHTML(r, { modal } = {}){
     </div>
     <div class="rec-barra" role="progressbar" aria-valuemin="0" aria-valuemax="${passos.length}" aria-valuenow="${feitos}"
       aria-label="${feitos} de ${passos.length} passos feitos">${passos.map(x => `<span class="${x.feito ? 'feito' : x.atual ? 'atual' : ''}"></span>`).join('')}</div>
+    ${termo ? `<p class="rec-ja"><b>Já tem o termo preenchido e assinado?</b> Alguns membros já têm: procure o seu na
+      <a href="${REC_TERMO_PASTA}" target="_blank" rel="noopener">pasta dos termos ↗</a>. Se estiver conforme (os seus dados de hoje e a assinatura na linha do receptor), confirme seus dados e envie esse mesmo arquivo no passo 4, sem baixar um novo. O campo de testemunhas não precisa ser preenchido.</p>` : ''}
     <div class="rec-passos n${passos.length}">${passos.map(x => `
       <section class="widget rec-passo${x.feito ? ' feito' : ''}${x.atual ? ' atual' : ''}${x.bloq && !x.feito ? ' bloq' : ''}" aria-current="${x.atual ? 'step' : 'false'}">
         <header><span class="w-rot">Passo ${x.n}</span>${x.feito ? `<span class="rec-ok">${ic('check')} Feito</span>` : ''}</header>

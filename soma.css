@@ -3548,3 +3548,10 @@ a.fin-card:hover{border-color:var(--line2);background:rgba(var(--tom),.045)}
 .fin-corpo h2:first-child{margin-top:0}
 .fin-link{width:100%;justify-content:center;margin-top:var(--s3)}
 @media (max-width:900px){.fin-imp{grid-template-columns:minmax(0,1fr)}.fin-imp-prev{position:static}}
+
+/* 2.19.2: o termo que o membro já tem */
+.rec-ja{margin:0 0 var(--s3);padding:12px 14px;border:1px solid var(--line2);border-radius:var(--r-sm);font-size:var(--fs-sm);color:var(--muted);line-height:1.55}
+.rec-ja b{color:var(--ink)}
+.rec-ja a,.termo-ja a{text-decoration:underline}
+.termo-ja{margin-bottom:var(--s4)}
+.termo-qual{margin-bottom:var(--s3)}

@@ -638,7 +638,13 @@ async function pgPerfil(reg){
         <section class="lb-bloco"><h2>Termo de sigilo</h2><p>${termoHTML(m.termo)}
           ${m.termo?.enviado_em ? `<span class="lb-sub">enviado em ${fmtD(m.termo.enviado_em)}</span>` : ''}
           ${m.termo?.conferido_em ? `<span class="lb-sub">conferido em ${fmtD(m.termo.conferido_em)}</span>` : ''}</p>
-          ${termoArq ? '<button class="btn ghost mini" type="button" id="lb-termo-abrir">Abrir o termo assinado ↗</button>' : ''}</section>
+          ${termoArq ? '<button class="btn ghost mini" type="button" id="lb-termo-abrir">Abrir o termo assinado ↗</button>' : ''}
+          ${lab.eu?.admin && m.termo && m.termo.situacao !== 'sem_campanha' ? `<div class="lb-termo-up">
+            <p class="lb-sub">Admin: envie o termo assinado por ${esc(m.nome.split(' ')[0])}. A pessoa é avisada e o Pessoal confere.</p>
+            <label class="btn ghost mini">Escolher o PDF<input type="file" id="lb-termo-arq" accept="application/pdf,.pdf" hidden></label>
+            <label class="lb-check"><input type="checkbox" id="lb-termo-ja" checked> É um termo que a pessoa já tinha</label>
+            <span class="lb-sub" id="lb-termo-nome" role="status"></span>
+            <button class="btn solid mini" type="button" id="lb-termo-enviar" disabled>Enviar o termo</button></div>` : ''}</section>
         <section class="lb-bloco"><h2>Pedidos de biometria</h2>${(d.pedidos || []).length
           ? `<ul class="lb-lista">${d.pedidos.map(p => `<li><a href="#/solicitacoes/${esc(p.id)}">${esc(p.protocolo || 'Pedido')}</a> <span class="lb-sub">${esc(p.etapa)}, atualizado em ${fmtD(p.atualizado_em)}</span></li>`).join('')}</ul>`
           : '<p class="lb-sub">Nenhum pedido.</p>'}</section>
@@ -651,10 +657,40 @@ async function pgPerfil(reg){
         ${m.acesso?.desde ? `<span class="lb-sub">desde ${fmtD(m.acesso.desde)}</span>` : ''}</div></aside>
     </div>`;
     $('#lb-termo-abrir')?.addEventListener('click', () => abrirTermo(m.termo.arquivo));
+    ligarEnvioTermo(m);
   } catch(e){
     if (e.message === 'sem_acesso') return;
     const el = $('#lb-perfil'); if (el) el.innerHTML = estado.erro('Não foi possível carregar o perfil.', `<button class="btn ghost mini" type="button" onclick="pgPerfil(${reg})">Tentar de novo</button>`);
   }
+}
+/* 2.19.2: o admin envia o termo por um membro (o banco confere que é admin e grava na pasta da pessoa) */
+function ligarEnvioTermo(m){
+  const arq = $('#lb-termo-arq'); if (!arq) return;
+  let escolhido = null;
+  arq.addEventListener('change', async () => {
+    const f = arq.files?.[0]; escolhido = null; $('#lb-termo-enviar').disabled = true;
+    if (!f) return;
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    if (f.size > 10 * 1024 * 1024) { $('#lb-termo-nome').textContent = 'O arquivo passa de 10 MB.'; return; }
+    if (String.fromCharCode(...bytes.slice(0, 5)) !== '%PDF-') { $('#lb-termo-nome').textContent = 'Este arquivo não é um PDF.'; return; }
+    escolhido = { f, bytes }; $('#lb-termo-nome').textContent = `${f.name}, ${(f.size / 1024).toFixed(0)} KB`; $('#lb-termo-enviar').disabled = false;
+  });
+  $('#lb-termo-enviar').addEventListener('click', async () => {
+    if (!escolhido) return;
+    const b = $('#lb-termo-enviar'); b.disabled = true;
+    try {
+      const c = await rpc('termo_admin_caminho', { p_registro:m.registro });
+      if (c?.status !== 'ok') throw new Error({ sem_campanha:'não há campanha do termo aberta', sem_permissao:'só o admin envia por outra pessoa' }[c?.status] || c?.status);
+      const up = await sb.storage.from('termos').upload(c.caminho, escolhido.f, { contentType:'application/pdf', upsert:false });
+      if (up.error) throw up.error;
+      const h = await crypto.subtle.digest('SHA-256', escolhido.bytes);
+      const sha = [...new Uint8Array(h)].map(x => x.toString(16).padStart(2, '0')).join('');
+      const r = await rpc('termo_registrar_envio_admin', { p_registro:m.registro, p_arquivo:c.caminho, p_sha256:sha, p_bytes:escolhido.bytes.length, p_existente:$('#lb-termo-ja').checked });
+      if (r?.status !== 'ok') throw new Error(r?.status);
+      toast('Termo enviado. A pessoa foi avisada e o Pessoal confere.');
+      pgPerfil(m.registro);
+    } catch(e){ toast('Não foi possível enviar o termo: ' + (e.message || e), true); b.disabled = false; }
+  });
 }
 /* o termo abre em nova guia por um link assinado de 2 minutos; o caminho nunca aparece */
 async function abrirTermo(arquivo){
