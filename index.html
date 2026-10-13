@@ -21,13 +21,13 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- design system (cópia gerada pelo brand: scripts/distribuir.mjs) e o CSS próprio do SOMA -->
-<link rel="stylesheet" href="ds/tokens.css?v=960ab0b5bc">
-<link rel="stylesheet" href="ds/neuro.css?v=960ab0b5bc">
-<link rel="stylesheet" href="ds/casca.css?v=960ab0b5bc">
-<link rel="stylesheet" href="ds/select.css?v=960ab0b5bc">
-<link rel="stylesheet" href="soma.css?v=960ab0b5bc">
-<script defer src="ds/select.js?v=960ab0b5bc"></script>
-<script src="ds/casca.js?v=960ab0b5bc"></script>
+<link rel="stylesheet" href="ds/tokens.css?v=0d62e14354">
+<link rel="stylesheet" href="ds/neuro.css?v=0d62e14354">
+<link rel="stylesheet" href="ds/casca.css?v=0d62e14354">
+<link rel="stylesheet" href="ds/select.css?v=0d62e14354">
+<link rel="stylesheet" href="soma.css?v=0d62e14354">
+<script defer src="ds/select.js?v=0d62e14354"></script>
+<script src="ds/casca.js?v=0d62e14354"></script>
 </head>
 <body>
 
@@ -270,7 +270,7 @@ const VERSAO = '2.19.2';
 /* O carimbo dos arquivos (scripts/carimbar.mjs): um hash do conteúdo de todo
    CSS e JS. Vai na query de tudo que o portal carrega, para um deploy nunca
    misturar arquivo novo com arquivo velho em cache. */
-const CARIMBO = '960ab0b5bc';
+const CARIMBO = '0d62e14354';
 const LOGO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
 const LOGO_BRANCO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
@@ -619,6 +619,7 @@ const ICONS = {
   inicio:'<path d="M4 10.2 12 4l8 6.2V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/>',
   agenda:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path d="M8 14h2M14 14h2M8 17h2"/>',
   quadro:'<rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M8.5 7.5v7M12 7.5v4M15.5 7.5v9"/>',
+  rede:'<circle cx="6" cy="6.5" r="2.5"/><circle cx="18" cy="5.5" r="2"/><circle cx="16.5" cy="17.5" r="3"/><circle cx="5.5" cy="17" r="2"/><path d="M8.4 7.2 16 5.9M7.7 8.6l6.7 6.9M17.7 7.5l-.8 7M7.5 17.2l6-.1"/>',
   recursos:'<rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><path d="m16.75 13.5 1.2 2.4 2.55.4-1.85 1.8.45 2.6-2.35-1.25-2.35 1.25.45-2.6-1.85-1.8 2.55-.4z"/>',
   livro:'<path d="M12 6.5c-1.6-1.4-4-2-7.5-2v14c3.5 0 5.9.6 7.5 2 1.6-1.4 4-2 7.5-2v-14c-3.5 0-5.9.6-7.5 2z"/><path d="M12 6.5v14"/>',
   servicos:'<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3.5h6v1M9 10h6M9 13.5h6M9 17h3.5"/>',
@@ -738,12 +739,13 @@ function cabecalho({ espaco, titulo, h1Attrs, voltar, trilha, codigo, meta, lead
 }
 /* os módulos antigos passam títulos já escapados; cabecalho() escapa de novo, então desfaz antes */
 const desesc = t => String(t ?? '').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&');
-/* Voltar: se a tela anterior é do mesmo espaço, volta pelo histórico
-   (mantém filtro e rolagem); se não, vai para o pai que o link diz. */
+/* Voltar: se a tela anterior é justamente a que o link aponta, volta pelo
+   histórico (mantém filtro e rolagem); se não, vai direto para o pai que o
+   link diz (de um formulário, nunca passa de novo pela tela de antes). */
 document.addEventListener('click', e => {
   const a = e.target.closest('a[data-voltar]'); if (!a || e.metaKey || e.ctrlKey) return;
-  const ant = state.telaAnterior || '', espaco = h => (h.split('/')[1] || '');
-  if (ant && ant !== location.hash && espaco(ant) === espaco(location.hash)){ e.preventDefault(); history.back(); }
+  const ant = state.telaAnterior || '', alvo = a.getAttribute('href') || '', sem = h => h.split('?')[0].replace(/\/$/, '');
+  if (ant && ant !== location.hash && sem(ant) === sem(alvo)){ e.preventDefault(); history.back(); }
 });
 /* L: busca, filtros (Segmented ou FilterBar), total e ações da lista */
 function ferramentas({ busca, filtros, total, acoes } = {}){
@@ -1749,6 +1751,8 @@ const ROTAS = {
   agenda:      { desenha:'pageAgenda', modulo:'agenda' },
   /* Biblioteca (2.19.2): o catálogo colaborativo de ferramentas da equipe (o módulo e o banco se chamam recursos) */
   biblioteca:  { desenha:'pageRecursos', modulo:'recursos' },
+  /* 2.19.2: Relações institucionais, só NRO_RELAC e NRO_COORD_OFFICE */
+  ri:          { desenha:'pageRI', modulo:'ri', permite: () => podeRI() },
   /* a sala do LABBIO no celular: o QR do tablet da porta abre aqui (fora do menu) */
   sala:        { desenha:'pageSala', modulo:'sala' },
   atividades:  { desenha:'pageAtividades', modulo:'atividades' },
@@ -1946,6 +1950,14 @@ function arvoreDoMenu(){
     { r:'biblioteca', rot:'Biblioteca', ic:'recursos', filhos: [
       { sub:'', rot:'Todos os itens', tambem:'^(?!novo$).+' },
       { sub:'novo', rot:'Adicionar item' }] },
+    /* Relações institucionais: a galeria, as conexões (mapa, tabela, kanban), as missões, o financiamento e as indicações */
+    ...(podeRI() ? [{ r:'ri', rot:'Relações institucionais', ic:'rede', filhos: [
+      { sub:'', rot:'Início' },
+      { sub:'conexoes', rot:'Conexões', tambem:'^(\\d+|tabela|kanban|novo)$' },
+      { sub:'missoes', rot:'Missões' },
+      { sub:'financiamento', rot:'Financiamento' },
+      { sep:true },
+      { sub:'indicacoes', rot:'Indicações' }] }] : []),
     /* Meus pedidos mora aqui desde a v24: o décimo primeiro espaço não
        cabia, e o acompanhamento do que se pediu é parte de pedir. O
        que o SOMA faz sozinho, sem pedido a ninguém — a declaração, o
@@ -1959,6 +1971,7 @@ function arvoreDoMenu(){
       ...(tenhoPapel('lideranca') ? [{ sub:'reporte', rot:'Reporte semanal' }] : []),
       { rotulo:'Comunicação' },
       { sub:'feed', rot:'Feed da equipe' },
+      { sub:'indicar', rot:'Indicar contato ou evento' },
       ...(tenhoPapel('lideranca') || state.feedEditor ? [{ sub:'newsletter', rot:'Newsletters' }] : []),
       { rotulo:'Marca' },
       { r:'marca', sub:'', rot:'Modelos', tambem:'^marca:(?!assinatura$|config$)' },
@@ -2084,6 +2097,11 @@ function estouEmAlgum(ids){
   return (ids || []).some(id => meus.has(grupoPorId(id)?.nome));
 }
 const podeAprovarStudio = () => souAdmin() || tenhoPapel('lideranca') || estouEmAlgum(state.studioCfg?.grupos_aprovadores);
+/* Relações institucionais: só quem está no NRO_RELAC ou no NRO_COORD_OFFICE (o banco confere de novo) */
+function podeRI(){
+  const meus = gruposEfetivos(state.membros.find(m => m.registro === state.perfil?.registro));
+  return meus.has('NRO_RELAC') || meus.has('NRO_COORD_OFFICE');
+}
 const podeStudio = () => podeAprovarStudio() || estouEmAlgum(state.studioCfg?.grupos_acesso);
 
 /* Os treinamentos (v24). Todo mundo faz; gere quem é admin, do Depto.
@@ -4052,7 +4070,8 @@ const SERVICOS_MODULO = {
   termo:      ['termo',      'pageTermo'],
   biometria:  ['biometria',  'pageBiometria'],
   feed:       ['feed',       'pageFeed'],
-  newsletter: ['feed',       'pageNewsletter']
+  newsletter: ['feed',       'pageNewsletter'],
+  indicar:    ['indicar',    'pageIndicar']
 };
 async function pageServicos(sub, sub2){
   if (sub === 'pedidos') return pagePedidos();
@@ -4102,6 +4121,15 @@ async function pageServicos(sub, sub2){
         <h3>Cofre de senhas</h3>
         <p>Usuário, senha e código de duas etapas das contas da equipe.</p>
         <span class="go">Abrir →</span>
+      </a>
+    </div>
+    <h2 class="srv-bloco">Relações institucionais</h2>
+    <div class="srv-grid">
+      <a class="srv" href="#/servicos/indicar">
+        <span class="lb">${ic('rede')} Abra portas</span>
+        <h3>Indicar contato ou evento</h3>
+        <p>Alguém que pode ajudar a NRO, ou um evento em que valha estar. A equipe de RI analisa e você é avisado.</p>
+        <span class="go">Indicar →</span>
       </a>
     </div>
     <h2 class="srv-bloco">Pedidos ao Depto. de Pessoal</h2>

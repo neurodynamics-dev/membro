@@ -304,7 +304,7 @@ async function rcsApagarComentario(id){
    ============================================================ */
 async function rcsFormulario(slug){
   const titulo = slug ? 'Editar item' : 'Adicionar item';
-  $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo, voltar:['Biblioteca', slug ? '#/biblioteca/' + encodeURIComponent(slug) : '#/biblioteca'] }) + estado.carregando();
+  $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo, voltar:['Biblioteca', '#/biblioteca'] }) + estado.carregando();
   let r = { id:null, url:'', nome:'', publicador:'', logo_url:'', tipo:'software', funcao:'', instrucoes_baixar:'', instrucoes_usar:'', tags:[], plataformas:[], acesso:[], status:'ativo', padrao_nro:false };
   if (slug){
     const { data, error } = await sb.rpc('recurso_ler', { p_slug:slug });
@@ -316,7 +316,7 @@ async function rcsFormulario(slug){
   const f = rcsM.form;
   const plats = [...new Set([...RCS_PLATS, ...(r.plataformas || [])])];
   const campo = (id, rot, corpo, ajuda = '') => `<div class="fld" id="rcs-f-${id}"><label for="rcs-${id}">${rot}</label>${corpo}${ajuda ? `<span class="hint">${ajuda}</span>` : ''}<span class="msg" id="rcs-e-${id}" role="alert"></span></div>`;
-  $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo, voltar:['Biblioteca', slug ? '#/biblioteca/' + encodeURIComponent(slug) : '#/biblioteca'],
+  $('#main').innerHTML = cabecalho({ espaco:'Biblioteca', titulo, voltar:['Biblioteca', '#/biblioteca'],
     lead: slug ? 'Qualquer pessoa pode melhorar a descrição, as instruções e as tags. A alteração fica registrada com o seu nome.' : 'Cole o endereço da ferramenta, diga o nome e o que ela faz. O resto (instruções, tags) dá para completar agora ou depois, e qualquer pessoa pode melhorar.' }) + `
     <form class="rcs-form" id="rcs-form" onsubmit="rcsSalvar(event)" novalidate>
       <div class="rcs-form-topo">
@@ -426,7 +426,9 @@ async function rcsSalvar(ev){
     if (data.status !== 'ok') throw new Error(data.status);
     rcsM.lista = null; rcsM.item = null;
     toast(f.slug ? 'Item atualizado.' : 'Item adicionado à Biblioteca.');
-    location.hash = '#/biblioteca/' + encodeURIComponent(data.slug);
+    // a página do item é a tela de antes: volta a ela pelo histórico, sem empilhar o formulário
+    const destino = '#/biblioteca/' + encodeURIComponent(data.slug);
+    if (state.telaAnterior === destino) history.back(); else location.replace(destino);
   } catch(e){ $('#rcs-erro').textContent = 'Não foi possível salvar agora. Tente de novo.'; $('#rcs-erro').hidden = false; }
   finally { const bb = $('#rcs-salvar'); if (bb) bb.disabled = false; }
 }

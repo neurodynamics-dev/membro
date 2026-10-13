@@ -173,6 +173,25 @@ try {
     await fim(t);
   }
 
+  console.log('Voltar');
+  {
+    const t = await abrir('#/biblioteca'), { p } = t;
+    await p.waitForSelector('.rcs-card');
+    confere('os filtros não têm rolagem própria', await p.evaluate(() => getComputedStyle(document.querySelector('#rcs-filtros')).overflowY === 'visible'));
+    await p.click('.rcs-card:has-text("Visual Studio Code")'); await p.waitForSelector('#rcs-editar');
+    await p.click('#rcs-editar'); await p.waitForSelector('#rcs-form');
+    await p.click('#main a[data-voltar]'); await p.waitForSelector('.rcs-card');
+    confere('editando, "Biblioteca" volta direto para a Biblioteca', await p.evaluate(() => location.hash) === '#/biblioteca');
+    await p.click('.rcs-card:has-text("Visual Studio Code")'); await p.waitForSelector('#rcs-editar');
+    await p.click('#rcs-editar'); await p.waitForSelector('#rcs-form');
+    await p.click('#rcs-salvar'); await p.waitForSelector('#rcs-editar');
+    confere('salvar volta à página do item', await p.evaluate(() => location.hash) === '#/biblioteca/visual-studio-code');
+    await p.click('#main a[data-voltar]'); await p.waitForSelector('.rcs-card');
+    confere('e o voltar do item vai à Biblioteca, sem passar pelo formulário', await p.evaluate(() => location.hash) === '#/biblioteca');
+    await p.goBack(); await p.waitForTimeout(250);
+    confere('o histórico não guarda o formulário depois de salvar', !(await p.evaluate(() => location.hash)).endsWith('/editar'));
+    await fim(t);
+  }
   console.log('No celular');
   {
     const t = await abrir('#/biblioteca', { celular:true }), { p } = t;
