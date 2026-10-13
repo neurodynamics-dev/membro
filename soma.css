@@ -3463,6 +3463,9 @@ button.ri-tag:hover{color:var(--ink);border-color:var(--dim)}
 /* formulários */
 .ri-form{max-width:860px;display:flex;flex-direction:column;gap:var(--s3)}
 .ri-form>.seg{align-self:flex-start}
+.ri-eq{padding:12px 14px;border:1px dashed var(--line2);border-radius:var(--r-sm);margin:0}
+.ri-eq p{margin:6px 0 0;color:var(--muted)}
+.ri-eq p:empty{display:none}
 .ri-form-tit{font-size:var(--fs-h3);font-weight:600;margin:var(--s4) 0 0}
 .ri-dupla{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--s3)}
 .ri-tres{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--s3)}

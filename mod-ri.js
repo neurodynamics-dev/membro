@@ -685,6 +685,7 @@ async function riFicha(id){
   $('#main').querySelectorAll('[data-rel]').forEach(b => b.addEventListener('click', () => riRelacaoModal(null, null, +b.dataset.rel)));
   $('#main').querySelectorAll('[data-copiar]').forEach(b => b.addEventListener('click', () => { navigator.clipboard?.writeText(b.dataset.copiar); toast('Copiado.'); }));
 }
+const riMembroRotulo = m => `${m.nome} (${String(m.registro).padStart(3, '0')})`;
 function riCanalLink(k){
   const v = esc(k.valor);
   if (k.tipo === 'email') return `<a href="mailto:${v}">${v}</a>`;
@@ -728,6 +729,11 @@ async function riFormulario(id){
     <form class="ri-form" id="ri-form" novalidate>
       <div class="seg" role="radiogroup" aria-label="Natureza" id="ri-nat">${[['pessoa', 'Pessoa'], ['organizacao', 'Organização']].map(([k, l]) =>
         `<button type="button" role="radio" data-v="${k}" class="${c.natureza === k ? 'on' : ''}" aria-checked="${c.natureza === k}">${l}</button>`).join('')}</div>
+      ${id ? '' : `<div class="fld ri-eq" id="ri-eq-fld"${c.natureza === 'organizacao' ? ' hidden' : ''}><label for="ri-eq">É da equipe? Busque o membro e os dados vêm da ficha</label>
+        <input id="ri-eq" type="search" list="ri-eq-ops" placeholder="Nome ou registro de um membro da NRO" autocomplete="off">
+        <datalist id="ri-eq-ops">${(state.membros || []).slice().sort((a2, b2) => a2.nome.localeCompare(b2.nome, 'pt'))
+          .map(m => `<option value="${esc(riMembroRotulo(m))}">`).join('')}</datalist>
+        <p class="small" id="ri-eq-msg" aria-live="polite"></p></div>`}
       <div class="ri-dupla">
         <div class="fld"><label for="ri-nome">Nome</label><input id="ri-nome" maxlength="160" required value="${esc(c.nome)}"></div>
         <div class="fld"><label for="ri-cargo" id="ri-cargo-rot">${c.natureza === 'organizacao' ? 'Tipo (universidade, hospital, empresa...)' : 'Cargo'}</label><input id="ri-cargo" maxlength="160" value="${esc(c.cargo || '')}"></div>
@@ -780,7 +786,27 @@ async function riFormulario(id){
   $('#ri-nat').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (!b) return;
     $('#ri-nat').querySelectorAll('button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
     $('#ri-org-fld').hidden = b.dataset.v === 'organizacao';
+    if ($('#ri-eq-fld')) $('#ri-eq-fld').hidden = b.dataset.v === 'organizacao';
     $('#ri-cargo-rot').textContent = b.dataset.v === 'organizacao' ? 'Tipo (universidade, hospital, empresa...)' : 'Cargo'; });
+  /* buscar um membro: o nome, o cargo e o e-mail vêm da ficha; a função vira "Membro da NRO" (ou "Ex-membro") */
+  $('#ri-eq')?.addEventListener('input', e => {
+    const q = e.target.value.trim(), msg = $('#ri-eq-msg'); if (!q) { msg.textContent = ''; return; }
+    const m = (state.membros || []).find(x => riMembroRotulo(x) === q || String(x.registro) === q.replace(/^0+/, ''));
+    if (!m) return;
+    const saiu = ['Desligado', 'Egresso'].includes(m.status);
+    $('#ri-nome').value = m.nome;
+    $('#ri-cargo').value = m.cargo || m.departamento || '';
+    $('#ri-funcao').value = saiu ? 'ex_membro' : 'membro';
+    $('#ri-prox').value = saiu ? '3' : '5';
+    if (!saiu) $('#ri-estagio').value = 'parceria';
+    if (!$('#ri-origem').value.trim()) $('#ri-origem').value = `Membro da NRO, registro ${String(m.registro).padStart(3, '0')}`;
+    [m.email_nro, m.email].filter(Boolean).forEach(em => { if (!canais.some(k => norm(k.valor) === norm(em))) canais.push({ tipo:'email', valor:em }); });
+    pintarCanais();
+    const ja = RI.d.contatos.find(x => norm(x.nome) === norm(m.nome));
+    msg.innerHTML = ja ? `${esc(m.nome)} já está em Conexões: <a href="#/ri/${ja.id}">abrir a ficha</a>.`
+      : `Dados de ${esc(m.nome)} preenchidos a partir da ficha${saiu ? ' (já saiu da equipe)' : ''}. Confira e complete.`;
+    msg.classList.toggle('ri-frio', !!ja);
+  });
   $('#ri-form').addEventListener('submit', async e => {
     e.preventDefault();
     const v = s => $(s).value, num = s => $(s).value ? +$(s).value : null;
