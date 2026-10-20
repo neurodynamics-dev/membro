@@ -10,7 +10,9 @@
      - a declaração de vínculo (NRO-DIR-004, o PN é o registro);
      - a declaração de participação em evento (o PN é o evento);
      - o registro escrito no portal (a ata, o relatório de teste…);
-     - o registro de contas digitais, exportado do cofre.
+     - o registro de contas digitais, exportado do cofre;
+     - a folha de aprovação do aproveitamento de AACC, com o selo
+       solene, que entra no relatório no lugar da folha reservada.
    As declarações levam no rodapé a legenda de autenticação — o código
    verificador, o de controle, o endereço de validação e o QR Code.
 
@@ -72,11 +74,29 @@
       LOGO = { dados, prop: img.naturalWidth / img.naturalHeight };
     }catch(e){ LOGO = false; }
   }
+  /* O selo solene (a onda dentro da coroa de louros, em Axon sobre
+     branco): só nos atos de chancelaria, como a folha de aprovação do
+     aproveitamento de AACC. Mora ao lado deste arquivo, no portal: o
+     auth.neurodynamics.dev, que carrega o doc-nro.js do portal, busca
+     o selo lá também. */
+  const BASE = (() => { try { return new URL('.', document.currentScript.src).href; } catch(e){ return location.origin + '/'; } })();
+  const SELO_URL = BASE + 'selo-solene.png';
+  let SELO = null;          /* os dados da imagem, ou false: aí a folha sai sem o selo */
+  async function carregarSelo(){
+    if (SELO !== null) return;
+    try{
+      const r = await fetch(SELO_URL); if (!r.ok) throw new Error(r.status);
+      const b = await r.blob();
+      SELO = await new Promise((ok, falha) => { const fr = new FileReader();
+        fr.onload = () => ok(fr.result); fr.onerror = falha; fr.readAsDataURL(b); });
+    }catch(e){ SELO = false; }
+  }
   /* Tudo o que um documento precisa, na primeira vez. */
-  async function precisa(){
+  async function precisa(op){
     if (!window.jspdf) await carregar(CDN_JSPDF);
     if (typeof window.qrcode !== 'function') await carregar(CDN_QR);
     await carregarLogo();
+    if (op && op.selo) await carregarSelo();
   }
 
   /* ---------------- texto ---------------- */
@@ -924,6 +944,259 @@
     return doc;
   }
 
+  /* ============================================================
+     O APROVEITAMENTO DE AACC
+     O que a Resolução nº 02/2019 da Congregação da Escola de Engenharia
+     permite pedir pela participação na equipe. É o mesmo catálogo do
+     template LaTeX (nro/aproveitamento.tex, no brand): mudou lá, muda
+     aqui. A tela do portal e a validação leem daqui.
+     ============================================================ */
+  const AACC = {
+    EQC: { nome:'Participação em equipe de competição estudantil', dispositivo:'art. 1º, II, c; art. 11',
+           base:'semestre', creditos:3, regra:'3 créditos por semestre letivo (art. 11, III)' },
+    EXT: { nome:'Projeto de extensão com vínculo formal', dispositivo:'art. 1º, I, c; arts. 3º e 8º',
+           base:'semestre', creditos:3, semestres:'siex', regra:'3 créditos por semestre na ação registrada na PROEX (art. 8º, III)' },
+    IC:  { nome:'Iniciação científica com vínculo formal', dispositivo:'art. 1º, I, a; arts. 3º e 8º',
+           base:'semestre', creditos:3, semestres:'ic', regra:'3 créditos por semestre com vínculo formal na PRPq (art. 8º, III)' },
+    VPC: { nome:'Vivência profissional complementar', dispositivo:'art. 1º, IV, a; art. 17',
+           base:'horas', creditos:1, unidade:300, regra:'1 crédito a cada 300 horas (art. 17, I)' }
+  };
+  const CONCEITO = n => n >= 90 ? 'A' : n >= 80 ? 'B' : n >= 70 ? 'C' : n >= 60 ? 'D' : n >= 40 ? 'E' : 'F';
+  const virgula = n => String(n == null ? '' : n).replace('.', ',');
+  /* "2023/1, 2023/2 e 2024/1" */
+  const lista = xs => xs.length < 2 ? (xs[0] || '') : xs.slice(0, -1).join(', ') + ' e ' + xs[xs.length - 1];
+  /* o período na equipe, como a declaração o diz */
+  function periodoEquipe(q, ate){
+    if (!valida(q.inicio)) return '';
+    if (q.situacao === 'egresso' && valida(q.fim)) return `de ${mesAno(q.inicio)} a ${mesAno(q.fim)}`;
+    return `de ${mesAno(q.inicio)} até ${valida(ate) ? dataExtenso(ate) : 'a data desta folha'}`;
+  }
+
+  /* A declaração do professor orientador (art. 11, I e II; art. 3º,
+     II), em trechos: a folha a imprime, e a validação a mostra. */
+  function textoAproveitamento(d, documento){
+    const est = d.estudante || {}, eq = d.equipe || {}, rel = d.relatorio || {}, pr = d.professor || {};
+    const sem = (d.semestres || []).filter(s => s.situacao === 'conta');
+    const nota = Number(pr.nota), conc = pr.conceito || CONCEITO(nota);
+    const norma = d.norma || 'Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG';
+    return [{ t:'Declaro que ' }, { t:String(est.nome || '').toUpperCase(), b:true },
+      { t:`${est.matricula ? ', matrícula ' + est.matricula : ''}${est.curso ? ', do curso de ' + est.curso : ''}, participou da NeuroDynamics PD&I, `
+        + `equipe de competição estudantil da Escola de Engenharia da UFMG, ${periodoEquipe(eq, d.data)}`
+        + `${sem.length ? `, com ${sem.length} ${sem.length === 1 ? 'semestre letivo' : 'semestres letivos'} de participação efetiva` : ''}, `
+        + `e que examinei o relatório de atividades ${documento || ''}, versão ${rel.versao || 1}. Avaliei-o pelo barema abaixo, com a nota final ` },
+      { t:`${virgula(nota)} de 100 (conceito ${conc})`, b:true },
+      { t:`, e aprovo o seu aproveitamento como Atividade Acadêmica Curricular Complementar, nos termos da ${norma}.` }];
+  }
+
+  /* A FOLHA DE APROVAÇÃO. Uma página, que o portal põe no lugar da folha
+     reservada do relatório (a segunda): o cabeçalho é o do relatório, o
+     NRO-PUB-002, e o rodapé também, com a página que ela ocupa. Leva o
+     selo solene, as aprovações da equipe (uma pessoa por etapa), a
+     declaração e a nota do professor orientador (art. 3º, II; art. 11,
+     I e II) e a legenda de autenticação, conferível em
+     auth.neurodynamics.dev.
+     e = a emissão (doc_emitido_json); o = { pagina, paginas }. */
+  function folhaAprovacaoAacc(e, o = {}){
+    /* uma página só: se o pedido tem muitas etapas ou muitas linhas, a
+       folha se aperta (as entrelinhas, depois o corpo) até caber */
+    let r;
+    for (const k of [0, 1, 2]){ r = montarFolhaAacc(e, o, k); if (r.cabe) break; }
+    return r.doc;
+  }
+  function montarFolhaAacc(e, o, k){
+    const C = [{ lhV:4.05, gapV:1.15, ap:5.8, bar:4.5, sec:8.2, pad:2.5, corpo:9.2, dado:9 },
+               { lhV:3.75, gapV:.6,  ap:4.9, bar:4.0, sec:7.4, pad:1.5, corpo:9,   dado:8.8 },
+               { lhV:3.5,  gapV:.35, ap:4.4, bar:3.7, sec:6.8, pad:1,   corpo:8.4, dado:8.4 }][k];
+    const d = e.dados || {}, est = d.estudante || {}, eq = d.equipe || {}, enq = d.enquadramento || {};
+    const cr = d.creditos || {}, rel = d.relatorio || {}, pr = d.professor || {};
+    const pagina = o.pagina || rel.folha || 2, paginas = o.paginas || rel.paginas || pagina;
+    const CORTEX = [0, 53, 47], TEXTO2 = [74, 79, 77], CINZA_DS = [97, 108, 104], REGUA = [217, 222, 220];
+    const x0 = PAG.esq, x1 = PAG.w - PAG.dir;
+    const doc = novo();
+    const titSerie = tituloFrase(d.serie_titulo || 'RELATÓRIO DE ATIVIDADES PARA APROVEITAMENTO DE AACC').replace(/\baacc\b/g, 'AACC');
+    const cab = { departamento:e.emissor || 'Departamento de Pessoal', titulo:titSerie, codigo:e.documento, rev:e.revisao };
+    /* o escritor só para os parágrafos: a folha é uma página, e a
+       diagramação é daqui (sem quebra de página) */
+    const w = escritor(doc, cab, { rodape:6 });
+    doc.setProperties({ title:`${e.documento} Folha de aprovação, ${est.nome || ''}`, subject:`Código verificador ${e.codigo}`,
+      author:'NeuroDynamics PD&I', creator:'SOMA, NeuroDynamics' });
+    const serif = (estilo, tam) => { doc.setFont('times', estilo || 'normal'); doc.setFontSize(tam);
+      FONTE = { estilo:estilo || 'normal', tam, familia:'times' }; };
+    /* a Times do PDF não tem a tabela de larguras daqui: mede pelo jsPDF,
+       que basta para texto curto alinhado */
+    const escreveSerif = (txt, x, y, al) => { const t = limpa(txt); if (!t) return;
+      const lw = doc.getTextWidth(t); doc.text(t, al === 'right' ? x - lw : al === 'center' ? x - lw / 2 : x, y);
+      const pg = doc.internal.getCurrentPageInfo().pageNumber; (doc.__textos[pg - 1] = doc.__textos[pg - 1] || []).push(t); };
+    const regua = (y, c, lw) => { doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(lw); doc.line(x0, y, x1, y); };
+    const secao = (txt, y) => { regua(y, CORTEX, .18); cor(doc, CORTEX); fonte(doc, 'bold', 8.2); escreve(doc, txt, x0, y + 4.4); return y + C.sec; };
+
+    /* o kicker do relatório formal: a régua, o rótulo e o código do pedido */
+    let y = PAG.topo;
+    regua(y, CORTEX, .18);
+    cor(doc, CORTEX); fonte(doc, 'bold', 8.6); escreve(doc, 'Folha de aprovação', x0, y + 5.1);
+    serif('italic', 12.5); escreveSerif(d.pedido || '', x1, y + 5.3, 'right');
+
+    /* o selo solene, à direita do título */
+    const lado = 31, sx = x1 - lado, sy = y + 9.5;
+    if (SELO) doc.addImage(SELO, 'PNG', sx, sy, lado, lado, 'selo', 'SLOW');
+    const largTit = (SELO ? sx - 6 : x1) - x0;
+    cor(doc, TINTA); serif('normal', 21);
+    escreveSerif('Aprovação do relatório de atividades', x0, y + 18.5);
+    w.y = y + 22.5; w.x0 = x0;
+    w.rico([{ t:`Relatório ${e.documento}, pedido ${d.pedido || ''} no SOMA, de ` }, { t:String(est.nome || ''), b:true },
+      { t:`, para o aproveitamento como Atividade Acadêmica Curricular Complementar (AACC), nos termos da ${d.norma || 'Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG'}. `
+        + 'Esta folha ocupa o lugar da folha reservada ao SOMA e vale para a versão do relatório identificada abaixo.' }],
+      { tamanho:9.4, largura:largTit, alinhar:'left', cor:TEXTO2, depois:0 });
+    y = Math.max(w.y, sy + lado) + 4;
+
+    /* 1. o estudante e o pedido: rótulo à esquerda, valor à direita */
+    y = secao('O estudante e o pedido', y);
+    const sem = (d.semestres || []).filter(s => s.situacao === 'conta').map(s => s.rotulo);
+    const alt = (enq.alternativas || []).map(k => AACC[k] ? `${AACC[k].nome} (${AACC[k].dispositivo})` : k);
+    const pri = AACC[enq.principal] ? `${AACC[enq.principal].nome} (${AACC[enq.principal].dispositivo})` : (enq.principal || '');
+    const nCred = Number(cr.total), nPri = Number(cr.principal_creditos), nIt = Number(cr.itens);
+    const linhas = [
+      ['Estudante', `${String(est.nome || '').toUpperCase()}${est.matricula ? ', matrícula ' + est.matricula : ''}`],
+      ['Curso', [est.curso, est.ingresso ? 'ingresso em ' + est.ingresso : ''].filter(Boolean).join(', ')],
+      ...(est.colegiado || enq.colegiado ? [['Colegiado', est.colegiado || enq.colegiado]] : []),
+      ['Na equipe', `${periodoEquipe(eq, d.data)} (${eq.situacao === 'egresso' ? 'egresso' : 'membro ativo'})${eq.cargo ? ', como ' + eq.cargo : ''}`],
+      ['Enquadramento', pri],
+      ...(alt.length ? [[alt.length === 1 ? 'Alternativa' : 'Alternativas', alt.join('; ')]] : []),
+      ...(enq.siex && enq.siex.length ? [['Registro no SIEX', lista(enq.siex)]] : []),
+      ...(enq.ic && enq.ic.length ? [['Vínculo de IC', lista(enq.ic)]] : []),
+      ['Semestres letivos', sem.length ? `${lista(sem)} (${sem.length}, com ao menos quatro meses de participação cada)` : 'nenhum'],
+      ...(Number.isFinite(nCred) ? [['Créditos declarados', `${nCred} ${nCred === 1 ? 'crédito' : 'créditos'}`
+        + (Number.isFinite(nPri) && Number.isFinite(nIt) && nIt > 0 ? `: ${nPri} pelo enquadramento e ${nIt} em atividades que contam à parte` : '')
+        + ', conforme o relatório']] : []),
+      ['Relatório', `versão ${rel.versao || 1}, ${rel.paginas || paginas} páginas, enviada em ${dataCurta(String(rel.enviado_em || '').slice(0, 10))}`
+        + (rel.sha256 ? `; SHA-256 ${String(rel.sha256).slice(0, 16)}` : '')]
+    ];
+    const wr = 34, tamV = C.dado, lhV = C.lhV;
+    linhas.forEach(([r, v]) => {
+      fonte(doc, 'normal', tamV); const ls = quebra(limpa(v || ''), x1 - x0 - wr);
+      cor(doc, CINZA_DS); fonte(doc, 'normal', 7.8); escreve(doc, r, x0, y + 3.3);
+      cor(doc, TINTA); fonte(doc, 'normal', tamV);
+      ls.forEach((l, k) => escreve(doc, l, x0 + wr, y + 3.3 + k * lhV));
+      y += Math.max(1, ls.length) * lhV + C.gapV;
+    });
+    y += C.pad;
+
+    /* 2. as aprovações da equipe */
+    y = secao('As aprovações da equipe', y);
+    const cols = [x0, x0 + 56, x0 + 128];
+    cor(doc, CINZA_DS); fonte(doc, 'normal', 7.8);
+    escreve(doc, 'Etapa', cols[0], y + 3); escreve(doc, 'Aprovado por', cols[1], y + 3); escreve(doc, 'Em', cols[2], y + 3);
+    y += 4.6;
+    (d.aprovacoes || []).forEach(a => {
+      regua(y, REGUA, .2);
+      cor(doc, TINTA); fonte(doc, 'normal', 9);
+      escreve(doc, `${a.etapa}. ${a.rotulo || ''}`, cols[0], y + C.ap * .69); escreve(doc, a.nome || '', cols[1], y + C.ap * .69);
+      cor(doc, TEXTO2); escreve(doc, momento(a.em), cols[2], y + C.ap * .69);
+      y += C.ap;
+    });
+    regua(y, REGUA, .2);
+    y += C.pad + 2.5;
+
+    /* 3. o professor orientador: a declaração (art. 11, I e II), a nota
+       (art. 3º, II) e o barema */
+    y = secao('O professor orientador', y);
+    const nota = Number(pr.nota), conc = pr.conceito || CONCEITO(nota);
+    const quem = String(pr.titulo || '').trim() + ' ' + String(pr.nome || '').trim();
+    const fem = /^profa/i.test(String(pr.titulo || ''));
+    w.y = y; w.x0 = x0;
+    w.rico(textoAproveitamento(d, e.documento),
+      { tamanho:C.corpo, largura:x1 - x0, depois:1.5 });
+    y = w.y;
+
+    /* o bloco de baixo, de altura conhecida: o barema à esquerda e a
+       aprovação à direita; o parecer cabe no que sobra */
+    const bar = Array.isArray(pr.barema) ? pr.barema : [];
+    const hBloco = Math.max(31, 4.6 + bar.length * C.bar + 6.5);
+    const topoAut = PAG.h - 25 - 24.5;
+    if (pr.parecer){
+      const sobra = topoAut - 4 - hBloco - y - 2;
+      fonte(doc, 'italic', 8.4);
+      let ls = quebra(limpa('Parecer: ' + pr.parecer), x1 - x0);
+      const nl = Math.max(0, Math.floor(sobra / 3.6));
+      if (ls.length > nl){
+        ls = ls.slice(0, nl);
+        const fim = '… (o parecer completo consta da validação)';
+        if (ls.length){ let u = ls[ls.length - 1];
+          do { u = u.replace(/\s*\S*$/, ''); } while (u && mede(u + fim) > x1 - x0);
+          ls[ls.length - 1] = u + fim; }
+      }
+      cor(doc, TEXTO2);
+      ls.forEach((l, k) => escreve(doc, l, x0, y + 3 + k * 3.6));
+      y += ls.length * 3.6 + (ls.length ? 2 : 0);
+    }
+    const cabe = y + 1 <= topoAut - 4 - hBloco;
+    y = Math.max(y + 1, topoAut - 4 - hBloco);
+    const bx = [x0, x0 + 62, x0 + 76, x0 + 93], bw = 108;
+    cor(doc, CINZA_DS); fonte(doc, 'normal', 7.6);
+    escreve(doc, 'Critério do barema', bx[0], y + 3); escreve(doc, 'Peso', bx[1] + 8, y + 3, { align:'right' });
+    escreve(doc, 'Nota (0 a 10)', bx[2] + 13, y + 3, { align:'right' }); escreve(doc, 'Pontos', bx[0] + bw, y + 3, { align:'right' });
+    let yb = y + 4.6;
+    bar.forEach(b => {
+      doc.setDrawColor(REGUA[0], REGUA[1], REGUA[2]); doc.setLineWidth(.2); doc.line(x0, yb, x0 + bw, yb);
+      cor(doc, TINTA); fonte(doc, 'normal', 8.4);
+      escreve(doc, b.nome || b.chave, bx[0], yb + C.bar * .73);
+      escreve(doc, String(b.peso), bx[1] + 8, yb + C.bar * .73, { align:'right' });
+      escreve(doc, virgula(b.nota), bx[2] + 13, yb + C.bar * .73, { align:'right' });
+      escreve(doc, virgula(b.pontos), bx[0] + bw, yb + C.bar * .73, { align:'right' });
+      yb += C.bar;
+    });
+    doc.setDrawColor(TINTA[0], TINTA[1], TINTA[2]); doc.setLineWidth(.3); doc.line(x0, yb, x0 + bw, yb);
+    cor(doc, TINTA); fonte(doc, 'bold', 8.6);
+    escreve(doc, 'Nota final', bx[0], yb + 4); escreve(doc, '100', bx[1] + 8, yb + 4, { align:'right' });
+    escreve(doc, virgula(nota), bx[0] + bw, yb + 4, { align:'right' });
+    /* a aprovação: a nota em destaque e quem aprovou */
+    const ax = x0 + bw + 10;
+    cor(doc, CORTEX); serif('normal', 30); escreveSerif(virgula(nota), ax, y + 11);
+    const wn = doc.getTextWidth(limpa(virgula(nota)));
+    cor(doc, TEXTO2); fonte(doc, 'normal', 8.6); escreve(doc, `de 100, conceito ${conc}`, ax + wn + 2, y + 11);
+    doc.setDrawColor(TINTA[0], TINTA[1], TINTA[2]); doc.setLineWidth(.2); doc.line(ax, y + 16, x1, y + 16);
+    cor(doc, TINTA); serif('normal', 13); escreveSerif(quem, ax, y + 21.5);
+    cor(doc, TEXTO2); fonte(doc, 'normal', 8.2);
+    escreve(doc, `${fem ? 'Professora orientadora' : 'Professor orientador'}${pr.email ? ', ' + pr.email : ''}`, ax, y + 25.6);
+    escreve(doc, `Aprovou no SOMA em ${momento(pr.em)}`, ax, y + 29.4);
+
+    /* a legenda de autenticação, sem assinatura */
+    const url = (e.url_validacao || URL_VALIDACAO).replace(/\/+$/, ''), host = url.replace(/^https?:\/\//, '');
+    const link = `${url}/?c=${e.codigo}`, ladoQ = 19.5, ha = 24.5, ta = topoAut;
+    doc.setFillColor(227, 239, 236); doc.rect(x0, ta, x1 - x0, ha, 'F');
+    doc.setDrawColor(CORTEX[0], CORTEX[1], CORTEX[2]); doc.setLineWidth(.18); doc.line(x0, ta, x1, ta);
+    doc.setFillColor(255, 255, 255); doc.rect(x0 + 2.2, ta + 2.5, ladoQ + 1.2, ladoQ + 1.2, 'F');
+    qr(doc, link, x0 + 2.8, ta + 3.1, ladoQ);
+    const tx = x0 + ladoQ + 7.5, tw = x1 - tx - 3;
+    cor(doc, CORTEX); fonte(doc, 'bold', 8); escreve(doc, 'Autenticação', tx, ta + 5);
+    cor(doc, TEXTO2); fonte(doc, 'normal', 7.4);
+    const corpo = `Folha emitida pelo SOMA, o sistema de gestão da NeuroDynamics PD&I, em ${momento(e.emitido_em)} (horário de Brasília), `
+      + `com as aprovações registradas no sistema nessa data. Dispensa assinatura. Confira em ${host} com o código verificador `
+      + `e o código de controle abaixo, ou pela leitura do QR Code ao lado. Vale para o relatório ${e.documento}, versão ${rel.versao || 1}.`;
+    quebra(limpa(corpo), tw).forEach((l, k) => escreve(doc, l, tx, ta + 9 + k * 3.05));
+    cor(doc, TINTA); fonte(doc, 'normal', 7.6); escreve(doc, 'Código verificador', tx, ta + ha - 3);
+    fonte(doc, 'bold', 9); escreve(doc, e.codigo, tx + 25, ta + ha - 3);
+    fonte(doc, 'normal', 7.6); escreve(doc, 'Controle', tx + 62, ta + ha - 3);
+    fonte(doc, 'bold', 9); escreve(doc, e.controle || '', tx + 74, ta + ha - 3);
+    if (e.situacao === 'revogado'){
+      cor(doc, [110, 10, 26]); fonte(doc, 'bold', 8); escreve(doc, 'Revogada', x1 - 3, ta + 5, { align:'right' });
+    }
+    doc.__link = { url:link, x:x0, y:ta, w:x1 - x0, h:ha };
+
+    /* o rodapé do relatório: a nota, a régua, o código e a página */
+    cor(doc, CINZA); fonte(doc, 'italic', 7.2);
+    const nota2 = quebra(limpa('Registro destinado à análise do aproveitamento de AACC pelo Colegiado do curso. Contém dados pessoais do '
+      + 'estudante e informações da NeuroDynamics PD&I; não deve ser divulgado para outros fins.'), 172);
+    nota2.forEach((l, k) => escreve(doc, l, PAG.w / 2, PAG.h - 13.6 - (nota2.length - 1 - k) * 2.9, { align:'center' }));
+    doc.setDrawColor(LINHA[0], LINHA[1], LINHA[2]); doc.setLineWidth(.2); doc.line(x0, PAG.h - 10.4, x1, PAG.h - 10.4);
+    cor(doc, CLARO); fonte(doc, 'normal', 7.2);
+    escreve(doc, `${e.documento}${e.revisao ? ' Rev. ' + e.revisao : ''}, ${est.nome || ''}`, x0, PAG.h - 7);
+    escreve(doc, `Página ${pagina} de ${paginas}`, x1, PAG.h - 7, { align:'right' });
+
+    doc.__nome = `${e.documento} FOLHA DE APROVAÇÃO - ${nomeArq(est.nome || '')}.pdf`;
+    return { doc, cabe };
+  }
+
   /* baixar: o nome segue o NRO-PUB-002 ("NRO-XXX-000 TÍTULO REV. B") */
   function baixar(doc, nome){
     const n = nome || doc.__nome || 'documento.pdf';
@@ -947,7 +1220,8 @@
 
   window.DocNRO = {
     versao: '1', URL_VALIDACAO, precisa, novo, escritor, cabecalho, rodape, rodapeAutenticado, qr,
-    declaracaoVinculo, declaracaoParticipacao, registro, registroContas, folhaCheckin, baixar, blob, abrir,
+    declaracaoVinculo, declaracaoParticipacao, registro, registroContas, folhaCheckin, folhaAprovacaoAacc, textoAproveitamento, AACC,
+    baixar, blob, abrir,
     textoVinculo, textoParticipacao, preencher, valorTexto, impressaoPadrao, notaDaClasse,
     limpa, dataExtenso, dataCurta, mesAno, horaExtenso, horasExtenso, periodo, momento, tituloFrase
   };

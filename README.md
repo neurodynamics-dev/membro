@@ -49,7 +49,13 @@ SOMA · Gestão está sendo trazido, conforme o
     recebe por e-mail a **declaração de participação**, autenticável;
   - **Cofre de senhas** — o usuário, a senha (gerada no SOMA) e o **código
     de duas etapas** das contas de cada acesso do catálogo, para quem tem o
-    acesso; a troca periódica com lembrete. Ver [Cofre de senhas](#cofre-de-senhas).
+    acesso; a troca periódica com lembrete. Ver [Cofre de senhas](#cofre-de-senhas);
+  - **Aproveitamento de AACC** — para membros e egressos: a participação na
+    equipe como Atividade Acadêmica Curricular Complementar do curso, pela
+    Resolução nº 02/2019 da Congregação da Escola de Engenharia. A ficha, o
+    enquadramento, o template LaTeX com os dados do SOMA, o envio do PDF, as
+    aprovações da equipe e do professor orientador e a folha de aprovação,
+    autenticável. Ver [Aproveitamento de AACC](#aproveitamento-de-aacc).
 
   E os pedidos ao Depto. de Pessoal, com protocolo:
   - **Solicitação de acesso** a documento, sistema/plataforma ou local,
@@ -768,6 +774,68 @@ identificador, e um backup não traz senha nenhuma.
   **registro de contas digitais** (`NRO-DIR-003`) no modelo da NRO — sem
   segredo nenhum.
 
+## Aproveitamento de AACC
+
+Membros e egressos pedem ao colegiado do curso o aproveitamento da
+participação na equipe como **Atividade Acadêmica Curricular Complementar**,
+nos termos da Resolução nº 02/2019 da Congregação da Escola de Engenharia da
+UFMG (`#/servicos/aproveitamento`, `mod-aproveitamento.js`;
+`membro.neurodynamics.dev/aproveitamento` leva até lá). O relatório é escrito
+no template LaTeX do brand (`templates/aacc`, em
+[brand.neurodynamics.dev](https://brand.neurodynamics.dev)); o SOMA conduz o
+resto, em quatro passos e duas aprovações:
+
+1. **A ficha.** Os campos do recadastro (os de *Dados pessoais* da ficha) e
+   os dados acadêmicos: curso, matrícula e o semestre de ingresso no curso. A
+   entrada e a saída da equipe são do Depto. de Pessoal, e é por elas que se
+   contam os semestres; se estiverem erradas, a tela abre a *Outra
+   solicitação* já escrita.
+2. **O enquadramento.** O painel mostra os semestres letivos de participação
+   pela regra da classe LaTeX (o 1º semestre de fevereiro a julho, o 2º de
+   agosto a janeiro; conta o que tem ao menos quatro meses, sem os
+   afastamentos aprovados; o anterior ao ingresso não conta, art. 5º) e o que
+   a resolução permite: equipe de competição estudantil (EQC, art. 11, 3
+   créditos por semestre), extensão com registro no SIEX (EXT), iniciação
+   científica (IC) e vivência profissional (VPC, 1 crédito a cada 300 h), com
+   a estimativa de cada um. A pessoa escolhe o principal e as alternativas
+   para o colegiado que não acolher o principal. Guardar cria o pedido,
+   `AAC-7`, cujo relatório é o `NRO-PES-020-7`.
+3. **O relatório.** O ZIP do template, com o `soma.tex` do pedido: o que o
+   SOMA sabe da pessoa (a ficha, o supervisor, os projetos, os afastamentos e
+   os treinamentos concluídos), o PN e o enquadramento. Escreve-se no
+   Overleaf; há um botão para baixar só o `soma.tex` de novo.
+4. **O envio.** O PDF final. A tela lê os metadados que a classe grava
+   (documento, modo, pendências, enquadramento, a folha reservada), confere o
+   que o banco vai conferir, calcula o SHA-256 e sobe o arquivo para o bucket
+   privado `aproveitamento`, na pasta da pessoa.
+
+**As aprovações.** Uma pessoa de cada etapa, na ordem da configuração
+(`NRO_PMO`, `NRO_PESSOAL` e `NRO_COORD_OFFICE` na semente), nunca quem pediu e
+nunca a mesma pessoa em duas etapas da mesma versão. Cada etapa é avisada no
+sino; o estudante, por e-mail, a cada passo. Qualquer etapa devolve, com o
+motivo, e o envio seguinte recomeça da primeira. Na última, quem aprova
+**indica o professor orientador** (nome, título e e-mail institucional): ele
+recebe um **link pessoal** por e-mail (`aproveitamento/?p=…`, válido pelo
+prazo da configuração) e, sem conta no portal, lê o relatório, dá a nota pelo
+barema (de meio em meio ponto; mínima de 60, art. 3º, II) e aprova ou
+devolve. A aprovação dele é a que vale para a UFMG.
+
+**A folha de aprovação.** Aprovado pelo professor, o banco emite a folha
+(`doc_emitidos`, tipo `aproveitamento`), com código verificador, conferível em
+`auth.neurodynamics.dev`. Ela leva o **selo solene** (`selo-solene.png`, do
+design system, só para atos de chancelaria), as aprovações de cada etapa, a
+declaração e a nota do professor com o barema e a legenda de autenticação.
+O **PDF final** é o relatório com a folha desenhada sobre a folha reservada
+(a página 2): o número de páginas não muda, e os marcadores e links do
+relatório continuam valendo. O estudante o entrega ao colegiado. Se o
+colegiado apontar algo, o estudante **reabre**: a folha é revogada (a
+validação passa a dizer isso) e o relatório corrigido passa pelas aprovações
+outra vez.
+
+**As configurações** (`admin` e Depto. de Pessoal): as etapas (o grupo e o
+nome de cada uma na folha), o domínio do e-mail do professor, a validade do
+link e o endereço do template.
+
 ## E-mails
 
 O Full mailer e os envios programados, em `#/admin/emails` (`mod-mailer.js`).
@@ -976,11 +1044,13 @@ placar, as folhas de check-in e os links úteis, da **29.0**
 conhecimento, da **30.0** (`v30_emails.sql`); as entrevistas online do
 processo seletivo e os e-mails delas, da **31.0** (`v31_ps_entrevistas.sql`);
 a fila que anda sozinha, o sino que não empilha e as notificações no
-aparelho, da **32.0** (`v32_fila_e_notificacoes.sql`).
-Depois da 28.0, da 30.0, da 31.0 e da 32.0,
+aparelho, da **32.0** (`v32_fila_e_notificacoes.sql`); o aproveitamento de
+AACC, da **33.0** (`v33_aproveitamento.sql`).
+Depois da 28.0, da 30.0, da 31.0, da 32.0 e da 33.0,
 **publique de novo** a Edge Function `notificar-email`: é ela que manda os
-convites, as mudanças e os lembretes da agenda, os e-mails programados e as
-notificações do aparelho. **Depois da 32.0, desligue nela a verificação de
+convites, as mudanças e os lembretes da agenda, os e-mails programados, as
+notificações do aparelho e os e-mails do aproveitamento de AACC (ao estudante
+e ao professor orientador). **Depois da 32.0, desligue nela a verificação de
 JWT** (Edge Functions › `notificar-email` › Details › *Enforce JWT
 verification*): a função passa a conferir sozinha quem chama, e é com ela
 desligada que o agendamento do banco consegue acordá-la.

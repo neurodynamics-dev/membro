@@ -42,7 +42,7 @@ congelados.
 ```
 db/
 ├── LEIAME.md                          este arquivo
-├── v14_unificacao.sql … v32_fila_e_notificacoes.sql  as migrações, em ordem
+├── v14_unificacao.sql … v33_aproveitamento.sql  as migrações, em ordem
 ├── testes/                            os testes, em PostgreSQL de verdade
 └── aplicadas/                         história, congelada
     ├── soma_v06_selecao.sql                 processo seletivo
@@ -81,6 +81,7 @@ db/
 | `v31_ps_entrevistas.sql` | as entrevistas do processo seletivo online: quem abriu cada janela (`ps_slots.criado_por`), o link da chamada no lugar do local (`link_reuniao`, obrigatório em entrevista nova), o reagendamento pelo comitê (`ps_reagendar`, `ps_slot_editar`, `ps_slot_excluir`) e a fila de e-mails (`ps_envios`): a reserva, o reagendamento, o link e o cancelamento ao candidato, e o resumo da véspera ao responsável; o site ganha o link em `ps_acompanhar` e o "online" em `ps_horarios` |
 | `v32_fila_e_notificacoes.sql` | a fila de envio que anda sozinha: o banco chama a Edge Function `notificar-email` a cada minuto (`soma-fila`, pelo `pg_cron` e o `pg_net`) e logo depois de cada aviso novo (o gatilho `fila_acordar`), com uma senha que a migração gera e guarda no Vault (`soma_fila_token`); uma passada de cada vez (`fila_passada_inicio`, `fila_passada_fim`) e o registro delas (`fila_passadas`, `fila_situacao`); o empurrão do portal aberto (`fila_empurrar`). O sino que não empilha: `notificacoes_limpar`, o expurgo (`notificacoes_expurgar`) e o aviso de teste que substitui o anterior. As notificações no aparelho (Web Push): `push_inscricoes`, `push_inscrever`, `push_cancelar`, `push_meus`, as chaves VAPID no Vault e a fila da Edge Function em `push_lote` e `push_baixa`. Depois dela, publique de novo a `notificar-email` e desligue nela a verificação de JWT |
 | `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
+| `v33_aproveitamento.sql` | o aproveitamento de AACC (Resolução 02/2019 da Congregação da Escola de Engenharia): o pedido `AAC-N` (`aacc_pedidos`), cujo relatório é o `NRO-PES-020-N` (a série nasce aqui, com os PNs fora do rol); a página do estudante (`aacc_meu`), que confere o recadastro e os dados acadêmicos e conta os semestres letivos pela mesma regra da classe LaTeX (`aacc_semestres`); a ficha que a própria pessoa completa (`aacc_perfil_salvar`); o enquadramento (`aacc_preparar`); o envio do PDF, conferido pelos metadados que o template escreve (`aacc_enviar`, bucket privado `aproveitamento`); as etapas de aprovação, uma pessoa de cada grupo, na ordem da configuração (`aacc_config`: NRO_PMO, NRO_PESSOAL e NRO_COORD_OFFICE na semente), com devolução em qualquer uma (`aacc_decidir`); o professor orientador indicado na última etapa, que decide pelo link pessoal sem conta no portal (`aacc_professor_ler`, `aacc_professor_decidir`, as duas abertas à chave anônima) com o barema e a nota mínima de 60; a folha de aprovação emitida em `doc_emitidos` (tipo `aproveitamento`), conferível em auth.neurodynamics.dev; reabrir, que revoga a folha (`aacc_reabrir`); e os avisos: os grupos no sino, o estudante por e-mail (`doc_envios`, tipos `aacc_membro` e `aacc_professor`). Depois dela, publique de novo a `notificar-email` e o portal |
 
 **Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
 duplica nada.
@@ -397,6 +398,14 @@ psql -d t32 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql
 psql -d t32 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
             -f v18_teste_email.sql -f v19_grupos_hierarquia.sql -f testes/esqueleto_vault.sql
 psql -d t32 -f testes/v32_fila_e_notificacoes.sql  # 113 asserções
+```
+
+```bash
+# 33.0: o aproveitamento de AACC, sobre a base com a 25.0 (o teste cria os
+# grupos NRO_PMO e NRO_COORD_OFFICE e roda a migração cinco vezes)
+createdb -T tbase t33
+psql -d t33 -f v25_documentos_eventos.sql
+psql -d t33 -f testes/v33_aproveitamento.sql  # 215 asserções (anon, RLS e Storage inclusos)
 ```
 
 O `esqueleto_vault.sql` faz para o Vault o que o de Storage faz para o

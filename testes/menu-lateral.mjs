@@ -146,12 +146,13 @@ console.log('\nAberto (admin, 1440px)');
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-seta');
   await p.waitForTimeout(200);
   let srv = await secao(p, 'servicos');
-  /* onze: todos os serviços, Meus pedidos (desde a v24), o que o SOMA faz
-     sozinho — a declaração, os eventos e o cofre (v25–v27) — e os seis
-     pedidos ao Depto. de Pessoal, cada bloco com o seu rótulo */
+  /* doze: todos os serviços, Meus pedidos (desde a v24), o que o SOMA faz
+     sozinho — a declaração, os eventos, o cofre e o aproveitamento de AACC
+     (v25–v27, v33) — e os seis pedidos ao Depto. de Pessoal, cada bloco
+     com o seu rótulo */
   confere('a seta abre Serviços sem navegar',
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 11 && srv.filhos[1] === 'Meus pedidos'
-      && srv.filhos.slice(2, 5).join('|') === 'Declaração de vínculo|Eventos e participações|Cofre de senhas'
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 12 && srv.filhos[1] === 'Meus pedidos'
+      && srv.filhos.slice(2, 6).join('|') === 'Declaração de vínculo|Eventos e participações|Cofre de senhas|Aproveitamento de AACC'
       && srv.rotulos.join('|') === 'Documentos e acessos|Ao Depto. de Pessoal'
       && await p.evaluate(() => location.hash) === '#/', srv);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-filho[data-sub="ouvidoria"]');

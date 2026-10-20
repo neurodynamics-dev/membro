@@ -9,8 +9,8 @@ import { nomeExibicao, assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, s
          personalizar, diaExtenso, quandoPS, linkAcompanhar, fraseCandidato, candidatoHTML, candidatoTexto,
          resumoHTML, resumoTexto, dinamicaTexto, linkGooglePS,
          b64u, deb64u, cifrarPush, jwtVapid, gerarChavesVapid, mensagemPush, paraOAparelho,
-         origemDoPapel, origemDoBanco,
-         type Destinatario, type EnvioPS, type EnvioDocumento, type EnvioAgenda } from "./index.ts";
+         origemDoPapel, origemDoBanco, aaccHTML, aaccTexto, aaccAbertura,
+         type EnvioAacc, type Destinatario, type EnvioPS, type EnvioDocumento, type EnvioAgenda } from "./index.ts";
 
 let falhas = 0;
 const ok = (n: string, c: boolean, extra = "") => {
@@ -462,6 +462,35 @@ const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {
   ok("papel desconhecido não entra", "erro" in origemDoPapel("postgres", ""));
   ok("a senha do banco é agendamento, a não ser que diga evento",
      origemDoBanco("") === "agendamento" && origemDoBanco("evento") === "evento" && origemDoBanco("portal") === "agendamento");
+}
+
+/* --- o aproveitamento de AACC (33.0): ao estudante e ao professor --- */
+{
+  const membro = (dados: EnvioAacc["dados"]): EnvioAacc => ({ id: 1, tipo: "aacc_membro", para_nome: "Carla Mendonça",
+    para_email: "carla@nro.dev", assunto: "AAC-7: o relatório foi recebido",
+    dados: { pedido: "AAC-7", url: "https://membro.neurodynamics.dev/aproveitamento", href: "#/servicos/aproveitamento", ...dados } });
+  ok("recebido diz que entrou na aprovação", aaccAbertura({ acao: "recebido", pedido: "AAC-7" }).includes("entrou na aprovação da equipe"));
+  ok("a etapa diz a próxima", aaccAbertura({ acao: "etapa", pedido: "AAC-7", etapa: "PMO", proxima: "Departamento de Pessoal" })
+     === "O pedido AAC-7 foi aprovado na etapa PMO e seguiu para a etapa Departamento de Pessoal.");
+  const dev = aaccHTML(membro({ acao: "devolvido", etapa: "Departamento de Pessoal", motivo: "Falta o afastamento <de 2024>." }));
+  ok("a devolução traz o motivo, escapado", dev.includes("Falta o afastamento &lt;de 2024&gt;.") && dev.includes("Corrigir e enviar de novo"));
+  const conc = aaccHTML(membro({ acao: "concluido", nota: 85.8, codigo: "FC6V-TZZ5-N9CV", validacao: "https://auth.neurodynamics.dev/?c=FC6V-TZZ5-N9CV" }));
+  ok("aprovado: a nota com vírgula, a folha e o PDF final", conc.includes("<b>85,8</b> de 100") && conc.includes("FC6V-TZZ5-N9CV")
+     && conc.includes("Baixar o PDF final no portal") && conc.includes(">auth.neurodynamics.dev<"));
+  ok("o botão leva ao portal", conc.includes('href="https://membro.neurodynamics.dev/aproveitamento"'));
+  const t = aaccTexto(membro({ acao: "devolvido", motivo: "Ajustar a memória de cálculo." }));
+  ok("o texto ao estudante traz o motivo e o link", t.includes("Motivo: Ajustar a memória de cálculo.") && t.includes("No portal: https://membro.neurodynamics.dev/aproveitamento"));
+  const prof: EnvioAacc = { id: 2, tipo: "aacc_professor", para_nome: "Profa. Dra. Joana Exemplo", para_email: "joana@ufmg.br",
+    assunto: "Relatório de AACC de Carla Mendonça para a sua avaliação",
+    dados: { pedido: "AAC-7", estudante: "Carla Mendonça", curso: "Engenharia Elétrica", principal: "EQC", creditos: "13",
+             indicado_por: "Diego Prado", professor: "Profa. Dra. Joana Exemplo", prazo: "2026-11-19",
+             url: "https://membro.neurodynamics.dev/aproveitamento/?p=" + "a".repeat(64) } };
+  const hp = aaccHTML(prof);
+  ok("ao professor: o tratamento pelo título", hp.includes("Prezada Profa. Dra. Joana Exemplo,"));
+  ok("o enquadramento por extenso e o prazo", hp.includes("participação em equipe de competição estudantil") && hp.includes("19 de novembro de 2026"));
+  ok("o botão é o link pessoal", hp.includes('href="https://membro.neurodynamics.dev/aproveitamento/?p=' + "a".repeat(64) + '"'));
+  ok("o texto ao professor", aaccTexto(prof).includes("Avaliar o relatório: https://membro.neurodynamics.dev/aproveitamento/?p="));
+  ok("sem travessão nem ponto médio", ![hp, conc, dev, t, aaccTexto(prof)].some((x) => /[—·]/.test(x)));
 }
 
 console.log(falhas ? `\n${falhas} falha(s)` : "\nTudo verde.");
