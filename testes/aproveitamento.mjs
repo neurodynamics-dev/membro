@@ -1,4 +1,4 @@
-/* O aproveitamento de AACC (v33), na tela.
+/* O aproveitamento de AACC (2.20.0), na tela.
    Confere, com asserção (sai com código 1 se algo falhar):
      Serviços — o cartão e o item do menu; o início avisa o pedido que
        espera a decisão de quem está logado;
@@ -41,7 +41,6 @@ const PDFLIB = readFileSync(nm('pdf-lib/dist/pdf-lib.min.js'), 'utf8');
 const JSZIPJS = readFileSync(nm('jszip/dist/jszip.min.js'), 'utf8');
 const DOCNRO = readFileSync(new URL('../doc-nro.js', import.meta.url), 'utf8');
 const SELO = readFileSync(new URL('../selo-solene.png', import.meta.url));
-const LOGO = readFileSync(new URL('../logo-nro.png', import.meta.url));
 const DIR = mkdtempSync(join(tmpdir(), 'aacc-'));
 
 /* o PDF que o template gera: as palavras-chave da classe e a folha
@@ -86,8 +85,13 @@ async function rotas(p){
   await p.route('https://membro.neurodynamics.dev/doc-nro.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:DOCNRO }));
   await p.route('https://membro.neurodynamics.dev/selo-solene.png', r => r.fulfill({ status:200, contentType:'image/png', body:SELO,
     headers:{ 'access-control-allow-origin':'*' } }));
-  await p.route('https://membro.neurodynamics.dev/logo-nro.png', r => r.fulfill({ status:200, contentType:'image/png', body:LOGO,
-    headers:{ 'access-control-allow-origin':'*' } }));
+  /* desde a 2.19.1 o doc-nro.js traz o jsPDF, o QR e a logo de perto dele (vendor/ e marca/) */
+  await p.route(/https:\/\/membro\.neurodynamics\.dev\/(vendor|marca)\//, r => r.fulfill({ headers:{ 'access-control-allow-origin':'*' },
+    body: readFileSync(new URL('..' + new URL(r.request().url()).pathname, import.meta.url)) }));
+  await p.route('https://membro.neurodynamics.dev/fontes-pdf.js', r => r.fulfill({ contentType:'application/javascript',
+    body: readFileSync(new URL('../fontes-pdf.js', import.meta.url)) }));
+  await p.route('https://membro.neurodynamics.dev/fontes/**', r => r.fulfill({ headers:{ 'access-control-allow-origin':'*' },
+    body: readFileSync(new URL('../fontes/' + new URL(r.request().url()).pathname.split('/').pop(), import.meta.url)) }));
   await p.route(/fonts\.googleapis|fonts\.gstatic|raw\.githubusercontent|youtube\.com|ytimg/, r => r.abort());
 }
 async function abrir({ vp = { width:1440, height:960 }, hash = '#/' } = {}){
@@ -374,7 +378,7 @@ const pdfTexto = (arq, pg) => execFileSync('pdftotext', ['-f', String(pg), '-l',
   const { ctx, p, erros } = await abrir({ hash:'#/servicos/aproveitamento/config' });
   await p.waitForTimeout(900);
   confere('as três etapas, cada uma com o grupo', await p.locator('.aac-etapa-l').count() === 3);
-  await p.locator('.aac-etapa-l').nth(2).locator('button').click(); await p.waitForTimeout(200);
+  await p.locator('.aac-etapa-l').nth(2).locator('button[aria-label^="Tirar a etapa"]').click(); await p.waitForTimeout(200);
   await p.click('#aac-cfg-btn'); await p.waitForTimeout(700);
   const c = (await rpcs(p, 'aacc_config_salvar')).pop();
   confere('salvar leva as duas etapas que ficaram', c?.p?.etapas?.length === 2 && c.p.etapas[0].grupo_id === 3 && c.p.prazo_professor_dias === 30, c);

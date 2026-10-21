@@ -22,6 +22,14 @@ stub, e a correção da verificação é a mesma do banco: o teste responde erra
 e certo e confere o que volta. O progresso da pessoa logada fica em
 `window.__treProg`.
 
+As da 2.18.0: `papeis_atuais` devolve o papel da conta do stub (ou
+`perfis[0].papeis`, se o teste puser a lista), `conta_ativa` responde falso com
+`window.__teste.bloqueada`, e `window.__teste.v218 = 'falta'` faz as funções
+novas não existirem, como num banco sem a migração. `grupo_papel_definir`
+muda `grupo_papeis` (só admin), `contas_papeis` dá o papel efetivo de cada
+conta, e `atividade_espelhar`, `atividade_espelho_remover` e `atividade_mover`
+mudam os espelhos do cartão (`espelhos`, `espelhos_ordem`) como o banco.
+
 As da 31.0 (`ps_reagendar`, `ps_slot_editar`, `ps_slot_excluir`) movem,
 mudam e excluem o horário no stub, e devolvem quantos candidatos seriam
 avisados. Com `window.__teste.ps31` posto antes de a página carregar, a Agenda
@@ -47,7 +55,7 @@ conta própria; o formulário grava o rascunho e manda a revisão. Com
 cujos PNs não moram no rol — sem ele, o rol é o de sempre, e os testes de
 Arquivos não mudam.
 
-As da 33.0 (o aproveitamento de AACC) moram num complemento,
+As da 2.20.0 (o aproveitamento de AACC) moram num complemento,
 `stub-aacc.js`, que o `aproveitamento.mjs` concatena depois do stub de sempre:
 ele embrulha o `createClient` e responde às funções `aacc_*` com as regras do
 banco (a ficha que falta, o pedido que nasce, o envio que confere o documento
@@ -66,6 +74,16 @@ verdade, para o Chromium aceitar a inscrição. `window.__teste.fila`
 `window.__teste.fn` (`'ocupada'`, `'push'`) muda o que a Edge Function
 responde. Cada chamada a uma função entra em `window.__invocacoes` como
 `{ nome, corpo }`.
+
+As da 2.17.0 também mudam o stub como o banco: `feedback_salvar`,
+`feedback_votar`, `feedback_comentar`, `feedback_decidir` e `feedback_excluir`
+sobre `soma_feedback_lista` (três relatos: o BUG-1 aberto, a SUG-2 planejada e
+o BUG-3 feito); `membro_foto_definir` põe na ficha um endereço que carrega de
+verdade (uma imagem em `data:`), para o avatar aparecer; `atividade_editar`,
+`atividade_criar`, `atividade_checklist`, `atividade_copiar` e o comentário
+que se corrige e se apaga mexem em `atividades_quadro`, na checklist do ORT-1
+e nos comentários, com a mesma regra de nível do quadro. O quadro tem o ORT-4
+arquivado, para a lista de arquivados. Cada chamada entra em `window.__rpcs`.
 
 Os PDFs são conferidos pelo texto que o modelo escreveu: `DocNRO.baixar` (e
 `DocNRO.abrir`, na prévia) deixam em `window.__docnro` o nome do arquivo, o
@@ -110,10 +128,13 @@ e rode daqui.
 | `agenda-e-inicio.mjs` | a agenda no modelo do Google (a semana com as camadas, os atalhos M, D, J, T, criar rápido, a página do evento com predefinido e convidado, reagendar sem apagar perguntando se avisa, responder ao convite, os eventos predefinidos), a presença (quem está no LABBIO, o placar, gerar a folha de check-in: o QR desenhado no PDF é lido de volta com o jsQR e tem de ser o endereço com o token fixo; abrir esse endereço registra; folha revogada não vale), o início (a semana, o convite respondido ali, o placar, as tarefas, os links sem `javascript:`, os abertos por último), o rodapé, os atalhos e Administração › Links úteis — com asserções |
 | `treinamentos.mjs` | os treinamentos: o espaço no menu (e Meus pedidos dentro de Serviços, com `#/pedidos` ainda abrindo), o obrigatório no início e na busca, o programa, o módulo em Markdown, o vídeo no player do site, o gabarito que não desce, a verificação reprovada e aprovada, o certificado em PDF e a conferência pelo código, a gestão, o editor que grava sozinho, importar o texto de um agente (o do README e um embrulhado em ```markdown), a pré-visualização, exportar e ler de volta, publicar, atribuir, novo do zero e de um texto, o acompanhamento e o CSV, as configurações e o README (ver, salvar, baixar com as referências, voltar ao padrão), a aba da ficha, quem não gere, quem gere por grupo, e o celular — com asserções |
 | `emails.mjs` | os e-mails (v30): o Full mailer em tela inteira (o tile de Relatórios leva até ele), a prévia com o nome de quem escreve, as redes vindas de Studio › Contas (link salvo ou montado pelo usuário, e desmarcar), o botão para uma tela do portal, o rodapé sem link morto, as cores dos seis remetentes (departamentos claros e distintos, a Leadership escura; as imagens da cor nova existem), o rascunho que sobrevive, a marca do nome fora do que se copia; programar (quem recebe e quem está sem e-mail, por grupo com os de baixo, só para mim; o que vai ao banco), a fila e o histórico, reagendar, cancelar; as pílulas (quem assina, para quem, grupo extinto, a série de quatro em quatro dias sem fim de semana e sem repetir a fila, pôr na série, editar, link recusado, abrir no mailer); o link de cada rede no Studio; o Comitê de Seleção sem programar, quem só lê sem entrar, e o celular — com asserções |
-| `notificacoes.mjs` | o sino que não empilha e o aviso no aparelho (v32): o × de cada aviso, limpar as lidas, o recado de migração que falta; ativar as notificações neste aparelho (a permissão, a inscrição com a chave do servidor, o nome do aparelho), a notificação de teste, desativar, os outros aparelhos e remover, a permissão bloqueada, o iPhone fora da tela de início, o convite do sino e o "agora não", sair da conta cancela a inscrição; o empurrão da fila (quando o banco diz que está parada, e só então); o teste de e-mail com a fila ocupada; o card "A fila de envio" em Programados (em dia, parada, sem agendamento) e o "Rodar a fila agora"; o manifesto, os ícones e o `sw.js` — com asserções |
+| `notificacoes.mjs` | o sino que não empilha e o aviso no aparelho (v32): o × de cada aviso, limpar as lidas, o recado de migração que falta; ativar as notificações neste aparelho (a permissão, a inscrição com a chave do servidor, o nome do aparelho), a notificação de teste, desativar, os outros aparelhos e remover, a permissão bloqueada, o iPhone fora da tela de início, o sino sem convite (ativar é em Preferências de avisos, 2.17.1), sair da conta cancela a inscrição; o empurrão da fila (quando o banco diz que está parada, e só então); o teste de e-mail com a fila ocupada; o card "A fila de envio" em Programados (em dia, parada, sem agendamento) e o "Rodar a fila agora"; o manifesto, os ícones e o `sw.js` — com asserções |
 | `tour.mjs` | o tour do SOMA (`tour.html`), de quem ainda não tem conta a quem já entrou: as treze etapas sem erro; criar a conta (o que o formulário recusa, o e-mail em minúsculas, o link que volta para o tour, "confira o seu e-mail", reenviar com espera), entrar (senha errada, e-mail não confirmado, a conta pronta com o primeiro nome), esqueci a senha; com conta, o que é da pessoa: o menu com o que ela alcança, o perfil e os grupos, as tarefas e os quadros dela, a posição no placar, o check-in, os treinamentos, o Studio conforme o acesso (e o que muda para quem não é dos grupos dele), a agenda, a equipe, o celular (iPhone, Android, o QR para o computador, as notificações no aparelho) e a ajuda; o celular de 390 px (nada vaza, a barra de baixo, a gaveta das etapas), os links do e-mail de confirmação vencido e de nova senha, o tema e o "continuar de onde parou" — com asserções |
-| `aproveitamento.mjs` | o aproveitamento de AACC (v33): o cartão em Serviços, o item do menu e o aviso no início; o contador dos passos (o do Arquivos); a ficha que falta (o ingresso que não é semestre volta, os pronomes, o curso da lista e o "Outro curso"), os semestres, o painel do enquadramento (a estimativa, sem IC, o OUT com o nome e a norma do Colegiado e o `soma.tex` que troca a norma, a extensão que pede os semestres do SIEX), o pedido que nasce, o ZIP com o `soma.tex` do pedido, só o `soma.tex`, o PDF em rascunho que não passa e o final que sobe e é enviado; a lista para aprovar, a última etapa (a Diretoria) que indica o professor com os títulos certos, o departamento, a unidade e o link assinado; o PDF final com a folha de aprovação no lugar da página 2 (o texto, a professora com o e-mail inteiro, a Diretoria, sem a nota de rodapé, o link da validação, os metadados), a data da aprovação na capa e só a folha; a página do professor (sem o link, o portal; vencido; o barema, a nota mínima, o meio ponto, a declaração, aprovar e devolver); a validação da folha; as configurações; o celular — com asserções |
+| `aproveitamento.mjs` | o aproveitamento de AACC (2.20.0): o cartão em Serviços, o item do menu e o aviso no início; o contador dos passos (o do Arquivos); a ficha que falta (o ingresso que não é semestre volta, os pronomes, o curso da lista e o "Outro curso"), os semestres, o painel do enquadramento (a estimativa, sem IC, o OUT com o nome e a norma do Colegiado e o `soma.tex` que troca a norma, a extensão que pede os semestres do SIEX), o pedido que nasce, o ZIP com o `soma.tex` do pedido, só o `soma.tex`, o PDF em rascunho que não passa e o final que sobe e é enviado; a lista para aprovar, a última etapa (a Diretoria) que indica o professor com os títulos certos, o departamento, a unidade e o link assinado; o PDF final com a folha de aprovação no lugar da página 2 (o texto, a professora com o e-mail inteiro, a Diretoria, sem a nota de rodapé, o link da validação, os metadados), a data da aprovação na capa e só a folha; a página do professor (sem o link, o portal; vencido; o barema, a nota mínima, o meio ponto, a declaração, aprovar e devolver); a validação da folha; as configurações; o celular — com asserções |
 | `ps-entrevistas.mjs` | as entrevistas online do PS (v31), em Seleção › Agenda: o link da chamada no lugar do local, com "Criar no Meet"; sem link ou sem https:// não cria; quem abre fica responsável; a dinâmica continua com local; o chip online com o nome; o horário antigo tracejado; o horário com o link, quem abriu e o último e-mail; reagendar o candidato com motivo; mudar hora e link avisando; assumir o horário antigo; excluir avisando; a ficha com a chamada; o celular — com asserções |
+| `versoes-fotos-e-cartoes.mjs` | a 2.17.0: a versão no rodapé (a que está no ar, lida da casca) e nenhum aviso de versão nova aberto sozinho (2.17.1); as notas (a versão no ar, o número antigo ao lado, a versão em foco pelo endereço, as antigas recolhidas, a busca); os bugs e sugestões (em aberto por votos, filtros, votar, o relato em Markdown, comentar, o andamento pela administração, relatar com a tela de onde se veio e os parecidos, quem não é admin); a foto (o aviso do início, enquadrar e enviar, o arquivo no bucket, a ficha, a câmera no organograma e na ficha só para quem pode); os OKRs (o título inteiro, a mesma altura na linha, a roda que dá zoom e o Shift que move, o fio do pé do pai); os cartões (etiquetas, pessoas e a checklist no quadro, o filtro por etiqueta, a descrição em Markdown com a barra e o Ver, a checklist, pessoas e etiquetas pelo seletor, o @ que marca, o comentário corrigido, a menção antiga, espelhar em outro quadro, tirar o espelho e mover (2.18.0), os arquivados, a atividade nova com pessoas e etiquetas, quem só lê); e o celular — com asserções |
+| `papeis-por-grupo.mjs` | os papéis por grupo (2.18.0): a liderança (Administração só com a lista de escrita, o quadro de pessoal, a Seleção, a ficha sem ocorrências e sem editar), a conta bloqueada ("Acesso encerrado." e o portal fechado), o banco sem a 2.18.0 (vale o papel da conta), o papel do grupo em Administração › Grupos (só admin muda) e o papel efetivo com a origem em Contas — com asserções |
+| `ps-entrevistas.mjs` | as entrevistas online do PS (v31), em Seleção › Agenda: o link da chamada no lugar do local, com "Criar no Meet"; sem link ou sem https:// não cria; quem abre fica responsável; a dinâmica continua com local; o chip online com o nome; o horário antigo tracejado; o horário com o link, quem abriu e o último e-mail; reagendar o candidato com motivo; mudar hora e link avisando; assumir o horário antigo; excluir avisando; a ficha com a chamada; o celular; e a entrevista reservada na agenda de quem conduz (2.17.1): a camada Entrevistas do PS, só o horário com candidato, a janela com a chamada e a ficha, desligar a camada, o mês, a semana do início e quem não é do comitê sem a camada — com asserções |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install
@@ -139,6 +160,8 @@ node ps-entrevistas.mjs
 node notificacoes.mjs
 node tour.mjs
 node aproveitamento.mjs                 # precisa do pdftotext (poppler-utils)
+node versoes-fotos-e-cartoes.mjs
+node papeis-por-grupo.mjs
 ```
 
 Os testes que baixam PDF lançam o Chromium com `LANG=C.UTF-8`: o nome dos
@@ -179,3 +202,15 @@ regras que saíram daí:
 
 - `../db/testes/` — as migrações rodando em PostgreSQL de verdade;
 - `../supabase/functions/*/`, cada função com o seu `*.test.ts`.
+
+## Complementos da 2.18.0
+
+- `papeis-por-grupo.mjs`: papéis efetivos, bloqueio, grupos e cartões espelhados.
+- `reporte.mjs`: preenchimento, conflito de versão, envio e publicação do feed com RPCs estritas.
+- `marca.mjs`: catálogo, assinatura, interfaces, acesso à configuração e celular.
+- `select-e-studio-ia.mjs`: teclado, seleção programática, fieldset desabilitado e validação da importação por IA.
+- `supabase/functions/notificar-email/newsletter.test.ts`: escaping e rodapé de descadastro.
+
+Na nuvem deste projeto, Chromium está em `/usr/bin/chromium`; o preload externo `/workspace/cloud-setup/chromium.mjs` adapta o caminho antigo dos testes. Exemplo: `node --import /workspace/cloud-setup/chromium.mjs testes/marca.mjs`, a partir da raiz. O servidor local deve estar na porta 8765. Os testes da validação pública interceptam também o carregamento de fontes locais de PDF.
+
+As mudanças da 2.18.0 foram conferidas no PostgreSQL 16 local e nos testes de navegador com Supabase simulado. Entrega real de e-mail/push, sincronização com Google e publicação do Supabase exigem a conferência de produção descrita em `PUBLICACAO-2.18.md`.

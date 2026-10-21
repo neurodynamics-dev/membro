@@ -24,7 +24,8 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **Projetos** | cada projeto: equipe, supervisor e o rol de arquivos | todos (criar: PMO e `admin`; editar: eles e o supervisor) |
 | **Arquivos** | documentos e registros controlados — código, revisão, status | todos no rol; o conteúdo segue a classe de cada série |
 | **Studio** | comunicação — criar as peças, planejar e aprovar as publicações | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
-| **Equipe** | pessoas — organograma, fichas, presença no LABBIO e apontamento | todos (a profundidade varia) |
+| **Marca** | materiais, assinaturas, interfaces e manual da marca | todos; vínculos geridos por quem administra Arquivos |
+| **Equipe** | pessoas — organograma, fichas, presença, reporte e feed | todos (a profundidade varia) |
 | **Treinamentos** | formação — o que os seus grupos pedem, fazer, os certificados | todos (gerir: `admin`, `pessoal` e os grupos gestores) |
 | **Serviços** | pedidos ao Depto. de Pessoal — e, em *Meus pedidos*, o andamento deles | todos |
 | **Seleção** | os bastidores do processo seletivo | `admin`, `pessoal`, `selecao` |
@@ -37,14 +38,12 @@ casinha menor, ao lado dela, diz que leva. No trilho a casinha sai; a logo
 basta. Um item "Início" repetiria o caminho da logo e empurraria os espaços
 para baixo.
 
-Até dez destinos no primeiro nível para toda a equipe (mais Seleção e
-Administração, para quem tem o papel), cada um com ícone, no **menu lateral**
-à esquerda. Com o Studio eram dez: **o próximo precisa caber dentro de um que
-já existe, ou tomar o lugar dele**. Os Treinamentos foram o próximo, e tomaram
-o lugar de Meus pedidos, que coube dentro de Serviços — o andamento do que se
-pediu é parte de pedir, e `#/pedidos` continua abrindo pelo `ALIAS`. O Studio é o único espaço do primeiro nível
-que some para quem não é dos grupos dele — é uma ferramenta de trabalho de uma
-equipe, como Seleção, e não um lugar da equipe inteira. O segundo nível são os subitens de cada espaço — o calendário e
+A ordem do primeiro nível é Agenda, Atividades, OKRs, Projetos, Arquivos,
+Studio, Marca, Equipe, Treinamentos, Serviços, Seleção e Administração.
+Studio, Seleção e Administração aparecem conforme as permissões. Marca
+fica disponível para toda a equipe, entre Studio e Equipe. Novos destinos
+precisam de revisão da arquitetura de navegação.
+O segundo nível são os subitens de cada espaço — o calendário e
 as configurações da Agenda, os quadros dos grupos da pessoa, cada serviço,
 cada painel —, pendurados numa linha-guia debaixo do espaço, como
 no painel da Cloudflare. Tudo o que tem endereço próprio vira subitem; o que
@@ -61,7 +60,7 @@ lado. Abaixo de 900px o menu vira gaveta, puxada pela barra de topo.
 |---|---|---|
 | 1 — as seções da tela | `.nav1`, o seletor segmentado com a pílula clara no item atual (`navNivel1()`) | as seções de um espaço (Arquivos, Studio, Treinamentos, Equipe, Seleção, Cofre, Eventos) ou de um objeto (a ficha, o projeto, o candidato) |
 | 2 — os recortes de uma seção | `.abas`, sublinhadas (`navNivel2()`) | Configurações › Geral · README; Dinâmica › Painel · Roteiro… |
-| filtro, que não troca de seção | `.seg`, o controle segmentado com o item ligado em Synapse | Meus · Todos, status, idioma, a visão da Agenda |
+| filtro, que não troca de seção | `.seg`, o controle segmentado com o item ligado quieto (9% e tinta, como o nível 1; seleção nunca é Synapse) | Meus, Todos; status; idioma; a visão da Agenda |
 
 Aba sublinhada no primeiro nível ou pílula no segundo é o erro que esta regra
 existe para evitar. O componente está no design system (card *Navegação*).
@@ -95,10 +94,18 @@ conforme quem entra é menu que ninguém aprende.
 #/agenda/novo[/<AAAA-MM-DD>[T<HH:MM>[~<HH:MM>]]]
 #/agenda/config[/predefinidos|google]
 #/atividades[/<grupo>]      o quadro
+#/atividades/<grupo>/arquivadas  os cartões arquivados do quadro, para restaurar
 #/atividades/card/<codigo>  uma atividade (ex.: #/atividades/card/ORT-14)
 #/equipe                    organograma
 #/equipe/<registro>         a ficha
-#/equipe/quadro|presenca|apontamento
+#/marca                    os modelos controlados e templates (Arquivos é o dono do download)
+#/marca/assinatura|config  a assinatura de e-mail; o vínculo de cada modelo com uma série
+#/equipe/quadro|presenca|feed|newsletter
+#/equipe/reporte            o ciclo da semana
+#/equipe/reporte/<frente>/<1-4>  preencher ou consultar uma frente (apontamentos, escalonamentos, feed, revisão)
+#/equipe/reporte/config     prazo e reunião (admin)
+#/admin/emails/comunidade
+# /equipe/apontamento é alias de /equipe/reporte; /feed e /marca/interfaces são endereços antigos
 #/okrs[/<codigo>]           a árvore de objetivos, com um em foco (OE1, OT1.2…)
 #/projetos[/novo]           os projetos
 #/projetos/<CÓDIGO>         um projeto (ex.: #/projetos/NEBULA)
@@ -141,6 +148,10 @@ conforme quem entra é menu que ninguém aprende.
 #/admin[/aba]               painéis
 #/admin/grupos/<prefixo>    a árvore de grupos, com um em foco
 #/admin/emails[/programados|pilulas]  o Full mailer, a fila e as pílulas
+#/versoes[/<x.y.z>]         as notas de versão, com uma em foco (fora do menu: a porta é o rodapé)
+#/versoes/comentarios       bugs e sugestões
+#/versoes/comentarios/bug|sugestao  relatar
+#/versoes/comentarios/<n>   um relato (BUG-12, SUG-13)
 ```
 
 **Regras:**
@@ -172,6 +183,7 @@ só a lupa, sem caixa nem legenda, no eixo dos outros ícones. Acha **quatro coi
 | **Eventos registrados** | código (`EXT-14`), nome |
 | **Cofre** | a conta (acesso e rótulo), o usuário, o endereço — nunca a senha |
 | **Aproveitamento de AACC** | código (`AAC-7`), nome de quem pediu |
+| **Notas de versão e relatos** | a versão (`2.16.0`) e o título dela; o código (`BUG-12`) e o título do relato |
 
 **O contrato.** Cada módulo registra as próprias fontes ao carregar:
 
@@ -263,6 +275,13 @@ Todo objeto que uma pessoa cita em voz alta precisa de um código curto:
 | Evento registrado | `EXT-14` | `eventos_ext.codigo` — sequência única; a participação da equipe num evento de fora (o `EVT-012` é um compromisso da agenda) |
 | Pedido de aproveitamento | `AAC-7` | `aacc_pedidos.codigo` — sequência única; o relatório do pedido é o `NRO-PES-020-7` (o PN é o número do pedido) e a folha de aprovação, um documento emitido |
 | Documento emitido | `Q8RT-5WZN-2KDH` | `doc_emitidos.codigo` — o código verificador: 12 caracteres do alfabeto de Crockford, sorteados. O documento em si é `NRO-DIR-004-17` (o PN é o registro) ou `NRO-DIR-006-14` (o PN é o evento); confere-se em `auth.neurodynamics.dev/?c=<código>` |
+| Relato (bug ou sugestão) | `BUG-12`, `SUG-13` | `soma_feedback.id` — um número só para os dois tipos; o prefixo diz o tipo, e o número não muda se a administração reclassificar |
+| Versão do SOMA | `2.17.0` | `VERSAO`, na casca — major.minor.patch (§ 10); as notas moram em `NOTAS_VERSAO` (`mod-versoes.js`) |
+
+Escrito num texto de trabalho (a descrição e os comentários de um cartão, um
+relato), o código vira link sozinho — `md()`, na casca, conhece os formatos
+desta tabela. O de quadro (`ORT-14`) só com prefixo de grupo que existe:
+`COVID-19` continua texto.
 
 Sequência por grupo, não global: `ORT-14` diz de qual quadro a atividade é.
 O prefixo mora em `grupos.prefixo` e é gerado do nome, editável depois.
@@ -344,6 +363,14 @@ Quatro, sempre os mesmos, sempre com texto que diz o que fazer:
 
 "Nenhum resultado" nunca é uma tela vazia: é "nenhuma atividade com esse
 filtro — limpar filtros".
+
+### O que ninguém pediu não aparece sozinho
+
+Toast e faixa só respondem ao que a pessoa acabou de fazer (salvou, errou,
+copiou). Novidade de versão, convite para ativar as notificações no
+aparelho, dica de recurso: ficam onde se procura (o rodapé, *Preferências de
+avisos*, a ajuda), nunca num aviso que abre por conta própria. O que espera
+a ação da pessoa tem lugar fixo: o sino e as pendências do início (2.17.1).
 
 ---
 
@@ -517,8 +544,31 @@ README ensina os agentes de IA a escrever o que o portal não lê.
 ## 8. Layout
 
 O design system da marca é a fonte
-([brand.neurodynamics.dev](https://brand.neurodynamics.dev)). O CSS da casca
-é cópia dele; mexer aqui sem mexer lá é dívida.
+([brand.neurodynamics.dev](https://brand.neurodynamics.dev)). O SOMA o recebe
+em `ds/` (tokens, componentes, casca do rodapé, select), gerada no brand por
+`scripts/distribuir.mjs`: **não edite `ds/`**. O CSS próprio do SOMA mora em
+`soma.css`, carregado depois. Componente que outro app também usaria vai
+para o `neuro.css` do brand, não para o `soma.css`.
+
+### Uma tela, um template
+
+Toda tela é um dos templates do `PLANO-DESIGN-SYSTEM.md` (seção 3): Lista,
+Objeto, Fluxo, Painel, Leitura, Ajustes, Área de trabalho ou Avulsa. O topo
+é sempre `cabecalho()`, na casca:
+
+- o eyebrow é o espaço do menu (Equipe, Arquivos...), nunca slogan, trilha
+  ou código; o h1 é a tela, num tamanho só;
+- voltar só em objeto e subtela (`voltar: ['Quadro de pessoal', '#/equipe/quadro']`);
+  com três níveis ou mais, `trilha`; seção irmã não tem voltar, tem o
+  SectionNav (`secoes`);
+- o código do objeto vai em `codigo`, numa Tag em Plex Mono;
+- no máximo um `.btn.solid`; no celular as outras ações vão para "Mais".
+
+As funções de cada template (`ferramentas`, `layoutObjeto`, `spec`,
+`etapas`, `layoutFluxo`, `layoutLeitura`, `ajuste`, `estado`) estão ao lado
+de `cabecalho()`. O catálogo vivo é `#/dev/templates` (só admin), e
+`testes/templates.mjs` confere e fotografa cada um. Tela nova passa no
+auditor do brand: `node ../brand/scripts/auditar.mjs --falhar <arquivos>`.
 
 Os três erros que mais aparecem ao trazer tela clara para o escuro:
 
@@ -581,9 +631,36 @@ O portal fala como um documento da NRO: direto, formal e curto.
 - **Sem travessão nem ponto médio em frase e rótulo.** Vírgula, dois-pontos
   ou parênteses. Contagem no título vai entre parênteses ("Equipe (4)");
   código e título, lado a lado ("ORT-14 Calibrar o encoder"). O travessão
-  fica como marca de campo vazio (`—`); o ponto médio, só na tipografia dos
-  documentos em PDF e nas artes do Studio.
+  fica como marca de campo vazio (`—`). Documentos e artes também usam
+  vírgula ou dois-pontos, sem ponto médio como separador.
 - **Erros dizem o que houve, não quem errou**: "Sem permissão para esta
   ação.", "Conta sem vínculo com um registro de membro." — os textos comuns
   moram em `MOTIVO_RPC`, na casca.
+
+### O texto de trabalho é Markdown
+
+O que a equipe escreve para a equipe ler — a descrição e os comentários de um
+cartão, um relato de bug, as notas de versão — é Markdown, desenhado por
+`md()`, na casca: seguro por construção (tudo é escapado e só vira marcação o
+que está previsto), com os códigos do SOMA como link e `@Nome` como menção
+(`op.mencoes`). O campo de escrever tem a barra (`mdBarra`) e, quando o texto
+é longo, o *Ver* antes de salvar. Marcar alguém é digitar `@`: a lista abre
+perto do cursor, e o que entra no texto é o nome e o sobrenome, que é como a
+menção aparece e como o banco sabe quem avisar.
+
+---
+
+## 10. Versões
+
+O SOMA se numera em **major.minor.patch** desde a 2.17.0. Minor quando a
+versão acrescenta sem mudar o que existia; patch quando só corrige; major
+quando algo deixa de funcionar como antes (uma tela sai, um endereço muda de
+sentido, um dado muda de forma). A numeração antiga virou `2.(N-16).p`: a 32.0
+é a 2.16.0.
+
+Subir a versão é um commit só: `VERSAO` na casca, a entrada no alto de
+`NOTAS_VERSAO` (`mod-versoes.js`, com o tipo de cada item) e, se houver, a
+migração com o número no nome (`db/2.17.0_notas_fotos_e_cartoes.sql`). Nota de
+versão diz o que muda para quem usa, no tom do § 9 — não o que mudou no
+código.
 

@@ -5,10 +5,11 @@
    onclick="…" e dependem de escopo global.
 
    Rotas:
-     #/atividades                 o quadro do seu grupo
-     #/atividades/<prefixo>       o quadro de um grupo (ORT, SIN…)
-     #/atividades/carga           quanto cada pessoa está carregando
-     #/atividades/card/<codigo>   uma atividade (ORT-14)
+     #/atividades                       o quadro do seu grupo
+     #/atividades/<prefixo>             o quadro de um grupo (ORT, SIN…)
+     #/atividades/<prefixo>/arquivadas  os cartões arquivados do quadro, para reabrir
+     #/atividades/carga                 quanto cada pessoa está carregando
+     #/atividades/card/<codigo>         uma atividade (ORT-14)
 
    Precisa da migração db/v15_atividades.sql. Sem ela, a tela diz
    isso em vez de quebrar. A db/v16_pessoal.sql acrescenta os
@@ -16,16 +17,26 @@
    ocorrência) e a decisão que concede acesso — sem ela o quadro
    funciona igual, só não tem bloco de origem.
 
+   A 2.17.0 (db/2.17.0_notas_fotos_e_cartoes.sql) dá ao cartão as
+   outras pessoas atribuídas, as etiquetas, as checklists, a cópia para
+   outro quadro e o comentário que se corrige; a descrição e os
+   comentários passam a ser Markdown (md(), na casca), e marcar alguém é
+   digitar @. Sem a migração, o cartão abre como antes: o que depende
+   dela some ou avisa.
+
    Depende da casca para: sb, $, esc, norm, state, can, toast,
-   abreModal, fechaModal, fmtD, hojeISO, pad3, avatarFoto,
-   registrarBusca, filtrarSimples, carregarNotificacoes, gruposEfetivos,
-   state.itensAcesso (catálogo, para conceder na decisão).
+   abreModal, fechaModal, confirma, copiar, fmtD, hojeISO, pad3,
+   avatarFoto, md, mdInline, mdBarra, rotuloMencao, ic, ibtn, dica,
+   motivoRPC, registrarBusca, filtrarSimples, carregarNotificacoes,
+   gruposEfetivos, state.itensAcesso (catálogo, para conceder na decisão).
    ============================================================ */
 
 const atividades = {
   pronto:false, grupos:[], itens:[], grupoAtual:null, erro:null,
-  filtro:{ q:'', pessoa:null, so:'' },   /* so: '' | 'atrasadas' | 'sinalizadas' | 'minhas' */
-  card:null, arrastando:null, origem:null, reabrir:false
+  filtro:{ q:'', pessoa:null, so:'', etiqueta:'' },   /* so: '' | 'atrasadas' | 'sinalizadas' | 'minhas' */
+  card:null, arrastando:null, origem:null, reabrir:false,
+  checks:null,        /* as checklists do cartão aberto: [{ ...lista, itens:[] }], ou null sem a 2.17.0 */
+  mudouPessoas:false  /* o seletor mexeu no cartão: ao fechar, o histórico é relido */
 };
 
 const COLUNAS = [
@@ -42,10 +53,42 @@ const PRIORIDADES = [
   ['urgente','Urgente',  'var(--bad)']
 ];
 /* de onde o cartão veio, para o selo do quadro */
-const ROTULO_ORIGEM = { solicitacao:'solicitação', apontamento:'apontamento', ocorrencia:'ocorrência' };
+const ROTULO_ORIGEM = { reporte:'reporte', newsletter:'newsletter', solicitacao:'solicitação', apontamento:'apontamento', ocorrencia:'ocorrência' };
 const rotuloStatus = s => (COLUNAS.find(c => c[0] === s) || [,s])[1];
 const corPrioridade = p => (PRIORIDADES.find(x => x[0] === p) || [,,'var(--dim)'])[2];
 const rotuloPrioridade = p => (PRIORIDADES.find(x => x[0] === p) || [,p])[1];
+
+/* ============================================================
+   ETIQUETAS E PESSOAS (2.17.0)
+   A cor da etiqueta sai do nome: a mesma etiqueta tem a mesma cor em
+   todo quadro, sem ninguém precisar escolher. São cores de status da
+   casca, que já têm a versão do tema claro.
+   ============================================================ */
+const ETIQUETA_CORES = ['var(--teal)', 'var(--info)', 'rgb(var(--roxo-rgb))', 'var(--warn)', 'var(--ok)', 'var(--bad)', 'var(--syn-borda)', 'rgb(var(--cinza-rgb))'];
+function corEtiqueta(nome){
+  let h = 0;
+  for (const c of norm(nome)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return ETIQUETA_CORES[h % ETIQUETA_CORES.length];
+}
+const etiquetaHTML = (e, extra, attrs) => `<span class="et" style="--et:${corEtiqueta(e)}"${attrs || ''}>${esc(e)}${extra || ''}</span>`;
+/* as etiquetas em uso num quadro, as mais usadas primeiro: são as opções
+   que o seletor oferece */
+function etiquetasDoQuadro(grupoId){
+  const n = new Map();
+  atividades.itens.filter(a => noQuadro(a, grupoId)).forEach(a => (a.etiquetas || []).forEach(e => n.set(e, (n.get(e) || 0) + 1)));
+  return [...n.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'pt')).map(([e]) => e);
+}
+/* todas as pessoas do cartão, o responsável primeiro */
+function pessoasDoCartao(a){
+  const regs = [a.responsavel, ...(a.pessoas || [])].filter(r => r != null);
+  return [...new Set(regs)].map(r => (state.membros || []).find(m => m.registro === r) || { registro:r, nome:'Registro ' + r });
+}
+const noCartao = (a, reg) => reg != null && (a.responsavel === reg || (a.pessoas || []).includes(reg));
+function rostosHTML(ps, max, px){
+  if (!ps.length) return '';
+  return `<span class="kb-rostos" title="${esc(ps.map(m => m.nome).join(', '))}">${ps.slice(0, max).map(m => avatarFoto(m, px, 9)).join('')}${
+    ps.length > max ? `<span class="mais">+${ps.length - max}</span>` : ''}</span>`;
+}
 
 /* ============================================================
    CARGA
@@ -81,6 +124,15 @@ const posso = {
   ver:    g => nivelNoGrupo(g) !== 'nenhum',
   editar: g => nivelNoGrupo(g) === 'edicao'
 };
+const grupoDoCartao = a => atividades.grupos.find(g => g.id === a?.grupo_id) || null;
+/* Card espelhado (2.18.0): o mesmo cartão em mais de um quadro. O dono é
+   grupo_id (dá o código); os outros vêm em espelhos, cada um com a sua
+   ordem na coluna. Edita quem edita qualquer um deles. */
+const quadroAtv = id => atividades.grupos.find(g => g.id === id) || null;
+const noQuadro = (a, gid) => a.grupo_id === gid || (a.espelhos || []).includes(gid);
+const ordemNo = (a, gid) => a.grupo_id === gid ? a.ordem : Number((a.espelhos_ordem || {})[gid] ?? a.ordem);
+const quadrosDoCartao = a => [a.grupo_id, ...(a.espelhos || [])].map(quadroAtv).filter(Boolean);
+const editoCartao = a => quadrosDoCartao(a).some(g => posso.editar(g));
 /* A ordem é SEMPRE a configurada em Administração -> Grupos. Ela é uma
    hierarquia que a equipe decidiu — escritório, gerência, PMO, supervisão,
    e por aí — e uma lista que se reordena sozinha conforme quem está
@@ -106,6 +158,8 @@ function avisoSemMigracao(){
     A migração <span class="mono">db/v15_atividades.sql</span> precisa ser aplicada no Supabase.
     ${atividades.erro ? `<br><span class="small">Detalhe: ${esc(atividades.erro.message)}</span>` : ''}</div>`;
 }
+const MIGRACAO_217 = 'Falta aplicar a migração db/2.17.0_notas_fotos_e_cartoes.sql.';
+const semMigracao217 = (e) => /atividade_(checklist|copiar|comentario_)|pessoas|etiquetas|does not exist|schema cache/i.test(e?.message || '');
 
 /* ============================================================
    ROTA
@@ -114,8 +168,7 @@ async function pageAtividades(sub, sub2){
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando as atividades…</div>`;
   await atvCarregar();
   if (atividades.erro){
-    $('#main').innerHTML = `<div class="pg-head"><span class="eyebrow">Trabalho</span>
-      <h1>Atividades</h1></div>` + avisoSemMigracao();
+    $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:'Quadros' }) + avisoSemMigracao();
     return;
   }
   if (sub === 'card' && sub2) return telaCard(sub2);
@@ -123,16 +176,14 @@ async function pageAtividades(sub, sub2){
 
   const gs = meusGrupos();
   if (!gs.length){
-    $('#main').innerHTML = `<div class="pg-head"><span class="eyebrow">Trabalho</span>
-      <h1>Atividades</h1></div>
-      <div class="vazio"><div class="glyph">—</div><h3>Nenhum quadro</h3>
-      <p>Os quadros são por grupo, e ainda não existe nenhum. Quem cria é a
-      Administração, em Grupos.</p></div>`;
+    $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:'Quadros' })
+      + estado.vazio({ texto:'Nenhum quadro. Os quadros são por grupo; quem cria é a Administração, em Grupos.' });
     return;
   }
   atividades.grupoAtual = gs.find(g => g.prefixo === (sub||'').toUpperCase())
     || gs.find(g => g.id === atividades.grupoAtual?.id)
     || grupoPadrao();
+  if (sub2 === 'arquivadas' && posso.ver(atividades.grupoAtual)) return telaArquivadas();
   /* O endereço passa a dizer qual quadro está aberto: #/atividades vira
      #/atividades/ORT. Assim o link copiado abre o mesmo quadro e o menu
      lateral acende o item certo. replaceState não dispara hashchange. */
@@ -160,23 +211,30 @@ function telaQuadro(){
         <h3>${esc(g.nome)} é um quadro fechado</h3>
         <p>Você vê que ele existe, mas não as atividades dele. São
            ${g.pessoas || 0} pessoa${(g.pessoas||0)===1?'':'s'} no grupo.</p>
-        <p class="sub">Para acompanhar, peça acesso a quem administra o portal —
+        <p class="sub">Para acompanhar, peça acesso a quem administra o portal:
            é uma permissão por quadro, e não precisa colocar você no grupo.</p>
         <div class="acts"><a class="btn ghost" href="#/servicos/solicitacoes">Abrir uma solicitação</a></div>
       </div>`;
     return;
   }
 
+  /* a etiqueta escolhida em outro quadro não vale neste */
+  const ets = etiquetasDoQuadro(g.id);
+  if (f.etiqueta && !ets.includes(f.etiqueta)) f.etiqueta = '';
   $('#main').innerHTML = topoQuadro(g, true) + `
     <div class="filtros kb-filtros">
       <div class="fld cresce"><label>Buscar</label>
-        <input value="${esc(f.q)}" placeholder="Código, título ou responsável"
+        <input value="${esc(f.q)}" placeholder="Código, título, pessoa ou etiqueta"
           oninput="atividades.filtro.q=this.value;desenhaColunas()"></div>
       <div class="fld"><label>Pessoa</label>
         <select onchange="atividades.filtro.pessoa=this.value?+this.value:null;desenhaColunas()">
           <option value="">Todas</option>
           ${pessoasDoGrupo().map(m => `<option value="${m.registro}" ${f.pessoa===m.registro?'selected':''}
             >${esc(m.nome)}</option>`).join('')}</select></div>
+      ${ets.length ? `<div class="fld et-f"><label>Etiqueta</label>
+        <select onchange="atividades.filtro.etiqueta=this.value;desenhaColunas()">
+          <option value="">Todas</option>
+          ${ets.map(e => `<option value="${esc(e)}" ${f.etiqueta===e?'selected':''}>${esc(e)}</option>`).join('')}</select></div>` : ''}
       <div class="fld"><label>Recorte</label>
         <select onchange="atividades.filtro.so=this.value;desenhaColunas()">
           <option value="">Tudo</option>
@@ -199,23 +257,12 @@ function telaQuadro(){
    ============================================================ */
 function topoQuadro(g, comAcoes){
   const edito = posso.editar(g);
-  return `
-    <div class="kb-topo">
-      <div class="kb-ident">
-        <span class="eyebrow">Trabalho</span>
-        <div class="kb-linha">
-          <h1>Atividades</h1>
-          ${seletorGrupo(g)}
-        </div>
-      </div>
-      <div class="kb-acoes">
-        <a class="btn ghost" href="#/atividades/carga">Carga da equipe</a>
-        ${comAcoes && edito
-          ? `<button class="btn solid" onclick="modalNovaAtividade()">Nova atividade</button>` : ''}
-        ${comAcoes && !edito
-          ? `<span class="kb-selo">${icCadeado(13)} só leitura</span>` : ''}
-      </div>
-    </div>`;
+  return cabecalho({ espaco:'Atividades', titulo:g.nome,
+    acoes:[seletorGrupo(g),
+      comAcoes ? `<a class="btn ghost" href="#/atividades/${esc(g.prefixo)}/arquivadas" title="Os cartões arquivados deste quadro">${ic('arquivar')} Arquivadas</a>` : '',
+      `<a class="btn ghost" href="#/atividades/carga">Carga da equipe</a>`,
+      comAcoes && edito ? `<button class="btn solid" onclick="modalNovaAtividade()">Nova atividade</button>` : '',
+      comAcoes && !edito ? `<span class="kb-selo">${icCadeado(13)} só leitura</span>` : ''] });
 }
 
 function seletorGrupo(g){
@@ -285,14 +332,17 @@ function pessoasDoGrupo(){
 
 function itensVisiveis(){
   const g = atividades.grupoAtual, f = atividades.filtro, q = norm(f.q);
+  const nomes = a => pessoasDoCartao(a).map(m => m.nome).join(' ');
   return atividades.itens.filter(a =>
-    a.grupo_id === g.id &&
-    (!f.pessoa || a.responsavel === f.pessoa) &&
-    (f.so !== 'minhas'      || a.responsavel === state.perfil?.registro) &&
+    noQuadro(a, g.id) &&
+    (!f.pessoa || noCartao(a, f.pessoa)) &&
+    (f.so !== 'minhas'      || noCartao(a, state.perfil?.registro)) &&
     (f.so !== 'atrasadas'   || a.atrasada) &&
     (f.so !== 'sinalizadas' || a.sinalizada) &&
+    (!f.etiqueta || (a.etiquetas || []).includes(f.etiqueta)) &&
     (!q || norm(a.codigo).includes(q) || norm(a.titulo).includes(q)
-        || norm(a.responsavel_nome).includes(q))
+        || norm(a.responsavel_nome).includes(q) || norm(nomes(a)).includes(q)
+        || (a.etiquetas || []).some(e => norm(e).includes(q)))
   );
 }
 
@@ -300,7 +350,7 @@ function desenhaColunas(){
   const vis = itensVisiveis();
   const atrasadas = vis.filter(a => a.atrasada).length;
   const sinal     = vis.filter(a => a.sinalizada).length;
-  const semDono   = vis.filter(a => !a.responsavel && a.status !== 'concluida').length;
+  const semDono   = vis.filter(a => !a.responsavel && !(a.pessoas || []).length && a.status !== 'concluida').length;
 
   const r = $('#atv-resumo');
   if (r) r.innerHTML = (atrasadas || sinal || semDono) ? `<div class="atv-resumo">
@@ -313,7 +363,8 @@ function desenhaColunas(){
 
   const edito = posso.editar(atividades.grupoAtual);
   $('#kanban').innerHTML = COLUNAS.map(([st, rot]) => {
-    const cards = vis.filter(a => a.status === st).sort((a,b) => a.ordem - b.ordem);
+    const gid = atividades.grupoAtual.id;
+    const cards = vis.filter(a => a.status === st).sort((a,b) => ordemNo(a, gid) - ordemNo(b, gid));
     const alvo = edito
       ? `ondragover="event.preventDefault();this.classList.add('sobre')"
          ondragleave="this.classList.remove('sobre')"
@@ -328,7 +379,7 @@ function desenhaColunas(){
 }
 
 function cartaoHTML(a){
-  const dono = (state.membros || []).find(m => m.registro === a.responsavel);
+  const pessoas = pessoasDoCartao(a);
   const edito = posso.editar(atividades.grupoAtual);
   /* O brilho no topo é o sinal sempre presente: cor da prioridade, ou
      âmbar quando o cartão está sinalizado — sinalizado é "olhe para
@@ -343,6 +394,8 @@ function cartaoHTML(a){
        ondragover="event.preventDefault();event.stopPropagation()"
        ondrop="event.stopPropagation();soltarEm(event,'${a.status}','${a.id}')"`
     : '';
+  const ets = a.etiquetas || [];
+  const ck = Number(a.check_total) || 0, ckf = Number(a.check_feitos) || 0;
   return `<article class="kb-card${a.sinalizada?' sinalizada':''}${a.status==='concluida'?' concluida':''}${edito?'':' fixo'}"
     style="--pri:${cor}" data-id="${a.id}" ${arraste}
     onclick="location.hash='#/atividades/card/${a.codigo}'">
@@ -351,17 +404,22 @@ function cartaoHTML(a){
         <span class="cod">${esc(a.codigo)}</span>
         ${a.origem_tipo ? `<span class="org" title="Nasceu de uma ${esc(ROTULO_ORIGEM[a.origem_tipo] || a.origem_tipo)}"
           >${esc(ROTULO_ORIGEM[a.origem_tipo] || a.origem_tipo)}</span>` : ''}
+        ${(a.espelhos || []).length ? `<span class="org kb-esp" title="Também em: ${esc(quadrosDoCartao(a)
+          .filter(q => q.id !== atividades.grupoAtual?.id).map(q => q.nome).join(', '))}">espelho</span>` : ''}
       </span>
       <span class="pri" style="background:${corPrioridade(a.prioridade)}"
         title="Prioridade ${rotuloPrioridade(a.prioridade).toLowerCase()}"></span>
     </div>
+    ${ets.length ? `<div class="kb-ets">${ets.slice(0, 3).map(e => etiquetaHTML(e)).join('')}${
+      ets.length > 3 ? `<span class="et" style="--et:transparent">+${ets.length - 3}</span>` : ''}</div>` : ''}
     <div class="kb-tit">${esc(a.titulo)}</div>
     ${a.sinalizada ? `<div class="kb-flag">${esc(a.sinalizada_motivo || 'Precisa de atenção')}</div>` : ''}
     <div class="kb-pe">
-      ${dono ? avatarFoto(dono, 22, 9) : '<span class="kb-sem">sem responsável</span>'}
+      ${pessoas.length ? rostosHTML(pessoas, 3, 22) : '<span class="kb-sem">sem responsável</span>'}
       <span class="kb-meta">
+        ${ck ? `<span class="ck${ckf === ck ? ' cheia' : ''}" title="Checklist: ${ckf} de ${ck}">${ic('checklist')}${ckf}/${ck}</span>` : ''}
         ${a.prazo ? `<span class="${a.atrasada?'atrasado':''}">${fmtD(a.prazo)}</span>` : ''}
-        ${a.comentarios ? `<span title="${a.comentarios} comentário(s)">${a.comentarios}c</span>` : ''}
+        ${a.comentarios ? `<span class="cmt" title="${a.comentarios} comentário(s)">${a.comentarios}c</span>` : ''}
       </span>
     </div>
   </article>`;
@@ -376,30 +434,34 @@ async function soltarEm(ev, status, antesDoId){
   const a = atividades.itens.find(x => x.id === id);
   if (!a) return;
 
+  /* a ordem é a do quadro aberto: no espelho, a do espelho */
+  const gid = atividades.grupoAtual.id, espelho = a.grupo_id !== gid;
+  const ord = x => ordemNo(x, gid);
   const naColuna = atividades.itens
-    .filter(x => x.grupo_id === a.grupo_id && x.status === status && x.id !== id)
-    .sort((x,y) => x.ordem - y.ordem);
+    .filter(x => noQuadro(x, gid) && x.status === status && x.id !== id)
+    .sort((x,y) => ord(x) - ord(y));
   let ordem;
   if (!antesDoId || antesDoId === id){
-    ordem = (naColuna.length ? naColuna[naColuna.length-1].ordem : 0) + 1000;
+    ordem = (naColuna.length ? ord(naColuna[naColuna.length-1]) : 0) + 1000;
   } else {
     const ix = naColuna.findIndex(x => x.id === antesDoId);
-    const antes = ix > 0 ? naColuna[ix-1].ordem : (naColuna[ix]?.ordem ?? 0) - 2000;
-    const alvo  = naColuna[ix]?.ordem ?? 0;
+    const antes = ix > 0 ? ord(naColuna[ix-1]) : (naColuna[ix] ? ord(naColuna[ix]) : 0) - 2000;
+    const alvo  = naColuna[ix] ? ord(naColuna[ix]) : 0;
     ordem = (antes + alvo) / 2;
   }
-  if (a.status === status && Math.abs(a.ordem - ordem) < 0.0001) return;
+  if (a.status === status && Math.abs(ord(a) - ordem) < 0.0001) return;
 
   /* pinta na hora e conserta se o banco recusar — arrastar precisa
      parecer instantâneo, e a RLS ainda é quem decide */
-  const antesStatus = a.status, antesOrdem = a.ordem;
-  a.status = status; a.ordem = ordem;
+  const antesStatus = a.status, antesOrdem = ord(a);
+  const porOrdem = v => { if (espelho) a.espelhos_ordem = { ...(a.espelhos_ordem || {}), [gid]: v }; else a.ordem = v; };
+  a.status = status; porOrdem(ordem);
   if (status === 'concluida' && antesStatus !== 'concluida') a.atrasada = false;
   desenhaColunas();
 
-  const { data, error } = await sb.rpc('atividade_editar', { p: { id, status, ordem } });
+  const { data, error } = await sb.rpc('atividade_editar', { p: { id, status, ordem, quadro: gid } });
   if (error || data?.status !== 'ok'){
-    a.status = antesStatus; a.ordem = antesOrdem;
+    a.status = antesStatus; porOrdem(antesOrdem);
     desenhaColunas();
     toast(data?.status === 'sem_permissao'
       ? 'Só quem está no grupo move as atividades dele.'
@@ -410,17 +472,49 @@ async function soltarEm(ev, status, antesDoId){
 }
 
 /* ============================================================
+   OS ARQUIVADOS — #/atividades/<prefixo>/arquivadas
+   Arquivar tira o cartão do quadro, não do sistema: aqui ele se acha
+   e volta para a coluna em que estava.
+   ============================================================ */
+async function telaArquivadas(){
+  const g = atividades.grupoAtual, edito = posso.editar(g);
+  $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:'Arquivadas', voltar:[g.nome, '#/atividades/' + g.prefixo] })
+    + `<div class="card" id="arq-lista"><div class="carregando"><span class="spin"></span></div></div>`;
+  const { data, error } = await sb.from('atividades_quadro').select('*').eq('grupo_id', g.id).eq('arquivada', true)
+    .order('atualizado_em', { ascending:false }).limit(200);
+  const el = $('#arq-lista'); if (!el) return;
+  if (error){ el.innerHTML = `<div class="aviso-box err">Não foi possível ler os arquivados: ${esc(error.message)}</div>`; return; }
+  const lista = (data || []).filter(a => a.grupo_id === g.id && a.arquivada);
+  el.innerHTML = lista.length ? `<div class="arq-lista">${lista.map(a => `<div class="arq">
+      <span class="cod">${esc(a.codigo)}</span>
+      <a class="tt" href="#/atividades/card/${esc(a.codigo)}">${esc(a.titulo)}</a>
+      <span class="q">${esc(rotuloStatus(a.status))}, ${fmtQuando(a.atualizado_em || a.criado_em)}</span>
+      ${edito ? `<button class="btn ghost mini" onclick="restaurarAtividade('${a.id}','${esc(a.codigo)}',true)">Restaurar</button>` : ''}
+    </div>`).join('')}</div>`
+    : '<div class="kb-vazio" style="text-align:left">Nenhuma atividade arquivada neste quadro.</div>';
+}
+async function restaurarAtividade(id, codigo, naLista){
+  const { data, error } = await sb.rpc('atividade_editar', { p:{ id, arquivada:false } });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível restaurar'), true);
+  toast(`${codigo} de volta ao quadro.`);
+  await atvCarregar(true);
+  if (naLista) telaArquivadas(); else telaCard(codigo);
+}
+
+/* ============================================================
    NOVA ATIVIDADE
    ============================================================ */
 function modalNovaAtividade(status){
   const g = atividades.grupoAtual;
+  const ets = etiquetasDoQuadro(g.id);
+  atividades.novasEtiquetas = [];
   abreModal(`<h3>Nova atividade</h3>
     <p class="sub" style="margin-bottom:16px">Em ${esc(g.nome)}, o código sai na hora de salvar</p>
     <div class="form-grid">
       <div class="fld full"><label>O que precisa ser feito</label>
         <input id="na-tit" placeholder="Calibrar o encoder do protótipo"></div>
-      <div class="fld full"><label>Detalhes (opcional)</label>
-        <textarea id="na-desc" rows="3" placeholder="Contexto, critério de pronto, links…"></textarea></div>
+      <div class="fld full"><label for="na-desc">Detalhes (opcional)</label>${mdBarra('na-desc')}
+        <textarea id="na-desc" rows="4" placeholder="Contexto, critério de pronto, links. Aceita Markdown."></textarea></div>
       <div class="fld"><label>Responsável</label>
         <select id="na-resp"><option value="">— ninguém ainda —</option>
           ${pessoasDoGrupo().map(m => `<option value="${m.registro}"
@@ -432,6 +526,19 @@ function modalNovaAtividade(status){
       <div class="fld"><label>Coluna</label>
         <select id="na-status">${COLUNAS.map(([k,l]) =>
           `<option value="${k}" ${k===(status||'a_fazer')?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="fld full"><label>Outras pessoas ${dica('Além do responsável. Quem entra é avisado, segue o cartão e o vê em Suas tarefas.')}</label>
+        <div class="multi" style="max-height:132px">${pessoasMencionaveis(g.id).map(m => `<label class="check">
+          <input type="checkbox" class="na-pes" value="${m.registro}"> ${esc(m.nome)}</label>`).join('')
+          || '<div class="small dim">Ninguém para incluir.</div>'}</div></div>
+      <div class="fld full"><label for="na-ets-in">Etiquetas</label>
+        <div class="pills-ed" onclick="if(event.target===this)document.getElementById('na-ets-in').focus()">
+          <span id="na-ets-lista"></span>
+          <input id="na-ets-in" list="na-ets-dl" autocomplete="off" placeholder="digite e tecle Enter"
+            onkeydown="naEtTecla(event)" onblur="naEtAdicionar()">
+        </div>
+        <datalist id="na-ets-dl">${ets.map(e => `<option value="${esc(e)}">`).join('')}</datalist>
+        ${ets.length ? `<div class="cd-linha" style="margin-top:8px">${ets.slice(0, 8).map(e =>
+          `<button type="button" class="et" style="--et:${corEtiqueta(e)}" onclick="naEtAdicionar(this.dataset.et)" data-et="${esc(e)}">${esc(e)}</button>`).join('')}</div>` : ''}</div>
     </div>
     <p class="err-msg" id="na-erro"></p>
     <div class="acts" style="justify-content:flex-end">
@@ -439,12 +546,42 @@ function modalNovaAtividade(status){
       <button class="btn solid" id="na-btn" onclick="salvarNovaAtividade()">Criar</button></div>`, true);
   setTimeout(() => $('#na-tit')?.focus(), 50);
 }
+/* as etiquetas da atividade nova, no editor de pills: Enter (ou vírgula)
+   põe, o × tira, e a sugestão do quadro entra com a grafia de lá */
+function naEtDesenhar(){
+  const l = $('#na-ets-lista'); if (!l) return;
+  l.innerHTML = (atividades.novasEtiquetas || []).map((e, i) => `<span class="pill-ed">${esc(e)}<button type="button"
+    onclick="naEtTirar(${i})" aria-label="Tirar a etiqueta ${esc(e)}" title="Tirar">×</button></span>`).join('');
+  document.querySelectorAll('#modal .cd-linha .et[data-et]').forEach(b =>
+    b.classList.toggle('on', (atividades.novasEtiquetas || []).some(x => norm(x) === norm(b.dataset.et))));
+}
+function naEtAdicionar(valor){
+  const inp = $('#na-ets-in'); if (!inp) return;
+  const lista = atividades.novasEtiquetas ||= [];
+  const conhecidas = etiquetasDoQuadro(atividades.grupoAtual.id);
+  String(valor ?? inp.value).split(',').map(x => x.trim().replace(/\s+/g, ' ').slice(0, 32)).filter(Boolean).forEach(e => {
+    const can = conhecidas.find(x => norm(x) === norm(e)) || e;
+    if (!lista.some(x => norm(x) === norm(can)) && lista.length < 10) lista.push(can);
+  });
+  if (valor == null) inp.value = '';
+  naEtDesenhar();
+}
+function naEtTirar(i){ (atividades.novasEtiquetas || []).splice(i, 1); naEtDesenhar(); $('#na-ets-in')?.focus(); }
+function naEtTecla(ev){
+  if (ev.key === 'Enter' || ev.key === ','){ ev.preventDefault(); naEtAdicionar(); return; }
+  if (ev.key === 'Backspace' && !ev.target.value && (atividades.novasEtiquetas || []).length){
+    ev.preventDefault(); atividades.novasEtiquetas.pop(); naEtDesenhar();
+  }
+}
 async function salvarNovaAtividade(){
   const tit = $('#na-tit').value.trim();
   if (!tit){ $('#na-erro').textContent = 'Diga o que precisa ser feito.'; return; }
+  naEtAdicionar();   /* o que ficou digitado sem Enter também vale */
+  const pessoas = [...document.querySelectorAll('.na-pes:checked')].map(x => +x.value);
+  const etiquetas = [...(atividades.novasEtiquetas || [])];
   $('#na-btn').disabled = true;
   try{
-    const { data, error } = await sb.rpc('atividade_criar', { p: {
+    const p = {
       grupo_id: atividades.grupoAtual.id,
       titulo: tit,
       descricao: $('#na-desc').value.trim() || null,
@@ -452,7 +589,11 @@ async function salvarNovaAtividade(){
       prazo: $('#na-prazo').value || null,
       prioridade: $('#na-pri').value,
       status: $('#na-status').value
-    }});
+    };
+    /* sem a 2.17.0 a função não conhece os dois campos, e os ignora */
+    if (pessoas.length) p.pessoas = pessoas;
+    if (etiquetas.length) p.etiquetas = etiquetas;
+    const { data, error } = await sb.rpc('atividade_criar', { p });
     if (error || data?.status !== 'ok'){
       $('#na-erro').textContent = data?.status === 'sem_permissao'
         ? 'Só quem está no grupo cria atividades nele.'
@@ -475,14 +616,21 @@ async function salvarNovaAtividade(){
    ============================================================ */
 async function telaCard(codigo){
   if (norm(atividades.card?.codigo || '') !== norm(codigo)) atividades.reabrir = false;
+  /* o cartão vai ser redesenhado: o seletor aberto perderia o botão */
+  if (seletor.el){ seletor.el.remove(); seletor.el = null; seletor.cfg = null; }
+  atividades.mudouPessoas = false;
+  mencaoFechar();
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando ${esc(codigo)}…</div>`;
   await atvCarregar(true);
-  const a = atividades.itens.find(x => norm(x.codigo) === norm(codigo));
+  let a = atividades.itens.find(x => norm(x.codigo) === norm(codigo));
+  /* arquivada não está no quadro: busca-se pelo código */
   if (!a){
-    $('#main').innerHTML = `<div class="topo-gestao"><div class="tx">
-      <span class="eyebrow">Atividade</span><h1>${esc(codigo)} não encontrada</h1>
-      <p class="lead">O código não existe, ou a atividade foi arquivada.</p></div></div>
-      <div class="acts"><a class="btn ghost" href="#/atividades">Voltar ao quadro</a></div>`;
+    const r = await sb.from('atividades_quadro').select('*').eq('codigo', String(codigo).toUpperCase()).maybeSingle();
+    if (!r.error && r.data?.arquivada) a = r.data;
+  }
+  if (!a){
+    $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:codigo + ' não encontrada', voltar:['Quadro', '#/atividades'],
+      lead:'O código não existe, ou você não tem acesso ao quadro dela.' });
     return;
   }
   atividades.card = a;
@@ -490,7 +638,8 @@ async function telaCard(codigo){
     sb.from('atividade_comentarios').select('*').eq('atividade_id', a.id).order('criado_em'),
     sb.from('atividade_log').select('*').eq('atividade_id', a.id).order('criado_em', { ascending:false }).limit(40),
     sb.from('atividade_seguidores').select('registro').eq('atividade_id', a.id),
-    a.origem_tipo ? sb.rpc('atividade_origem_detalhe', { p_codigo: a.codigo }) : Promise.resolve({ data:null })
+    a.origem_tipo ? sb.rpc('atividade_origem_detalhe', { p_codigo: a.codigo }) : Promise.resolve({ data:null }),
+    ckCarregar(a)
   ]);
   atividades.origem = o.data || null;
   desenhaCard(a, c.data || [], l.data || [], (s.data || []).map(x => x.registro), o.data || null);
@@ -498,25 +647,23 @@ async function telaCard(codigo){
 
 function desenhaCard(a, comentarios, log, seguidores, origem){
   const sigo = seguidores.includes(state.perfil?.registro);
-  const dono = (state.membros || []).find(m => m.registro === a.responsavel);
+  const g = grupoDoCartao(a), edito = editoCartao(a), editoDono = posso.editar(g);
   const pes  = pessoasDoGrupoDe(a.grupo_id, a.responsavel);
+  /* volta ao quadro de onde se veio, se o cartão está nele (espelho) */
+  const volta = atividades.grupoAtual && noQuadro(a, atividades.grupoAtual.id) ? atividades.grupoAtual.prefixo : a.grupo_prefixo;
+  const copias = log.filter(e => e.tipo === 'copiou_para' && e.para).map(e => e.para);
+  atividades.comentarios = comentarios;
 
-  $('#main').innerHTML = `
-    <div class="topo-gestao">
-      <div style="padding-top:34px"><a class="icon-btn" href="#/atividades/${esc(a.grupo_prefixo)}"
-        title="Voltar ao quadro" aria-label="Voltar ao quadro">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-          stroke-linecap="round"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></a></div>
-      <div class="tx"><span class="eyebrow">${esc(a.grupo)}, ${esc(a.codigo)}</span>
-        <h1 id="cd-titulo" class="editavel" onclick="editarTitulo()">${esc(a.titulo)}</h1>
-        ${a.atrasada ? `<p class="lead" style="color:var(--bad)">Atrasada desde ${fmtD(a.prazo)}.</p>` : ''}</div>
-      <div class="acoes">
-        <button class="btn ghost" onclick="alternarSeguir(${sigo})">${sigo?'Seguindo':'Seguir'}</button>
-        <button class="btn ${a.sinalizada?'solid':'ghost'}" onclick="modalSinalizar()">
-          ${a.sinalizada ? 'Sinalizada' : 'Sinalizar'}</button>
-      </div>
+  $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:a.titulo, codigo:a.codigo,
+      h1Attrs:`id="cd-titulo" class="${edito ? 'editavel' : ''}" ${edito ? 'onclick="editarTitulo()"' : ''}`,
+      voltar:['Quadro', '#/atividades/' + volta],
+      meta:[esc(a.grupo), a.atrasada ? `<span class="pill p-bad">Atrasada desde ${fmtD(a.prazo)}</span>` : ''],
+      acoes:[`<button class="btn ghost" onclick="alternarSeguir(${sigo})">${sigo?'Seguindo':'Seguir'}</button>`,
+        `<button class="btn ${a.sinalizada?'solid':'ghost'}" onclick="modalSinalizar()">${a.sinalizada ? 'Sinalizada' : 'Sinalizar'}</button>`] }) + `
     </div>
 
+    ${a.arquivada ? `<div class="aviso-box warn"><b>Arquivada.</b> Fora do quadro${editoDono
+      ? `: <button class="btn ghost mini" onclick="restaurarAtividade('${a.id}','${esc(a.codigo)}')">Restaurar</button>` : '.'}</div>` : ''}
     ${a.sinalizada ? `<div class="aviso-box warn"><b>Precisa de atenção.</b>
       ${esc(a.sinalizada_motivo || '')}</div>` : ''}
 
@@ -525,30 +672,24 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
         ${blocoOrigem(a, origem)}
         <div class="card" style="margin-bottom:16px">
           <h3>Descrição</h3>
-          <div id="cd-desc" class="cd-desc editavel" onclick="editarDescricao()">${
-            a.descricao ? esc(a.descricao) : '<span class="muted">Sem detalhes. Clique para escrever.</span>'}</div>
+          <div id="cd-desc" class="cd-desc md${edito ? ' editavel' : ''}" ${edito ? 'onclick="editarDescricao(event)"' : ''}>${
+            a.descricao ? md(a.descricao) : `<span class="muted">${edito ? 'Sem detalhes. Clique para escrever.' : 'Sem detalhes.'}</span>`}</div>
         </div>
+
+        ${ckCartaoHTML(a, edito)}
 
         <div class="card" style="margin-bottom:16px">
           <h3>Comentários ${comentarios.length ? `<span class="muted">(${comentarios.length})</span>` : ''}</h3>
-          <p class="sub" style="margin-bottom:16px">A pessoa mencionada é notificada</p>
-          <div class="cd-coments">${comentarios.map(c => {
-            const q = (state.membros||[]).find(m => m.registro === c.registro);
-            return `<div class="cm">
-              ${q ? avatarFoto(q, 28, 10) : ''}
-              <div class="cm-cx"><div class="cm-tp"><b>${esc(q?.nome || 'Alguém')}</b>
-                <span>${fmtQuando(c.criado_em)}</span></div>
-              <div class="cm-cp">${esc(c.corpo)}</div></div></div>`;
-          }).join('') || '<div class="kb-vazio" style="text-align:left">Nenhum comentário.</div>'}</div>
+          <p class="sub" style="margin-bottom:16px">Quem é marcado com @ é avisado</p>
+          <div class="cd-coments" id="cd-coments">${comentarios.map(comentarioHTML).join('')
+            || '<div class="kb-vazio" style="text-align:left">Nenhum comentário.</div>'}</div>
           <div class="cd-novo">
-            <textarea id="cd-coment" rows="2" placeholder="Escreva um comentário…"></textarea>
-            <div class="cd-menc">
-              <span class="small muted">Marcar:</span>
-              ${pes.map(m => `<button class="chip mini" data-reg="${m.registro}"
-                onclick="this.classList.toggle('on')">${esc(m.nome.split(' ')[0])}</button>`).join(' ')}
+            <textarea id="cd-coment" rows="3" placeholder="Escreva um comentário. Digite @ para marcar alguém."></textarea>
+            <div class="cd-novo-pe">
+              <span class="small muted">Aceita Markdown</span>
+              <button type="button" class="btn ghost mini" onclick="mencaoIniciar('cd-coment')" title="Marcar alguém">${ic('mencao')} Marcar</button>
+              <button class="btn solid" id="cd-btn" onclick="enviarComentario()">Comentar</button>
             </div>
-            <div class="acts" style="margin-top:10px">
-              <button class="btn solid" id="cd-btn" onclick="enviarComentario()">Comentar</button></div>
           </div>
         </div>
       </div>
@@ -572,14 +713,26 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
                 `<option value="${k}" ${k===a.prioridade?'selected':''}>${l}</option>`).join('')}</select></div>
             <div class="fld"><label>Estimativa (horas)</label>
               <input type="number" step="0.5" min="0" value="${a.estimativa_h ?? ''}"
-                onchange="mudarCampo('estimativa_h', this.value)"></div>
+                oninput="cdEstimativa(this)" onblur="cdEstimativa(this, true)"></div>
           </div>
+          ${a.pessoas !== undefined ? `
+          <div class="cd-bloco"><label>Outras pessoas</label>
+            <div class="cd-linha" id="cd-pessoas">${pessoasChipsHTML(a, edito)}</div></div>
+          <div class="cd-bloco"><label>Etiquetas</label>
+            <div class="cd-linha" id="cd-etiquetas">${etiquetasChipsHTML(a, edito)}</div></div>` : ''}
           <div class="dl" style="margin-top:6px">
             <div class="it"><dt>Criada por</dt><dd>${esc(a.criado_por_nome || '—')}</dd></div>
             <div class="it"><dt>Criada em</dt><dd>${fmtD(String(a.criado_em).slice(0,10))}</dd></div>
           </div>
+          ${quadrosHTML(a)}
+          ${a.copia_de_codigo ? `<p class="cd-copia">Cópia de <a href="#/atividades/card/${esc(a.copia_de_codigo)}">${esc(a.copia_de_codigo)}</a></p>` : ''}
+          ${copias.length ? `<p class="cd-copia">Cópias: ${[...new Set(copias)].map(c =>
+            `<a href="#/atividades/card/${esc(c)}">${esc(c)}</a>`).join(', ')}</p>` : ''}
           <div class="acts" style="margin-top:14px">
-            <button class="btn ghost" onclick="arquivarAtividade()">Arquivar</button></div>
+            ${a.pessoas !== undefined && editoDono && !a.arquivada ? `<button class="btn ghost" onclick="modalOutroQuadro()">${ic('copy')} Espelhar ou mover</button>` : ''}
+            <button class="btn ghost" onclick="copiarLinkCartao()">${ic('link')} Copiar link</button>
+            ${editoDono && !a.arquivada ? `<button class="btn ghost" onclick="arquivarAtividade()">${ic('arquivar')} Arquivar</button>` : ''}
+          </div>
         </div>
 
         <div class="card"><h3>Histórico</h3>
@@ -593,6 +746,8 @@ function desenhaCard(a, comentarios, log, seguidores, origem){
         </div>
       </div>
     </div>`;
+  ligarMencoes('cd-coment', a.grupo_id);
+  ckLigarArraste(edito);
 }
 
 /* ============================================================
@@ -618,6 +773,8 @@ const ROTULO_DADOS = {
 };
 
 function blocoOrigem(a, o){
+  if(a.origem_tipo==='newsletter')return `<div class="card"><h3>Newsletter</h3><a class="btn" href="#/servicos/newsletter/${esc(a.origem_id)}">Revisar newsletter</a></div>`;
+  if(a.origem_tipo==='reporte')return `<div class="card"><h3>Sinalização do reporte semanal</h3><p class="small muted">Acompanhe o caso neste cartão. Registre ocorrências na ficha do membro.</p></div>`;
   if (!a.origem_tipo) return '';
   if (!o) return `<div class="card" style="margin-bottom:16px"><h3>De onde veio</h3>
     <p class="sub">Este cartão nasceu de ${esc(a.origem_tipo)}, mas o registro de
@@ -643,7 +800,7 @@ function origemSolicitacao(o){
 
   return `<div class="card" style="margin-bottom:16px">
     <h3>De onde veio</h3>
-    <p class="sub" style="margin-bottom:14px">Solicitação ${esc(o.protocolo || '')} —
+    <p class="sub" style="margin-bottom:14px">Solicitação ${esc(o.protocolo || '')}:
       ${esc(TIPOS_SOL[o.especie] || o.especie)}, <span class="pill"><span class="dt"
         style="background:${esc(STATUS_SOL[o.status]?.c || 'var(--dim)')}"></span
         >${esc(STATUS_SOL[o.status]?.l || o.status)}</span></p>
@@ -655,13 +812,23 @@ function origemSolicitacao(o){
     ${o.resposta ? `<div class="aviso-box" style="margin-top:14px"><b>Resposta:</b>
       ${esc(o.resposta)}<br><span class="small muted">${esc(o.respondido_por || '')}${
         o.respondido_em ? ', ' + fmtD(String(o.respondido_em).slice(0,10)) : ''}</span></div>` : ''}
-    ${can() ? formDecisao(o, fechada) : (fechada ? '' :
+    ${o.registro === state.perfil?.registro && state.perfil?.papel !== 'admin' && !fechada
+      ? `<p class="sub" style="margin-top:14px">Este pedido é seu: outra pessoa do Depto. de Pessoal decide.</p>`
+      : (o.dados || {}).labbio_pedido_id ? blocoBiometria(o.dados.labbio_pedido_id) : can() ? formDecisao(o, fechada) : (fechada ? '' :
       `<p class="sub" style="margin-top:14px">Só o Depto de Pessoal decide esta solicitação.</p>`)}
   </div>`;
 }
 
+/* pedido de acesso biométrico (2.19.1, L6): o Pessoal vê os dados e a foto e encaminha ao LABBIO */
+function blocoBiometria(id){
+  if (!can()) return `<p class="sub" style="margin-top:14px">Só o Depto de Pessoal decide esta solicitação.</p>`;
+  carregarModulo('biometria').then(() => bioPessoalBloco(id)).catch(() => {
+    const el = document.getElementById('bio-pessoal'); if (el) el.innerHTML = '<div class="aviso-box err">Não foi possível carregar o pedido de biometria.</div>'; });
+  return `<div id="bio-pessoal" style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px"><div class="carregando"><span class="spin"></span> Carregando o pedido…</div></div>`;
+}
 function formDecisao(o, fechada){
-  const itens = (state.itensAcesso || []);
+  /* a biometria do LABBIO não é concedida por aqui (2.19.2): tem pedido próprio */
+  const itens = (state.itensAcesso || []).filter(i => i.chave !== 'labbio_biometria');
   const jaAtivo = new Set((o.acessos || []).filter(x => x.ativo).map(x => x.item_id));
   const pedido  = (o.dados || {}).item_id || null;
   /* o pedido ainda não concedido vem marcado: é a resposta mais provável */
@@ -764,7 +931,7 @@ function origemApontamento(o){
   return `<div class="card" style="margin-bottom:16px">
     <h3>De onde veio</h3>
     <p class="sub" style="margin-bottom:14px">Apontamento semanal do grupo
-      ${esc(o.grupo || '—')}${o.data ? ' — ' + fmtD(String(o.data).slice(0,10)) : ''}</p>
+      ${esc(o.grupo || '—')}${o.data ? ', ' + fmtD(String(o.data).slice(0,10)) : ''}</p>
     <div class="dl">
       ${linhaDl('Entregue por', esc(o.responsavel || '—'))}
       ${linhaDl('Pessoas no apontamento', String(itens.length))}
@@ -798,20 +965,44 @@ function pessoasDoGrupoDe(grupoId, incluirRegistro){
   }
   return lista;
 }
+/* Quem se pode marcar e atribuir num quadro: num quadro reservado, só
+   quem está no grupo (os outros nem leem o cartão); nos abertos, a equipe
+   ativa, com o grupo primeiro. */
+function pessoasMencionaveis(grupoId){
+  const g = atividades.grupos.find(x => x.id === grupoId);
+  const doGrupo = pessoasDoGrupoDe(grupoId);
+  if (g?.reservado) return doGrupo;
+  const ja = new Set(doGrupo.map(m => m.registro));
+  return [...doGrupo, ...(state.membros || []).filter(m => !ja.has(m.registro)
+    && ['Ativo','Em pausa / avaliação','Sob demanda'].includes(m.status))];
+}
 
 function frasesLog(e){
   switch (e.tipo){
     case 'criou':        return 'Criou a atividade';
     case 'moveu':        return `Moveu de "${rotuloStatus(e.de)}" para "${rotuloStatus(e.para)}"`;
     case 'atribuiu':     return e.para ? `Atribuiu a ${e.para}` : 'Removeu o responsável';
+    case 'incluiu':      return `Incluiu ${e.para}`;
+    case 'retirou':      return `Retirou ${e.para}`;
+    case 'etiquetas':    return e.para ? `Etiquetas: ${e.para}` : 'Tirou as etiquetas';
     case 'prazo':        return e.para ? `Prazo para ${fmtD(e.para)}` : 'Removeu o prazo';
     case 'prioridade':   return `Prioridade: ${rotuloPrioridade(e.de)} → ${rotuloPrioridade(e.para)}`;
     case 'sinalizou':    return e.para ? `Sinalizou: ${e.para}` : 'Sinalizou como precisando de atenção';
     case 'dessinalizou': return 'Tirou a sinalização';
     case 'comentou':     return 'Comentou';
+    case 'apagou_comentario': return 'Apagou um comentário';
+    case 'checklist':    return `Criou a checklist "${e.para}"`;
+    case 'checklist_excluida': return `Excluiu a checklist "${e.para}"`;
+    case 'concluiu_item':return `Concluiu "${e.para}"`;
+    case 'copiou_de':    return `Copiada de ${e.para}`;
+    case 'copiou_para':  return `Copiada para ${e.para}`;
+    case 'espelhou':     return `Espelhou no quadro ${e.para}`;
+    case 'tirou_espelho':return `Tirou o espelho do quadro ${e.para}`;
+    case 'arquivou':     return e.para ? `Arquivou (a cópia seguiu em ${e.para})` : 'Arquivou';
+    case 'restaurou':    return 'Restaurou ao quadro';
     case 'decidiu':      return `Decidiu a solicitação: ${e.de||'aberta'} → ${e.para}`;
     case 'concedeu':     return `Concedeu acesso: ${e.para}`;
-    case 'editou':       return 'Editou o conteúdo';
+    case 'editou':       return e.campo === 'grupo' ? `Mudou de quadro: ${e.de} → ${e.para}` : 'Editou o conteúdo';
     default:             return e.tipo;
   }
 }
@@ -819,41 +1010,438 @@ function frasesLog(e){
 /* ---- edições no lugar ---- */
 function editarTitulo(){
   const a = atividades.card, el = $('#cd-titulo');
+  /* clicar dentro do campo (mover o cursor) chega aqui pelo onclick do h1:
+     o campo já existe, então não recria nem salva */
+  if ($('#cd-tit-in')) return;
   el.innerHTML = `<input id="cd-tit-in" value="${esc(a.titulo)}"
     style="width:100%;font:inherit;background:var(--campo);border:1px solid var(--line2);
     border-radius:10px;padding:4px 10px;color:inherit">`;
   const i = $('#cd-tit-in'); i.focus(); i.select();
-  const fim = () => mudarCampo('titulo', i.value.trim() || a.titulo);
+  const fim = () => mudarCampo('titulo', i.value.trim() || a.titulo, { redesenha:true });
   i.onblur = fim;
   i.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); i.blur(); }
                        if (e.key === 'Escape'){ i.onblur = null; telaCard(a.codigo); } };
 }
-function editarDescricao(){
+/* A descrição em Markdown: a barra de formatação, escrever e ver antes
+   de salvar. Um link dentro da descrição continua sendo link — clicar
+   nele não abre o editor. */
+function editarDescricao(ev){
+  if (ev?.target?.closest('a')) return;
   const a = atividades.card, el = $('#cd-desc');
-  el.innerHTML = `<textarea id="cd-desc-in" rows="5"
-    style="width:100%;background:var(--campo);border:1px solid var(--line2);
-    border-radius:10px;padding:10px 12px;color:inherit;font:inherit">${esc(a.descricao||'')}</textarea>
+  el.classList.remove('editavel'); el.onclick = null;
+  el.innerHTML = `${mdBarra('cd-desc-in')}
+    <textarea id="cd-desc-in" rows="8"
+      style="width:100%;background:var(--campo);border:1px solid var(--line2);
+      border-radius:10px;padding:10px 12px;color:var(--ink);font:inherit;font-size:13.5px"
+      placeholder="Contexto, critério de pronto, links. **negrito**, - lista, - [ ] tarefa">${esc(a.descricao||'')}</textarea>
+    <div class="md md-ver" id="cd-desc-ver" hidden></div>
     <div class="acts" style="margin-top:10px">
       <button class="btn solid" onclick="salvarDescricao()">Salvar</button>
+      <button class="btn ghost" id="cd-desc-alt" onclick="alternarVerDescricao()">Ver</button>
       <button class="btn ghost" onclick="telaCard('${esc(a.codigo)}')">Cancelar</button></div>`;
   $('#cd-desc-in').focus();
-  el.onclick = null;
+  cdAutoSalvar('descricao', $('#cd-desc-in'), '#cd-desc');
 }
-function salvarDescricao(){ mudarCampo('descricao', $('#cd-desc-in').value); }
+function cdEstimativa(el, agora){
+  const a = atividades.card, grava = () => mudarCampo('estimativa_h', el.value, { cartao:a, quieto:true });
+  clearTimeout(cdTimers.estimativa_h);
+  if (agora) grava(); else cdTimers.estimativa_h = setTimeout(grava, 1500);
+}
+function alternarVerDescricao(){
+  const ta = $('#cd-desc-in'), ver = $('#cd-desc-ver'), bt = $('#cd-desc-alt');
+  const vendo = !ver.hidden;
+  if (!vendo) ver.innerHTML = ta.value.trim() ? md(ta.value) : '<span class="muted">Nada escrito.</span>';
+  ver.hidden = vendo; ta.hidden = !vendo;
+  document.querySelector('#cd-desc .md-barra')?.toggleAttribute('hidden', !vendo);
+  bt.textContent = vendo ? 'Ver' : 'Escrever';
+  if (vendo) ta.focus();
+}
+function salvarDescricao(){ clearTimeout(cdTimers.descricao); mudarCampo('descricao', $('#cd-desc-in').value, { redesenha:true }); }
 
-async function mudarCampo(campo, valor){
-  const a = atividades.card;
-  const p = { id: a.id }; p[campo] = valor === '' ? null : valor;
+/* Salvar um campo do cartão. Não redesenha o cartão: o campo que a pessoa
+   está editando continua o mesmo elemento, com o foco. Só o título e a
+   descrição (que terminam a edição ao salvar) pedem o redesenho. */
+async function mudarCampo(campo, valor, opc = {}){
+  const a = opc.cartao || atividades.card;
+  const v = valor === '' ? null : valor;
+  if (opc.quieto && String(v ?? '') === String(a[campo] ?? '')) return;
+  const p = { id: a.id }; p[campo] = v;
   const { data, error } = await sb.rpc('atividade_editar', { p });
+  const ativo = atividades.card === a;
   if (error || data?.status !== 'ok'){
     toast(data?.status === 'sem_permissao'
       ? 'Só quem está no grupo edita as atividades dele.'
       : 'Não foi possível salvar' + (error ? ': ' + error.message : '.'), true);
-    return telaCard(a.codigo);
+    if (ativo && !opc.quieto) telaCard(a.codigo);
+    return false;
   }
+  a[campo] = ['estimativa_h','responsavel'].includes(campo) && v !== null ? Number(v) : v;
   toast('Salvo.');
   carregarNotificacoes();
-  telaCard(a.codigo);
+  if (ativo && opc.redesenha) telaCard(a.codigo);
+  return true;
+}
+/* Campo de texto do cartão: salva ~1,5 s depois da última tecla e ao sair
+   do campo (menos para um botão do próprio editor, que decide por si). */
+const cdTimers = {};
+function cdAutoSalvar(campo, el, aoSair){
+  const a = atividades.card;
+  const gravar = () => { clearTimeout(cdTimers[campo]); mudarCampo(campo, el.value, { cartao:a, quieto:true }); };
+  el.addEventListener('input', () => { clearTimeout(cdTimers[campo]); cdTimers[campo] = setTimeout(gravar, 1500); });
+  el.addEventListener('blur', ev => {
+    if (aoSair && ev.relatedTarget && ev.relatedTarget.closest(aoSair)) return;
+    gravar();
+  });
+}
+
+/* ============================================================
+   OUTRAS PESSOAS E ETIQUETAS (2.17.0)
+   Um seletor só, que abre embaixo do botão: marcar e desmarcar salva
+   na hora, e ao fechar o cartão é relido (o histórico ganhou a linha).
+   ============================================================ */
+function pessoasChipsHTML(a, edito){
+  const ps = (a.pessoas || []).map(r => (state.membros || []).find(m => m.registro === r) || { registro:r, nome:'Registro ' + r });
+  return ps.map(m => `<span class="pessoa-chip">${avatarFoto(m, 20, 8)}<span class="nm">${esc(m.nome)}</span>${
+      edito ? `<button type="button" onclick="pessoaTirar(${m.registro})" title="Tirar do cartão" aria-label="Tirar ${esc(m.nome)} do cartão">×</button>` : ''}</span>`).join('')
+    + (edito ? `<button type="button" class="cd-add" id="cd-add-pessoa" onclick="seletorPessoas(event)">${ic('plus')} Pessoa</button>`
+             : (ps.length ? '' : '<span class="small muted">Ninguém além do responsável.</span>'));
+}
+function etiquetasChipsHTML(a, edito){
+  const ets = a.etiquetas || [];
+  return ets.map(e => etiquetaHTML(e, edito ? `<button type="button" class="x" onclick="etiquetaTirar(this.parentNode.dataset.et)" title="Tirar a etiqueta" aria-label="Tirar a etiqueta ${esc(e)}">×</button>` : '',
+      ` data-et="${esc(e)}"`)).join('')
+    + (edito ? `<button type="button" class="cd-add" id="cd-add-etiqueta" onclick="seletorEtiquetas(event)">${ic('etiqueta')} Etiqueta</button>`
+             : (ets.length ? '' : '<span class="small muted">Nenhuma.</span>'));
+}
+async function cartaoSalvar(p, desfaz){
+  const a = atividades.card;
+  const { data, error } = await sb.rpc('atividade_editar', { p:{ id:a.id, ...p } });
+  if (error || data?.status !== 'ok'){
+    desfaz?.();
+    toast(semMigracao217(error) ? MIGRACAO_217 : data?.status === 'sem_permissao'
+      ? 'Só quem está no grupo edita as atividades dele.' : motivoRPC(data, error, 'Não foi possível salvar'), true);
+    return false;
+  }
+  atividades.mudouPessoas = true;
+  return true;
+}
+function pessoasRedesenhar(){
+  const el = $('#cd-pessoas'), a = atividades.card; if (el && a) el.innerHTML = pessoasChipsHTML(a, true);
+  const e2 = $('#cd-etiquetas'); if (e2 && a) e2.innerHTML = etiquetasChipsHTML(a, true);
+}
+async function pessoaTirar(reg){
+  const a = atividades.card, antes = [...(a.pessoas || [])];
+  a.pessoas = antes.filter(r => r !== reg); pessoasRedesenhar();
+  if (await cartaoSalvar({ pessoas:a.pessoas }, () => { a.pessoas = antes; pessoasRedesenhar(); })) telaCard(a.codigo);
+}
+async function etiquetaTirar(e){
+  const a = atividades.card, antes = [...(a.etiquetas || [])];
+  a.etiquetas = antes.filter(x => x !== e); pessoasRedesenhar();
+  if (await cartaoSalvar({ etiquetas:a.etiquetas }, () => { a.etiquetas = antes; pessoasRedesenhar(); })) telaCard(a.codigo);
+}
+
+/* o seletor genérico: itens [{ id, rotulo, sub, pre, grupo }] */
+const seletor = { el:null, cfg:null, ativo:0 };
+function seletorAbrir(ancora, cfg){
+  seletorFechar();
+  const el = document.createElement('div');
+  el.className = 'sel-pop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', cfg.titulo);
+  el.innerHTML = `<input id="sel-q" placeholder="${esc(cfg.busca || 'Buscar')}" autocomplete="off"><div class="sel-lista" id="sel-lista" role="listbox"></div>`;
+  document.body.appendChild(el);
+  Object.assign(seletor, { el, cfg, ativo:0, ancora });
+  const r = ancora.getBoundingClientRect();
+  el.style.position = 'fixed';
+  el.style.left = Math.max(12, Math.min(r.left, innerWidth - 332)) + 'px';
+  const alto = 340, embaixo = r.bottom + 6 + alto <= innerHeight;
+  el.style.top = (embaixo ? r.bottom + 6 : Math.max(12, r.top - 6 - alto)) + 'px';
+  const q = el.querySelector('#sel-q');
+  q.oninput = () => { seletor.ativo = 0; seletorDesenhar(); };
+  q.onkeydown = e => {
+    const ops = [...el.querySelectorAll('.sel-op')];
+    if (e.key === 'ArrowDown'){ e.preventDefault(); seletor.ativo = Math.min(ops.length - 1, seletor.ativo + 1); seletorDesenhar(); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); seletor.ativo = Math.max(0, seletor.ativo - 1); seletorDesenhar(); }
+    else if (e.key === 'Enter'){ e.preventDefault(); ops[seletor.ativo]?.click(); }
+    else if (e.key === 'Escape'){ e.preventDefault(); seletorFechar(); ancora.focus?.(); }
+  };
+  seletorDesenhar();
+  q.focus();
+}
+function seletorDesenhar(){
+  const { el, cfg } = seletor; if (!el) return;
+  const q = norm(el.querySelector('#sel-q').value.trim());
+  const itens = cfg.itens().filter(i => !q || norm(i.rotulo + ' ' + (i.sub || '')).includes(q));
+  const marcados = cfg.marcados();
+  const criar = cfg.criar && q && !cfg.itens().some(i => norm(i.rotulo) === q) ? el.querySelector('#sel-q').value.trim() : null;
+  let grupo = null, k = 0;
+  const ops = [];
+  itens.forEach(i => {
+    if (i.grupo && i.grupo !== grupo){ grupo = i.grupo; ops.push(`<div class="sel-grp">${esc(grupo)}</div>`); }
+    ops.push(`<button type="button" class="sel-op${k === seletor.ativo ? ' ativo' : ''}" role="option" aria-selected="${marcados.has(i.id)}"
+      data-id="${esc(String(i.id))}" onclick="seletorEscolher(this.dataset.id)">${i.pre || ''}<span class="nm">${esc(i.rotulo)}</span>${
+        i.sub ? `<span class="sub">${esc(i.sub)}</span>` : ''}${marcados.has(i.id) ? ic('check', 'ok') : ''}</button>`);
+    k++;
+  });
+  if (criar) ops.push(`<button type="button" class="sel-op${k === seletor.ativo ? ' ativo' : ''}" onclick="seletorCriar()">${ic('plus')}
+    <span class="nm">Criar "${esc(criar)}"</span></button>`);
+  el.querySelector('#sel-lista').innerHTML = ops.join('') || `<div class="sel-vazio">${esc(cfg.vazio || 'Nada encontrado.')}</div>`;
+  el.querySelector('.sel-op.ativo')?.scrollIntoView({ block:'nearest' });
+}
+function seletorEscolher(id){
+  const { cfg } = seletor; if (!cfg) return;
+  const i = cfg.itens().find(x => String(x.id) === id); if (!i) return;
+  cfg.alternar(i.id);
+  seletorDesenhar();
+}
+function seletorCriar(){
+  const { el, cfg } = seletor; if (!cfg?.criar) return;
+  const t = el.querySelector('#sel-q').value.trim(); if (!t) return;
+  cfg.criar(t); el.querySelector('#sel-q').value = ''; seletorDesenhar();
+}
+function seletorFechar(){
+  if (!seletor.el) return;
+  seletor.el.remove(); seletor.el = null; seletor.cfg = null;
+  if (atividades.mudouPessoas && atividades.card){ atividades.mudouPessoas = false; telaCard(atividades.card.codigo); }
+}
+document.addEventListener('mousedown', e => {
+  if (seletor.el && !seletor.el.contains(e.target) && !e.target.closest('.cd-add')) seletorFechar();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && seletor.el) seletorFechar(); });
+
+function seletorPessoas(ev){
+  ev?.stopPropagation();
+  const a = atividades.card, g = grupoDoCartao(a);
+  const doGrupo = new Set(pessoasDoGrupoDe(a.grupo_id).map(m => m.registro));
+  seletorAbrir(ev.currentTarget, {
+    titulo:'Outras pessoas', busca:'Buscar pessoa', vazio:'Ninguém com esse nome.',
+    itens: () => pessoasMencionaveis(a.grupo_id).filter(m => m.registro !== a.responsavel).map(m => ({
+      id:m.registro, rotulo:m.nome, sub:m.cargo || '', pre:avatarFoto(m, 22, 9),
+      grupo: g?.reservado ? null : (doGrupo.has(m.registro) ? 'Do grupo ' + g?.nome : 'Outras pessoas') })),
+    marcados: () => new Set(a.pessoas || []),
+    alternar: async (reg) => {
+      const antes = [...(a.pessoas || [])];
+      a.pessoas = antes.includes(reg) ? antes.filter(r => r !== reg) : [...antes, reg];
+      pessoasRedesenhar();
+      await cartaoSalvar({ pessoas:a.pessoas }, () => { a.pessoas = antes; pessoasRedesenhar(); seletorDesenhar(); });
+    }
+  });
+}
+function seletorEtiquetas(ev){
+  ev?.stopPropagation();
+  const a = atividades.card;
+  /* as opções: as do quadro, e as de toda a equipe depois */
+  const doQuadro = etiquetasDoQuadro(a.grupo_id);
+  const outras = [...new Set(atividades.itens.flatMap(x => x.etiquetas || []))].filter(e => !doQuadro.includes(e))
+    .sort((x, y) => x.localeCompare(y, 'pt'));
+  const alternar = async (e) => {
+    const antes = [...(a.etiquetas || [])];
+    const tem = antes.some(x => norm(x) === norm(e));
+    if (!tem && antes.length >= 10) return toast('Até dez etiquetas por cartão.', true);
+    a.etiquetas = tem ? antes.filter(x => norm(x) !== norm(e)) : [...antes, e];
+    pessoasRedesenhar();
+    await cartaoSalvar({ etiquetas:a.etiquetas }, () => { a.etiquetas = antes; pessoasRedesenhar(); seletorDesenhar(); });
+  };
+  seletorAbrir(ev.currentTarget, {
+    titulo:'Etiquetas', busca:'Buscar ou criar etiqueta', vazio:'Digite para criar a primeira.',
+    itens: () => [...new Set([...(a.etiquetas || []), ...doQuadro, ...outras])].map(e => ({
+      id:e, rotulo:e, pre:`<span class="et" style="--et:${corEtiqueta(e)};padding:0;border:0"></span>`,
+      grupo: doQuadro.includes(e) || (a.etiquetas || []).includes(e) ? 'Deste quadro' : 'De outros quadros' })),
+    marcados: () => new Set(a.etiquetas || []),
+    alternar,
+    criar: (t) => alternar(t.replace(/\s+/g, ' ').slice(0, 32))
+  });
+}
+
+/* ============================================================
+   CHECKLISTS (2.17.0)
+   Uma ou mais por cartão. Marcar salva na hora; colar uma lista cria um
+   item por linha (e "- [x]" já entra marcado); arrastar reordena, e leva
+   o item de uma lista para outra do mesmo cartão.
+   ============================================================ */
+async function ckCarregar(a){
+  atividades.checks = null;
+  const l = await sb.from('atividade_checklists').select('*').eq('atividade_id', a.id).order('ordem');
+  if (l.error) return;   /* sem a 2.17.0 */
+  const listas = l.data || [];
+  const ids = listas.map(x => x.id);
+  const i = ids.length ? await sb.from('atividade_checklist_itens').select('*').in('checklist_id', ids).order('ordem') : { data:[] };
+  const itens = i.data || [];
+  atividades.checks = listas.map(x => ({ ...x, itens: itens.filter(y => y.checklist_id === x.id).sort((p, q) => p.ordem - q.ordem) }));
+}
+function ckCartaoHTML(a, edito){
+  const ls = atividades.checks;
+  if (!ls || (!ls.length && !edito)) return '';
+  return `<div class="card" style="margin-bottom:16px" id="cd-checks">
+    <div class="head" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <h3>Checklist</h3>
+      ${edito ? `<button class="btn ghost mini" onclick="ckNovaLista()">${ic('plus')} Checklist</button>` : ''}</div>
+    <div id="ck-corpo" style="margin-top:12px">${ckListasHTML(edito)}</div>
+  </div>`;
+}
+function ckListasHTML(edito){
+  const ls = atividades.checks || [];
+  if (!ls.length) return '<p class="small muted">Nenhuma checklist.</p>';
+  return ls.map(l => {
+    const t = l.itens.length, f = l.itens.filter(i => i.feito).length, pct = t ? Math.round(100 * f / t) : 0;
+    return `<div class="ck-lista" data-lista="${l.id}">
+      <div class="ck-topo">${ic('checklist')}
+        <h4 id="ck-tit-${l.id}" class="${edito ? 'editavel' : ''}" ${edito ? `onclick="ckRenomear('${l.id}')"` : ''}>${esc(l.titulo)}</h4>
+        <span class="n">${f}/${t}</span>
+        ${edito ? ibtn('trash', 'Excluir a checklist', `ckExcluirLista('${l.id}')`, 'sm') : ''}</div>
+      <div class="ck-barra${t && f === t ? ' cheia' : ''}"><i style="width:${pct}%"></i></div>
+      <div class="ck-itens" data-lista="${l.id}">${l.itens.map(i => `<div class="ck-item${i.feito ? ' feito' : ''}" data-id="${i.id}"${edito ? ' draggable="true"' : ''}>
+          <input type="checkbox" ${i.feito ? 'checked' : ''} ${edito ? '' : 'disabled'} onchange="ckMarcar('${i.id}', this.checked)" aria-label="${esc(i.texto)}">
+          <span class="tx${edito ? ' editavel' : ''}" id="ck-tx-${i.id}" ${edito ? `onclick="ckEditarItem(event,'${i.id}')"` : ''}>${mdInline(i.texto)}</span>
+          ${edito ? `<span class="acs">${ibtn('trash', 'Excluir o item', `ckExcluirItem('${i.id}')`, 'sm')}</span>` : ''}
+        </div>`).join('')}</div>
+      ${edito ? `<div class="ck-novo">
+        <textarea id="ck-novo-${l.id}" class="ck-in" rows="1" placeholder="Adicionar item (colar uma lista cria vários)"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();ckAdicionar('${l.id}')}"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <button class="btn ghost mini" onclick="ckAdicionar('${l.id}')">Adicionar</button></div>` : ''}
+    </div>`;
+  }).join('');
+}
+function ckRedesenhar(focarLista){
+  const el = $('#ck-corpo'), edito = editoCartao(atividades.card); if (!el) return;
+  el.innerHTML = ckListasHTML(edito);
+  ckLigarArraste(edito);
+  if (focarLista) $('#ck-novo-' + focarLista)?.focus();
+}
+async function ckAcao(p, msg){
+  const { data, error } = await sb.rpc('atividade_checklist', { p });
+  if (error || data?.status !== 'ok'){
+    toast(semMigracao217(error) ? MIGRACAO_217 : data?.status === 'sem_permissao'
+      ? 'Só quem está no grupo mexe na checklist.' : motivoRPC(data, error, msg || 'Não foi possível salvar'), true);
+    return null;
+  }
+  return data;
+}
+async function ckRecarregar(focarLista){ await ckCarregar(atividades.card); ckRedesenhar(focarLista); }
+async function ckNovaLista(){
+  const a = atividades.card;
+  abreModal(`<h3>Nova checklist</h3>
+    <div class="form-grid" style="margin-top:12px">
+      <div class="fld full"><label for="ckn-tit">Título</label><input id="ckn-tit" maxlength="80" placeholder="Checklist"></div>
+      <div class="fld full"><label for="ckn-itens">Itens (opcional) ${dica('Um por linha. Uma lista colada em Markdown também serve: "- [x]" entra marcado.')}</label>
+        <textarea id="ckn-itens" rows="5" placeholder="Conferir a fonte&#10;Aterrar a bancada"></textarea></div>
+    </div>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" id="ckn-btn" onclick="ckCriarLista()">Criar</button></div>`);
+  setTimeout(() => $('#ckn-tit')?.focus(), 50);
+  atividades.ckPara = a.id;
+}
+async function ckCriarLista(){
+  const bt = $('#ckn-btn'); if (bt) bt.disabled = true;
+  const d = await ckAcao({ acao:'lista_criar', atividade_id:atividades.ckPara, titulo:$('#ckn-tit').value.trim() || null,
+    texto:$('#ckn-itens').value || null }, 'Não foi possível criar a checklist');
+  if (bt) bt.disabled = false;
+  if (!d) return;
+  fechaModal();
+  await ckRecarregar(d.id);
+}
+async function ckAdicionar(listaId){
+  const ta = $('#ck-novo-' + listaId), t = (ta?.value || '').trim(); if (!t) return;
+  ta.disabled = true;
+  const d = await ckAcao({ acao:'item_criar', checklist_id:listaId, texto:t });
+  ta.disabled = false;
+  if (!d) return;
+  ta.value = '';
+  await ckRecarregar(listaId);
+}
+async function ckMarcar(itemId, feito){
+  const l = (atividades.checks || []).find(x => x.itens.some(i => i.id === itemId));
+  const i = l?.itens.find(x => x.id === itemId); if (!i) return;
+  const antes = i.feito; i.feito = feito; ckRedesenhar();
+  const d = await ckAcao({ acao:'item_marcar', item_id:itemId, feito });
+  if (!d){ i.feito = antes; ckRedesenhar(); }
+}
+async function ckExcluirItem(itemId){
+  if (await ckAcao({ acao:'item_excluir', item_id:itemId })) await ckRecarregar();
+}
+async function ckExcluirLista(listaId){
+  const l = (atividades.checks || []).find(x => x.id === listaId); if (!l) return;
+  if (!await confirma(`Excluir a checklist <b>${esc(l.titulo)}</b>${l.itens.length ? ` e os ${l.itens.length} itens dela` : ''}?`, 'Excluir')) return;
+  if (await ckAcao({ acao:'lista_excluir', checklist_id:listaId })) telaCard(atividades.card.codigo);
+}
+function ckEditarTexto(el, valor, salvar){
+  el.onclick = null; el.classList.remove('editavel');
+  el.innerHTML = `<input value="${esc(valor)}" style="width:100%;font:inherit;background:var(--campo);border:1px solid var(--line2);border-radius:8px;padding:3px 8px;color:inherit">`;
+  const i = el.querySelector('input'); i.focus(); i.select();
+  let feito = false;
+  const fim = async (grava) => { if (feito) return; feito = true;
+    const v = i.value.trim();
+    if (grava && v && v !== valor) await salvar(v);
+    ckRedesenhar(); };
+  i.onblur = () => fim(true);
+  i.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); i.blur(); } if (e.key === 'Escape'){ e.preventDefault(); fim(false); } };
+}
+function ckEditarItem(ev, itemId){
+  if (ev?.target?.closest('a')) return;
+  const l = (atividades.checks || []).find(x => x.itens.some(i => i.id === itemId));
+  const i = l?.itens.find(x => x.id === itemId); if (!i) return;
+  ckEditarTexto($('#ck-tx-' + itemId), i.texto, async v => { if (await ckAcao({ acao:'item_editar', item_id:itemId, texto:v })) i.texto = v; });
+}
+function ckRenomear(listaId){
+  const l = (atividades.checks || []).find(x => x.id === listaId); if (!l) return;
+  ckEditarTexto($('#ck-tit-' + listaId), l.titulo, async v => { if (await ckAcao({ acao:'lista_renomear', checklist_id:listaId, titulo:v })) l.titulo = v; });
+}
+/* arrastar um item: solta antes do item de baixo, ou no fim da lista */
+function ckLigarArraste(edito){
+  if (!edito) return;
+  let arrastado = null;
+  document.querySelectorAll('#ck-corpo .ck-item[draggable]').forEach(el => {
+    el.addEventListener('dragstart', e => { arrastado = el.dataset.id; e.dataTransfer.effectAllowed = 'move'; el.style.opacity = '.5'; });
+    el.addEventListener('dragend', () => { el.style.opacity = ''; });
+  });
+  document.querySelectorAll('#ck-corpo .ck-itens').forEach(box => {
+    box.addEventListener('dragover', e => { if (arrastado){ e.preventDefault(); } });
+    box.addEventListener('drop', async e => {
+      if (!arrastado) return; e.preventDefault();
+      const listaId = box.dataset.lista, l = atividades.checks.find(x => x.id === listaId);
+      const sobre = e.target.closest('.ck-item');
+      const outros = l.itens.filter(i => i.id !== arrastado);
+      let ordem;
+      if (sobre && sobre.dataset.id !== arrastado){
+        const ix = outros.findIndex(i => i.id === sobre.dataset.id);
+        const r = sobre.getBoundingClientRect(), depois = e.clientY > r.top + r.height / 2;
+        const a1 = depois ? outros[ix] : outros[ix - 1], b1 = depois ? outros[ix + 1] : outros[ix];
+        ordem = a1 && b1 ? (a1.ordem + b1.ordem) / 2 : a1 ? a1.ordem + 1 : (b1 ? b1.ordem - 1 : 1);
+      } else ordem = (outros.length ? outros[outros.length - 1].ordem : 0) + 1;
+      const id = arrastado; arrastado = null;
+      if (await ckAcao({ acao:'item_mover', item_id:id, checklist_id:listaId, ordem })) await ckRecarregar();
+    });
+  });
+}
+
+/* ============================================================
+   COMENTÁRIOS: Markdown, @ para marcar, e o seu se corrige (2.17.0)
+   ============================================================ */
+const escRe = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function comentarioHTML(c){
+  const q = (state.membros || []).find(m => m.registro === c.registro);
+  const menc = (c.mencionados || []).map(r => (state.membros || []).find(m => m.registro === r)).filter(Boolean);
+  /* marcado pelo jeito antigo (os botões com o nome) não tem @ no texto:
+     a linha de baixo diz quem foi marcado */
+  const foraDoTexto = menc.filter(m => !new RegExp('@(' + escRe(m.nome) + '|' + escRe(rotuloMencao(m)) + ')', 'u').test(c.corpo || ''));
+  const meu = c.registro != null && c.registro === state.perfil?.registro;
+  const g = grupoDoCartao(atividades.card);
+  return `<div class="cm" id="cm-${c.id}">
+    ${q ? avatarFoto(q, 28, 10) : ''}
+    <div class="cm-cx"><div class="cm-tp"><b>${esc(q?.nome || 'Alguém')}</b>
+      <span>${fmtQuando(c.criado_em)}</span>${c.editado_em ? '<span class="ed">editado</span>' : ''}</div>
+    <div class="cm-cp md" id="cm-cp-${c.id}">${md(c.corpo, { mencoes: menc })}</div>
+    ${foraDoTexto.length ? `<div class="cm-marcou">Marcou: ${foraDoTexto.map(m =>
+      `<a class="mencao${m.registro === state.perfil?.registro ? ' eu' : ''}" href="#/equipe/${m.registro}">@${esc(rotuloMencao(m))}</a>`).join(' ')}</div>` : ''}
+    ${(meu && editoCartao(atividades.card)) || can() ? `<div class="cm-acs">
+      ${meu && editoCartao(atividades.card) ? `<button type="button" onclick="comentarioEditar('${c.id}')">Editar</button>` : ''}
+      <button type="button" onclick="comentarioExcluir('${c.id}')">Excluir</button></div>` : ''}
+    </div></div>`;
+}
+/* os marcados de um texto: quem do quadro aparece como @Nome */
+function mencoesNoTexto(texto, grupoId){
+  const t = String(texto || '');
+  return pessoasMencionaveis(grupoId).filter(m => m.registro !== state.perfil?.registro
+    && new RegExp('@(' + escRe(m.nome) + '|' + escRe(rotuloMencao(m)) + ')(?![\\p{L}\\p{N}])', 'u').test(t)).map(m => m.registro);
 }
 
 async function enviarComentario(){
@@ -861,7 +1449,7 @@ async function enviarComentario(){
   const cx = $('#cd-coment'), b = $('#cd-btn');
   const corpo = (cx?.value || '').trim();
   if (!corpo || !a) return;
-  const mencionados = [...document.querySelectorAll('.cd-menc .chip.on')].map(x => +x.dataset.reg);
+  const mencionados = mencoesNoTexto(corpo, a.grupo_id);
 
   /* O try/finally é o que evita o comentário "pendurado": sem ele, um erro
      em qualquer linha daqui deixava o botão desabilitado para sempre e o
@@ -885,6 +1473,195 @@ async function enviarComentario(){
     const btn = $('#cd-btn');
     if (btn){ btn.disabled = false; btn.textContent = 'Comentar'; }
   }
+}
+function comentarioEditar(id){
+  const c = (atividades.comentarios || []).find(x => x.id === id); if (!c) return;
+  const el = $('#cm-cp-' + id); if (!el) return;
+  el.classList.remove('md');
+  el.innerHTML = `<textarea id="cm-ed-${id}" rows="3" style="width:100%;background:var(--campo);border:1px solid var(--line2);
+      border-radius:10px;padding:8px 10px;color:var(--ink);font:inherit;font-size:13px">${esc(c.corpo)}</textarea>
+    <div class="acts" style="margin-top:8px"><button class="btn solid mini" onclick="comentarioSalvar('${id}')">Salvar</button>
+      <button class="btn ghost mini" onclick="telaCard(atividades.card.codigo)">Cancelar</button></div>`;
+  ligarMencoes('cm-ed-' + id, atividades.card.grupo_id);
+  $('#cm-ed-' + id).focus();
+}
+async function comentarioSalvar(id){
+  const corpo = ($('#cm-ed-' + id)?.value || '').trim(); if (!corpo) return;
+  const { data, error } = await sb.rpc('atividade_comentario_editar', { p:{ id, corpo,
+    mencionados: mencoesNoTexto(corpo, atividades.card.grupo_id) } });
+  if (error || data?.status !== 'ok')
+    return toast(semMigracao217(error) ? MIGRACAO_217 : motivoRPC(data, error, 'Não foi possível salvar o comentário'), true);
+  carregarNotificacoes();
+  telaCard(atividades.card.codigo);
+}
+async function comentarioExcluir(id){
+  if (!await confirma('Excluir este comentário?', 'Excluir')) return;
+  const { data, error } = await sb.rpc('atividade_comentario_excluir', { p:{ id } });
+  if (error || data?.status !== 'ok')
+    return toast(semMigracao217(error) ? MIGRACAO_217 : motivoRPC(data, error, 'Não foi possível excluir o comentário'), true);
+  toast('Comentário excluído.');
+  telaCard(atividades.card.codigo);
+}
+
+/* ---- @ para marcar ----
+   Digitar @ abre a lista de quem se pode marcar no quadro, filtrada pelo
+   que vem depois (sem acento, pelo nome e pelo sobrenome). Setas e Enter
+   (ou Tab) escolhem; Esc fecha. Entra no texto "@Nome Sobrenome", que é
+   como a menção aparece no comentário e como o banco sabe quem avisar. */
+const mencao = { el:null, ta:null, grupo:null, lista:[], ativo:0, ini:0 };
+function ligarMencoes(id, grupoId){
+  const ta = document.getElementById(id); if (!ta || ta.dataset.menc) return;
+  ta.dataset.menc = '1';
+  ta.addEventListener('input', () => mencaoAtualizar(ta, grupoId));
+  ta.addEventListener('click', () => mencaoAtualizar(ta, grupoId));
+  ta.addEventListener('keydown', e => {
+    if (!mencao.el || mencao.ta !== ta) return;
+    if (e.key === 'ArrowDown'){ e.preventDefault(); mencao.ativo = (mencao.ativo + 1) % mencao.lista.length; mencaoDesenhar(); }
+    else if (e.key === 'ArrowUp'){ e.preventDefault(); mencao.ativo = (mencao.ativo - 1 + mencao.lista.length) % mencao.lista.length; mencaoDesenhar(); }
+    else if (e.key === 'Enter' || e.key === 'Tab'){ e.preventDefault(); mencaoEscolher(mencao.ativo); }
+    else if (e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); mencaoFechar(); }
+  });
+  ta.addEventListener('blur', () => setTimeout(() => { if (mencao.ta === ta && document.activeElement !== ta) mencaoFechar(); }, 150));
+}
+function mencaoAtualizar(ta, grupoId){
+  const antes = ta.value.slice(0, ta.selectionStart);
+  const m = antes.match(/(^|[\s(])@([\p{L}\p{N}._-]{0,30})$/u);
+  if (!m) return mencaoFechar();
+  const q = norm(m[2]);
+  const lista = pessoasMencionaveis(grupoId).filter(p => p.registro !== state.perfil?.registro)
+    .filter(p => !q || norm(p.nome).split(/\s+/).some(w => w.startsWith(q)) || norm(p.nome).startsWith(q)).slice(0, 8);
+  if (!lista.length) return mencaoFechar();
+  Object.assign(mencao, { ta, grupo:grupoId, lista, ini: ta.selectionStart - m[2].length - 1,
+    ativo: mencao.ta === ta && mencao.el ? Math.min(mencao.ativo, lista.length - 1) : 0 });
+  if (!mencao.el){
+    mencao.el = document.createElement('div');
+    mencao.el.className = 'menc-pop'; mencao.el.setAttribute('role', 'listbox'); mencao.el.setAttribute('aria-label', 'Marcar alguém');
+    document.body.appendChild(mencao.el);
+  }
+  mencaoDesenhar();
+  const p = posicaoDoCursor(ta);
+  const w = 300, h = mencao.el.offsetHeight;
+  mencao.el.style.left = Math.max(12, Math.min(p.x, innerWidth - w - 12)) + 'px';
+  mencao.el.style.top = (p.y + 6 + h > innerHeight - 8 ? Math.max(8, p.y - p.alto - h - 6) : p.y + 6) + 'px';
+}
+function mencaoDesenhar(){
+  if (!mencao.el) return;
+  const g = grupoDoCartao(atividades.card);
+  const doGrupo = new Set(pessoasDoGrupoDe(mencao.grupo).map(m => m.registro));
+  mencao.el.innerHTML = mencao.lista.map((m, i) => `<button type="button" class="menc-op${i === mencao.ativo ? ' ativo' : ''}" role="option"
+    aria-selected="${i === mencao.ativo}" onmousedown="event.preventDefault();mencaoEscolher(${i})">${avatarFoto(m, 22, 9)}
+    <span class="nm">${esc(m.nome)}</span><span class="sub">${doGrupo.has(m.registro) ? esc(g?.prefixo || '') : ''}</span></button>`).join('');
+}
+function mencaoEscolher(i){
+  const m = mencao.lista[i], ta = mencao.ta; if (!m || !ta) return;
+  const ins = '@' + rotuloMencao(m) + ' ';
+  const fim = ta.selectionStart;
+  ta.value = ta.value.slice(0, mencao.ini) + ins + ta.value.slice(fim);
+  const pos = mencao.ini + ins.length;
+  ta.setSelectionRange(pos, pos); ta.focus();
+  mencaoFechar();
+}
+function mencaoFechar(){ mencao.el?.remove(); mencao.el = null; mencao.ta = null; mencao.ativo = 0; }
+/* o botão "Marcar": põe o @ onde está o cursor e abre a lista */
+function mencaoIniciar(id){
+  const ta = document.getElementById(id); if (!ta) return;
+  const p = ta.selectionStart ?? ta.value.length, antes = ta.value.slice(0, p);
+  const ins = (antes && !/\s$/.test(antes) ? ' ' : '') + '@';
+  ta.value = antes + ins + ta.value.slice(p);
+  ta.focus(); ta.setSelectionRange(p + ins.length, p + ins.length);
+  ta.dispatchEvent(new Event('input'));
+}
+/* onde está o cursor no textarea, na tela: um espelho invisível com o
+   mesmo estilo mede até o cursor */
+function posicaoDoCursor(ta){
+  const cs = getComputedStyle(ta), d = document.createElement('div');
+  ['boxSizing','width','borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth','paddingTop','paddingRight',
+   'paddingBottom','paddingLeft','fontStyle','fontVariant','fontWeight','fontSize','lineHeight','fontFamily','textAlign',
+   'textTransform','textIndent','letterSpacing','wordSpacing','tabSize'].forEach(k => d.style[k] = cs[k]);
+  Object.assign(d.style, { position:'absolute', visibility:'hidden', whiteSpace:'pre-wrap', overflowWrap:'break-word', top:'0', left:'-9999px' });
+  d.textContent = ta.value.slice(0, ta.selectionStart);
+  const s = document.createElement('span'); s.textContent = ta.value.slice(ta.selectionStart) || '.'; d.appendChild(s);
+  document.body.appendChild(d);
+  const r = ta.getBoundingClientRect(), alto = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.45;
+  const x = r.left + s.offsetLeft - ta.scrollLeft, y = r.top + s.offsetTop - ta.scrollTop + alto;
+  d.remove();
+  return { x, y: Math.min(y, r.bottom), alto };
+}
+window.addEventListener('scroll', e => { if (mencao.el && e.target !== mencao.ta) mencaoFechar(); }, true);
+
+/* ============================================================
+   ESPELHAR OU MOVER PARA OUTRO QUADRO (2.18.0)
+   Espelhar põe o MESMO cartão no outro quadro: o que muda em um muda
+   no outro, e quem edita qualquer um dos quadros edita o cartão.
+   Mover cria o cartão no outro quadro, com o prefixo dele (o código
+   leva o prefixo do grupo), e arquiva este; os espelhos vão junto.
+   As duas pedem edição neste quadro e no de destino.
+   ============================================================ */
+/* Os quadros em que o cartão está: o dono e os espelhos, cada um com o
+   botão de tirar para quem edita aquele quadro (ou o dono). */
+function quadrosHTML(a){
+  const qs = quadrosDoCartao(a);
+  if (qs.length < 2) return '';
+  const tiro = q => q.id !== a.grupo_id && !a.arquivada && (posso.editar(q) || posso.editar(grupoDoCartao(a)));
+  return `<div class="cd-bloco"><label>Quadros ${dica('O mesmo cartão em todos: o que muda em um muda nos outros. O código vem do primeiro, o quadro dono.')}</label>
+    <div class="cd-linha" id="cd-quadros">${qs.map(q => `<span class="chip mini cd-quadro">
+      <a href="#/atividades/${esc(q.prefixo)}">${esc(q.prefixo)} ${esc(q.nome)}</a>${q.id === a.grupo_id ? '<span class="muted">, dono</span>' : ''}
+      ${tiro(q) ? `<button type="button" class="x" onclick="espelhoTirar(${q.id})" title="Tirar deste quadro" aria-label="Tirar de ${esc(q.nome)}">×</button>` : ''}</span>`).join(' ')}</div></div>`;
+}
+function modalOutroQuadro(){
+  const a = atividades.card;
+  const destinos = meusGrupos().filter(x => posso.editar(x) && !noQuadro(a, x.id));
+  if (!destinos.length) return toast('Nenhum outro quadro com edição.', true);
+  abreModal(`<h3>${esc(a.codigo)} em outro quadro</h3>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="fld full"><label for="cp-grupo">Quadro</label>
+        <select id="cp-grupo">${destinos.map(x => `<option value="${x.id}">${esc(x.prefixo)} ${esc(x.nome)}</option>`).join('')}</select></div>
+      <div class="fld full"><label>Como ${dica('Espelhar: o mesmo cartão nos dois quadros, sincronizado. Mover: o cartão passa para o outro quadro com outro código, e este fica arquivado.')}</label>
+        <div class="seg" role="radiogroup" aria-label="Como">
+          <label class="check"><input type="radio" name="cp-modo" id="cp-modo-espelhar" value="espelhar" checked> Espelhar</label>
+          <label class="check"><input type="radio" name="cp-modo" id="cp-modo-mover" value="mover"> Mover</label></div></div>
+    </div>
+    <p class="err-msg" id="cp-erro"></p>
+    <div class="acts" style="justify-content:flex-end">
+      <button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" id="cp-btn" onclick="outroQuadroSalvar()">Confirmar</button></div>`, true);
+}
+async function outroQuadroSalvar(){
+  const a = atividades.card, bt = $('#cp-btn');
+  const gid = +$('#cp-grupo').value, mover = $('#cp-modo-mover')?.checked;
+  const destino = quadroAtv(gid);
+  bt.disabled = true;
+  try{
+    const { data, error } = await sb.rpc(mover ? 'atividade_mover' : 'atividade_espelhar', { p:{ id:a.id, grupo_id:gid } });
+    if (error || data?.status !== 'ok'){
+      $('#cp-erro').textContent = /does not exist|schema cache/i.test(error?.message || '')
+        ? 'O banco ainda não tem a versão 2.18.0.'
+        : data?.status === 'sem_permissao' ? 'Sem edição num dos dois quadros.'
+        : motivoRPC(data, error, mover ? 'Cartão não movido' : 'Cartão não espelhado');
+      return;
+    }
+    fechaModal();
+    await atvCarregar(true);
+    if (mover){
+      toast(`${a.codigo} movida para ${destino?.nome || 'o outro quadro'} como ${data.codigo}.`);
+      location.hash = '#/atividades/card/' + data.codigo;
+    } else {
+      toast(`${a.codigo} também está em ${destino?.nome || 'outro quadro'}.`);
+      telaCard(a.codigo);
+    }
+  } finally { const b = $('#cp-btn'); if (b) b.disabled = false; }
+}
+async function espelhoTirar(gid){
+  const a = atividades.card, q = quadroAtv(gid);
+  if (!await confirma(`Tirar ${esc(a.codigo)} do quadro ${esc(q?.nome || '')}? O cartão continua nos outros.`, 'Tirar')) return;
+  const { data, error } = await sb.rpc('atividade_espelho_remover', { p:{ id:a.id, grupo_id:gid } });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Espelho não retirado'), true);
+  toast(`${a.codigo} saiu de ${q?.nome || 'um quadro'}.`);
+  await atvCarregar(true);
+  telaCard(a.codigo);
+}
+function copiarLinkCartao(){
+  copiar(location.origin + location.pathname + '#/atividades/card/' + atividades.card.codigo);
 }
 
 function modalSinalizar(){
@@ -937,11 +1714,8 @@ async function telaCarga(){
   const { data, error } = await sb.from('atividades_carga').select('*').order('abertas', { ascending:false });
   const linhas = (data || []).filter(x => x.abertas > 0 || x.atrasadas > 0);
   const max = Math.max(1, ...linhas.map(x => x.abertas));
-  $('#main').innerHTML = `
-    <div class="topo-gestao"><div class="tx"><span class="eyebrow">Trabalho</span>
-      <h1>Carga da equipe</h1>
-      <p class="lead">Atividades abertas, atrasadas e sinalizadas por pessoa.</p></div>
-      <div class="acoes"><a class="btn ghost" href="#/atividades">${ic('back')} Quadro</a></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Atividades', titulo:'Carga da equipe', voltar:['Quadro', '#/atividades'],
+      lead:'Atividades abertas, atrasadas e sinalizadas por pessoa, como responsável ou incluída.' }) + `
     ${error ? avisoSemMigracao() : ''}
     ${linhas.length ? `<div class="card"><div class="barras">${linhas.map(x => `
       <div class="barra carga">
@@ -964,7 +1738,8 @@ registrarBusca({
   fonte:'atividades', rotulo:'Atividades',
   buscar: (t) => filtrarSimples(atividades.itens.map(a => ({
     titulo: a.titulo,
-    sub: `${rotuloStatus(a.status)}, ${a.grupo}${a.responsavel_nome ? ', ' + a.responsavel_nome : ''}`,
+    sub: `${rotuloStatus(a.status)}, ${a.grupo}${a.responsavel_nome ? ', ' + a.responsavel_nome : ''}${
+      (a.etiquetas || []).length ? ', ' + a.etiquetas.join(', ') : ''}`,
     codigo: a.codigo,
     href: '#/atividades/card/' + a.codigo
   })), t, 6)

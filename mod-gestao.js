@@ -29,7 +29,7 @@
 const gestao = {
   pronto: false, apont: null,
   tiposOcorrencia: [],
-  filtros: { q:'', status:'Ativo', dep:'', grupo:'' },
+  filtros: { q:'', status:['Ativo'], dep:[], grupo:[], trainee:false },
   ficha: null,
   aud: []
 };
@@ -54,15 +54,6 @@ function chips(arr, max){
   const v = arr.slice(0, max||99).map(g => `<span class="chip mini">${esc(g)}</span>`).join(' ');
   return v + (arr.length > (max||99) ? ` <span class="chip mini">+${arr.length-max}</span>` : '');
 }
-/* Cabeçalho de página no padrão da marca, com as ações à direita. */
-function topoGestao({ olho, titulo, lead, acoes, voltar }){
-  return `<div class="topo-gestao">
-    ${voltar ? `<div style="padding-top:34px">${ibtn('back','Voltar', voltar)}</div>` : ''}
-    <div class="tx"><span class="eyebrow">${esc(olho||'Gestão')}</span>
-      <h1>${esc(titulo)}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}</div>
-    ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
-}
-
 /* ============================================================
    CARGA
    A casca carrega membros com as colunas que o plano do membro usa.
@@ -88,14 +79,43 @@ async function pageQuadro(sub){
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando o quadro…</div>`;
   try { await gestaoCarregar(); }
   catch(e){
-    $('#main').innerHTML = topoGestao({titulo:'Quadro indisponível'})
+    $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Quadro de pessoal' })
       + `<div class="aviso-box err">Não foi possível carregar o quadro de pessoal:
-         ${esc(e.message)}. Se o erro fala de permissão, o seu papel não dá acesso a esta tela.</div>`;
+         ${esc(e.message)}. Se o erro fala de permissão, Sem permissão para esta tela..</div>`;
     return;
   }
   const reg = sub != null ? parseInt(sub, 10) : null;
   if (reg != null && !isNaN(reg)) return abrirFicha(reg);
   renderQuadro();
+  carregarTermosDoQuadro();
+}
+/* O termo de sigilo do LABBIO (2.19.1): uma coluna a mais para quem gere.
+   Sem a 2.19.1 no banco (ou sem permissão), a coluna não aparece. */
+async function carregarTermosDoQuadro(){
+  if (!can()) return;
+  try {
+    const { data, error } = await sb.rpc('termo_painel');
+    if (error || data?.status !== 'ok') return;
+    gestao.termo = Object.fromEntries((data.pessoas || []).map(p => [p.registro, p]));
+    renderTabelaMembros();
+  } catch (e) { /* sem a função: segue sem a coluna */ }
+}
+const TERMO_ICONE = { conferido: ['check', 'Termo conferido', 'ok'], enviado: ['doc', 'Termo enviado, a conferir', 'info'],
+  devolvido: ['x', 'Termo devolvido', 'err'], pendente: ['relogio', 'Termo pendente', 'warn'] };
+function celulaTermo(m){
+  const t = gestao.termo?.[m.registro];
+  if (!t) return '<td class="termo-col"><span class="sr">Fora da campanha</span></td>';
+  const [icone, rotulo, cls] = TERMO_ICONE[t.situacao] || TERMO_ICONE.pendente;
+  return t.arquivo
+    ? `<td class="termo-col"><button class="termo-ic ${cls}" title="${esc(rotulo)}: abrir o PDF" aria-label="${esc(rotulo)}: abrir o PDF de ${esc(m.nome)}"
+        onclick="event.stopPropagation();abrirTermoAssinado('${esc(t.arquivo)}')">${ic(icone)}</button></td>`
+    : `<td class="termo-col"><span class="termo-ic ${cls}" title="${esc(rotulo)}" role="img" aria-label="${esc(rotulo)}">${ic(icone)}</span></td>`;
+}
+async function abrirTermoAssinado(caminho){
+  const w = window.open('', '_blank');
+  const { data, error } = await sb.storage.from('termos').createSignedUrl(caminho, 120);
+  if (error || !data?.signedUrl){ w?.close(); toast('Não foi possível abrir o termo.', true); return; }
+  if (w) w.location = data.signedUrl; else location.href = data.signedUrl;
 }
 
 function renderQuadro(){
@@ -107,12 +127,12 @@ function renderQuadro(){
   });
   const maxDep = Math.max(1, ...Object.values(deptos));
 
-  $('#main').innerHTML = topoGestao({
-    olho: 'Quadro de pessoal',
-    titulo: 'Quadro',
-    lead: '',
-    acoes: can() ? ibtn('plus','Novo membro','modalMembro()','primary') : ''
-  }) + abasEquipe('quadro') + `
+  $('#main').innerHTML = cabecalho({
+    espaco: 'Equipe',
+    titulo: 'Quadro de pessoal',
+    acoes: can() ? `<button class="btn solid" onclick="modalMembro()">${ic('plus')}Novo membro</button>` : '',
+    secoes: abasEquipe('quadro')
+  }) + `
     <div class="metricas" style="margin-bottom:18px">
       <div class="metrica"><span class="rot">Membros ativos</span><span class="val">${c('Ativo')}</span></div>
       <div class="metrica"><span class="rot">Em pausa / avaliação</span><span class="val">${c('Em pausa / avaliação')}</span></div>
@@ -128,13 +148,14 @@ function renderQuadro(){
           <span class="n">${n}</span></div>`).join('')}</div>`
         : '<div class="empty">Nenhum membro ativo cadastrado.</div>'}
     </div>
-    ${filtrosHTML()}
+    <div class="q-filtros">${filtrosHTML()}</div>
     <div class="card" style="padding:8px 14px"><div id="tb-membros"></div></div>
     <div id="q-ocorr" style="margin-top:18px"></div>`;
 
+  fbDesenhar('q-fb');
   renderTabelaMembros();
   carregarPendencias();
-  if (podeQuadro()) carregarOcorrenciasRecentes();
+  if (can()) carregarOcorrenciasRecentes();
 }
 
 function opcoesDe(campo){ return [...new Set(state.membros.map(m=>m[campo]).filter(Boolean))].sort(); }
@@ -146,46 +167,51 @@ function todosGrupos(){
 function membrosFiltrados(){
   const f = gestao.filtros, q = norm(f.q);
   return state.membros.filter(m =>
-    (!f.status || m.status === f.status) &&
-    (!f.dep || m.departamento === f.dep) &&
-    (!f.grupo || gruposEfetivos(m).has(f.grupo)) &&
+    (!f.status.length || f.status.includes(m.status)) &&
+    (!f.dep.length || f.dep.includes(m.departamento)) &&
+    (!f.grupo.length || f.grupo.some(g => gruposEfetivos(m).has(g))) &&
+    (!f.trainee || ehTrainee(m)) &&
     (!q || norm(m.nome).includes(q) || norm(m.email_nro).includes(q)
         || norm(m.email_pessoal).includes(q) || String(m.registro).includes(q))
   ).sort((a,b) => a.registro - b.registro);
 }
+/* os filtros do quadro: a FilterBar do sistema de design, como no Arquivo (2.19.2) */
 function filtrosHTML(){
-  const f = gestao.filtros;
-  const sel = (id, label, opts, atual) => `<div class="fld"><label>${label}</label>
-    <select onchange="gestao.filtros.${id}=this.value;renderTabelaMembros()">
-      <option value="">Todos</option>${opts.map(o=>`<option ${atual===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
-  return `<div class="filtros">
-    <div class="fld cresce"><label>Buscar</label>
-      <input value="${esc(f.q)}" placeholder="Nome, e-mail ou registro"
-        oninput="gestao.filtros.q=this.value;renderTabelaMembros()"></div>
-    ${sel('status','Status', STATUS_LIST, f.status)}
-    ${sel('dep','Departamento', opcoesDe('departamento'), f.dep)}
-    ${sel('grupo','Grupo', todosGrupos(), f.grupo)}
-    ${ibtn('x','Limpar filtros (volta ao padrão de ativos)',
-      "gestao.filtros={q:'',status:'Ativo',dep:'',grupo:''};renderQuadro()")}
-  </div>`;
+  const f = gestao.filtros, ops = l => l.map(o => [o, o]);
+  return filtroBarra({ id:'q-fb', aoMudar: quadroFiltroMudou,
+    antes: `<input id="q-busca" class="fb-busca" type="search" value="${esc(f.q)}" placeholder="Nome, e-mail ou registro"
+      aria-label="Buscar por nome, e-mail ou registro" oninput="gestao.filtros.q=this.value;renderTabelaMembros()">`,
+    grupos: [
+      { k:'status', rot:'Status', ops: ops(STATUS_LIST), sel: f.status },
+      { k:'dep', rot:'Departamento', ops: ops(opcoesDe('departamento')), sel: f.dep },
+      { k:'grupo', rot:'Grupo', ops: ops(todosGrupos()), sel: f.grupo },
+      { k:'trainee', rot:'Trainees', unico:true, ops: [['sim', 'Só trainees']], sel: f.trainee ? ['sim'] : [] },
+    ] });
+}
+function quadroFiltroMudou(k, vals){
+  if (k === 'trainee') gestao.filtros.trainee = vals[0] === 'sim';
+  else gestao.filtros[k] = vals;
+  renderTabelaMembros();
 }
 function renderTabelaMembros(){
   const ms = membrosFiltrados();
   const el = $('#tb-membros'); if (!el) return;
   el.innerHTML = ms.length ? `
-    <div class="wrap"><table class="tabela trabalho fixa">
+    <div class="wrap"><table class="tabela trabalho fixa" style="--tab-min:900px">
       <thead><tr><th style="width:64px">Reg.</th><th>Nome</th><th>Departamento</th>
-        <th>Cargo</th><th style="width:150px">Grupos</th><th style="width:132px">Status</th></tr></thead>
+        <th>Cargo</th><th style="width:150px">Grupos</th><th style="width:132px">Status</th>${gestao.termo ? '<th style="width:64px" title="Termo de sigilo do LABBIO">Termo</th>' : ''}</tr></thead>
       <tbody>${ms.map(m=>`<tr class="click" tabindex="0" onclick="abrirFicha(${m.registro})"
         onkeydown="if(event.key==='Enter')abrirFicha(${m.registro})">
         <td class="reg">${pad3(m.registro)}</td>
-        <td class="nome" title="${esc(m.nome)}">${esc(m.nome)}</td>
+        <td class="nome" title="${esc(m.nome)}">${esc(m.nome)}${chipTrainee(m)}</td>
         <td title="${esc(m.departamento||'')}">${esc(m.departamento||'—')}</td>
         <td title="${esc(m.cargo||'')}">${esc(m.cargo||'—')}</td>
         <td title="${esc([...gruposEfetivos(m)].join(', '))}">${chips([...gruposEfetivos(m)],2)}</td>
-        <td>${pill(m.status)}</td></tr>`).join('')}</tbody></table></div>
+        <td>${pill(m.status)}</td>${gestao.termo ? celulaTermo(m) : ''}</tr>`).join('')}</tbody></table></div>
     <div class="small muted" style="padding:10px 4px">${ms.length} de ${state.membros.length} registros</div>`
     : `<div class="empty">Nenhum membro corresponde aos filtros.</div>`;
+  const tot = document.querySelector('#q-fb .fb-total');
+  if (tot){ tot.hidden = false; tot.innerHTML = `<b>${ms.length}</b> ${ms.length === 1 ? 'resultado' : 'resultados'}`; }
 }
 
 async function carregarPendencias(){
@@ -240,7 +266,7 @@ const CAMPOS_MEMBRO = [
   {k:'email_nro', l:'E-mail NRO', t:'text'},
   {k:'email_pessoal', l:'E-mail pessoal', t:'text'},
   {k:'telefone', l:'Telefone', t:'text'},
-  {k:'foto_url', l:'Foto (URL; vazio usa fotos/REG.jpg do repositório)', t:'text', full:true},
+  {k:'foto_url', l:'Foto (link; vazio usa fotos/REG.jpg do repositório; a câmera no avatar envia a imagem)', t:'text', full:true},
   {k:'data_ingresso', l:'Data de ingresso', t:'date'},
   {k:'forma_ingresso', l:'Forma de ingresso', t:'datalist', list:'dl-formas'},
   {k:'data_desligamento', l:'Data de desligamento', t:'date'},
@@ -249,17 +275,38 @@ const CAMPOS_MEMBRO = [
   {k:'bolsa', l:'Bolsa', t:'text'},
   {k:'data_encerramento', l:'Data de encerramento da bolsa', t:'date'}
 ];
+/* a aba "Dados pessoais": tudo o que o recadastro (Meus dados) grava, em grupos (2.19.2).
+   O endereço aparece numa linha, montado das partes; na edição, vão as partes. */
 const CAMPOS_PESS = [
-  {k:'cpf', l:'CPF'}, {k:'data_nascimento', l:'Data de nascimento', t:'date'}, {k:'genero', l:'Gênero'},
-  {k:'endereco', l:'Endereço', full:true}, {k:'cidade_origem', l:'Cidade de origem'},
+  {g:'Identificação'},
+  {k:'nome_civil', l:'Nome civil', full:true}, {k:'cpf', l:'CPF'}, {k:'data_nascimento', l:'Data de nascimento', t:'date'},
+  {k:'rg', l:'Carteira de identidade'}, {k:'rg_orgao', l:'Órgão expedidor'}, {k:'nacionalidade', l:'Nacionalidade'},
+  {k:'estado_civil', l:'Estado civil'}, {k:'genero', l:'Gênero'}, {k:'autodeclaracao_racial', l:'Autodeclaração racial'},
+  {g:'Contato e endereço'},
+  {k:'telefone', l:'Telefone'}, {k:'cidade_origem', l:'Cidade de origem'},
+  {k:'endereco', l:'Endereço', full:true, so:'ver'},
+  {k:'end_logradouro', l:'Rua, avenida ou praça', full:true, so:'editar'}, {k:'end_numero', l:'Número', so:'editar'},
+  {k:'end_complemento', l:'Complemento', so:'editar'}, {k:'end_bairro', l:'Bairro', so:'editar'}, {k:'end_cep', l:'CEP', so:'editar'},
+  {k:'end_cidade', l:'Cidade', so:'editar'}, {k:'end_uf', l:'UF', so:'editar'},
+  {g:'Vínculo acadêmico'},
   {k:'instituicao', l:'Instituição de ensino'}, {k:'curso', l:'Curso'}, {k:'matricula', l:'Matrícula'},
   {k:'periodo_ingresso', l:'Período de ingresso'}, {k:'tempo_deslocamento', l:'Tempo de deslocamento'},
-  {k:'autodeclaracao_racial', l:'Autodeclaração racial'}, {k:'situacao_fump', l:'Situação junto à FUMP'},
-  {k:'acessibilidade', l:'Necessidades de acessibilidade', full:true},
+  {k:'situacao_fump', l:'Situação junto à FUMP'},
+  {g:'Perfil'},
   {k:'background', l:'Background', t:'textarea', full:true},
   {k:'lattes', l:'Currículo Lattes', full:true}, {k:'instagram', l:'Instagram'}, {k:'github', l:'GitHub'},
+  {k:'acessibilidade', l:'Necessidades de acessibilidade', full:true},
   {k:'autorizacao_imagem', l:'Autorização de uso de imagem', t:'bool'}
 ];
+const camposPess = modo => CAMPOS_PESS.filter(c => c.k && c.so !== (modo === 'ver' ? 'editar' : 'ver'));
+/* o endereço de uma linha: das partes, quando existem (o recadastro), senão o que veio da planilha */
+function enderecoPess(p){
+  if (!p?.end_logradouro) return p?.endereco || null;
+  const cep = String(p.end_cep || '').replace(/\D/g, '');
+  return [`${p.end_logradouro}, ${p.end_numero || 's/n'}${p.end_complemento ? ' ' + p.end_complemento : ''}`, p.end_bairro,
+    [p.end_cidade, p.end_uf].filter(Boolean).join('/'), cep.length === 8 ? `CEP ${cep.slice(0, 5)}-${cep.slice(5)}` : ''].filter(Boolean).join(', ');
+}
+
 
 function datalistsHTML(){
   const dl = (id, vals) => `<datalist id="${id}">${vals.map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`;
@@ -276,7 +323,7 @@ function campoInput(c, val, regAtual){
   if (c.t === 'gestor'){
     const opts = state.membros.filter(m => m.status==='Ativo' && m.registro !== regAtual)
       .map(m => `<option value="${m.registro}" ${m.registro===val?'selected':''}>${esc(m.nome)}</option>`).join('');
-    return `<select id="f-${c.k}"><option value="">— sem gestor —</option>${opts}</select>`;
+    return `<select id="f-${c.k}"><option value="">Sem gestor</option>${opts}</select>`;
   }
   if (c.t === 'grupos') return pillsGrupos(val);
   const v = val == null ? '' : val;
@@ -424,16 +471,17 @@ async function carregarFicha(){
     const ix = state.membros.findIndex(m => m.registro === reg);
     if (ix >= 0) Object.assign(state.membros[ix], linha.data); else state.membros.push(linha.data);
   }
-  /* Consultas por chave: ocorrências e dados pessoais só para quem tem
-     o quadro. Assim o papel de consulta nem chega a pedi-los. */
+  /* Consultas por chave: a ficha (dados pessoais, avaliações, acessos)
+     é de quem tem o quadro, liderança inclusive; ocorrências, só de
+     admin e pessoal. Assim o papel de consulta nem chega a pedi-las. */
   const q = {
     acessos: sb.from('acessos_concedidos').select('*').eq('registro', reg),
     avals:   sb.from('avaliacoes').select('*').eq('registro', reg).order('data',{ascending:false}),
     aponts:  sb.from('apontamento_itens').select('*').eq('registro', reg).order('data',{ascending:false}).limit(12)
   };
-  if (podeQuadro()) q.ocorr = sb.from('ocorrencias').select('*').eq('registro', reg)
+  if (can()) q.ocorr = sb.from('ocorrencias').select('*').eq('registro', reg)
     .order('data',{ascending:false}).order('criado_em',{ascending:false});
-  if (can()) q.pess = sb.from('dados_pessoais').select('*').eq('registro', reg).maybeSingle();
+  if (podeVerFicha()) q.pess = sb.from('dados_pessoais').select('*').eq('registro', reg).maybeSingle();
 
   const chaves = Object.keys(q);
   const res = await Promise.all(chaves.map(k => q[k]));
@@ -470,29 +518,32 @@ async function juntarCabecalhos(itens){
 function renderFicha(){
   const m = membroAtual();
   if (!m){
-    $('#main').innerHTML = topoGestao({titulo:'Registro não encontrado', voltar:"location.hash='#/equipe/quadro'"})
+    $('#main').innerHTML = cabecalho({ espaco:'Equipe', titulo:'Registro não encontrado', voltar:['Quadro de pessoal', '#/equipe/quadro'] })
       + '<div class="empty">Nenhum membro com este número de registro.</div>';
     return;
   }
   const f = gestao.ficha;
   const gestor = m.gestor_registro ? nomeDe(m.gestor_registro) : null;
   const abas = [['dados','Dados']];
-  if (podeQuadro()) abas.push(['ocorr', `Ocorrências (${f.ocorr.length})`]);
+  if (can()) abas.push(['ocorr', `Ocorrências (${f.ocorr.length})`]);
   abas.push(['acessos','Acessos'], ['avals', `Avaliações (${f.avals.length})`]);
   if (f.treinos) abas.push(['treinos', `Treinamentos (${f.concl.length})`]);
-  if (can()) abas.push(['pess','Dados pessoais']);
+  if (podeVerFicha()) abas.push(['pess','Dados pessoais']);
 
-  $('#main').innerHTML = topoGestao({
-    olho: 'Ficha do membro',
+  $('#main').innerHTML = cabecalho({
+    espaco: 'Equipe',
     titulo: m.nome,
-    voltar: podeQuadro() ? "location.hash='#/equipe/quadro'" : "location.hash='#/equipe'",
-    acoes: ibtn('doc','Gerar relatório do membro','relatorioDoMembro()')
-      + (can() ? ibtn('pencil','Editar dados',
-        "gestao.ficha.editando=true;gestao.ficha.tab='dados';renderFicha()") : '')
+    codigo: String(m.registro).padStart(3, '0'),
+    meta: ehTrainee(m) ? '<span class="chip mini">Trainee</span>' : '',
+    voltar: podeQuadro() ? ['Quadro de pessoal', '#/equipe/quadro'] : ['Organograma', '#/equipe'],
+    acoes: [`<button class="btn ghost" onclick="relatorioDoMembro()">${ic('doc')}Relatório</button>`,
+      can() ? `<button class="btn ghost" onclick="gestao.ficha.editando=true;gestao.ficha.tab='dados';renderFicha()">${ic('pencil')}Editar dados</button>` : '']
   }) + `
     <div class="card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px">
-      <span onclick="alternarCampoFoto()" style="line-height:0;cursor:${f.editando&&f.tab==='dados'?'pointer':'default'}"
+      <span class="ficha-foto"><span onclick="alternarCampoFoto()" style="line-height:0;cursor:${f.editando&&f.tab==='dados'?'pointer':'default'}"
         title="${f.editando&&f.tab==='dados'?'Clique para alterar o link da foto':''}">${avatarFoto(m, 52, 17)}</span>
+        ${podeFotoDe(m.registro) ? `<button class="foto-bt" onclick="modalFoto(${m.registro})"
+          title="${m.foto_url ? 'Trocar a foto' : 'Enviar foto'}" aria-label="${m.foto_url ? 'Trocar a foto' : 'Enviar foto'}">${ic('camera')}</button>` : ''}</span>
       <div style="flex:1;min-width:220px">
         <div style="font-family:var(--fd);font-size:17px;font-weight:600">${esc(m.nome)}</div>
         <div class="small muted" style="margin-top:3px">
@@ -564,8 +615,8 @@ function renderTabDados(){
       <div class="acts" style="justify-content:flex-end">
         <button class="btn ghost" onclick="gestao.ficha.editando=false;renderFicha()">Cancelar</button>
         <button class="btn solid" onclick="salvarMembro()">${ic('check')} Salvar</button></div>
-      <p class="small muted" style="margin-top:14px;line-height:1.6">Para alterar o link da foto, clique no
-        avatar acima. Mudanças de status, cargo, departamento, grupos e gestor também geram ocorrências.</p></div>`;
+      <p class="small muted" style="margin-top:14px;line-height:1.6">Para enviar a foto, use a câmera no avatar;
+        para colar um link, clique no avatar. Mudanças de status, cargo, departamento, grupos e gestor também geram ocorrências.</p></div>`;
     return;
   }
   $('#ficha-body').innerHTML = `<div class="card"><div class="dl">
@@ -768,7 +819,7 @@ function renderTabAvals(){
   $('#ficha-body').innerHTML = `<div class="card" style="margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px">
       <div><h3>Avaliações periódicas</h3><p class="sub">Um registro por ciclo</p></div>
-      ${ibtn('plus','Nova avaliação', `modalAval(${f.reg})`, 'primary sm')}
+      ${can() ? ibtn('plus','Nova avaliação', `modalAval(${f.reg})`, 'primary sm') : ''}
     </div>
     ${f.avals.length ? f.avals.map(a => `
       <div class="aval-card"><div class="hd">
@@ -794,7 +845,7 @@ function renderTabAvals(){
         <td>${a.sinalizado ? `<span class="pill ${a.tratado?'':'p-bad'}">
           <span class="dt ${a.tratado?'dt-gray':'dt-bad'}"></span>${a.tratado?'Tratada':'Pendente'}</span>` : '<span class="muted">—</span>'}</td>
         <td>${esc(a.apont?.responsavel||'—')}</td></tr>`).join('')}</tbody></table></div>`
-    : '<div class="empty">Nenhum apontamento semanal. Registro em Equipe › Apontamento semanal.</div>'}
+    : '<div class="empty">Nenhum apontamento semanal. Registro em Equipe, Reporte semanal.</div>'}
   </div>`;
 }
 function modalAval(reg){
@@ -832,8 +883,9 @@ function renderTabPess(){
   const p = gestao.ficha.pess;
   if (gestao.ficha.editando){
     $('#ficha-body').innerHTML = `<div class="card"><h3>Editar dados pessoais</h3>
-      <div class="form-grid" style="margin-top:16px">${CAMPOS_PESS.map(c =>
-        `<div class="fld ${c.full?'full':''}"><label>${c.l}</label>${campoInput(c, p ? p[c.k] : null, null)}</div>`).join('')}</div>
+      <div class="form-grid" style="margin-top:16px">${CAMPOS_PESS.filter(c => !c.k || c.so !== 'ver').map(c => c.g
+        ? `<h4 class="full pess-grupo">${esc(c.g)}</h4>`
+        : `<div class="fld ${c.full?'full':''}"><label>${c.l}</label>${campoInput(c, p ? p[c.k] : null, null)}</div>`).join('')}</div>
       <div class="acts" style="justify-content:flex-end">
         <button class="btn ghost" onclick="gestao.ficha.editando=false;renderFicha()">Cancelar</button>
         <button class="btn solid" onclick="salvarPess()">Salvar</button></div></div>`;
@@ -842,11 +894,12 @@ function renderTabPess(){
   $('#ficha-body').innerHTML = `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px">
       <div><h3>Dados pessoais</h3><p class="sub">Sob a LGPD</p></div>
-      ${ibtn('pencil','Editar dados pessoais', "gestao.ficha.editando=true;renderFicha()", 'sm')}</div>
-    <div class="aviso-box warn">Dados sensíveis (LGPD), visíveis apenas para a Diretoria e o Depto. de Pessoal.
+      ${can() ? ibtn('pencil','Editar dados pessoais', "gestao.ficha.editando=true;renderFicha()", 'sm') : ''}</div>
+    <div class="aviso-box warn">Dados sensíveis (LGPD), visíveis apenas para a Diretoria, o Depto. de Pessoal e a liderança.
       Não inclua estes campos em relatórios ou comunicações.</div>
-    ${p ? `<div class="dl">${CAMPOS_PESS.map(c => {
-        let v = p[c.k];
+    ${p ? `<div class="dl">${CAMPOS_PESS.filter(c => !c.k || c.so !== 'editar').map(c => {
+        if (c.g) return `<h4 class="full pess-grupo">${esc(c.g)}</h4>`;
+        let v = c.k === 'endereco' ? enderecoPess(p) : p[c.k];
         if (c.t === 'date') v = v ? fmtD(v) : null;
         if (c.t === 'bool') v = v === true ? 'Sim' : v === false ? 'Não' : null;
         return `<div class="it${c.full?' full':''}"><dt>${c.l}</dt>
@@ -857,7 +910,8 @@ function renderTabPess(){
 }
 async function salvarPess(){
   try{
-    const o = lerCampos(CAMPOS_PESS); o.registro = gestao.ficha.reg;
+    const o = lerCampos(camposPess('editar')); o.registro = gestao.ficha.reg;
+    if (o.end_logradouro) o.endereco = enderecoPess(o);   // a linha única acompanha as partes, como no recadastro
     const { error } = await sb.from('dados_pessoais').upsert(o, { onConflict:'registro' });
     if (error) throw error;
     gestao.ficha.editando = false;
@@ -877,8 +931,8 @@ async function pageAuditoria(){
     if (error) throw error;
     gestao.aud = data || [];
     const tabelas = [...new Set(gestao.aud.map(r => r.tabela))];
-    $('#main').innerHTML = topoGestao({
-      olho: 'Trilha de auditoria',
+    $('#main').innerHTML = cabecalho({
+      espaco: 'Administração',
       titulo: 'Auditoria',
       lead: 'Últimos 400 eventos registrados.'
     }) + `
@@ -891,7 +945,7 @@ async function pageAuditoria(){
       <div class="card" style="padding:8px 14px"><div id="tb-aud"></div></div>`;
     renderTabelaAud();
   }catch(e){
-    $('#main').innerHTML = topoGestao({titulo:'Auditoria indisponível'})
+    $('#main').innerHTML = cabecalho({ espaco:'Administração', titulo:'Auditoria' })
       + `<div class="aviso-box err">Não foi possível carregar a trilha: ${esc(e.message)}</div>`;
   }
 }
@@ -910,7 +964,7 @@ function renderTabelaAud(){
       .some(v => v && norm(v).includes(q))));
   const OP = {INSERT:'Criação', UPDATE:'Alteração', DELETE:'Exclusão'};
   $('#tb-aud').innerHTML = rows.length ? `
-    <div class="wrap"><table class="tabela trabalho fixa">
+    <div class="wrap"><table class="tabela trabalho fixa" style="--tab-min:1100px">
       <thead><tr><th style="width:132px">Quando</th><th>Responsável</th><th style="width:110px">Tabela</th>
         <th>Registro</th><th style="width:92px">Ação</th><th>Campo</th><th>De</th><th>Para</th></tr></thead>
       <tbody>${rows.slice(0,200).map(r => {
@@ -943,130 +997,6 @@ registrarBusca({
     })), t, 6);
   }
 });
-
-/* ============================================================
-   APONTAMENTO SEMANAL — aba de Equipe
-   ============================================================ */
-/* ---------------- apontamento semanal ---------------- */
-function pageApontamento(){
-  const topo = topoGestao({ olho:'Equipe', titulo:'Apontamento semanal',
-    lead:'Avaliação rápida de assiduidade e entregas do seu grupo, com sinalização ao Depto. de Pessoal.'
-  }) + abasEquipe('apontamento');
-  if(!gestao.apont){
-    const gs = todosGrupos();
-    $('#main').innerHTML = topo + `<div class="card" style="max-width:560px">
-      <h3>Iniciar apontamento</h3>
-      <p class="small muted" style="line-height:1.6;margin-bottom:14px">Selecione o grupo sob a sua liderança.
-      Serão listados os membros ativos e em pausa, para avaliar <b>assiduidade</b> e <b>entregas</b> da semana e,
-      se necessário, <b>sinalizar</b> alguém para o Depto de Pessoal.</p>
-      ${gs.length?`<div class="fld"><label>Grupo</label><select id="ap-grupo">${gs.map(g=>`<option>${esc(g)}</option>`).join('')}</select></div>
-      <button class="btn solid" onclick="iniciarApontamento()">${ic('fwd')} Iniciar</button>`
-      :'<div class="empty">Nenhum grupo cadastrado no quadro.</div>'}
-    </div>`;
-    return;
-  }
-  renderApontamentoLista();
-}
-function iniciarApontamento(){
-  const g = $('#ap-grupo').value;
-  const itens = state.membros
-    .filter(m=>['Ativo','Em pausa / avaliação'].includes(m.status) && gruposEfetivos(m).has(g))
-    .filter(m=>m.registro !== state.perfil?.registro)
-    .sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'))
-    .map(m=>({registro:m.registro, nome:m.nome, cargo:m.cargo, status:m.status,
-      assiduidade:'SUFICIENTE', entregas:'SUFICIENTE', sinalizado:false, justificativa:null, abrirOcorrencia:false}));
-  if(!itens.length){ toast('Esse grupo não tem membros ativos ou em pausa.', true); return; }
-  gestao.apont = {grupo:g, itens};
-  renderApontamentoLista();
-}
-function segNota(i, campo){
-  const v = gestao.apont.itens[i][campo];
-  return `<span class="seg">
-    <button class="${v==='SUFICIENTE'?'on-ok':''}" onclick="setNota(${i},'${campo}','SUFICIENTE')"><span class="light ${v==='SUFICIENTE'?'lt-ok':'lt-off'}"></span>Suficiente</button>
-    <button class="${v==='INSUFICIENTE'?'on-bad':''}" onclick="setNota(${i},'${campo}','INSUFICIENTE')"><span class="light ${v==='INSUFICIENTE'?'lt-bad':'lt-off'}"></span>Insuficiente</button>
-  </span>`;
-}
-function setNota(i, campo, v){ gestao.apont.itens[i][campo]=v; renderApontamentoLista(); }
-function renderApontamentoLista(){
-  const topo = topoGestao({ olho:'Equipe', titulo:'Apontamento semanal' }) + abasEquipe('apontamento');
-  const a = gestao.apont;
-  const nSin = a.itens.filter(x=>x.sinalizado).length;
-  $('#main').innerHTML = topo + `
-    <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <div style="flex:1;min-width:220px"><b>Grupo:</b> ${esc(a.grupo)}<span class="muted small">, ${a.itens.length} membro(s), ${fmtD(hojeISO())}</span></div>
-      <button class="btn" onclick="gestao.apont=null;pageApontamento()">Trocar grupo</button>
-      <button class="btn solid" onclick="salvarApontamento()">${ic('check')} Registrar apontamento</button>
-    </div>
-    ${nSin?`<div class="aviso-box warn">${nSin} membro(s) sinalizado(s). O Depto. de Pessoal será notificado.</div>`:''}
-    <div class="card" style="padding:6px 14px">
-      <table class="tabela trabalho"><thead><tr><th>Reg.</th><th>Membro</th><th>Assiduidade</th><th>Entregas</th><th style="text-align:right">Sinalizar</th></tr></thead>
-      <tbody>${a.itens.map((it,i)=>`<tr>
-        <td class="reg">${pad3(it.registro)}</td>
-        <td><span style="font-weight:600">${esc(it.nome)}</span><br><span class="small muted">${esc(it.cargo||'—')}${it.status!=='Ativo'?', '+esc(it.status):''}</span>
-          ${it.sinalizado?`<br><span class="small" style="color:var(--bad)">⚑ ${esc(it.justificativa)}</span>`:''}</td>
-        <td>${segNota(i,'assiduidade')}</td>
-        <td>${segNota(i,'entregas')}</td>
-        <td style="text-align:right">${ibtn('flag', it.sinalizado?'Remover sinalização':'Sinalizar para o Depto de Pessoal', `clicarFlag(${i})`, it.sinalizado?'danger':'')}</td>
-      </tr>`).join('')}</tbody></table>
-    </div>`;
-}
-async function clicarFlag(i){
-  const it = gestao.apont.itens[i];
-  if(it.sinalizado){ it.sinalizado=false; it.justificativa=null; it.abrirOcorrencia=false; renderApontamentoLista(); return; }
-  let recentes = [];
-  try{
-    const desde = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
-    const {data} = await sb.from('apontamento_itens').select('data').eq('registro',it.registro)
-      .eq('sinalizado',true).gte('data',desde).order('data',{ascending:false});
-    recentes = data||[];
-  }catch(e){ /* segue sem histórico */ }
-  const reinc = recentes.length>0;
-  abreModal(`<h3>Sinalizar ${esc(it.nome)}</h3>
-    ${reinc?`<div class="aviso-box warn"><b>Sinalização reincidente:</b> a última foi em ${fmtD(recentes[0].data)},
-      dentro de 30 dias. Com ocorrência formal, o Depto. de Pessoal agenda uma reunião com o membro.</div>`
-    :`<div class="aviso-box info">Primeira sinalização recente. O Depto. de Pessoal fará contato com o membro.</div>`}
-    <div class="fld"><label>Justificativa</label><select id="sn-just">${JUSTIFICATIVAS.map(j=>`<option>${j}</option>`).join('')}</select></div>
-    <div class="fld"><label>Detalhes (opcional)</label><textarea id="sn-det" placeholder="Contexto que ajude o Depto de Pessoal…"></textarea></div>
-    ${reinc?`<div class="fld"><label class="check"><input type="checkbox" id="sn-oc" checked> Abrir ocorrência de "Sinalização reincidente" na ficha do membro</label></div>`:''}
-    <div class="acts" style="justify-content:flex-end"><button class="btn" onclick="fechaModal()">Cancelar</button>
-    <button class="btn solid" onclick="confirmarSinalizacao(${i}, ${reinc})">${ic('flag')} Sinalizar</button></div>`);
-}
-function confirmarSinalizacao(i, reinc){
-  const it = gestao.apont.itens[i];
-  const det = $('#sn-det').value.trim();
-  it.sinalizado = true;
-  it.justificativa = $('#sn-just').value + (det? ': '+det : '');
-  it.abrirOcorrencia = reinc && $('#sn-oc') ? $('#sn-oc').checked : false;
-  fechaModal(); renderApontamentoLista();
-}
-async function salvarApontamento(){
-  const a = gestao.apont; if(!a) return;
-  try{
-    const {data:cab, error} = await sb.from('apontamentos')
-      .insert({grupo:a.grupo, data:hojeISO(), responsavel:quemSouEu(), responsavel_id:state.perfil.id})
-      .select('id').single();
-    if(error) throw error;
-    const itens = a.itens.map(it=>({apontamento_id:cab.id, registro:it.registro, data:hojeISO(),
-      assiduidade:it.assiduidade, entregas:it.entregas, sinalizado:it.sinalizado, justificativa:it.justificativa}));
-    const r = await sb.from('apontamento_itens').insert(itens);
-    if(r.error) throw r.error;
-    const ocs = a.itens.filter(it=>it.abrirOcorrencia).map(it=>({registro:it.registro,
-      tipo:'Sinalização reincidente', descricao:it.justificativa, responsavel:quemSouEu(), data:hojeISO()}));
-    if(ocs.length){ const r2 = await sb.from('ocorrencias').insert(ocs); if(r2.error) throw r2.error; }
-    const nSin = a.itens.filter(x=>x.sinalizado).length;
-    gestao.apont = null;
-    $('#main').innerHTML = topo + `<div class="card" style="max-width:560px;text-align:center;padding:36px">
-      <div class="sq" style="width:52px;height:52px;border-radius:16px;background:var(--soft);color:var(--green);display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">${ic('check')}</div>
-      <h3 style="margin-bottom:8px">Apontamento registrado</h3>
-      <p class="small muted" style="line-height:1.6;margin-bottom:18px">Grupo ${esc(a.grupo)}, ${a.itens.length} membro(s) avaliado(s)
-      ${nSin?`, ${nSin} sinalização(ões) encaminhada(s) ao Depto de Pessoal`:''}${ocs.length?`, ${ocs.length} ocorrência(s) aberta(s)`:''}.</p>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <button class="btn ghost" onclick="gestao.apont=null;pageApontamento()">Novo apontamento</button>
-        <a class="btn solid" href="#/equipe">Voltar à equipe</a></div>
-    </div>`;
-    toast('Apontamento registrado.');
-  }catch(e){ falha(e,'Erro ao registrar o apontamento'); }
-}
 
 /* O relatório em PDF mora no módulo de relatórios, que é quem carrega o
    jsPDF. A ficha só pede — e a biblioteca desce na primeira vez. */

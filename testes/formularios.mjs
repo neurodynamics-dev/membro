@@ -112,8 +112,7 @@ async function previa(p, ctx){
     && await p.locator('[data-campo="pauta"] .frm-item input').count() === 2);
 
   const t = await previa(p, ctx);
-  /* a logo é a imagem do portal (logo-nro.png), não o símbolo desenhado com o nome em texto */
-  confere('a prévia no modelo da NRO: a logo, quem se reuniu no cabeçalho, o título, o código e a revisão do template',
+  confere('a prévia no modelo da NRO: quem se reuniu no cabeçalho, o título, o código e a revisão do template',
     /^Gerência Ata de reunião NRO-PUB-003-2 Rev\. A/.test(t), t.slice(0, 160));
   confere('a frase da ata, com a data e a hora por extenso', /Às 16 horas do dia 24 de setembro de 2026, reuniram-se na Sala de Reuniões do LABBIO/.test(t), t.slice(0, 400));
   confere('os presentes numerados e a pauta com letras, com a pontuação do template',

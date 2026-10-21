@@ -6,15 +6,23 @@ mudou na versão 14.0 é que agora isso está escrito em algum lugar.
 
 ## Como aplicar
 
-No SQL Editor do Supabase, na ordem numérica, cada arquivo uma vez. Depois da
+No SQL Editor do Supabase, na ordem das versões, cada arquivo uma vez: a
+`v14` à `v32`, e depois as de número novo, da `2.17.0` em diante. Depois da
 14.0, o banco responde sozinho o que já rodou:
 
 ```sql
-select id, aplicada_em from public.migracoes order by id;
+select id, aplicada_em from public.migracoes order by aplicada_em;
 ```
 
 Migração nova termina inserindo a própria linha em `migracoes` — siga o rodapé
 da `v14_unificacao.sql` como modelo.
+
+**O número.** Desde a 2.17.0 o SOMA se numera em major.minor.patch (README,
+"Versões"), e a migração leva no nome a versão que a traz:
+`2.17.0_notas_fotos_e_cartoes.sql`, com a linha
+`2.17.0_notas_fotos_e_cartoes` em `migracoes`. As de antes continuam com o
+nome antigo (`v14` a `v32`): são o registro do que já rodou, e a linha delas
+no banco já existe. Na regra nova, a `v32` é a 2.16.0.
 
 ## A colisão de numeração (e por que os nomes são estes)
 
@@ -42,7 +50,8 @@ congelados.
 ```
 db/
 ├── LEIAME.md                          este arquivo
-├── v14_unificacao.sql … v33_aproveitamento.sql  as migrações, em ordem
+├── v14_unificacao.sql … v32_fila_e_notificacoes.sql  as migrações, em ordem
+├── 2.17.0_notas_fotos_e_cartoes.sql   a primeira com o número novo (major.minor.patch)
 ├── testes/                            os testes, em PostgreSQL de verdade
 └── aplicadas/                         história, congelada
     ├── soma_v06_selecao.sql                 processo seletivo
@@ -80,8 +89,127 @@ db/
 | `v30_emails.sql` | os e-mails da equipe: o link de cada rede nas contas do Studio (`studio_config.links`), os roteiros das pílulas de conhecimento (`email_roteiros`, dezesseis prontos, cada um com a área que assina e os grupos a quem vai) e os e-mails programados do Full mailer (`email_programados`: `email_programar`, `email_destinatarios`, `email_programado_cancelar`; a fila da Edge Function em `email_programados_lote` e `email_programados_baixa`) |
 | `v31_ps_entrevistas.sql` | as entrevistas do processo seletivo online: quem abriu cada janela (`ps_slots.criado_por`), o link da chamada no lugar do local (`link_reuniao`, obrigatório em entrevista nova), o reagendamento pelo comitê (`ps_reagendar`, `ps_slot_editar`, `ps_slot_excluir`) e a fila de e-mails (`ps_envios`): a reserva, o reagendamento, o link e o cancelamento ao candidato, e o resumo da véspera ao responsável; o site ganha o link em `ps_acompanhar` e o "online" em `ps_horarios` |
 | `v32_fila_e_notificacoes.sql` | a fila de envio que anda sozinha: o banco chama a Edge Function `notificar-email` a cada minuto (`soma-fila`, pelo `pg_cron` e o `pg_net`) e logo depois de cada aviso novo (o gatilho `fila_acordar`), com uma senha que a migração gera e guarda no Vault (`soma_fila_token`); uma passada de cada vez (`fila_passada_inicio`, `fila_passada_fim`) e o registro delas (`fila_passadas`, `fila_situacao`); o empurrão do portal aberto (`fila_empurrar`). O sino que não empilha: `notificacoes_limpar`, o expurgo (`notificacoes_expurgar`) e o aviso de teste que substitui o anterior. As notificações no aparelho (Web Push): `push_inscricoes`, `push_inscrever`, `push_cancelar`, `push_meus`, as chaves VAPID no Vault e a fila da Edge Function em `push_lote` e `push_baixa`. Depois dela, publique de novo a `notificar-email` e desligue nela a verificação de JWT |
+| `2.19.0_quiosque.sql` | o quiosque entra com uma conta de serviço: `quiosque_conta`, `conta_quiosque()`, `conta_ativa()` falsa para ela (nenhuma tabela lê pela API), `quiosque_estado_conta()` e `quiosque_painel()`; o segredo que estava no código público deixa de servir. Confira antes: `quiosque_estado(text)` e a linha `segredo_quiosque` em `config_sistema` (ver `PUBLICACAO-2.19.md`) |
+| `2.19.0_avisos.sql` | quadro de avisos com onze layouts (hero, número, contagem, lista, citação e progresso entram) e as colunas `familia` e `valor` em `portal_avisos`; só acrescenta, pode rodar de novo |
+
+Teste das duas migrações da 2.19.0 (19 asserções; aplica cada uma duas vezes e simula o que só a produção tem, `config_sistema` e `quiosque_estado`):
+
+```sh
+createdb -T tbase t219
+psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.18.0_soma.sql
+psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
+```
+
+### 2.19.1: recadastro e termo de sigilo do LABBIO
+
+| Migração | O que faz |
+|---|---|
+| `2.19.1_recadastro.sql` | Meus dados e o recadastro semestral: os campos pessoais em `dados_pessoais`, o histórico de cada conferência (`cadastro_confirmacoes`, a fotografia dos dados), as campanhas (`recadastro_campanhas`, com o termo opcional) e quem já concluiu (`recadastro_pendencias`). `cadastro_meus_dados`, `cadastro_confirmar` (valida CPF, CEP, UF...), `recadastro_estado` (o que a entrada pede), `recadastro_dispensar` (uma vez por campanha), `recadastro_painel` e `recadastro_campanha_ativar` (avisa todos os membros ativos). Férias e afastamento pausam o pedido |
+| `2.19.1_termo.sql` | o termo de sigilo do LABBIO como serviço à parte: `termo_campanhas`, `termo_pendencias`, o bucket privado `termos`; `termo_emitir` só com dados conferidos há até 180 dias (e guarda quais saíram no termo), `termo_registrar_envio` só para um termo emitido com a última conferência; `termo_painel` e `termo_conferir` para o Pessoal. Depende da `2.19.1_recadastro.sql` |
+| `2.19.1_reporte.sql` | o reporte por liderança direta: um por líder e semana (`reportes.modelo = 'lider'`, a lista fotografada em `pessoas`), cobrança de sexta 16h (`reporte_cobrancas`, `reporte_cobranca_estado`, `reporte_ausente`), fechamento na segunda 0h (`reporte_ciclos.fecha_em`), avaliações na ficha (`membro_reporte_avaliacoes`), sinalizações com PMO e offboarding (`reporte_sinalizacoes`, `reporte_sequencias`), consolidado para admin e NRO_MANAGERS. Os ciclos por frente continuam como estavam. Independente do recadastro e do termo |
+| `2.19.1_labbio_base.sql` | os gestores do LABBIO com conta própria, que não é membro: convite por e-mail (fila `labbio_envios`, mandada pela `notificar-email`), aceite, a estrela do responsável principal, revogação. A conta externa fica fechada em quatro camadas: a porta da API (`api_pre_request`, configurada em `pgrst.db_pre_request` do papel `authenticator`; só passa `/rpc/labbio_*`), `conta_ativa()` falsa, `papeis_atuais()` vazio e uma política restritiva no Storage. Depende da `2.19.0_quiosque.sql`. Depois dela, publique de novo a `notificar-email` |
+| `2.19.1_labbio_acesso.sql` | o pedido de acesso biométrico ao LABBIO: rascunho → Pessoal → LABBIO → concedido (e devolvido, negado, cancelado), com versões (`labbio_pedido_versoes`) e a trilha (`labbio_pedido_eventos`); foto no bucket privado `biometria`; o item do catálogo pela chave `labbio_biometria`; os campos pedidos em `labbio_config`. A triagem do Pessoal (`pessoal_solicitacao_decidir`) encaminha esse subtipo em vez de conceder; os outros pedidos de acesso não mudam. Depende da `2.19.1_labbio_base` e da `2.19.1_recadastro` |
+| `2.19.1_trainees.sql` | trainees no SOMA principal: trainee é quem tem cargo `Trainee` (`eh_trainee`), status Ativo, no grupo NRO_TRAINEE. `ps_trainees_pendentes`, `ps_admitir_trainees` (lote, tudo ou nada, sem duplicar; o candidato continua `trainee` no PS), `trainees_quadro` (área de interesse separada da alocação), `trainee_efetivar` e `trainee_dispensar` (Desligado, card no Pessoal; nada é apagado e nenhum acesso é dado como revogado sozinho) |
+| `2.19.1_labbio_dados.sql` | as consultas do painel do LABBIO (`labbio_inicio`, `labbio_membros`, `labbio_membro`, `labbio_checkins`, `labbio_treinamentos`), só com os campos combinados; a revogação física pendente (`labbio_revogacoes`), criada por gatilho quando quem tem biometria sai (Desligado, Egresso), sem notificação, até o gestor confirmar. Depende da `2.19.1_labbio_acesso`, da `2.19.1_termo` e da `2.19.1_trainees` |
+| `2.19.1_labbio_salas.sql` | a consulta ao LABBIO para a Sala de Reuniões e o Auditório (`espacos.labbio`, `espacos.consulta_labbio`, `labbio_consultas`): nasce por gatilho ao salvar o evento, presa à ocorrência e à versão de local e horário, consultiva (sem resposta, o evento vale); conflito avisa o organizador uma vez; sobreposição sem títulos alheios para o organizador |
+| `2.19.1_labbio_tablets.sql` | os tablets na porta das salas: token por aparelho (só o hash fica), `sala_estado`, `sala_ocupar` (até 30 min, antes da próxima reserva) e `sala_liberar` para o papel anon; a gestão é do painel do LABBIO e do admin |
+| `2.19.1_onboarding.sql` | a trilha de onboarding versionada (`onboarding_trilhas`, a 1 com as sete etapas do plano) e o progresso no servidor (`onboarding_progresso`); as etapas de fato (dados, termo, treinamentos) o SOMA confere sozinho; `onboarding_meu`, `onboarding_marcar`, `onboarding_painel`, `onboarding_trilha_salvar`. Nada bloqueia o SOMA |
+| `2.19.1_feed.sql` | o feed editorial: estados rascunho, pronto, publicando, publicado e retirado; tópico ou notícia (slug estável, `feed_slugs`); quem publica é NRO_MANAGERS ou admin, sem votação (o reporte só contribui); público no site com as imagens copiadas para o bucket público `noticias` em dois passos; reações (`feed_reacoes`, só em notícia) de quem tem registro no quadro, em qualquer status; newsletter sem votos, com os itens ainda não distribuídos (`newsletter_itens`) e envio na hora (`newsletter_enviar_agora`); inscrição pública confirmada (`comunidade_inscrever`, `comunidade_confirmar`, fila `comunidade_envios`). Depois dela, publique de novo a `notificar-email` |
+| `2.19.1_labbio_admin.sql` | o admin do SOMA entra no painel `/labbio/` com a própria conta de membro e faz o que um gestor ativo faz: `conta_labbio()` passa a valer para ele, `labbio_eu()` responde `admin` (o portal não o desvia) e as decisões ficam com "Nome (admin do SOMA)" (`labbio_ator_nome()`). Ele não vira conta externa: o SOMA e a porta da API não mudam. Depois da `2.19.1_labbio_base`, `_acesso`, `_dados` e `_salas` |
+| `2.19.2_checkin_local.sql` | o check-in pela folha confere a posição: `checkin_local` (centro do LABBIO, raio de 150 m, imprecisão máxima de 200 m), `registrar_checkin_folha(token, lat, lon, precisão)` (a versão só com o token é apagada), `checkin_local_ler` e `checkin_local_salvar` (admin). As coordenadas não ficam guardadas |
+| `2.19.2_solicitacoes.sql` | a triagem dos pedidos de acesso: ninguém decide o próprio pedido (`proprio_pedido`, só o admin pode), nem pela triagem do LABBIO (`labbio_pedido_pessoal`) nem pela comum (`pessoal_solicitacao_decidir`); a triagem comum não concede o acesso biométrico (`biometria_pelo_labbio`), que só sai pelo LABBIO. Traz a consulta para conferir onde cada pedido parou. Depois da `2.19.1_labbio_acesso` |
+| `2.19.2_salas.sql` | as salas no tablet e no celular: organizador e reservas de hoje na situação (`sala_situacao`, a partir de `sala_blocos`), ocupar de 5 min até o fim do dia (`sala_ocupar_espaco`), a sala no celular para membro (`sala_painel`, `sala_ocupar_membro`, `sala_liberar_membro`) e as reservas próprias do LABBIO (`labbio_reservas`, `labbio_salas_disponibilidade`, `labbio_reserva_salvar`, `labbio_reserva_cancelar`), fora da agenda do SOMA, com aviso de conflito nos dois sentidos (sino do organizador e e-mail `conflito_sala` ao responsável principal). Depois da `2.19.1_labbio_tablets` e da `_admin` |
+| `2.19.2_labbio_painel.sql` | o início do painel do LABBIO vira um dashboard: `labbio_inicio()` mantém os campos de antes e passa a trazer os pedidos no LABBIO (até 6, do mais antigo), as consultas de sala sem resposta, quem fez check-in hoje, os eventos de hoje nas salas do LABBIO, a presença dos últimos 14 dias, a biometria e o termo por situação e quantos têm treinamento obrigatório em aberto. Só leitura, só nome e foto. Depois da `2.19.1_labbio_dados` e da `_salas` |
+| `2.19.2_labbio_biometria_existente.sql` | o acesso biométrico que já existia (registros 001, 002, 009, 011, 012, 016, 018, 030, 032, 043 e 056) passa a constar, sem aviso; quem já saiu da equipe ou não existe é só relatado |
+| `2.19.2_salas_tempo_real.sql` | o banco avisa o canal de broadcast da sala (`sala-<id>`, Supabase Realtime, só "mudou", sem dado) quando muda a ocupação, um evento numa sala do LABBIO ou uma reserva do LABBIO; o tablet e o celular consultam de novo na hora. Sem `realtime.send`, ou se o envio falhar, a gravação segue. Depois da `2.19.2_salas` |
+| `2.19.2_recadastro_completo.sql` | o recadastro (`cadastro_confirmar`, `cadastro_meus_dados`) atualiza todos os dados pessoais da ficha: os campos opcionais (gênero, cidade de origem, período de ingresso, deslocamento, FUMP, acessibilidade, background, Lattes, Instagram, GitHub, autorização de imagem), o endereço de uma linha montado das partes e o e-mail pessoal (em `membros`). Campo que não vem fica como estava; em branco apaga. Depois da `2.19.1_recadastro` |
+| `2.19.2_recursos.sql` | Recursos, o catálogo colaborativo de ferramentas da equipe: `recursos`, `recurso_avaliacoes` e `recurso_comentarios`, só por função (`recursos_listar`, `recurso_ler`, `recurso_salvar`, `recurso_avaliar`, `recurso_comentar`, `recurso_comentario_apagar`). Qualquer membro com conta ativa adiciona, edita, avalia (1 a 5) e comenta; só a gestão (admin, Pessoal e liderança) marca "NRO Standard". O mesmo endereço não entra duas vezes |
+| `2.19.2_recursos_semente.sql` | a semente da Biblioteca, 283 itens (padrões VS Code e Git Bash, softwares, extensões do VS Code e do navegador, bases de pesquisa em saúde, gravação de microcontroladores, benefícios de estudante, repositórios da NSA e as indicações da equipe), com a função e, nos softwares, as instruções de baixar e usar. Não repete: o que já existe pelo endereço fica como está. Depois da `2.19.2_recursos` |
+| `2.19.2_ri.sql` | Relações institucionais, só para NRO_RELAC e NRO_COORD_OFFICE: conexões (`ri_contatos`, `ri_relacoes`, `ri_interacoes`), missões (`ri_missoes`), financiamento (`ri_editais`: cronograma, checklist e arranjo de cada edital) e as indicações que qualquer membro faz pelos Serviços (`ri_indicacoes`, com aviso a quem indicou). Tudo por função (`ri_*`); nenhuma tabela é legível pela API. Teste: `testes/2.19.2_ri.sql`. |
+| `2.19.2_termo_existente.sql` | o termo de sigilo que o membro já tinha: `termo_registrar_envio` ganha `p_existente` (sem exigir o termo baixado pelo portal, só os dados conferidos), e o admin envia por um membro pelo painel do LABBIO (`termo_admin_caminho`, `termo_registrar_envio_admin`, com aviso à pessoa). O painel do Pessoal mostra a marca e quem enviou. Depois da `2.19.1_termo`. Teste: `testes/2.19.2_termo_existente.sql`. |
+| `2.20.0_aproveitamento.sql` | o aproveitamento de AACC (Resolução 02/2019 da Congregação da Escola de Engenharia): o pedido `AAC-N` (`aacc_pedidos`), cujo relatório é o `NRO-PES-020-N` (a série nasce aqui, com os PNs fora do rol); a página de quem pede (`aacc_meu`), que confere o recadastro (com os pronomes, `dados_pessoais.pronomes`, que nasce aqui) e os dados acadêmicos e conta os semestres letivos pela mesma regra da classe LaTeX (`aacc_semestres`); a ficha que a própria pessoa completa (`aacc_perfil_salvar`); o enquadramento (`aacc_preparar`: EQC, EXT ou VPC, ou OUT, com o nome e a norma do Colegiado, para curso fora da Resolução 02/2019; sem iniciação científica); o envio do PDF, conferido pelos metadados que o template escreve (`aacc_enviar`, bucket privado `aproveitamento`); as etapas de aprovação, uma pessoa de cada grupo, na ordem da configuração (`aacc_config`: NRO_PMO, NRO_PESSOAL e NRO_COORD_OFFICE, a Diretoria, na semente), com devolução em qualquer uma (`aacc_decidir`); o professor orientador indicado na última etapa (com o departamento e a unidade acadêmica), que decide pelo link pessoal sem conta no portal (`aacc_professor_ler`, `aacc_professor_decidir`, as duas abertas à chave anônima) com o barema e a nota mínima de 60; a folha de aprovação emitida em `doc_emitidos` (tipo `aproveitamento`), conferível em auth.neurodynamics.dev; reabrir, que revoga a folha (`aacc_reabrir`); e os avisos: os grupos no sino, quem pediu por e-mail (`doc_envios`, tipos `aacc_membro` e `aacc_professor`). Depois dela, publique de novo a `notificar-email` e o portal |
+
+A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
+2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
+sigilo do LABBIO". Teste (44 asserções):
+
+```sh
+createdb -T tbase t2191
+psql -X -v ON_ERROR_STOP=1 -d t2191 -f testes/2.18.0_soma.sql -f testes/2.19.0.sql -f testes/2.19.1_recadastro.sql
+```
+
+O LABBIO, identidade e segurança (52 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191l 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql
+```
+
+O pedido de acesso biométrico (48 asserções), depois do LABBIO e do recadastro:
+
+```sh
+bash testes/preparar-base.sh teste t2191a 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql 2.19.1_labbio_acesso.sql
+```
+
+Os trainees (33 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191t 2.18.0_soma.sql 2.19.0.sql 2.19.1_recadastro.sql 2.19.1_trainees.sql
+```
+
+As consultas do LABBIO (25 asserções), depois do pedido de biometria e dos trainees:
+
+```sh
+bash testes/preparar-base.sh teste t2191d 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
+     2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
+     2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql \
+     2.19.1_labbio_admin.sql
+```
+
+As salas (19) e os tablets (17), depois do LABBIO:
+
+```sh
+bash testes/preparar-base.sh teste t2191tb 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql
+```
+
+O onboarding (15 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191o 2.18.0_soma.sql 2.19.0.sql 2.19.1_recadastro.sql 2.19.1_trainees.sql 2.19.1_onboarding.sql
+```
+
+O feed e a newsletter (84 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191f 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_reporte.sql 2.19.1_feed.sql
+```
+
+A 2.19.1 inteira, na ordem de aplicação em produção (632 asserções):
+
+```sh
+bash testes/preparar-base.sh teste t2191 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
+     2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
+     2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql
+```
+
+A 2.19.2 sobre a 2.19.1 inteira (o check-in com local e a triagem dos pedidos de acesso):
+
+```sh
+bash testes/preparar-base.sh teste t2192 2.18.0_soma.sql 2.19.0.sql 2.19.1_labbio.sql 2.19.1_recadastro.sql \
+     2.19.1_labbio_acesso.sql 2.19.1_reporte.sql 2.19.1_trainees.sql 2.19.1_labbio_dados.sql \
+     2.19.1_labbio_salas.sql 2.19.1_labbio_tablets.sql 2.19.1_onboarding.sql 2.19.1_feed.sql \
+     2.19.1_labbio_admin.sql 2.19.2_checkin_local.sql 2.19.2_solicitacoes.sql 2.19.2_salas.sql \
+     2.19.2_labbio_painel.sql 2.19.2_labbio_biometria_existente.sql 2.19.2_salas_tempo_real.sql \
+     2.19.2_recadastro_completo.sql 2.19.2_recursos.sql 2.19.2_recursos_semente.sql 2.19.2_ri.sql 2.19.2_termo_existente.sql
+```
+
+O reporte (70 asserções, mais o teste da 2.18.0 do reporte de novo):
+
+```sh
+bash testes/preparar-base.sh             # monta a tbase, uma vez
+bash testes/preparar-base.sh teste t2191r 2.18.0_soma.sql 2.19.0.sql 2.19.1_reporte.sql
+```
 | `v27_cofre.sql` | o cofre: as contas de cada acesso do catálogo, com a senha, a anterior, o segredo do 2FA e as notas no **Vault**; quem usa (grupos e acesso concedido) e quem mantém; o código de duas etapas (TOTP, RFC 6238) calculado no banco; o registro de uso; a troca periódica com o lembrete (pg_cron) e a senha exposta por quem saiu |
-| `v33_aproveitamento.sql` | o aproveitamento de AACC (Resolução 02/2019 da Congregação da Escola de Engenharia): o pedido `AAC-N` (`aacc_pedidos`), cujo relatório é o `NRO-PES-020-N` (a série nasce aqui, com os PNs fora do rol); a página de quem pede (`aacc_meu`), que confere o recadastro (com os pronomes, `dados_pessoais.pronomes`, que nasce aqui) e os dados acadêmicos e conta os semestres letivos pela mesma regra da classe LaTeX (`aacc_semestres`); a ficha que a própria pessoa completa (`aacc_perfil_salvar`); o enquadramento (`aacc_preparar`: EQC, EXT ou VPC, ou OUT, com o nome e a norma do Colegiado, para curso fora da Resolução 02/2019; sem iniciação científica); o envio do PDF, conferido pelos metadados que o template escreve (`aacc_enviar`, bucket privado `aproveitamento`); as etapas de aprovação, uma pessoa de cada grupo, na ordem da configuração (`aacc_config`: NRO_PMO, NRO_PESSOAL e NRO_COORD_OFFICE, a Diretoria, na semente), com devolução em qualquer uma (`aacc_decidir`); o professor orientador indicado na última etapa (com o departamento e a unidade acadêmica), que decide pelo link pessoal sem conta no portal (`aacc_professor_ler`, `aacc_professor_decidir`, as duas abertas à chave anônima) com o barema e a nota mínima de 60; a folha de aprovação emitida em `doc_emitidos` (tipo `aproveitamento`), conferível em auth.neurodynamics.dev; reabrir, que revoga a folha (`aacc_reabrir`); e os avisos: os grupos no sino, quem pediu por e-mail (`doc_envios`, tipos `aacc_membro` e `aacc_professor`). Depois dela, publique de novo a `notificar-email` e o portal |
+| `2.17.0_notas_fotos_e_cartoes.sql` | a primeira com o número novo: os bugs e sugestões das notas de versão (`soma_feedback`, votos, comentários, o andamento por `admin`); a foto enviada pelo portal (o bucket público `fotos`, `membro_foto_definir`); os cartões com outras pessoas, etiquetas, checklists (`atividade_checklist`), a cópia para outro quadro (`atividade_copiar`) e o comentário que se corrige e se apaga. Passa a ser a dona de `atividade_criar`, `atividade_editar`, `atividades_quadro` e `atividades_carga` |
 
 **Aplique nesta ordem**, e todas são idempotentes: rodar de novo não
 duplica nada.
@@ -269,6 +397,37 @@ de entrevista abertos antes dela continuam com o local e sem responsável: em
 Seleção › Agenda, "Mudar horário ou link" põe o link (e avisa quem já
 reservou), e "Assumir" põe você como responsável, para receber o resumo.
 
+A **2.17.0** (`2.17.0_notas_fotos_e_cartoes.sql`) é a primeira com o número
+novo. Precisa da 15.0, da 17.0 e da 19.0, e traz três coisas:
+
+- **os bugs e sugestões** das notas de versão: `soma_feedback` (o relato,
+  `BUG-12` ou `SUG-13`), `soma_feedback_votos`, `soma_feedback_comentarios` e
+  a view `soma_feedback_lista`; todo mundo lê, e a escrita é só pelas funções
+  (`feedback_salvar`, `feedback_votar`, `feedback_comentar`, `feedback_decidir`,
+  de `admin`, e `feedback_excluir`);
+- **a foto enviada pelo portal**: o bucket público `fotos` (5 MB, JPEG, PNG
+  ou WebP), as políticas — cada um grava na pasta do seu registro, `admin` e
+  `pessoal` em qualquer uma — e `membro_foto_definir`, que grava o endereço
+  público na ficha e devolve a foto anterior, para o portal apagar do bucket.
+  O endereço do projeto sai do Vault (`soma_url_projeto`, o mesmo da 32.0);
+  sem ele, o do projeto de sempre;
+- **os cartões**: `atividades.pessoas` (as outras pessoas atribuídas),
+  `atividades.etiquetas`, `atividades.copia_de`, as checklists
+  (`atividade_checklists`, `atividade_checklist_itens`, por
+  `atividade_checklist()`), `atividade_copiar`, o comentário que se corrige e
+  se apaga (`atividade_comentario_editar`, `atividade_comentario_excluir`,
+  `atividade_comentarios.editado_em`).
+
+**A dona de `atividade_criar`, de `atividade_editar` e das views
+`atividades_quadro` e `atividades_carga` passa a ser a 2.17.0**: a 15.0 deixa
+de redefini-las quando ela já passou (o mesmo cuidado da 15.0 com
+`sou_do_grupo`, por causa da 17.0), e rodar a 15.0 de novo não apaga as
+pessoas, as etiquetas nem a conta das checklists. O teste da 2.17.0 roda a
+15.0 no fim e confere isso. A carga da equipe passa a contar também quem está
+nas outras pessoas de um cartão. Confira:
+`select id, public from storage.buckets where id = 'fotos';` e
+`select codigo, pessoas, etiquetas, check_total, check_feitos from public.atividades_quadro limit 5;`
+
 **O que o SQL Editor responde.** O editor do Supabase mostra só o último
 resultado que tem linhas. As migrações até a 20.0 terminam em *Success. No
 rows returned*. A 21.0 termina com a tabela **"o que a 21.0 deixou"**: sete
@@ -401,11 +560,13 @@ psql -d t32 -f testes/v32_fila_e_notificacoes.sql  # 113 asserções
 ```
 
 ```bash
-# 33.0: o aproveitamento de AACC, sobre a base com a 25.0 (o teste cria os
-# grupos NRO_PMO e NRO_COORD_OFFICE e roda a migração cinco vezes)
-createdb -T tbase t33
-psql -d t33 -f v25_documentos_eventos.sql
-psql -d t33 -f testes/v33_aproveitamento.sql  # 236 asserções (anon, RLS e Storage inclusos)
+# 2.17.0: os relatos, a foto e os cartões, sobre a 15.0 à 19.0 com o Storage e o
+# Vault (o teste aplica a 2.17.0 no começo; no fim roda a 15.0 e a 2.17.0 de novo)
+createdb t217
+psql -d t217 -f testes/esqueleto.sql -f testes/esqueleto_storage.sql -f testes/esqueleto_vault.sql
+psql -d t217 -f v15_atividades.sql -f v16_pessoal.sql -f v17_grupos_acesso.sql \
+             -f v18_teste_email.sql -f v19_grupos_hierarquia.sql
+psql -d t217 -f testes/2.17.0_notas_fotos_e_cartoes.sql  # 106 asserções (RLS e Storage inclusos)
 ```
 
 O `esqueleto_vault.sql` faz para o Vault o que o de Storage faz para o
@@ -439,3 +600,31 @@ corte da unificação** — os READMEs de lá ainda os citam, e quebrar aquelas
 referências no meio da migração não ajudaria ninguém. Como são arquivos
 congelados, não há risco de divergirem. Quando o `nro-pessoal` virar repositório
 de redirecionamento, ficam só estes aqui.
+
+## 2.18.0: acesso, comunicação e marca
+
+| Migração | Conteúdo |
+|---|---|
+| `2.18.0_soma.sql` | Papéis por grupo, bloqueio de contas, folha única, cartões espelhados, preferências por categoria, reporte/feed, newsletter com três aprovações, ata de evento e vínculos da Marca |
+
+Aplicar depois da 2.17.0 e das migrações anteriores. Registro: `2.18.0_soma`. É idempotente. O checklist de produção está em [`../PUBLICACAO-2.18.md`](../PUBLICACAO-2.18.md).
+
+Testes em banco novo com a base 15.0–24.0 descrita acima:
+
+```sh
+createdb -T tbase t218
+psql -X -v ON_ERROR_STOP=1 -d t218 -f testes/2.18.0_soma.sql
+psql -X -v ON_ERROR_STOP=1 -d t218 -f testes/2.18.0_reporte.sql -f testes/2.18.0_newsletter.sql -f testes/2.18.0_ata.sql -f testes/2.18.0_marca_feed.sql
+```
+
+O teste principal tem 193 asserções e reaplica a migração. Os complementos verificam isolamento de rascunhos, sinalização idempotente, votos/versionamento, descadastro, ata com PN reutilizado, permissões da Marca e paginação com datas empatadas. Todos usam fixtures locais; não executar os testes no Supabase de produção.
+
+O aproveitamento de AACC (2.20.0), sobre a base com a 25.0 (o teste cria os grupos NRO_PMO e NRO_COORD_OFFICE e roda a migração cinco vezes):
+
+```sh
+createdb -T tbase t220
+psql -d t220 -f v25_documentos_eventos.sql
+psql -X -v ON_ERROR_STOP=1 -d t220 -f testes/2.20.0_aproveitamento.sql  # 236 asserções (anon, RLS e Storage inclusos)
+```
+
+Nos testes históricos de Agenda, use `PGOPTIONS='-c timezone=America/Sao_Paulo'`: os lembretes têm hora local. `v29_presenca.sql` valida o contrato da versão 29.0 (Pessoal ainda podia gerar a folha); `2.18.0_soma.sql` valida a restrição nova a admin. Os testes históricos não devem ser executados sobre um banco já migrado para a 2.18.0.

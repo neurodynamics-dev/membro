@@ -1,5 +1,5 @@
 -- ============================================================
--- SOMA 33.0, MIGRAÇÃO, NeuroDynamics
+-- SOMA 2.20.0, MIGRAÇÃO, NeuroDynamics
 -- O APROVEITAMENTO DE AACC: o pedido, as aprovações e a folha que
 -- vai para o Colegiado.
 --
@@ -55,11 +55,11 @@ do $$
 begin
   if to_regprocedure('public.esta_no_grupo(integer,integer)') is null then
     raise exception using message = 'Falta aplicar a v19 antes desta migração.',
-      detail = 'A 33.0 pergunta quem está em cada grupo por esta_no_grupo, da 19.0.';
+      detail = 'A 2.20.0 pergunta quem está em cada grupo por esta_no_grupo, da 19.0.';
   end if;
   if to_regclass('public.doc_emitidos') is null or to_regclass('public.doc_envios') is null then
     raise exception using message = 'Falta aplicar a v25 antes desta migração.',
-      detail = 'A 33.0 emite a folha de aprovação em doc_emitidos e põe os e-mails em doc_envios, da 25.0.';
+      detail = 'A 2.20.0 emite a folha de aprovação em doc_emitidos e põe os e-mails em doc_envios, da 25.0.';
   end if;
 end $$;
 
@@ -182,12 +182,12 @@ begin
     insert into doc_series (prefixo, sn, titulo, tipo, subtipo, classe, multiplo, pn_origem, descricao)
     values ('PES', v_sn, 'RELATÓRIO DE ATIVIDADES PARA APROVEITAMENTO DE AACC', 'registro', 'relatorio',
             'controlado', true, format(c_origem, public.doc_codigo('PES', v_sn, null)),
-            'Criada pela migração 33.0. O template é o relatório LaTeX do brand (templates/aacc).')
+            'Criada pela migração 2.20.0. O template é o relatório LaTeX do brand (templates/aacc).')
     returning id into v_serie;
     insert into doc_arquivos (serie_id, pn, codigo, autor_nome, alterado_nome)
-    values (v_serie, null, public.doc_codigo('PES', v_sn, null), 'SOMA 33.0', 'SOMA 33.0')
+    values (v_serie, null, public.doc_codigo('PES', v_sn, null), 'SOMA 2.20.0', 'SOMA 2.20.0')
     returning id into v_cab;
-    insert into doc_eventos (arquivo_id, tipo, detalhe, nome) values (v_cab, 'criou', null, 'SOMA 33.0');
+    insert into doc_eventos (arquivo_id, tipo, detalhe, nome) values (v_cab, 'criou', null, 'SOMA 2.20.0');
   elsif (select pn_origem from doc_series where id = v_serie) is null then
     update doc_series set pn_origem = format(c_origem, public.doc_codigo(prefixo, sn, null)), atualizado_em = now()
      where id = v_serie;
@@ -1517,13 +1517,13 @@ begin
 end $$;
 
 insert into public.migracoes (id, descricao) values
-  ('v33_aproveitamento', 'O aproveitamento de AACC: o pedido (AAC-N) com o enquadramento pela Resolução 02/2019 da Congregação (ou pela norma de outro Colegiado), o envio do relatório do template LaTeX, as aprovações por etapa (uma pessoa de cada grupo), o professor orientador pelo link pessoal e a folha de aprovação emitida e autenticável')
+  ('2.20.0_aproveitamento', 'O aproveitamento de AACC: o pedido (AAC-N) com o enquadramento pela Resolução 02/2019 da Congregação (ou pela norma de outro Colegiado), o envio do relatório do template LaTeX, as aprovações por etapa (uma pessoa de cada grupo), o professor orientador pelo link pessoal e a folha de aprovação emitida e autenticável')
 on conflict (id) do nothing;
 
 -- ------------------------------------------------------------
 -- O QUE O SQL EDITOR MOSTRA NO FIM
 -- ------------------------------------------------------------
-select x.item as "o que a 33.0 deixou", x.valor
+select x.item as "o que a 2.20.0 deixou", x.valor
   from (values
     (1, 'série do relatório', (select public.doc_codigo(s.prefixo, s.sn, null) || ', ' || s.titulo
                                  from doc_series s where s.id = (select serie from aacc_config))),
@@ -1537,7 +1537,7 @@ select x.item as "o que a 33.0 deixou", x.valor
  order by x.ordem;
 
 -- ============================================================
--- FIM, SOMA 33.0
+-- FIM, SOMA 2.20.0
 --
 -- Depois de rodar:
 --   1) confira as etapas acima; etapa SEM GRUPO trava o pedido nela;

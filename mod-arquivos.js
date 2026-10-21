@@ -35,7 +35,7 @@
 
 const arq = {
   pronto:false, em:0, erro:null, rol:[], emissores:[], padrao:[], pendentes:[], series:[],
-  filtro:{ q:'', status:'', natureza:'', estrutura:'', subtipo:'', classe:'', pend:false },
+  filtro:{ q:'', status:[], natureza:[], estrutura:[], subtipo:[], classe:[], pend:false },
   abertos:new Set(), ordem:{ col:'codigo', dir:1 },
   tela:null, envio:null, cfgFiltro:{ emissor:'', q:'' }
 };
@@ -120,8 +120,7 @@ async function arqCarregar(forcar){
   arq.pronto = true; arq.em = Date.now();
 }
 function arqSemMigracao(){
-  $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Arquivos</span>
-      <h1>Controle de documentos e registros</h1></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Arquivos', titulo:'Controle de documentos e registros' }) + `
     <div class="aviso-box err"><b>O controle de arquivos ainda não está no banco.</b>
       ${esc(arq.erro?.message || '')}<br><span class="small">Falta aplicar a migração
       <code>db/v20_projetos_arquivos.sql</code> (e, para trazer a planilha NRO-PUB-001,
@@ -176,10 +175,9 @@ function arqNavHTML(atual){
   </nav>`;
 }
 
-function arqTopo(eyebrow, titulo, lead, acoes){
-  return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">${eyebrow}</span>
-      <h1>${titulo}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}</div>
-    ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+/* o eyebrow é sempre o espaço (Arquivos); o primeiro argumento fica só por compatibilidade */
+function arqTopo(_eyebrow, titulo, lead, acoes){
+  return cabecalho({ espaco:'Arquivos', titulo, lead, acoes:[].concat(acoes || '') });
 }
 const arqPill = st => { const s = ARQ_STATUS[st] || ARQ_STATUS.rascunho;
   return `<span class="pill ${s[2]}"><span class="dt dt-${s[1]}"></span>${s[0]}</span>`; };
@@ -297,12 +295,13 @@ function arqCompara(a, b){
 function arqFiltra(r){
   const f = arq.filtro, q = norm(f.q);
   return (!q || norm(r.codigo).includes(q) || norm(r.titulo).includes(q))
-    && (!f.status || r.status === f.status) && (!f.natureza || r.natureza === f.natureza)
-    && (!f.estrutura || arqEstrutura(r) === f.estrutura)
-    && (!f.subtipo || r.subtipo === f.subtipo) && (!f.classe || r.classe === f.classe)
+    && (!f.status.length || f.status.includes(r.status)) && (!f.natureza.length || f.natureza.includes(r.natureza))
+    && (!f.estrutura.length || f.estrutura.includes(arqEstrutura(r)))
+    && (!f.subtipo.length || f.subtipo.includes(r.subtipo)) && (!f.classe.length || f.classe.includes(r.classe))
     && (!f.pend || !!arqPendente(r.id));
 }
-const arqFiltroAtivo = () => { const f = arq.filtro; return !!(f.q || f.status || f.natureza || f.estrutura || f.subtipo || f.classe || f.pend); };
+const ARQ_FILTROS = ['status', 'estrutura', 'natureza', 'subtipo', 'classe'];
+const arqFiltroAtivo = () => { const f = arq.filtro; return !!(f.q || f.pend || ARQ_FILTROS.some(k => f[k].length)); };
 
 /* O ROL — a primeira tela de Arquivos: todos os arquivos, como a lista
    do Drive, e o filtro por emissor (#/arquivos/PES é o mesmo rol, já
@@ -321,6 +320,7 @@ function arqLista(pref){
   + arqNavHTML('')
   + arqLegendaHTML(arq.rol.filter(r => r.pn == null && (!pref || r.prefixo === pref)), true)
   + arqFiltrosHTML() + '<div id="arq-rol"></div>';
+  fbDesenhar('arq-fb');
   arqRedesenharRol();
 }
 /* As estruturas, com quantas séries há de cada — a coluna ao lado do
@@ -329,42 +329,56 @@ function arqLista(pref){
 function arqLegendaHTML(cabecas, filtra){
   const n = k => cabecas.filter(r => arqEstrutura(r) === k).length;
   return `<div class="arq-legenda">${Object.entries(ARQ_ESTRUTURAS).filter(([k]) => k !== 'avulso' || n(k)).map(([k, e]) => {
-    const on = !!filtra && arq.filtro.estrutura === k;
+    const on = !!filtra && arq.filtro.estrutura.includes(k);
     const tag = filtra ? 'button' : 'div';
     return `<${tag} class="arq-leg${on ? ' on' : ''}" data-est="${k}" ${filtra ? `aria-pressed="${on}"
-        onclick="arq.filtro.estrutura=arq.filtro.estrutura==='${k}'?'':'${k}';arqLista(arq.rolAtual)"` : ''}>
+        onclick="arqAlternarEstrutura('${k}')"` : ''}>
       <span class="arq-ic ${k === 'registros' ? 'registro' : k === 'unico' ? 'documento' : 'template'}">${ic(k === 'registros' ? 'registro' : k === 'unico' ? 'doc' : 'molde')}</span>
       <span class="tx"><b>${e.rot}</b> <span class="n">${n(k)}</span><span class="fr">${k === 'avulso' ? 'sem frase na coluna: o modelo de base dos outros' : '“' + e.frase + '”'}</span></span></${tag}>`;
   }).join('')}</div>`;
 }
+function arqAlternarEstrutura(k){
+  const e = arq.filtro.estrutura;
+  arq.filtro.estrutura = e.includes(k) ? e.filter(x => x !== k) : [...e, k];
+  arqLista(arq.rolAtual);
+}
+/* os filtros do rol: a FilterBar do sistema de design, com a busca no começo */
 function arqFiltrosHTML(){
   const f = arq.filtro;
-  const sel = (k, rot, ops) => `<div class="fld"><label>${rot}</label><select onchange="arq.filtro.${k}=this.value;arqRedesenharRol()">
-      <option value="">Todos</option>${ops.map(([v, l]) => `<option value="${v}" ${f[k] === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>`;
-  return `<div class="filtros arq-filtros">
-    <div class="fld cresce"><label for="arq-q">Buscar</label><input id="arq-q" value="${esc(f.q)}" placeholder="Código ou título"
-      oninput="arq.filtro.q=this.value;arqRedesenharRol(true)"></div>
-    <div class="fld"><label for="arq-emissor">Emissor</label><select id="arq-emissor"
-        onchange="location.hash = this.value ? '#/arquivos/' + this.value : '#/arquivos'">
-      <option value="">Todos</option>${arq.emissores.map(e => `<option value="${e.prefixo}" ${arq.rolAtual === e.prefixo ? 'selected' : ''}>NRO-${esc(e.prefixo)} ${
-        esc(e.nome.replace(/^Departamento\s+(de|d[oa]s?)\s+/i, ''))}</option>`).join('')}</select></div>
-    ${sel('status', 'Status', Object.entries(ARQ_STATUS).map(([k, v]) => [k, v[0]]))}
-    ${sel('estrutura', 'Estrutura da série', Object.entries(ARQ_ESTRUTURAS).map(([k, v]) => [k, v.rot]))}
-    ${sel('natureza', 'Natureza', [['template', 'Template'], ['documento', 'Documento'], ['registro', 'Registro']])}
-    ${sel('subtipo', 'Subtipo', Object.entries(ARQ_SUBTIPOS))}
-    ${sel('classe', 'Classe', Object.entries(ARQ_CLASSES).map(([k, v]) => [k, v[0]]))}
-    <label class="check" style="align-self:center;margin-bottom:9px"><input type="checkbox" ${f.pend ? 'checked' : ''}
-      onchange="arq.filtro.pend=this.checked;arqRedesenharRol()"> só com versão em revisão</label>
-  </div>`;
+  const g = (k, rot, ops) => ({ k, rot, ops, sel: f[k] });
+  return filtroBarra({ id:'arq-fb', aoMudar: arqFiltroMudou,
+    antes: `<input id="arq-q" class="fb-busca" type="search" value="${esc(f.q)}" placeholder="Buscar por código ou título"
+      aria-label="Buscar por código ou título" oninput="arq.filtro.q=this.value;arqRedesenharRol(true)">`,
+    grupos: [
+      { k:'emissor', rot:'Emissor', unico:true, sel: arq.rolAtual ? [arq.rolAtual] : [],
+        ops: arq.emissores.map(e => [e.prefixo, 'NRO-' + e.prefixo + ' ' + e.nome.replace(/^Departamento\s+(de|d[oa]s?)\s+/i, '')]) },
+      g('status', 'Status', Object.entries(ARQ_STATUS).map(([k, v]) => [k, v[0]])),
+      g('estrutura', 'Estrutura da série', Object.entries(ARQ_ESTRUTURAS).map(([k, v]) => [k, v.rot])),
+      g('natureza', 'Natureza', [['template', 'Template'], ['documento', 'Documento'], ['registro', 'Registro']]),
+      g('subtipo', 'Subtipo', Object.entries(ARQ_SUBTIPOS)),
+      g('classe', 'Classe', Object.entries(ARQ_CLASSES).map(([k, v]) => [k, v[0]])),
+      { k:'pend', rot:'Revisão', unico:true, sel: f.pend ? ['sim'] : [], ops: [['sim', 'Com versão em revisão']] },
+    ] });
+}
+function arqFiltroMudou(k, vals){
+  if (k === 'emissor'){ location.hash = vals[0] ? '#/arquivos/' + vals[0] : '#/arquivos'; return; }
+  if (k === 'pend') arq.filtro.pend = vals[0] === 'sim';
+  else arq.filtro[k] = vals;
+  // a legenda das estruturas também filtra: acompanha a barra
+  if (k === 'estrutura') document.querySelectorAll('.arq-legenda .arq-leg').forEach(b => {
+    const on = vals.includes(b.dataset.est); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  arqRedesenharRol();
 }
 let _arqQ = null;
 function arqRedesenharRol(digitando){
   if (digitando){ clearTimeout(_arqQ); _arqQ = setTimeout(() => arqRedesenharRol(), 120); return; }
   const box = $('#arq-rol'); if (!box) return;
   const doEmissor = arq.rol.filter(r => !arq.rolAtual || r.prefixo === arq.rolAtual);
-  let corpo;
+  let corpo, total = null;
   if (arqFiltroAtivo()){
-    corpo = doEmissor.filter(arqFiltra).sort(arqCompara).map(r => arqLinha(r)).join('');
+    const achados = doEmissor.filter(arqFiltra);
+    corpo = achados.sort(arqCompara).map(r => arqLinha(r)).join('');
+    total = achados.length;
   } else {
     corpo = doEmissor.filter(r => r.pn == null).sort(arqCompara).map(c => arqLinha(c, { caret:true })
       + (arq.abertos.has(c.serie_id)
@@ -374,6 +388,8 @@ function arqRedesenharRol(digitando){
   }
   box.innerHTML = arqTabela(corpo, { ordenar:true, vazio: arqFiltroAtivo()
     ? 'Nenhum arquivo com esse filtro.' : arq.rolAtual ? 'Nenhuma série neste emissor.' : 'Nenhum arquivo no rol.' });
+  const tot = document.querySelector('#arq-fb .fb-total');
+  if (tot){ tot.hidden = total == null; tot.innerHTML = `<b>${total}</b> ${total === 1 ? 'resultado' : 'resultados'}`; }
 }
 
 /* ============================================================
@@ -468,8 +484,8 @@ async function arqEscrever(){
   if (typeof frmEscrever !== 'function'){
     try { await carregarModulo('formularios'); }
     catch(e){
-      $('#main').innerHTML = `<div class="pg-head"><h1>Não carregou</h1><p class="lead">O formulário não pôde ser carregado
-        (${esc(e.message)}). Verifique a conexão e recarregue a página.</p></div>`;
+      $('#main').innerHTML = cabecalho({ espaco:'Arquivos', titulo:'Não carregou',
+        lead:`O formulário não pôde ser carregado (${esc(e.message)}). Verifique a conexão e recarregue a página.` });
       return;
     }
   }
@@ -484,22 +500,13 @@ function arqDesenharTela(){
   const pj = arqProjeto(r.projeto_id);
   $('#main').innerHTML = `<div class="arq-folha${tpl ? ' tpl' : ''}">
     ${tpl ? `<span class="arq-fita">${ic('molde')} ${esc(arqNatureza(r))}: molde, não documento</span>` : ''}
-    <nav class="arq-migalha" aria-label="Caminho"><a href="#/arquivos">Arquivos</a><span>›</span>
-      <a href="#/arquivos/${esc(r.prefixo)}">${esc(e?.nome || r.prefixo)}</a>
-      ${cabeca ? `<span>›</span><a href="#/arquivos/${esc(cabeca.codigo)}">${esc(cabeca.codigo)}</a>` : ''}
-      <span>›</span><b>${esc(r.codigo)}</b></nav>
-    <div class="arq-cab">
-      <span class="arq-ic ${r.natureza}">${ic(ARQ_ICONE[r.natureza])}</span>
-      <div class="tx"><span class="cod">${esc(r.codigo)}</span>
-        <h1>${esc(r.titulo)}</h1>
-        <div class="arq-selos">${arqPill(r.status)}
-          <span class="pill"><span class="dt dt-info"></span>${esc(arqNatureza(r))}</span>
-          <span class="pill"><span class="dt dt-gray"></span>${esc(ARQ_SUBTIPOS[r.subtipo] || r.subtipo)}</span>
-          <span class="arq-cls ${r.classe}" title="${esc(ARQ_CLASSES[r.classe][1])}">${ic(r.classe === 'publico' ? 'eye' : r.classe === 'confidencial' ? 'cadeado' : 'shield')}${ARQ_CLASSES[r.classe][0]}</span>
-          ${pj ? `<a class="chip mini" style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 4px"
-              href="#/projetos/${esc(pj.codigo)}">${logoProjeto(pj.logo_semente, 16, pj.nome)}${esc(pj.nome)}</a>` : ''}
-        </div></div>
-    </div>
+    ${cabecalho({ espaco:'Arquivos', titulo:r.titulo, codigo:r.codigo,
+      trilha:[['Arquivos', '#/arquivos'], [e?.nome || r.prefixo, '#/arquivos/' + r.prefixo], ...(cabeca ? [[cabeca.codigo, '#/arquivos/' + cabeca.codigo]] : []), [r.codigo]],
+      meta:[arqPill(r.status),
+        `<span class="pill"><span class="dt dt-info"></span>${esc(arqNatureza(r))}</span>`,
+        `<span class="pill"><span class="dt dt-gray"></span>${esc(ARQ_SUBTIPOS[r.subtipo] || r.subtipo)}</span>`,
+        `<span class="arq-cls ${r.classe}" title="${esc(ARQ_CLASSES[r.classe][1])}">${ic(r.classe === 'publico' ? 'eye' : r.classe === 'confidencial' ? 'cadeado' : 'shield')}${ARQ_CLASSES[r.classe][0]}</span>`,
+        pj ? `<a class="chip mini" style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 4px" href="#/projetos/${esc(pj.codigo)}">${logoProjeto(pj.logo_semente, 16, pj.nome)}${esc(pj.nome)}</a>` : ''] })}
     ${arqEtapasHTML(t)}
     <div class="arq-cols">
       <div class="arq-main">${arqPrincipalHTML(t)}</div>
@@ -1009,7 +1016,7 @@ function arqModalEditar(){
         <input id="aed-tit" value="${esc(r.complemento || '')}" placeholder="${esc(r.projeto_nome || 'bancada 2')}">
         <span class="mailer-sub tight">Aparece depois do título da série: ${esc(r.serie_titulo)}, …</span></div>` : ''}
       <div class="fld full"><label for="aed-tpl">Feito sobre o template</label>
-        <select id="aed-tpl"><option value="">— nenhum —</option>${tpls.map(x =>
+        <select id="aed-tpl"><option value="">Nenhum</option>${tpls.map(x =>
           `<option value="${x.id}" ${x.id === r.template_id ? 'selected' : ''}>${esc(x.codigo)} ${esc(x.titulo)}</option>`).join('')}</select></div>
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
@@ -1125,7 +1132,7 @@ function arqModalNovoPN(serieId, projetoId){
       <div class="fld full"><label for="apn-tit">Complemento do título (opcional)</label>
         <input id="apn-tit" placeholder="bancada 2, reunião geral de setembro…"></div>
       <div class="fld full"><label for="apn-pj">Projeto</label>
-        <select id="apn-pj" ${projetoId ? 'disabled' : ''}><option value="">— nenhum —</option>${projs.map(p =>
+        <select id="apn-pj" ${projetoId ? 'disabled' : ''}><option value="">Nenhum</option>${projs.map(p =>
           `<option value="${p.id}" ${p.id === projetoId ? 'selected' : ''}>${esc(p.nome)} (${esc(p.codigo)})</option>`).join('')}</select></div>
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
@@ -1166,7 +1173,7 @@ async function arqRolDoProjeto(pj, podeCriar){
     if (!pns.length || pd.quantidade === 'varios'){
       if (!pns.length) resumo.criar++;
       corpo += `<tr class="previsto"><td><div class="cel-cod"><span class="arq-ic ${cab.tipo === 'registro' ? 'registro' : 'documento'}">${ic(cab.tipo === 'registro' ? 'registro' : 'doc')}</span>
-          <span class="cod">${esc(cab.codigo)}-·</span></div></td>
+          <span class="cod">${esc(cab.codigo)}-?</span></div></td>
         <td><span class="tit">${esc(cab.titulo)}</span><span class="sub">${pns.length ? 'mais um' : 'a criar'}, ${cab.tipo === 'registro' ? 'um registro' : 'um documento'} do template ${esc(cab.codigo)}${cab.rev_vigente ? ' Rev. ' + esc(cab.rev_vigente) : ''}</span></td>
         <td class="arq-rev">—</td><td>—</td>
         <td>${podeCriar ? `<button class="btn ghost mini" onclick="arqCriarPN('${pd.serie_id}', '${pj.id}', null)">${ic('plus')} Criar</button>`
@@ -1224,7 +1231,7 @@ function arqCfgSeries(){
         <option value="">Todos</option>${arq.emissores.map(e => `<option value="${e.prefixo}" ${f.emissor === e.prefixo ? 'selected' : ''}>${esc(e.prefixo)} ${esc(e.nome)}</option>`).join('')}</select></div>
       <button class="btn solid mini" style="align-self:flex-end;margin-bottom:2px" onclick="arqModalSerie(null, arq.cfgFiltro.emissor)">${ic('plus')} Nova série</button>
     </div>
-    <div class="card" style="padding:0"><div class="wrap" style="max-height:none"><table class="tabela trabalho fixa">
+    <div class="card" style="padding:0"><div class="wrap" style="max-height:none"><table class="tabela trabalho fixa" style="--tab-min:1060px">
       <thead><tr><th style="width:120px">Série</th><th>Título</th><th style="width:190px">Estrutura</th><th style="width:120px">Classe</th>
         <th style="width:170px">Revisa</th><th style="width:170px">Lê também</th><th style="width:56px"></th></tr></thead>
       <tbody>${lista.map(s => `<tr>
@@ -1265,7 +1272,7 @@ function arqModalSerie(id, prefixo, estrutura){
       <div class="fld full"><label>Classe</label><div class="multi" style="max-height:none">${Object.entries(ARQ_CLASSES).map(([k, [l, d]]) =>
         `<label class="check"><input type="radio" name="as-cls" value="${k}" ${(s?.classe || 'controlado') === k ? 'checked' : ''}>
           <span><b style="color:var(--ink)">${l}</b>: ${d}</span></label>`).join('')}</div></div>
-      <div class="fld full"><label for="as-rev">Grupo revisor</label><select id="as-rev"><option value="">— o PMO —</option>${opG(s?.grupo_revisor)}</select>
+      <div class="fld full"><label for="as-rev">Grupo revisor</label><select id="as-rev"><option value="">PMO</option>${opG(s?.grupo_revisor)}</select>
         <span class="mailer-sub tight">Aprova as versões novas da série e recebe o aviso por e-mail. Quem envia não aprova a própria versão.</span></div>
       <div class="fld full"><label>Grupos que também leem</label><div class="multi" id="as-leit">${grupos.map(g =>
         `<label class="check"><input type="checkbox" value="${g.id}" ${(s?.grupos_leitura || []).includes(g.id) ? 'checked' : ''}> ${esc(g.nome)}</label>`).join('')}</div>
@@ -1315,9 +1322,9 @@ function arqCfgEmissores(){
         <span class="cod-pf">${esc(e.prefixo)}</span>
         <input class="nm" value="${esc(e.nome)}" aria-label="Nome do emissor ${esc(e.prefixo)}" id="em-n-${e.prefixo}" style="height:34px">
         <select id="em-g-${e.prefixo}" aria-label="Grupo do emissor ${esc(e.prefixo)}" style="height:34px;max-width:240px">
-          <option value="">— sem grupo —</option>${grupos.map(g => `<option value="${g.id}" ${g.id === e.grupo_id ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}</select>
+          <option value="">Sem grupo</option>${grupos.map(g => `<option value="${g.id}" ${g.id === e.grupo_id ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}</select>
         <button class="btn ghost mini" onclick="arqSalvarEmissor('${e.prefixo}')">Salvar</button></div>`).join('')}
-      <div class="acc-row"><input id="em-novo-p" maxlength="3" placeholder="XXX" style="width:70px;height:34px;text-transform:uppercase;font-family:var(--fm)">
+      <div class="acc-row"><input id="em-novo-p" maxlength="3" placeholder="XXX" data-codigo style="width:70px;height:34px">
         <input id="em-novo-n" class="nm" placeholder="Departamento Clínico" style="height:34px">
         <button class="btn solid mini" onclick="arqSalvarEmissor(null)">${ic('plus')} Emissor</button></div></div>`;
 }
@@ -1383,7 +1390,7 @@ function arqCfgChaves(){
   const atual = k => grupos.find(g => g.chave === k)?.id;
   const admin = state.perfil?.papel === 'admin';
   const sel = (k, rot, ajuda) => `<div class="fld"><label for="ch-${k}">${rot}</label>
-    <select id="ch-${k}" ${admin ? '' : 'disabled'}><option value="">— nenhum —</option>${grupos.map(g =>
+    <select id="ch-${k}" ${admin ? '' : 'disabled'}><option value="">Nenhum</option>${grupos.map(g =>
       `<option value="${g.id}" ${g.id === atual(k) ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}</select>
     <span class="mailer-sub tight">${ajuda}</span></div>`;
   $('#cfg-corpo').innerHTML = `<div class="card" style="max-width:640px">

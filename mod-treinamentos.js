@@ -515,7 +515,7 @@ function treEscreverTexto(meta, conteudo){
     const b = [`# ${m.titulo || ''}`, '', String(m.corpo || '').trim()];
     if ((m.links || []).length){
       b.push('', '## Links relacionados', '');
-      m.links.forEach(k => b.push(`- [${k.titulo || k.url}](${k.url})${k.descricao ? ' — ' + k.descricao : ''}`));
+      m.links.forEach(k => b.push(`- [${k.titulo || k.url}](${k.url})${k.descricao ? ': ' + k.descricao : ''}`));
     }
     const qs = m.verificacao?.questoes || [];
     if (qs.length){
@@ -649,11 +649,11 @@ carga_horaria: 30
 
 O código (NRO-TRE-XXX) e a revisão (Rev. A, B…) quem dá é o portal, não o texto.
 
-**Os módulos.** Cada módulo começa com um título de nível 1 (\`# \`) e vai até o próximo. O portal numera os módulos — não escreva "Módulo 1" no título.
+**Os módulos.** Cada módulo começa com um título de nível 1 (\`# \`) e vai até o próximo. O portal numera os módulos: não escreva "Módulo 1" no título.
 
 - de **3 a 7 módulos**; cada um com **3 a 8 minutos** de leitura (300 a 900 palavras), fora os vídeos;
 - o módulo abre com **uma frase** dizendo o que a pessoa vai conseguir fazer ao fim dele;
-- dentro do módulo, subtítulos com \`##\` e \`###\` — nunca \`#\`, que abre outro módulo;
+- dentro do módulo, subtítulos com \`##\` e \`###\`: nunca \`#\`, que abre outro módulo;
 - procedimento é **lista numerada**, um passo por item, começando pelo verbo;
 - o módulo termina no último passo ou na última ideia. Sem resumo do que acabou de ser dito.
 
@@ -889,9 +889,9 @@ function treNavConfig(atual){
   return navNivel2([['', 'Treinamentos', '#/treinamentos/config'], ['geral', 'Geral', '#/treinamentos/config/geral'],
     ['readme', 'README de conteúdo', '#/treinamentos/config/readme']], atual, 'Configurações');
 }
-function treTopo(titulo, lead, acoes, olho){
-  return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">${esc(olho || 'Treinamentos')}</span><h1>${titulo}</h1>
-    ${lead ? `<p class="lead">${lead}</p>` : ''}</div>${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+/* o eyebrow é sempre o espaço (Treinamentos); o 4º argumento fica só por compatibilidade */
+function treTopo(titulo, lead, acoes, _olho){
+  return cabecalho({ espaco:'Treinamentos', titulo, lead, acoes:[].concat(acoes || '') });
 }
 async function treCarregarLista(){
   const { data, error } = await sb.rpc('treinamentos_meus');
@@ -1028,7 +1028,7 @@ async function treVerificar(cod){
           <div class="it"><dt>Situação hoje</dt><dd>${data.em_dia ? 'Em dia' + (data.vence_em ? ' até ' + fmtD(data.vence_em) : '')
             : data.revisao_atual && data.revisao_atual !== data.revisao ? `Refeito o treinamento? A revisão atual é a ${esc(data.revisao_atual)}.` : 'Vencido'}</dd></div>
         </div></div>`
-      : `<div class="aviso-box err"><b>Nenhum certificado com o código ${esc(cod || '')}.</b> Confira as letras e os números — o código tem o formato CERT-XXXX-XXXX.</div>`}`;
+      : `<div class="aviso-box err"><b>Nenhum certificado com o código ${esc(cod || '')}.</b> Formato: CERT-XXXX-XXXX.</div>`}`;
 }
 
 /* ============================================================
@@ -1068,11 +1068,8 @@ async function treTreinamento(cod){
       ${t.notas_revisao ? esc(t.notas_revisao) : ''} O certificado da Rev. ${esc(a.conclusao?.revisao || '')} continua no seu perfil.</div></div>`;
   $('#main').innerHTML = `<div class="tre-hero">
       <div class="tre-hero-tx">
-        <a class="tre-voltar" href="#/treinamentos">${ic('back')} Treinamentos</a>
-        <span class="eyebrow">${esc(t.codigo)}, Rev. ${esc(t.revisao)}${t.categoria ? ', ' + esc(t.categoria) : ''}</span>
-        <h1>${esc(t.titulo)}</h1>
-        ${t.resumo ? `<p class="lead">${esc(t.resumo)}</p>` : ''}
-        <div class="tre-hero-tags">${trePill(s)} ${treObrig(a.obrigatorio)}</div>
+        ${cabecalho({ espaco:'Treinamentos', titulo:t.titulo, codigo:t.codigo, voltar:['Treinamentos', '#/treinamentos'],
+          lead:t.resumo ? esc(t.resumo) : '', meta:['Rev. ' + esc(t.revisao) + (t.categoria ? ', ' + esc(t.categoria) : ''), trePill(s), treObrig(a.obrigatorio)] })}
       </div>
       <dl class="tre-ficha">
         <div><dt>Módulos</dt><dd>${mods.length}</dd></div>
@@ -1108,7 +1105,7 @@ async function treRecomecar(){
   if (!treEu()) return toast(MOTIVO_RPC.sem_registro, true);
   if (!await confirma(`Recomeçar <b>${esc(t.titulo)}</b> do zero? Os módulos voltam a ficar por fazer. Os certificados que você já tem continuam no seu perfil.`, 'Recomeçar')) return;
   const { data, error } = await sb.rpc('treinamento_recomecar', { p_id: t.id });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para recomeçar'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível recomeçar'), true);
   treino.lista = null;
   location.hash = `#/treinamentos/${t.codigo}/1`;
 }
@@ -1141,8 +1138,8 @@ async function treModulo(cod, n){
     <article class="tre-conteudo">
       ${a.situacao === 'vencido' ? `<div class="aviso-box warn">Este treinamento venceu: o que você fizer agora não renova o certificado.
         Para ficar em dia, <button class="tre-a" style="font:inherit" onclick="treRecomecar()">recomece do zero</button>.</div>` : ''}
-      <span class="eyebrow">Módulo ${String(n).padStart(2, '0')} de ${String(mods.length).padStart(2, '0')}${feito ? ', concluído' : ''}</span>
-      <h1>${esc(m.titulo)}</h1>
+      ${cabecalho({ espaco:'Treinamentos', titulo:m.titulo, voltar:[t.titulo, '#/treinamentos/' + t.codigo],
+        meta:['Módulo ' + String(n).padStart(2, '0') + ' de ' + String(mods.length).padStart(2, '0') + (feito ? ', concluído' : '')] })}
       <div class="tre-md">${treMd(m.corpo, ctx)}</div>
       ${(m.links || []).length ? `<section class="tre-links"><h2>Links relacionados</h2><div class="doc-grid">${m.links.map(treLinkCartao).join('')}</div></section>` : ''}
       ${qs.length ? treVerificacaoHTML(m, qs, res, t) : `<div class="tre-concluir">
@@ -1211,7 +1208,7 @@ async function treEnviar(){
   const bt = $('#tre-enviar'); if (bt) bt.disabled = true;
   const { data, error } = await sb.rpc('treinamento_responder', { p_id: t.id, p_modulo: mid, p_respostas: resp });
   if (bt) bt.disabled = false;
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para enviar as respostas'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível enviar as respostas'), true);
   const erradas = new Set(data.erradas || []);
   document.querySelectorAll('#tre-verif .tre-q').forEach(li => {
     const q = li.dataset.q, g = data.gabarito?.[q];
@@ -1247,7 +1244,7 @@ async function treConcluirModulo(){
   const a = treino.atual, t = a.treinamento, mid = treino.modAtual?.id;
   if (!treEu()) return toast(MOTIVO_RPC.sem_registro, true);
   const { data, error } = await sb.rpc('treinamento_concluir_modulo', { p_id: t.id, p_modulo: mid });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para concluir o módulo'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível concluir o módulo'), true);
   a.feitos = data.feitos || a.feitos; a.situacao = data.situacao; treino.lista = null;
   if (data.certificado && data.situacao === 'concluido') return treParabens(data.certificado);
   const n = treino.modAtual.n;
@@ -1385,7 +1382,7 @@ async function treCriar(deTexto){
   if (!p.titulo) return toast('O texto não trouxe título: ponha "titulo:" no cabeçalho, entre as linhas ---.', true);
   if (conteudo) p.conteudo = conteudo;
   const { data, error } = await sb.rpc('treinamento_salvar', { p });
-  if (error || data?.status !== 'ok') return toast(data?.status === 'duplicado' ? 'Já existe um treinamento com esse número.' : motivoRPC(data, error, 'Não deu para criar'), true);
+  if (error || data?.status !== 'ok') return toast(data?.status === 'duplicado' ? 'Já existe um treinamento com esse número.' : motivoRPC(data, error, 'Não foi possível criar'), true);
   toast(`${data.codigo} criado, em rascunho.`);
   treino.gestao = null;
   location.hash = `#/treinamentos/${data.codigo}/editar`;
@@ -1419,7 +1416,7 @@ function treImpPreviaHTML(r){
     ${ms.length ? `<ol class="tre-imp-mods">${ms.map(m => `<li>${esc(m.titulo || '(sem título)')}${m.verificacao ? ` <span class="tag-mini">${m.verificacao.questoes.length} q.</span>` : ''}</li>`).join('')}</ol>` : ''}
     ${probs.length ? `<div class="aviso-box warn"><b>${probs.length === 1 ? 'Um ponto' : probs.length + ' pontos'} para conferir.</b> A importação é permitida; a publicação, só após a correção:
       <ul>${probs.slice(0, 12).map(x => `<li>${esc(x)}</li>`).join('')}${probs.length > 12 ? `<li>e mais ${probs.length - 12}…</li>` : ''}</ul></div>`
-      : ms.length ? '<div class="aviso-box lima">Tudo certo: o texto segue o formato do README.</div>' : ''}</div>`;
+      : ms.length ? '<div class="aviso-box lima">Texto no formato do README.</div>' : ''}</div>`;
 }
 
 /* ============================================================
@@ -1468,13 +1465,12 @@ function treEdDesenhar(){
     ? (t.revisao_atual ? `Rascunho da Rev. ${letra}. Quem faz o treinamento continua vendo a Rev. ${esc(t.revisao_atual)} até você publicar.`
                        : 'Rascunho, não publicado.')
     : `Rev. ${esc(t.revisao_atual)} publicada${t.status === 'arquivado' ? ' e arquivada' : ''}. Mudar o conteúdo abre o rascunho da Rev. ${letra}.`;
-  $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Editor de ${esc(t.codigo)}</span>
-      <h1 id="tre-ed-h1">${esc(ed.meta.titulo || 'Sem título')}</h1><p class="lead">${estado}</p></div>
-      <div class="acoes">
-        <button class="btn ghost mini" onclick="trePrevia(0)">${ic('eye')} Pré-visualizar</button>
-        <button class="btn ghost mini" onclick="treImportarModal()">${ic('subir')} Importar texto</button>
-        <button class="btn ghost mini" onclick="treExportar()">${ic('down')} Exportar</button>
-        <button class="btn solid mini" onclick="treEdPublicarModal()">${ic('enviar')} Publicar a Rev. ${letra}</button></div></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Treinamentos', titulo:ed.meta.titulo || 'Sem título', codigo:t.codigo,
+      h1Attrs:'id="tre-ed-h1"', voltar:['Treinamento', '#/treinamentos/' + t.codigo], lead:estado,
+      acoes:[`<button class="btn ghost" onclick="trePrevia(0)">${ic('eye')} Pré-visualizar</button>`,
+        `<button class="btn ghost" onclick="treImportarModal()">${ic('subir')} Importar texto</button>`,
+        `<button class="btn ghost" onclick="treExportar()">${ic('down')} Exportar</button>`,
+        `<button class="btn solid" onclick="treEdPublicarModal()">${ic('enviar')} Publicar a Rev. ${letra}</button>`] }) + `
     <div class="tre-ed-status" id="tre-ed-st" role="status"></div>
     <div class="tre-ed">
       <div class="tre-ed-main">
@@ -1544,7 +1540,7 @@ async function treEdSalvar(){
         if (!meta.titulo){ ok = false; ed.sujoM = true; toast('O treinamento precisa de título.', true); }
         else {
           const { data, error } = await sb.rpc('treinamento_salvar', { p: { id: ed.t.id, ...meta } });
-          if (error || data?.status !== 'ok'){ ok = false; ed.sujoM = true; toast(motivoRPC(data, error, 'Não deu para salvar os dados'), true); }
+          if (error || data?.status !== 'ok'){ ok = false; ed.sujoM = true; toast(motivoRPC(data, error, 'Não foi possível salvar os dados'), true); }
           else { ed.metaOrig = mj; Object.assign(ed.t, { titulo:meta.titulo }); }
         }
       }
@@ -1552,7 +1548,7 @@ async function treEdSalvar(){
     if (ed.sujoC){
       ed.sujoC = false;
       const { data, error } = await sb.rpc('treinamento_rascunho_salvar', { p_id: ed.t.id, p_conteudo: ed.conteudo, p_notas: ed.notas || '' });
-      if (error || data?.status !== 'ok'){ ok = false; ed.sujoC = true; toast(motivoRPC(data, error, 'Não deu para salvar o rascunho'), true); }
+      if (error || data?.status !== 'ok'){ ok = false; ed.sujoC = true; toast(motivoRPC(data, error, 'Não foi possível salvar o rascunho'), true); }
       else if (!ed.rasc){ ed.rasc = { id: data.revisao_id, status:'rascunho' }; ed.revs.push(ed.rasc); treEdDesenharCabeca(); }
     }
     if (ok) ed.salvoEm = new Date().toISOString();
@@ -1566,7 +1562,7 @@ async function treEdSalvar(){
 }
 /* o rascunho acabou de nascer: o topo passa a dizer "rascunho da Rev. X" */
 function treEdDesenharCabeca(){
-  const ed = treino.ed, lead = document.querySelector('.topo-gestao .lead');
+  const ed = treino.ed, lead = document.querySelector('.cab .cab-lead');
   if (!ed || !$('#tre-ed-h1')) return;
   if (lead && ed.t.revisao_atual) lead.textContent = `Rascunho da Rev. ${treProxLetra()}. Quem faz o treinamento continua vendo a Rev. ${ed.t.revisao_atual} até você publicar.`;
 }
@@ -1808,7 +1804,7 @@ async function treEdAtribSalvar(){
   const ed = treino.ed;
   const lista = ed.atrib.map(a => ({ grupo_id: a.k === 'todos' ? null : +a.k, obrigatorio: a.obrigatorio }));
   const { data, error } = await sb.rpc('treinamento_atribuir', { p_id: ed.t.id, p_lista: lista });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para salvar a atribuição'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível salvar a atribuição'), true);
   ed.atribSujo = false; $('#tre-ed-atr').innerHTML = treEdAtribHTML();
   treino.lista = null;
   toast('Atribuição salva.' + (data.avisados ? ` ${data.avisados} ${data.avisados === 1 ? 'pessoa avisada' : 'pessoas avisadas'}.` : ''));
@@ -1840,7 +1836,7 @@ async function treEdPublicar(){
   const { data, error } = await sb.rpc('treinamento_publicar', { p_id: ed.t.id, p_exige_refazer: refazer, p_notas: notas });
   if (error || data?.status !== 'ok'){
     if (bt) bt.disabled = false;
-    return toast(data?.status === 'invalido' ? 'O banco recusou: ' + (data.problemas || []).slice(0, 2).join(' ') : motivoRPC(data, error, 'Não deu para publicar'), true);
+    return toast(data?.status === 'invalido' ? 'O banco recusou: ' + (data.problemas || []).slice(0, 2).join(' ') : motivoRPC(data, error, 'Não foi possível publicar'), true);
   }
   fechaModal();
   toast(`Rev. ${data.revisao} publicada.` + (data.avisados ? ` ${data.avisados} ${data.avisados === 1 ? 'pessoa avisada' : 'pessoas avisadas'}.` : ''));
@@ -1852,14 +1848,14 @@ async function treEdDescartar(){
   if (!await confirma(`Jogar fora o rascunho? O conteúdo volta a ser o da Rev. ${esc(ed.t.revisao_atual)}, a publicada.`, 'Descartar')) return;
   clearTimeout(ed.timer); ed.sujoC = false;
   const { data, error } = await sb.rpc('treinamento_rascunho_descartar', { p_id: ed.t.id });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para descartar'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível descartar'), true);
   toast('Rascunho descartado.'); treEditor(ed.t.codigo);
 }
 async function treEdArquivar(arquivar){
   const ed = treino.ed;
   if (arquivar && !await confirma('Arquivar? O treinamento sai da lista e das pendências. Os certificados continuam válidos; é possível desarquivar.', 'Arquivar')) return;
   const { data, error } = await sb.rpc('treinamento_arquivar', { p_id: ed.t.id, p_arquivar: arquivar });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para arquivar'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível arquivar'), true);
   toast(arquivar ? 'Arquivado.' : 'Desarquivado.'); treino.lista = null; treEditor(ed.t.codigo);
 }
 async function treEdExcluir(){
@@ -1867,7 +1863,7 @@ async function treEdExcluir(){
   if (!await confirma(`Excluir ${esc(ed.t.codigo)} de vez? Ele nunca foi publicado, então ninguém o fez.`, 'Excluir')) return;
   clearTimeout(ed.timer); ed.sujoC = ed.sujoM = false;
   const { data, error } = await sb.rpc('treinamento_excluir', { p_id: ed.t.id });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para excluir'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível excluir'), true);
   treino.ed = null; treino.gestao = null; toast(`${data.codigo} excluído.`);
   location.hash = '#/treinamentos/config';
 }
@@ -2032,7 +2028,7 @@ async function treCfgSalvar(){
   const d = { nota_minima: nota, assinatura_nome: $('#tc-ass').value.trim() || null, assinatura_cargo: $('#tc-cargo').value.trim() || null };
   if (can()) d.grupos_gestores = [...treino.cfgGestores];
   const { error } = await sb.from('treinamento_config').update(d).eq('id', true);
-  if (error) return toast('Não deu para salvar: ' + (/tre_so_admin/.test(error.message) ? 'só admin e o Depto. de Pessoal mudam quem gere.' : error.message), true);
+  if (error) return toast('Não foi possível salvar: ' + (/tre_so_admin/.test(error.message) ? 'só admin e o Depto. de Pessoal mudam quem gere.' : error.message), true);
   Object.assign(treino.cfg, d);
   if (d.grupos_gestores) carregarTreinamentoConfig();
   toast('Configurações salvas.');
@@ -2052,7 +2048,7 @@ async function treCfgPrevia(){
 }
 function treCertExemplo(){
   treCertificadoPDF(treCertAmostra(), { assinatura_nome: $('#tc-ass')?.value.trim(), assinatura_cargo: $('#tc-cargo')?.value.trim() })
-    .catch(e => falha(e, 'Não deu para gerar o certificado'));
+    .catch(e => falha(e, 'Não foi possível gerar o certificado'));
 }
 
 /* ---------------- o README ---------------- */
@@ -2097,7 +2093,7 @@ async function treReadmeSalvar(){
   const txt = $('#tr-readme').value;
   const igual = txt.trim() === TRE_README_PADRAO.trim();
   const { error } = await sb.from('treinamento_config').update({ readme: igual ? null : txt }).eq('id', true);
-  if (error) return toast('Não deu para salvar o README: ' + error.message, true);
+  if (error) return toast('Não foi possível salvar o README: ' + error.message, true);
   toast(igual ? 'É igual ao padrão: fica valendo o do portal.' : 'README salvo. É ele que desce, daqui em diante.');
   treConfig('readme');
 }
@@ -2165,7 +2161,7 @@ function treTinta(src, cor){
 }
 function treFontes(){
   return _treFontes || (_treFontes = Promise.race([
-    Promise.all(['700 100px Archivo', '600 100px Archivo', '500 100px Archivo', '500 30px "IBM Plex Mono"', '600 30px "IBM Plex Mono"']
+    Promise.all(['400 30px "Instrument Sans"', '700 100px Archivo', '600 100px Archivo', '500 100px Archivo', '500 30px "IBM Plex Mono"', '600 30px "IBM Plex Mono"']
       .map(f => document.fonts.load(f))).catch(() => {}),
     new Promise(ok => setTimeout(ok, 2500))]));
 }
@@ -2191,29 +2187,25 @@ async function treCertificadoCanvas(c, cfg, k){
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const x = cv.getContext('2d');
   const F = (p, mm) => `${p} ${Math.max(1, Math.round(mm * u))}px Archivo, "Segoe UI", Arial, sans-serif`;
+  const S = (p, mm) => `${p} ${Math.max(1, Math.round(mm * u))}px "Instrument Sans", Arial, sans-serif`;
   const M = (p, mm) => `${p} ${Math.max(1, Math.round(mm * u))}px "IBM Plex Mono", ui-monospace, Menlo, monospace`;
   const esp = mm => { if ('letterSpacing' in x) x.letterSpacing = (mm * u).toFixed(1) + 'px'; };
   const linha = (x0, y0, x1, y1) => { x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke(); };
   /* o papel */
-  x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
-  const halo = x.createRadialGradient(W * .92, -H * .1, 0, W * .92, -H * .1, W * .62);
-  halo.addColorStop(0, 'rgba(206,220,0,.13)'); halo.addColorStop(1, 'rgba(206,220,0,0)');
-  x.fillStyle = halo; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#E3EFEC'; x.fillRect(0, 0, W, H); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const B = 66 * u;
   x.strokeStyle = 'rgba(0,53,47,.05)'; x.lineWidth = Math.max(1, .14 * u);
   for (let gx = B + 10 * u; gx < W; gx += 10 * u) linha(gx, 0, gx, H);
   for (let gy = 10 * u; gy < H; gy += 10 * u) linha(B, gy, W, gy);
   /* a faixa Cortex, com a rede neural do certificado */
-  const gb = x.createLinearGradient(0, 0, B * .7, H);
-  gb.addColorStop(0, '#00594F'); gb.addColorStop(.55, '#00352F'); gb.addColorStop(1, '#012520');
-  x.fillStyle = gb; x.fillRect(0, 0, B, H);
+  x.fillStyle = '#00352F'; x.fillRect(0, 0, B, H); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const rnd = treSorteio(c.certificado);
   const pts = Array.from({ length:30 }, () => [(5 + rnd() * 56) * u, (6 + rnd() * 198) * u, rnd()]);
   x.lineWidth = .32 * u;
   pts.forEach((p, i) => pts.slice(i + 1).forEach(q => {
     const d = Math.hypot(p[0] - q[0], p[1] - q[1]), lim = 30 * u;
     if (d < lim){ x.strokeStyle = `rgba(206,220,0,${(.34 * (1 - d / lim)).toFixed(3)})`; linha(p[0], p[1], q[0], q[1]); } }));
-  pts.forEach(p => { x.fillStyle = p[2] > .8 ? 'rgba(206,220,0,.9)' : 'rgba(45,212,191,.55)';
+  pts.forEach(p => { x.fillStyle = p[2] > .8 ? 'rgba(206,220,0,.9)' : 'rgba(169,204,196,.55)';
     x.beginPath(); x.arc(p[0], p[1], (p[2] > .8 ? 1.1 : .7) * u, 0, Math.PI * 2); x.fill(); });
   if (treMarca.simbolo){
     const s = treMarca.simbolo, h = 30 * u, w = h * s.width / s.height;
@@ -2221,54 +2213,54 @@ async function treCertificadoCanvas(c, cfg, k){
     x.drawImage(s, (B - w) / 2, 40 * u - h / 2, w, h);
   }
   x.save(); x.translate(B / 2 + 1.2 * u, H - 14 * u); x.rotate(-Math.PI / 2);
-  x.font = M(500, 3.1); x.fillStyle = 'rgba(245,245,247,.78)'; esp(.9); x.textAlign = 'left';
-  x.fillText('CERTIFICADO · NEURODYNAMICS · UFMG', 0, 0); x.restore(); esp(0);
+  x.font = F(600, 3.1); x.fillStyle = 'rgba(232,237,235,.78)'; esp(.9); x.textAlign = 'left';
+  x.fillText('CERTIFICADO, NEURODYNAMICS, UFMG', 0, 0); x.restore(); esp(0);
   /* marcas de corte nos cantos do papel */
   x.strokeStyle = 'rgba(0,53,47,.35)'; x.lineWidth = .25 * u;
   [[W - 8 * u, 8 * u, -1, 1], [W - 8 * u, H - 8 * u, -1, -1]].forEach(([cx, cy, sx, sy]) => {
     linha(cx, cy, cx + sx * 6 * u, cy); linha(cx, cy, cx, cy + sy * 6 * u); });
   /* o topo: as duas marcas */
   const X0 = 88 * u, XR = W - 20 * u;
-  if (treMarca.nro){ const s = treTinta(treMarca.nro, '#00352F'), h = 9.5 * u; x.drawImage(s, X0, 21 * u, h * s.width / s.height, h); }
-  if (treMarca.labbio){ const s = treTinta(treMarca.labbio, '#00594F'), h = 10.5 * u, w = h * s.width / s.height; x.drawImage(s, XR - w, 20.5 * u, w, h); }
+  if (treMarca.nro){ const s = treTinta(treMarca.nro, '#00352F'), h = 9.5 * u; x.drawImage(s, X0, 21 * u, h * s.width / s.height, h); } // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  if (treMarca.labbio){ const s = treTinta(treMarca.labbio, '#00594F'), h = 10.5 * u, w = h * s.width / s.height; x.drawImage(s, XR - w, 20.5 * u, w, h); } // auditar: ok, cor de dado ou de canvas, precisa ser literal
   /* o texto */
-  x.fillStyle = '#CEDC00'; x.fillRect(X0, 49.3 * u, 2.3 * u, 2.3 * u);
-  x.font = M(500, 3.4); x.fillStyle = '#45625B'; esp(.75); x.textBaseline = 'alphabetic';
-  x.fillText('CERTIFICADO DE CONCLUSÃO', X0 + 5.2 * u, 51.9 * u); esp(0);
-  x.font = F(500, 5); x.fillStyle = '#45625B'; x.fillText('Certificamos que', X0, 69 * u);
+  x.fillStyle = '#CEDC00'; x.fillRect(X0, 49.3 * u, 2.3 * u, 2.3 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x.font = F(600, 3.4); x.fillStyle = '#2E3533'; esp(.75); x.textBaseline = 'alphabetic'; // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x.fillText('Certificado de conclusão', X0 + 5.2 * u, 51.9 * u); esp(0);
+  x.font = S(400, 5); x.fillStyle = '#2E3533'; x.fillText('Certificamos que', X0, 69 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   let tam = 15.5; x.font = F(700, tam);
   while (x.measureText(c.nome).width > XR - X0 && tam > 8){ tam -= .5; x.font = F(700, tam); }
-  x.fillStyle = '#0F1714'; esp(-.02 * tam); x.fillText(c.nome, X0, 87 * u); esp(0);
-  x.font = F(500, 5); x.fillStyle = '#45625B'; x.fillText('concluiu o treinamento', X0, 102 * u);
+  x.fillStyle = '#1D1D1F'; esp(-.02 * tam); x.fillText(c.nome, X0, 87 * u); esp(0); // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x.font = S(400, 5); x.fillStyle = '#2E3533'; x.fillText('concluiu o treinamento', X0, 102 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   let tt = 10.5, ls;
   do { x.font = F(700, tt); ls = treQuebra(x, c.titulo, XR - X0, 2); tt -= .5; } while (ls.length > 1 && x.measureText(ls[0]).width > XR - X0 && tt > 6);
-  x.fillStyle = '#00352F';
+  x.fillStyle = '#00352F'; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const lh = (tt + .5) * 1.18 * u;
   ls.forEach((l, i) => x.fillText(l, X0, 116 * u + i * lh));
   let y = 116 * u + (ls.length - 1) * lh;
-  x.fillStyle = '#CEDC00'; x.fillRect(X0, y + 5 * u, 26 * u, 1.4 * u);
-  const meta = [`${c.codigo} · REV. ${c.revisao}`, c.carga_horaria_min ? 'CARGA HORÁRIA ' + treDuracao(c.carga_horaria_min).toUpperCase() : null,
-    c.nota != null ? `NOTA ${c.nota}%` : null].filter(Boolean).join('   ·   ');
-  x.font = M(500, 3.3); x.fillStyle = '#45625B'; esp(.45); x.fillText(meta, X0, y + 16 * u); esp(0);
+  x.fillStyle = '#CEDC00'; x.fillRect(X0, y + 5 * u, 26 * u, 1.4 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  const meta = [`${c.codigo}, REV. ${c.revisao}`, c.carga_horaria_min ? 'CARGA HORÁRIA ' + treDuracao(c.carga_horaria_min).toUpperCase() : null,
+    c.nota != null ? `NOTA ${c.nota}%` : null].filter(Boolean).join('  ,   ');
+  x.font = F(600, 3.3); x.fillStyle = '#2E3533'; esp(.45); x.fillText(meta, X0, y + 16 * u); esp(0); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   if ((c.modulos || []).length){
-    x.font = F(500, 3.5); x.fillStyle = '#66726D';
+    x.font = S(400, 3.5); x.fillStyle = '#616C68'; // auditar: ok, cor de dado ou de canvas, precisa ser literal
     const txt = 'Conteúdo: ' + c.modulos.map((m, i) => `${i + 1}. ${m}`).join(', ');
     treQuebra(x, txt, XR - X0, 2).forEach((l, i) => x.fillText(l, X0, y + 25 * u + i * 5 * u));
   }
   /* o pé: a data, a assinatura e o código */
   const yb = 187 * u;
   x.strokeStyle = 'rgba(0,53,47,.14)'; x.lineWidth = .25 * u; linha(X0, yb - 15 * u, XR, yb - 15 * u);
-  const rot = (t, xx, al) => { x.font = M(500, 2.7); x.fillStyle = '#66726D'; esp(.55); x.textAlign = al || 'left'; x.fillText(t, xx, yb - 6 * u); esp(0); };
-  rot('CONCLUÍDO EM', X0);
-  x.font = F(600, 4.6); x.fillStyle = '#0F1714'; x.textAlign = 'left'; x.fillText(treDataLonga(c.concluido_em), X0, yb + 1.5 * u);
+  const rot = (t, xx, al) => { x.font = F(600, 2.7); x.fillStyle = '#616C68'; esp(.55); x.textAlign = al || 'left'; x.fillText(t, xx, yb - 6 * u); esp(0); }; // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  rot('BELO HORIZONTE', X0);
+  x.font = F(600, 4.6); x.fillStyle = '#1D1D1F'; x.textAlign = 'left'; x.fillText(treDataLonga(c.concluido_em), X0, yb + 1.5 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   const SX = X0 + 60 * u, SW = 56 * u;
-  x.strokeStyle = '#00352F'; x.lineWidth = .3 * u; linha(SX, yb - 2 * u, SX + SW, yb - 2 * u);
-  x.font = F(600, 4.1); x.fillStyle = '#0F1714'; x.textAlign = 'center';
+  x.strokeStyle = '#00352F'; x.lineWidth = .3 * u; linha(SX, yb - 2 * u, SX + SW, yb - 2 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x.font = F(600, 4.1); x.fillStyle = '#1D1D1F'; x.textAlign = 'center'; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   x.fillText(cfg?.assinatura_nome || 'Departamento de Pessoal', SX + SW / 2, yb + 4 * u);
-  x.font = F(500, 3.1); x.fillStyle = '#66726D'; x.fillText(cfg?.assinatura_cargo || 'NeuroDynamics', SX + SW / 2, yb + 9 * u);
+  x.font = F(500, 3.1); x.fillStyle = '#616C68'; x.fillText(cfg?.assinatura_cargo || 'NeuroDynamics', SX + SW / 2, yb + 9 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   rot('CÓDIGO DO CERTIFICADO', XR, 'right');
-  x.font = M(600, 4.4); x.fillStyle = '#00352F'; esp(.3); x.textAlign = 'right'; x.fillText(c.certificado, XR, yb + 1.5 * u); esp(0);
-  x.font = F(500, 2.8); x.fillStyle = '#66726D'; x.fillText('Confira em membro.neurodynamics.dev', XR, yb + 7 * u);
+  x.font = M(600, 4.4); x.fillStyle = '#00352F'; esp(.3); x.textAlign = 'right'; x.fillText(c.certificado, XR, yb + 1.5 * u); esp(0); // auditar: ok, cor de dado ou de canvas, precisa ser literal
+  x.font = F(500, 2.8); x.fillStyle = '#616C68'; x.fillText('Confira em membro.neurodynamics.dev', XR, yb + 7 * u); // auditar: ok, cor de dado ou de canvas, precisa ser literal
   x.textAlign = 'left';
   return cv;
 }
@@ -2295,7 +2287,7 @@ async function treBaixarCertificado(codigo, bt){
     if (c.error) throw c.error;
     if (!c.data) throw new Error('certificado não encontrado');
     await treCertificadoPDF(c.data, treino.cfg);
-  } catch(e){ falha(e, 'Não deu para gerar o certificado'); }
+  } catch(e){ falha(e, 'Não foi possível gerar o certificado'); }
   finally { if (bt) bt.disabled = false; }
 }
 

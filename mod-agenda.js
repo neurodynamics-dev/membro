@@ -10,12 +10,13 @@
      #/agenda/dia|semana/AAAA-MM-DD
      #/agenda/mes/AAAA-MM
      #/agenda/evento/<id>              um evento: ver, responder, editar
-     #/agenda/novo[/AAAA-MM-DD[THH:MM[~HH:MM]]]
+     #/agenda/novo[/AAAA-MM-DD[THH:MM[~HH:MM]][@sala]]
      #/agenda/config[/predefinidos|google]
 
    Camadas, como as agendas da coluna do Google: os eventos, o
    calendário da equipe (marcos, UFMG, feriados, prazos), as ausências
-   e três que têm data sem serem da agenda: as suas tarefas com prazo
+   e as que têm data sem serem da agenda: as entrevistas do PS que você
+   conduz (Seleção, só para o comitê), as suas tarefas com prazo
    (Atividades), as suas publicações (Studio) e os seus treinamentos
    que vencem.
 
@@ -27,7 +28,7 @@
    fechaModal, ic, ibtn, confirma, falha, motivoRPC, avatarFoto, nomeDe,
    primeiroNome, hojeISO, isoDia, isoDow, dataHora, hhmmMin, minHHMM,
    fmtD, gruposEfetivos, membrosDoGrupo, gruposDaEquipe, grupoPorNome,
-   podeStudio, can, navNivel1, dica, registrarBusca, filtrarSimples,
+   podeStudio, podeSelecao, can, navNivel1, dica, registrarBusca, filtrarSimples,
    carregarItens, carregarAgendaPessoal, CAMADAS_AGENDA, AUSENCIAS_AGENDA,
    corDoItem, horaDoItem, calMesHTML, calMesLigar,
    inicioDaSemana, maiuscula, DIAS_SEMANA, MESES_LONGOS, EXPEDIENTE, DIAS_LB,
@@ -37,10 +38,10 @@
 const agenda = {
   visao:null, ref:null, itens:[], erro:null, janela:null,
   camadas:null, predef:null, espacos:null, pref:null, agendas:null,
-  ev:null, rascunho:null, arr:null, rolagem:null
+  ev:null, rascunho:null, arr:null, rolagem:null, linkEntrevista:null
 };
 const AG_CAMADAS = CAMADAS_AGENDA;
-const AG_CORES = ['#2DD4BF', '#CEDC00', '#4ADE97', '#7FA7F2', '#A78BFA', '#F5C36A', '#F1806F', '#8E8E93'];
+const AG_CORES = ['#2DD4BF', '#CEDC00', '#4ADE97', '#7FA7F2', '#A78BFA', '#F5C36A', '#F1806F', '#8E8E93']; // auditar: ok, cor de dado ou de canvas, precisa ser literal
 const AG_REPETE = [['Única', 'Não repete'], ['Diária', 'Todos os dias'], ['Dias úteis', 'Dias úteis (seg. a sex.)'],
   ['Semanal', 'Semanal'], ['Quinzenal', 'Quinzenal'], ['Mensal', 'Mensal'], ['Anual', 'Anual']];
 const AG_LEMBRETES = [0, 5, 10, 15, 30, 60, 120, 1440, 2880, 10080];
@@ -115,7 +116,9 @@ async function agCarregar(de, ate){
   agenda.janela = { de, ate };
   return itens;
 }
-const agVisiveis = () => agenda.itens.filter(i => agCamada(i.camada) && (i.camada !== 'publicacoes' || podeStudio()));
+/* as camadas que a pessoa alcança: publicações é do Studio; entrevistas, do comitê de seleção */
+const agCamadaMinha = k => (k !== 'publicacoes' || podeStudio()) && (k !== 'entrevistas' || podeSelecao());
+const agVisiveis = () => agenda.itens.filter(i => agCamada(i.camada) && agCamadaMinha(i.camada));
 
 /* ============================================================
    A TELA — a coluna, a barra e o corpo
@@ -167,11 +170,11 @@ async function agCalendario(visao, ref){
   if (!noMesmoLugar) $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando a agenda…</div>`;
   await agPreparar();
   await agCarregar(per.de, per.ate);
-  $('#main').innerHTML = `<div class="agx">
+  $('#main').innerHTML = cabecalho({ espaco:'Agenda', titulo:'Agenda' }) + `<div class="agx">
     <aside class="agx-lado" aria-label="Agenda">
       ${agBotaoCriar()}
       <div class="agx-mini" id="agx-mini">${agMiniHTML(agenda.mini || ref)}</div>
-      <div class="agx-camadas"><h5>Agendas</h5>${AG_CAMADAS.filter(([k]) => k !== 'publicacoes' || podeStudio()).map(([k, l, c]) =>
+      <div class="agx-camadas"><h5>Agendas</h5>${AG_CAMADAS.filter(([k]) => agCamadaMinha(k)).map(([k, l, c]) =>
         `<label class="agx-camada" style="--cc:${c}"><input type="checkbox" ${agCamada(k) ? 'checked' : ''}
           onchange="agAlternarCamada('${k}', this.checked)"><span class="cx" aria-hidden="true"></span>${l}</label>`).join('')}</div>
     </aside>
@@ -179,7 +182,7 @@ async function agCalendario(visao, ref){
       <div class="cal-barra">
         <button class="btn ghost mini" onclick="location.hash=agHref(agenda.visao,new Date())">Hoje</button>
         <span class="cal-nav">${ibtn('back', 'Anterior', 'agPasso(-1)', 'sm')}${ibtn('chevron', 'Próximo', 'agPasso(1)', 'sm')}</span>
-        <h1 class="cal-tit">${esc(agTitulo(visao, ref, per))}</h1>
+        <h2 class="cal-tit">${esc(agTitulo(visao, ref, per))}</h2>
         <span class="cal-dir">
           <span class="seg" role="group" aria-label="Visão">${[['dia', 'Dia'], ['semana', 'Semana'], ['mes', 'Mês']].map(([k, l]) =>
             `<button class="${visao === k ? 'on' : ''}" aria-pressed="${visao === k}" onclick="agVisao('${k}')">${l}</button>`).join('')}</span>
@@ -210,7 +213,7 @@ function agBotaoCriar(){
     <div class="agx-criar-pop" id="agx-criar-pop" hidden>
       <button onclick="agNovoEvento()">Evento</button>
       <button onclick="agModalAusencia()">Ausência</button>
-      ${can() ? '<button onclick="agModalMarco()">Marco da equipe</button>' : ''}</div></div>`;
+      ${podeGerir() ? '<button onclick="agModalMarco()">Marco da equipe</button>' : ''}</div></div>`;
 }
 function agMenuCriar(e){
   e.stopPropagation();
@@ -374,12 +377,36 @@ function agSombra(col, m0, m1, titulo, cor){
   col.appendChild(s);
 }
 
-/* Abrir um item: o evento tem página; o resto abre onde mora. */
+/* Abrir um item: o evento tem página; a entrevista, a janela com a
+   chamada; o resto abre onde mora. */
 function agAbrirItem(k, alvo){
   const it = agenda.itens.find(x => x.k === k); if (!it) return;
+  if (it.origem === 'entrevista') return agModalEntrevista(it);
   if (it.href){ location.hash = it.href; return; }
   if (it.origem === 'marco') return agModalMarco(it);
   if (it.origem === 'ausencia') return agModalAusencia(it);
+}
+
+/* A entrevista do PS (2.17.1): quem abriu o horário em Seleção › Agenda
+   conduz. Daqui, a chamada e a ficha do candidato; mudar o horário, o
+   link ou o candidato é lá, onde o candidato é avisado por e-mail. */
+function agModalEntrevista(it){
+  const s = it.bruto || {}, cands = s.candidatos || [];
+  const link = /^https:\/\/\S+$/i.test(s.link_reuniao || '') ? s.link_reuniao : null;
+  agenda.linkEntrevista = link;
+  abreModal(`<h3>${esc(it.titulo)}</h3>
+    <p class="small muted" style="margin:2px 0 14px">${esc(agCap(agDataLonga(it.de)))}, ${minHHMM(it.hi)} – ${minHHMM(it.hf)}</p>
+    <div class="ps-slot-info">
+      <div>${ic(link ? 'video' : 'local')} ${link
+        ? `<a href="${esc(link)}" target="_blank" rel="noopener">${esc(link.replace(/^https:\/\//i, ''))}</a>
+           ${ibtn('copy', 'Copiar o link', 'copiar(agenda.linkEntrevista)', 'sm')}`
+        : `<span>${esc(s.local || 'Sem link de chamada')}</span>`}</div>
+      ${cands.map(c => `<div>${ic('users')} <b>${esc(c.nome)}</b>
+        <a class="btn ghost mini" href="#/selecao/candidatos/${esc(c.id)}" onclick="fechaModal()">Ver a ficha</a></div>`).join('')}
+    </div>
+    <p class="small muted">Horário, link e candidato mudam em Seleção › Agenda, que avisa o candidato por e-mail.</p>
+    <div class="acts"><a class="btn ghost" href="#/selecao/agenda" onclick="fechaModal()">Abrir a agenda do PS</a>
+      ${link ? `<a class="btn solid" href="${esc(link)}" target="_blank" rel="noopener">${ic('video')} Entrar na chamada</a>` : ''}</div>`);
 }
 
 /* ---------- reagendar arrastando ---------- */
@@ -569,8 +596,10 @@ async function agEventoNovo(s){
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span></div>`;
   await agPreparar();
   const f = agModeloVazio();
-  const m = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2})(?:~(\d{2}:\d{2}))?)?$/.exec(s || '');
-  if (m){ f.data = m[1]; if (m[2]){ f.hi = m[2]; f.hf = m[3] || minHHMM(Math.min(hhmmMin(m[2]) + 60, 24*60 - 1)); } else f.dia_inteiro = true; }
+  /* @<id> no fim já escolhe a sala (2.19.2: o "Reservar um horário" da sala no celular) */
+  const m = /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2})(?:~(\d{2}:\d{2}))?)?(?:@(\d+))?$/.exec(s || '');
+  if (m){ f.data = m[1]; if (m[2]){ f.hi = m[2]; f.hf = m[3] || minHHMM(Math.min(hhmmMin(m[2]) + 60, 24*60 - 1)); } else f.dia_inteiro = true;
+    if (m[4] && (agenda.espacos || []).some(e => String(e.id) === m[4])) f.espaco_id = m[4]; }
   else { const a = new Date(); const ini = Math.min(Math.ceil((a.getHours() * 60 + a.getMinutes()) / 30) * 30, 22*60); f.hi = minHHMM(ini); f.hf = minHHMM(ini + 60); }
   const eu = (state.membros || []).find(x => x.registro === agEu());
   agenda.ev = { novo:true, pode:true, f, orig:null, conv:new Map([[agEu(), { nome: eu?.nome || 'Você', opcional:false, resposta:'vou' }]]),
@@ -604,6 +633,7 @@ async function agEventoPagina(id){
   agenda.ev.convOrig = JSON.stringify([...agenda.ev.conv].map(([r, v]) => [r, v.opcional]).sort());
   agenda.ev.extOrig = JSON.stringify(agenda.ev.ext.map(x => x.email).sort());
   agEventoDesenhar();
+  agConsultaLabbioCarregar(agenda.ev);
 }
 
 function agEventoDesenhar(){
@@ -616,6 +646,7 @@ function agEventoDesenhar(){
       <a class="icon-btn" href="${volta}" title="Voltar à agenda" aria-label="Voltar à agenda">${ic('x')}</a>
       <input id="ev-tit" class="evp-tit" placeholder="Adicionar título" maxlength="160" value="${esc(f.titulo)}" oninput="agenda.ev.f.titulo=this.value" aria-label="Título">
       <span class="evp-acoes">
+        ${agAtaBotao()}
         ${ev.novo ? '' : `<button class="btn ghost mini" onclick="agEventoExcluir()">Excluir</button>`}
         <button class="btn solid" id="ev-salvar" onclick="agEventoSalvar()">Salvar</button></span>
     </div>
@@ -640,6 +671,7 @@ function agEventoDesenhar(){
           ${(agenda.espacos || []).length ? `<select id="ev-esp" onchange="agenda.ev.f.espaco_id=this.value;document.getElementById('ev-local').hidden=!!this.value" aria-label="Sala">
             <option value="">Outro local</option>${agenda.espacos.map(e => `<option value="${e.id}" ${String(f.espaco_id) === String(e.id) ? 'selected' : ''}>${esc(e.nome)}</option>`).join('')}</select>` : ''}
           <input id="ev-local" placeholder="Local" value="${esc(f.local)}" ${f.espaco_id ? 'hidden' : ''} oninput="agenda.ev.f.local=this.value" aria-label="Local"></div></div>
+        <div id="ag-labbio-consulta">${agConsultaLabbioHTML(ev)}</div>
         <div class="evp-lin">${ic('video')}<input id="ev-meet" type="url" placeholder="Link da chamada (Meet)" value="${esc(f.meet_url)}" oninput="agenda.ev.f.meet_url=this.value" aria-label="Link da chamada">
           <a class="btn ghost mini" href="https://meet.google.com/new" target="_blank" rel="noopener">Criar no Meet</a></div>
         <div class="evp-lin top">${ic('sino')}<div class="evp-lemb" id="ev-lemb">${agLembretesHTML()}</div></div>
@@ -675,14 +707,14 @@ function agEventoLeitura(volta){
   const esp = (agenda.espacos || []).find(e => String(e.id) === String(f.espaco_id))?.nome;
   const conv = [...ev.conv];
   const conta = k => conv.filter(([, v]) => v.resposta === k).length + ev.ext.filter(x => x.resposta === k).length;
-  $('#main').innerHTML = `<div class="evp leitura">
-    <div class="evp-topo"><a class="icon-btn" href="${volta}" title="Voltar à agenda" aria-label="Voltar à agenda">${ic('x')}</a>
-      <span class="evp-cor" style="--cc:${esc(ev.corEvento || '#2DD4BF')}"></span>
-      <h1 class="evp-tit ${ev.cancelado ? 'riscado' : ''}">${esc(f.titulo || '(sem título)')}</h1></div>
+  $('#main').innerHTML = cabecalho({ espaco:'Agenda', titulo:f.titulo || '(sem título)', voltar:['Agenda', volta],
+      h1Attrs:ev.cancelado ? 'class="riscado"' : '', meta:[ev.cancelado ? '<span class="pill p-bad">Cancelado</span>' : ''] }) + `<div class="evp leitura">
+    ${agAtaBotao()}
     ${ev.cancelado ? '<div class="aviso-box err">Evento cancelado.</div>' : ''}
     <div class="evp-cols"><div class="evp-det">
       <div class="evp-lin">${ic('relogio')}<span>${esc(quando)}${f.recorrencia !== 'Única' ? `<span class="evp-sub">${esc(AG_REPETE.find(r => r[0] === f.recorrencia)?.[1] || f.recorrencia)}</span>` : ''}</span></div>
       ${esp || f.local ? `<div class="evp-lin">${ic('local')}<span>${esc(esp || f.local)}</span></div>` : ''}
+      <div id="ag-labbio-consulta">${agConsultaLabbioHTML(ev)}</div>
       ${f.meet_url ? `<div class="evp-lin">${ic('video')}<a class="btn solid mini" href="${esc(f.meet_url)}" target="_blank" rel="noopener">Entrar na chamada</a>
         <span class="evp-sub">${esc(f.meet_url.replace(/^https?:\/\//, ''))}</span></div>` : ''}
       ${f.lembretes.length ? `<div class="evp-lin">${ic('sino')}<span>${f.lembretes.map(agRotuloLembrete).join(', ')}</span></div>` : ''}
@@ -826,7 +858,7 @@ function agAddConv(i){
 }
 
 /* ---------- disponibilidade: a ocupação de cada convidado no dia ---------- */
-const AG_D0 = 7, AG_D1 = 21;
+const AG_D0 = 0, AG_D1 = 24;
 async function agDispCarregar(){
   const ev = agenda.ev, el = $('#ev-disp'); if (!el) return;
   const regs = [...ev.conv.keys()];
@@ -869,31 +901,34 @@ function agDispClique(e){
   f.hi = minHHMM(m); f.hf = minHHMM(Math.min(m + dur, 24*60 - 1));
   $('#ev-hi').value = f.hi; $('#ev-hf').value = f.hf; agDispDesenhar();
 }
-/* O primeiro horário, a partir de agora, em que todos os obrigatórios
-   estão livres, dentro do expediente e nos próximos dez dias. */
+/* Varre a agenda: cada clique traz o próximo horário em que todos os
+   obrigatórios estão livres, depois do último sugerido, a qualquer hora
+   do dia, nos dez dias seguintes. Recomeça de agora quando mudam os
+   participantes, a duração ou a data/hora escolhida. */
 async function agProximoLivre(){
   const ev = agenda.ev, f = ev.f;
   const dur = f.dia_inteiro ? 60 : Math.max(15, hhmmMin(f.hf) - hhmmMin(f.hi));
-  const regs = [...ev.conv].filter(([, v]) => !v.opcional).map(([r]) => r);
-  const de = new Date(); const ate = new Date(de.getTime() + 10 * 864e5);
+  const regs = [...ev.conv].filter(([, v]) => !v.opcional).map(([r]) => r).sort((a, b) => a - b);
+  const s0 = ev.sug, chave = regs.join() + '|' + dur;
+  const segue = s0 && s0.chave === chave && s0.data === f.data && s0.hi === f.hi;
+  const de = segue ? new Date(s0.fim) : new Date();
+  const ate = new Date(de.getTime() + 10 * 864e5);
   const { data, error } = await sb.rpc('portal_agenda_ocupacao', { p_registros: regs, p_de: de.toISOString(), p_ate: ate.toISOString() });
   if (error) return toast('Não foi possível consultar a disponibilidade.', true);
   const blocos = (data || []).map(b => [new Date(b.inicio).getTime(), new Date(b.fim).getTime()]);
-  const ini = hhmmMin(EXPEDIENTE.inicio), fim = hhmmMin(EXPEDIENTE.fim);
-  for (let d = 0; d < 10; d++){
-    const dia = new Date(); dia.setDate(dia.getDate() + d);
-    if (!EXPEDIENTE.dias.includes(isoDow(dia))) continue;
-    const iso = isoDia(dia), base = dataHora(iso, 0).getTime();
-    for (let m = ini; m + dur <= fim; m += 15){
-      const a = base + m * 6e4, z = a + dur * 6e4;
-      if (a < Date.now()) continue;
-      if (!blocos.some(([i, fb]) => i < z && fb > a)){
-        f.data = iso; f.dia_inteiro = false; f.hi = minHHMM(m); f.hf = minHHMM(m + dur);
-        agEventoDesenhar(); toast(`Todos livres: ${fmtD(iso)}, ${f.hi}.`); return;
-      }
-    }
+  const passo = 15 * 6e4, dia0 = new Date(de); dia0.setHours(0, 0, 0, 0);
+  for (let a = dia0.getTime(); a < ate.getTime(); a += passo){
+    if (a < de.getTime() || a < Date.now()) continue;
+    const z = a + dur * 6e4;
+    if (blocos.some(([i, fb]) => i < z && fb > a)) continue;
+    const ini = new Date(a), fimD = new Date(z);
+    if (fimD.getDate() !== ini.getDate()) continue;
+    const iso = isoDia(ini), m = ini.getHours() * 60 + ini.getMinutes();
+    f.data = iso; f.dia_inteiro = false; f.hi = minHHMM(m); f.hf = minHHMM(m + dur);
+    ev.sug = { chave, data: f.data, hi: f.hi, fim: z };
+    agEventoDesenhar(); toast(`Todos livres: ${fmtD(iso)}, ${f.hi}.`); return;
   }
-  toast('Nenhum horário comum nos próximos dez dias úteis.', true);
+  toast('Nenhum horário comum nos próximos dez dias.', true);
 }
 
 /* ---------- salvar e excluir ---------- */
@@ -966,8 +1001,7 @@ async function agConfig(aba){
   aba = ['predefinidos', 'google'].includes(aba) ? aba : '';
   $('#main').innerHTML = `<div class="carregando"><span class="spin"></span></div>`;
   agenda.predef = null; await agPreparar();
-  const topo = `<div class="topo-gestao"><div style="padding-top:34px"><a class="icon-btn" href="#/agenda" title="Voltar à agenda" aria-label="Voltar à agenda">${ic('back')}</a></div>
-      <div class="tx"><span class="eyebrow">Agenda</span><h1>Configurações</h1></div></div>
+  const topo = cabecalho({ espaco:'Agenda', titulo:'Configurações', voltar:['Agenda', '#/agenda'] }) + `
     ${navNivel1([['', 'Geral', '#/agenda/config'], ['predefinidos', 'Eventos predefinidos', '#/agenda/config/predefinidos'],
       ['google', 'Google Agenda', '#/agenda/config/google']], aba, 'Configurações da agenda')}
     <div id="agc-corpo"></div>`;
@@ -1013,21 +1047,21 @@ function agCfgPredefinidos(){
   const grupos = ids => (ids || []).map(id => grupoPorId(id)?.nome).filter(Boolean);
   $('#agc-corpo').innerHTML = `<div class="filtros" style="justify-content:space-between;align-items:center">
       <p class="small muted" style="margin:0">Usados ao criar um evento: preenchem duração, local, convidados e notificações.</p>
-      ${can() ? `<button class="btn solid mini" onclick="agPdEditar()">${ic('plus')} Novo</button>` : ''}</div>
+      ${podeGerir() ? `<button class="btn solid mini" onclick="agPdEditar()">${ic('plus')} Novo</button>` : ''}</div>
     ${lista.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th>Nome</th><th>Duração</th><th>Convidados</th><th>Notificações</th><th>Local</th><th></th></tr></thead>
-      <tbody>${lista.map(p => `<tr class="${can() ? 'click' : ''}" ${can() ? `tabindex="0" onclick="agPdEditar('${p.id}')" onkeydown="if(event.key==='Enter')this.click()"` : ''}>
+      <tbody>${lista.map(p => `<tr class="${podeGerir() ? 'click' : ''}" ${podeGerir() ? `tabindex="0" onclick="agPdEditar('${p.id}')" onkeydown="if(event.key==='Enter')this.click()"` : ''}>
         <td class="nome"><span class="agc-pt" style="--cc:${esc(p.cor)}"></span>${esc(p.nome)}</td>
         <td>${p.dia_inteiro ? 'Dia inteiro' : (p.duracao_min >= 60 && p.duracao_min % 60 === 0 ? p.duracao_min / 60 + ' h' : p.duracao_min + ' min')}${p.hora_inicio ? ', ' + p.hora_inicio.slice(0, 5) : ''}</td>
         <td style="white-space:normal">${p.todos ? 'Toda a equipe' : [...grupos(p.grupos), ...(p.convidados || []).map(r => primeiroNome(nomeDe(r)))].map(esc).join(', ') || '<span class="dim">—</span>'}</td>
         <td>${(p.lembretes || []).map(agRotuloLembrete).join(', ') || '<span class="dim">nenhuma</span>'}</td>
         <td>${esc((agenda.espacos || []).find(e => e.id === p.espaco_id)?.nome || p.local || '—')}</td>
-        <td>${can() ? ic('chevron') : ''}</td></tr>`).join('')}</tbody></table></div>`
-      : `<div class="vazio"><h3>Nenhum evento predefinido</h3>${can() ? `<button class="btn solid" onclick="agPdEditar()">Criar o primeiro</button>` : ''}</div>`}`;
+        <td>${podeGerir() ? ic('chevron') : ''}</td></tr>`).join('')}</tbody></table></div>`
+      : `<div class="vazio"><h3>Nenhum evento predefinido</h3>${podeGerir() ? `<button class="btn solid" onclick="agPdEditar()">Criar o primeiro</button>` : ''}</div>`}`;
 }
 function agPdEditar(id){
-  if (!can()) return;
+  if (!podeGerir()) return;
   const p = (agenda.predef || []).find(x => x.id === id) || { nome:'', titulo:'', duracao_min:60, dia_inteiro:false, hora_inicio:null, local:'',
-    espaco_id:null, meet_url:'', descricao:'', visibilidade:'convidados', cor:'#2DD4BF', todos:false, grupos:[], convidados:[], lembretes:[30], recorrencia:'Única', ordem:100 };
+    espaco_id:null, meet_url:'', descricao:'', visibilidade:'convidados', cor:'#2DD4BF', todos:false, grupos:[], convidados:[], lembretes:[30], recorrencia:'Única', ordem:100 }; // auditar: ok, cor de dado ou de canvas, precisa ser literal
   agenda.pd = { id: p.id || null, grupos:new Set(p.grupos || []), pessoas:new Set(p.convidados || []), lembretes:[...(p.lembretes || [])], cor:p.cor };
   const ativos = (state.membros || []).filter(m => ['Ativo', 'Em pausa / avaliação'].includes(m.status)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   abreModal(`<h3>${p.id ? esc(p.nome) : 'Novo evento predefinido'}</h3>
@@ -1055,6 +1089,7 @@ function agPdEditar(id){
         <select id="pd-pessoas" multiple size="5" style="margin-top:8px;width:100%" aria-label="Pessoas">${ativos.map(m =>
           `<option value="${m.registro}" ${agenda.pd.pessoas.has(m.registro) ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</select>
         <p class="mini">Grupos incluem quem está nos grupos abaixo deles. Ctrl/⌘ para marcar várias pessoas.</p></div>
+      <div class="fld full"><label class="check"><input type="checkbox" id="pd-ata" ${p.gera_ata ? 'checked' : ''}> Gerar ata na série NRO-PUB-003</label></div>
       <div class="fld full"><label for="pd-desc">Descrição</label><textarea id="pd-desc" rows="3">${esc(p.descricao || '')}</textarea></div>
       <div class="fld"><label for="pd-ordem">Ordem na lista</label><input id="pd-ordem" type="number" value="${p.ordem ?? 100}"></div>
     </div>
@@ -1072,7 +1107,7 @@ function agPdLembHTML(){
 async function agPdSalvar(){
   const x = agenda.pd, nome = $('#pd-nome').value.trim();
   if (!nome) return $('#pd-erro').textContent = 'O nome é obrigatório.';
-  const d = { nome, titulo: $('#pd-tit').value.trim() || null, duracao_min: Math.max(5, Math.min(1440, +$('#pd-dur').value || 60)),
+  const d = { nome, gera_ata: $('#pd-ata').checked, titulo: $('#pd-tit').value.trim() || null, duracao_min: Math.max(5, Math.min(1440, +$('#pd-dur').value || 60)),
     hora_inicio: $('#pd-hora').value || null, dia_inteiro: $('#pd-dia').checked, espaco_id: $('#pd-esp').value ? +$('#pd-esp').value : null,
     local: $('#pd-local').value.trim() || null, meet_url: $('#pd-meet').value.trim() || null, visibilidade: $('#pd-vis').value,
     recorrencia: $('#pd-rep').value, cor: x.cor, lembretes: [...new Set(x.lembretes)], todos: $('#pd-todos').checked,
@@ -1186,3 +1221,33 @@ registrarBusca({
   buscar: (t) => filtrarSimples(agenda.itens.filter(i => i.origem === 'evento').map(i => ({
     titulo: i.titulo, sub: `${fmtD(i.de)}${i.dia ? '' : ', ' + minHHMM(i.hi)}`, href: i.href })), t, 6)
 });
+
+function agAtaBotao(){
+ const e=agenda.ev,p=(agenda.predef||[]).find(x=>x.id===e.f.predefinido_id);
+ return !e.novo&&!e.cancelado&&p?.gera_ata&&(e.dono===agEu()||e.conv.has(agEu()))
+ ? '<button class="btn ghost mini" onclick="agAbrirAta()">Gerar ata</button>' : '';
+}
+async function agAbrirAta(){
+ const {data,error}=await sb.rpc('evento_ata_abrir',{p_evento:agenda.ev.id});
+ if(error||data?.status!=='ok')return toast(motivoRPC(data,error,'Não foi possível abrir a ata'),true);
+ location.hash='#/arquivos/'+data.codigo+'/escrever';
+}
+
+/* L8: a consulta é consultiva; o portal recebe só os horários sobrepostos. */
+async function agConsultaLabbioCarregar(ev){
+ if(ev.novo||!ev.f.espaco_id)return;
+ try{
+  const {data,error}=await sb.rpc('labbio_consulta_do_evento',{p_evento:ev.id});
+  if(agenda.ev!==ev||!document.getElementById('ag-labbio-consulta'))return;
+  if(error||data?.status!=='ok')return;
+  ev.consultaLabbio=data;
+  document.getElementById('ag-labbio-consulta').innerHTML=agConsultaLabbioHTML(ev);
+ }catch(_){} // A indisponibilidade da consulta não impede abrir o evento.
+}
+function agConsultaLabbioHTML(ev){
+ const d=ev.consultaLabbio,c=d?.consulta;if(!c)return '';
+ const aviso=c.situacao==='conflito'?`<div class="aviso-box warn">O LABBIO apontou conflito: ${esc(c.motivo)}. O evento continua marcado; ajuste se precisar.</div>`
+  :c.situacao==='pendente'?'<p class="evp-sub">LABBIO: consulta enviada, sem resposta. O evento vale assim mesmo.</p>'
+  :c.situacao==='disponivel'?'<p class="evp-sub">LABBIO: disponível.</p>':'';
+ return aviso+(d.sobreposicoes||[]).map(o=>`<p class="evp-sub">Outro evento usa este espaço das ${esc(o.hora_inicio)} às ${esc(o.hora_fim)}.</p>`).join('');
+}

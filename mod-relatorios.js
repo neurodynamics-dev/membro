@@ -21,11 +21,12 @@
    abrirEmail, gmailCompose, marcados, gruposEfetivos, gruposDaEquipe, dica.
    ============================================================ */
 
-const CDN_JSPDF     = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+const CDN_JSPDF     = 'vendor/jspdf-2.5.1.umd.min.js';   /* local desde a 2.19.1, o mesmo do doc-nro.js */
 const CDN_AUTOTABLE = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js';
 const CDN_XLSX      = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 
 /* O autotable precisa do jsPDF já no ar: carrega em ordem, não em paralelo. */
+let pdfFontesDados;
 async function precisaPDF(){
   if (!window.jspdf) await carregarLib(CDN_JSPDF);
   if (!window.jspdf?.jsPDF?.API?.autoTable) await carregarLib(CDN_AUTOTABLE);
@@ -67,7 +68,7 @@ const LOCAIS_PORTARIA = ['PORTARIA PRINCIPAL (HALL)','PORTARIA DO GALPÃO DA MEC
 function pageRelatorios(){
   const tiles = [];
   const t = (i,tt,td,fn) => tiles.push([i,tt,td,fn]);
-  if (can()){
+  if (podeVerFicha()){
     t('door','Lista para a portaria','Autorização de entrada na Escola de Engenharia, com espaço para assinatura e envio à SLOG.','modalPortaria()');
     t('clip','Lista de assinatura em evento','Presença dos ativos para imprimir, com nome do evento e data.','modalAssinatura()');
   }
@@ -78,15 +79,15 @@ function pageRelatorios(){
      pílulas de conhecimento: o tile leva até lá */
   t('mailer','Full mailer','E-mail no padrão NeuroDynamics, com a cor da área que assina. Abre em E-mails.',"location.hash='#/admin/emails'");
   /* Estes dois expõem o quadro inteiro — quem tem acesso a quê e a
-     exportação geral. Ficam com can(): a Comissão de Seleção precisa
+     exportação geral. Ficam com podeVerFicha() (admin, pessoal, liderança): a Comissão de Seleção precisa
      dos e-mails dos candidatos, não do efetivo. */
-  if (can()){
+  if (podeVerFicha()){
     t('key','Lista de autorizados','Quem tem acesso ativo a um sistema, local ou documento, em PDF.','modalAutorizados()');
     t('down','Quadro completo','Exportação geral do quadro em Excel ou PDF, com filtros.','modalQuadro()');
   }
 
   $('#sec-relatorios').innerHTML = `
-    <p class="sub" style="margin-bottom:18px">Tudo daqui sai para imprimir ou colar em e-mail —
+    <p class="sub" style="margin-bottom:18px">Tudo daqui sai para imprimir ou colar em e-mail:
       por isso continua em superfície clara, e não no escuro da tela.</p>
     <div class="gal">${tiles.map(([i,tt,td,fn]) =>
       `<button class="tile" onclick="${fn}"><span class="sq">${icRel(i)}</span>
@@ -112,7 +113,7 @@ function grupoCheckboxes(idPrefix, selecionados){
     <input type="checkbox" class="${idPrefix}" value="${esc(g)}" ${selecionados&&selecionados.includes(g)?'checked':''}> ${esc(g)}</label>`).join('')}</div>`;
 }
 /* ---------------- PDF: modelo de documento NRO ---------------- */
-function pdfNovo(orient){ const {jsPDF}=window.jspdf; return new jsPDF({orientation:orient||'portrait',unit:'mm',format:'a4'}); }
+function pdfNovo(orient){ const {jsPDF}=window.jspdf; const doc = new jsPDF({orientation:orient||'portrait',unit:'mm',format:'a4'}); doc.setFont('helvetica','normal'); return doc; }
 function desenhaLogo(doc,x,y,s,cor){
   doc.setFillColor(cor[0],cor[1],cor[2]);
   doc.circle(x+s*0.33, y+s*0.5, s*0.24, 'F');
@@ -204,10 +205,10 @@ function secaoTabela(doc, y, titulo, head, body, colStyles){
   if(y > H-40){ doc.addPage(); y = 16; }
   doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(29,29,31);
   doc.text(titulo, 12, y);
-  doc.autoTable({ startY:y+2.5, head:head||undefined, body, theme:'striped',
+  doc.autoTable({ startY:y+2.5, head:head||undefined, body, theme:'plain',
     styles:{font:'helvetica', fontSize:8.5, cellPadding:1.8, textColor:[29,29,31]},
-    headStyles:{fillColor:[29,29,31], textColor:[245,245,247], fontSize:8.5},
-    alternateRowStyles:{fillColor:[246,246,248]},
+    headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:8.5},
+    alternateRowStyles:{fillColor:[255,255,255]},
     columnStyles:colStyles||{}, margin:{left:12,right:12} });
   return doc.lastAutoTable.finalY + 8;
 }
@@ -215,7 +216,7 @@ async function gerarRelatorioMembro(){
   try{
     const m = membroAtual(); if(!m) return;
     const f = gestao.ficha;
-    const temPess = can() && !!f.pess;
+    const temPess = podeVerFicha() && !!f.pess;
     const doc = pdfNovo();
     let y = pdfCabecalho(doc, 'FICHA DO MEMBRO: '+m.nome.toUpperCase(),
       `Registro ${pad3(m.registro)}, ${m.status}, Emitida em ${new Date().toLocaleDateString('pt-BR')}`
@@ -264,7 +265,7 @@ async function gerarRelatorioMembro(){
       f.aponts.map(a=>[fmtD(a.data), a.apont?.grupo||'—', a.assiduidade||'—', a.entregas||'—',
         a.sinalizado?(a.tratado?'Sinalizado, tratado':'Sinalizado, pendente'):'—']));
     if(temPess){
-      const pess = CAMPOS_PESS.map(c=>{ let v = f.pess[c.k];
+      const pess = camposPess('ver').map(c=>{ let v = c.k==='endereco' ? enderecoPess(f.pess) : f.pess[c.k];
         if(c.t==='date') v = v? fmtD(v) : '';
         if(c.t==='bool') v = v===true?'Sim':(v===false?'Não':'');
         return [c.l, v||'—']; });
@@ -314,8 +315,8 @@ async function gerarListaPortaria(){
     doc.autoTable({ startY:y, theme:'grid',
       head:[['Nome','Matrícula','Assinatura']],
       body:lista.map(m=>[m.nome, mats.get(m.registro)||'—','']),
-      styles:{font:'helvetica', fontSize:9, cellPadding:2.2, textColor:[29,29,31], lineColor:[210,210,215], lineWidth:.25, minCellHeight:9},
-      headStyles:{fillColor:[29,29,31], textColor:[245,245,247], fontSize:9},
+      styles:{font:'helvetica', fontSize:9, cellPadding:2.2, textColor:[29,29,31], lineColor:[196,204,201], lineWidth:.25, minCellHeight:9},
+      headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:9},
       columnStyles:{0:{cellWidth:86},1:{cellWidth:38},2:{cellWidth:'auto'}}, margin:{left:12,right:12} });
     let fy = doc.lastAutoTable.finalY + 9;
     if(fy > doc.internal.pageSize.getHeight()-22){ doc.addPage(); fy = 16; }
@@ -373,8 +374,8 @@ async function gerarListaAssinatura(){
     doc.autoTable({ startY:y, theme:'grid',
       head:[['Nome','Matrícula','Assinatura']],
       body:lista.map(m=>[m.nome, mats.get(m.registro)||'—','']),
-      styles:{font:'helvetica', fontSize:9, cellPadding:2.2, textColor:[29,29,31], lineColor:[210,210,215], lineWidth:.25, minCellHeight:9},
-      headStyles:{fillColor:[29,29,31], textColor:[245,245,247], fontSize:9},
+      styles:{font:'helvetica', fontSize:9, cellPadding:2.2, textColor:[29,29,31], lineColor:[196,204,201], lineWidth:.25, minCellHeight:9},
+      headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:9},
       columnStyles:{0:{cellWidth:86},1:{cellWidth:38},2:{cellWidth:'auto'}}, margin:{left:12,right:12} });
     pdfRodape(doc);
     doc.save(`NRO-PES_lista_assinatura_${hojeISO()}.pdf`);
@@ -402,7 +403,7 @@ function gerarEmails(){
   $('#eml-result').innerHTML = emails.length ? `
     <div class="fld" style="margin-top:4px"><label>${emails.length} e-mail(s), separados por vírgula</label>
       <textarea id="eml-texto" readonly style="min-height:110px;font-size:12.5px">${esc(emails.join(', '))}</textarea></div>
-    ${semEmail.length?`<p class="small muted">⚠ ${semEmail.length} membro(s) sem e-mail cadastrado: ${esc(semEmail.map(m=>m.nome).join('; '))}</p>`:''}
+    ${semEmail.length?`<p class="small muted">Atenção: ${semEmail.length} membro(s) sem e-mail cadastrado: ${esc(semEmail.map(m=>m.nome).join('; '))}</p>`:''}
     <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
       <button class="btn ghost" onclick="copiar(document.getElementById('eml-texto').value)">${ic('copy')} Copiar</button>
       <a class="btn ghost" id="eml-mailto" href="${esc(mailtoHref)}" onclick="return abrirEmail(this.href)">${ic('mail')} App de e-mail (Cco)</a>
@@ -517,7 +518,7 @@ function relEmlCandsEnviar(via){
 }
 /* --- 4. lista de autorizados --- */
 function modalAutorizados(){
-  if (!can()) return toast('Este relatório é da administração.', true);
+  if (!podeVerFicha()) return toast('Este relatório é da administração.', true);
   abreModal(`<h3>Lista de autorizados</h3>
     <div class="form-grid">
       <div class="fld full"><label>Sistema, local ou documento</label>
@@ -541,12 +542,12 @@ async function gerarAutorizados(){
     const y = pdfCabecalho(doc, 'AUTORIZADOS: '+item.nome.toUpperCase(),
       `${CAT_LABEL[item.categoria]}, ${lista.length} pessoa(s) com acesso ativo`
       + (grupos.length?`, Grupos: ${grupos.join(', ')}`:'') + (sts.length?`, Status: ${sts.join(', ')}`:''));
-    doc.autoTable({ startY:y, theme:'striped',
+    doc.autoTable({ startY:y, theme:'plain',
       head:[['Reg.','Nome','Departamento','Status','Concedido em']],
       body:lista.map(m=>[pad3(m.registro), m.nome, m.departamento||'—', m.status, desde.get(m.registro)?fmtD(desde.get(m.registro)):'—']),
       styles:{font:'helvetica', fontSize:9, cellPadding:2, textColor:[29,29,31]},
-      headStyles:{fillColor:[29,29,31], textColor:[245,245,247], fontSize:9},
-      alternateRowStyles:{fillColor:[246,246,248]}, margin:{left:12,right:12} });
+      headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:9},
+      alternateRowStyles:{fillColor:[255,255,255]}, margin:{left:12,right:12} });
     pdfRodape(doc);
     doc.save(`NRO-PES_autorizados_${hojeISO()}.pdf`);
     fechaModal(); toast('PDF gerado.');
@@ -554,7 +555,7 @@ async function gerarAutorizados(){
 }
 /* --- 5. quadro completo --- */
 function modalQuadro(){
-  if (!can()) return toast('Este relatório é da administração.', true);
+  if (!podeVerFicha()) return toast('Este relatório é da administração.', true);
   abreModal(`<h3>Exportar quadro completo</h3>
     <div class="form-grid">
       <div class="fld full"><label>Grupos (vazio = todos)</label>${grupoCheckboxes('g-qd')}</div>
@@ -601,8 +602,8 @@ function exportarPDFQuadro(){
         m.gestor_registro?(nomeDe(m.gestor_registro)||''):'', (m.grupos||[]).join(', '),
         m.email_nro||m.email_pessoal||'', m.data_ingresso?fmtD(m.data_ingresso):'']),
       styles:{font:'helvetica', fontSize:7.5, cellPadding:1.6, textColor:[29,29,31]},
-      headStyles:{fillColor:[29,29,31], textColor:[245,245,247], fontSize:8},
-      alternateRowStyles:{fillColor:[246,246,248]}, margin:{left:12,right:12} });
+      headStyles:{fillColor:[255,255,255], textColor:[29,29,31], lineColor:[196,204,201], lineWidth:{bottom:.25}, fontSize:8},
+      alternateRowStyles:{fillColor:[255,255,255]}, margin:{left:12,right:12} });
     pdfRodape(doc);
     doc.save(`NRO-PES_quadro_${hojeISO()}.pdf`);
     fechaModal(); toast('PDF gerado.');
@@ -616,7 +617,7 @@ function exportarPDFQuadro(){
 registrarBusca({
   fonte:'relatorios', rotulo:'Relatórios',
   buscar: (t) => {
-    if (!can() && !podeSelecao()) return [];
+    if (!podeVerFicha() && !podeSelecao()) return [];
     /* a busca não pode achar o que a galeria esconde */
     const itens = [
       { titulo:'Lista de e-mails', sub:'Por grupo e status', href:'#/admin/relatorios' },
@@ -624,7 +625,7 @@ registrarBusca({
     ];
     if (podeSelecao())
       itens.push({ titulo:'E-mails dos candidatos', sub:'Por status da fase', href:'#/admin/relatorios' });
-    if (can()) itens.push(
+    if (podeVerFicha()) itens.push(
       { titulo:'Lista para a portaria', sub:'Autorização de entrada', href:'#/admin/relatorios' },
       { titulo:'Lista de assinatura em evento', sub:'Presença para imprimir', href:'#/admin/relatorios' },
       { titulo:'Lista de autorizados', sub:'Quem tem acesso a quê', href:'#/admin/relatorios' },

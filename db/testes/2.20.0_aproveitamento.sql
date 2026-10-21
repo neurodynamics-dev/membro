@@ -2,9 +2,9 @@
 \pset pager off
 set check_function_bodies = off;
 -- ============================================================
--- Teste da 33.0, o aproveitamento de AACC.
+-- Teste da 2.20.0, o aproveitamento de AACC.
 -- Rode num banco com o esqueleto (e o de Storage), a 15.0 a 25.0, e
--- AINDA SEM a 33.0: o teste cria os grupos das etapas e roda a
+-- AINDA SEM a 2.20.0: o teste cria os grupos das etapas e roda a
 -- migração (duas vezes no meio, e de novo no fim).
 -- ============================================================
 create or replace function ok(cond boolean, txt text) returns void language plpgsql as $$
@@ -89,8 +89,8 @@ insert into treinamento_conclusoes (certificado, registro, nome, codigo, titulo,
 values ('CERT-AACC-0001', 17, 'Carla Mendonça', 'NRO-TRE-003', 'Segurança elétrica em bancada', 'A', 240, '2023-05-10 14:00-03')
 on conflict do nothing;
 
-\ir ../v33_aproveitamento.sql
-\ir ../v33_aproveitamento.sql
+\ir ../2.20.0_aproveitamento.sql
+\ir ../2.20.0_aproveitamento.sql
 
 create or replace function ped(p_reg integer) returns aacc_pedidos language sql security definer as $$
   select * from aacc_pedidos where registro = p_reg order by criado_em desc, numero desc limit 1 $$;
@@ -124,17 +124,17 @@ do $$ begin
   perform ok((select pg_get_constraintdef(oid) like '%aproveitamento%' from pg_constraint
                where conrelid = 'public.doc_emitidos'::regclass and conname = 'doc_emitidos_tipo_check'),
              'doc_emitidos aceita o tipo aproveitamento');
-  perform ok((select count(*) from migracoes where id = 'v33_aproveitamento') = 1, 'a migração fica registrada');
+  perform ok((select count(*) from migracoes where id = '2.20.0_aproveitamento') = 1, 'a migração fica registrada');
 end $$;
 
 -- a etapa sem grupo se preenche ao rodar de novo; a escolhida não muda
 update aacc_config set grupos = array[null, gid('Depto de Pessoal'), gid('NRO_COORD_OFFICE')];
-\ir ../v33_aproveitamento.sql
+\ir ../2.20.0_aproveitamento.sql
 do $$ begin
   perform ok((select grupos[1] = gid('NRO_PMO') from aacc_config), 'rodar de novo preenche a etapa que ficou sem grupo');
 end $$;
 update aacc_config set grupos = array[gid('NRO_PMO'), gid('Sinais'), gid('NRO_COORD_OFFICE')];
-\ir ../v33_aproveitamento.sql
+\ir ../2.20.0_aproveitamento.sql
 do $$ begin
   perform ok((select grupos[2] = gid('Sinais') from aacc_config), 'e não mexe na etapa que alguém escolheu');
 end $$;
@@ -143,7 +143,7 @@ update aacc_config set grupos = array[gid('NRO_PMO'), gid('Depto de Pessoal'), g
 update aacc_config set rotulos[3] = 'Coordenação',
        barema = jsonb_set(jsonb_set(barema, '{0,descritor}', '"As atividades são de engenharia do curso do estudante, e a relação está demonstrada."'),
                           '{3,descritor}', '"Cada atividade tem evidências verificáveis (códigos no SOMA, repositórios), e as horas batem."');
-\ir ../v33_aproveitamento.sql
+\ir ../2.20.0_aproveitamento.sql
 do $$ begin
   perform ok((select rotulos[3] = 'Diretoria' from aacc_config), 'rodar de novo troca a Coordenação pela Diretoria');
   perform ok((select barema->0->>'descritor' like 'As atividades se relacionam com o curso%'
@@ -151,7 +151,7 @@ do $$ begin
                      and jsonb_array_length(barema) = 6 from aacc_config), 'e os textos antigos do barema, sem mexer nos outros');
 end $$;
 update aacc_config set rotulos[3] = 'Comitê';
-\ir ../v33_aproveitamento.sql
+\ir ../2.20.0_aproveitamento.sql
 do $$ begin
   perform ok((select rotulos[3] = 'Comitê' from aacc_config), 'o nome que alguém escolheu não muda');
 end $$;
@@ -680,13 +680,13 @@ reset role;
 -- ------------------------------------------------------------
 create temp table antes as select id, status, etapa, versao, emitido, prof_token_hash from aacc_pedidos;
 create temp table cfg_antes as select grupos, rotulos, prazo_professor_dias, barema from aacc_config;
-\ir ../v33_aproveitamento.sql
+\ir ../2.20.0_aproveitamento.sql
 do $$ begin
   perform ok((select count(*) from aacc_pedidos) = (select count(*) from antes)
              and not exists (select 1 from aacc_pedidos p join antes a using (id)
                               where (p.status, p.etapa, p.versao, p.emitido, p.prof_token_hash)
                                     is distinct from (a.status, a.etapa, a.versao, a.emitido, a.prof_token_hash)),
-             'rodar a 33.0 de novo não mexe nos pedidos');
+             'rodar a 2.20.0 de novo não mexe nos pedidos');
   perform ok((select (c.grupos, c.rotulos, c.prazo_professor_dias, c.barema) = (a.grupos, a.rotulos, a.prazo_professor_dias, a.barema)
                 from aacc_config c, cfg_antes a), 'nem nas configurações');
   perform ok((select count(*) from storage.buckets where id = 'aproveitamento') = 1, 'nem no bucket');
@@ -703,4 +703,4 @@ do $$ begin
              'e o portal não chama as internas');
 end $$;
 
-\echo '33.0: todas as asserções passaram'
+\echo '2.20.0: todas as asserções passaram'

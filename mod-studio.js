@@ -94,7 +94,7 @@ async function pageStudio(sub, sub2){
   $('#main').innerHTML = '<div class="carregando"><span class="spin"></span> Carregando o Studio…</div>';
   const ok = await stCarregar();
   if (!ok){
-    $('#main').innerHTML = `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Studio</span><h1>Studio</h1></div></div>
+    $('#main').innerHTML = cabecalho({ espaco:'Studio', titulo:'Quadro de publicações' }) + `
       <div class="aviso-box err"><b>O Studio ainda não está no banco.</b> ${esc(studioM.erro?.message || '')}<br>
       <span class="small">Falta aplicar a migração <code>db/v23_studio.sql</code>. O criador já funciona:
       <a href="#/studio/criar">criar uma peça</a> e baixar, sem salvar no quadro.</span></div>`;
@@ -130,10 +130,9 @@ function stNav(atual){
       ? ` <span class="n sua" title="Esperando a sua aprovação">${n}</span>` : ''}</a>`).join('')}</nav>`;
 }
 function stTopo(titulo, lead, acoes){
-  return `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Studio</span><h1>${titulo}</h1>
-    ${lead ? `<p class="lead">${lead}</p>` : ''}</div>
-    <div class="acoes">${acoes ?? `<button class="btn ghost mini" onclick="stModalIdeia()">${ic('lampada')} Nova ideia</button>
-      <a class="btn solid mini" href="#/studio/criar">${ic('plus')} Criar publicação</a>`}</div></div>`;
+  return cabecalho({ espaco:'Studio', titulo, lead,
+    acoes: acoes ?? [`<button class="btn ghost" onclick="stModalIdeia()">${ic('lampada')} Nova ideia</button>`,
+      `<a class="btn solid" href="#/studio/criar">${ic('plus')} Criar publicação</a>`] });
 }
 
 /* ============================================================
@@ -237,7 +236,7 @@ async function stSoltar(ev, st){
 async function stMover(id, st, link){
   const { data, error } = await sb.rpc('studio_mover', { p_id: id, p_status: st, p_link: link || null });
   if (error || data?.status !== 'ok'){
-    toast(data?.status === 'precisa_aprovacao' ? 'Precisa da aprovação antes.' : motivoRPC(data, error, 'Não deu para mover'), true);
+    toast(data?.status === 'precisa_aprovacao' ? 'Precisa da aprovação antes.' : motivoRPC(data, error, 'Não foi possível mover'), true);
     return false;
   }
   toast(st === 'aprovacao' ? 'Enviada para aprovação.' : `Movida para “${stRotStatus(st)}”.`);
@@ -287,7 +286,7 @@ function stIdeias(){
         <div class="fld"><label>Onde</label><div class="st-chips-redes" id="id-redes">${stRedesChips([])}</div></div>
       </div>
       <div class="acts" style="justify-content:flex-end;margin-top:4px"><button class="btn solid mini" onclick="stGuardarIdeia()">${ic('lampada')} Guardar ideia</button></div>
-      <details class="st-partidas"><summary>Sem ideia? Pontos de partida, por pilar</summary>
+      <details class="st-partidas"><summary>Pontos de partida, por pilar</summary>
         <div class="st-partidas-g">${Object.entries(ST_PARTIDAS).map(([k, xs]) => `<div><b style="--c:${STUDIO_PILARES[k][2]}">${esc(STUDIO_PILARES[k][0])}</b>
           ${xs.map(x => `<button class="chip-b" onclick="$('#id-txt').value='${esc(x.replace(/'/g, '’'))}';$('#id-pilar').value='${k}';$('#id-txt').focus()">${esc(x)}</button>`).join('')}</div>`).join('')}</div>
       </details>
@@ -328,12 +327,12 @@ async function stGuardarIdeia(){
   const p = { titulo, status:'ideia', categoria: $('#id-tipo').value, formato: $('#id-formato').value, pilar: $('#id-pilar').value,
     redes: stRedesLidas('#id-redes'), modelo: $('#id-tipo').value };
   const { data, error } = await sb.rpc('studio_publicacao_salvar', { p });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para guardar'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível guardar'), true);
   toast(`Ideia guardada: ${data.codigo}.`);
   await stCarregar(); stIdeias();
 }
 function stModalIdeia(){
-  abreModal(`<h3>${ic('lampada')} Nova ideia</h3>
+  abreModal(`<h3>${ic('lampada')} Nova ideia</h3><p><a class="btn" href="#/studio/criar" onclick="fechaModal()">Importar publicação por IA</a></p>
     <div class="fld"><label for="mi-txt">A ideia</label><textarea id="mi-txt" rows="3" placeholder="Nem que seja uma frase"></textarea></div>
     <div class="st-ideia-campos">
       <div class="fld"><label for="mi-tipo">Tipo</label><select id="mi-tipo"><option value="">—</option>${STUDIO_TIPOS.map(t => `<option value="${t[0]}">${esc(t[1])}</option>`).join('')}</select></div>
@@ -349,7 +348,7 @@ async function stModalIdeiaOk(){
   const tipo = $('#mi-tipo').value;
   const { data, error } = await sb.rpc('studio_publicacao_salvar', { p: { titulo, status:'ideia', categoria: tipo, modelo: tipo,
     formato: $('#mi-formato').value || studioTipo(tipo)?.[3] || '', pilar: studioTipo(tipo)?.[2] || '', redes: stRedesLidas('#mi-redes') } });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para guardar'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível guardar'), true);
   fechaModal(); toast(`Ideia guardada: ${data.codigo}.`);
   await stRecarregarTela();
 }
@@ -370,7 +369,7 @@ async function stDataOk(id, tirar){
   if (!tirar && !d) return toast('Escolha o dia.', true);
   const iso = tirar ? '' : new Date(`${d}T${h}`).toISOString();
   const { data, error } = await sb.rpc('studio_publicacao_salvar', { p: { id, data_publicacao: iso } });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para salvar'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível salvar'), true);
   fechaModal(); toast(tirar ? 'Sem data.' : 'Data marcada.');
   await stRecarregarTela();
 }
@@ -378,7 +377,7 @@ async function stExcluir(id){
   const p = studioM.pubs.find(x => x.id === id);
   if (!await confirma(`Apagar ${esc(p?.codigo || 'a publicação')}${p?.imagens?.length ? ' e as artes dela' : ''}? Não tem volta.`, 'Apagar')) return;
   const { data, error } = await sb.rpc('studio_excluir', { p_id: id });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para apagar'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível apagar'), true);
   /* as artes e as fotos de origem, no Storage */
   const { data: arqs } = await sb.storage.from('studio').list(id).catch(() => ({ data:null })) || {};
   const { data: fontes } = await sb.storage.from('studio').list(id + '/fontes').catch(() => ({ data:null })) || {};
@@ -567,13 +566,12 @@ async function stPublicacao(cod){
   const passos = ST_COLUNAS.map((s, i) => { const at = ST_COLUNAS.indexOf(pub.status);
     return `<li class="${i < at ? 'feito' : i === at ? 'agora' : ''}"><span>${esc(stRotStatus(s))}</span></li>`; }).join('');
   const redesComo = (pub.redes || []).filter(r => ST_COMO[r]);
-  $('#main').innerHTML = `<div class="topo-gestao st-pub-topo"><div class="tx"><span class="eyebrow">Studio › ${esc(pub.codigo)}</span>
-      <h1>${esc(pub.titulo)}</h1>
-      <p class="lead">${[tipo?.[1], pub.formato && STUDIO_FORMATOS[pub.formato], (pub.redes || []).map(r => STUDIO_REDES[r]?.l).filter(Boolean).join(', ')].filter(Boolean).map(esc).join(', ') || 'Sem tipo nem rede ainda'}
-        ${pub.data_publicacao ? `, <b>${esc(stQuando(pub.data_publicacao))}</b>` : ''}</p></div>
-      <div class="acoes">${pub.formato === 'texto' ? '' : `<a class="btn ${pub.imagens?.length ? 'ghost' : 'solid'} mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} ${pub.imagens?.length ? 'Editar a arte' : 'Criar a arte'}</a>`}
+  $('#main').innerHTML = cabecalho({ espaco:'Studio', titulo:pub.titulo, codigo:pub.codigo, voltar:['Quadro', '#/studio'],
+      lead:`${[tipo?.[1], pub.formato && STUDIO_FORMATOS[pub.formato], (pub.redes || []).map(r => STUDIO_REDES[r]?.l).filter(Boolean).join(', ')].filter(Boolean).map(esc).join(', ') || 'Sem tipo nem rede ainda'}
+        ${pub.data_publicacao ? `, <b>${esc(stQuando(pub.data_publicacao))}</b>` : ''}`,
+      acoes:[`${pub.formato === 'texto' ? '' : `<a class="btn ${pub.imagens?.length ? 'ghost' : 'solid'} mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} ${pub.imagens?.length ? 'Editar a arte' : 'Criar a arte'}</a>`}
         ${pub.status !== 'arquivada' ? `<button class="btn ghost mini" onclick="stArquivar('${pub.id}')">Arquivar</button>` : `<button class="btn ghost mini" onclick="stMover('${pub.id}','ideia')">Desarquivar</button>`}
-        ${podeApagar ? ibtn('trash', 'Apagar', `stExcluir('${pub.id}')`) : ''}</div></div>
+        ${podeApagar ? ibtn('trash', 'Apagar', `stExcluir('${pub.id}')`) : ''}`] }) + `
     ${stNav('')}
     ${pub.status === 'arquivada' ? '<div class="aviso-box info">Arquivada: fora do quadro e do calendário.</div>' : `<ol class="st-passos">${passos}</ol>`}
     <div class="st-pub">
@@ -663,7 +661,7 @@ async function stSalvarPlano(id){
   if (antes?.status === 'pronta' && (p.legenda || '') !== (antes.legenda || '')
       && !await confirma('A publicação está aprovada. Com a legenda nova, ela volta para aprovação. Salvar?', 'Salvar')) return;
   const { data, error } = await sb.rpc('studio_publicacao_salvar', { p: { id, ...p } });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para salvar'), true);
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não foi possível salvar'), true);
   toast(data.situacao === 'aprovacao' && antes?.status === 'pronta' ? 'Salvo; voltou para aprovação.' : 'Plano salvo.');
   await stCarregar(); await stPublicacao(antes.codigo);
 }
@@ -694,7 +692,7 @@ const stNomeImagem = (pub, i, x) => `${pub.codigo.toLowerCase()}-${String(i + 1)
 async function stBaixar(i){
   const pub = studioM.atual, x = pub?.imagens?.[i]; if (!x) return;
   const { data, error } = await sb.storage.from('studio').createSignedUrl(x.caminho, 120, { download: stNomeImagem(pub, i, x) });
-  if (error || !data?.signedUrl) return toast('Não deu para baixar: ' + (error?.message || 'sem link'), true);
+  if (error || !data?.signedUrl) return toast('Não foi possível baixar: ' + (error?.message || 'sem link'), true);
   const a = document.createElement('a'); a.href = data.signedUrl; a.download = stNomeImagem(pub, i, x);
   document.body.appendChild(a); a.click(); a.remove();
 }
@@ -712,7 +710,7 @@ async function stBaixarTodas(){
     const blob = await zip.generateAsync({ type:'blob' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = pub.codigo.toLowerCase() + '.zip';
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  } catch(e){ falha(e, 'Não deu para baixar'); }
+  } catch(e){ falha(e, 'Não foi possível baixar'); }
 }
 
 /* ============================================================
@@ -788,10 +786,10 @@ async function stCfgSalvarAcesso(){
   if (!dados.grupos_aprovadores.length && !await confirma('Sem grupo aprovador, só admin aprova. Continuar?', 'Continuar')) return;
   const eu = (state.membros || []).find(m => m.registro === stEu());
   const nomes = new Set(dados.grupos_aprovadores.map(i => grupoPorId(i)?.nome));
-  if (state.perfil?.papel !== 'admin' && ![...gruposEfetivos(eu)].some(n => nomes.has(n))
+  if (!souAdmin() && !tenhoPapel('lideranca') && ![...gruposEfetivos(eu)].some(n => nomes.has(n))
       && !await confirma('Você não está em nenhum dos grupos aprovadores escolhidos: depois de salvar, não poderá mais mexer aqui. Continuar?', 'Continuar')) return;
   const { data, error } = await sb.from('studio_config').update(dados).eq('id', true).select();
-  if (error || (Array.isArray(data) && !data.length)) return toast('Não deu para salvar' + (error ? ': ' + error.message : ' — sem permissão.'), true);
+  if (error || (Array.isArray(data) && !data.length)) return toast('Não foi possível salvar' + (error ? ': ' + error.message : ': sem permissão.'), true);
   await carregarStudioConfig();
   toast('Configuração salva.');
   if (!podeStudio()){ location.hash = '#/'; return; }
@@ -844,7 +842,7 @@ async function stCfgSalvarContas(){
     delete dados.links; semLinks = true;
     ({ data, error } = await sb.from('studio_config').update(dados).eq('id', true).select());
   }
-  if (error || (Array.isArray(data) && !data.length)) return toast('Não deu para salvar' + (error ? ': ' + error.message : ' — sem permissão.'), true);
+  if (error || (Array.isArray(data) && !data.length)) return toast('Não foi possível salvar' + (error ? ': ' + error.message : ': sem permissão.'), true);
   await carregarStudioConfig();
   toast(semLinks ? 'Usuários salvos. Os links precisam da migração v30.' : 'Contas salvas.', semLinks);
   stCfgContas();
@@ -916,7 +914,7 @@ async function stImpSalvar(tipo, id){
   if (!id) d.ordem = (Math.max(0, ...studioM.imprensa.filter(x => x.tipo === tipo).map(x => x.ordem || 0)) + 10);
   const q = id ? sb.from('site_imprensa').update(d).eq('id', id) : sb.from('site_imprensa').insert(d);
   const { error } = await q;
-  if (error) return toast('Não deu para salvar: ' + error.message, true);
+  if (error) return toast('Não foi possível salvar: ' + error.message, true);
   fechaModal(); toast('Salvo e publicado no site.'); stCfgImprensa();
 }
 async function stImpOrdem(id, d){
@@ -951,7 +949,7 @@ async function stCfgRecursos(){
   $('#st-cfg').innerHTML = `<p class="small muted" style="line-height:1.6;margin-bottom:14px">Onde estão as fotos e os vídeos da equipe: pastas do Drive,
       álbuns compartilhados, repositórios, bancos de imagem. Quem entra no Studio cadastra; para usar uma foto no criador, baixe e use <b>Enviar</b>.</p>
     <div class="acts" style="margin-bottom:14px"><button class="btn solid mini" onclick="stRecModal()">${ic('plus')} Recurso</button>
-      <a class="btn ghost mini" href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">${ic('link')} Brand guidelines</a></div>
+      <a class="btn ghost mini" href="https://brand.neurodynamics.dev" target="_blank" rel="noopener">${ic('link')} Manual da marca</a></div>
     ${porTipo.length ? porTipo.map(([t, l]) => `<h4 class="adm-grupo">${esc(ST_RECURSO_TIPOS[t])}</h4>
       <div class="st-recs">${l.map(stRecCartao).join('')}</div>`).join('')
       : `<div class="vazio"><div class="glyph">▣</div><h3>Nenhum recurso</h3><p>Cadastre a pasta de fotos do Drive, o álbum do último evento, o repositório com as fotos dos projetos.</p>
@@ -982,7 +980,7 @@ async function stRecSalvar(id){
   if (!/^https?:\/\//i.test(d.url)) return toast('O link precisa começar com https://', true);
   const { error } = id ? await sb.from('studio_recursos').update(d).eq('id', id)
     : await sb.from('studio_recursos').insert({ ...d, criado_por: stEu() });
-  if (error) return toast('Não deu para salvar: ' + error.message, true);
+  if (error) return toast('Não foi possível salvar: ' + error.message, true);
   fechaModal(); toast('Recurso salvo.'); stCfgRecursos();
 }
 async function stRecApagar(id){

@@ -7,7 +7,7 @@
                a busca da tela abre o caminho; o progresso, o detalhe com
                comentários, o comentar grava; quem é só leitura não cria
                nem desdobra;
-     Seleção — as oito abas têm endereço e acendem no menu; visão geral,
+     Seleção — as nove abas (a 2.19.1 trouxe Trainees) têm endereço e acendem no menu; visão geral,
                candidatos (filtro, seleção em lote, ficha por endereço),
                competências (nome com aspas não quebra), avaliação (grava
                a nota), agenda, dinâmica (sub-abas e a janela com código),
@@ -123,7 +123,7 @@ console.log('\nOKRs (admin)');
     com.length === 1 && com[0].dados.texto === 'Duas vagas preenchidas.' && com[0].dados.autor === 'Ana Figueiredo', com);
   await p.keyboard.press('Escape'); await p.waitForTimeout(300);
 
-  await p.click('.topo-gestao .btn.solid'); await p.waitForTimeout(400);
+  await p.click('.cab .btn.solid'); await p.waitForTimeout(400);
   confere('"Novo objetivo estratégico" sugere o próximo código (OE3)',
     await p.inputValue('#okr-f-codigo') === 'OE3');
   await p.keyboard.press('Escape'); await p.waitForTimeout(300);
@@ -141,7 +141,7 @@ console.log('\nOKRs (leitura)');
 {
   const { ctx, p, erros } = await abrir({ hash:'#/okrs/OE2', stub: stubDe('leitura') });
   const t = await p.evaluate(() => ({
-    novo: !!document.querySelector('.topo-gestao .btn.solid'),
+    novo: !!document.querySelector('.cab .btn.solid'),
     desdobrar: !!document.querySelector('.okr-no button[title="Desdobrar"]') }));
   confere('quem é só leitura não cria nem desdobra', !t.novo && !t.desdobrar, t);
   await p.click('.okr-no.foco .nm'); await p.waitForTimeout(500);
@@ -172,8 +172,9 @@ console.log('\nSeleção (admin)');
     const s = document.querySelector('#lt-nav .lt-sec[data-r="selecao"]');
     return { aberta: s.classList.contains('aberta'), filhos: [...s.querySelectorAll('.lt-filho .nm')].map(x => x.textContent) };
   });
-  confere('no menu, Seleção aberta com as oito abas',
-    menu.aberta && menu.filhos.join('|') === 'Visão geral|Candidatos|Avaliação|Agenda|Dinâmica|Publicações|FAQ|Configurações', menu);
+  /* 2.19.1: Trainees entrou depois de Dinâmica (ficha T2) */
+  confere('no menu, Seleção aberta com as nove abas',
+    menu.aberta && menu.filhos.join('|') === 'Visão geral|Candidatos|Avaliação|Agenda|Dinâmica|Trainees|Publicações|FAQ|Configurações', menu);
   confere('e "Visão geral" marcada', JSON.stringify(await atual(p)) === '["Visão geral"]', await atual(p));
 
   await p.click('.nav1 a:has-text("Candidatos")'); await p.waitForTimeout(800);
@@ -204,6 +205,9 @@ console.log('\nSeleção (admin)');
   const ficha = await p.evaluate(() => ({ aberto: document.getElementById('modal').classList.contains('open'),
     nome: document.querySelector('#modal [style*="font-size:17px"]')?.textContent }));
   confere('#/selecao/candidatos/c1 abre a ficha por cima da lista', ficha.aberto && ficha.nome === 'Joana Ribeiro', ficha);
+  await p.click('#pstab-dados .ps-copiar-email'); await p.waitForTimeout(200);
+  confere('a ficha tem o botão de copiar ao lado do e-mail e ele copia', await p.evaluate(() => document.getElementById('modal').classList.contains('open')
+    && !!document.querySelector('#pstab-dados dd .ps-copiar-email') && /Copiado/.test(document.body.innerText)));
   await p.click('#modal .nav1 button:text-is("Ações")'); await p.waitForTimeout(200);
   confere('as abas da ficha trocam de conteúdo',
     await p.evaluate(() => !document.getElementById('pstab-acoes').hidden && document.getElementById('pstab-dados').hidden));
@@ -223,7 +227,7 @@ console.log('\nSeleção (admin)');
   const aval = await p.evaluate(() => [...document.querySelectorAll('.aval-cand')].map(a => ({
     nome: a.querySelector('.nm').textContent, nota: a.querySelector('.nota-badge')?.textContent?.trim() })));
   confere('avaliação da dinâmica: os dois candidatos da fase, a média de quem já foi avaliado primeiro',
-    aval.length === 2 && /Paula/.test(aval[0].nome) && aval[0].nota === '★ 4.5', aval);
+    aval.length === 2 && /Paula/.test(aval[0].nome) && aval[0].nota === 'Nota 4.5', aval);
   await p.click('.aval-cand:has-text("Marcos") .btn'); await p.waitForTimeout(300);
   await p.click('#modal .crit-row:nth-of-type(1) .seg button:has-text("4")');
   await p.click('#modal .crit-row:nth-of-type(2) .seg button:has-text("5")');
@@ -269,8 +273,11 @@ console.log('\nSeleção por papel e no celular');
 {
   const { ctx, p, erros } = await abrir({ hash:'#/selecao/config', stub: stubDe('selecao') });
   confere('o Comitê (papel selecao) entra', await hash(p) === '#/selecao/config' && await p.locator('#ps-ed-nome').count() === 1);
-  confere('e não vê a lista de perfis, que é de admin/pessoal',
-    /visível apenas para admin\/pessoal/.test(await p.locator('#sel-corpo').textContent()));
+  /* o comitê vem dos grupos (2.18.0); as contas com o papel legado são
+     de admin e pessoal */
+  const corpoSel = await p.locator('#sel-corpo').textContent();
+  confere('e vê o comitê pelos grupos, sem a lista de contas (de admin e pessoal)',
+    /Comitê de Seleção/.test(corpoSel) && !/Papel na conta/.test(corpoSel), corpoSel.slice(-300));
   confere('sem erro de página', erros.length === 0, erros);
   await ctx.close();
 }

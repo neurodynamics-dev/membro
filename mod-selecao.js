@@ -167,13 +167,11 @@ async function pageSelecao(sub, sub2){
 
 async function desenhaSelecao(){
   const m = $('#main');
-  const topo = (acoes) => `<div class="topo-gestao"><div class="tx"><span class="eyebrow">Comitê de Seleção</span>
-      <h1>Processo seletivo</h1><p class="lead">Os bastidores do processo: candidatos, avaliação, agenda,
-      a dinâmica em grupo e o que vai para o site.</p></div>
-    ${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+  const topo = (acoes) => cabecalho({ espaco:'Seleção', titulo:'Processo seletivo',
+    lead:'Os bastidores do processo: candidatos, avaliação, agenda, a dinâmica em grupo e o que vai para o site.', acoes:[].concat(acoes || '') });
   if(!podeSelecao()){
     m.innerHTML = topo() + `<div class="aviso-box warn"><b>Acesso restrito.</b> Esta página é do Comitê de
-      Seleção. Peça a um administrador para atribuir o papel <b>selecao</b> ao seu perfil.</div>`;
+      Seleção: quem está num grupo com o papel Seleção, definido em Administração › Grupos.</div>`;
     return;
   }
   if(!PS.pronto && !PS.erro){
@@ -201,7 +199,7 @@ async function desenhaSelecao(){
     ${navNivel1(PS_ABAS.map(([t, l]) => [t, l, '#/selecao' + (t === 'geral' ? '' : '/' + t)]), PS.tab, 'Seleção')}
     <div id="sel-corpo"></div>`;
   ({geral:psGeral, candidatos:psCandidatos, avaliacao:psAvaliacao, agenda:psAgenda,
-    dinamica:psDinamica, publicacoes:psPublicacoes, faq:psFaq, config:psConfig}[PS.tab]||psGeral)();
+    dinamica:psDinamica, trainees:psTrainees, publicacoes:psPublicacoes, faq:psFaq, config:psConfig}[PS.tab]||psGeral)();
 }
 
 /* ============================================================
@@ -309,12 +307,12 @@ function psLinhaCand(c){
   return `<tr class="click" tabindex="0" onclick="psAbrirFicha('${c.id}')" onkeydown="if(event.key==='Enter')psAbrirFicha('${c.id}')">
     <td onclick="event.stopPropagation()"><input type="checkbox" aria-label="Selecionar ${esc(c.nome)}" ${PS.selecionados.has(c.id)?'checked':''} onchange="psSelUm('${c.id}',this.checked)"></td>
     <td class="reg">${esc(c.protocolo||'—')}</td>
-    <td><span class="nome">${esc(c.nome)}</span><br><span class="small dim">${esc(c.email)}</span></td>
+    <td><span class="nome">${esc(c.nome)}</span><br><span class="small dim">${esc(c.email)}</span>${c.email?' '+psCopiarEmail(c.email):''}</td>
     <td class="small">${esc(c.curso||'—')}${c.periodo?`, ${esc(c.periodo)}`:''}</td>
     <td>${psPill(c.status)}</td>
     <td class="small">${agTxt(ad)}</td>
     <td class="small">${agTxt(ae)}</td>
-    <td>${md!=null?`<span class="nota-badge">★ ${md.toFixed(1)}</span>`:'<span class="dim small">—</span>'}</td>
+    <td>${md!=null?`<span class="nota-badge">Nota ${md.toFixed(1)}</span>`:'<span class="dim small">—</span>'}</td>
     <td onclick="event.stopPropagation()">${ibtn('mail','E-mail de confirmação da inscrição',`psEmailConfirmacao('${c.id}')`,'sm')}</td>
   </tr>`;
 }
@@ -389,7 +387,7 @@ function psEmailConfirmacao(id, voltaFicha){
   abreModal(`
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
       <div><h3 style="margin:0">Confirmação da inscrição</h3>
-        <div class="small muted" style="margin-top:4px"><b>${esc(c.nome)}</b> ·
+        <div class="small muted" style="margin-top:4px"><b>${esc(c.nome)}</b>,
           <span class="mono">${esc(c.protocolo||'sem protocolo')}</span></div></div>
       <div style="display:flex;gap:8px;align-items:center">${psPill(c.status)}${ibtn('x','Fechar',fechar,'sm')}</div>
     </div>
@@ -417,6 +415,8 @@ function psEmailAbrir(via){
 }
 
 /* ---------- a ficha do candidato ---------- */
+/* botão utilitário discreto; o clique não abre a ficha da linha */
+const psCopiarEmail = em => `<button type="button" class="icon-btn sm ps-copiar-email" title="Copiar o e-mail" aria-label="Copiar o e-mail ${esc(em)}" data-em="${esc(em)}" onclick="event.stopPropagation();copiar(this.dataset.em)">${ic('copy')}</button>`;
 function psAbrirFicha(id){
   const c = psCand(id); if(!c) return;
   const grupos = {};
@@ -450,7 +450,7 @@ function psAbrirFicha(id){
            ['Acessibilidade',c.acessibilidade],['Instituição',c.instituicao],['Curso',c.curso],
            ['Matrícula',c.matricula],['Período',c.periodo],['Disponibilidade',c.disponibilidade],
            ['Como soube',c.como_soube],['Autorização de imagem',c.autorizacao_imagem?'Sim':'Não']]
-          .map(([l,vl])=>`<div class="it"><dt>${l}</dt><dd>${esc(vl||'—')}</dd></div>`).join('')}
+          .map(([l,vl])=>`<div class="it"><dt>${l}</dt><dd>${esc(vl||'—')}${l==='E-mail'&&vl?' '+psCopiarEmail(vl):''}</dd></div>`).join('')}
         <div class="it full"><dt>Áreas de interesse</dt>
           <dd>${(c.areas_interesse||[]).map(a=>`<span class="chip mini">${esc(a)}</span>`).join(' ')||'—'}</dd></div>
         <div class="it full"><dt>Links</dt><dd>${linksRow}</dd></div>
@@ -475,7 +475,7 @@ function psAbrirFicha(id){
         const l = grupos[f]||[]; if(!l.length) return '';
         const md = psMedia(l);
         return `<div class="aval-card">
-          <div class="hd"><b>${PS_FASES_AVAL[f].lbl}</b>${md!=null?`<span class="nota-badge">★ ${md.toFixed(1)}, ${l.length} avaliação${l.length>1?'ões':''}</span>`:''}</div>
+          <div class="hd"><b>${PS_FASES_AVAL[f].lbl}</b>${md!=null?`<span class="nota-badge">Nota ${md.toFixed(1)}, ${l.length} avaliação${l.length>1?'ões':''}</span>`:''}</div>
           ${l.map(a=>`<div class="small" style="border-top:1px solid var(--line);padding:8px 0">
             <b>${esc(a.avaliador||'—')}</b>: nota ${a.nota??'—'}
             ${a.recomendacao?` <span class="chip mini">${PS_REC[a.recomendacao]||a.recomendacao}</span>`:''}
@@ -498,7 +498,8 @@ function psAbrirFicha(id){
       <button class="btn ghost" onclick="psEmailConfirmacao('${c.id}', true)">${ic('mail')} Escrever e-mail de confirmação</button>
       ${psHr}
       <h3 style="font-size:14px;margin-bottom:6px">Integrar como membro</h3>
-      ${podeIntegrar ? `
+      ${c.status === 'trainee' ? `<p class="small">Para trainees, use <a href="#/selecao/trainees" onclick="fechaModal()">Seleção › Trainees</a>.</p>`
+      : podeIntegrar ? `
         <p class="small muted" style="margin-bottom:12px">Cria o registro no quadro com todos os dados da ficha, grava a ocorrência de ingresso e marca o candidato como integrado.</p>
         <div class="form-grid">
           <div class="fld"><label>Nº de registro</label><input id="ps-int-reg" type="number" value="${proxReg}"></div>
@@ -552,6 +553,198 @@ async function psIntegrarCand(id){
 }
 
 /* ============================================================
+   TRAINEES (2.19.1, ficha T2; contrato em fichas/CONTRATO-TRAINEES.md)
+   Para admitir: os candidatos em "trainee" que ainda não estão no
+   quadro, com a prévia (área, gestor, grupos, registro) antes de
+   gravar. No quadro: quem tem o cargo Trainee, com efetivar e dispensar.
+   ============================================================ */
+const PS_TR_ERRO = {
+  nao_encontrado:'O candidato não está mais na lista.', status_invalido:'O candidato não está como trainee.',
+  email_de_membro:'Já existe um membro com este e-mail.', registro_em_uso:'Este registro já está em uso.',
+  area_obrigatoria:'Escolha a área de alocação.', gestor_invalido:'Escolha um gestor ativo.',
+  grupo_invalido:'Um dos grupos não existe ou está inativo.'
+};
+const psTr = { pend:null, quadro:null, area:'', sel:new Set(), previa:[] };
+const psTrGestao = () => tenhoPapel('admin') || tenhoPapel('pessoal');
+
+async function psTrainees(){
+  const el = $('#sel-corpo');
+  el.innerHTML = '<div class="carregando"><span class="spin"></span> Carregando os trainees…</div>';
+  try{
+    const [a, b] = await Promise.all([sb.rpc('ps_trainees_pendentes', { p_edicao: PS.ed?.id || null }),
+                                      sb.rpc('trainees_quadro', { p_area_interesse: psTr.area || null })]);
+    if (a.error) throw a.error; if (b.error) throw b.error;
+    psTr.pend = a.data?.status === 'ok' ? a.data : null;
+    psTr.quadro = b.data?.status === 'ok' ? b.data.trainees || [] : [];
+    psTr.sel = new Set([...psTr.sel].filter(id => (psTr.pend?.candidatos || []).some(c => c.id === id && !c.membro_mesmo_email)));
+    psTrDesenhar();
+  }catch(e){
+    el.innerHTML = `<div class="aviso-box err"><b>Não foi possível carregar os trainees.</b> ${esc(e.message || '')}
+      Confira se a migração 2.19.1_trainees foi aplicada.</div><button class="btn ghost" onclick="psTrainees()">Tentar de novo</button>`;
+  }
+}
+
+function psTrDesenhar(){
+  const el = $('#sel-corpo'); if (!el) return;
+  const p = psTr.pend, cands = p?.candidatos || [], semGrupo = p && !p.grupo_trainee;
+  const areas = PS.ed?.areas || [];
+  const linhaCand = c => {
+    const bloq = !!c.membro_mesmo_email;
+    return `<tr id="ps-tr-c-${esc(c.id)}">
+      <td style="width:40px"><input type="checkbox" aria-label="Selecionar ${esc(c.nome)}" ${bloq ? 'disabled' : ''}
+        ${psTr.sel.has(c.id) ? 'checked' : ''} onchange="psTrMarcar('${esc(c.id)}', this.checked)"></td>
+      <td><b>${esc(c.nome)}</b>${bloq ? `<div class="small" style="color:var(--warn-tx);white-space:normal">Já existe um membro com este e-mail (registro ${Number(c.membro_mesmo_email)}): confira antes.</div>` : ''}</td>
+      <td>${esc(c.email)}</td>
+      <td>${(c.areas_interesse || []).map(x => `<span class="chip mini">${esc(x)}</span>`).join(' ') || '—'}</td>
+      <td>${esc(c.curso || '—')}</td></tr>`;
+  };
+  const gestao = psTrGestao();
+  const linhaQ = t => `<tr>
+      <td><a href="#/equipe/${t.registro}">${esc(t.nome)}</a> <span class="chip mini">Trainee</span></td>
+      <td>${(t.areas_interesse || []).map(x => `<span class="chip mini">${esc(x)}</span>`).join(' ') || '—'}</td>
+      <td class="ps-tr-aloc">${esc(t.alocacao || '—')}</td>
+      <td>${esc(t.gestor_nome || '—')}</td>
+      <td>${t.data_ingresso ? fmtD(t.data_ingresso) : '—'}</td>
+      ${gestao ? `<td style="white-space:nowrap"><button class="btn ghost mini" onclick="psTrEfetivar(${t.registro})">Efetivar</button>
+        <button class="btn ghost mini" onclick="psTrDispensar(${t.registro})">Dispensar</button></td>` : ''}</tr>`;
+  el.innerHTML = `
+    ${p ? `<section class="card" style="margin-bottom:18px" aria-labelledby="ps-tr-h1">
+      <h3 id="ps-tr-h1" style="margin-bottom:6px">Para admitir</h3>
+      <p class="small muted" style="margin-bottom:12px">Candidatos com o resultado Trainee que ainda não estão no quadro.</p>
+      ${semGrupo ? `<div class="aviso-box warn">Crie o grupo NRO_TRAINEE em Administração › Grupos antes de admitir.</div>` : ''}
+      ${cands.length ? `<div class="wrap"><table class="tabela trabalho"><thead><tr><th></th><th>Nome</th><th>E-mail</th><th>Áreas de interesse</th><th>Curso</th></tr></thead>
+        <tbody>${cands.map(linhaCand).join('')}</tbody></table></div>
+        <div class="acts"><button class="btn solid" id="ps-tr-admitir" ${semGrupo || !psTr.sel.size ? 'disabled' : ''} onclick="psTrPrevia()">Admitir os selecionados</button></div>`
+      : '<div class="empty">Ninguém esperando admissão.</div>'}
+    </section>` : ''}
+    <section class="card" aria-labelledby="ps-tr-h2">
+      <h3 id="ps-tr-h2" style="margin-bottom:10px">No quadro</h3>
+      <div class="seg" role="group" aria-label="Área de interesse" style="margin-bottom:12px">
+        ${[['', 'Todas'], ...areas.map(a => [a, a])].map(([v, l]) => `<button type="button" class="${psTr.area === v ? 'on' : ''}" aria-pressed="${psTr.area === v}"
+          onclick="psTr.area=${esc(JSON.stringify(v))};psTrainees()">${esc(l)}</button>`).join('')}
+      </div>
+      ${psTr.quadro.length ? `<div class="wrap"><table class="tabela trabalho" id="ps-tr-quadro"><thead><tr><th>Nome</th><th>Área de interesse</th><th>Alocação</th><th>Gestor</th><th>Ingresso</th>${gestao ? '<th></th>' : ''}</tr></thead>
+        <tbody>${psTr.quadro.map(linhaQ).join('')}</tbody></table></div>`
+      : '<div class="empty">Nenhum trainee no quadro com este filtro.</div>'}
+    </section>`;
+}
+function psTrMarcar(id, on){
+  on ? psTr.sel.add(id) : psTr.sel.delete(id);
+  const b = $('#ps-tr-admitir'); if (b) b.disabled = !psTr.sel.size || !psTr.pend?.grupo_trainee;
+}
+
+/* a prévia: uma linha por pessoa, nada é gravado até confirmar */
+function psTrPrevia(){
+  const cands = (psTr.pend?.candidatos || []).filter(c => psTr.sel.has(c.id));
+  if (!cands.length) return;
+  const areas = PS.ed?.areas || [];
+  const gestores = state.membros.filter(m => m.status === 'Ativo').sort((a, b) => a.nome.localeCompare(b.nome));
+  const grupos = (state.grupos || []).map(g => g.nome).filter(n => n !== 'NRO_TRAINEE').sort();
+  psTr.previa = cands.map(c => ({ candidato:c.id, nome:c.nome, area:(c.areas_interesse || []).find(a => areas.includes(a)) || areas[0] || '', gestor:'', grupos:[], registro:'' }));
+  const linha = (x, i) => `<div class="card" id="ps-tr-p-${i}" style="margin-bottom:10px">
+      <h4 style="margin-bottom:8px">${esc(x.nome)}</h4>
+      <div class="form-grid">
+        <div class="fld"><label for="ps-tr-area-${i}">Área de alocação</label>
+          <select id="ps-tr-area-${i}" onchange="psTr.previa[${i}].area=this.value">
+            ${areas.map(a => `<option ${a === x.area ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></div>
+        <div class="fld"><label for="ps-tr-gestor-${i}">Gestor direto</label>
+          <select id="ps-tr-gestor-${i}" onchange="psTr.previa[${i}].gestor=this.value?Number(this.value):''">
+            <option value="">Escolha</option>${gestores.map(m => `<option value="${m.registro}">${esc(m.nome)}</option>`).join('')}</select></div>
+        <div class="fld"><label for="ps-tr-reg-${i}">Registro</label>
+          <input id="ps-tr-reg-${i}" type="number" min="1" placeholder="vazio = o próximo livre" oninput="psTr.previa[${i}].registro=this.value"></div>
+      </div>
+      <fieldset style="border:0;padding:0;margin:8px 0 0;min-width:0"><legend class="small muted" style="margin-bottom:6px">Grupos</legend>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 14px;max-height:140px;overflow:auto">
+          <label class="small"><input type="checkbox" checked disabled> NRO_TRAINEE</label>
+          ${grupos.map(g => `<label class="small"><input type="checkbox" value="${esc(g)}" onchange="psTrGrupo(${i}, this.value, this.checked)"> ${esc(g)}</label>`).join('')}
+        </div></fieldset>
+      <p class="small ps-tr-erro" id="ps-tr-erro-${i}" style="color:var(--bad-tx);margin-top:6px" hidden></p>
+    </div>`;
+  abreModal(`<h3>Admitir ${cands.length === 1 ? 'trainee' : cands.length + ' trainees'}</h3>
+    <p class="small muted" style="margin-bottom:14px">Confira cada pessoa. Nada é gravado até confirmar; se uma linha tiver problema, ninguém entra.</p>
+    ${psTr.previa.map(linha).join('')}
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" id="ps-tr-confirmar" onclick="psTrConfirmar()">Confirmar a admissão</button></div>`, 'largo');
+}
+function psTrGrupo(i, g, on){
+  const l = psTr.previa[i].grupos; on ? l.includes(g) || l.push(g) : l.splice(l.indexOf(g), 1);
+}
+async function psTrConfirmar(){
+  const bt = $('#ps-tr-confirmar'); bt.disabled = true;
+  document.querySelectorAll('.ps-tr-erro').forEach(e => { e.hidden = true; e.textContent = ''; });
+  const itens = psTr.previa.map(x => ({ candidato:x.candidato, area:x.area, gestor:x.gestor || null,
+    grupos:['NRO_TRAINEE', ...x.grupos], ...(String(x.registro).trim() ? { registro:Number(x.registro) } : {}) }));
+  try{
+    const { data, error } = await sb.rpc('ps_admitir_trainees', { p_itens:itens });
+    if (error) throw error;
+    if (data?.status === 'invalido'){
+      for (const er of data.erros || []){
+        const i = psTr.previa.findIndex(x => x.candidato === er.candidato), e = $('#ps-tr-erro-' + i);
+        if (e){ e.hidden = false; e.textContent = (PS_TR_ERRO[er.erro] || 'Não foi possível admitir (' + er.erro + ').') + (er.grupo ? ' (' + er.grupo + ')' : ''); }
+      }
+      return;
+    }
+    if (data?.status === 'sem_grupo_trainee'){ toast('Crie o grupo NRO_TRAINEE em Administração › Grupos antes de admitir.', true); return; }
+    if (data?.status !== 'ok'){ toast(motivoRPC(data, null, 'Não foi possível admitir'), true); return; }
+    const n = (data.admitidos || []).length;
+    fechaModal(); toast(`${n} trainee${n === 1 ? '' : 's'} no quadro.`);
+    psTr.sel.clear();
+    const { data:m } = await sb.from('membros')
+      .select('registro,nome,cargo,departamento,status,grupos,gestor_registro,foto_url,email_nro,email_pessoal,telefone').order('nome');
+    if (m) state.membros = m;
+    psTrainees();
+  }catch(e){ falha(e, 'Falha ao admitir'); }
+  finally{ if (document.body.contains(bt)) bt.disabled = false; }
+}
+
+function psTrEfetivar(reg){
+  const t = psTr.quadro.find(x => x.registro === reg); if (!t) return;
+  const deptos = [...new Set(state.membros.map(m => m.departamento).filter(Boolean))].sort();
+  abreModal(`<h3>Efetivar ${esc(t.nome)}</h3>
+    <p class="small muted" style="margin-bottom:12px">Deixa de ser trainee e passa a membro com o cargo escolhido.</p>
+    <div class="fld"><label for="ps-tr-cargo">Cargo</label><input id="ps-tr-cargo" autocomplete="off"></div>
+    <div class="fld"><label for="ps-tr-dep">Área (opcional)</label>
+      <select id="ps-tr-dep"><option value="">Manter</option>${deptos.map(d => `<option>${esc(d)}</option>`).join('')}</select></div>
+    <p class="small" id="ps-tr-ef-erro" style="color:var(--bad-tx)" hidden></p>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" onclick="psTrEfetivarOk(${reg})">Efetivar</button></div>`);
+}
+async function psTrEfetivarOk(reg){
+  const cargo = $('#ps-tr-cargo').value.trim(), er = $('#ps-tr-ef-erro');
+  const erro = m => { er.hidden = false; er.textContent = m; };
+  if (!cargo || /^trainee$/i.test(cargo)) return erro('Escolha o cargo de membro (não pode ser Trainee).');
+  try{
+    const { data, error } = await sb.rpc('trainee_efetivar', { p_reg:reg, p_cargo:cargo, p_departamento: $('#ps-tr-dep').value || null });
+    if (error) throw error;
+    if (data?.status === 'invalido') return erro('Escolha o cargo de membro (não pode ser Trainee).');
+    if (data?.status !== 'ok') return erro(motivoRPC(data, null, 'Não foi possível efetivar'));
+    fechaModal(); toast('Efetivado.'); psTrainees();
+  }catch(e){ falha(e, 'Falha ao efetivar'); }
+}
+function psTrDispensar(reg){
+  const t = psTr.quadro.find(x => x.registro === reg); if (!t) return;
+  abreModal(`<h3>Dispensar ${esc(t.nome)}</h3>
+    <p class="small muted" style="margin-bottom:12px">A conta perde o acesso ao SOMA na hora. O Pessoal recebe um card para redistribuir as atividades e revogar os acessos; o acesso físico ao LABBIO só sai quando o LABBIO confirmar.</p>
+    <div class="fld"><label for="ps-tr-motivo">Motivo</label><textarea id="ps-tr-motivo" rows="3"></textarea></div>
+    <p class="small" id="ps-tr-di-erro" style="color:var(--bad-tx)" hidden></p>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn danger" onclick="psTrDispensarOk(${reg})">Dispensar</button></div>`);
+}
+async function psTrDispensarOk(reg){
+  const motivo = $('#ps-tr-motivo').value.trim(), er = $('#ps-tr-di-erro');
+  if (!motivo){ er.hidden = false; er.textContent = 'Escreva o motivo da dispensa.'; return; }
+  try{
+    const { data, error } = await sb.rpc('trainee_dispensar', { p_reg:reg, p_motivo:motivo });
+    if (error) throw error;
+    if (data?.status === 'motivo_obrigatorio'){ er.hidden = false; er.textContent = 'Escreva o motivo da dispensa.'; return; }
+    if (data?.status !== 'ok'){ er.hidden = false; er.textContent = motivoRPC(data, null, 'Não foi possível dispensar'); return; }
+    fechaModal(); toast(`Dispensado. O Pessoal recebeu o card ${data.card || ''} para redistribuir as atividades e revogar os acessos.`);
+    const m = state.membros.find(x => x.registro === reg); if (m) m.status = 'Desligado';
+    psTrainees();
+  }catch(e){ falha(e, 'Falha ao dispensar'); }
+}
+
+/* ============================================================
    AVALIAÇÃO GUIADA
    Cada membro do comitê registra a própria avaliação, por critério;
    a nota do candidato na fase é a média de todas.
@@ -582,7 +775,7 @@ function psAvaliacao(){
             ${Object.keys(recs).length?', '+Object.entries(recs).map(([r,q])=>`${q}× ${PS_REC[r]}`).join(', '):''}
           </div>
         </div>
-        ${media!=null?`<span class="nota-badge">★ ${media.toFixed(1)}</span>`:''}
+        ${media!=null?`<span class="nota-badge">Nota ${media.toFixed(1)}</span>`:''}
         <button class="btn ${minha?'ghost':'solid'} mini" onclick="psAbrirAval('${c.id}','${fase}')">
           ${ic('pencil')} ${minha?'Editar minha avaliação':'Avaliar'}</button>
       </div>`; }).join('')
@@ -683,7 +876,7 @@ function psAgenda(){
   </div>
   ${fase==='entrevista' && !PS.v31 ? `<div class="aviso-box warn">Para as entrevistas online e os e-mails ao candidato, falta aplicar a migração v31 (db/v31_ps_entrevistas.sql).</div>` : ''}
   <div class="card" style="margin-bottom:16px">
-    <h3>Abrir janela de horários ${online ? dica('A entrevista é online. Todos os horários desta janela usam o mesmo link de chamada. Quem abre a janela fica como responsável: recebe, na véspera, o resumo das entrevistas do dia seguinte, e o nome aparece para o candidato.') : ''}</h3>
+    <h3>Abrir janela de horários ${online ? dica('A entrevista é online. Todos os horários desta janela usam o mesmo link de chamada. Quem abre a janela fica como responsável: cada entrevista reservada entra na agenda dessa pessoa, o resumo das entrevistas do dia seguinte chega a ela na véspera, e o nome aparece para o candidato.') : ''}</h3>
     <p class="small muted" style="margin:4px 0 14px">Gera vários horários de uma vez. O candidato escolhe um deles no site${online ? ' e recebe o link por e-mail' : ''}.</p>
     <div class="form-grid">
       <div class="fld"><label for="ps-sl-data">Data</label><input id="ps-sl-data" type="date"></div>
@@ -696,7 +889,7 @@ function psAgenda(){
       <div class="fld"><label for="ps-sl-dur">Duração (min)</label><input id="ps-sl-dur" type="number" value="${fase==='dinamica'?'90':'30'}"></div>
       ${fase==='dinamica' ? `<div class="fld"><label for="ps-sl-cap">Vagas por horário</label><input id="ps-sl-cap" type="number" value="8"></div>` : ''}
     </div>
-    ${online ? `<p class="small muted" style="margin:0 0 12px">${eu ? `Responsável: <b>${esc(eu.nome)}</b>`
+    ${online ? `<p class="small muted" style="margin:0 0 12px">${eu ? `Responsável: <b>${esc(eu.nome)}</b>. As entrevistas reservadas entram na sua <a href="#/agenda" style="text-decoration:underline">agenda</a>.`
       : 'A sua conta não tem registro no quadro: os horários ficam sem responsável e ninguém recebe o resumo da véspera.'}</p>` : ''}
     <button class="btn solid" onclick="psCriarSlots('${fase}')">${ic('plus')} Criar horários</button>
   </div>
@@ -1201,7 +1394,7 @@ function psDinJanelas(){
       <div class="tt">${fmtD(s.data)}, ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</div>
       <div class="mt">${esc(s.local||'sem local')}, ${ocup(s)}/${s.capacidade} agendados${s.ativo?'':', inativa'}</div>
     </div>
-    <span class="pill mono" style="letter-spacing:.16em">${s.codigo ? esc(s.codigo) : '— sem código —'}</span>
+    <span class="pill mono" style="letter-spacing:.16em">${s.codigo ? esc(s.codigo) : 'Sem código'}</span>
     <button class="btn ghost mini" onclick="PS.dinJanela='${s.id}';psDinamica()">Preparar</button>
   </div>`).join('') || '<div class="empty">Nenhuma janela de dinâmica na agenda. Crie em Seleção › Agenda.</div>'}
   <p class="small muted" style="margin-top:12px;line-height:1.7">
@@ -1219,7 +1412,7 @@ function psDinJanela(s){
 
   <div class="card" style="margin-bottom:16px">
     <h3>${fmtD(s.data)}, ${psHm(s.hora_inicio)}–${psHm(s.hora_fim)}</h3>
-    <p class="small muted" style="margin:4px 0 16px">${esc(s.local||'sem local definido')} ·
+    <p class="small muted" style="margin:4px 0 16px">${esc(s.local||'sem local definido')},
       ${ags.length} de ${s.capacidade} lugares ocupados</p>
 
     ${cod ? `<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:16px">
@@ -1285,10 +1478,10 @@ function psDinFoto(m){
   });
 }
 
-/* O curso mora em dados_pessoais, que só admin/pessoal lê. Quem prepara
-   a mesa com papel "selecao" recebe o campo vazio e preenche à mão. */
+/* O curso mora em dados_pessoais, que só admin, pessoal e liderança leem.
+   Quem prepara a mesa com papel "selecao" recebe o campo vazio e preenche à mão. */
 async function psDinCursos(regs){
-  if(!can() || !regs.length) return {};
+  if(!podeVerFicha() || !regs.length) return {};
   try{
     const {data, error} = await sb.from('dados_pessoais').select('registro,curso').in('registro', regs);
     if(error) throw error;
@@ -1545,7 +1738,7 @@ function psCompsCorpo(){
   };
   return grupos.map(([g,itens])=>`<div class="comp-bloco"><h5>${esc(g)}</h5>
     <div class="comp-sel">${itens.map(chip).join('')}</div></div>`).join('')
-    || '<p class="small muted">Catálogo vazio — use o campo abaixo para incluir etiquetas.</p>';
+    || '<p class="small muted">Catálogo vazio.</p>';
 }
 
 function psCompCicla(btn, i){
@@ -1659,9 +1852,6 @@ async function psExcluirPub(id){
    ============================================================ */
 function psConfig(){
   const e = PS.ed;
-  const souAdmin = state.perfil.papel==='admin';
-  const comite = PS.perfis.filter(p=>p.papel==='selecao');
-  const promoviveis = PS.perfis.filter(p=>p.papel==='leitura');
   $('#sel-corpo').innerHTML = `
   <div class="card" style="margin-bottom:16px">
     <h3 style="margin-bottom:14px">Edição</h3>
@@ -1697,24 +1887,28 @@ function psConfig(){
     <div style="margin-top:12px"><button class="btn ghost" onclick="psEditarEtapa()">${ic('plus')} Adicionar marco</button></div>
   </div>
   <div class="card">
-    <h3>Acesso ao módulo (Comitê de Seleção)</h3>
-    <p class="small muted" style="margin:4px 0 14px">Quem tiver o papel <b>selecao</b> acessa esta página por completo,
-      mantendo apenas consulta no restante do portal. Administração e Depto. de Pessoal sempre têm acesso.${souAdmin?'':' <b>Somente administradores alteram papéis.</b>'}</p>
-    ${can() ? (comite.map(p=>`<div class="ps-linha">
-        ${avatarFoto({nome:p.nome||p.email}, 28, 10)}
-        <span style="flex:1"><b>${esc(p.nome||p.email)}</b> <span class="dim small">${esc(p.email)}</span></span>
-        ${souAdmin?ibtn('x','Remover do comitê',`psTirarAcesso('${p.id}')`,'sm'):''}</div>`).join('')
-      || '<div class="empty">Ninguém com o papel selecao. Acesso atual: admin e pessoal.</div>')
-    : '<div class="empty">A lista de perfis é visível apenas para admin/pessoal.</div>'}
-    ${souAdmin?`<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-      <select id="ps-com-add" style="flex:1;min-width:240px">
-        <option value="">Escolher perfil…</option>
-        ${promoviveis.map(p=>`<option value="${p.id}">${esc(p.nome||p.email)} (${esc(p.email)})</option>`).join('')}
-      </select>
-      <button class="btn solid" onclick="psDarAcesso()">${ic('plus')} Incluir no comitê</button></div>
-      <p class="small dim" style="margin-top:8px">Requer conta no portal. Admin e pessoal já têm acesso. Papéis:
-        <a href="#/admin/contas" style="text-decoration:underline">Administração › Contas e perfis</a>.</p>`:''}
+    <h3>Comitê de Seleção ${dica('Acessa este módulo quem está num grupo com o papel Seleção (e nos grupos abaixo dele). Admin, Depto. de Pessoal e liderança também acessam. O papel de cada grupo é definido em Administração › Grupos.')}</h3>
+    ${psComiteHTML()}
   </div>`;
+}
+/* O comitê vem dos grupos (2.18.0). As contas com o papel "selecao"
+   gravado nelas ainda valem nesta versão (legado): admin as tira daqui. */
+function psComiteHTML(){
+  const admin = souAdmin();
+  const grupos = gruposComPapel('selecao');
+  const pessoas = [...new Map(grupos.flatMap(g => membrosDoGrupo(g.nome).map(m => [m.registro, { m, via:g.nome }]))).values()]
+    .sort((a, b) => a.m.nome.localeCompare(b.m.nome, 'pt-BR'));
+  const legado = (PS.perfis || []).filter(p => p.papel === 'selecao');
+  return `${grupos.length ? '' : `<div class="empty">Nenhum grupo com o papel Seleção.${admin ? ' <a href="#/admin/grupos" style="text-decoration:underline">Definir em Grupos</a>' : ''}</div>`}
+    ${pessoas.map(({ m, via }) => `<div class="ps-linha">
+        ${avatarFoto(m, 28, 10)}
+        <span style="flex:1"><b>${esc(m.nome)}</b> <span class="dim small">via ${esc(via)}</span></span></div>`).join('')}
+    ${grupos.length && !pessoas.length ? '<div class="empty">Ninguém nos grupos com o papel Seleção.</div>' : ''}
+    ${legado.length ? `<h4 style="margin:16px 0 8px">Papel na conta (legado) ${dica('Contas com o papel Seleção gravado na própria conta, de antes dos papéis por grupo. Valem até a próxima versão; o caminho é incluir a pessoa num grupo com o papel.')}</h4>
+      ${legado.map(p => `<div class="ps-linha">
+        ${avatarFoto({ nome:p.nome || p.email }, 28, 10)}
+        <span style="flex:1"><b>${esc(p.nome || p.email)}</b> <span class="dim small">${esc(p.email)}</span></span>
+        ${admin ? ibtn('x', 'Tirar o papel da conta', `psTirarAcesso('${p.id}')`, 'sm') : ''}</div>`).join('')}` : ''}`;
 }
 async function psSalvarEdicao(){
   const linha = { nome:$('#ps-ed-nome').value.trim(), descricao:$('#ps-ed-desc').value.trim()||null,
@@ -1793,22 +1987,12 @@ async function psExcluirEtapa(id){
     PS.pronto=false; desenhaSelecao();
   }catch(e){ falha(e,'Falha ao excluir'); }
 }
-async function psDarAcesso(){
-  const uid = $('#ps-com-add').value;
-  if(!uid){ toast('Escolha um perfil.', true); return; }
-  try{
-    const {error} = await sb.from('perfis').update({papel:'selecao'}).eq('id', uid);
-    if(error) throw error;
-    toast('Acesso concedido ao comitê.');
-    PS.pronto=false; desenhaSelecao();
-  }catch(e){ falha(e,'Falha ao conceder acesso'); }
-}
 async function psTirarAcesso(uid){
-  if(!await confirma('Remover esta pessoa do comitê? O perfil volta ao papel de consulta.','Remover')) return;
+  if(!await confirma('Tirar o papel Seleção da conta? A pessoa continua no comitê se estiver num grupo com o papel.','Tirar')) return;
   try{
     const {error} = await sb.from('perfis').update({papel:'leitura'}).eq('id', uid);
     if(error) throw error;
-    toast('Removido do comitê.');
+    toast('Papel retirado da conta.');
     PS.pronto=false; desenhaSelecao();
   }catch(e){ falha(e,'Falha ao remover'); }
 }

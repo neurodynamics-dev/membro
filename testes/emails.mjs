@@ -70,8 +70,8 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   confere('o tile de Relatórios leva à tela inteira, não a uma janela',
     await p.evaluate(() => location.hash) === '#/admin/emails' && await p.locator('.ml-tela').count() === 1
     && await p.locator('#modal.open').count() === 0);
-  confere('as três seções: Escrever, Programados (com a fila) e Pílulas',
-    (await p.locator('#sec-emails .nav1 a').allTextContents()).map(t => t.replace(/\s+/g, ' ').trim()).join('|') === 'Escrever|Programados 1|Pílulas de conhecimento',
+  confere('as seções: Escrever, Comunidade, Programados e Pílulas',
+    (await p.locator('#sec-emails .nav1 a').allTextContents()).map(t => t.replace(/\s+/g, ' ').trim()).join('|') === 'Escrever|Comunidade|Programados 1|Pílulas de conhecimento',
     await p.locator('#sec-emails .nav1 a').allTextContents());
   confere('a prévia ocupa a altura da janela', await p.evaluate(() => document.getElementById('ml-prev').getBoundingClientRect().height) >= 800);
 
@@ -94,7 +94,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   await p.fill('#ml-links', 'Portal do membro https://membro.neurodynamics.dev | Sem link'); await p.waitForTimeout(300);
   h = await previa(p);
   confere('o rodapé: item com endereço vira link; sem endereço, texto (nada de href="#")',
-    h.includes('href="https://membro.neurodynamics.dev" target="_blank"') && h.includes('>Sem link</span>') && !h.includes('href="#"'));
+    h.includes('href="https://membro.neurodynamics.dev" target="_blank"') && h.includes('<br>Sem link') && !h.includes('href="#"'));
 
   const cores = await p.evaluate(() => {
     const lum = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
@@ -109,19 +109,19 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
 
   await p.selectOption('#ml-rem', 'ri'); await p.waitForTimeout(300);
   h = await previa(p);
-  confere('Relações Institucionais: fundo claro, logo e ícones da cor nova (3b4d9a)',
-    h.includes('background:#E8EBF7') && h.includes('logo-3b4d9a.png') && h.includes('ico-linkedin-3b4d9a.png')
+  confere('Relações Institucionais: fundo claro, marca e ícones neutros sobre Retina claro',
+    h.includes('background:#E0E6FC') && h.includes('logo-imagotipo-retina-dark.png') && h.includes('ico-linkedin-1d1d1f.png')
     && (await p.inputValue('#ml-titulo')) === 'Relações Institucionais e Parcerias');
   const imgs = await p.evaluate(async () => {
     const d = document.getElementById('ml-prev').contentDocument;
     await new Promise(r => setTimeout(r, 300));
-    return [...d.images].map(i => ({ src:i.src.split('/').pop(), ok:i.complete && i.naturalWidth > 0 }));
+    return [...d.images].filter(i => !i.src.includes('brand.neurodynamics.dev')).map(i => ({ src:i.src.split('/').pop(), ok:i.complete && i.naturalWidth > 0 }));
   });
-  confere('as imagens da cor nova existem na pasta /mailer', imgs.length >= 2 && imgs.every(i => i.ok), imgs);
+  confere('as imagens da cor nova existem na pasta /mailer', imgs.length >= 1 && imgs.every(i => i.ok), imgs);
   await p.selectOption('#ml-rem', 'leadership'); await p.waitForTimeout(300);
   h = await previa(p);
-  confere('Leadership: o título e o verde profundo com a logo lima',
-    h.includes('background:#00352F') && h.includes('logo-cedc00.png') && (await p.inputValue('#ml-titulo')) === 'Leadership');
+  confere('Leadership: o título e o verde profundo com a logo branca',
+    h.includes('background:#00352F') && h.includes('logo-imagotipo-cortex-light.png') && (await p.inputValue('#ml-titulo')) === 'Leadership');
 
   await p.fill('#ml-assunto', 'Rascunho que não pode sumir'); await p.waitForTimeout(250);
   await ir(p, '#/admin/emails/pilulas', 900); await ir(p, '#/admin/emails', 900);
@@ -212,7 +212,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
     && JSON.stringify(serie[1].grupos) === '[7]' && serie[1].remetente_nome === 'P&D | NeuroDynamics'
     && JSON.stringify(serie[3].grupos) === '[5,6]' && serie[3].remetente === 'leadership', serie.map(i => [i.remetente_nome, i.todos, i.grupos]));
   confere('e o e-mail pronto, com as cores da área e o botão para o portal',
-    serie[2].html.includes('background:#E8EBF7') && serie[2].html.includes('https://membro.neurodynamics.dev/#/agenda') && serie[2].texto.includes('Texto da pílula PIL-05'));
+    serie[2].html.includes('background:#E0E6FC') && serie[2].html.includes('https://membro.neurodynamics.dev/#/agenda') && serie[2].texto.includes('Texto da pílula PIL-05'));
   confere('depois, a fila', await p.evaluate(() => location.hash) === '#/admin/emails/programados'
     && (await p.locator('.ml-tab').first().locator('tbody tr').count()) === 5);
 

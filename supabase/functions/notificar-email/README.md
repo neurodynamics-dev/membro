@@ -363,20 +363,60 @@ ligar de novo, rode a 32.0 outra vez.
 
 ## Quem recebe o quê
 
-A regra inteira mora no banco, em `notificacoes_email_lote()` (dona desde a
-migração 23.0), e é curta:
+A regra inteira mora no banco, em `notificacoes_email_lote()` e `push_lote()`
+(donas desde a 2.18.0, seção "Notificações por tipo" de `db/2.18.0_soma.sql`).
 
-- quem escolheu **A cada aviso** recebe o que estiver pendente;
-- quem escolheu **Um resumo por dia** só entra se já faz mais de 20h desde o
-  último e-mail;
-- quem escolheu **Só no portal** nunca entra;
-- quem nunca escolheu nada recebe como "a cada aviso" — a ausência de
-  preferência não pode virar silêncio;
-- duas exceções saem **sempre**, qualquer que seja a preferência: o e-mail de
-  teste (é um pedido da própria pessoa) e o **lembrete da véspera do Studio**
-  (`studio_lembrete`: a publicação tem dia marcado, e um resumo que chega
-  depois dele não serve);
-- membro desligado, ou sem nenhum endereço na ficha, fica de fora.
+Cada aviso do sino tem um tipo, e cada tipo pertence a uma **categoria**
+(`notificacao_categoria(tipo)`):
+
+| Categoria | Tipos |
+|---|---|
+| Atividades | `atividade_*` (atribuída, menção, moveu, prazo, sinalizada), `quadro_liberado`, `projeto_equipe` |
+| Bugs e melhorias | `feedback_*` (novo, status, comentário) |
+| Documentos | `doc_*` (revisão, aprovada, devolvida) |
+| Studio | `studio_*` (aprovação, decisão, lembrete) |
+| Reporte | `reporte_*`, `newsletter*` |
+| Agenda | `agenda_*` (convite, resposta, cancelamento no sino), `evento_*` |
+| Pessoal | `pessoal_*`, `solicitacao_respondida` |
+| Treinamentos | `treinamento*` |
+| Sistema | o resto (`cofre_troca` e o que vier sem categoria) |
+
+Para cada categoria a pessoa escolhe (tabela `notificacao_canais`):
+
+- **push**: ligado ou desligado (só na hora);
+- **e-mail**: desligado, instantâneo, resumo diário ou resumo semanal.
+
+Sem escolha, vale o padrão: **push ligado e e-mail em resumo semanal**.
+
+- **instantâneo**: sai na próxima passada (avisos dos últimos 3 dias);
+- **resumo diário**: um e-mail às **8h** (horário de Brasília) com os avisos
+  pendentes das categorias em diário, agrupados por categoria;
+- **resumo semanal**: um e-mail na **segunda às 8h**, do mesmo jeito (avisos
+  dos últimos 8 dias);
+- o lote devolve cada pessoa em até três envelopes (`modo`: `instantaneo`,
+  `diario`, `semanal`). Um resumo é devido quando há aviso pendente daquele
+  modo criado antes do último marco (`notificacao_resumo_marco`), e leva tudo
+  o que está pendente do modo. Não há relógio guardado por pessoa;
+- saem **sempre na hora**, fora da preferência: o e-mail de teste, os
+  **convites e lembretes de evento** (fila `agenda_envios`) e as **pílulas e
+  e-mails programados** (fila `email_programados`). O lembrete da véspera do
+  Studio (`studio_lembrete`) sai na hora, a não ser que o e-mail do Studio
+  esteja desligado;
+- conta bloqueada (Desligado, Egresso, Sob demanda), membro fora de Ativo ou
+  Em pausa, ou sem nenhum endereço na ficha, fica de fora do e-mail e do push;
+- o sino recebe tudo, sempre.
+
+**Agendamento.** Os resumos não pedem cron próprio: o `soma-fila` da 32.0
+(`* * * * *`, `select public.fila_chamar('agendamento')`) chama a função a cada
+minuto, e o banco decide quando o diário e o semanal são devidos. Basta conferir
+que ele existe e está ativo:
+
+```sql
+select jobname, schedule, active from cron.job where jobname = 'soma-fila';
+-- se não existir: select cron.schedule('soma-fila', '* * * * *', $$select public.fila_chamar('agendamento')$$);
+```
+
+Sem o `soma-fila`, o resumo só sai quando o portal aberto empurra a fila.
 
 Cada pessoa muda isso sozinha: **sininho → Preferências de avisos**.
 

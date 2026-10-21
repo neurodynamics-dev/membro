@@ -166,6 +166,26 @@ const chamou = (nome: string) => rpcs.filter((r) => r.nome === nome);
   ok("na segunda passada, o par que já existe é usado (não gera outro)", chamou("push_chaves_gravar").length === 0 && pushes.length === 1);
 }
 
+/* ---------- 2b. os resumos (2.18.0): até três envelopes por pessoa ---------- */
+{
+  bancoNormal();
+  const item = (id: number, categoria: string, titulo: string) =>
+    ({ id, tipo: "x", categoria, titulo, corpo: null, href: "#/", criado_em: "2026-10-05T12:00:00Z" });
+  banco.notificacoes_email_lote = () => [
+    { registro: 11, nome: "Bruno Tavares", email: "bruno@nro.dev", modo: "instantaneo", itens: [item(1, "atividades", "ORT-14 Calibrar")] },
+    { registro: 11, nome: "Bruno Tavares", email: "bruno@nro.dev", modo: "semanal",
+      itens: [item(2, "documentos", "NRO-PES-007 em revisão"), item(3, "bugs_melhorias", "FB-12 respondido")] },
+  ];
+  const b = await (await pedir({ "x-soma-fila": "a".repeat(64) }, { origem: "agendamento" })).json();
+  const assuntos = emails.map((e) => String(e.corpo.subject));
+  ok("a mesma pessoa recebe o instantâneo e o resumo semanal, em dois e-mails",
+     b.enviadas === 3 && emails.length === 2 && assuntos.includes("ORT-14 Calibrar")
+     && assuntos.includes("Resumo semanal do SOMA (2 avisos)"), JSON.stringify(assuntos));
+  const html = String(emails.find((e) => String(e.corpo.subject).startsWith("Resumo"))?.corpo.html || "");
+  ok("o resumo sai agrupado por categoria", html.includes("Bugs e melhorias (1)") && html.includes("Documentos (1)"));
+  ok("e a baixa leva os três avisos", JSON.stringify(chamou("notificacoes_email_baixa")[0]?.corpo.p?.enviadas) === "[1,2,3]");
+}
+
 /* ---------- 3. uma passada de cada vez ---------- */
 {
   bancoNormal();

@@ -9,7 +9,7 @@ import { nomeExibicao, assuntoDe, corpoHTML, corpoTexto, linkDe, primeiroNome, s
          personalizar, diaExtenso, quandoPS, linkAcompanhar, fraseCandidato, candidatoHTML, candidatoTexto,
          resumoHTML, resumoTexto, dinamicaTexto, linkGooglePS,
          b64u, deb64u, cifrarPush, jwtVapid, gerarChavesVapid, mensagemPush, paraOAparelho,
-         origemDoPapel, origemDoBanco, aaccHTML, aaccTexto, aaccAbertura,
+         origemDoPapel, origemDoBanco, porCategoria, aaccHTML, aaccTexto, aaccAbertura,
          type EnvioAacc, type Destinatario, type EnvioPS, type EnvioDocumento, type EnvioAgenda } from "./index.ts";
 
 let falhas = 0;
@@ -169,7 +169,7 @@ ok("configurado direito não reclama de nada",
 
 /* --- assunto --- */
 ok("um aviso vira assunto do próprio aviso",
-   assuntoDe(pessoa([{}])) === "ORT-14 — Revisar a bancada");
+   assuntoDe(pessoa([{}])) === "ORT-14: Revisar a bancada");
 ok("vários viram contagem",
    assuntoDe(pessoa([{}, {}, {}])) === "3 avisos no portal");
 
@@ -190,11 +190,37 @@ ok("sem href, o link é a home do portal",
 /* --- HTML --- */
 const html = corpoHTML(pessoa([{}, { titulo: "DEP-3 — SOL26-0001", href: null }]));
 ok("o HTML traz os dois títulos",
-   html.includes("ORT-14 — Revisar a bancada") && html.includes("DEP-3 — SOL26-0001"));
+   html.includes("ORT-14: Revisar a bancada") && html.includes("DEP-3: SOL26-0001"));
 ok("diz quantos avisos são", html.includes("Há 2 avisos"));
-ok("o e-mail é claro, não escuro", html.includes("#ffffff") && !html.includes("#050807"));
-ok("a logo sai por endereço absoluto", /src="https:\/\/[^"]+\/logo-00594f\.png"/.test(html));
-ok("explica como mudar a preferência", html.includes("Preferências de e-mail"));
+ok("o e-mail é claro, não escuro", html.includes("#FFFFFF") && !html.includes("#050807"));
+ok("a logo sai por endereço absoluto", /src="https:\/\/brand\.neurodynamics\.dev\/assets\/logo-imagotipo-cortex-dark\.png"/.test(html));
+ok("explica como mudar a preferência", html.includes("Preferências de avisos"));
+ok("o envio na hora não agrupa por categoria", !html.includes("ATIVIDADES") && !/Atividades \(\d+\)/.test(html));
+
+/* --- os resumos (2.18.0): agrupados por categoria, na ordem da tela --- */
+{
+  const d = pessoa([
+    { categoria: "documentos", titulo: "NRO-PES-007 em revisão" },
+    { categoria: "atividades" },
+    { categoria: "atividades", titulo: "ORT-15 — Molde" },
+    { categoria: "inventada", titulo: "Algo novo" },
+  ]);
+  const sem = { ...d, modo: "semanal" as const }, dia = { ...d, modo: "diario" as const };
+  ok("o assunto do semanal diz que é resumo e conta", assuntoDe(sem) === "Resumo semanal do SOMA (4 avisos)", assuntoDe(sem));
+  ok("o do diário também", assuntoDe(dia) === "Resumo diário do SOMA (4 avisos)", assuntoDe(dia));
+  ok("um aviso só, no singular", assuntoDe({ ...dia, itens: d.itens.slice(0, 1) }) === "Resumo diário do SOMA (1 aviso)");
+  const g = porCategoria(d.itens);
+  ok("agrupa na ordem da tela, e o desconhecido vai para Sistema",
+     g.map((x) => x.nome).join("|") === "Atividades|Documentos|Sistema" && g[0].itens.length === 2, JSON.stringify(g.map((x) => x.nome)));
+  const h = corpoHTML(sem);
+  ok("o HTML do resumo tem o título de cada grupo, com a contagem",
+     h.includes("Atividades (2)") && h.includes("Documentos (1)") && h.indexOf("Atividades (2)") < h.indexOf("Documentos (1)"));
+  ok("e a abertura do semanal", h.includes("Os 4 avisos da última semana no portal."));
+  const t = corpoTexto(dia);
+  ok("o texto do resumo agrupa também", t.includes("ATIVIDADES (2)") && t.includes("Os 4 avisos do último dia no portal."), t);
+  ok("sem travessão nem ponto médio no rodapé", !/·/.test(t.split("Preferências")[1] || "x"));
+  ok("o modo antigo (imediato) segue sem grupo", !corpoHTML(pessoa([{ categoria: "atividades" }])).includes("Atividades (1)"));
+}
 
 /* --- a armadilha: conteúdo escrito por gente --- */
 const perigoso = corpoHTML(pessoa([{
@@ -243,7 +269,8 @@ const envio = (d: Partial<EnvioDocumento["dados"]> = {}, o: Partial<EnvioDocumen
   ok("e diz onde se confere", h.includes(">auth.neurodynamics.dev</a>"));
   ok("o externo não recebe link do portal, que ele não tem", !h.includes("#/servicos/eventos/EXT-1"));
   ok("e é tratado pelo primeiro nome", h.includes("Olá, Helena."));
-  ok("o e-mail é claro, como os outros", h.includes("#ffffff"));
+  ok("o código verificador sai em IBM Plex Mono, com Courier New de reserva", /IBM Plex Mono','Courier New',monospace/.test(h));
+  ok("o e-mail é claro, como os outros", h.includes("#FFFFFF"));
 }
 {
   const h = declaracaoHTML(envio({ membro: true }, { para_nome: "Ana Figueiredo" }));
@@ -276,7 +303,7 @@ const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {
   ok("convite: quem convidou, o título e quando", h.includes("Carla Mendonça convidou você") && h.includes("Revisão do protótipo")
      && h.includes("sábado, 3 de outubro de 2026, das 14:00 às 15:30"));
   ok("os três botões respondem pelo token", h.includes(linkResposta("0f5c-tok", "vou").replace(/&/g, "&amp;"))
-     && h.includes("rsvp.html?t=0f5c-tok&amp;r=talvez") && h.includes("r=nao") && /Não vou<\/a>/.test(h));
+     && h.includes("rsvp?t=0f5c-tok&amp;r=talvez") && h.includes("r=nao") && /Não vou<\/a>/.test(h));
   ok("o link do Google Agenda leva o horário e o fuso", linkGoogle(convite("convite").dados).includes("dates=20261003T140000%2F20261003T153000")
      && linkGoogle(convite("convite").dados).includes("ctz=America%2FSao_Paulo"));
   ok("dia inteiro de vários dias vai até o dia seguinte ao fim",
@@ -287,10 +314,10 @@ const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {
 {
   ok("alteração diz o que mudou", agendaFrase(convite("alteracao", { mudou: "data, horário" })) === "Este evento mudou (data, horário).");
   const c = agendaHTML(convite("cancelamento"));
-  ok("cancelamento risca o título e não pergunta se vai", c.includes("line-through") && !c.includes("rsvp.html"));
+  ok("cancelamento risca o título e não pergunta se vai", c.includes("line-through") && !c.includes("rsvp"));
   ok("lembrete: quanto falta", agendaFrase(convite("lembrete", { minutos: 1440 })) === "Começa em 1 dia."
      && antecedenciaTexto(90) === "1 hora e 30 minutos");
-  ok("a resposta dada fica marcada", agendaHTML(convite("lembrete", {}, { resposta: "vou" })).includes("background:#00594F;color:#ffffff;border:1px solid #00594F\">\n      Vou"));
+  ok("a resposta dada fica marcada", agendaHTML(convite("lembrete", {}, { resposta: "vou" })).includes("background:#00352F;color:#FFFFFF;border:1px solid #00352F\">Vou"));
 }
 {
   const h = agendaHTML(convite("convite", { titulo: 'Reunião <img src=x onerror=alert(1)> & "cia"', descricao: "<b>oi</b>" }));
@@ -464,7 +491,7 @@ const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {
      origemDoBanco("") === "agendamento" && origemDoBanco("evento") === "evento" && origemDoBanco("portal") === "agendamento");
 }
 
-/* --- o aproveitamento de AACC (33.0): ao estudante e ao professor --- */
+/* --- o aproveitamento de AACC (2.20.0): a quem pediu e ao professor --- */
 {
   const membro = (dados: EnvioAacc["dados"]): EnvioAacc => ({ id: 1, tipo: "aacc_membro", para_nome: "Carla Mendonça",
     para_email: "carla@nro.dev", assunto: "AAC-7: o relatório foi recebido",

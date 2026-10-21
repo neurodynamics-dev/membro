@@ -1,4 +1,4 @@
-/* O aproveitamento de AACC (v33) no Supabase falso. Vem DEPOIS do
+/* O aproveitamento de AACC (2.20.0) no Supabase falso. Vem DEPOIS do
    stub-supabase.js (o teste concatena os dois): embrulha o createClient
    dele e responde às funções aacc_*, à doc_validar da folha, à tabela
    aacc_config e ao bucket "aproveitamento". O resto continua com o stub

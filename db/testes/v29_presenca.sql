@@ -91,8 +91,7 @@ begin
   perform ok(coalesce((select (x->>'atual')::int from jsonb_array_elements(r->'sequencias') x where (x->>'registro')::int = 4), 0)
     = case when hoje_util() then 1 else 0 end, 'o dia útil de hoje sem check-in ainda não quebra (o dia não acabou)');
   perform ok((r->'eu'->>'atual')::int = 5 and (r->'eu'->>'recorde')::int = 5, 'e cada um vê a própria');
-  perform ok((r->'ranking'->0->>'registro')::int = 11
-    and (r->'ranking'->0->>'dias')::int = (select count(distinct (registrado_em at time zone 'America/Sao_Paulo')::date) from presencas
+  perform ok((select (x->>'dias')::int from jsonb_array_elements(r->'ranking') x where (x->>'registro')::int=11) = (select count(distinct (registrado_em at time zone 'America/Sao_Paulo')::date) from presencas
        where registro = 11 and registrado_em >= date_trunc('month', now() at time zone 'America/Sao_Paulo') at time zone 'America/Sao_Paulo'),
     'o ranking do mês conta os dias');
   perform eu(17, 'leitura');

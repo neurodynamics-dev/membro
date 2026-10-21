@@ -34,7 +34,7 @@
      #/servicos/aproveitamento/AAC-7       um pedido
    membro.neurodynamics.dev/aproveitamento leva para a primeira.
 
-   Precisa da migração db/v33_aproveitamento.sql.
+   Precisa da migração db/2.20.0_aproveitamento.sql.
 
    Depende da casca para: sb, $, esc, norm, state, can, toast, abreModal,
    fechaModal, fmtD, fmtDT, ic, confirma, falha, motivoRPC, carregarLib,
@@ -43,8 +43,9 @@
 
 const aac = { meu:null, lista:null, atual:null, cfg:null, pdf:null, sel:null, ficha:false };
 
-const AAC_CDN_PDFLIB = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
-const AAC_CDN_JSZIP  = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+/* local, como o jsPDF e o pdf-lib do termo (2.19.1): nada de CDN de terceiros */
+const AAC_CDN_PDFLIB = 'vendor/pdf-lib-1.17.1.min.js';
+const AAC_CDN_JSZIP  = 'vendor/jszip-3.10.1.min.js';
 const AAC_EXEMPLO    = 'https://brand.neurodynamics.dev/assets/exemplo-relatorio-aacc.pdf';
 
 const AAC_STATUS = {
@@ -168,7 +169,7 @@ const aacTopo = (titulo, lead, acoes, olho) => `<div class="topo-gestao"><div cl
   ${lead ? `<p class="lead">${lead}</p>` : ''}</div>${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
 const aacCarregando = t => `<div class="carregando"><span class="spin"></span> ${t || 'Carregando…'}</div>`;
 const aacFaltaBanco = erro => `${aacTopo('Aproveitamento de AACC', '')}<div class="aviso-box err"><b>Isto ainda não está no banco.</b>
-  ${esc(erro?.message || '')}<br><span class="small">Falta aplicar a migração <code>db/v33_aproveitamento.sql</code>.</span></div>`;
+  ${esc(erro?.message || '')}<br><span class="small">Falta aplicar a migração <code>db/2.20.0_aproveitamento.sql</code>.</span></div>`;
 const aacMesAno = iso => { if (!/^\d{4}-\d{2}/.test(String(iso || ''))) return '—';
   const [a, m] = String(iso).split('-'); return `${['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][+m - 1]}/${a}`; };
 const aacGere = () => ['admin', 'pessoal'].includes(state.perfil?.papel);
@@ -388,7 +389,7 @@ function aacPassoEnquadramento(pode){
       ${dica('Conta o semestre com ao menos quatro meses de participação, sem os afastamentos, e posterior ao ingresso no curso (art. 5º).')}</div>
     <p class="small muted" style="margin:8px 0 14px">${conta.length} ${conta.length === 1 ? 'semestre letivo conta' : 'semestres letivos contam'}.</p>
     <div class="aac-cat">${Object.entries(AAC_CATALOGO).map(([k, c]) => `<div class="aac-op${s.principal === k ? ' pri' : usa(k) ? ' alt' : ''}${c.fora ? ' fora' : ''}">
-        <div class="cab"><span class="cod">${k}</span><b>${esc(c.nome)}</b></div>
+        <div class="aac-cab"><span class="cod">${k}</span><b>${esc(c.nome)}</b></div>
         <span class="small">${c.fora ? 'Curso fora da Escola de Engenharia' : esc(c.disp)}. ${esc(c.regra)}. ${dica(c.quando)}</span>
         <span class="est">${aacEstimativa(k)}</span>
         <div class="esc">

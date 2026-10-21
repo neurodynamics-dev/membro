@@ -28,7 +28,7 @@ out.grupoNaLista  = await p.locator('.grp-item .nm').allTextContents();
 out.travadosNaLista = await p.locator('.grp-item.travado .nm').allTextContents();
 out.marcadoLeitura  = await p.locator('.grp-item .tag').allTextContents();
 /* fecha clicando fora — que é o comportamento que interessa testar */
-await p.mouse.click(1200, 120);
+await p.click('#main .cab h1');
 await p.waitForTimeout(150);
 out.popoverFechaClicandoFora = await p.evaluate(() => document.getElementById('grp-pop').hidden);
 

@@ -64,9 +64,8 @@ const MOTIVO_DOC = {
 };
 const docMotivo = (data, error, padrao) => error ? motivoRPC(null, error, padrao)
   : MOTIVO_DOC[data?.status] || motivoRPC(data, null, padrao);
-const docTopo = (titulo, lead, acoes, olho) => `<div class="topo-gestao"><div class="tx">
-  <span class="eyebrow">${esc(olho || 'Serviços › Documentos')}</span><h1>${titulo}</h1>
-  ${lead ? `<p class="lead">${lead}</p>` : ''}</div>${acoes ? `<div class="acoes">${acoes}</div>` : ''}</div>`;
+/* o eyebrow é sempre o espaço (Serviços); o 4º argumento fica só por compatibilidade */
+const docTopo = (titulo, lead, acoes, _olho) => cabecalho({ espaco:'Serviços', titulo:desesc(titulo), lead, acoes:[].concat(acoes || '') });
 const docFaltaBanco = (erro, titulo) => `${docTopo(titulo, '')}<div class="aviso-box err"><b>Isto ainda não está no banco.</b>
   ${esc(erro?.message || '')}<br><span class="small">Falta aplicar a migração <code>db/v25_documentos_eventos.sql</code>.</span></div>`;
 const docCarregando = t => `<div class="carregando"><span class="spin"></span> ${t || 'Carregando…'}</div>`;
@@ -95,7 +94,7 @@ async function docSegundaVia(codigo){
    A DECLARAÇÃO DE VÍNCULO
    ============================================================ */
 async function pageDeclaracao(sub2){
-  const reg = can() && /^\d+$/.test(String(sub2 || '')) ? Number(sub2) : state.perfil?.registro;
+  const reg = podeGerir() && /^\d+$/.test(String(sub2 || '')) ? Number(sub2) : state.perfil?.registro;
   docs.alvo = reg;
   if (!reg){
     $('#main').innerHTML = `${docTopo('Declaração de vínculo', '')}<div class="aviso-box warn">A sua conta ainda não está ligada a
@@ -124,7 +123,7 @@ function dclDesenhar(){
   const vinc = d.vigente === false
     ? (d.desde && d.ate ? `de ${DocNRO_mesAno(d.desde)} a ${DocNRO_mesAno(d.ate)}` : d.ate ? `até ${DocNRO_mesAno(d.ate)}` : 'encerrado')
     : (d.desde ? `desde ${DocNRO_mesAno(d.desde)}` : 'vigente');
-  const outros = can() ? `<div class="fld dcl-quem"><label for="dcl-quem">Emitir para</label>
+  const outros = podeGerir() ? `<div class="fld dcl-quem"><label for="dcl-quem">Emitir para</label>
       <select id="dcl-quem" onchange="location.hash = '#/servicos/declaracao/' + this.value">${[...state.membros]
         .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'))
         .map(m => `<option value="${m.registro}" ${m.registro === docs.alvo ? 'selected' : ''}>${esc(m.nome)}${
@@ -151,7 +150,7 @@ function dclDesenhar(){
           <div><dt>Segunda folha</dt><dd>${nT} ${nT === 1 ? 'treinamento' : 'treinamentos'}, ${nE} ${nE === 1 ? 'evento' : 'eventos'}</dd></div>
         </dl>
         ${(p.faltam || []).length ? `<div class="aviso-box warn" style="margin:14px 0 0">${(p.faltam || []).map(f => esc(DOC_FALTA[f] || f)).join('<br>')}
-          <br><span class="small">A ficha é atualizada pelo Depto. de Pessoal.${can() ? ` <a href="#/equipe/${docs.alvo}" style="text-decoration:underline">Abrir a ficha</a>` : ''}</span></div>` : ''}
+          <br><span class="small">A ficha é atualizada pelo Depto. de Pessoal.${podeVerFicha() ? ` <a href="#/equipe/${docs.alvo}" style="text-decoration:underline">Abrir a ficha</a>` : ''}</span></div>` : ''}
         <div class="acts" style="margin-top:18px">
           <button class="btn solid" id="dcl-btn" onclick="dclEmitir()">${ic('selo')} Emitir a declaração</button>
           <span class="small muted">Dispensa assinatura.</span>
@@ -225,12 +224,12 @@ async function dclRevogarConfirma(codigo){
 /* ============================================================
    OS EVENTOS
    ============================================================ */
-const evxPodeConfigurar = () => can();
+const evxPodeConfigurar = () => podeGerir();
 async function pageEventosExt(sub2){
   const s = String(sub2 || '');
   const extra = String(location.hash.split('/')[4] || '');
   if (s === 'novo') return evxFormulario(null);
-  if (s === 'config') return can() ? evxConfig() : (location.hash = '#/servicos/eventos');
+  if (s === 'config') return podeGerir() ? evxConfig() : (location.hash = '#/servicos/eventos');
   if (/^ext-\d+$/i.test(s)) return extra === 'editar' ? evxFormulario(s.toUpperCase()) : evxPagina(s.toUpperCase());
   return evxLista(['aprovar', 'todos'].includes(s) ? s : 'meus');
 }
@@ -271,7 +270,7 @@ async function evxLista(filtro){
       `<a class="btn solid" href="#/servicos/eventos/novo">${ic('plus')} Registrar evento</a>`)}
     ${evxNav(filtro)}
     ${lista.length ? `<div class="evx-lista">${lista.map(evxCartao).join('')}</div>`
-      : `<div class="vazio"><div class="glyph">${filtro === 'aprovar' ? '✓' : '·'}</div>
+      : `<div class="vazio"><div class="glyph">${filtro === 'aprovar' ? '✓' : '-'}</div>
           <h3>${filtro === 'aprovar' ? 'Nada aguardando aprovação' : filtro === 'todos' ? 'Nenhum evento aprovado'
             : 'Nenhum evento registrado'}</h3>
           ${filtro !== 'aprovar' ? `<a class="btn ghost" href="#/servicos/eventos/novo">Registrar evento</a>` : ''}</div>`}`;

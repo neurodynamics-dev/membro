@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#050807"> <!-- auditar: ok, theme-color exige valor literal -->
+<script>try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.dataset.tema = 'claro'; }catch(e){}</script>
+<title>Reagir | NeuroDynamics</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ds/tokens.css?v=884d0049eb">
+<link rel="stylesheet" href="ds/neuro.css?v=884d0049eb">
+<style>
+/* A página de reação (2.19.1, ficha F3): fora da casca do portal, para
+   que ex-membros e egressos, que não abrem o SOMA, reajam às notícias. */
+body{background:var(--bg);color:var(--ink);font-family:var(--f);min-height:100vh}
+main{max-width:560px;margin:0 auto;padding:clamp(28px,8vh,72px) 16px 48px}
+.voltar{display:flex;width:max-content;gap:8px;align-items:center;font-size:13px;color:var(--muted);text-decoration:none;margin-bottom:22px}
+.voltar:hover{color:var(--ink)}
+.etiqueta{display:inline-flex;font-family:var(--fd);font-weight:600;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  padding:3px 8px;border-radius:var(--r-tag);border:1px solid var(--line2);color:var(--dim)}
+h1{font-family:var(--fd);font-size:clamp(26px,6vw,36px);font-weight:600;line-height:1.12;margin:14px 0 10px;overflow-wrap:anywhere}
+.sub{color:var(--muted);margin:0 0 22px}
+.capa{display:block;width:100%;height:auto;border-radius:var(--r);margin-bottom:22px}
+.painel{border-top:1px solid var(--line);padding-top:22px;display:flex;flex-direction:column;gap:14px}
+.painel h2{font-family:var(--fd);font-size:16px;font-weight:600;margin:0}
+.quem{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.msg{font-size:13px;color:var(--muted);min-height:18px;margin:0}
+.msg.ruim{color:var(--bad-tx)}
+.esqueci{font-size:12.5px;color:var(--muted)}
+.esqueci a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+</style>
+</head>
+<body>
+<main id="pg" aria-live="polite"><p class="msg">Carregando…</p></main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* os mesmos dados públicos do SOMA (index.html, CONFIG) */
+const CONFIG = {
+  SUPABASE_URL: 'https://rxzmkyjttzzpwtodqkve.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_MJFR-aaQqTS1BthxYJG2kg_5XGhs9wg'
+};
+const sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+const SLUG_OK = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const EMOJIS = ['👏', '❤️', '🎉', '💡', '🚀', '😮']; // auditar: ok, as reações são dado (o banco só aceita estes seis)
+const $ = s => document.querySelector(s);
+const esc = v => v == null ? '' : String(v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const pg = $('#pg');
+const st = { n:null, sessao:null, ocupado:false };
+
+const imgPublica = u => typeof u === 'string' && /^noticias\//.test(u)
+  ? CONFIG.SUPABASE_URL + '/storage/v1/object/public/' + u.split('/').map(encodeURIComponent).join('/') : '';
+const pessoas = n => n === 1 ? '1 pessoa' : n + ' pessoas';
+
+function msg(texto, ruim){ const m = $('#msg'); if (m){ m.textContent = texto || ''; m.classList.toggle('ruim', !!ruim); } }
+
+/* com sessão: os seis botões; sem: as contagens só para ler */
+function barra(){
+  const n = st.n, r = n.reacoes || {};
+  if (!st.sessao){
+    const so = EMOJIS.filter(e => r[e] > 0).map(e => `<span class="reacao">${e} <span class="n">${Number(r[e])}</span></span>`).join('');
+    return so ? `<div class="reacoes" aria-label="Reações">${so}</div>` : '';
+  }
+  return `<div class="reacoes" role="group" aria-label="Reações">${EMOJIS.map(e => {
+    const c = Number(r[e] || 0), meu = n.minha_reacao === e;
+    return `<button type="button" class="reacao" aria-pressed="${meu}" data-e="${e}"
+      aria-label="Reagir com ${e}${c ? ', ' + pessoas(c) : ''}" onclick="reagir(this.dataset.e)">${e}${c ? ` <span class="n">${c}</span>` : ''}</button>`;
+  }).join('')}</div>`;
+}
+
+function desenhar(){
+  const n = st.n, img = (n.imagens || []).map(i => ({ src:imgPublica(i.url), leg:i.legenda })).find(i => i.src);
+  const volta = SLUG_OK.test(n.slug || '') ? `<a class="voltar" href="https://neurodynamics.dev/#/news/${n.slug}">← Voltar para a matéria</a>` : '';
+  const painel = st.sessao ? `
+    <div class="painel">
+      ${barra()}
+      <p class="msg" id="msg" role="status"></p>
+      <p class="quem">Entrou como ${esc(st.sessao.user?.email || 'sua conta')}.
+        <button type="button" class="btn ghost mini" onclick="sair()" title="Sai também do SOMA neste navegador">Sair</button></p>
+    </div>` : `
+    <div class="painel">
+      ${barra()}
+      <h2>Entre com a sua conta do SOMA para reagir</h2>
+      <form id="entrar" novalidate onsubmit="entrar(event)">
+        <div class="fld"><label for="e-email">E-mail</label><input id="e-email" type="email" autocomplete="username"></div>
+        <div class="fld"><label for="e-senha">Senha</label><input id="e-senha" type="password" autocomplete="current-password"></div>
+        <button class="btn solid" type="submit" id="e-btn">Entrar</button>
+      </form>
+      <p class="msg" id="msg" role="status"></p>
+      <p class="esqueci">Esqueceu a senha? <a href="./">Recupere pelo SOMA.</a></p>
+    </div>`;
+  pg.innerHTML = `${volta}
+    <span class="etiqueta">Notícia</span>
+    <h1>${esc(n.titulo)}</h1>
+    ${n.subtitulo ? `<p class="sub">${esc(n.subtitulo)}</p>` : ''}
+    ${img ? `<img class="capa" src="${esc(img.src)}" alt="${esc(img.leg || n.titulo)}">` : ''}
+    ${painel}`;
+}
+
+async function carregar(slug){
+  const { data, error } = await sb.rpc('noticia_publica', { p_slug:slug });
+  if (error) throw error;
+  return data;
+}
+
+async function iniciar(){
+  const slug = new URLSearchParams(location.search).get('n') || '';
+  if (!SLUG_OK.test(slug)){ pg.innerHTML = '<p class="msg">Link inválido.</p>'; return; }
+  try{
+    const [n, s] = await Promise.all([carregar(slug), sb.auth.getSession()]);
+    if (!n || n.status !== 'ok'){
+      pg.innerHTML = '<p class="msg">Esta notícia não está mais publicada.</p><p><a class="btn ghost" href="https://neurodynamics.dev/#/news">Ir para as notícias</a></p>';
+      return;
+    }
+    if (n.redirecionar && SLUG_OK.test(n.slug || '')) history.replaceState(null, '', location.pathname + '?n=' + n.slug);
+    st.n = n; st.sessao = s?.data?.session || null;
+    desenhar();
+  }catch(_){
+    pg.innerHTML = '<p class="msg">Não foi possível carregar a notícia.</p><p><button class="btn ghost" type="button" onclick="iniciar()">Tentar de novo</button></p>';
+  }
+}
+
+async function entrar(ev){
+  ev.preventDefault();
+  const bt = $('#e-btn'); bt.disabled = true; msg('');
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email:$('#e-email').value.trim(), password:$('#e-senha').value });
+    if (error){
+      const naoConf = error.code === 'email_not_confirmed' || /not confirmed/i.test(error.message || '');
+      msg(naoConf ? 'Falta confirmar o e-mail da sua conta.' : 'E-mail ou senha incorretos.', true); return;
+    }
+    const s = await sb.auth.getSession();
+    st.sessao = s?.data?.session || data?.session || { user:{ email:$('#e-email').value.trim() } };
+    st.n = await carregar(st.n.slug);   /* de novo, para vir a sua reação */
+    desenhar();
+  }catch(_){ msg('Não foi possível entrar agora. Tente de novo.', true); }
+  finally{ if (document.body.contains(bt)) bt.disabled = false; }
+}
+
+async function sair(){
+  try{ await sb.auth.signOut(); }catch(_){}
+  st.sessao = null; desenhar();
+}
+
+async function reagir(e){
+  if (st.ocupado) return;
+  st.ocupado = true;
+  const bts = [...document.querySelectorAll('button.reacao')]; bts.forEach(b => b.disabled = true);
+  const tirar = st.n.minha_reacao === e;
+  try{
+    const { data, error } = await sb.rpc('feed_reagir', { p_ref:st.n.ref, p_emoji: tirar ? null : e });
+    if (error) throw error;
+    if (data?.status === 'ok'){
+      st.n.reacoes = data.reacoes || {}; st.n.minha_reacao = data.minha_reacao || null;
+      desenhar(); msg(tirar ? 'Reação retirada.' : 'Reação registrada.');
+    } else if (data?.status === 'limite') msg('Muitas reações seguidas. Espere alguns minutos.', true);
+    else msg('Sua conta não pode reagir. Reagem membros, ex-membros e egressos com conta no SOMA.', true);
+  }catch(_){ msg('Não foi possível registrar a reação.', true); }
+  finally{ st.ocupado = false; document.querySelectorAll('button.reacao').forEach(b => b.disabled = false); }
+}
+
+iniciar();
+</script>
+</body>
+</html>

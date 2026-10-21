@@ -77,8 +77,9 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   const blocos = await p.evaluate(() => [...document.querySelectorAll('#main h2.srv-bloco')].map(h => h.textContent));
   confere('Serviços: o que o SOMA faz sozinho vem antes dos pedidos', blocos.join('|') === 'Documentos e acessos|Pedidos ao Depto. de Pessoal', blocos);
   const tiles = await p.evaluate(() => [...document.querySelectorAll('#main a.srv.agora')].map(a => a.getAttribute('href')));
-  confere('os quatro: declaração, registrar evento, cofre e aproveitamento de AACC (v33)',
-    tiles.join('|') === '#/servicos/declaracao|#/servicos/eventos/novo|#/servicos/cofre|#/servicos/aproveitamento', tiles);
+  /* 2.19.1: o acesso ao LABBIO entra no bloco; 2.19.2: com o mesmo desenho dos vizinhos; 2.20.0: o aproveitamento de AACC */
+  confere('os cinco: declaração, registrar evento, acesso ao LABBIO, cofre e aproveitamento de AACC',
+    tiles.join('|') === '#/servicos/declaracao|#/servicos/eventos/novo|#/servicos/biometria|#/servicos/cofre|#/servicos/aproveitamento', tiles);
 
   await ir(p, '#/servicos/declaracao', 1400);
   const previa = await texto(p, '.dcl-folha p');
@@ -97,8 +98,7 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   const d = await pdf(p);
   confere('emitir baixa o PDF com o nome do NRO-PUB-002', nome === 'NRO-DIR-004-4 DECLARAÇÃO DE VÍNCULO - Ana Figueiredo.pdf', nome);
   confere('duas folhas', d?.paginas === 2, d?.paginas);
-  /* a logo é a imagem do portal (logo-nro.png), não o símbolo desenhado com o nome em texto */
-  confere('o cabeçalho do modelo: a logo, Diretoria, o título, o código e a revisão',
+  confere('o cabeçalho do modelo: Diretoria, o título, o código e a revisão',
     /^Diretoria Declaração de vínculo NRO-DIR-004-4 Rev\. B/.test(d.textos[0]), d.textos[0].slice(0, 120));
   confere('a frase, com o CPF inteiro no papel',
     d.textos[0].includes('Declaramos, para os devidos fins, que ANA FIGUEIREDO, CPF nº 000.000.000-00, atua como GERENTE DE PROJETO da NeuroDynamics PD&I desde março de 2024.'),

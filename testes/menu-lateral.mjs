@@ -79,7 +79,7 @@ console.log('\nAberto (admin, 1440px)');
      tomaram o lugar de Meus pedidos, que virou subitem de Serviços */
   confere('os espaços, na ordem (admin vê também Studio, Seleção e Administração)',
     arvore.map(s => s.rot).join('|') ===
-      'Agenda|Atividades|OKRs|Projetos|Arquivos|Studio|Equipe|Treinamentos|Serviços|Seleção|Administração',
+      'Agenda|Atividades|Equipe|OKRs|Projetos|Arquivos|Studio|Treinamentos|Biblioteca|Serviços|Seleção|Administração',
     arvore.map(s => s.rot));
   confere('todo espaço tem ícone', arvore.every(s => s.icone > 20), arvore);
   confere('Seleção e Administração vêm depois do divisor "Gestão"',
@@ -123,8 +123,9 @@ console.log('\nAberto (admin, 1440px)');
 
   await ir(p, '#/admin/contas', 1200);
   const adm = await secao(p, 'admin');
+  /* 18 desde a 2.19.1: os painéis Onboarding (ficha T3) e LABBIO (só admin, ficha L2) */
   confere('Administração: todos os painéis, em quatro grupos',
-    adm.filhos.length === 14 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
+    adm.filhos.length === 18 && adm.rotulos.join() === 'Portal,Pessoas,Registro,Conteúdo', adm);
   confere('#/admin/contas marca "Contas e perfis"',
     JSON.stringify(await atual(p)) === '["Contas e perfis"]', await atual(p));
   await ir(p, '#/admin/site', 1200);
@@ -136,25 +137,35 @@ console.log('\nAberto (admin, 1440px)');
     }));
 
   await ir(p, '#/', 700);
-  confere('sem "Início" no menu: no início, quem fica marcada é a casinha ao lado da logo',
+  confere('sem "Início" no menu: no início, quem fica marcada é a logo',
     JSON.stringify(await atual(p)) === '[]'
-    && await p.getAttribute('#lt-casa', 'aria-current') === 'page', await atual(p));
+    && await p.getAttribute('#lt-marca', 'aria-current') === 'page', await atual(p));
   await ir(p, '#/agenda/mes', 600);
-  confere('e sai dela quando se sai do início', await p.getAttribute('#lt-casa', 'aria-current') === null);
-  await p.click('#lt-casa'); await p.waitForTimeout(500);
-  confere('a casinha leva ao início', await p.evaluate(() => location.hash) === '#/');
+  confere('e sai dela quando se sai do início', await p.getAttribute('#lt-marca', 'aria-current') === null);
+  await p.click('#lt-marca'); await p.waitForTimeout(500);
+  confere('a logo leva ao início, e não há uma casinha repetindo o caminho', await p.evaluate(() => location.hash) === '#/'
+    && await p.locator('#lt-casa').count() === 0);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-seta');
   await p.waitForTimeout(200);
   let srv = await secao(p, 'servicos');
-  /* doze: todos os serviços, Meus pedidos (desde a v24), o que o SOMA faz
-     sozinho — a declaração, os eventos, o cofre e o aproveitamento de AACC
-     (v25–v27, v33) — e os seis pedidos ao Depto. de Pessoal, cada bloco
-     com o seu rótulo */
+  /* 2.19.1: o reporte saiu de Equipe e entrou em Serviços, só para liderança.
+     Treze: todos os serviços, Meus pedidos (desde a v24), Reporte semanal, o que o SOMA faz
+     sozinho — a declaração, os eventos, o cofre (v25–v27), o aproveitamento de AACC (2.20.0)
+     e Meus dados (2.19.1) — e os seis pedidos ao Depto. de Pessoal, cada bloco com o
+     seu rótulo */
+    /* 14 desde a 2.19.1: "Acesso ao LABBIO" em Documentos e acessos (ficha L6) */
   confere('a seta abre Serviços sem navegar',
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 12 && srv.filhos[1] === 'Meus pedidos'
-      && srv.filhos.slice(2, 6).join('|') === 'Declaração de vínculo|Eventos e participações|Cofre de senhas|Aproveitamento de AACC'
-      && srv.rotulos.join('|') === 'Documentos e acessos|Ao Depto. de Pessoal'
+    /* 2.19.2: Comunicação (o feed e as newsletters) e a Marca entram em Serviços */
+    /* 2.19.2: "Indicar contato ou evento" em Comunicação */
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 22 && srv.filhos[1] === 'Meus pedidos'
+      && srv.filhos[2] === 'Reporte semanal'
+      && srv.filhos.slice(3, 10).join('|') === 'Feed da equipe|Indicar contato ou evento|Newsletters|Modelos|Assinatura de e-mail|Configurações da marca|Manual da marca'
+      && srv.filhos.slice(10, 16).join('|') === 'Declaração de vínculo|Acesso ao LABBIO|Eventos e participações|Cofre de senhas|Aproveitamento de AACC|Meus dados'
+      && srv.rotulos.join('|') === 'Comunicação|Marca|Documentos e acessos|Ao Depto. de Pessoal'
       && await p.evaluate(() => location.hash) === '#/', srv);
+  const equipe = await secao(p, 'equipe');
+  confere('Equipe fica com Organograma, Quadro e Presença: o feed e as newsletters foram para Serviços (2.19.2)',
+    equipe.filhos.join('|') === 'Organograma|Quadro de pessoal|Presença', equipe);
   await p.click('#lt-nav .lt-sec[data-r="servicos"] .lt-filho[data-sub="ouvidoria"]');
   await p.waitForTimeout(700);
   confere('o subitem leva à tela', await p.evaluate(() => location.hash) === '#/servicos/ouvidoria');
@@ -199,11 +210,16 @@ console.log('\nAberto (admin, 1440px)');
       r = b.getBoundingClientRect(), i = b.querySelector('svg').getBoundingClientRect();
     return { borda: cs.borderTopColor, fundo: cs.backgroundColor, legenda: getComputedStyle(b.querySelector('span')).opacity,
       atalho: getComputedStyle(b.querySelector('kbd')).opacity, w: Math.round(r.width), ic: Math.round(i.left + i.width / 2),
-      casa: getComputedStyle(document.getElementById('lt-casa')).display }; });
+      marca: getComputedStyle(document.getElementById('lt-marca')).display,
+      simbolo: getComputedStyle(document.querySelector('#lt-marca .lt-simbolo')).display,
+      simboloBt: getComputedStyle(document.querySelector('#lt-recolher .lt-simbolo')).display,
+      imagotipo: getComputedStyle(document.querySelector('#lt-marca .lt-imagotipo')).display,
+      expande: getComputedStyle(document.querySelector('#lt-recolher .ic.expande')).display }; });
   confere('no trilho, a busca é só o ícone — sem caixa nem legenda —, no eixo dos outros ícones',
     bus.borda === 'rgba(0, 0, 0, 0)' && bus.fundo === 'rgba(0, 0, 0, 0)' && bus.legenda === '0' && bus.atalho === '0'
     && bus.w <= 48 && bus.ic === 34, bus);
-  confere('e a casinha sai do trilho: a logo já é o início', bus.casa === 'none', bus);
+  confere('no trilho (2.19.2), o símbolo é a logo e leva ao Início; abrir o menu é um botão à parte',
+    bus.marca === 'flex' && bus.simbolo === 'block' && bus.imagotipo === 'none' && bus.simboloBt === 'none' && bus.expande === 'block', bus);
 
   await p.reload({ waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])'); await p.waitForTimeout(700);
@@ -361,8 +377,8 @@ console.log('\nTema');
     fundo: getComputedStyle(document.body).backgroundColor, rot: document.getElementById('lt-tema').getAttribute('aria-label'),
     meta: document.querySelector('meta[name="theme-color"]').content }));
   confere('o seletor troca para o claro e guarda a escolha',
-    t1.tema === 'claro' && t1.salvo === 'claro' && t1.fundo === 'rgb(242, 245, 241)' && t1.rot === 'Usar o tema escuro'
-    && t1.meta === '#F2F5F1', t1);
+    t1.tema === 'claro' && t1.salvo === 'claro' && t1.fundo === 'rgb(232, 237, 235)' && t1.rot === 'Usar o tema escuro'
+    && t1.meta === '#E8EDEB', t1);
   /* legível: o texto de cada token, sobre o fundo que ele tem de fato.
      Trocar o tema dispara as transições de cor (o item do menu tem
      color .15s): medir no meio delas leria o texto do escuro, #9AA5A1,
@@ -377,10 +393,10 @@ console.log('\nTema');
       for (let e = el; e; e = e.parentElement){ const c = rgb(getComputedStyle(e).backgroundColor);
         if (c.length === 3 || c[3] > 0){ camadas.push(c); if (c.length === 3 || c[3] >= 1) break; } }
       return camadas.reverse().reduce((b, c) => sobre(c, b), rgb(getComputedStyle(document.body).backgroundColor).slice(0, 3)); };
-    const amostras = { 'título': 'main h1', 'texto de apoio': '.topo-gestao .lead', 'rótulo (dim)': '.topo-gestao .eyebrow',
+    const amostras = { 'título': 'main h1', 'texto de apoio': '.cab .cab-lead', 'rótulo (dim)': '.cab .eyebrow',
       'item do menu': '#lt-nav .lt-item .lt-rot', 'código': '.arq-tab .cod', 'subtítulo da linha': '.arq-tab .sub',
       'quem mexeu': '.arq-tab .arq-quem', 'classe controlado': '.arq-cls.controlado', 'status ativo': '.pill.p-ok',
-      'link secundário': '.nav1 a:not(.on)', 'selo Synapse': '.hd-tag', 'frase da estrutura': '.arq-leg .fr',
+      'link secundário': '.nav1 a:not(.on)', 'frase da estrutura': '.arq-leg .fr',
       'rótulo de campo': '.fld label' };
     return Object.entries(amostras).map(([nome, sel]) => { const el = document.querySelector(sel); if (!el) return { nome, falta: true };
       const f = fundo(el), t = sobre(rgb(getComputedStyle(el).color), f), [a, b] = [lum(t), lum(f)].sort((x, y) => y - x);
@@ -404,16 +420,16 @@ console.log('\nTema');
     return { n: nomes.length, cor, dif };
   });
   confere(`no claro, a banda de destaque volta os ${ilha.n} tokens de tema aos do escuro`,
-    ilha.n > 40 && !ilha.dif.length && ilha.cor === 'rgb(245, 245, 247)', ilha);
+    ilha.n > 40 && !ilha.dif.length && ilha.cor === 'rgb(232, 237, 235)', ilha);
   /* logo em <img> é pintada de branco no escuro — no papel, some; no claro vira tinta */
   const logos = await p.evaluate(() => {
     const d = document.createElement('div');
-    d.innerHTML = '<div class="login"><div class="lg"><img alt=""></div></div><div class="ft-grid"><img alt=""></div>';
+    d.innerHTML = '<div class="login"><div class="lg"><img class="lt-imagotipo" alt=""></div></div><div class="ft-grid"><img class="lt-imagotipo" alt=""></div>';
     document.body.append(d);
-    const f = [...d.querySelectorAll('img')].map(i => getComputedStyle(i).filter); d.remove(); return f;
+    aplicarTema('claro'); const f = [...d.querySelectorAll('img')].map(i => ({filtro:getComputedStyle(i).filter,src:i.src})); d.remove(); return f;
   });
-  confere('as logos do login e do rodapé ficam de tinta no claro',
-    logos.every(f => /^brightness\(0\) invert\(0\.0\d\)$/.test(f)), logos);
+  confere('as logos usam o desenho preto no claro, sem inversão',
+    logos.every(x => x.filtro==='none' && x.src.endsWith('/logo-imagotipo-black.png')), logos);
   await p.reload({ waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])'); await p.waitForTimeout(500);
   confere('recarregar mantém o claro — e o <head> o aplica antes de a página aparecer',
@@ -434,12 +450,13 @@ console.log('\nPor papel');
 for (const [papel, esperado] of [
   ['leitura', { admin:null, quadroPessoal:false, selecao:false }],
   ['selecao', { admin:'Todos os painéis|E-mails|Relatórios', quadroPessoal:false, selecao:true }],
-  ['pessoal', { admin:14, quadroPessoal:true, selecao:true }]
+  ['pessoal', { admin:17, quadroPessoal:true, selecao:true }]   // 17 com o Onboarding (2.19.1, T3)
 ]){
   const { ctx, p } = await abrir({ stub: stubDe(papel) });
   const adm = await secao(p, 'admin'), eq = await secao(p, 'equipe'), sel = await secao(p, 'selecao');
-  confere(`${papel}: Seleção ${esperado.selecao ? 'aparece, com as oito abas' : 'não aparece'}`,
-    esperado.selecao ? sel?.filhos.length === 8 : sel === null, sel?.filhos ?? null);
+  /* nove abas desde a 2.19.1 (Trainees, ficha T2) */
+  confere(`${papel}: Seleção ${esperado.selecao ? 'aparece, com as nove abas' : 'não aparece'}`,
+    esperado.selecao ? sel?.filhos.length === 9 : sel === null, sel?.filhos ?? null);
   const okAdm = esperado.admin === null ? adm === null
     : typeof esperado.admin === 'number' ? adm?.filhos.length === esperado.admin
     : adm?.filhos.join('|') === esperado.admin;
@@ -447,6 +464,9 @@ for (const [papel, esperado] of [
     okAdm, adm?.filhos ?? null);
   confere(`${papel}: "Quadro de pessoal" ${esperado.quadroPessoal ? 'aparece' : 'não aparece'} em Equipe`,
     eq.filhos.includes('Quadro de pessoal') === esperado.quadroPessoal, eq.filhos);
+  const servicos = await secao(p, 'servicos');
+  confere(`${papel}: reporte não aparece sem liderança`,
+    !servicos.filhos.includes('Reporte semanal') && !eq.filhos.includes('Reporte semanal'), servicos);
   await ctx.close();
 }
 

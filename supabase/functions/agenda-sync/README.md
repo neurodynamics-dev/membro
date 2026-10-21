@@ -13,6 +13,7 @@ Ela existe porque o navegador não consegue buscar o `.ics`: o
 |----------------|---------|
 | `index.ts`     | **Tudo**: o leitor de iCalendar (parte 1) e a função em si (parte 2) |
 | `ics.test.ts`  | 20 casos de conferência do leitor |
+| `acesso.test.ts` | quem pode sincronizar: os papéis do banco e a conta bloqueada (2.18.0) |
 
 O leitor mora no mesmo arquivo de propósito. O painel do Supabase publica
 colando **um** arquivo no editor, e um `import` relativo a um segundo arquivo
@@ -41,6 +42,11 @@ Sempre `POST`, com o `Authorization` da sessão de quem chamou:
 | `{}`                | sincroniza a agenda de quem chamou | qualquer membro |
 | `{"registro": 12}`  | sincroniza a de outra pessoa | `admin` e `pessoal` |
 | `{"todos": true}`   | todas as agendas conectadas e ativas | `admin`, `pessoal` e a service role (cron) |
+
+Desde a 2.18.0 o papel vem de `papeis_atuais()`, perguntado com o token de quem
+chama: vale o pessoal pela conta ou pelo grupo (`NRO_PESSOAL`). Conta bloqueada
+(Desligado, Egresso, Sob demanda) recebe 403 e não sincroniza nem a própria
+agenda. Sem a 2.18.0 no banco, vale o papel da conta (`perfis.papel`).
 
 O portal chama sozinho ao salvar o link e no botão *Sincronizar agora*; o
 `admin.html` chama com `{"todos": true}`. Para rodar de hora em hora sem
@@ -79,5 +85,6 @@ sincronização reescreve os blocos daquela pessoa.
 
 ```
 node --experimental-strip-types ics.test.ts     # Node 22+
+node --experimental-strip-types acesso.test.ts  # Node 22+
 deno run ics.test.ts                            # ou Deno
 ```

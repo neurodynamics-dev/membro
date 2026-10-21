@@ -18,7 +18,8 @@
     itens_de_acesso: [
       { id:'i1', nome:'LABBIO — porta principal', categoria:'local', ativo:true, ordem:1 },
       { id:'i2', nome:'Google Workspace', categoria:'sistema', ativo:true, ordem:2 },
-      { id:'i3', nome:'Termo de confidencialidade', categoria:'documento', ativo:true, ordem:3 }
+      { id:'i3', nome:'Termo de confidencialidade', categoria:'documento', ativo:true, ordem:3 },
+      { id:'i4', nome:'Acesso biométrico ao LABBIO', categoria:'local', ativo:true, ordem:4, chave:'labbio_biometria' },
     ],
     ocorrencias: [
       { id:'o1', registro:4, tipo:'Mudança de cargo', data:'2026-05-02',
@@ -84,33 +85,43 @@
         chave:null, meu_nivel:'edicao',  pessoas:2 }
     ],
     grupo_acessos: [{ grupo_id:4, registro:11, nivel:'leitura', concedido_por:4 }],
+    /* o papel de cada grupo (2.18.0) */
+    grupo_papeis: [{ grupo_id:3, papel:'pessoal' }],
     atividades_quadro: [
       { id:'t9', codigo:'DEP-1', grupo_id:3, grupo:'Depto de Pessoal', grupo_prefixo:'DEP', seq:1,
         titulo:'SOL26-0001 — Acesso ao LABBIO', descricao:'Carla Mendonça abriu uma solicitação de acesso.',
         status:'a_fazer', prioridade:'media', responsavel:null, responsavel_nome:null,
         criado_por:17, criado_por_nome:'Carla Mendonça', prazo:null, sinalizada:false,
         ordem:500, arquivada:false, comentarios:0, atrasada:false, criado_em:'2026-09-20T09:00:00Z',
-        origem_tipo:'solicitacao', origem_id:'s1' },
+        origem_tipo:'solicitacao', origem_id:'s1', pessoas:[], etiquetas:[], check_total:0, check_feitos:0 },
       { id:'t1', codigo:'ORT-1', grupo_id:1, grupo:'Órtese', grupo_prefixo:'ORT', seq:1,
         titulo:'Calibrar o encoder', descricao:'Bancada 2.', status:'fazendo', prioridade:'alta',
         responsavel:11, responsavel_nome:'Bruno Tavares', criado_por:4, criado_por_nome:'Ana Figueiredo',
         prazo:'2026-09-10', estimativa_h:4, sinalizada:true, sinalizada_motivo:'Bloqueada pelo fornecedor',
-        ordem:1000, arquivada:false, comentarios:2, atrasada:true, criado_em:'2026-09-01T10:00:00Z' },
+        ordem:1000, arquivada:false, comentarios:2, atrasada:true, criado_em:'2026-09-01T10:00:00Z',
+        descricao:'Bancada 2, com o **multímetro** novo.\n\n- [x] pedir o cabo\n- [ ] trocar o conector',
+        pessoas:[4], etiquetas:['Firmware', 'Bancada 2'], check_total:3, check_feitos:1 },
       { id:'t2', codigo:'ORT-2', grupo_id:1, grupo:'Órtese', grupo_prefixo:'ORT', seq:2,
         titulo:'Revisar o firmware', status:'a_fazer', prioridade:'media', responsavel:17,
         responsavel_nome:'Carla Mendonça', criado_por:4, criado_por_nome:'Ana Figueiredo',
         prazo:null, sinalizada:false, ordem:2000, arquivada:false, comentarios:0, atrasada:false,
-        criado_em:'2026-09-05T10:00:00Z' },
+        criado_em:'2026-09-05T10:00:00Z', pessoas:[], etiquetas:['Firmware'], check_total:0, check_feitos:0 },
       { id:'t3', codigo:'ORT-3', grupo_id:1, grupo:'Órtese', grupo_prefixo:'ORT', seq:3,
         titulo:'Montar a bancada', status:'concluida', prioridade:'baixa', responsavel:4,
         responsavel_nome:'Ana Figueiredo', criado_por:4, criado_por_nome:'Ana Figueiredo',
         sinalizada:false, ordem:3000, arquivada:false, comentarios:0, atrasada:false,
-        criado_em:'2026-08-20T10:00:00Z' },
+        criado_em:'2026-08-20T10:00:00Z', pessoas:[], etiquetas:[], check_total:0, check_feitos:0 },
+      /* 2.17.0: um cartão arquivado, que a lista de arquivadas mostra e restaura */
+      { id:'t5', codigo:'ORT-4', grupo_id:1, grupo:'Órtese', grupo_prefixo:'ORT', seq:4,
+        titulo:'Trocar o cabo do sensor', status:'a_fazer', prioridade:'media', responsavel:null,
+        responsavel_nome:null, criado_por:4, criado_por_nome:'Ana Figueiredo', sinalizada:false, ordem:4000,
+        arquivada:true, comentarios:0, atrasada:false, criado_em:'2026-09-02T10:00:00Z', atualizado_em:'2026-09-18T10:00:00Z',
+        pessoas:[], etiquetas:[], check_total:0, check_feitos:0 },
       { id:'t4', codigo:'SIN-1', grupo_id:2, grupo:'Sinais', grupo_prefixo:'SIN', seq:1,
         titulo:'Filtro passa-faixa', status:'backlog', prioridade:'media', responsavel:null,
         responsavel_nome:null, criado_por:11, criado_por_nome:'Bruno Tavares',
         sinalizada:false, ordem:1000, arquivada:false, comentarios:0, atrasada:false,
-        criado_em:'2026-09-08T10:00:00Z' }
+        criado_em:'2026-09-08T10:00:00Z', pessoas:[], etiquetas:[], check_total:0, check_feitos:0 }
     ],
     atividade_comentarios: [
       { id:'c1', atividade_id:'t1', registro:4, corpo:'Fornecedor respondeu?', mencionados:[11],
@@ -125,6 +136,27 @@
       { id:4, atividade_id:'t1', registro:4, tipo:'sinalizou', para:'Bloqueada pelo fornecedor', criado_em:'2026-09-16T11:00:00Z' }
     ],
     atividade_seguidores: [{ atividade_id:'t1', registro:4 }, { atividade_id:'t1', registro:11 }],
+    /* 2.17.0: a checklist do ORT-1 */
+    atividade_checklists: [{ id:'ck1', atividade_id:'t1', titulo:'Antes de ligar', ordem:1 }],
+    atividade_checklist_itens: [
+      { id:'ci1', checklist_id:'ck1', texto:'Conferir a fonte', feito:true, ordem:1, feito_por:4 },
+      { id:'ci2', checklist_id:'ck1', texto:'Aterrar a bancada', feito:false, ordem:2 },
+      { id:'ci3', checklist_id:'ck1', texto:'Medir a tensão, ver NRO-PES-007', feito:false, ordem:3 }
+    ],
+    /* 2.17.0: bugs e sugestões */
+    soma_feedback_lista: [
+      { id:1, tipo:'bug', codigo:'BUG-1', titulo:'O quadro não abre no celular', corpo:'Fica girando.\n\n1. Abrir **Atividades**\n2. Esperar',
+        versao:'2.16.0', tela:'#/atividades/ORT', aparelho:'Safari no iPhone', status:'aberto', autor:11, autor_nome:'Bruno Tavares',
+        votos:2, votei:false, comentarios:1, criado_em:'2026-09-27T10:00:00Z', atualizado_em:'2026-09-27T10:00:00Z' },
+      { id:2, tipo:'sugestao', codigo:'SUG-2', titulo:'Filtrar o quadro por etiqueta', corpo:'Para achar o que é de firmware.',
+        versao:'2.16.0', status:'planejado', autor:17, autor_nome:'Carla Mendonça', votos:5, votei:true, comentarios:0,
+        resposta:'Entra na próxima versão.', decidido_por:4, decidido_por_nome:'Ana Figueiredo', decidido_em:'2026-09-28T10:00:00Z',
+        criado_em:'2026-09-26T10:00:00Z', atualizado_em:'2026-09-28T10:00:00Z' },
+      { id:3, tipo:'bug', codigo:'BUG-3', titulo:'O placar não conta o feriado', status:'feito', versao_feito:'2.16.0',
+        autor:4, autor_nome:'Ana Figueiredo', votos:0, votei:false, comentarios:0, criado_em:'2026-09-20T10:00:00Z' }
+    ],
+    soma_feedback_comentarios: [{ id:'fc1', feedback_id:1, registro:17, corpo:'No Android também.', criado_em:'2026-09-27T12:00:00Z' }],
+    soma_feedback_votos: [{ feedback_id:1, registro:17 }, { feedback_id:1, registro:23 }, { feedback_id:2, registro:4 }],
     atividades_carga: [
       { registro:11, nome:'Bruno Tavares', abertas:3, fazendo:1, atrasadas:1, sinalizadas:1, horas_abertas:12 },
       { registro:17, nome:'Carla Mendonça', abertas:1, fazendo:0, atrasadas:0, sinalizadas:0, horas_abertas:0 }
@@ -147,15 +179,15 @@
       deliberacoes:null, status:'Preparação', owner_registro:4, recorrencia:'Única',
       grupos:['Órtese'], visibilidade:'equipe' }],
     evento_participantes: [
-      { id:'pp1', evento_id:'e1', registro:11, resposta:'vou', presente:null,
+      { id:'pp1', missao_id:'e1', registro:11, resposta:'vou', presente:null,
         membro:{ nome:'Bruno Tavares', cargo:'Pesquisador' } },
-      { id:'pp2', evento_id:'e1', registro:17, resposta:'talvez', presente:null,
+      { id:'pp2', missao_id:'e1', registro:17, resposta:'talvez', presente:null,
         membro:{ nome:'Carla Mendonça', cargo:'Desenvolvedora' } }
     ],
     evento_checklist: [
-      { id:'ck1', evento_id:'e1', item:'Reservar o auditório pelo SisCAS', feito:true, ordem:10 },
-      { id:'ck2', evento_id:'e1', item:'Enviar convite com RSVP', feito:true, ordem:20 },
-      { id:'ck3', evento_id:'e1', item:'Imprimir a lista de presença', feito:false, ordem:30 }
+      { id:'ck1', missao_id:'e1', item:'Reservar o auditório pelo SisCAS', feito:true, ordem:10 },
+      { id:'ck2', missao_id:'e1', item:'Enviar convite com RSVP', feito:true, ordem:20 },
+      { id:'ck3', missao_id:'e1', item:'Imprimir a lista de presença', feito:false, ordem:30 }
     ],
     portal_avisos: [],
     portal_documentos: [
@@ -195,7 +227,7 @@
     ps_edicoes: [
       { id:'ed1', nome:'Processo Seletivo 2026', slug:'ps-2026', descricao:'Edição do segundo semestre.',
         inscricoes_inicio:'2026-08-01', inscricoes_fim:'2026-08-31', status:'publicada', edital_url:null,
-        areas:['Hardware','Software'], criado_em:'2026-07-20T12:00:00Z' }
+        areas:['Hardware','Software','Mecânica','Simulação','Eletrônica'], criado_em:'2026-07-20T12:00:00Z' }
     ],
     ps_candidatos: [
       { id:'c1', edicao_id:'ed1', numero:1, protocolo:'PS26-001', nome:'Joana Ribeiro', email:'joana@ufmg.br',
@@ -512,52 +544,52 @@
       aprovado_em:null, motivo:null }
   ];
   DADOS.eventos_ext_participantes = [
-    { id:'pt1', evento_id:'ev1', registro:4, nome:'Ana Figueiredo', email:null, papel:'Apresentador(a) de trabalho', horas:null, ordem:1, declaracao:'K7QD-2M9X-P4TR' },
-    { id:'pt2', evento_id:'ev1', registro:null, nome:'Helena Prado', email:'helena.prado@exemplo.org', papel:'Coautor(a)', horas:16, ordem:2, declaracao:'3HVN-8Z2C-QW6E' },
-    { id:'pt3', evento_id:'ev2', registro:11, nome:'Bruno Tavares', email:null, papel:'Palestrante', horas:null, ordem:1, declaracao:null },
-    { id:'pt4', evento_id:'ev2', registro:17, nome:'Carla Mendonça', email:null, papel:null, horas:2, ordem:2, declaracao:null },
-    { id:'pt5', evento_id:'ev3', registro:4, nome:'Ana Figueiredo', email:null, papel:'Expositor(a)', horas:null, ordem:1, declaracao:null },
-    { id:'pt6', evento_id:'ev4', registro:11, nome:'Bruno Tavares', email:null, papel:null, horas:null, ordem:1, declaracao:null }
+    { id:'pt1', missao_id:'ev1', registro:4, nome:'Ana Figueiredo', email:null, papel:'Apresentador(a) de trabalho', horas:null, ordem:1, declaracao:'K7QD-2M9X-P4TR' },
+    { id:'pt2', missao_id:'ev1', registro:null, nome:'Helena Prado', email:'helena.prado@exemplo.org', papel:'Coautor(a)', horas:16, ordem:2, declaracao:'3HVN-8Z2C-QW6E' },
+    { id:'pt3', missao_id:'ev2', registro:11, nome:'Bruno Tavares', email:null, papel:'Palestrante', horas:null, ordem:1, declaracao:null },
+    { id:'pt4', missao_id:'ev2', registro:17, nome:'Carla Mendonça', email:null, papel:null, horas:2, ordem:2, declaracao:null },
+    { id:'pt5', missao_id:'ev3', registro:4, nome:'Ana Figueiredo', email:null, papel:'Expositor(a)', horas:null, ordem:1, declaracao:null },
+    { id:'pt6', missao_id:'ev4', registro:11, nome:'Bruno Tavares', email:null, papel:null, horas:null, ordem:1, declaracao:null }
   ];
   DADOS.eventos_ext_aprovacoes = [
-    { evento_id:'ev1', versao:1, registro:17, nome:'Carla Mendonça', decisao:'aprovada', parecer:null, criado_em:dvDia(-16) },
-    { evento_id:'ev1', versao:1, registro:11, nome:'Bruno Tavares', decisao:'aprovada', parecer:'Confere com a programação.', criado_em:dvDia(-15) },
-    { evento_id:'ev2', versao:1, registro:17, nome:'Carla Mendonça', decisao:'aprovada', parecer:null, criado_em:dvDia(-1) }
+    { missao_id:'ev1', versao:1, registro:17, nome:'Carla Mendonça', decisao:'aprovada', parecer:null, criado_em:dvDia(-16) },
+    { missao_id:'ev1', versao:1, registro:11, nome:'Bruno Tavares', decisao:'aprovada', parecer:'Confere com a programação.', criado_em:dvDia(-15) },
+    { missao_id:'ev2', versao:1, registro:17, nome:'Carla Mendonça', decisao:'aprovada', parecer:null, criado_em:dvDia(-1) }
   ];
   DADOS.eventos_ext_historico = [
-    { evento_id:'ev1', nome:'Ana Figueiredo', acao:'criou', detalhe:null, criado_em:dvDia(-17) },
-    { evento_id:'ev1', nome:'Ana Figueiredo', acao:'enviou', detalhe:'Versão 1', criado_em:dvDia(-17) },
-    { evento_id:'ev1', nome:'Carla Mendonça', acao:'aprovou', detalhe:'Versão 1 · 1 de 2', criado_em:dvDia(-16) },
-    { evento_id:'ev1', nome:'Bruno Tavares', acao:'aprovou', detalhe:'Versão 1 · 2 de 2 — Confere com a programação.', criado_em:dvDia(-15) },
-    { evento_id:'ev1', nome:'Bruno Tavares', acao:'emitiu', detalhe:'2 declarações de participação', criado_em:dvDia(-15) },
-    { evento_id:'ev2', nome:'Bruno Tavares', acao:'criou', detalhe:null, criado_em:dvDia(-2) },
-    { evento_id:'ev2', nome:'Bruno Tavares', acao:'enviou', detalhe:'Versão 1', criado_em:dvDia(-2) },
-    { evento_id:'ev2', nome:'Carla Mendonça', acao:'aprovou', detalhe:'Versão 1 · 1 de 2', criado_em:dvDia(-1) },
-    { evento_id:'ev3', nome:'Ana Figueiredo', acao:'criou', detalhe:null, criado_em:dvDia(-1) },
-    { evento_id:'ev4', nome:'Bruno Tavares', acao:'criou', detalhe:null, criado_em:dvDia(-4) }
+    { missao_id:'ev1', nome:'Ana Figueiredo', acao:'criou', detalhe:null, criado_em:dvDia(-17) },
+    { missao_id:'ev1', nome:'Ana Figueiredo', acao:'enviou', detalhe:'Versão 1', criado_em:dvDia(-17) },
+    { missao_id:'ev1', nome:'Carla Mendonça', acao:'aprovou', detalhe:'Versão 1 · 1 de 2', criado_em:dvDia(-16) },
+    { missao_id:'ev1', nome:'Bruno Tavares', acao:'aprovou', detalhe:'Versão 1 · 2 de 2 — Confere com a programação.', criado_em:dvDia(-15) },
+    { missao_id:'ev1', nome:'Bruno Tavares', acao:'emitiu', detalhe:'2 declarações de participação', criado_em:dvDia(-15) },
+    { missao_id:'ev2', nome:'Bruno Tavares', acao:'criou', detalhe:null, criado_em:dvDia(-2) },
+    { missao_id:'ev2', nome:'Bruno Tavares', acao:'enviou', detalhe:'Versão 1', criado_em:dvDia(-2) },
+    { missao_id:'ev2', nome:'Carla Mendonça', acao:'aprovou', detalhe:'Versão 1 · 1 de 2', criado_em:dvDia(-1) },
+    { missao_id:'ev3', nome:'Ana Figueiredo', acao:'criou', detalhe:null, criado_em:dvDia(-1) },
+    { missao_id:'ev4', nome:'Bruno Tavares', acao:'criou', detalhe:null, criado_em:dvDia(-4) }
   ];
   const DV_EV1 = { codigo:'EXT-1', nome:DADOS.eventos_ext[0].nome, descricao:DADOS.eventos_ext[0].descricao, modalidade:'presencial',
     local:DADOS.eventos_ext[0].local, data_inicio:dvData(-20), data_fim:dvData(-18), hora_inicio:null, hora_fim:null };
   DADOS.doc_emitidos = [
     { codigo:'Q8RT-5WZN-2KDH', tipo:'vinculo', documento:'NRO-DIR-004-4', revisao:'B', titulo:'Declaração de vínculo', emissor:'Diretoria',
-      registro:4, titular:'Ana Figueiredo', evento_id:null, participante_id:null, controle:'4F1A9C2E', emitido_em:dvDia(-30),
+      registro:4, titular:'Ana Figueiredo', missao_id:null, participante_id:null, controle:'4F1A9C2E', emitido_em:dvDia(-30),
       emitido_por:4, emitido_nome:'Ana Figueiredo', revogado_em:null, revogado_nome:null, revogado_motivo:null, consultas:2, consultado_em:dvDia(-28),
       dados:{ nome:'Ana Figueiredo', cpf:'000.000.000-00', cargo:'Gerente de projeto', departamento:'Engenharia', status:'Ativo', vigente:true,
         desde:'2024-03-01', ate:null, cidade:'Belo Horizonte', data:dvData(-30), texto_instituicao:DV_TEXTO, treinamentos:[], eventos:[] } },
     { codigo:'K7QD-2M9X-P4TR', tipo:'participacao', documento:'NRO-DIR-006-1', revisao:'A', titulo:'Declaração de participação', emissor:'Diretoria',
-      registro:4, titular:'Ana Figueiredo', evento_id:'ev1', participante_id:'pt1', controle:'B03D77A1', emitido_em:dvDia(-15),
+      registro:4, titular:'Ana Figueiredo', missao_id:'ev1', participante_id:'pt1', controle:'B03D77A1', emitido_em:dvDia(-15),
       emitido_por:11, emitido_nome:'Bruno Tavares', revogado_em:null, revogado_nome:null, revogado_motivo:null, consultas:0, consultado_em:null,
       dados:{ nome:'Ana Figueiredo', membro:true, papel:'Apresentador(a) de trabalho', horas:24, evento:DV_EV1, cidade:'Belo Horizonte',
         data:dvData(-15), texto_instituicao:DV_TEXTO } },
     { codigo:'3HVN-8Z2C-QW6E', tipo:'participacao', documento:'NRO-DIR-006-1', revisao:'A', titulo:'Declaração de participação', emissor:'Diretoria',
-      registro:null, titular:'Helena Prado', evento_id:'ev1', participante_id:'pt2', controle:'77C0E5D9', emitido_em:dvDia(-15),
+      registro:null, titular:'Helena Prado', missao_id:'ev1', participante_id:'pt2', controle:'77C0E5D9', emitido_em:dvDia(-15),
       emitido_por:11, emitido_nome:'Bruno Tavares', revogado_em:null, revogado_nome:null, revogado_motivo:null, consultas:1, consultado_em:dvDia(-10),
       dados:{ nome:'Helena Prado', membro:false, papel:'Coautor(a)', horas:16, evento:DV_EV1, cidade:'Belo Horizonte',
         data:dvData(-15), texto_instituicao:DV_TEXTO } }
   ];
   /* uma revogada, para a validação pública dizer isso */
   DADOS.doc_emitidos.push({ codigo:'M4TX-7RPD-9KCE', tipo:'vinculo', documento:'NRO-DIR-004-4', revisao:'B', titulo:'Declaração de vínculo',
-    emissor:'Diretoria', registro:4, titular:'Ana Figueiredo', evento_id:null, participante_id:null, controle:'0B9E44D1', emitido_em:dvDia(-60),
+    emissor:'Diretoria', registro:4, titular:'Ana Figueiredo', missao_id:null, participante_id:null, controle:'0B9E44D1', emitido_em:dvDia(-60),
     emitido_por:4, emitido_nome:'Ana Figueiredo', revogado_em:dvDia(-59), revogado_nome:'Ana Figueiredo',
     revogado_motivo:'Emitida antes de a ficha ser atualizada.', consultas:0, consultado_em:null,
     dados:{ ...DADOS.doc_emitidos[0].dados, data:dvData(-60), cargo:'Desenvolvedora' } });
@@ -585,6 +617,12 @@
       reagendado_por:null, slot:sl('s3', '14:00:00', '14:30:00') });
     DADOS.ps_envios.push({ id:1, tipo:'confirmacao', candidato_id:'c5', slot_id:'s3', criado_em:'2026-09-27T12:00:00Z',
       enviado_em:'2026-09-27T12:05:00Z', tentativas:0, erro:null });
+  }
+  /* ---- 2.19.2: Relações institucionais. Com window.__teste.ri, a Ana entra no NRO_RELAC. ---- */
+  if ((window.__teste || {}).ri){
+    DADOS.grupos.push({ id:90, nome:'NRO_RELAC', prefixo:'REL', ativo:true, cor:null, chave:null, reservado:false, ordem:9,
+      pai_id:null, quadro:false, responsaveis:[], descricao:'Relações institucionais' });
+    DADOS.membros[0].grupos.push('NRO_RELAC');
   }
   if ((window.__teste || {}).dir){
     DADOS.doc_emissores.push({ prefixo:'DIR', nome:'Diretoria', grupo_id:null, ordem:3 });
@@ -680,19 +718,19 @@
       recorrencia:'Única', serie_id:null, visibilidade:'equipe', cor:'#F5C36A', predefinido_id:null, lembretes:[] }
   ];
   DADOS.evento_participantes = [
-    { evento_id:'e1', registro:4, papel:'obrigatorio', resposta:'vou' }, { evento_id:'e1', registro:11, papel:'obrigatorio', resposta:'vou' },
-    { evento_id:'e1', registro:17, papel:'obrigatorio', resposta:'talvez' },
-    { evento_id:'e2', registro:11, papel:'obrigatorio', resposta:'vou' }, { evento_id:'e2', registro:4, papel:'obrigatorio', resposta:'pendente' },
-    { evento_id:'e3', registro:4, papel:'obrigatorio', resposta:'vou' },
-    { evento_id:'e4', registro:4, papel:'obrigatorio', resposta:'vou' }, { evento_id:'e4', registro:11, papel:'opcional', resposta:'pendente' },
-    { evento_id:'e5', registro:17, papel:'obrigatorio', resposta:'vou' }
+    { missao_id:'e1', registro:4, papel:'obrigatorio', resposta:'vou' }, { missao_id:'e1', registro:11, papel:'obrigatorio', resposta:'vou' },
+    { missao_id:'e1', registro:17, papel:'obrigatorio', resposta:'talvez' },
+    { missao_id:'e2', registro:11, papel:'obrigatorio', resposta:'vou' }, { missao_id:'e2', registro:4, papel:'obrigatorio', resposta:'pendente' },
+    { missao_id:'e3', registro:4, papel:'obrigatorio', resposta:'vou' },
+    { missao_id:'e4', registro:4, papel:'obrigatorio', resposta:'vou' }, { missao_id:'e4', registro:11, papel:'opcional', resposta:'pendente' },
+    { missao_id:'e5', registro:17, papel:'obrigatorio', resposta:'vou' }
   ];
-  DADOS.evento_externos = [{ id:'x1', evento_id:'e3', email:'contato@parceiro.com', nome:'Dra. Lima', resposta:'vou' }];
+  DADOS.evento_externos = [{ id:'x1', missao_id:'e3', email:'contato@parceiro.com', nome:'Dra. Lima', resposta:'vou' }];
   DADOS.calendario_itens = [{ id:'m1', titulo:'Prazo UFMG: trancamento parcial', tipo:'prazo', data_inicio:agDia(4), data_fim:agDia(4), observacao:null, registro:null }];
   DADOS.agenda_ausencias = [{ id:'au1', registro:17, tipo:'ferias', inicio:agDia(8) + 'T03:00:00Z', fim:agDia(12) + 'T03:00:00Z', dia_inteiro:true, observacao:null }];
   DADOS.atividades = [
-    { id:'a1', codigo:'ORT-14', titulo:'Calibrar o encoder da bancada 2', prazo:agDia(1), status:'fazendo', prioridade:'alta', responsavel:4 },
-    { id:'a2', codigo:'ORT-15', titulo:'Revisar o USRS', prazo:agDia(40), status:'a_fazer', prioridade:'media', responsavel:4 }
+    { id:'a1', codigo:'ORT-14', titulo:'Calibrar o encoder da bancada 2', prazo:agDia(1), status:'fazendo', prioridade:'alta', responsavel:4, arquivada:false },
+    { id:'a2', codigo:'ORT-15', titulo:'Revisar o USRS', prazo:agDia(40), status:'a_fazer', prioridade:'media', responsavel:4, arquivada:false }
   ];
   window.__agenda = DADOS;
 
@@ -748,7 +786,7 @@
     let linhas = (DADOS[tabela] || []).map(r => ({ ...r }));
     const filtros = [];
     const b = {
-      select(){ return b; },
+      select(cols){ b._cols = String(cols || ''); return b; },
       /* "slot.edicao_id": o supabase-js filtra por coluna da tabela embutida */
       eq(c, v){ filtros.push(r => c.split('.').reduce((o, k) => o?.[k], r) === v); return b; },
       neq(c, v){ filtros.push(r => r[c] !== v); return b; },
@@ -770,7 +808,12 @@
       then(ok){
         if (b._muda){ DADOS[tabela].filter(r => filtros.every(f => f(r))).forEach(r => Object.assign(r, b._muda)); b._muda = null;
           linhas = DADOS[tabela].map(r => ({ ...r })); }
-        const res = linhas.filter(r => filtros.every(f => f(r)));
+        let res = linhas.filter(r => filtros.every(f => f(r)));
+        /* os horários do PS com os agendamentos e o candidato embutidos,
+           como a agenda de quem conduz lê (2.17.1) */
+        if (tabela === 'ps_slots' && /ps_agendamentos\(/.test(b._cols || ''))
+          res = res.map(sl => ({ ...sl, ps_agendamentos: (DADOS.ps_agendamentos || []).filter(a => a.slot_id === sl.id)
+            .map(a => ({ id:a.id, candidato: (DADOS.ps_candidatos || []).find(c => c.id === a.candidato_id) || null })) }));
         return Promise.resolve(ok({ data: b._um ? (res[0] || null) : res, error: null }));
       }
     };
@@ -780,8 +823,186 @@
   window.supabase = {
     createClient(){
       return {
-        from: builder,
+        /* Realtime (2.19.2, as salas): canais de broadcast de mentira. window.__canais guarda os inscritos por
+           tópico; window.__canalDispara(topico) entrega um "mudou" como se viesse de outro aparelho ou do banco;
+           window.__enviados guarda o que esta página avisou. */
+        channel: topico => {
+          const c = { topico, ouvintes: [],
+            on(tipo, filtro, cb){ this.ouvintes.push({ tipo, evento: filtro && filtro.event, cb }); return this; },
+            subscribe(cb){ ((window.__canais ||= {})[topico] ||= []).push(c); if (cb) setTimeout(() => cb('SUBSCRIBED'), 0); return this; },
+            send(m){ (window.__enviados ||= []).push({ topico, ...m }); return Promise.resolve('ok'); } };
+          window.__canalDispara ||= t => ((window.__canais || {})[t] || []).forEach(x => x.ouvintes.forEach(o => o.cb({ event:'mudou', payload:{} })));
+          return c;
+        },
+        removeChannel: c => { const l = (window.__canais || {})[c.topico]; if (l) window.__canais[c.topico] = l.filter(x => x !== c); return Promise.resolve('ok'); },
+        /* toda tabela lida e toda RPC chamada, em ordem (window.__tabelas, window.__chamadas) */
+        from: (t, ...resto) => { (window.__tabelas ||= []).push(t); return builder(t, ...resto); },
         rpc: async (nome, args) => {
+          (window.__chamadas ||= []).push(nome);
+          /* ---- 2.19.2: Relações institucionais (window.__riDB). Sem window.__teste.ri, só a indicação funciona. ---- */
+          if (/^ri_/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const ok = d => ({ data:{ status:'ok', ...(d || {}) }, error:null }), nega = { data:{ status:'sem_permissao' }, error:null };
+            const pode = !!(window.__teste || {}).ri;
+            const D = window.__riDB ||= (() => {
+              const c = (id, nome, extra) => ({ id, natureza:'pessoa', nome, cargo:null, organizacao_id:null, funcao:'stakeholder', proximidade:2, estagio:'identificado',
+                influencia:null, interesse:null, tags:[], cidade:null, resumo:null, responsavel:4, proximo_passo:null, proximo_em:null, ativo:true,
+                atualizado_em:'2026-10-01T12:00:00Z', canais:[], notas:null, origem:null, ...extra });
+              return { seq:100, contatos:[
+                  c(1, 'Hospital das Clínicas', { natureza:'organizacao', cargo:'Hospital', funcao:'saude', proximidade:3, estagio:'conhecendo' }),
+                  c(2, 'Ana Souza', { cargo:'Diretora clínica', organizacao_id:1, funcao:'parceiro', proximidade:4, estagio:'colaborando', influencia:5, interesse:4,
+                    tags:['Reabilitação'], resumo:'Abre portas no HC.', canais:[{ tipo:'email', valor:'ana@hc.br' }] }),
+                  c(3, 'Bruno Lima', { funcao:'investidor', proximidade:2, estagio:'primeiro_contato' }),
+                  c(4, 'Fundação Apoio', { natureza:'organizacao', funcao:'fomento', proximidade:1, estagio:'identificado' }),
+                  c(5, 'Carla Dias', { funcao:'mentor', proximidade:5, estagio:'parceria', ativo:false })],
+                relacoes:[{ id:1, a:2, b:3, tags:['Amizade'], sinal:'positiva', forca:4, nota:null }],
+                interacoes:[{ id:1, data:'2026-07-01', tipo:'reuniao', resumo:'Apresentação.', contatos:[2], missao_id:null, autor:4 }],
+                missoes:[{ id:1, nome:'Feira Hospitalar', tipo:'feira', status:'confirmado', inicio:'2099-11-10', fim:'2099-11-12', local:'São Paulo', modalidade:'presencial',
+                  link:null, organizador:null, objetivos:['Conhecer stakeholders'], publico:null, custo:null, participantes:[4], contatos:[2], resultados:null, avaliacao:null, notas:null }],
+                indicacoes:[{ id:1, tipo:'contato', autor:11, dados:{ nome:'Tio Carlos', por_que:'Potencial investidor', relacao:'tio' }, status:'nova', resposta:null, criado_em:'2026-10-10T12:00:00Z' }] };
+            })();
+            const nm = r => DADOS.membros.find(m => m.registro === r)?.nome || null;
+            const json = c => ({ ...c, organizacao:D.contatos.find(o => o.id === c.organizacao_id)?.nome || null, responsavel_nome:nm(c.responsavel),
+              ultima_interacao:D.interacoes.filter(i => i.contatos.includes(c.id)).map(i => i.data).sort().at(-1) || null,
+              n_interacoes:D.interacoes.filter(i => i.contatos.includes(c.id)).length });
+            const ev = e => ({ ...e, participantes_nomes:e.participantes.map(nm), contatos_lista:e.contatos.map(i => ({ id:i, nome:D.contatos.find(c => c.id === i)?.nome })) });
+            const a = args || {};
+            if (nome === 'ri_indicar'){ const id = ++D.seq; D.indicacoes.unshift({ id, tipo:a.p.tipo, autor:4, dados:a.p.dados, status:'nova', resposta:null, criado_em:new Date().toISOString() }); return ok({ id }); }
+            if (nome === 'ri_minhas_indicacoes') return ok({ indicacoes:D.indicacoes.filter(i => i.autor === 4) });
+            if (!pode) return nega;
+            if (nome === 'ri_dados') return ok({ contatos:D.contatos.map(json), relacoes:D.relacoes, equipe:[{ registro:4, nome:'Ana Figueiredo' }],
+              indicacoes_novas:D.indicacoes.filter(i => ['nova', 'em_analise'].includes(i.status)).length });
+            if (nome === 'ri_contato_ler'){
+              const c = D.contatos.find(x => x.id === a.p_id); if (!c) return { data:{ status:'nao_encontrado' }, error:null };
+              return ok({ contato:json(c), interacoes:D.interacoes.filter(i => i.contatos.includes(c.id)).map(i => ({ ...i, autor_nome:nm(i.autor) })),
+                relacoes:D.relacoes.filter(r => r.a === c.id || r.b === c.id), membros:D.contatos.filter(m => m.organizacao_id === c.id),
+                missoes:D.missoes.filter(e => e.contatos.includes(c.id)) });
+            }
+            if (nome === 'ri_contato_salvar'){
+              const p = a.p; if (!String(p.nome || '').trim()) return { data:{ status:'invalido', campo:'nome' }, error:null };
+              let c = p.id ? D.contatos.find(x => x.id === p.id) : null;
+              if (!c){ c = { id:++D.seq }; D.contatos.push(c); }
+              Object.assign(c, { ...p, id:c.id, nome:p.nome.trim(), atualizado_em:new Date().toISOString() });
+              return ok({ id:c.id, contato:json(c) });
+            }
+            if (nome === 'ri_contato_estagio'){ const c = D.contatos.find(x => x.id === a.p_id); c.estagio = a.p_estagio; return ok(); }
+            if (nome === 'ri_contato_excluir'){ D.contatos = D.contatos.filter(x => x.id !== a.p_id); D.relacoes = D.relacoes.filter(r => r.a !== a.p_id && r.b !== a.p_id); return ok(); }
+            if (nome === 'ri_relacao_salvar'){
+              const p = a.p, x = Math.min(p.a, p.b), y = Math.max(p.a, p.b);
+              let r = D.relacoes.find(r2 => r2.a === x && r2.b === y); if (!r){ r = { id:++D.seq, a:x, b:y }; D.relacoes.push(r); }
+              Object.assign(r, { tags:p.tags || [], sinal:p.sinal, forca:p.forca, nota:p.nota || null }); return ok({ relacao:r });
+            }
+            if (nome === 'ri_relacao_excluir'){ D.relacoes = D.relacoes.filter(r => r.id !== a.p_id); return ok(); }
+            if (nome === 'ri_interacao_salvar'){
+              const p = a.p; let i = p.id ? D.interacoes.find(x => x.id === p.id) : null;
+              if (!i){ i = { id:++D.seq, autor:4 }; D.interacoes.push(i); }
+              Object.assign(i, { data:p.data, tipo:p.tipo, resumo:p.resumo, contatos:p.contatos, missao_id:p.missao_id || null });
+              if (p.proximo_passo) D.contatos.filter(c => p.contatos.includes(c.id)).forEach(c => { c.proximo_passo = p.proximo_passo; c.proximo_em = p.proximo_em; });
+              return ok({ id:i.id });
+            }
+            if (nome === 'ri_interacao_excluir'){ D.interacoes = D.interacoes.filter(i => i.id !== a.p_id); return ok(); }
+            if (nome === 'ri_missoes_listar') return ok({ missoes:D.missoes.map(ev) });
+            if (nome === 'ri_missao_salvar'){
+              const p = a.p; let e = p.id ? D.missoes.find(x => x.id === p.id) : null;
+              if (!e){ e = { id:++D.seq }; D.missoes.push(e); }
+              Object.assign(e, { ...p, id:e.id }); return ok({ id:e.id, evento:ev(e) });
+            }
+            if (nome === 'ri_missao_excluir'){ D.missoes = D.missoes.filter(e => e.id !== a.p_id); return ok(); }
+            if (nome === 'ri_indicacoes_listar') return ok({ indicacoes:D.indicacoes.map(i => ({ ...i, autor_nome:nm(i.autor) })) });
+            if (nome === 'ri_indicacao_decidir'){
+              const i = D.indicacoes.find(x => x.id === a.p_id);
+              if (a.p_acao === 'recusar' && !a.p_resposta) return { data:{ status:'resposta_obrigatoria' }, error:null };
+              i.status = { em_analise:'em_analise', aceitar:'aceita', recusar:'recusada' }[a.p_acao]; i.resposta = a.p_resposta || i.resposta;
+              if (a.p_acao === 'aceitar' && i.tipo === 'contato'){ const c = { id:++D.seq, natureza:'pessoa', nome:i.dados.nome, funcao:'stakeholder', proximidade:1,
+                estagio:'identificado', tags:[], canais:[], ativo:true, responsavel:4, origem:'Indicação' }; D.contatos.push(c); i.contato_id = c.id; return ok({ contato_id:c.id }); }
+              return ok();
+            }
+            /* financiamento */
+            D.editais ||= [{ id:1, codigo:'EDT-001', titulo:'Centelha MG', financiador:'FAPEMIG', financiador_id:null, chamada:'05/2026', link:'https://fapemig.br/centelha',
+              resumo:'Ideias inovadoras.', tipo:'inovacao', status:'preparando', valor_maximo:80000, valor_solicitado:null, valor_aprovado:null, contrapartida:null,
+              abertura:'2026-10-01', prazo:'2099-11-30', resultado:null, duracao_meses:12, proponente:'fundacao', responsavel_submissao:'FUNDEP', responsavel:4,
+              pela_ufmg:true, outro_grupo:null, empresa:null, temas:['Saúde'], arranjo:[{ rotulo:'TRL mínimo', valor:'3' }],
+              cronograma:[{ data:'2026-10-01', etapa:'Abertura', feito:true }, { data:'2099-11-30', etapa:'Submissão', feito:false }],
+              checklist:[{ item:'Carta de anuência', feito:false }, { item:'Plano de trabalho', feito:true }], corpo:'## Elegibilidade\nStartups.', fonte_md:null,
+              contatos:[1], equipe:[4], notas:null, atualizado_em:'2026-10-10T12:00:00Z' }];
+            const edj = e => ({ ...e, responsavel_nome:nm(e.responsavel), checklist_total:e.checklist.length, checklist_feitos:e.checklist.filter(c => c.feito).length,
+              proxima_etapa:e.cronograma.filter(c => !c.feito && c.data).sort((x, y) => x.data.localeCompare(y.data))[0] || null,
+              contatos_lista:e.contatos.map(i => ({ id:i, nome:D.contatos.find(c => c.id === i)?.nome })), equipe_nomes:e.equipe.map(r => ({ registro:r, nome:nm(r) })) });
+            if (nome === 'ri_resumo') return ok({ contatos:D.contatos.filter(c => c.ativo).length, organizacoes:D.contatos.filter(c => c.ativo && c.natureza === 'organizacao').length,
+              passos_atrasados:0, missoes_proximas:D.missoes.length, missoes_realizadas:0, editais_ativos:D.editais.filter(e => ['radar', 'avaliando', 'preparando', 'submetido'].includes(e.status)).length,
+              prazos_30:0, em_execucao:0, indicacoes_abertas:D.indicacoes.filter(i => ['nova', 'em_analise'].includes(i.status)).length });
+            if (nome === 'ri_editais_listar') return ok({ editais:D.editais.map(edj), equipe:[{ registro:4, nome:'Ana Figueiredo' }] });
+            if (nome === 'ri_edital_ler'){ const e = D.editais.find(x => x.id === a.p_id); return e ? ok({ edital:edj(e) }) : { data:{ status:'nao_encontrado' }, error:null }; }
+            if (nome === 'ri_edital_salvar'){
+              const p = a.p; if (!String(p.titulo || '').trim()) return { data:{ status:'invalido', campo:'titulo' }, error:null };
+              let e = p.id ? D.editais.find(x => x.id === p.id) : null;
+              if (!e){ e = { id:++D.seq, codigo:'EDT-' + String(D.editais.length + 1).padStart(3, '0') }; D.editais.push(e); }
+              Object.assign(e, { tipo:'pesquisa', status:'radar', proponente:'coordenador', temas:[], arranjo:[], cronograma:[], checklist:[], contatos:[], equipe:[], ...p, id:e.id, codigo:e.codigo,
+                cronograma:(p.cronograma || []).map(c => ({ ...c, feito:!!c.feito })), checklist:(p.checklist || []).map(c => ({ ...c, feito:!!c.feito })), atualizado_em:new Date().toISOString() });
+              return ok({ id:e.id, edital:edj(e) });
+            }
+            if (nome === 'ri_edital_status'){ D.editais.find(x => x.id === a.p_id).status = a.p_status; return ok(); }
+            if (nome === 'ri_edital_marcar'){ D.editais.find(x => x.id === a.p_id)[a.p_lista][a.p_indice].feito = a.p_feito; return ok(); }
+            if (nome === 'ri_edital_excluir'){ D.editais = D.editais.filter(x => x.id !== a.p_id); return ok(); }
+            return { data:null, error:{ message:'stub ri: ' + nome } };
+          }
+          /* ---- 2.19.2: Recursos (catálogo colaborativo). window.__teste.recursos = { gestao:false } tira a gestão. ---- */
+          if (/^recursos?_/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const T = (window.__teste || {}).recursos || {};
+            const gestao = T.gestao !== undefined ? T.gestao : DADOS.perfis[0].papel === 'admin';
+            const ok = d => ({ data:d, error:null });
+            const DB = window.__rcsDB ||= (() => {
+              const mk = (slug, nome, url, pub, tipo, funcao, extra = {}) => ({ id:'id-' + slug, slug, nome, url, publicador:pub, logo_url:null, tipo, funcao,
+                instrucoes_baixar:null, instrucoes_usar:null, tags:[], plataformas:['Windows'], acesso:['gratis'], status:'ativo', padrao_nro:false,
+                criado_em:'2026-10-01T12:00:00Z', atualizado_em:'2026-10-01T12:00:00Z', criado_por_nome:'Ana Figueiredo', atualizado_por_nome:'Ana Figueiredo', notas:{}, comentarios_lista:[], ...extra });
+              return { lista:[
+                mk('visual-studio-code', 'Visual Studio Code', 'https://code.visualstudio.com', 'Microsoft', 'software', 'Editor de código e IDE padrão da equipe.',
+                  { padrao_nro:true, tags:['IDE', 'Editor', 'VS Code'], plataformas:['Windows', 'macOS', 'Linux'], instrucoes_baixar:'1. Abra code.visualstudio.com.\n2. Instale.', 
+                    instrucoes_usar:'Use o Git Bash como terminal:\n`git --version`\n- Extensão C/C++\n- Extensão PlatformIO', notas:{ 11:5, 17:4 },
+                    comentarios_lista:[{ id:'c1', registro:11, autor:'Bruno Tavares', texto:'Settings Sync salvou a minha vida.', criado_em:'2026-10-05T12:00:00Z' }] }),
+                mk('git-bash-git-for-windows', 'Git Bash (Git for Windows)', 'https://gitforwindows.org', 'Git for Windows', 'software', 'Controle de versão e terminal no Windows.',
+                  { padrao_nro:true, tags:['Git', 'Terminal', 'Controle de versão'] }),
+                mk('figma', 'Figma', 'https://www.figma.com', 'Figma', 'software', 'Design de interfaces e protótipos.', { tags:['Design', 'Estudante'], plataformas:['Web', 'macOS'], acesso:['freemium', 'estudante'], notas:{ 11:4 } }),
+                mk('platformio-ide', 'PlatformIO IDE', 'https://platformio.org', 'PlatformIO Labs', 'software', 'Compila e grava microcontroladores pelo VS Code.',
+                  { tags:['Gravação', 'Microcontroladores', 'ESP32', 'STM32', 'VS Code'], plataformas:['VS Code', 'Windows', 'Linux'], notas:{ 11:5, 17:5, 23:3 } }),
+                mk('esptool', 'esptool', 'https://github.com/espressif/esptool', 'Espressif', 'software', 'Grava e apaga a flash de ESP32.', { tags:['Gravação', 'Microcontroladores', 'ESP32'], plataformas:['Windows', 'macOS', 'Linux'] }),
+                mk('ghidra', 'Ghidra', 'https://github.com/NationalSecurityAgency/ghidra', 'NSA', 'repositorio', 'Engenharia reversa de software.', { tags:['NSA', 'Engenharia reversa', 'Ainda não testada'], plataformas:['Windows', 'macOS', 'Linux'] }),
+                mk('github-student-developer-pack', 'GitHub Student Developer Pack', 'https://education.github.com/pack', 'GitHub', 'beneficio', 'Ofertas gratuitas para estudantes.', { tags:['Estudante', 'Domínio', 'Hospedagem'], plataformas:['Web'], acesso:['estudante'], notas:{ 11:5 } }),
+                mk('ferramenta-antiga', 'Ferramenta antiga', 'https://antiga.example.com', 'Alguém', 'software', 'Descontinuada.', { status:'inativo', tags:['Legado'] })],
+                prox:100 };
+            })();
+            const resumo = (x, completo) => { const v = Object.values(x.notas || {}); const n = v.length;
+              const base = { id:x.id, slug:x.slug, nome:x.nome, url:x.url, publicador:x.publicador, logo_url:x.logo_url, tipo:x.tipo, funcao:x.funcao, tags:x.tags, plataformas:x.plataformas,
+                acesso:x.acesso, status:x.status, padrao_nro:x.padrao_nro, criado_em:x.criado_em, atualizado_em:x.atualizado_em, media: n ? Math.round(v.reduce((a, b) => a + b, 0) / n * 100) / 100 : null,
+                avaliacoes:n, comentarios:x.comentarios_lista.length, minha:(x.notas || {})[4] ?? null };
+              return completo ? { ...base, instrucoes_baixar:x.instrucoes_baixar, instrucoes_usar:x.instrucoes_usar, criado_por_nome:x.criado_por_nome, atualizado_por_nome:x.atualizado_por_nome,
+                comentarios_lista:x.comentarios_lista.map(c => ({ ...c, meu:c.registro === 4, pode_apagar:c.registro === 4 || gestao })) } : base; };
+            const chave = u => String(u).toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/[\/#?]+$/, '');
+            const achar = slug => DB.lista.find(x => x.slug === slug);
+            if (nome === 'recursos_listar') return ok({ status:'ok', gestao, recursos:DB.lista.map(x => resumo(x, false)) });
+            if (nome === 'recurso_ler'){ const x = achar(args.p_slug); return ok(x ? { status:'ok', gestao, recurso:resumo(x, true) } : { status:'nao_encontrado' }); }
+            if (nome === 'recurso_avaliar'){ const x = achar(args.p_slug); if (!x) return ok({ status:'nao_encontrado' });
+              if (!args.p_estrelas) delete x.notas[4]; else x.notas[4] = args.p_estrelas; return ok({ status:'ok', recurso:resumo(x, false) }); }
+            if (nome === 'recurso_comentar'){ const x = achar(args.p_slug); if (!x) return ok({ status:'nao_encontrado' }); const t = String(args.p_texto || '').trim(); if (!t) return ok({ status:'invalido' });
+              x.comentarios_lista.push({ id:'c' + (DB.prox++), registro:4, autor:'Ana Figueiredo', texto:t, criado_em:'2026-10-12T12:00:00Z' });
+              return ok({ status:'ok', comentarios_lista:resumo(x, true).comentarios_lista }); }
+            if (nome === 'recurso_comentario_apagar'){ for (const x of DB.lista){ const i = x.comentarios_lista.findIndex(c => c.id === args.p_id); if (i >= 0){ x.comentarios_lista.splice(i, 1); return ok({ status:'ok', comentarios_lista:resumo(x, true).comentarios_lista }); } } return ok({ status:'nao_encontrado' }); }
+            if (nome === 'recurso_salvar'){
+              const p = args.p || {};
+              if (!/^https?:\/\/[^\s/]+\.[^\s/]+/i.test(p.url || '')) return ok({ status:'invalido', campo:'url' });
+              if (!String(p.nome || '').trim()) return ok({ status:'invalido', campo:'nome' });
+              if (!String(p.funcao || '').trim()) return ok({ status:'invalido', campo:'funcao' });
+              const dup = DB.lista.find(x => chave(x.url) === chave(p.url) && x.id !== p.id); if (dup) return ok({ status:'duplicado', slug:dup.slug, nome:dup.nome });
+              const campos = { url:p.url, nome:p.nome, publicador:p.publicador || null, logo_url:p.logo_url || null, tipo:p.tipo, funcao:p.funcao, instrucoes_baixar:p.instrucoes_baixar || null,
+                instrucoes_usar:p.instrucoes_usar || null, tags:p.tags || [], plataformas:p.plataformas || [], acesso:p.acesso || [], status:p.status || 'ativo' };
+              if (p.id){ const x = DB.lista.find(y => y.id === p.id); Object.assign(x, campos, { atualizado_por_nome:'Ana Figueiredo' }); if (gestao && 'padrao_nro' in p) x.padrao_nro = !!p.padrao_nro; return ok({ status:'ok', slug:x.slug }); }
+              const slug = String(p.nome).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+              DB.lista.push({ id:'id-' + slug, slug, ...campos, padrao_nro:gestao && !!p.padrao_nro, criado_em:'2026-10-12T12:00:00Z', atualizado_em:'2026-10-12T12:00:00Z',
+                criado_por_nome:'Ana Figueiredo', atualizado_por_nome:'Ana Figueiredo', notas:{}, comentarios_lista:[] });
+              return ok({ status:'ok', slug });
+            }
+          }
           if (nome === 'notificacoes_marcar_lidas') return { data: 1, error: null };
           /* ---- v32: o sino que não empilha, a fila e o aparelho ---- */
           if (nome === 'notificacoes_limpar'){
@@ -857,12 +1078,828 @@
             return { data:{ status:'ok', id:1, email:'ana@neurodynamics.dev',
                             modo: f.modo || 'imediato' }, error:null };
           }
+          /* ---- 2.17.0: a foto, os relatos e os cartões ---- */
+          const eAdm = () => DADOS.perfis[0].papel === 'admin';
+          const regra = (k, p) => (window.__rpcs ||= []).push({ nome:k, p });
+          /* ---- 2.18.0: os papéis por grupo ---- */
+          const papeisStub = () => { const pf = DADOS.perfis[0];
+            return pf.papeis || ['admin','pessoal','lideranca','selecao','leitura'].filter(k => k === (pf.papel || 'leitura') || k === 'leitura'); };
+          if (nome === 'conta_ativa') return { data: !(window.__teste || {}).bloqueada, error:null };
+          /* ---- 2.19.1: gestores do LABBIO (db/2.19.1_labbio_base.sql).
+             window.__teste.labbio = { conta: 'nao_gestor'|'convidado'|'ativo'|'revogado',
+             principal: true|false }. Sem ele, a conta é de membro (nao_gestor).
+             Para conta externa, qualquer RPC fora de labbio_* falha como na
+             porta da API (window.__barradas anota quais). ---- */
+          {
+            const LB = (window.__teste || {}).labbio;
+            const externa = LB && LB.conta && LB.conta !== 'nao_gestor';
+            if (externa && !/^labbio_/.test(nome)){
+              (window.__barradas ||= []).push(nome);
+              return { data:null, error:{ code:'42501', message:'Esta conta é do painel do LABBIO e não acessa o portal da equipe.' } };
+            }
+            if (/^labbio_(eu|gestores_lista|convidar|aceitar|principal|revogar)$/.test(nome)){
+              (window.__rpcs ||= []).push({ nome, p:args });
+              const G = window.__lbG ||= [
+                { id:'g1', nome:'Gestora Um', email:'gestora@labbio.test', situacao:'ativo', principal:true, convidado_em:'2026-10-01T12:00:00Z',
+                  aceito_em:'2026-10-02T12:00:00Z', revogado_em:null, revogado_motivo:null, ultimo_acesso:'2026-10-10T12:00:00Z', tem_conta:true, convidado_por:'Ana Figueiredo' },
+                { id:'g2', nome:'Gestor Dois', email:'dois@labbio.test', situacao:'convidado', principal:false, convidado_em:'2026-10-09T12:00:00Z',
+                  aceito_em:null, revogado_em:null, revogado_motivo:null, ultimo_acesso:null, tem_conta:false, convidado_por:'Gestora Um' }];
+              const ativo = LB && LB.conta === 'ativo';
+              const souAdm = !externa && (DADOS.perfis[0].papel === 'admin');
+              const eu = ativo ? { ...G[0], principal: LB.principal !== false } : null;
+              const r = d => ({ data:d, error:null });
+              /* o admin do SOMA (conta de membro) entra no painel com status próprio (2.19.1_labbio_admin) */
+              if (nome === 'labbio_eu' && souAdm) return r({ status:'admin', gestor:{ id:null, nome:'Ana Figueiredo (admin do SOMA)',
+                email:'ana@nro.dev', situacao:'ativo', principal:false, admin:true } });
+              if (nome === 'labbio_eu') return r(!LB || LB.conta === 'nao_gestor' ? { status:'nao_gestor' }
+                : LB.conta === 'ativo' ? { status:'ok', gestor:eu } : { status:LB.conta });
+              if (nome === 'labbio_aceitar'){
+                if (!/^[0-9a-f]{48}$/.test(args.p_token || '')) return r({ status:'invalido' });
+                if (args.p_token.startsWith('0')) return r({ status:'expirado' });
+                LB.conta = 'ativo'; return r({ status:'ok', gestor:{ ...G[0] } });
+              }
+              if (!(ativo || souAdm)) return r({ status:'sem_permissao' });
+              if (nome === 'labbio_gestores_lista') return r({ status:'ok', gestores: structuredClone(G) });
+              if (nome === 'labbio_convidar'){
+                const e = String(args.p_email || '').trim().toLowerCase();
+                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return r({ status:'email_invalido' });
+                if (!String(args.p_nome || '').trim()) return r({ status:'nome_obrigatorio' });
+                if (/@nro\.dev$/.test(e)) return r({ status:'email_de_membro' });
+                if (G.some(g => g.email === e && g.situacao === 'ativo')) return r({ status:'ja_ativo' });
+                G.push({ id:'g' + (G.length + 1), nome:args.p_nome.trim(), email:e, situacao:'convidado', principal:false,
+                  convidado_em:new Date().toISOString(), tem_conta:false, convidado_por: souAdm ? 'Ana Figueiredo' : 'Gestora Um' });
+                return r({ status:'ok', id:'g' + G.length });
+              }
+              const podeEstrela = souAdm || (eu && eu.principal);
+              if (nome === 'labbio_principal'){
+                if (!podeEstrela) return r({ status:'sem_permissao' });
+                const g = G.find(x => x.id === args.p_id && x.situacao === 'ativo'); if (!g) return r({ status:'invalido' });
+                G.forEach(x => x.principal = x === g); return r({ status:'ok' });
+              }
+              if (nome === 'labbio_revogar'){
+                if (!podeEstrela) return r({ status:'sem_permissao' });
+                const g = G.find(x => x.id === args.p_id && x.situacao !== 'revogado'); if (!g) return r({ status:'invalido' });
+                if (g.principal && G.some(x => x !== g && x.situacao === 'ativo')) return r({ status:'transfira_antes' });
+                Object.assign(g, { situacao:'revogado', principal:false, revogado_em:new Date().toISOString(), revogado_motivo:args.p_motivo || null });
+                return r({ status:'ok' });
+              }
+            }
+          }
+          /* ---- 2.19.1: painel do LABBIO (consultas, L3) e pedido de biometria (L5).
+             As consultas pedem window.__teste.labbio.conta === 'ativo'. O pedido do
+             membro lê window.__teste.biometria = { etapa, temAcesso, semDados }
+             (sem ele: nenhum pedido). ---- */
+          if (/^labbio_(inicio|membros|membro|checkins|treinamentos|revogacoes|revogacao_confirmar|solicitacoes|pedido_ler|pedido_decidir|pedido_meu|pedido_criar|pedido_enviar|pedido_cancelar|pedido_pessoal)$/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const LB = (window.__teste || {}).labbio, BI = (window.__teste || {}).biometria || {};
+            const r = d => ({ data:d, error:null });
+            // conta_labbio(): gestor ativo ou o admin do SOMA com a conta de membro
+            const gestor = (LB && LB.conta === 'ativo') || (!(LB && LB.conta && LB.conta !== 'nao_gestor') && DADOS.perfis[0].papel === 'admin');
+            const pessoa = (registro, nome, extra = {}) => ({ registro, nome, foto_url:null, email_nro: nome.split(' ')[0].toLowerCase() + '@neurodynamics.dev',
+              email_pessoal:null, telefone:'(31) 90000-0000', status:'Ativo', cargo:'Pesquisador(a)', area:'Órtese', trainee:false, gestor:4,
+              gestor_nome:'Ana Figueiredo', termo:{ situacao:'pendente', enviado_em:null, conferido_em:null, arquivo:null },
+              acesso:{ estado:'nao_possui', sub:null }, ...extra });
+            const PED = window.__lbP ||= {
+              id:'p1', registro:11, nome:'Bruno Tavares', protocolo:'SOL-0042', etapa: BI.etapa || 'labbio', versao:1, devolvido_por:null,
+              justificativa:'Projeto da órtese, bancada do LABBIO', tempo:'Até o fim do semestre', encaminhado_em:'2026-10-10T12:00:00Z',
+              criado_em:'2026-10-09T12:00:00Z', atualizado_em:'2026-10-10T12:00:00Z',
+              enviada:{ versao:1, dados:{ nome_civil:'Bruno Tavares da Silva', cpf:'52998224725', matricula:'2021012345', nome:'Bruno Tavares',
+                confirmado_em:'2026-10-01T12:00:00Z' }, foto_path:'11/p1/1.jpg', enviada_em:'2026-10-09T12:00:00Z' },
+              eventos:[{ versao:1, de:'rascunho', para:'pessoal', ator:'membro', ator_nome:'Bruno Tavares', motivo:null, quando:'2026-10-09T12:00:00Z' },
+                       { versao:1, de:'pessoal', para:'labbio', ator:'pessoal', ator_nome:'Carla Mendonça', motivo:null, quando:'2026-10-10T12:00:00Z' }] };
+            const REV = window.__lbR ||= [{ id:'rv1', registro:46, nome:'Lia Moura', status_de:'Ativo', status_para:'Desligado',
+              criada_em:'2026-10-08T12:00:00Z', confirmada_em:null, observacao:null, confirmada_por:null }];
+            const evento = (de, para, ator, motivo) => PED.eventos.push({ versao:PED.versao, de, para, ator, ator_nome: ator === 'labbio' ? 'Gestora Um' : 'Bruno Tavares', motivo: motivo || null, quando:new Date().toISOString() });
+            // o lado do membro
+            if (nome === 'labbio_pedido_meu') return r({ status:'ok', tem_acesso: !!BI.temAcesso,
+              dados: BI.semDados ? null : { nome_civil:'Ana Figueiredo', cpf:'52998224725', matricula:'2020000004', nome:'Ana Figueiredo', confirmado_em:'2026-10-01T12:00:00Z' },
+              campos:['nome_civil','cpf','matricula'], pedido: BI.etapa ? { ...structuredClone(PED), registro:4, nome:'Ana Figueiredo' } : null });
+            if (nome === 'labbio_pedido_criar'){
+              if (BI.temAcesso) return r({ status:'ja_tem_acesso' });
+              if (String(args.p_justificativa || '').trim().length < 10) return r({ status:'invalido', campo:'justificativa' });
+              if (!String(args.p_tempo || '').trim()) return r({ status:'invalido', campo:'tempo' });
+              Object.assign(PED, { etapa:'rascunho', versao:1, justificativa:args.p_justificativa, tempo:args.p_tempo, encaminhado_em:null, eventos:[] });
+              BI.etapa = 'rascunho';
+              return r({ status:'ok', pedido: structuredClone(PED) });
+            }
+            if (nome === 'labbio_pedido_enviar'){
+              if (args.p_versao !== PED.versao) return r({ status:'conflito' });
+              if (BI.semDados) return r({ status:'dados_pendentes' });
+              if (!args.p_foto_path || !(window.__uploads || []).some(u => u.bucket === 'biometria' && u.caminho === args.p_foto_path)) return r({ status:'foto_pendente' });
+              const para = PED.etapa === 'devolvido' && PED.devolvido_por === 'labbio' ? 'labbio' : 'pessoal';
+              evento(PED.etapa, para, 'membro'); PED.etapa = para; BI.etapa = para;
+              PED.enviada = { ...PED.enviada, versao:PED.versao, foto_path:args.p_foto_path, enviada_em:new Date().toISOString() };
+              return r({ status:'ok', pedido: structuredClone(PED) });
+            }
+            if (nome === 'labbio_pedido_cancelar'){ evento(PED.etapa, 'cancelado', 'membro'); PED.etapa = 'cancelado'; BI.etapa = 'cancelado'; return r({ status:'ok' }); }
+            if (nome === 'labbio_pedido_pessoal'){
+              if (!['admin','pessoal'].includes(DADOS.perfis[0].papel)) return r({ status:'sem_permissao' });
+              if (args.p_acao !== 'encaminhar' && !String(args.p_motivo || '').trim()) return r({ status:'motivo_obrigatorio' });
+              const para = { encaminhar:'labbio', negar:'negado_pessoal', devolver:'devolvido' }[args.p_acao];
+              evento('pessoal', para, 'pessoal', args.p_motivo); PED.etapa = para;
+              if (para === 'devolvido'){ PED.devolvido_por = 'pessoal'; PED.versao++; }
+              return r({ status:'ok', pedido: structuredClone(PED) });
+            }
+            if (nome === 'labbio_pedido_ler' && !gestor && ['admin','pessoal'].includes(DADOS.perfis[0].papel)) return r({ status:'ok', pedido: structuredClone(PED) });
+            // o lado do LABBIO
+            if (!gestor) return r({ status:'sem_permissao' });
+            if (nome === 'labbio_inicio'){
+              const dia = n => { const x = new Date(); x.setDate(x.getDate() + n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+              const agora = n => new Date(Date.now() - n * 60000).toISOString();
+              return r({ status:'ok', hoje_data: dia(0), membros:12, com_acesso:7, pedidos_abertos: PED.etapa === 'labbio' ? 1 : 0,
+                revogacoes: REV.filter(x => !x.confirmada_em).map(({ id, registro, nome, status_para, criada_em }) => ({ id, registro, nome, status_para, criada_em })),
+                pedidos: PED.etapa === 'labbio' ? [{ id: PED.id, registro: 11, nome:'Bruno Tavares', encaminhado_em: new Date(Date.now() - 3 * 864e5).toISOString() }] : [],
+                consultas_pendentes: 2, consultas: [{ id:'cq1', missao_id:'ev1', titulo:'Banca de TCC', data: dia(1), hora_inicio:'14:00', hora_fim:'16:00', espaco:'Auditório' },
+                                                    { id:'cq2', missao_id:'ev2', titulo:'Reunião com parceiros', data: dia(3), hora_inicio:'10:00', hora_fim:'11:00', espaco:'Sala de Reuniões' }],
+                hoje: { presentes: 3, ultimos: [{ registro: 4, nome:'Ana Figueiredo', registrado_em: agora(15) }, { registro: 17, nome:'Carla Mendonça', registrado_em: agora(70) },
+                                                { registro: 11, nome:'Bruno Tavares', registrado_em: agora(130) }],
+                        eventos: [{ id:'ev0', titulo:'Seminário interno', hora_inicio:'09:00', hora_fim:'10:30', espaco:'Auditório', consulta:'disponivel' }] },
+                serie: Array.from({ length:14 }, (_, i) => ({ dia: dia(i - 13), pessoas: [0, 6].includes(new Date(dia(i - 13) + 'T12:00:00').getDay()) ? i % 3 : [4, 6, 5, 7, 6, 8, 5, 7, 6, 9, 3, 5, 8, 3][i] })),
+                acesso: { possui:7, solicitado: PED.etapa === 'labbio' ? 1 : 0, nao_possui: PED.etapa === 'labbio' ? 4 : 5 },
+                termo: { pendente:3, enviado:2, conferido:6, devolvido:1 }, treinamentos_pendentes: 2 });
+            }
+            const listaMembros = () => [pessoa(4, 'Ana Figueiredo', { acesso:{ estado:'possui', sub:null, desde:'2026-03-01' },
+                               termo:{ situacao:'conferido', enviado_em:'2026-10-05T12:00:00Z', conferido_em:'2026-10-06T12:00:00Z', arquivo:'labbio-2026/4/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.pdf' } }),
+                             pessoa(11, 'Bruno Tavares', { acesso:{ estado:'solicitado', sub: PED.etapa } }),
+                             pessoa(17, 'Carla Mendonça', { trainee:true, cargo:'Trainee' }),
+                             pessoa(46, 'Lia Moura', { status:'Desligado', acesso:{ estado:'possui', sub:'revogacao_pendente' } })]
+                .filter(x => x.registro !== 46 || REV.some(v => v.registro === 46 && !v.confirmada_em));
+            if (nome === 'labbio_membros'){
+              const q = String(args.p_busca || '').trim().toLowerCase();
+              return r({ status:'ok', membros: listaMembros().filter(x => !q || x.nome.toLowerCase().includes(q) || String(x.registro) === q) });
+            }
+            if (nome === 'labbio_membro'){
+              const m = listaMembros().find(x => x.registro === args.p_registro);
+              if (!m) return r({ status:'nao_encontrado' });
+              return r({ status:'ok', membro:m, liderados: args.p_registro === 4 ? [{ registro:11, nome:'Bruno Tavares' }, { registro:17, nome:'Carla Mendonça' }] : [],
+                pedidos: args.p_registro === 11 ? [structuredClone(PED)] : [], revogacoes: REV.filter(x => x.registro === args.p_registro) });
+            }
+            if (nome === 'labbio_checkins'){
+              if (!args.p_de || !args.p_ate || args.p_ate < args.p_de) return r({ status:'invalido' });
+              let itens = Array.from({ length:73 }, (_, i) => ({ registro: [4, 11, 17][i % 3], nome: ['Ana Figueiredo','Bruno Tavares','Carla Mendonça'][i % 3],
+                registrado_em: new Date(Date.parse('2026-10-10T12:00:00Z') - i * 36e5).toISOString(), origem: i % 5 === 0 ? 'folha' : 'quiosque' }));
+              if (args.p_registro) itens = itens.filter(x => x.registro === args.p_registro);
+              if (args.p_origem) itens = itens.filter(x => x.origem === args.p_origem);
+              const pag = args.p_pagina || 1;
+              return r({ status:'ok', pagina:pag, por_pagina:50, total:itens.length, itens: itens.slice((pag - 1) * 50, pag * 50) });
+            }
+            if (nome === 'labbio_treinamentos') return r({ status:'ok',
+              treinamentos:[{ id:'t1', codigo:'NRO-TRE-001', titulo:'Segurança na bancada', categoria:'Segurança', revisao:'B', validade_meses:12 },
+                            { id:'t2', codigo:'NRO-TRE-002', titulo:'Impressora 3D', categoria:'Máquinas', revisao:'A', validade_meses:null }],
+              pessoas:[{ registro:4, nome:'Ana Figueiredo', area:'Órtese', celulas:{ t1:{ situacao:'concluido', obrigatorio:true, concluido_em:'2026-03-01T12:00:00Z', revisao:'B', vence_em:'2027-03-01T12:00:00Z' },
+                                                                                    t2:{ situacao:'andamento', obrigatorio:false, concluido_em:null, revisao:null, vence_em:null } } },
+                       { registro:11, nome:'Bruno Tavares', area:'Sinais', celulas:{ t1:{ situacao:'vencido', obrigatorio:true, concluido_em:null, revisao:null, vence_em:null },
+                                                                                    t2:{ situacao:'pendente', obrigatorio:null, concluido_em:null, revisao:null, vence_em:null } } }] });
+            if (nome === 'labbio_revogacoes') return r({ status:'ok', revogacoes: REV.filter(x => args.p_abertas === false || !x.confirmada_em) });
+            if (nome === 'labbio_revogacao_confirmar'){ const v = REV.find(x => x.id === args.p_id); if (!v) return r({ status:'nao_encontrado' });
+              Object.assign(v, { confirmada_em:new Date().toISOString(), observacao:args.p_observacao || null, confirmada_por:'Gestora Um' }); return r({ status:'ok' }); }
+            if (nome === 'labbio_solicitacoes'){
+              const sit = args.p_situacao || 'abertos', aberto = PED.etapa === 'labbio', visto = !!PED.encaminhado_em;
+              return r({ status:'ok', pedidos: visto && (sit === 'todos' || (sit === 'abertos') === aberto) ? [structuredClone(PED)] : [] });
+            }
+            if (nome === 'labbio_pedido_ler') return r(PED.encaminhado_em ? { status:'ok', pedido: structuredClone(PED) } : { status:'sem_permissao' });
+            if (nome === 'labbio_pedido_decidir'){
+              if (PED.etapa !== 'labbio') return r({ status:'encerrado' });
+              if (args.p_versao !== PED.versao) return r({ status:'conflito' });
+              if (args.p_acao !== 'implantado' && !String(args.p_motivo || '').trim()) return r({ status:'motivo_obrigatorio' });
+              const para = { implantado:'concedido', negar:'negado_labbio', devolver:'devolvido' }[args.p_acao];
+              evento('labbio', para, 'labbio', args.p_motivo); PED.etapa = para;
+              if (para === 'devolvido'){ PED.devolvido_por = 'labbio'; PED.versao++; }
+              return r({ status:'ok', pedido: structuredClone(PED) });
+            }
+          }
+          /* ---- 2.19.1: agenda das salas (L7), tablets (L9), trainees (T1) e
+             onboarding (T3). Agenda e tablets do painel pedem
+             window.__teste.labbio.conta === 'ativo'; sala_* é do tablet (sem
+             conta): window.__teste.sala = { token, estado:'livre'|'evento'|'ocupada' }.
+             Trainees e onboarding usam o papel do perfil do stub. ---- */
+          if (/^(labbio_(agenda|consulta_decidir|consulta_do_evento|dispositivo_criar|dispositivos|dispositivo_revogar)|sala_(estado|ocupar|liberar|painel|ocupar_membro|liberar_membro)|ps_trainees_pendentes|ps_admitir_trainees|trainees_quadro|trainee_efetivar|trainee_dispensar|onboarding_(meu|marcar|painel))$/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const LB = (window.__teste || {}).labbio,
+                  gestor = (LB && LB.conta === 'ativo') || (!(LB && LB.conta && LB.conta !== 'nao_gestor') && DADOS.perfis[0].papel === 'admin');
+            const papel = DADOS.perfis[0].papel, gestao = ['admin','pessoal','selecao'].includes(papel);
+            const r = d => ({ data:d, error:null });
+            const hoje = new Date().toISOString().slice(0, 10);
+            const EV = window.__lbEv ||= [
+              { id:'ev1', titulo:'Reunião de projeto', data:hoje, hora_inicio:'10:00', hora_fim:'11:00', espaco_id:1, espaco:'Sala de reuniões', status:null,
+                organizador:'Ana Figueiredo', convidados:['Bruno Tavares','Carla Mendonça'], consulta:{ id:'c1', situacao:'pendente', motivo:null, decidido_em:null },
+                sobreposicoes:[{ id:'ev2', titulo:'Banca', hora_inicio:'10:30', hora_fim:'11:30' }] },
+              { id:'ev2', titulo:'Banca', data:hoje, hora_inicio:'10:30', hora_fim:'11:30', espaco_id:1, espaco:'Sala de reuniões', status:null,
+                organizador:'Diego Prado', convidados:[], consulta:{ id:'c2', situacao:'disponivel', motivo:null, decidido_em:hoje + 'T09:00:00Z' },
+                sobreposicoes:[{ id:'ev1', titulo:'Reunião de projeto', hora_inicio:'10:00', hora_fim:'11:00' }] },
+              { id:'ev3', titulo:'Seminário', data:hoje, hora_inicio:'14:00', hora_fim:'15:00', espaco_id:2, espaco:'Auditório', status:null,
+                organizador:'Ana Figueiredo', convidados:[], consulta:{ id:'c3', situacao:'pendente', motivo:null, decidido_em:null }, sobreposicoes:[] }];
+            if (nome === 'labbio_consulta_do_evento'){
+              const e = EV.find(x => x.id === args.p_evento);
+              return r({ status:'ok', consulta: e?.consulta ? { situacao:e.consulta.situacao, motivo:e.consulta.motivo, decidido_em:e.consulta.decidido_em, criada_em:hoje } : null,
+                sobreposicoes: (e?.sobreposicoes || []).map(({ hora_inicio, hora_fim }) => ({ hora_inicio, hora_fim })) });
+            }
+            // a sala no celular (membro logado): window.__salaM guarda a ocupação
+            if (/^sala_(painel|ocupar_membro|liberar_membro)$/.test(nome)){
+              const M = window.__salaM ||= { estado: ((window.__teste || {}).salaM || {}).estado || 'livre', ate:null, por:null };
+              if (![1, 2, 3].includes(Number(args.p_espaco))) return r({ status:'nao_encontrado' });
+              const fimDia = new Date(); fimDia.setHours(24, 0, 0, 0);
+              const prox = { id:'ev3', origem:'soma', titulo:'Seminário', organizador:'Ana Figueiredo', data:hoje, hora_inicio:'14:00', hora_fim:'15:00', inicio:hoje + 'T17:00:00Z', fim:hoje + 'T18:00:00Z' };
+              const lab = { id:'rl1', origem:'labbio', titulo:'Aula de bioengenharia', organizador:'Prof. Helena', data:hoje, hora_inicio:'16:00', hora_fim:'17:30', inicio:hoje + 'T19:00:00Z', fim:hoje + 'T20:30:00Z' };
+              const atual = { id:'ev9', origem:'soma', titulo:'Defesa de TCC', organizador:'Bruno Tavares', data:hoje, hora_inicio:'09:00', hora_fim:'12:00', inicio:hoje + 'T12:00:00Z', fim:hoje + 'T15:00:00Z' };
+              const sit = () => ({ espaco_id:2, estado:M.estado, evento: M.estado === 'evento' ? atual : null, proximo:prox,
+                ocupada_ate: M.estado === 'ocupada' ? M.ate : null, ocupada_por: M.estado === 'ocupada' ? M.por : null,
+                hoje: [...(M.estado === 'evento' ? [atual] : []), prox, lab] });
+              if (nome === 'sala_ocupar_membro'){
+                if (M.estado === 'evento') return r({ status:'em_evento', ...sit() });
+                if (!(args.p_minutos >= 5 && args.p_minutos <= 1440)) return r({ status:'invalido', ...sit() });
+                Object.assign(M, { estado:'ocupada', por:'Ana Figueiredo', ate:new Date(Math.min(Date.now() + args.p_minutos * 6e4, fimDia.getTime(), Date.parse(prox.inicio))).toISOString() });
+                return r({ status:'ok', ...sit() });
+              }
+              if (nome === 'sala_liberar_membro'){ Object.assign(M, { estado:'livre', ate:null, por:null }); return r({ status:'ok', ...sit() }); }
+              return r({ status:'ok', sala:{ id:2, nome:'Auditório', ...sit() },
+                outras:[{ id:1, nome:'Sala de reuniões', espaco_id:1, estado:'evento', evento:{ ...lab, titulo:'Banca', organizador:'Diego Prado', fim:hoje + 'T16:00:00Z' }, proximo:null, hoje:[] },
+                        { id:3, nome:'Bancada 2', espaco_id:3, estado:'livre', evento:null, proximo:null, hoje:[] }] });
+            }
+            // o tablet
+            if (/^sala_/.test(nome)){
+              const S = (window.__teste || {}).sala;
+              if (!S || args.p_token !== S.token) return r({ status:'dispositivo_invalido' });
+              const prox = S.semProximo ? null : { id:'ev3', origem:'soma', titulo:'Seminário', organizador:'Ana Figueiredo', data:hoje, hora_inicio:'14:00', hora_fim:'15:00', inicio:hoje + 'T17:00:00Z', fim:hoje + 'T18:00:00Z' };
+              const atual = { id:'ev9', origem:'soma', titulo:'Defesa de TCC', organizador:'Bruno Tavares', data:hoje, hora_inicio:'09:00', hora_fim:'12:00', inicio:hoje + 'T12:00:00Z', fim:hoje + 'T15:00:00Z' };
+              const lab = { id:'rl1', origem:'labbio', titulo:'Aula de bioengenharia', organizador:'Prof. Helena', data:hoje, hora_inicio:'16:00', hora_fim:'17:30', inicio:hoje + 'T19:00:00Z', fim:hoje + 'T20:30:00Z' };
+              const est = () => ({ status:'ok', sala:'Auditório', rotulo:'Porta do auditório', espaco_id:2, estado:S.estado, agora:new Date().toISOString(),
+                evento: S.estado === 'evento' ? atual : null,
+                proximo: prox, ocupada_ate: S.estado === 'ocupada' ? S.ate : null, ocupada_por: S.estado === 'ocupada' ? (S.por || null) : null,
+                hoje: [...(S.estado === 'evento' ? [atual] : []), ...(prox ? [prox, lab] : [])] });
+              if (nome === 'sala_ocupar'){
+                if (S.estado === 'evento') return r({ ...est(), status:'em_evento' });
+                if (!(args.p_minutos >= 5 && args.p_minutos <= 1440)) return r({ ...est(), status:'invalido' });
+                const fimDia = new Date(); fimDia.setHours(24, 0, 0, 0);
+                S.estado = 'ocupada'; S.por = null; S.ate = new Date(Math.min(Date.now() + args.p_minutos * 6e4, fimDia.getTime(), prox ? Date.parse(prox.inicio) : Infinity)).toISOString();
+              }
+              if (nome === 'sala_liberar' && S.estado === 'ocupada'){ S.estado = 'livre'; S.ate = null; }
+              return r(est());
+            }
+            if (/^labbio_/.test(nome)){
+              if (!gestor && !(papel === 'admin' && /dispositiv/.test(nome))) return r({ status:'sem_permissao' });
+              if (nome === 'labbio_agenda') return r({ status:'ok', espacos:[{ id:1, nome:'Sala de reuniões', consulta:true }, { id:2, nome:'Auditório', consulta:true }],
+                eventos: structuredClone(EV) });
+              if (nome === 'labbio_consulta_decidir'){
+                const e = EV.find(x => x.consulta?.id === args.p_id); if (!e) return r({ status:'nao_encontrado' });
+                if (!args.p_disponivel && !String(args.p_motivo || '').trim()) return r({ status:'motivo_obrigatorio' });
+                Object.assign(e.consulta, { situacao: args.p_disponivel ? 'disponivel' : 'conflito', motivo: args.p_motivo || null, decidido_em:new Date().toISOString() });
+                return r({ status:'ok' });
+              }
+              const DV = window.__lbDv ||= [{ id:'d1', rotulo:'Porta do auditório', espaco_id:2, espaco:'Auditório', ativo:true, criado_em:'2026-10-01T12:00:00Z', revogado_em:null, ultimo_contato:new Date().toISOString() }];
+              if (nome === 'labbio_dispositivos') return r({ status:'ok', dispositivos: structuredClone(DV) });
+              if (nome === 'labbio_dispositivo_criar'){
+                if (![1, 2].includes(args.p_espaco)) return r({ status:'espaco_invalido' });
+                if (!String(args.p_rotulo || '').trim()) return r({ status:'rotulo_obrigatorio' });
+                DV.push({ id:'d' + (DV.length + 1), rotulo:args.p_rotulo.trim(), espaco_id:args.p_espaco, espaco: args.p_espaco === 1 ? 'Sala de reuniões' : 'Auditório',
+                  ativo:true, criado_em:new Date().toISOString(), revogado_em:null, ultimo_contato:null });
+                return r({ status:'ok', id:'d' + DV.length, endereco:'sala.html?d=' + 'ab'.repeat(24) });
+              }
+              if (nome === 'labbio_dispositivo_revogar'){ const d = DV.find(x => x.id === args.p_id && x.ativo); if (!d) return r({ status:'nao_encontrado' });
+                Object.assign(d, { ativo:false, revogado_em:new Date().toISOString() }); return r({ status:'ok' }); }
+            }
+            // trainees
+            const TR = window.__trn ||= { pendentes:[
+                { id:'c1', nome:'Paula Nunes', email:'paula@exemplo.test', protocolo:'PS26-101', edicao:'Processo Seletivo 2026', areas_interesse:['Mecânica','Simulação'], curso:'Engenharia Mecânica', instituicao:'UFMG', membro_mesmo_email:null },
+                { id:'c2', nome:'Rafael Dias', email:'rafael@exemplo.test', protocolo:'PS26-102', edicao:'Processo Seletivo 2026', areas_interesse:['Software'], curso:'Ciência da Computação', instituicao:'UFMG', membro_mesmo_email:null },
+                { id:'c3', nome:'Bruno de novo', email:'bruno@neurodynamics.dev', protocolo:'PS26-103', edicao:'Processo Seletivo 2026', areas_interesse:['Software'], curso:'Engenharia Elétrica', instituicao:'UFMG', membro_mesmo_email:11 }],
+              quadro:[{ registro:301, nome:'Sara Lopes', alocacao:'Eletrônica', status:'Ativo', areas_interesse:['Eletrônica','Software'], gestor:4, gestor_nome:'Ana Figueiredo',
+                        grupos:['NRO_TRAINEE','Sinais'], data_ingresso:'2026-09-15', edicao:'Processo Seletivo 2026' }] };
+            if (nome === 'ps_trainees_pendentes') return r(gestao ? { status:'ok', grupo_trainee:'NRO_TRAINEE', candidatos: structuredClone(TR.pendentes) } : { status:'sem_permissao' });
+            if (nome === 'ps_admitir_trainees'){
+              if (!gestao) return r({ status:'sem_permissao' });
+              const erros = [];
+              for (const x of args.p_itens || []){
+                const c = TR.pendentes.find(p => p.id === x.candidato);
+                if (!c) erros.push({ candidato:x.candidato, erro:'nao_encontrado' });
+                else if (c.membro_mesmo_email) erros.push({ candidato:c.id, erro:'email_de_membro' });
+                else if (!String(x.area || '').trim()) erros.push({ candidato:c.id, erro:'area_obrigatoria' });
+                else if (!x.gestor) erros.push({ candidato:c.id, erro:'gestor_invalido' });
+              }
+              if (erros.length) return r({ status:'invalido', erros });
+              const admitidos = (args.p_itens || []).map((x, i) => { const c = TR.pendentes.find(p => p.id === x.candidato);
+                const reg = x.registro || 302 + i;
+                TR.quadro.push({ registro:reg, nome:c.nome, alocacao:x.area, status:'Ativo', areas_interesse:c.areas_interesse, gestor:x.gestor, gestor_nome:'Ana Figueiredo',
+                  grupos:['NRO_TRAINEE', ...(x.grupos || [])], data_ingresso:hoje, edicao:c.edicao });
+                return { candidato:c.id, registro:reg }; });
+              TR.pendentes = TR.pendentes.filter(p => !admitidos.some(a => a.candidato === p.id));
+              return r({ status:'ok', admitidos });
+            }
+            if (nome === 'trainees_quadro') return r(gestao || papel === 'lideranca' || papel === 'admin' ? { status:'ok',
+              trainees: TR.quadro.filter(t => t.status === 'Ativo' && (!args.p_area_interesse || t.areas_interesse.includes(args.p_area_interesse))) } : { status:'sem_permissao' });
+            if (nome === 'trainee_efetivar'){
+              if (!['admin','pessoal'].includes(papel)) return r({ status:'sem_permissao' });
+              if (!String(args.p_cargo || '').trim() || /^trainee$/i.test(args.p_cargo.trim())) return r({ status:'invalido', campo:'cargo' });
+              const t = TR.quadro.find(x => x.registro === args.p_reg); if (!t) return r({ status:'nao_trainee' });
+              TR.quadro = TR.quadro.filter(x => x !== t); return r({ status:'ok' });
+            }
+            if (nome === 'trainee_dispensar'){
+              if (!['admin','pessoal'].includes(papel)) return r({ status:'sem_permissao' });
+              if (!String(args.p_motivo || '').trim()) return r({ status:'motivo_obrigatorio' });
+              const t = TR.quadro.find(x => x.registro === args.p_reg); if (!t) return r({ status:'nao_trainee' });
+              t.status = 'Desligado'; return r({ status:'ok', atividades_abertas:2, acessos:'Google Workspace', card:'PES-31' });
+            }
+            // onboarding
+            const ON = window.__onb ||= { lidas:['contexto'] };
+            const etapas = () => [
+              ['contexto','A NeuroDynamics, o LABBIO e os objetivos da equipe','leitura',null,'bem-vindo'],
+              ['organizacao','Áreas, grupos, liderança e a cadeia de reporte','leitura',null,'equipe'],
+              ['dados','Conferir os seus dados','fato','dados','conta'],
+              ['termo','Assinar o termo de sigilo do LABBIO','fato','termo','servicos'],
+              ['soma','Usar o SOMA: tarefas, agenda, presença e Serviços','leitura',null,'inicio'],
+              ['treinamentos','Treinamentos obrigatórios e segurança no laboratório','fato','treinamentos','treinamentos'],
+              ['proximos','Próximos passos com a sua liderança','leitura',null,'ajuda']]
+              .map(([id, titulo, tipo, fato, ancora]) => ({ id, titulo, tipo, ...(fato ? { fato } : {}), ancora,
+                feita: tipo === 'leitura' ? ON.lidas.includes(id) : fato === 'dados', feita_em: ON.lidas.includes(id) ? '2026-10-01T12:00:00Z' : null }));
+            const meu = () => { const e = etapas(); return { status:'ok', versao:1, etapas:e, feitas:e.filter(x => x.feita).length, total:e.length }; };
+            if (nome === 'onboarding_meu') return r(meu());
+            if (nome === 'onboarding_marcar'){
+              const e = etapas().find(x => x.id === args.p_etapa); if (!e || e.tipo !== 'leitura') return r({ status:'invalido' });
+              ON.lidas = ON.lidas.filter(x => x !== args.p_etapa); if (args.p_feita !== false) ON.lidas.push(args.p_etapa);
+              return r(meu());
+            }
+            if (nome === 'onboarding_painel') return r(['admin','pessoal','lideranca'].includes(papel) ? { status:'ok', versao:1, pessoas:[
+              { registro:301, nome:'Sara Lopes', trainee:true, gestor_nome:'Ana Figueiredo', feitas:3, total:7, pendentes:['Assinar o termo de sigilo do LABBIO','Usar o SOMA: tarefas, agenda, presença e Serviços','Treinamentos obrigatórios e segurança no laboratório','Próximos passos com a sua liderança'] },
+              { registro:11, nome:'Bruno Tavares', trainee:false, gestor_nome:'Ana Figueiredo', feitas:7, total:7, pendentes:[] }] } : { status:'sem_permissao' });
+          }
+          /* ---- 2.19.1: feed editorial, site, reações e newsletter (db/2.19.1_feed.sql).
+             window.__teste.feed = { editor:true|false, semPermissao:true }
+             (sem ele: editor = admin; semPermissao: feed_reagir nega, como para
+             conta sem registro ou do LABBIO). Sem sessão: troque getSession e
+             signInWithPassword no texto do stub, como testes/tour.mjs faz.
+             Para o site e a página de reação: noticias_publicas, noticia_publica,
+             feed_reagir, comunidade_*. Estado em window.__fd. ---- */
+          if (/^(feed_(lista|editor|editorial|item_salvar|publicar|publicar_confirmar|retirar|reagir)|newsletter_(lista|pendentes|enviar_agora)|noticias_publicas|noticia_publica|comunidade_(inscrever|confirmar))$/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const FT = (window.__teste || {}).feed || {};
+            const editor = FT.editor ?? (DADOS.perfis[0].papel === 'admin');
+            const r = d => ({ data:d, error:null });
+            const longo = 'O protótipo da órtese passou por dez mil ciclos na bancada do LABBIO sem folga nas articulações. '.repeat(5);
+            const FD = window.__fd ||= { itens:[
+              { id:'f1', tipo:'noticia', slug:'ortese-passa-no-teste', titulo:'Órtese passa no teste de bancada', subtitulo:'Dez mil ciclos sem folga',
+                texto:longo, autor:'Equipe de Comunicação', publicado_em:'2026-10-09T15:00:00Z', publico:true, estado:'publicado',
+                imagens:[{ path:'f1/bancada.jpg', legenda:'O protótipo na bancada', publico_path:'f1/1.jpg' }], reacoes:{ '👏':3, '❤️':1 }, minha_reacao:null },
+              { id:'f2', tipo:'topico', slug:null, titulo:'Seminário na sexta', subtitulo:'Às 14h no auditório', texto:'Aberto a todos.', autor:'Ana Figueiredo',
+                publicado_em:'2026-10-08T12:00:00Z', publico:false, estado:'publicado', imagens:[], reacoes:{}, minha_reacao:null },
+              { id:'f3', tipo:'topico', slug:null, titulo:'Prêmio no congresso', subtitulo:'A equipe foi premiada', texto:'Curto.', autor:'Iara Melo',
+                publicado_em:null, publico:false, estado:'pronto', reporte_id:'r9', imagens:[], reacoes:{}, minha_reacao:null }],
+              inscritos:[], envios:[] };
+            const pub = f => ({ id:f.id, tipo:f.tipo, slug:f.slug, titulo:f.titulo, subtitulo:f.subtitulo, texto:f.texto, autor:f.autor,
+              publicado_em:f.publicado_em, publico:f.publico, imagens:f.imagens, reacoes:f.reacoes, minha_reacao:f.minha_reacao });
+            const publicados = () => FD.itens.filter(f => f.estado === 'publicado').sort((a, b) => b.publicado_em.localeCompare(a.publicado_em));
+            if (nome === 'feed_lista') return r(publicados().filter(f => !args.p_tipo || f.tipo === args.p_tipo).map(pub));
+            if (nome === 'feed_editor') return r(editor);
+            if (nome === 'noticias_publicas') return r(publicados().filter(f => f.publico).map(f => ({ tipo:f.tipo, slug:f.slug, titulo:f.titulo,
+              resumo:f.subtitulo, texto: f.tipo === 'topico' ? f.texto : null, autor:f.autor, publicado_em:f.publicado_em,
+              imagem: f.imagens.find(i => i.publico_path) ? 'noticias/' + f.imagens.find(i => i.publico_path).publico_path : null,
+              reacoes: f.tipo === 'noticia' ? f.reacoes : null, ref:f.id })));
+            if (nome === 'noticia_publica'){
+              const f = publicados().find(x => x.publico && x.tipo === 'noticia' && (x.slug === args.p_slug || (args.p_slug === 'nome-antigo' && x.id === 'f1')));
+              if (!f) return r({ status:'nao_encontrada' });
+              const { id, ...resto } = pub(f);
+              return r({ status:'ok', ...resto, ref:id, redirecionar: f.slug !== args.p_slug,
+                imagens: f.imagens.filter(i => i.publico_path).map(i => ({ url:'noticias/' + i.publico_path, legenda:i.legenda })) });
+            }
+            if (nome === 'feed_reagir'){
+              const f = FD.itens.find(x => x.id === args.p_ref);
+              if (!f || f.estado !== 'publicado' || f.tipo !== 'noticia' || FT.semPermissao) return r({ status:'sem_permissao' });
+              if (args.p_emoji && !['👏','❤️','🎉','💡','🚀','😮'].includes(args.p_emoji)) return r({ status:'invalido' });
+              if (f.minha_reacao) f.reacoes[f.minha_reacao] = Math.max(0, (f.reacoes[f.minha_reacao] || 1) - 1);
+              if (f.minha_reacao && !f.reacoes[f.minha_reacao]) delete f.reacoes[f.minha_reacao];
+              f.minha_reacao = args.p_emoji || null;
+              if (f.minha_reacao) f.reacoes[f.minha_reacao] = (f.reacoes[f.minha_reacao] || 0) + 1;
+              return r({ status:'ok', reacoes: { ...f.reacoes }, minha_reacao: f.minha_reacao });
+            }
+            if (nome === 'comunidade_inscrever'){
+              const e = String(args.p_email || '').trim().toLowerCase();
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return r({ status:'email_invalido' });
+              if (!String(args.p_nome || '').trim()) return r({ status:'nome_invalido' });
+              if (args.p_consentimento !== true) return r({ status:'consentimento' });
+              FD.inscritos.push(e); return r({ status:'ok' });
+            }
+            if (nome === 'comunidade_confirmar') return r({ status: args.p_token === '11111111-1111-1111-1111-111111111111' ? 'ok' : 'invalido' });
+            if (!editor) return r(nome === 'newsletter_lista' ? [] : { status:'sem_permissao' });
+            if (nome === 'feed_editorial') return r({ status:'ok', itens: FD.itens.filter(f => !args.p_estado || f.estado === args.p_estado)
+              .map(f => ({ ...pub(f), estado:f.estado, reporte_id:f.reporte_id || null, criado_em:'2026-10-07T12:00:00Z', atualizado_em:'2026-10-09T12:00:00Z',
+                publicado_por: f.estado === 'publicado' ? 'Iara Melo' : null, retirado_em:null })) });
+            if (nome === 'feed_item_salvar'){
+              const p = args.p || {}, tipo = p.tipo || 'topico';
+              if (!String(p.titulo || '').trim()) return r({ status:'invalido', campo:'titulo' });
+              if (!String(p.subtitulo || '').trim()) return r({ status:'invalido', campo:'subtitulo' });
+              if (tipo === 'topico' && String(p.texto || '').length > 1200) return r({ status:'invalido', campo:'texto' });
+              const slug = tipo === 'noticia' ? String(p.slug || p.titulo).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) : null;
+              let f = p.id && FD.itens.find(x => x.id === p.id);
+              if (p.id && !f) return r({ status:'nao_encontrado' });
+              if (!f){ if ((p.imagens || []).length) return r({ status:'invalido', campo:'imagens' });
+                f = { id:'f' + (FD.itens.length + 1), estado:'pronto', publico:false, publicado_em:null, reacoes:{}, minha_reacao:null, imagens:[] }; FD.itens.push(f); }
+              if ((p.imagens || []).some(i => !String(i.path || '').startsWith(f.id + '/'))) return r({ status:'invalido', campo:'imagens' });
+              Object.assign(f, { tipo, titulo:p.titulo.trim(), subtitulo:p.subtitulo.trim(), texto:p.texto || '', slug, autor:p.autor_texto || 'Ana Figueiredo',
+                imagens:(p.imagens || []).map(i => ({ path:i.path, legenda:i.legenda || null, ...(f.imagens.find(o => o.path === i.path && o.publico_path) ? { publico_path:f.imagens.find(o => o.path === i.path).publico_path } : {}) })) });
+              return r({ status:'ok', id:f.id, slug });
+            }
+            if (nome === 'feed_publicar'){
+              const f = FD.itens.find(x => x.id === args.p_id); if (!f) return r({ status:'nao_encontrado' });
+              if (f.tipo === 'noticia' && (f.texto.length < 300 || !f.slug)) return r({ status:'noticia_incompleta' });
+              if (!args.p_publico){ Object.assign(f, { estado:'publicado', publico:false, publicado_em: f.publicado_em || new Date().toISOString() }); return r({ status:'ok', estado:'publicado', copiar:[] }); }
+              f.imagens.forEach((i, n) => { i.publico_path = f.id + '/' + (n + 1) + '.' + (i.path.split('.').pop() || 'jpg'); });
+              f.publico = true;
+              if (!f.imagens.length){ Object.assign(f, { estado:'publicado', publicado_em: f.publicado_em || new Date().toISOString() }); return r({ status:'ok', estado:'publicado', slug:f.slug }); }
+              f.estado = 'publicando';
+              return r({ status:'ok', estado:'publicando', copiar: f.imagens.map(i => ({ de:i.path, para:i.publico_path })) });
+            }
+            if (nome === 'feed_publicar_confirmar'){
+              const f = FD.itens.find(x => x.id === args.p_id); if (!f || f.estado !== 'publicando') return r({ status:'invalido' });
+              const falta = f.imagens.map(i => i.publico_path).filter(c => !(window.__uploads || []).some(u => u.bucket === 'noticias' && u.caminho === c));
+              if (falta.length) return r({ status:'imagens_pendentes', faltam:falta });
+              Object.assign(f, { estado:'publicado', publicado_em: f.publicado_em || new Date().toISOString() }); return r({ status:'ok', estado:'publicado', slug:f.slug });
+            }
+            if (nome === 'feed_retirar'){
+              const f = FD.itens.find(x => x.id === args.p_id); if (!f) return r({ status:'nao_encontrado' });
+              f.estado = 'retirado'; return r({ status:'ok', apagar: f.imagens.filter(i => i.publico_path).map(i => i.publico_path) });
+            }
+            const elegiveis = p => publicados().filter(f => (p === 'equipe' || f.publico) && !FD.envios.some(e => e.item === f.id && e.publico === p));
+            if (nome === 'newsletter_pendentes') return r({ status:'ok', equipe: elegiveis('equipe').map(({ id, titulo, tipo, publicado_em }) => ({ id, titulo, tipo, publicado_em })),
+              comunidade: elegiveis('comunidade').map(({ id, titulo, tipo, publicado_em }) => ({ id, titulo, tipo, publicado_em })), inscritos:42 });
+            if (nome === 'newsletter_enviar_agora'){
+              const p = args.p_tipo === 'semanal' ? 'equipe' : 'comunidade', itens = elegiveis(p);
+              if (!itens.length) return r({ status:'vazio' });
+              itens.forEach(f => FD.envios.push({ item:f.id, publico:p }));
+              (FD.edicoes ||= []).unshift({ id:'n' + (FD.edicoes.length + 1), tipo:args.p_tipo, periodo_ini:'2026-10-11', periodo_fim:'2026-10-11',
+                assunto:(p === 'equipe' ? 'Boletim da equipe: ' : 'NeuroDynamics: ') + '11/10/2026', itens: itens.map(pub), status:'aprovada', manual:true,
+                criado_em:new Date().toISOString(), destinatarios: p === 'equipe' ? 12 : 42, enviados:0, falhas:0 });
+              return r({ status:'ok', id:FD.edicoes[0].id, destinatarios:FD.edicoes[0].destinatarios, itens:itens.length });
+            }
+            if (nome === 'newsletter_lista') return r(structuredClone(FD.edicoes || [{ id:'n0', tipo:'semanal', periodo_ini:'2026-09-28', periodo_fim:'2026-10-04',
+              assunto:'Boletim da equipe: 04/10/2026', itens:[], status:'enviada', manual:false, criado_em:'2026-10-05T11:00:00Z', destinatarios:12, enviados:12, falhas:0 }]));
+          }
+          /* ---- 2.19.1: reporte por liderança direta (db/2.19.1_reporte.sql).
+             Sem window.__teste.reporteLider, o líder não tem reporte nem
+             cobrança. As opções: { cobranca:'nenhuma'|'aviso'|'obrigatoria',
+             semLiderados, mudancas, enviado, fechado, consolidado } ---- */
+          if (/^reporte_(meu|cadeia_atualizar|participante|cobranca_estado|ausente|lider_painel|avaliacoes_de|consolidado_pode)$/.test(nome)
+              || (/^reporte_(salvar|enviar|unificado)$/.test(nome) && (window.__teste || {}).reporteLider)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const L = (window.__teste || {}).reporteLider;
+            const ok = d => ({ data:{ status:'ok', ...d }, error:null });
+            if (!L) return { data: nome === 'reporte_cobranca_estado' ? { status:'nenhuma' } : { status:'sem_permissao' }, error:null };
+            const ciclo = { id:'cl1', semana:'2026-10-05', modelo:'lider', prazo:'2026-10-09T19:00:00+00:00', reuniao_em:'2026-10-09T19:00:00+00:00',
+              fecha_em:'2026-10-12T03:00:00+00:00', fechado:false };
+            const pessoa = (registro, nome, origem = 'direto', justificativa = null) => ({ registro, nome, cargo:null, origem, justificativa });
+            const ap = registro => ({ registro, entregas:'SUFICIENTE', assiduidade:'SUFICIENTE', sinalizacao:null });
+            const R = window.__repL ||= { id:'rl1', ciclo_id:'cl1', autor:4, modelo:'lider', etapa:1, versao:1, atrasado:false,
+              enviado_em: L.enviado ? '2026-10-09T18:00:00+00:00' : null,
+              pessoas: L.semLiderados ? [] : [pessoa(11, 'Bruno Tavares'), pessoa(17, 'Carla Mendonça')],
+              apontamentos: L.semLiderados ? [] : [ap(11), ap(17)], escalonamentos:[], feed:[] };
+            const ver = v => v === R.versao;
+            if (nome === 'reporte_meu'){
+              if (L.fechado && !R.enviado_em) return ok({ ciclo, reporte:null, mudancas:null, feed:[] });
+              const { feed, ...rep } = R;
+              return ok({ ciclo, reporte: structuredClone(rep), feed: structuredClone(feed),
+                mudancas: L.mudancas && !R.enviado_em ? { entram:[pessoa(23, 'Diego Prado')], saem:[] } : null });
+            }
+            if (R.enviado_em && /salvar|participante|cadeia/.test(nome)) return { data:{ status:'encerrado' }, error:null };
+            if (nome === 'reporte_cadeia_atualizar'){
+              if (!ver(args.p_versao)) return { data:{ status:'conflito' }, error:null };
+              if (L.mudancas){ R.pessoas.push(pessoa(23, 'Diego Prado')); R.apontamentos.push(ap(23)); L.mudancas = false; }
+              return ok({ versao: ++R.versao });
+            }
+            if (nome === 'reporte_participante'){
+              if (!ver(args.p_versao)) return { data:{ status:'conflito' }, error:null };
+              if (args.p_incluir){
+                if (!String(args.p_justificativa || '').trim()) return { data:{ status:'justificativa_obrigatoria' }, error:null };
+                if (R.pessoas.some(x => x.registro === args.p_registro)) return { data:{ status:'duplicado' }, error:null };
+                const m = DADOS.membros.find(x => x.registro === args.p_registro);
+                R.pessoas.push(pessoa(args.p_registro, m?.nome || 'Registro ' + args.p_registro, 'excepcional', args.p_justificativa.trim()));
+                R.apontamentos.push(ap(args.p_registro));
+              } else {
+                R.pessoas = R.pessoas.filter(x => !(x.registro === args.p_registro && x.origem === 'excepcional'));
+                R.apontamentos = R.apontamentos.filter(x => x.registro !== args.p_registro);
+              }
+              return ok({ versao: ++R.versao });
+            }
+            if (nome === 'reporte_salvar'){
+              const p = args.p;
+              if (!ver(p.versao)) return { data:{ status:'conflito' }, error:null };
+              const invalido = !Array.isArray(p.apontamentos) || !Array.isArray(p.escalonamentos) || !Array.isArray(p.feed)
+                || p.apontamentos.some(a => !R.pessoas.some(x => x.registro === a.registro)
+                  || !['SUFICIENTE','INSUFICIENTE'].includes(a.entregas) || !['SUFICIENTE','INSUFICIENTE'].includes(a.assiduidade)
+                  || (a.sinalizacao && (!String(a.sinalizacao.relato || '').trim() || a.sinalizacao.conversa_confirmada !== true)))
+                || p.escalonamentos.some(e => !String(e.texto || '').trim());
+              if (invalido) return { data:{ status:'invalido' }, error:null };
+              Object.assign(R, { apontamentos: structuredClone(p.apontamentos), escalonamentos: structuredClone(p.escalonamentos),
+                feed: structuredClone(p.feed), etapa: p.etapa });
+              window.__repSalvo = structuredClone(p);
+              return ok({ versao: ++R.versao });
+            }
+            if (nome === 'reporte_enviar'){
+              if (R.enviado_em) return ok({});
+              if (!ver(args.p_versao)) return { data:{ status:'conflito' }, error:null };
+              if (R.etapa !== 3 || R.pessoas.some(x => !R.apontamentos.some(a => a.registro === x.registro))) return { data:{ status:'incompleto' }, error:null };
+              R.enviado_em = new Date().toISOString(); R.atrasado = L.cobranca === 'obrigatoria'; R.versao++;
+              L.cobranca = 'nenhuma';
+              return ok({ atrasado: R.atrasado });
+            }
+            if (nome === 'reporte_cobranca_estado'){
+              const st = R.enviado_em || L.ausente ? 'nenhuma' : (L.cobranca || 'nenhuma');
+              return { data:{ status: st, ciclo_id:'cl1', prazo: ciclo.prazo, fecha_em: ciclo.fecha_em, agora: new Date().toISOString() }, error:null };
+            }
+            if (nome === 'reporte_consolidado_pode') return { data: !!L.consolidado, error:null };
+            if (nome === 'reporte_ausente'){ L.ausente = true; return ok({}); }
+            if (nome === 'reporte_lider_painel'){
+              if (!L.consolidado) return { data:{ status:'sem_permissao' }, error:null };
+              return ok({ ciclo, config:{ dia_prazo:4, hora_prazo:'16:00:00', dia_reuniao:4, hora_reuniao:'16:00:00', modelo_lider_desde:'2026-10-05' },
+                lideres:[{ registro:4, nome:'Ana Figueiredo', reporte_id:'rl1', enviado_em:R.enviado_em, atrasado:R.atrasado, situacao: R.enviado_em ? 'enviado' : 'pendente' },
+                         { registro:23, nome:'Diego Prado', reporte_id:null, enviado_em:null, atrasado:false, situacao:'ausente' }] });
+            }
+            if (nome === 'reporte_unificado'){
+              if (!L.consolidado) return { data:{ status:'sem_permissao' }, error:null };
+              return ok({ modelo:'lider', gerado_em:'2026-10-09T19:00:00+00:00', ciclo,
+                cobertura:{ lideres:2, enviados:1, atrasados:1, ausentes:1, pendentes:0 },
+                apontamentos:[{ registro:11, nome:'Bruno Tavares', lider:4, lider_nome:'Ana Figueiredo', entregas:'INSUFICIENTE', assiduidade:'SUFICIENTE',
+                                sinalizado:true, relato:'Combinamos a entrega na terça e não veio' },
+                              { registro:17, nome:'Carla Mendonça', lider:4, lider_nome:'Ana Figueiredo', entregas:'SUFICIENTE', assiduidade:'INSUFICIENTE',
+                                sinalizado:false, relato:null }],
+                escalonamentos:[{ lider_nome:'Ana Figueiredo', texto:'Falta verba para a bancada', atividade_codigo:'ORT-1', atividade_titulo:'Molde da órtese', responsavel_nome:'Carla Mendonça' }],
+                atrasados:[{ codigo:'ORT-2', titulo:'Teste de bancada', responsavel_nome:'Bruno Tavares', prazo:'2026-10-01', dias:8, status:'fazendo' }],
+                feed:[{ titulo:'Bancada pronta', subtitulo:'O ensaio da órtese começa', autor:'Ana Figueiredo', publicado_em:'2026-10-09T18:00:00+00:00' }] });
+            }
+            if (nome === 'reporte_avaliacoes_de') return ok({ itens:[
+              { semana:'2026-10-05', autor:4, autor_nome:'Ana Figueiredo', entregas:'INSUFICIENTE', assiduidade:'SUFICIENTE', origem:'direto', sinalizado:true },
+              { semana:'2026-09-28', autor:4, autor_nome:'Ana Figueiredo', entregas:'SUFICIENTE', assiduidade:'SUFICIENTE', origem:'direto', sinalizado:false }] });
+          }
+          /* ---- 2.19.1: Meus dados, recadastro e termo de sigilo. Sem
+             window.__teste.rec, não há campanha; rec.termo = a campanha
+             inclui o termo do LABBIO ---- */
+          if (/^(cadastro|recadastro|termo)_/.test(nome)){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const T = (window.__teste || {}).rec;
+            if (nome === 'cadastro_meus_dados') return { data:{ status:'ok', registro:4, nome:'Ana Figueiredo', foto:false, nome_civil:'Ana Figueiredo',
+              nacionalidade:'brasileira', endereco_antigo:'Rua Antiga, 10', ...((T || {}).dados || {}), confirmado_em: (T || {}).confirmado || null }, error:null };
+            if (nome === 'cadastro_confirmar'){
+              const p = args.p, e = {};
+              if (!/\S+\s+\S+/.test(p.nome_civil || '')) e.nome_civil = 'Escreva o nome completo, como no documento.';
+              if ((p.cpf || '').replace(/\D/g, '') !== '52998224725') e.cpf = 'CPF inválido. Confira os 11 números.';
+              for (const k of ['data_nascimento','rg','rg_orgao','estado_civil','telefone','end_logradouro','end_numero','end_bairro','end_cep','end_cidade','end_uf','instituicao','curso'])
+                if (!p[k]) e[k] = 'Preencha este campo.';
+              if (!p.matricula && !p.sem_matricula) e.matricula = 'Informe a matrícula, ou marque que não tem.';
+              if (Object.keys(e).length) return { data:{ status:'invalido', campos:e }, error:null };
+              const d = { ...p, cpf: p.cpf.replace(/\D/g, ''), end_cep: p.end_cep.replace(/\D/g, ''), rg_orgao: p.rg_orgao.toUpperCase(), end_uf: p.end_uf.toUpperCase() };
+              if (T){ if (T.emitido && JSON.stringify(T.dados) !== JSON.stringify(d)) T.emitido = null;
+                T.dados = d; T.confirmado = '2026-10-11T12:00:00Z'; }
+              return { data:{ status:'ok', dados:d }, error:null };
+            }
+            const st = () => T.conferido ? 'conferido' : T.enviado ? 'enviado' : T.devolvido ? 'devolvido' : 'pendente';
+            const termoEst = () => (!T || !T.termo) ? { status:'nenhum' } : { status: st(), campanha:'labbio-2026', titulo:'Termo de sigilo do LABBIO',
+              modelo:'termos/termo_sigilo_labbio_3.pdf', modelo_sha256: T.sha, dados_confirmados_em: T.confirmado || null, dados_recentes: !!T.confirmado,
+              emitido_em: T.emitido || null, enviado_em: T.enviado || null, motivo: T.devolvido || null };
+            if (nome === 'recadastro_estado'){
+              if (!T) return { data:{ status:'nenhum' }, error:null };
+              const feito = !!T.confirmado && (!T.termo || ['enviado','conferido'].includes(st()));
+              const status = feito ? 'concluido' : 'pendente';
+              return { data:{ status, campanha:'2026-2', titulo:'Recadastro 2026/2', termo_campanha: T.termo ? 'labbio-2026' : null,
+                dados_confirmados_em: T.confirmado || null, termo: T.termo ? termoEst() : null, pausado: !!T.pausado,
+                dispensa_disponivel: !T.dispensa, bloqueia: status === 'pendente' && !!T.dispensa && !T.pausado }, error:null };
+            }
+            if (nome === 'recadastro_dispensar'){ const ja = !!T?.dispensa; if (T) T.dispensa = true; return { data:{ status: ja ? 'ja_usada' : 'ok' }, error:null }; }
+            if (nome === 'recadastro_painel') return { data:{ status:'ok', campanha: T ? { id:'2026-2', titulo:'Recadastro 2026/2', ativa:true, termo: T.termo ? 'labbio-2026' : null } : null,
+              pessoas:[{ registro:4, nome:'Ana Figueiredo', confirmado_em:'2026-10-10T10:00:00Z', concluido_em:'2026-10-10T10:30:00Z' },
+                       { registro:11, nome:'Bruno Tavares', confirmado_em:null, concluido_em:null }] }, error:null };
+            if (nome === 'recadastro_campanha_ativar') return { data:{ status:'ok', avisados:9 }, error:null };
+            if (nome === 'termo_admin_caminho') return { data:{ status:'ok', caminho:'labbio-2026/' + args.p_registro + '/cccccccc-cccc-cccc-cccc-cccccccccccc.pdf' }, error:null };
+            if (nome === 'termo_registrar_envio_admin') return { data:{ status:'ok' }, error:null };
+            if (nome === 'termo_estado') return { data: termoEst(), error:null };
+            if (!T) return { data:{ status:'sem_permissao' }, error:null };
+            if (nome === 'termo_emitir'){
+              if (!T.confirmado) return { data:{ status:'dados_pendentes' }, error:null };
+              T.emitido = '2026-10-11T12:05:00Z';
+              return { data:{ status:'ok', modelo:'termos/termo_sigilo_labbio_3.pdf', modelo_sha256: T.sha, dados: T.dados, dia:11, mes:'outubro', ano:2026, registro:4 }, error:null };
+            }
+            if (nome === 'termo_registrar_envio'){ if (args.p_existente ? !T.confirmado : !T.emitido) return { data:{ status: args.p_existente ? 'dados_pendentes' : 'nao_emitido' }, error:null };
+              T.enviado = '2026-10-11T12:30:00Z'; T.devolvido = null; T.envio = args; return { data:{ status:'ok' }, error:null }; }
+            if (nome === 'termo_painel') return { data:{ status:'ok', campanha:'labbio-2026', pessoas:[
+              { registro:11, nome:'Bruno Tavares', situacao:'enviado', enviado_em:'2026-10-11T10:00:00Z', arquivo:'labbio-2026/11/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa.pdf' },
+              { registro:17, nome:'Carla Mendonça', situacao:'pendente' },
+              { registro:4, nome:'Ana Figueiredo', situacao:'conferido', enviado_em:'2026-10-10T10:00:00Z', arquivo:'labbio-2026/4/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb.pdf' }] }, error:null };
+            if (nome === 'termo_conferir') return { data:{ status: !args.p_ok && !args.p_motivo ? 'motivo_obrigatorio' : 'ok' }, error:null };
+          }
+          if (nome === 'papeis_atuais'){
+            if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:'function public.papeis_atuais() does not exist' } };
+            return { data: (window.__teste || {}).bloqueada ? [] : papeisStub(), error:null };
+          }
+          if (nome === 'contas_papeis'){
+            regra(nome, {});
+            if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:'function public.contas_papeis() does not exist' } };
+            return { data:{ status:'ok', contas: DADOS.perfis.map(pf => ({ id:pf.id, bloqueada:false,
+              papeis: (pf.papeis || [pf.papel || 'leitura', 'leitura']).filter((x, i, l) => l.indexOf(x) === i)
+                .map(x => ({ papel:x, via: x === 'admin' ? 'conta' : x === 'leitura' ? null : (pf.via || 'legado') })) })) }, error:null };
+          }
+          if (nome === 'grupo_papel_definir'){
+            const p = args?.p || {}; regra(nome, p);
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
+            DADOS.grupo_papeis = (DADOS.grupo_papeis || []).filter(x => x.grupo_id !== p.grupo_id);
+            if (p.papel) DADOS.grupo_papeis.push({ grupo_id:p.grupo_id, papel:p.papel });
+            return { data:{ status:'ok' }, error:null };
+          }
+          if (nome === 'apontamento_ocorrencias'){
+            regra(nome, args);
+            return { data:{ status:'ok', abertas:(args?.p_registros || []).length }, error:null };
+          }
+          if (nome === 'membro_foto_definir'){
+            const p = args?.p || {}; regra(nome, p);
+            if ((window.__teste || {}).v217 === 'falta') return { data:null, error:{ message:'function public.membro_foto_definir(jsonb) does not exist' } };
+            const reg = p.registro ?? DADOS.perfis[0].registro;
+            if (reg !== DADOS.perfis[0].registro && !['admin', 'pessoal'].includes(DADOS.perfis[0].papel)) return { data:{ status:'sem_permissao' }, error:null };
+            const m = DADOS.membros.find(x => x.registro === reg); if (!m) return { data:{ status:'nao_encontrado' }, error:null };
+            const base = '/storage/v1/object/public/fotos/', ant = m.foto_url || '';
+            m.foto_url = p.caminho ? 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#CEDC00"/></svg>') + '#' + base + p.caminho : null;
+            return { data:{ status:'ok', foto_url:m.foto_url, anterior: ant.includes(base) ? ant.split(base)[1] : null }, error:null };
+          }
+          if (nome.startsWith('feedback_')){
+            const p = args?.p || {}; regra(nome, p);
+            const L = DADOS.soma_feedback_lista, f = L.find(x => x.id === p.id);
+            const cod = (t, id) => (t === 'bug' ? 'BUG-' : 'SUG-') + id;
+            if (nome === 'feedback_salvar'){
+              if (!String(p.titulo || '').trim() || String(p.titulo).trim().length < 3) return { data:{ status:'invalido', campo:'titulo' }, error:null };
+              if (!p.id){
+                const id = Math.max(0, ...L.map(x => x.id)) + 1;
+                L.push({ id, tipo:p.tipo, codigo:cod(p.tipo, id), titulo:p.titulo.trim(), corpo:p.corpo || null, versao:p.versao, tela:p.tela || null,
+                  aparelho:p.aparelho, status:'aberto', autor:4, autor_nome:'Ana Figueiredo', votos:0, votei:false, comentarios:0,
+                  criado_em:new Date().toISOString(), atualizado_em:new Date().toISOString() });
+                return { data:{ status:'ok', id, codigo:cod(p.tipo, id) }, error:null };
+              }
+              if (!f) return { data:{ status:'nao_encontrado' }, error:null };
+              if (f.autor !== 4 && !eAdm()) return { data:{ status:'sem_permissao' }, error:null };
+              if (f.status !== 'aberto' && !eAdm()) return { data:{ status:'fechado' }, error:null };
+              Object.assign(f, { tipo:p.tipo, codigo:cod(p.tipo, f.id), titulo:p.titulo.trim(), corpo:p.corpo });
+              return { data:{ status:'ok', id:f.id, codigo:f.codigo }, error:null };
+            }
+            if (!f) return { data:{ status:'nao_encontrado' }, error:null };
+            if (nome === 'feedback_votar'){
+              if (p.voto && !f.votei){ f.votei = true; f.votos++; DADOS.soma_feedback_votos.push({ feedback_id:f.id, registro:4 }); }
+              if (!p.voto && f.votei){ f.votei = false; f.votos--; DADOS.soma_feedback_votos = DADOS.soma_feedback_votos.filter(v => !(v.feedback_id === f.id && v.registro === 4)); }
+              return { data:{ status:'ok', votos:f.votos, votei:f.votei }, error:null };
+            }
+            if (nome === 'feedback_comentar'){
+              DADOS.soma_feedback_comentarios.push({ id:'fc' + (DADOS.soma_feedback_comentarios.length + 1), feedback_id:f.id, registro:4,
+                corpo:p.corpo, criado_em:new Date().toISOString() });
+              f.comentarios++;
+              return { data:{ status:'ok' }, error:null };
+            }
+            if (nome === 'feedback_decidir'){
+              if (!eAdm()) return { data:{ status:'sem_permissao' }, error:null };
+              if (p.status === 'duplicado' && !p.duplicado_de) return { data:{ status:'invalido', campo:'duplicado_de' }, error:null };
+              const d = p.duplicado_de ? L.find(x => x.id === +p.duplicado_de) : null;
+              Object.assign(f, { status:p.status, tipo:p.tipo || f.tipo, codigo:cod(p.tipo || f.tipo, f.id), resposta:p.resposta || null,
+                versao_feito: p.status === 'feito' ? p.versao_feito : null, duplicado_de: d?.id || null, duplicado_de_codigo: d?.codigo || null,
+                decidido_por:4, decidido_por_nome:'Ana Figueiredo', decidido_em:new Date().toISOString() });
+              return { data:{ status:'ok', codigo:f.codigo }, error:null };
+            }
+            if (nome === 'feedback_excluir'){
+              if (!eAdm() && (f.autor !== 4 || f.status !== 'aberto')) return { data:{ status:'sem_permissao' }, error:null };
+              DADOS.soma_feedback_lista = L.filter(x => x.id !== f.id);
+              return { data:{ status:'ok' }, error:null };
+            }
+          }
+          const linhaAtv = id => DADOS.atividades_quadro.find(a => a.id === id);
+          const contaChecks = aid => { const a = linhaAtv(aid); if (!a) return;
+            const ids = DADOS.atividade_checklists.filter(k => k.atividade_id === aid).map(k => k.id);
+            const it = DADOS.atividade_checklist_itens.filter(i => ids.includes(i.checklist_id));
+            a.check_total = it.length; a.check_feitos = it.filter(i => i.feito).length; };
+          /* ---- 2.18.0: o card espelhado ---- */
+          const nivelQ = id => DADOS.grupos_visiveis.find(x => x.id === id)?.meu_nivel;
+          if (nome === 'atividade_espelhar' || nome === 'atividade_espelho_remover' || nome === 'atividade_mover'){
+            const p = args?.p || {}; regra(nome, p);
+            if ((window.__teste || {}).v218 === 'falta') return { data:null, error:{ message:`function public.${nome}(jsonb) does not exist` } };
+            const a = linhaAtv(p.id); if (!a) return { data:{ status:'nao_encontrado' }, error:null };
+            const g = DADOS.grupos_visiveis.find(x => x.id === p.grupo_id);
+            if (!g) return { data:{ status:'invalido', campo:'grupo' }, error:null };
+            if (nome === 'atividade_espelho_remover'){
+              if (nivelQ(g.id) !== 'edicao' && nivelQ(a.grupo_id) !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+              a.espelhos = (a.espelhos || []).filter(x => x !== g.id);
+              const o = { ...(a.espelhos_ordem || {}) }; delete o[g.id]; a.espelhos_ordem = o;
+              DADOS.atividade_log.push({ id:DADOS.atividade_log.length + 1, atividade_id:a.id, registro:4, tipo:'tirou_espelho', para:g.nome, criado_em:new Date().toISOString() });
+              return { data:{ status:'ok' }, error:null };
+            }
+            if (nivelQ(a.grupo_id) !== 'edicao' || g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+            if (nome === 'atividade_espelhar'){
+              if (g.id === a.grupo_id) return { data:{ status:'invalido', campo:'grupo' }, error:null };
+              if (!(a.espelhos || []).includes(g.id)){
+                a.espelhos = [...(a.espelhos || []), g.id]; a.espelhos_ordem = { ...(a.espelhos_ordem || {}), [g.id]:9e9 };
+                DADOS.atividade_log.push({ id:DADOS.atividade_log.length + 1, atividade_id:a.id, registro:4, tipo:'espelhou', para:g.nome, criado_em:new Date().toISOString() });
+              }
+              return { data:{ status:'ok', codigo:a.codigo }, error:null };
+            }
+            /* mover: a cópia com tudo, o original arquivado, os espelhos vão junto */
+            const seq = Math.max(0, ...DADOS.atividades_quadro.filter(x => x.grupo_id === g.id).map(x => x.seq || 0)) + 1;
+            const id = 'tm' + seq + g.prefixo, codigo = g.prefixo + '-' + seq;
+            const esp = (a.espelhos || []).filter(x => x !== g.id);
+            DADOS.atividades_quadro.push({ ...a, id, codigo, seq, grupo_id:g.id, grupo:g.nome, grupo_prefixo:g.prefixo, copia_de:a.id,
+              copia_de_codigo:a.codigo, comentarios:0, arquivada:false, ordem:9e9, espelhos:esp,
+              espelhos_ordem:Object.fromEntries(esp.map(x => [x, (a.espelhos_ordem || {})[x] ?? 9e9])), criado_em:new Date().toISOString() });
+            a.arquivada = true; a.espelhos = []; a.espelhos_ordem = {};
+            return { data:{ status:'ok', id, codigo }, error:null };
+          }
+          if (nome === 'atividade_editar'){
+            let p = args?.p || {}; regra(nome, p);
+            const a = linhaAtv(p.id); if (!a) return { data:{ status:'nao_encontrado' }, error:null };
+            /* edita quem edita qualquer quadro ligado; arquivar é do dono */
+            const quadros = [a.grupo_id, ...(a.espelhos || [])];
+            if (quadros.every(q => nivelQ(q) !== undefined && nivelQ(q) !== 'edicao')) return { data:{ status:'sem_permissao' }, error:null };
+            if ('arquivada' in p && p.arquivada !== a.arquivada && nivelQ(a.grupo_id) !== undefined && nivelQ(a.grupo_id) !== 'edicao')
+              return { data:{ status:'sem_permissao', campo:'arquivada' }, error:null };
+            if ('ordem' in p && p.quadro != null && p.quadro !== a.grupo_id && (a.espelhos || []).includes(p.quadro)){
+              a.espelhos_ordem = { ...(a.espelhos_ordem || {}), [p.quadro]:p.ordem }; p = { ...p }; delete p.ordem; }
+            ['titulo','descricao','status','prioridade','prazo','estimativa_h','ordem','arquivada','etiquetas'].forEach(k => { if (k in p) a[k] = p[k]; });
+            if ('responsavel' in p){ a.responsavel = p.responsavel == null ? null : +p.responsavel;
+              a.responsavel_nome = DADOS.membros.find(m => m.registro === a.responsavel)?.nome || null; }
+            if ('pessoas' in p) a.pessoas = [...new Set(p.pessoas.map(Number))].filter(r => r !== a.responsavel);
+            else if (a.pessoas) a.pessoas = a.pessoas.filter(r => r !== a.responsavel);
+            return { data:{ status:'ok', codigo:a.codigo }, error:null };
+          }
+          if (nome === 'atividade_checklist'){
+            const p = args?.p || {}; regra(nome, p);
+            const K = DADOS.atividade_checklists, I = DADOS.atividade_checklist_itens;
+            const it = p.item_id ? I.find(i => i.id === p.item_id) : null;
+            const ck = p.checklist_id ? K.find(k => k.id === p.checklist_id) : it ? K.find(k => k.id === it.checklist_id) : null;
+            const aid = p.acao === 'lista_criar' ? p.atividade_id : ck?.atividade_id;
+            const a = linhaAtv(aid); if (!a) return { data:{ status:'nao_encontrado' }, error:null };
+            const g = DADOS.grupos_visiveis.find(x => x.id === a.grupo_id);
+            if (g && g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao' }, error:null };
+            const linhas = (cid, t) => String(t || '').split('\n').map(l => ({ x:/^\s*([-*+]|\d+[.)])\s+\[[xX]\]\s+/.test(l),
+              t:l.replace(/^\s*(([-*+]|\d+[.)])\s+)?(\[[ xX]\]\s+)?/, '').trim() })).filter(l => l.t)
+              .map((l, n) => { const o = { id:'ci' + (I.length + 1 + n) + '-' + Date.now(), checklist_id:cid, texto:l.t, feito:l.x,
+                ordem:Math.max(0, ...I.filter(i => i.checklist_id === cid).map(i => i.ordem)) + 1 + n }; I.push(o); return o; });
+            let novo = null, n = 0;
+            if (p.acao === 'lista_criar'){ novo = 'ck' + (K.length + 1) + '-' + Date.now();
+              K.push({ id:novo, atividade_id:aid, titulo:p.titulo || 'Checklist', ordem:K.length + 1 }); n = linhas(novo, p.texto).length; }
+            else if (p.acao === 'lista_renomear') ck.titulo = p.titulo;
+            else if (p.acao === 'lista_excluir'){ DADOS.atividade_checklists = K.filter(k => k.id !== ck.id);
+              DADOS.atividade_checklist_itens = I.filter(i => i.checklist_id !== ck.id); }
+            else if (p.acao === 'item_criar'){ const ns = linhas(ck.id, p.texto); n = ns.length; novo = ns[ns.length - 1]?.id; }
+            else if (p.acao === 'item_editar') it.texto = p.texto;
+            else if (p.acao === 'item_marcar') it.feito = p.feito ?? !it.feito;
+            else if (p.acao === 'item_excluir') DADOS.atividade_checklist_itens = I.filter(i => i.id !== it.id);
+            else if (p.acao === 'item_mover'){ if (p.checklist_id) it.checklist_id = p.checklist_id; if (p.ordem != null) it.ordem = p.ordem; }
+            else return { data:{ status:'invalido', campo:'acao' }, error:null };
+            contaChecks(aid);
+            return { data:{ status:'ok', id:novo, itens:n }, error:null };
+          }
+          if (nome === 'atividade_copiar'){
+            const p = args?.p || {}; regra(nome, p);
+            const a = linhaAtv(p.id), g = DADOS.grupos_visiveis.find(x => x.id === p.grupo_id);
+            if (!a) return { data:{ status:'nao_encontrado' }, error:null };
+            if (!g || g.meu_nivel !== 'edicao') return { data:{ status:'sem_permissao', campo:'grupo' }, error:null };
+            const seq = Math.max(0, ...DADOS.atividades_quadro.filter(x => x.grupo_id === g.id).map(x => x.seq || 0)) + 1;
+            const com = { descricao:true, pessoas:true, etiquetas:true, prazo:true, checklists:true, ...(p.com || {}) };
+            const id = 'tc' + seq + g.prefixo, codigo = g.prefixo + '-' + seq;
+            DADOS.atividades_quadro.push({ ...a, id, codigo, seq, grupo_id:g.id, grupo:g.nome, grupo_prefixo:g.prefixo, titulo:p.titulo || a.titulo,
+              status:p.status || a.status, descricao: com.descricao ? a.descricao : null, responsavel: com.pessoas ? a.responsavel : null,
+              responsavel_nome: com.pessoas ? a.responsavel_nome : null, pessoas: com.pessoas ? [...(a.pessoas || [])] : [],
+              etiquetas: com.etiquetas ? [...(a.etiquetas || [])] : [], prazo: com.prazo ? a.prazo : null, copia_de:a.id,
+              copia_de_codigo:a.codigo, comentarios:0, sinalizada:false, origem_tipo:null, origem_id:null, arquivada:false,
+              criado_em:new Date().toISOString(), ordem:9e9, check_total:0, check_feitos:0 });
+            if (com.checklists) DADOS.atividade_checklists.filter(k => k.atividade_id === a.id).forEach(k => {
+              const nk = k.id + '-' + id; DADOS.atividade_checklists.push({ ...k, id:nk, atividade_id:id });
+              DADOS.atividade_checklist_itens.filter(i => i.checklist_id === k.id).forEach(i => DADOS.atividade_checklist_itens.push({ ...i, id:i.id + '-' + id, checklist_id:nk })); });
+            contaChecks(id);
+            DADOS.atividade_log.push({ id:DADOS.atividade_log.length + 1, atividade_id:a.id, registro:4, tipo:'copiou_para', para:codigo, criado_em:new Date().toISOString() });
+            if (p.arquivar) a.arquivada = true;
+            return { data:{ status:'ok', id, codigo }, error:null };
+          }
+          if (nome === 'atividade_comentario_editar' || nome === 'atividade_comentario_excluir'){
+            const p = args?.p || {}; regra(nome, p);
+            const c = DADOS.atividade_comentarios.find(x => x.id === p.id); if (!c) return { data:{ status:'nao_encontrado' }, error:null };
+            if (nome === 'atividade_comentario_editar'){
+              if (c.registro !== 4) return { data:{ status:'sem_permissao' }, error:null };
+              Object.assign(c, { corpo:p.corpo, mencionados:p.mencionados || [], editado_em:new Date().toISOString() });
+            } else {
+              if (c.registro !== 4 && !['admin', 'pessoal'].includes(DADOS.perfis[0].papel)) return { data:{ status:'sem_permissao' }, error:null };
+              DADOS.atividade_comentarios = DADOS.atividade_comentarios.filter(x => x.id !== p.id);
+            }
+            return { data:{ status:'ok' }, error:null };
+          }
+          if (nome === 'atividade_criar'){
+            const p = args?.p || {}; regra(nome, p);
+            const g = DADOS.grupos_visiveis.find(x => x.id === p.grupo_id) || { id:p.grupo_id, prefixo:'ORT', nome:'Órtese' };
+            const seq = Math.max(0, ...DADOS.atividades_quadro.filter(x => x.grupo_id === g.id).map(x => x.seq || 0)) + 1;
+            const codigo = g.prefixo + '-' + seq;
+            DADOS.atividades_quadro.push({ id:'tn' + seq, codigo, seq, grupo_id:g.id, grupo:g.nome, grupo_prefixo:g.prefixo, titulo:p.titulo,
+              descricao:p.descricao, status:p.status || 'a_fazer', prioridade:p.prioridade || 'media', responsavel:p.responsavel ? +p.responsavel : null,
+              pessoas:(p.pessoas || []).map(Number), etiquetas:p.etiquetas || [], prazo:p.prazo, arquivada:false, comentarios:0,
+              atrasada:false, sinalizada:false, ordem:9e9, criado_por:4, criado_por_nome:'Ana Figueiredo', criado_em:new Date().toISOString(),
+              check_total:0, check_feitos:0 });
+            return { data:{ status:'ok', codigo, id:'tn' + seq }, error:null };
+          }
           if (nome === 'atividade_comentar'){
             if (window.__comentarFalha === 'sem_registro')
               return { data: { status:'sem_registro' }, error: null };
             if (window.__comentarFalha === 'lanca') throw new Error('rede caiu');
             window.__comentario = args?.p;
-            return { data: { status:'ok', id:'c9' }, error: null };
+            const id = 'c' + (DADOS.atividade_comentarios.length + 9);
+            DADOS.atividade_comentarios.push({ id, atividade_id:args.p.atividade_id, registro:4, corpo:args.p.corpo,
+              mencionados:args.p.mencionados || [], criado_em:new Date().toISOString() });
+            const a = DADOS.atividades_quadro.find(x => x.id === args.p.atividade_id); if (a) a.comentarios = (a.comentarios || 0) + 1;
+            return { data: { status:'ok', id }, error: null };
           }
           if (nome === 'grupo_salvar'){
             const p = args?.p || {};
@@ -916,7 +1953,7 @@
             return { data: {
               tipo:'solicitacao', id:'s1', protocolo:'SOL26-0001',
               titulo:'Acesso ao LABBIO', especie:'acesso', status:'aberta',
-              dados:{ item:'LABBIO — porta principal', item_id:'i1',
+              dados:{ item:'LABBIO — porta principal', item_id:'i1', ...(((window.__teste || {}).biometria) ? { labbio_pedido_id:'p1' } : {}),
                       justificativa:'Montagem da bancada <b>nova</b>',
                       tempo_necessario:'Até dezembro' },
               resposta:null, respondido_por:null, respondido_em:null,
@@ -928,6 +1965,24 @@
             window.__decisao = args?.p;
             return { data: { status:'ok', decisao:args?.p?.decisao,
                              concedidos:(args?.p?.conceder||[]).length, codigo:'DEP-1' }, error:null };
+          }
+          /* 2.18.0: as preferências por categoria; Ana escolheu atividades na hora e o Studio sem e-mail */
+          if (nome === 'notificacao_canais_meus'){
+            const CATS = [['atividades','Atividades'],['bugs_melhorias','Bugs e melhorias'],['documentos','Documentos'],
+              ['studio','Studio'],['reporte','Reporte'],['agenda','Agenda'],['pessoal','Pessoal'],
+              ['treinamentos','Treinamentos'],['sistema','Sistema']];
+            DADOS.notificacao_canais ||= [{ registro:4, categoria:'atividades', push:true, email:'instantaneo' },
+                                          { registro:4, categoria:'studio', push:false, email:'nunca' }];
+            return { data: { status:'ok', categorias: CATS.map(([chave, nome]) => {
+              const l = DADOS.notificacao_canais.find(x => x.registro === 4 && x.categoria === chave);
+              return { chave, nome, push: l ? l.push : true, email: l ? l.email : 'semanal' };
+            }) }, error:null };
+          }
+          if (nome === 'notificacao_canais_salvar'){
+            window.__canais = args?.p;
+            DADOS.notificacao_canais = (args?.p?.canais || []).filter(c => !(c.push && c.email === 'semanal'))
+              .map(c => ({ registro:4, ...c }));
+            return { data: { status:'ok', categorias:(args?.p?.canais || []).length }, error:null };
           }
           if (nome === 'notificacao_preferencia_salvar'){
             window.__preferencia = args?.p;
@@ -1264,15 +2319,15 @@
             const aprovadores = () => DADOS.membros.filter(m => ['Ativo','Em pausa / avaliação','Sob demanda'].includes(m.status)
               && (cfgE.grupos_aprovadores || []).some(id => gruposDe(m.registro).has(id))).map(m => m.registro);
             const gere = e => e.criado_por === eu || gestao;
-            const parts = e => DADOS.eventos_ext_participantes.filter(p => p.evento_id === e.id).sort((a, b) => a.ordem - b.ordem);
-            const vale = e => new Set(DADOS.eventos_ext_aprovacoes.filter(a => a.evento_id === e.id && a.versao === e.versao
+            const parts = e => DADOS.eventos_ext_participantes.filter(p => p.missao_id === e.id).sort((a, b) => a.ordem - b.ordem);
+            const vale = e => new Set(DADOS.eventos_ext_aprovacoes.filter(a => a.missao_id === e.id && a.versao === e.versao
               && a.decisao === 'aprovada').map(a => a.registro)).size;
-            const jaAprovei = e => DADOS.eventos_ext_aprovacoes.some(a => a.evento_id === e.id && a.versao === e.versao
+            const jaAprovei = e => DADOS.eventos_ext_aprovacoes.some(a => a.missao_id === e.id && a.versao === e.versao
               && a.registro === eu && a.decisao === 'aprovada');
             const ve = e => (e.status === 'aprovado' && eu != null) || gestao || e.criado_por === eu
               || parts(e).some(p => p.registro === eu) || (['aprovacao','aprovado'].includes(e.status) && aprova());
             const veEmails = e => gestao || aprova() || e.criado_por === eu;
-            const hist = (e, acao, detalhe) => DADOS.eventos_ext_historico.push({ evento_id:e.id, nome:'Ana Figueiredo', acao,
+            const hist = (e, acao, detalhe) => DADOS.eventos_ext_historico.push({ missao_id:e.id, nome:'Ana Figueiredo', acao,
               detalhe: detalhe ?? null, criado_em:new Date().toISOString() });
             const porCod = c => DADOS.doc_emitidos.find(d => d.codigo === String(c || '').toUpperCase().replace(/[^0-9A-Z]/g, '')
               .replace(/O/g, '0').replace(/[IL]/g, '1').replace(/^(.{4})(.{4})(.{4})$/, '$1-$2-$3'));
@@ -1288,7 +2343,7 @@
               return `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8)}`; };
             const emitir = (tipo, documento, revisao, titulo, registro, titular, dados, e, pt) => {
               const d = { codigo:novoCod(), tipo, documento, revisao, titulo, emissor:'Diretoria', registro, titular,
-                evento_id:e?.id || null, participante_id:pt?.id || null, dados,
+                missao_id:e?.id || null, participante_id:pt?.id || null, dados,
                 controle: Math.floor(Math.random() * 0xFFFFFFFF).toString(16).toUpperCase().padStart(8, '0'),
                 emitido_em:new Date().toISOString(), emitido_por:eu, emitido_nome:'Ana Figueiredo',
                 revogado_em:null, revogado_nome:null, revogado_motivo:null, consultas:0, consultado_em:null };
@@ -1302,7 +2357,7 @@
                 treinamentos: DADOS.treinamento_conclusoes.filter(c => c.registro === reg).map(c => ({ codigo:c.codigo, titulo:c.titulo,
                   revisao:c.revisao, carga_horaria_min:c.carga_horaria_min, concluido_em:String(c.concluido_em).slice(0, 10), certificado:c.certificado })),
                 eventos: DADOS.eventos_ext_participantes.filter(p => p.registro === reg)
-                  .map(p => [p, DADOS.eventos_ext.find(e => e.id === p.evento_id)]).filter(([, e]) => e?.status === 'aprovado')
+                  .map(p => [p, DADOS.eventos_ext.find(e => e.id === p.missao_id)]).filter(([, e]) => e?.status === 'aprovado')
                   .map(([p, e]) => ({ codigo:e.codigo, nome:e.nome, data_inicio:e.data_inicio, data_fim:e.data_fim, local:e.local,
                     modalidade:e.modalidade, papel:p.papel, horas:p.horas ?? e.horas })) }; };
             const podeVinculo = reg => reg != null && (reg === eu || gestao);
@@ -1336,10 +2391,10 @@
                 .map(d => ({ codigo:d.codigo, tipo:d.tipo, documento:d.documento, revisao:d.revisao, titulo:d.titulo, titular:d.titular,
                   emitido_em:d.emitido_em, emitido_nome:d.emitido_nome, revogado_em:d.revogado_em, revogado_motivo:d.revogado_motivo,
                   consultas:d.consultas, consultado_em:d.consultado_em,
-                  evento_codigo: DADOS.eventos_ext.find(e => e.id === d.evento_id)?.codigo || null })), error:null };
+                  evento_codigo: DADOS.eventos_ext.find(e => e.id === d.missao_id)?.codigo || null })), error:null };
             }
             if (nome === 'doc_emitido_ler'){
-              const d = porCod(args.p_codigo), e = d && DADOS.eventos_ext.find(x => x.id === d.evento_id);
+              const d = porCod(args.p_codigo), e = d && DADOS.eventos_ext.find(x => x.id === d.missao_id);
               if (!d || !(d.registro === eu || d.emitido_por === eu || gestao || (d.tipo === 'participacao' && e && veEmails(e))))
                 return st('nao_encontrado');
               return ok(json(d, false));
@@ -1375,8 +2430,8 @@
                   return { id:p.id, registro:p.registro, nome:p.nome, email: vm || p.registro === eu ? p.email : null, papel:p.papel, horas:p.horas,
                     declaracao: vm || p.registro === eu ? p.declaracao : null, enviado_em: vm ? env?.enviado_em || null : null,
                     envio_erro: vm ? env?.erro || null : null }; }),
-                aprovacoes: DADOS.eventos_ext_aprovacoes.filter(a => a.evento_id === e.id),
-                historico: DADOS.eventos_ext_historico.filter(h => h.evento_id === e.id),
+                aprovacoes: DADOS.eventos_ext_aprovacoes.filter(a => a.missao_id === e.id),
+                historico: DADOS.eventos_ext_historico.filter(h => h.missao_id === e.id),
                 aprovacoes_validas:vale(e), aprovacoes_minimas:cfgE.aprovacoes_minimas,
                 pode:{ editar: g && ['rascunho','aprovacao'].includes(e.status), enviar: g && e.status === 'rascunho' && eu != null,
                   cancelar: g && ['rascunho','aprovacao'].includes(e.status),
@@ -1417,8 +2472,8 @@
               else { nova = e.status === 'aprovacao'; if (nova) e.versao++; hist(e, 'editou', nova ? `Versão ${e.versao} — as aprovações recomeçam` : null); }
               Object.assign(e, { nome:nm, descricao:String(p.descricao || '').trim() || null, modalidade:mod, local:String(p.local || '').trim() || null,
                 data_inicio:p.data_inicio, data_fim:fim, hora_inicio:p.hora_inicio || null, hora_fim:p.hora_fim || null, horas:Math.round(h * 100) / 100 });
-              DADOS.eventos_ext_participantes = DADOS.eventos_ext_participantes.filter(x => x.evento_id !== e.id).concat(ps.map((x, i) => ({
-                id:`${e.id}-p${i + 1}-${Date.now()}`, evento_id:e.id, registro:x.registro ?? null,
+              DADOS.eventos_ext_participantes = DADOS.eventos_ext_participantes.filter(x => x.missao_id !== e.id).concat(ps.map((x, i) => ({
+                id:`${e.id}-p${i + 1}-${Date.now()}`, missao_id:e.id, registro:x.registro ?? null,
                 nome: x.registro != null ? DADOS.membros.find(m => m.registro === x.registro).nome : String(x.nome).trim(),
                 email: x.registro != null ? null : String(x.email).trim().toLowerCase(), papel:String(x.papel || '').trim() || null,
                 horas: x.horas === '' || x.horas == null ? null : Number(x.horas), ordem:i + 1, declaracao:null })));
@@ -1445,7 +2500,7 @@
               if (e.status !== 'aprovacao') return st('fora_de_aprovacao');
               if (e.enviado_por === eu) return st('propria');
               if (jaAprovei(e)) return st('ja_aprovou');
-              DADOS.eventos_ext_aprovacoes.push({ evento_id:e.id, versao:e.versao, registro:eu, nome:'Ana Figueiredo',
+              DADOS.eventos_ext_aprovacoes.push({ missao_id:e.id, versao:e.versao, registro:eu, nome:'Ana Figueiredo',
                 decisao: p.decisao === 'aprovar' ? 'aprovada' : 'devolvida', parecer: String(p.parecer || '').trim() || null, criado_em:new Date().toISOString() });
               if (p.decisao === 'devolver'){ Object.assign(e, { status:'rascunho', motivo:p.parecer.trim() }); hist(e, 'devolveu', p.parecer.trim());
                 return ok({ situacao:'rascunho' }); }
@@ -1480,7 +2535,7 @@
               if (e.status !== 'aprovado') return st('nao_aprovado');
               if (!String(args.p_motivo || '').trim()) return st('invalido', { campo:'motivo' });
               let n = 0;
-              DADOS.doc_emitidos.filter(d => d.evento_id === e.id && !d.revogado_em).forEach(d => { n++;
+              DADOS.doc_emitidos.filter(d => d.missao_id === e.id && !d.revogado_em).forEach(d => { n++;
                 Object.assign(d, { revogado_em:new Date().toISOString(), revogado_nome:'Ana Figueiredo', revogado_motivo:`${e.codigo} reaberto para correção: ${args.p_motivo.trim()}` }); });
               parts(e).forEach(pt => { pt.declaracao = null; });
               Object.assign(e, { status:'rascunho', versao:e.versao + 1, aprovado_em:null, motivo:args.p_motivo.trim() });
@@ -1489,7 +2544,7 @@
             }
             if (nome === 'evento_ext_reenviar'){
               const pt = DADOS.eventos_ext_participantes.find(x => x.id === args.p_participante);
-              const e = pt && DADOS.eventos_ext.find(x => x.id === pt.evento_id);
+              const e = pt && DADOS.eventos_ext.find(x => x.id === pt.missao_id);
               if (!pt) return st('nao_encontrado');
               if (!veEmails(e)) return st('sem_permissao');
               if (e.status !== 'aprovado' || !pt.declaracao) return st('nao_aprovado');
@@ -1630,13 +2685,13 @@
           /* ---- v28: a agenda ---- */
           const agReg = () => DADOS.perfis[0].registro, agGestor = () => ['admin','pessoal'].includes(DADOS.perfis[0].papel);
           const agVe = e => e.visibilidade === 'equipe' || agGestor() || e.owner_registro === agReg()
-            || DADOS.evento_participantes.some(p => p.evento_id === e.id && p.registro === agReg());
+            || DADOS.evento_participantes.some(p => p.missao_id === e.id && p.registro === agReg());
           if (nome === 'agenda_manter_series') return { data:0, error:null };
           if (nome === 'agenda_itens'){
             (window.__rpcs ||= []).push({ nome, p:args });
             const de = args.p_de, ate = args.p_ate, eu = agReg();
             const evs = DADOS.eventos.filter(e => e.status !== 'Cancelado' && e.data <= ate && (e.data_fim || e.data) >= de && agVe(e)).map(e => {
-              const ps = DADOS.evento_participantes.filter(p => p.evento_id === e.id), meu = ps.find(p => p.registro === eu);
+              const ps = DADOS.evento_participantes.filter(p => p.missao_id === e.id), meu = ps.find(p => p.registro === eu);
               const pd = DADOS.agenda_predefinidos.find(x => x.id === e.predefinido_id);
               return { id:'ev:' + e.id, origem:'evento', ref:e.id, tipo:e.tipo, titulo:e.titulo, cor:e.cor || pd?.cor || '#2DD4BF',
                 data_inicio:e.data, data_fim:e.data_fim || e.data, hora_inicio:e.hora_inicio, hora_fim:e.hora_fim, dia_inteiro:!e.hora_inicio,
@@ -1661,12 +2716,12 @@
             if (!e || !agVe(e)) return { data:{ status:'nao_encontrado' }, error:null };
             const nomeDe = r => DADOS.membros.find(m => m.registro === r)?.nome;
             const pode = agGestor() || e.owner_registro === agReg();
-            return { data:{ status:'ok', pode_editar:pode, minha_resposta:DADOS.evento_participantes.find(p => p.evento_id === e.id && p.registro === agReg())?.resposta || null,
+            return { data:{ status:'ok', pode_editar:pode, minha_resposta:DADOS.evento_participantes.find(p => p.missao_id === e.id && p.registro === agReg())?.resposta || null,
               evento:{ ...e, hora_inicio:e.hora_inicio?.slice(0, 5) || null, hora_fim:e.hora_fim?.slice(0, 5) || null, descricao:e.pauta,
                 cor:e.cor || DADOS.agenda_predefinidos.find(x => x.id === e.predefinido_id)?.cor || '#2DD4BF', cor_propria:e.cor || null,
                 organizador:nomeDe(e.owner_registro), cancelado:e.status === 'Cancelado', serie_ate:null },
-              participantes:DADOS.evento_participantes.filter(p => p.evento_id === e.id).map(p => ({ ...p, nome:nomeDe(p.registro) })),
-              externos:DADOS.evento_externos.filter(x => x.evento_id === e.id).map(x => pode ? x : { nome:x.nome, resposta:x.resposta }) }, error:null };
+              participantes:DADOS.evento_participantes.filter(p => p.missao_id === e.id).map(p => ({ ...p, nome:nomeDe(p.registro) })),
+              externos:DADOS.evento_externos.filter(x => x.missao_id === e.id).map(x => pode ? x : { nome:x.nome, resposta:x.resposta }) }, error:null };
           }
           if (nome === 'agenda_evento_salvar'){
             const p = args?.p || {};
@@ -1690,17 +2745,17 @@
             let entraram = 0;
             if ('obrigatorios' in p || 'opcionais' in p){
               const todos = [...new Set([...(p.obrigatorios || []), ...(p.opcionais || []), e.owner_registro])];
-              const velhos = DADOS.evento_participantes.filter(x => x.evento_id === e.id);
+              const velhos = DADOS.evento_participantes.filter(x => x.missao_id === e.id);
               entraram = todos.filter(r => !velhos.some(v => v.registro === r)).length;
-              DADOS.evento_participantes = DADOS.evento_participantes.filter(x => x.evento_id !== e.id || todos.includes(x.registro));
-              todos.forEach(r => { let x = DADOS.evento_participantes.find(y => y.evento_id === e.id && y.registro === r);
-                if (!x){ x = { evento_id:e.id, registro:r, resposta:r === e.owner_registro ? 'vou' : 'pendente' }; DADOS.evento_participantes.push(x); }
+              DADOS.evento_participantes = DADOS.evento_participantes.filter(x => x.missao_id !== e.id || todos.includes(x.registro));
+              todos.forEach(r => { let x = DADOS.evento_participantes.find(y => y.missao_id === e.id && y.registro === r);
+                if (!x){ x = { missao_id:e.id, registro:r, resposta:r === e.owner_registro ? 'vou' : 'pendente' }; DADOS.evento_participantes.push(x); }
                 x.papel = (p.opcionais || []).includes(r) ? 'opcional' : 'obrigatorio'; });
             }
-            if ('externos' in p){ DADOS.evento_externos = DADOS.evento_externos.filter(x => x.evento_id !== e.id);
-              (p.externos || []).forEach((x, i) => DADOS.evento_externos.push({ id:'x' + e.id + i, evento_id:e.id, email:x.email, nome:x.nome, resposta:'pendente' })); }
+            if ('externos' in p){ DADOS.evento_externos = DADOS.evento_externos.filter(x => x.missao_id !== e.id);
+              (p.externos || []).forEach((x, i) => DADOS.evento_externos.push({ id:'x' + e.id + i, missao_id:e.id, email:x.email, nome:x.nome, resposta:'pendente' })); }
             const mudou = antes ? [antes.data !== e.data && 'data', (antes.hora_inicio !== e.hora_inicio || antes.hora_fim !== e.hora_fim) && 'horário'].filter(Boolean) : [];
-            return { data:{ status:'ok', id:e.id, numero:e.numero, convidados:DADOS.evento_participantes.filter(x => x.evento_id === e.id).length,
+            return { data:{ status:'ok', id:e.id, numero:e.numero, convidados:DADOS.evento_participantes.filter(x => x.missao_id === e.id).length,
               entraram, mudou, eventos:1, ocorrencias:0 }, error:null };
           }
           if (nome === 'agenda_evento_excluir'){
@@ -1710,7 +2765,7 @@
           }
           if (nome === 'agenda_responder'){
             (window.__rpcs ||= []).push({ nome, p:args });
-            const x = DADOS.evento_participantes.find(y => y.evento_id === args.p_id && y.registro === agReg());
+            const x = DADOS.evento_participantes.find(y => y.missao_id === args.p_id && y.registro === agReg());
             if (!x) return { data:{ status:'nao_convidado' }, error:null };
             x.resposta = args.p_resposta; return { data:{ status:'ok', resposta:args.p_resposta }, error:null };
           }
@@ -1721,7 +2776,8 @@
           if (nome === 'labbio_placar'){ (window.__rpcs ||= []).push({ nome, p:args }); return { data:DADOS.placar, error:null }; }
           if (nome === 'checkin_folha_criar'){
             (window.__rpcs ||= []).push({ nome, p:args });
-            if (!agGestor()) return { data:{ status:'sem_permissao' }, error:null };
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
+            DADOS.checkin_folhas.forEach(x => { if (!x.revogada_em){ x.revogada_em = new Date().toISOString(); x.revogada_motivo = 'substituída'; } });
             const f = { id:'f' + (DADOS.checkin_folhas.length + 1), numero:DADOS.checkin_folhas.length + 1, token:'0c9d8e7f-6a5b-4c3d-8e2f-1a0b9c8d7e6f',
               rotulo:args.p_rotulo || null, criada_em:new Date().toISOString(), criada_por:'Ana Figueiredo', revogada_em:null, usos:0, ultimo_uso:null };
             DADOS.checkin_folhas.unshift(f);
@@ -1729,13 +2785,39 @@
           }
           if (nome === 'checkin_folha_revogar'){
             (window.__rpcs ||= []).push({ nome, p:args });
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
             const f = DADOS.checkin_folhas.find(x => x.id === args.p_id); if (!f) return { data:{ status:'nao_encontrado' }, error:null };
             f.revogada_em = new Date().toISOString(); return { data:{ status:'ok' }, error:null };
+          }
+          /* 2.19.2: o local do check-in pela folha (db/2.19.2_checkin_local.sql). window.__teste.checkinLocal
+             sobrescreve a configuração; a regra é a do banco: distância menos a imprecisão (no máximo 100 m) cabe no raio. */
+          const LOCAL = () => ({ ativo:true, latitude:-19.870585008331524, longitude:-43.96169940068524, raio_m:150, precisao_max_m:200,
+            atualizado_em:'2026-10-11T12:00:00Z', atualizado_por:'Migração 2.19.2', configurado:true, ...((window.__teste || {}).checkinLocal || {}) });
+          if (nome === 'checkin_local_ler'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            return { data: DADOS.perfis[0].papel === 'admin' ? { status:'ok', ...LOCAL() } : { status:'sem_permissao' }, error:null };
+          }
+          if (nome === 'checkin_local_salvar'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            if (DADOS.perfis[0].papel !== 'admin') return { data:{ status:'sem_permissao' }, error:null };
+            (window.__teste ||= {}).checkinLocal = { ativo:args.p_ativo, latitude:args.p_lat, longitude:args.p_lon, raio_m:args.p_raio,
+              precisao_max_m:args.p_precisao_max, atualizado_por:'Ana Figueiredo', atualizado_em:new Date().toISOString() };
+            return { data:{ status:'ok' }, error:null };
           }
           if (nome === 'registrar_checkin_folha'){
             (window.__rpcs ||= []).push({ nome, p:args });
             const f = DADOS.checkin_folhas.find(x => x.token === args.p_token && !x.revogada_em);
             if (!f) return { data:{ status:'folha_invalida' }, error:null };
+            const c = LOCAL();
+            if (c.ativo){
+              const { p_lat:la, p_lon:lo, p_precisao:pr } = args;
+              if (typeof la !== 'number' || typeof lo !== 'number' || !isFinite(la) || !isFinite(lo)) return { data:{ status:'sem_localizacao' }, error:null };
+              if (typeof pr !== 'number' || !isFinite(pr) || pr > c.precisao_max_m) return { data:{ status:'localizacao_imprecisa', precisao_max_m:c.precisao_max_m }, error:null };
+              const rad = x => x * Math.PI / 180, a = Math.sin(rad(la - c.latitude) / 2) ** 2
+                + Math.cos(rad(c.latitude)) * Math.cos(rad(la)) * Math.sin(rad(lo - c.longitude) / 2) ** 2;
+              const d = 2 * 6371000 * Math.asin(Math.sqrt(a));
+              if (d - Math.min(pr, 100) > c.raio_m) return { data:{ status:'fora_do_local', distancia_m:Math.round(d), raio_m:c.raio_m }, error:null };
+            }
             f.usos++; return { data:{ status:'ok', nome:'Ana Figueiredo', visitas_mes:13, anterior:null }, error:null };
           }
           if (nome === 'portal_agenda_ocupacao'){
@@ -1813,7 +2895,12 @@
                 return { data:{ path: caminho }, error:null }; },
               createSignedUrl: async (caminho, exp, op) => { (window.__baixados ||= []).push({ bucket, caminho, op });
                 return { data:{ signedUrl:'javascript:void(0)' }, error:null }; },
-              remove: async (caminhos) => { (window.__removidos ||= []).push(...caminhos); return { data:[], error:null }; },
+              remove: async (caminhos) => { (window.__removidos ||= []).push(...caminhos);
+                (window.__removidosB ||= []).push(...caminhos.map(caminho => ({ bucket, caminho }))); return { data:[], error:null }; },
+              /* baixar (a cópia das imagens do feed para o bucket público): um JPEG de mentira */
+              download: async (caminho) => { (window.__baixados ||= []).push({ bucket, caminho, op:'download' });
+                if ((window.__teste || {}).downloadFalha === caminho) return { data:null, error:{ message:'Object not found' } };
+                return { data: new Blob([new Uint8Array([255, 216, 255, 217])], { type:'image/jpeg' }), error:null }; },
               /* a prévia de uma arte: um retângulo da cor da marca */
               createSignedUrls: async (caminhos) => ({ data: caminhos.map(c => ({ path:c, signedUrl:
                 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="100"><rect width="80" height="100" fill="#00594F"/><circle cx="60" cy="20" r="12" fill="#CEDC00"/></svg>') })), error:null }),
