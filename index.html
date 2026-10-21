@@ -2928,15 +2928,14 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 .aac-faixa .tx>.small,.aac-motivo{flex-basis:100%}
 .aac-motivo{font-size:13px;color:var(--warn-tx)}
 .aac-faixa .acts{margin:0}
+.aac-trilha{grid-template-columns:repeat(5,1fr);margin:4px 0 18px}
+@media (max-width:640px){.aac-trilha .sub{display:none}
+  .aac-trilha .arq-etapa{min-width:0;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 .aac-passos{display:flex;flex-direction:column;gap:14px}
 .aac-passo{padding:18px 20px}
-.aac-passo>header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.aac-passo>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .aac-passo>header h2{font-size:16.5px;font-weight:600}
-.aac-n{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:50%;border:1px solid var(--line2);
-  font-family:var(--fd);font-size:13px;font-weight:600;color:var(--muted)}
-.aac-n .ic{width:15px;height:15px}
-.aac-passo.feito .aac-n{background:rgba(var(--ok-rgb),.14);border-color:rgba(var(--ok-rgb),.45);color:var(--ok)}
-.aac-passo.atual .aac-n{background:var(--syn);border-color:var(--syn);color:var(--deep)}
+.aac-passo.atual{border-color:var(--syn-borda)}
 .aac-passo.trava{opacity:.62}
 .aac-dados dt,.aac-sem i,.aac-op .cod,.aac-etapas .n{font-family:var(--fd)}
 .aac-dados dt{letter-spacing:.06em}
@@ -2958,6 +2957,10 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 .aac-op{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .aac-op.pri{border-color:var(--syn-borda);background:rgba(var(--tom),.04)}
 .aac-op.alt{border-style:dashed;border-color:var(--line2)}
+.aac-op.fora:not(.pri){background:rgba(var(--tom),.02)}
+.aac-out{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0 14px;margin-top:12px;
+  border:1px solid var(--line);border-radius:14px;padding:12px 14px 2px}
+.aac-out .fld.full{grid-column:1/-1}
 .aac-op .cab{display:flex;align-items:baseline;gap:8px}
 .aac-op .cab b{font-size:14px;font-weight:600;line-height:1.35}
 .aac-op .cod{font-size:11px;font-weight:600;letter-spacing:.08em;color:var(--syn-tx)}

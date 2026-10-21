@@ -5,13 +5,17 @@
    da Congregação da Escola de Engenharia da UFMG. O relatório é escrito
    no template LaTeX do brand (templates/aacc); o portal conduz o resto:
 
-   1. A FICHA. Os campos do recadastro e os dados acadêmicos (curso,
-      matrícula, semestre de ingresso). A entrada e a saída da equipe são
-      do Depto. de Pessoal: é por elas que se contam os semestres.
+   1. A FICHA. Os campos do recadastro (com os pronomes, com que o
+      relatório concorda) e os dados acadêmicos: o curso, de uma lista
+      (AAC_CURSOS, a mesma de nro/competencias.tex, que escolhe as
+      competências do relatório), a matrícula e o semestre de ingresso.
+      A entrada e a saída da equipe são do Depto. de Pessoal: é por elas
+      que se contam os semestres.
    2. O ENQUADRAMENTO. O painel com o que a resolução permite (CATALOGO,
       o mesmo de nro/aproveitamento.tex e do DocNRO.AACC) e os semestres
-      letivos que contam, pela mesma regra da classe LaTeX. Guardar cria
-      o pedido, AAC-7, cujo relatório é o NRO-PES-020-7.
+      letivos que contam, pela mesma regra da classe LaTeX. O OUT é para
+      o curso que segue a norma de outro Colegiado. Guardar cria o
+      pedido, AAC-7, cujo relatório é o NRO-PES-020-7.
    3. O RELATÓRIO. O ZIP do template com o soma.tex do pedido (o que o
       SOMA sabe da pessoa), para abrir no Overleaf.
    4. O ENVIO. O PDF compilado em modo final: a tela lê os metadados que
@@ -54,20 +58,44 @@ const AAC_STATUS = {
 const aacPill = st => { const s = AAC_STATUS[st] || { l:st, dt:'dt-gray', p:'' };
   return `<span class="pill ${s.p}"><span class="dt ${s.dt}"></span>${s.l}</span>`; };
 
-/* O que a resolução permite pela participação na equipe. É o catálogo
-   do template (nro/aproveitamento.tex): mudou lá, muda aqui e no
-   DocNRO.AACC. As atividades que contam à parte se indicam no próprio
-   relatório, atividade por atividade. */
+/* O que a resolução permite pela participação na equipe, e o OUT, para
+   quem é de curso fora da Escola de Engenharia. É o catálogo do template
+   (nro/aproveitamento.tex): mudou lá, muda aqui e no DocNRO.AACC. As
+   atividades que contam à parte se indicam no próprio relatório,
+   atividade por atividade. */
 const AAC_CATALOGO = {
   EQC: { nome:'Participação em equipe de competição estudantil', disp:'art. 1º, II, c; art. 11', base:'semestre', cred:3,
-         regra:'3 créditos por semestre letivo', quando:'O enquadramento de todo membro: a equipe disputa competições de desempenho de um produto que ela mesma concebe, projeta e monta.' },
+         regra:'3 créditos por semestre letivo', quando:'A equipe compete no Cybathlon com a tecnologia que concebe, projeta e monta, e a participação está registrada no SIEX (Competição Cybathlon 2024, nº 205234).' },
   EXT: { nome:'Projeto de extensão com vínculo formal', disp:'art. 1º, I, c; arts. 3º e 8º', base:'semestre', cred:3, sem:'siex',
-         regra:'3 créditos por semestre com registro na ação do SIEX', quando:'Só nos semestres em que o estudante consta da equipe da ação de extensão no SIEX.' },
-  IC:  { nome:'Iniciação científica com vínculo formal', disp:'art. 1º, I, a; arts. 3º e 8º', base:'semestre', cred:3, sem:'ic',
-         regra:'3 créditos por semestre com vínculo na PRPq', quando:'Só nos semestres com vínculo formal (bolsa ou registro na PRPq) num projeto de pesquisa conduzido na equipe.' },
+         regra:'3 créditos por semestre com registro na ação do SIEX', quando:'Só nos semestres com registro na equipe da ação de extensão Competição Cybathlon 2024 (SIEX nº 205234).' },
   VPC: { nome:'Vivência profissional complementar', disp:'art. 1º, IV, a; art. 17', base:'horas', cred:1, unidade:300,
-         regra:'1 crédito a cada 300 horas', quando:'A alternativa para o Colegiado que não acolher as anteriores; rende menos créditos.' }
+         regra:'1 crédito a cada 300 horas', quando:'A alternativa para o Colegiado que não acolher as anteriores; rende menos créditos.' },
+  OUT: { nome:'Outro enquadramento', disp:'a norma do Colegiado', base:'colegiado', fora:true,
+         regra:'Créditos definidos pelo Colegiado', quando:'Para curso que não segue a Resolução 02/2019 da Escola de Engenharia: o relatório cita a norma do seu Colegiado, e ele define os créditos. Sem alternativas.' }
 };
+/* Os cursos: as engenharias da UFMG e os cursos da EEFFTO, da Faculdade
+   de Medicina, da Escola de Enfermagem, do ICEx e da FACE. É a lista de
+   nro/competencias.tex: o nome escolhe as competências da Parte IV do
+   relatório. Curso fora dela usa as competências gerais. */
+const AAC_CURSOS = [
+  ['Escola de Engenharia', ['Engenharia Aeroespacial', 'Engenharia Ambiental', 'Engenharia Civil', 'Engenharia de Computação',
+    'Engenharia de Controle e Automação', 'Engenharia de Materiais', 'Engenharia de Minas', 'Engenharia de Produção', 'Engenharia de Sistemas',
+    'Engenharia Elétrica', 'Engenharia Mecânica', 'Engenharia Metalúrgica', 'Engenharia Química']],
+  ['Instituto de Ciências Agrárias', ['Engenharia Agrícola e Ambiental', 'Engenharia de Alimentos', 'Engenharia Florestal']],
+  ['EEFFTO', ['Educação Física', 'Fisioterapia', 'Terapia Ocupacional']],
+  ['Faculdade de Medicina', ['Fonoaudiologia', 'Medicina', 'Tecnologia em Radiologia']],
+  ['Escola de Enfermagem', ['Enfermagem', 'Gestão de Serviços de Saúde', 'Nutrição']],
+  ['ICEx', ['Ciência da Computação', 'Ciência de Dados', 'Estatística', 'Física', 'Matemática', 'Matemática Computacional', 'Química',
+    'Química Tecnológica', 'Sistemas de Informação']],
+  ['FACE', ['Administração', 'Ciências Atuariais', 'Ciências Contábeis', 'Ciências Econômicas', 'Controladoria e Finanças',
+    'Relações Econômicas Internacionais']]
+];
+const AAC_CURSO_LISTA = AAC_CURSOS.flatMap(([, l]) => l);
+const AAC_UNIDADES = ['Escola de Engenharia', 'Instituto de Ciências Exatas (ICEx)', 'Escola de Educação Física, Fisioterapia e Terapia Ocupacional (EEFFTO)',
+  'Faculdade de Medicina', 'Escola de Enfermagem', 'Faculdade de Ciências Econômicas (FACE)', 'Instituto de Ciências Biológicas (ICB)',
+  'Instituto de Ciências Agrárias (ICA)'];
+/* os pronomes: a forma masculina, a feminina e a neutra */
+const aacPron = (p, m, f, n) => { const x = String(p || '').toLowerCase(); return x === 'ela' ? f : x === 'elu' ? n : m; };
 const AAC_ITENS = 'Contam à parte, indicadas atividade por atividade no relatório (art. 7º): publicação (1 a 3 créditos, art. 9º), '
   + 'organização de evento técnico-científico (1 crédito a cada 7,5 h de evento, art. 14), participação em evento (1 a cada 15 h, art. 14), '
   + 'curso presencial ou a distância (1 a cada 15 h, art. 15) e voluntariado (1 a cada 15 h, art. 12).';
@@ -82,10 +110,11 @@ const AAC_CAMPOS = [
   { k:'endereco', l:'Endereço', full:true },
   { k:'cidade_origem', l:'Cidade de origem' },
   { k:'instituicao', l:'Instituição de ensino', ph:'UFMG' },
-  { k:'curso', l:'Curso', ph:'Engenharia Elétrica' },
+  { k:'curso', l:'Curso', curso:true },
   { k:'matricula', l:'Matrícula' },
   { k:'periodo_ingresso', l:'Semestre de ingresso no curso', ph:'2022/2' },
   { k:'genero', l:'Gênero' },
+  { k:'pronomes', l:'Pronomes', opcoes:[['ela', 'ela/dela'], ['ele', 'ele/dele'], ['elu', 'elu/delu']] },
   { k:'autodeclaracao_racial', l:'Autodeclaração racial', lista:['Branca','Preta','Parda','Amarela','Indígena','Prefiro não declarar'] }
 ];
 const AAC_ROT_CAMPO = Object.fromEntries(AAC_CAMPOS.map(c => [c.k, c.l]));
@@ -116,8 +145,12 @@ const AAC_MOTIVO = {
 };
 const AAC_CAMPO_MSG = {
   principal: 'Escolha o enquadramento principal.', alternativas: 'Alternativa inválida.',
-  siex: 'Marque os semestres com registro no SIEX (só os que contam).', ic: 'Marque os semestres com vínculo de IC (só os que contam).',
+  siex: 'Marque os semestres com registro no SIEX (só os que contam).',
+  outro: 'Informe o nome do enquadramento na norma do seu Colegiado.', norma: 'Informe a norma do seu Colegiado.',
+  normacurta: 'A forma curta da norma tem até 80 caracteres.',
+  pronomes: 'Escolha os pronomes: ela, ele ou elu.',
   professor_nome: 'Informe o nome completo do professor.', professor_titulo: 'Informe o título do professor.',
+  professor_departamento: 'Informe o departamento do professor.', professor_unidade: 'Informe a unidade acadêmica do professor.',
   professor_email: 'Informe um e-mail válido.', pdf_url: 'Não foi possível gerar o link do PDF.',
   parecer: 'Informe o motivo (até 1.200 caracteres).', motivo: 'Informe o motivo.', etapas: 'Confira as etapas.'
 };
@@ -183,6 +216,12 @@ async function aacMeu(){
     $('#main').innerHTML = `${aacTopo('Aproveitamento de AACC', '')}<div class="aviso-box err">${esc(aacMotivo(aac.meu, null, 'Não foi possível ler a ficha'))}</div>`;
     return;
   }
+  /* o cancelado vai para os anteriores: a pessoa pode abrir outro */
+  if (aac.meu.pedido?.status === 'cancelado'){
+    const x = aac.meu.pedido;
+    aac.meu.anteriores = [{ id:x.id, codigo:x.codigo, status:x.status, concluido_em:null, emitido:null }, ...(aac.meu.anteriores || [])];
+    aac.meu.pedido = null;
+  }
   const p = aac.meu.pedido;
   aac.sel = aacSelecaoDe(p);
   aac.pdf = null;
@@ -192,7 +231,8 @@ async function aacMeu(){
 function aacSelecaoDe(p){
   const ped = p?.pedido || {};
   return { principal: ped.principal || 'EQC', alternativas: ped.alternativas || (p ? [] : ['VPC']),
-           siex: ped.siex || [], ic: ped.ic || [], colegiado: ped.colegiado || '' };
+           siex: ped.siex || [], colegiado: ped.colegiado || '',
+           outro: ped.outro || '', norma: ped.norma || '', normacurta: ped.normacurta && ped.normacurta !== ped.norma ? ped.normacurta : '' };
 }
 const aacConta = () => (aac.meu.semestres || []).filter(s => s.situacao === 'conta');
 
@@ -206,6 +246,7 @@ function aacMeuDesenhar(){
   $('#main').innerHTML = `${aacTopo('Aproveitamento de AACC', lead, p ? `<a class="btn ghost" href="#/servicos/aproveitamento/${esc(p.codigo)}">${esc(p.codigo)}</a>` : '')}
     ${aacNav('meu')}
     ${p ? aacFaixaPedido(p) : ''}
+    ${aacTrilha(d, p, bl)}
     <div class="aac-passos">
       ${aacPasso(1, 'A ficha e os dados acadêmicos', passo1 ? 'feito' : 'atual', aacPassoFicha(d, bl, pode))}
       ${aacPasso(2, 'O enquadramento', !passo1 ? 'trava' : passo2 && !aac.editandoEnq ? 'feito' : 'atual', aacPassoEnquadramento(pode && passo1))}
@@ -220,9 +261,30 @@ function aacMeuDesenhar(){
   aacLigarEnvio();
 }
 function aacPasso(n, titulo, estado, corpo){
-  const sel = { feito:`${ic('check')}`, atual:String(n), trava:String(n) }[estado];
-  return `<section class="card aac-passo ${estado}" id="aac-p${n}"><header><span class="aac-n">${sel}</span><h2>${titulo}</h2></header>
+  return `<section class="card aac-passo ${estado}" id="aac-p${n}"><header><h2>${titulo}</h2>
+    ${estado === 'feito' ? `<span class="small aac-ok">${ic('check')} feito</span>` : ''}</header>
     <div class="aac-corpo">${corpo}</div></section>`;
+}
+/* O contador dos passos: o mesmo do Arquivos (arq-etapas), com o que
+   falta ou o que foi feito embaixo de cada um. */
+function aacTrilha(d, p, bl){
+  const st = p?.status, ped = p?.pedido || {};
+  const falta = (d.faltam || []).length;
+  const agora = bl.length ? 0 : !p || aac.editandoEnq ? 1 : ['preparacao'].includes(st) ? (aac.pdf ? 3 : 2)
+    : st === 'devolvido' ? 3 : 4;
+  const cor = st === 'concluido' ? 'ok' : st === 'devolvido' || st === 'cancelado' ? 'bad' : agora === 4 ? 'warn' : '';
+  const sub = [
+    bl.length ? (falta ? `${falta === 1 ? 'falta um campo' : `faltam ${falta} campos`}` : 'falta um dado da equipe') : 'completa',
+    p && ped.principal ? esc(ped.principal === 'OUT' ? (ped.outro || 'outro enquadramento') : ped.principal) : 'a escolher',
+    p ? `template do ${esc(p.codigo)}` : 'depois do enquadramento',
+    p?.versao ? `versão ${p.versao}${p.enviado_em ? ', ' + fmtD(p.enviado_em) : ''}` : 'PDF final, sem pendência',
+    st === 'analise' ? `etapa ${p.etapa} de ${p.n_etapas}` : st === 'professor' ? 'com o professor orientador'
+      : st === 'concluido' ? `aprovado${p.concluido_em ? ' em ' + fmtD(p.concluido_em) : ''}` : st === 'devolvido' ? 'devolvido para ajuste'
+      : st === 'cancelado' ? 'cancelado' : 'equipe e professor orientador'
+  ];
+  return `<div class="arq-etapas aac-trilha" role="list" aria-label="Passos do pedido">${['Ficha', 'Enquadramento', 'Relatório', 'Envio', 'Aprovação']
+    .map((nome, i) => `<div role="listitem" class="arq-etapa${i < agora || (st === 'concluido' && i === 4) ? ' feita' : ''}${i === agora ? ' agora ' + cor : ''}"
+      ${i === agora ? 'aria-current="step"' : ''}>${nome}<span class="sub">${sub[i]}</span></div>`).join('')}</div>`;
 }
 /* a faixa do alto: onde o pedido está */
 function aacFaixaPedido(p){
@@ -251,7 +313,7 @@ function aacPassoFicha(d, bl, pode){
       <div><dt>Curso</dt><dd>${esc(d.curso || '—')}</dd></div>
       <div><dt>Matrícula</dt><dd>${esc(d.matricula || '—')}</dd></div>
       <div><dt>Ingresso no curso</dt><dd>${esc(d.ingresso || d.periodo_ingresso || '—')}</dd></div>
-      <div><dt>Situação</dt><dd>${eg ? 'Egresso' : 'Membro ativo'}</dd></div>
+      <div><dt>Situação</dt><dd>${eg ? aacPron(d.pronomes, 'Egresso', 'Egressa', 'Egresse') : 'Membro ativo'}</dd></div>
       <div><dt>Entrada na equipe</dt><dd>${d.inicio ? fmtD(d.inicio) : '—'}</dd></div>
       <div><dt>${eg ? 'Saída da equipe' : 'Cargo'}</dt><dd>${eg ? (d.fim ? fmtD(d.fim) : '—') : esc(d.cargo || '—')}</dd></div>
     </dl>
@@ -259,16 +321,33 @@ function aacPassoFicha(d, bl, pode){
       <button class="btn ghost mini" style="margin-left:6px" onclick="aacPedirCorrecao()">Pedir a correção</button></div>` : ''}
     ${mostrar.length ? `<div class="aac-ficha">${falta.length && !aac.ficha ? `<p class="small" style="color:var(--warn-tx);margin-bottom:8px">
         ${falta.length === 1 ? 'Falta um campo' : `Faltam ${falta.length} campos`} do recadastro.</p>` : ''}
-      <div class="aac-campos">${mostrar.map(c => `<div class="fld${c.full ? ' full' : ''}"><label for="aac-f-${c.k}">${esc(c.l)}</label>
-        <input id="aac-f-${c.k}" data-k="${c.k}" type="${c.t || 'text'}" value="${esc(valor(c.k) || '')}"${c.ph ? ` placeholder="${esc(c.ph)}"` : ''}${c.lista ? ` list="aac-l-${c.k}"` : ''}>
-        ${c.lista ? `<datalist id="aac-l-${c.k}">${c.lista.map(o => `<option value="${esc(o)}">`).join('')}</datalist>` : ''}</div>`).join('')}</div>
+      <div class="aac-campos">${mostrar.map(c => aacCampo(c, valor(c.k) || '')).join('')}</div>
       <div class="acts"><button class="btn solid" id="aac-ficha-btn" onclick="aacSalvarFicha()">Salvar a ficha</button></div></div>`
     : `<div class="acts" style="margin-top:10px"><span class="small aac-ok">${ic('check')} Recadastro completo.</span>
         ${pode ? `<button class="btn ghost mini" onclick="aac.ficha=true;aacMeuDesenhar()">Editar a ficha</button>` : ''}</div>`}`;
 }
+/* um campo da ficha: o curso vem da lista (ou "Outro curso", escrito);
+   os pronomes, de um seletor */
+function aacCampo(c, v){
+  const rot = `<label for="aac-f-${c.k}">${esc(c.l)}</label>`;
+  if (c.curso){
+    const outro = !!v && !AAC_CURSO_LISTA.includes(v);
+    return `<div class="fld"><label for="aac-f-curso-sel">${esc(c.l)} ${dica('O curso escolhe as competências das Diretrizes Curriculares Nacionais que o relatório mostra. Curso fora da lista usa as competências gerais.')}</label>
+      <select id="aac-f-curso-sel" onchange="const o=this.value==='__outro';$('#aac-f-curso').hidden=!o;if(!o)$('#aac-f-curso').value=this.value">
+        <option value="">Escolha o curso</option>
+        ${AAC_CURSOS.map(([u, l]) => `<optgroup label="${esc(u)}">${l.map(x => `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join('')}</optgroup>`).join('')}
+        <option value="__outro" ${outro ? 'selected' : ''}>Outro curso</option></select>
+      <input id="aac-f-curso" data-k="curso" value="${esc(v)}" placeholder="O nome do curso, como no registro acadêmico" ${outro ? '' : 'hidden'} style="margin-top:6px"></div>`;
+  }
+  if (c.opcoes) return `<div class="fld">${rot}<select id="aac-f-${c.k}" data-k="${c.k}"><option value="">Escolha</option>
+      ${c.opcoes.map(([k, l]) => `<option value="${k}" ${k === String(v).toLowerCase() ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
+  return `<div class="fld${c.full ? ' full' : ''}">${rot}
+    <input id="aac-f-${c.k}" data-k="${c.k}" type="${c.t || 'text'}" value="${esc(v)}"${c.ph ? ` placeholder="${esc(c.ph)}"` : ''}${c.lista ? ` list="aac-l-${c.k}"` : ''}>
+    ${c.lista ? `<datalist id="aac-l-${c.k}">${c.lista.map(o => `<option value="${esc(o)}">`).join('')}</datalist>` : ''}</div>`;
+}
 async function aacSalvarFicha(){
   const o = {};
-  document.querySelectorAll('.aac-campos input[data-k]').forEach(i => { o[i.dataset.k] = i.value.trim(); });
+  document.querySelectorAll('.aac-campos [data-k]').forEach(i => { o[i.dataset.k] = i.value.trim(); });
   const b = $('#aac-ficha-btn'); if (b) b.disabled = true;
   const { data, error } = await sb.rpc('aacc_perfil_salvar', { p: o });
   if (b) b.disabled = false;
@@ -292,7 +371,8 @@ function aacPedirCorrecao(){
 function aacEstimativa(k){
   const c = AAC_CATALOGO[k], s = aac.sel;
   if (c.base === 'horas') return 'conforme as horas declaradas';
-  const n = c.sem === 'siex' ? s.siex.length : c.sem === 'ic' ? s.ic.length : aacConta().length;
+  if (c.base === 'colegiado') return 'a definir pelo Colegiado';
+  const n = c.sem === 'siex' ? s.siex.length : aacConta().length;
   return `${n * c.cred} ${n * c.cred === 1 ? 'crédito' : 'créditos'}`;
 }
 function aacPassoEnquadramento(pode){
@@ -305,18 +385,25 @@ function aacPassoEnquadramento(pode){
   return `<div class="aac-sems">${sem.length ? sem.map(x => `<span class="aac-sem ${x.situacao}" title="${x.meses} ${x.meses === 1 ? 'mês' : 'meses'} de participação">
         <b>${esc(x.rotulo)}</b><i>${x.meses} ${x.meses === 1 ? 'mês' : 'meses'}, ${sit[x.situacao] || x.situacao}</i></span>`).join('')
       : '<span class="small muted">Nenhum semestre: falta a entrada na equipe.</span>'}
-      ${dica('O 1º semestre letivo vai de fevereiro a julho; o 2º, de agosto a janeiro. Conta o semestre com ao menos quatro meses de participação, sem os afastamentos aprovados no SOMA; o anterior ao ingresso no curso não conta (art. 5º). O relatório conta da mesma forma.')}</div>
+      ${dica('Conta o semestre com ao menos quatro meses de participação, sem os afastamentos, e posterior ao ingresso no curso (art. 5º).')}</div>
     <p class="small muted" style="margin:8px 0 14px">${conta.length} ${conta.length === 1 ? 'semestre letivo conta' : 'semestres letivos contam'}.</p>
-    <div class="aac-cat">${Object.entries(AAC_CATALOGO).map(([k, c]) => `<div class="aac-op${s.principal === k ? ' pri' : usa(k) ? ' alt' : ''}">
+    <div class="aac-cat">${Object.entries(AAC_CATALOGO).map(([k, c]) => `<div class="aac-op${s.principal === k ? ' pri' : usa(k) ? ' alt' : ''}${c.fora ? ' fora' : ''}">
         <div class="cab"><span class="cod">${k}</span><b>${esc(c.nome)}</b></div>
-        <span class="small">${esc(c.disp)}. ${esc(c.regra)}. ${dica(c.quando)}</span>
+        <span class="small">${c.fora ? 'Curso fora da Escola de Engenharia' : esc(c.disp)}. ${esc(c.regra)}. ${dica(c.quando)}</span>
         <span class="est">${aacEstimativa(k)}</span>
         <div class="esc">
           <label><input type="radio" name="aac-pri" value="${k}" ${s.principal === k ? 'checked' : ''} ${pode ? '' : 'disabled'} onchange="aacPrincipal('${k}')"> Principal</label>
-          <label><input type="checkbox" ${s.alternativas.includes(k) ? 'checked' : ''} ${pode && s.principal !== k ? '' : 'disabled'} onchange="aacAlternativa('${k}',this.checked)"> Alternativa</label>
+          ${c.fora ? '' : `<label><input type="checkbox" ${s.alternativas.includes(k) ? 'checked' : ''} ${pode && s.principal !== k && s.principal !== 'OUT' ? '' : 'disabled'} onchange="aacAlternativa('${k}',this.checked)"> Alternativa</label>`}
         </div>
-        ${c.sem && usa(k) ? `<div class="aac-semop"><span class="small">${c.sem === 'siex' ? 'Semestres com registro no SIEX' : 'Semestres com vínculo de IC'}</span>${chipsSem(c.sem)}</div>` : ''}
+        ${c.sem && usa(k) ? `<div class="aac-semop"><span class="small">Semestres com registro no SIEX</span>${chipsSem(c.sem)}</div>` : ''}
       </div>`).join('')}</div>
+    ${s.principal === 'OUT' ? `<div class="aac-out">
+      <div class="fld full"><label for="aac-outro">Enquadramento, como a norma do Colegiado o nomeia</label>
+        <input id="aac-outro" value="${esc(s.outro)}" maxlength="200" ${pode ? '' : 'disabled'} placeholder="Atividade complementar de extensão" oninput="aac.sel.outro=this.value"></div>
+      <div class="fld full"><label for="aac-norma">Norma do Colegiado</label>
+        <input id="aac-norma" value="${esc(s.norma)}" maxlength="200" ${pode ? '' : 'disabled'} placeholder="Resolução nº 05/2020, do Colegiado do Curso de Fisioterapia" oninput="aac.sel.norma=this.value"></div>
+      <div class="fld"><label for="aac-ncurta">Forma curta <span class="opc">(opcional)</span></label>
+        <input id="aac-ncurta" value="${esc(s.normacurta)}" maxlength="80" ${pode ? '' : 'disabled'} placeholder="Resolução nº 05/2020" oninput="aac.sel.normacurta=this.value"></div></div>` : ''}
     <p class="small muted" style="margin-top:10px">${aacSugestao()} ${dica(AAC_ITENS, 'As atividades que contam à parte')}</p>
     <div class="fld" style="max-width:560px;margin-top:12px"><label for="aac-col">Colegiado do curso <span class="opc">(opcional)</span></label>
       <input id="aac-col" value="${esc(s.colegiado)}" ${pode ? '' : 'disabled'} placeholder="Colegiado do Curso de Graduação em Engenharia Elétrica"
@@ -325,16 +412,17 @@ function aacPassoEnquadramento(pode){
 }
 function aacSugestao(){
   const s = aac.sel, n = aacConta().length;
+  if (s.principal === 'OUT') return 'O relatório pede o aproveitamento nos termos da norma do seu Colegiado, que define os créditos.';
   if (!n) return 'Sem semestre que conta, o enquadramento por semestre não rende créditos: considere a vivência profissional.';
   if (s.principal === 'EQC') return `Com a equipe de competição, ${n * 3} créditos pelos ${n} semestres${s.alternativas.length ? `, e ${s.alternativas.join(' e ')} para o Colegiado que não a acolher` : ''}.`;
   return `O principal escolhido é ${s.principal}. A participação em equipe de competição (EQC) costuma ser o enquadramento direto da equipe.`;
 }
 function aacPrincipal(k){
-  aac.sel.principal = k; aac.sel.alternativas = aac.sel.alternativas.filter(x => x !== k);
+  aac.sel.principal = k; aac.sel.alternativas = k === 'OUT' ? [] : aac.sel.alternativas.filter(x => x !== k);
   aac.editandoEnq = true; aacRedesenharEnquadramento();
 }
 function aacAlternativa(k, on){
-  const a = aac.sel.alternativas.filter(x => x !== k); if (on) a.push(k);
+  const a = aac.sel.alternativas.filter(x => x !== k); if (on && !AAC_CATALOGO[k].fora) a.push(k);
   aac.sel.alternativas = Object.keys(AAC_CATALOGO).filter(x => a.includes(x));
   aac.editandoEnq = true; aacRedesenharEnquadramento();
 }
@@ -351,8 +439,12 @@ function aacRedesenharEnquadramento(){
 async function aacSalvarEnquadramento(){
   const s = aac.sel;
   const usa = k => s.principal === k || s.alternativas.includes(k);
-  const p = { principal:s.principal, alternativas:s.alternativas, colegiado:s.colegiado || '',
-              siex: usa('EXT') ? s.siex : [], ic: usa('IC') ? s.ic : [] };
+  const out = s.principal === 'OUT';
+  if (out && !s.outro.trim()) return toast(AAC_CAMPO_MSG.outro, true);
+  if (out && !s.norma.trim()) return toast(AAC_CAMPO_MSG.norma, true);
+  const p = { principal:s.principal, alternativas: out ? [] : s.alternativas, colegiado:s.colegiado || '',
+              siex: usa('EXT') ? s.siex : [],
+              ...(out ? { outro:s.outro.trim(), norma:s.norma.trim(), normacurta:s.normacurta.trim() } : {}) };
   const b = $('#aac-enq-btn'); if (b) b.disabled = true;
   const { data, error } = await sb.rpc('aacc_preparar', { p });
   if (b) b.disabled = false;
@@ -400,7 +492,7 @@ function aacSomaTex(){
 ${kv({ codigo: s.codigo || 'NRO-PES-020', revisao: s.revisao || 'A' })}
 }
 \\estudante{
-${kv({ nome: d.nome, matricula: d.matricula, curso: d.curso, colegiado: ped.colegiado || '', email: d.email_pessoal || d.email, ingresso: d.ingresso })}
+${kv({ nome: d.nome, pronomes: d.pronomes || '', matricula: d.matricula, curso: d.curso, colegiado: ped.colegiado || '', email: d.email_pessoal || d.email, ingresso: d.ingresso })}
 }
 \\membro{
 ${kv({ registro: d.registro, situacao: d.situacao, inicio: mes(d.inicio), fim: d.situacao === 'egresso' ? mes(d.fim) : '',
@@ -410,8 +502,13 @@ ${kv({ registro: d.registro, situacao: d.situacao, inicio: mes(d.inicio), fim: d
   principal    = ${aacTex(ped.principal)},
   alternativas = {${lista(ped.alternativas)}},
   siex         = {${lista(ped.siex)}},
-  ic           = {${lista(ped.ic)}},
-}
+  outro        = {${aacTex(ped.outro || '')}},
+}${ped.principal === 'OUT' && ped.norma ? `
+%% a norma do seu Colegiado, no lugar da Resolução nº 02/2019
+\\equipe{
+  norma      = {${aacTex(ped.norma)}},
+  normacurta = {${aacTex(ped.normacurta || ped.norma)}},
+}` : ''}
 \\afastamentosdosoma{%
 ${af.join('\n')}
 }
@@ -585,20 +682,22 @@ function aacDesenharPagina(){
     <div class="evx-cols">
       <div class="evx-main">
         <div class="card"><dl class="dcl-dados evx-dados aac-dados">
-          <div><dt>Estudante</dt><dd>${esc(p.nome)}</dd></div>
+          <div><dt>Nome</dt><dd>${esc(p.nome)}</dd></div>
           <div><dt>Curso</dt><dd>${esc(d.curso || '—')}${d.ingresso ? `, ingresso em ${esc(d.ingresso)}` : ''}</dd></div>
           <div><dt>Matrícula</dt><dd>${esc(d.matricula || '—')}</dd></div>
-          <div><dt>Na equipe</dt><dd>${d.inicio ? `${aacMesAno(d.inicio)} a ${d.situacao === 'egresso' ? aacMesAno(d.fim) : 'hoje'}` : '—'}${d.situacao === 'egresso' ? ' (egresso)' : ''}</dd></div>
-          <div class="full"><dt>Enquadramento</dt><dd>${esc(ped.principal || '')} ${esc(AAC_CATALOGO[ped.principal]?.nome || '')}${(ped.alternativas || []).length
-            ? `; alternativas: ${(ped.alternativas || []).map(esc).join(', ')}` : ''}${(ped.siex || []).length ? `; SIEX em ${ped.siex.map(esc).join(', ')}` : ''}${(ped.ic || []).length ? `; IC em ${ped.ic.map(esc).join(', ')}` : ''}</dd></div>
+          <div><dt>Na equipe</dt><dd>${d.inicio ? `${aacMesAno(d.inicio)} a ${d.situacao === 'egresso' ? aacMesAno(d.fim) : 'hoje'}` : '—'}${d.situacao === 'egresso' ? ` (${aacPron(d.pronomes, 'egresso', 'egressa', 'egresse')})` : ''}</dd></div>
+          <div class="full"><dt>Enquadramento</dt><dd>${esc(ped.principal || '')} ${esc(ped.principal === 'OUT' ? (ped.outro || '') : AAC_CATALOGO[ped.principal]?.nome || '')}${ped.principal === 'OUT' && ped.norma
+            ? `, nos termos da ${esc(ped.norma)}` : ''}${(ped.alternativas || []).length
+            ? `; alternativas: ${(ped.alternativas || []).map(esc).join(', ')}` : ''}${(ped.siex || []).length ? `; SIEX em ${ped.siex.map(esc).join(', ')}` : ''}</dd></div>
           ${ped.colegiado ? `<div class="full"><dt>Colegiado</dt><dd>${esc(ped.colegiado)}</dd></div>` : ''}
           <div class="full"><dt>Semestres letivos</dt><dd>${(p.semestres || []).map(s => `<span class="aac-sem mini ${s.situacao}"><b>${esc(s.rotulo)}</b><i>${s.meses} m</i></span>`).join(' ') || '—'}</dd></div>
           ${p.versao ? `<div><dt>Créditos declarados</dt><dd>${esc(meta.creditos || '—')}${meta.itens && meta.itens !== '0' ? ` (${esc(meta.itens)} à parte)` : ''}</dd></div>
           <div><dt>Relatório</dt><dd>versão ${p.versao}, ${p.pdf_paginas} páginas, ${fmtD(p.enviado_em)}
             <button class="btn ghost mini" style="margin-left:6px" onclick="aacAbrirPdf()">${ic('eye')} Abrir</button></dd></div>` : ''}
         </dl></div>
-        ${prof ? `<div class="card aac-prof" style="margin-top:16px"><h3>${ic('capelo')} Professor orientador</h3>
+        ${prof ? `<div class="card aac-prof" style="margin-top:16px"><h3>${ic('capelo')} ${aacProfessora(p.prof_titulo) ? 'Professora orientadora' : 'Professor orientador'}</h3>
           <p><b>${esc(p.prof_titulo || '')} ${esc(p.prof_nome || '')}</b> <span class="small dim">${esc(p.prof_email || '')}</span></p>
+          ${p.prof_departamento || p.prof_unidade ? `<p class="small">${esc([p.prof_departamento, p.prof_unidade].filter(Boolean).join(', '))}</p>` : ''}
           <p class="small muted">${p.prof_indicado_nome ? `Indicado por ${esc(p.prof_indicado_nome)} em ${fmtDT(p.prof_indicado_em)}. ` : ''}${p.status === 'professor'
             ? `Link válido até ${fmtD(p.prof_expira)}. ${p.prof_visto_em ? `Aberto em ${fmtDT(p.prof_visto_em)}.` : 'Ainda não aberto.'}` : ''}</p>
           ${p.status === 'concluido' && Array.isArray(p.barema) ? `<table class="tabela aac-barema"><thead><tr><th>Critério</th><th>Peso</th><th>Nota</th><th>Pontos</th></tr></thead>
@@ -635,18 +734,24 @@ async function aacAbrirPdf(){
 }
 
 /* ---------------- decidir ---------------- */
-const AAC_TITULOS = ['Prof. Dr.', 'Profa. Dra.', 'Prof. Me.', 'Profa. Ma.', 'Prof.', 'Profa.'];
+/* Prof.ª, Dr.ª, Ma. (mestra) e Me. (mestre): as abreviaturas com o
+   ordinal feminino, como a norma culta as escreve */
+const AAC_TITULOS = ['Prof. Dr.', 'Prof.ª Dr.ª', 'Prof. Me.', 'Prof.ª Ma.', 'Prof.', 'Prof.ª'];
+const aacProfessora = t => /^prof(a\b|\.?ª|essora)/i.test(String(t || '').trim());
 const aacCamposProfessor = (pr = {}) => {
   const dom = aac.atual?.config?.dominio_professor || 'ufmg.br';
   return `<div class="aac-prof-f">
     <div class="fld"><label for="aac-pt">Título</label><select id="aac-pt">${AAC_TITULOS.map(t => `<option ${t === pr.titulo ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-    <div class="fld"><label for="aac-pn">Nome completo</label><input id="aac-pn" value="${esc(pr.nome || '')}" placeholder="João Modelo"></div>
-    <div class="fld full"><label for="aac-pe">E-mail institucional</label><input id="aac-pe" type="email" value="${esc(pr.email || '')}" placeholder="nome@${esc(dom)}"></div></div>`;
+    <div class="fld"><label for="aac-pn">Nome completo</label><input id="aac-pn" value="${esc(pr.nome || '')}" placeholder="Henrique Resende Martins"></div>
+    <div class="fld full"><label for="aac-pe">E-mail institucional</label><input id="aac-pe" type="email" value="${esc(pr.email || '')}" placeholder="nome@${esc(dom)}"></div>
+    <div class="fld full"><label for="aac-pd">Departamento</label><input id="aac-pd" value="${esc(pr.departamento || '')}" maxlength="160" placeholder="Departamento de Engenharia Elétrica"></div>
+    <div class="fld full"><label for="aac-pu">Unidade acadêmica</label><input id="aac-pu" value="${esc(pr.unidade || '')}" maxlength="160" list="aac-l-unidades" placeholder="Escola de Engenharia">
+      <datalist id="aac-l-unidades">${AAC_UNIDADES.map(u => `<option value="${esc(u)}">`).join('')}</datalist></div></div>`;
 };
 function aacModalDecidir(dec){
   const r = aac.atual, p = r.pedido, indicar = dec === 'aprovar' && r.pode?.indicar;
   abreModal(`<h3>${dec === 'aprovar' ? 'Aprovar' : 'Devolver'} ${esc(p.codigo)}</h3>
-    <p class="sub" style="margin-bottom:14px">${dec === 'devolver' ? 'O pedido volta para o estudante, com o motivo; o envio seguinte recomeça da primeira etapa.'
+    <p class="sub" style="margin-bottom:14px">${dec === 'devolver' ? 'O pedido volta para quem pediu, com o motivo; o envio seguinte recomeça da primeira etapa.'
       : indicar ? `Última etapa da equipe. Indique o professor orientador: ele recebe por e-mail um link pessoal, válido por ${r.config?.prazo_professor_dias || 30} dias, para avaliar pelo barema e aprovar.`
       : `Etapa ${esc(p.etapa_rotulo || p.etapa)}. Aprovado, o pedido segue para a próxima.`}</p>
     ${indicar ? aacCamposProfessor() : ''}
@@ -655,7 +760,8 @@ function aacModalDecidir(dec){
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" id="aac-dbtn" onclick="aacDecidir('${dec}')">${dec === 'aprovar' ? (indicar ? 'Aprovar e mandar ao professor' : 'Aprovar') : 'Devolver'}</button></div>`);
 }
-const aacProfessorLido = () => ({ titulo: $('#aac-pt')?.value || '', nome: ($('#aac-pn')?.value || '').trim(), email: ($('#aac-pe')?.value || '').trim() });
+const aacProfessorLido = () => ({ titulo: $('#aac-pt')?.value || '', nome: ($('#aac-pn')?.value || '').trim(), email: ($('#aac-pe')?.value || '').trim(),
+  departamento: ($('#aac-pd')?.value || '').trim(), unidade: ($('#aac-pu')?.value || '').trim() });
 /* o link do PDF para o professor: assinado aqui, com validade de um
    pouco mais que o prazo dele (o banco confere que é o desta versão) */
 async function aacLinkPdf(p){
@@ -673,13 +779,15 @@ async function aacDecidir(dec){
     if (dec === 'aprovar' && r.pode?.indicar){
       corpo.professor = aacProfessorLido();
       if (corpo.professor.nome.length < 5) return toast(AAC_CAMPO_MSG.professor_nome, true);
+      if (corpo.professor.departamento.length < 3) return toast(AAC_CAMPO_MSG.professor_departamento, true);
+      if (corpo.professor.unidade.length < 3) return toast(AAC_CAMPO_MSG.professor_unidade, true);
       corpo.pdf_url = await aacLinkPdf(p);
     }
     const { data, error } = await sb.rpc('aacc_decidir', { p: corpo });
     if (error || data?.status !== 'ok') return toast(aacMotivo(data, error, 'Não foi possível registrar a decisão'), true);
     fechaModal();
     toast(data.situacao === 'professor' ? 'Aprovado. O professor orientador recebe o link por e-mail.'
-      : data.situacao === 'analise' ? `Aprovado. O pedido seguiu para a etapa ${data.etapa}.` : 'Devolvido ao estudante.');
+      : data.situacao === 'analise' ? `Aprovado. O pedido seguiu para a etapa ${data.etapa}.` : 'Devolvido.');
     aacPagina(p.codigo);
   }catch(e){ falha(e, 'Não foi possível registrar a decisão'); }
   finally{ if (b) b.disabled = false; }
@@ -688,7 +796,7 @@ function aacModalProfessor(){
   const p = aac.atual.pedido;
   abreModal(`<h3>Professor orientador do ${esc(p.codigo)}</h3>
     <p class="sub" style="margin-bottom:14px">Um link novo segue por e-mail; o anterior deixa de valer.</p>
-    ${aacCamposProfessor({ titulo:p.prof_titulo, nome:p.prof_nome, email:p.prof_email })}
+    ${aacCamposProfessor({ titulo:p.prof_titulo, nome:p.prof_nome, email:p.prof_email, departamento:p.prof_departamento, unidade:p.prof_unidade })}
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
       <button class="btn solid" id="aac-pbtn" onclick="aacTrocarProfessor()">Mandar o link</button></div>`);
 }
@@ -726,7 +834,9 @@ async function aacMotivoConfirma(acao, id){
    folha reservada. A folha é desenhada por cima da página (a página
    continua a mesma, e os marcadores e links do relatório que apontam
    para ela continuam valendo); o link de validação vai sobre a
-   legenda de autenticação.
+   legenda de autenticação. Na capa, o "Pendente" da avaliação da
+   equipe vira a data da aprovação: o template grava onde ele está
+   (avaliacao=x,y, em mm a partir do canto de baixo, à esquerda).
    ============================================================ */
 async function aacFolhaDoc(id){
   const { data, error } = await sb.rpc('aacc_folha', { p_id:id });
@@ -754,10 +864,17 @@ async function aacBaixarFinal(id){
   finally{ clearTimeout(t); }
 }
 async function aacMontarFinal(relBytes, folhaBytes, f, link){
-  const { PDFDocument, PDFName, PDFString } = PDFLib;
+  const { PDFDocument, PDFName, PDFString, StandardFonts, rgb } = PDFLib;
   const rel = await PDFDocument.load(relBytes, { updateMetadata:false });
   const n = rel.getPageCount();
   if (f.folha < 1 || f.folha > n) throw new Error('a folha reservada não está no relatório');
+  const pos = String(aacLerMeta(rel.getKeywords()).avaliacao || '').split(',').map(Number);
+  if (pos.length === 2 && pos.every(v => Number.isFinite(v) && v > 0)){
+    const capa = rel.getPage(0), mm = 72 / 25.4, x = pos[0] * mm, y = pos[1] * mm;
+    const fonte = await rel.embedFont(StandardFonts.HelveticaBold);
+    capa.drawRectangle({ x: x - 1, y: y - 3, width: 45 * mm, height: 12.5, color: rgb(1, 1, 1) });
+    capa.drawText(`Aprovada em ${fmtD(f.emissao.dados?.data || f.emissao.emitido_em)}`, { x, y, size: 9, font: fonte, color: rgb(29 / 255, 29 / 255, 31 / 255) });
+  }
   const [emb] = await rel.embedPdf(folhaBytes, [0]);
   const pg = rel.getPage(f.folha - 1);
   const { width, height } = pg.getSize();

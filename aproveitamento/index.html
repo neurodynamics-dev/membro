@@ -123,9 +123,12 @@ const TOKEN = new URLSearchParams(location.search).get('p') || '';
 const CAT = {
   EQC:'Participação em equipe de competição estudantil (art. 1º, II, c; art. 11)',
   EXT:'Projeto de extensão com vínculo formal (art. 1º, I, c; arts. 3º e 8º)',
-  IC:'Iniciação científica com vínculo formal (art. 1º, I, a; arts. 3º e 8º)',
   VPC:'Vivência profissional complementar (art. 1º, IV, a; art. 17)'
 };
+const NORMA = 'Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG';
+/* o enquadramento: no OUT, o nome que a pessoa deu e a norma do Colegiado */
+const enquadramento = (k, ped) => k === 'OUT' ? `${ped.outro || 'Outro enquadramento'}${ped.normacurta || ped.norma ? ` (${ped.normacurta || ped.norma})` : ''}` : CAT[k] || k || '';
+const pron = (p, m, f, n) => { const x = String(p || '').toLowerCase(); return x === 'ela' ? f : x === 'elu' ? n : m; };
 const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const mesAno = iso => /^\d{4}-\d{2}/.test(String(iso || '')) ? `${MESES[+String(iso).slice(5, 7) - 1]} de ${String(iso).slice(0, 4)}` : '';
 const data = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { timeZone:'America/Sao_Paulo' }); };
@@ -144,13 +147,13 @@ function abertura(kicker, titulo, lead){
   return `<div class="abre"><div><span class="kicker">${esc(kicker)}</span><h1>${esc(titulo)}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}</div>
     <img src="../selo-solene.png" alt="Selo solene da NeuroDynamics"></div>`;
 }
-const pe = `<p class="pe">Dúvidas sobre o pedido: Departamento de Pessoal da NeuroDynamics PD&amp;I. Documentos emitidos pelo SOMA se conferem em
+const pe = `<p class="pe">Dúvidas sobre o pedido: Departamento de Pessoal da NeuroDynamics. Documentos emitidos pelo SOMA se conferem em
   <a href="${CONFIG.VALIDACAO}" rel="noopener">auth.neurodynamics.dev</a>.</p>`;
 
 function fechado(st, d){
   const f = document.getElementById('folha');
   const t = {
-    nao_encontrado: ['Link inválido', 'Este link não abre nenhum pedido. Ele pode ter sido substituído por um novo, enviado por e-mail, ou o pedido voltou ao estudante.'],
+    nao_encontrado: ['Link inválido', 'Este link não abre nenhum pedido. Ele pode ter sido substituído por um novo, enviado por e-mail, ou o pedido foi devolvido.'],
     expirado: ['Link vencido', 'O prazo deste link terminou. Peça à equipe um link novo.'],
     fechado: ['Pedido fora de avaliação', 'O pedido não está mais aguardando a avaliação do professor orientador.'],
     concluido: ['Relatório aprovado', '']
@@ -164,28 +167,27 @@ function fechado(st, d){
 function desenhar(){
   const r = R, p = r.pedido, m = p.membro || {}, ped = p.pedido || {};
   const sem = p.semestres || [], conta = sem.filter(s => s.situacao === 'conta');
-  const periodo = m.situacao === 'egresso' && m.fim ? `de ${mesAno(m.inicio)} a ${mesAno(m.fim)} (egresso)` : `desde ${mesAno(m.inicio)} (membro ativo)`;
+  const periodo = m.situacao === 'egresso' && m.fim ? `de ${mesAno(m.inicio)} a ${mesAno(m.fim)} (${pron(m.pronomes, 'egresso', 'egressa', 'egresse')})` : `desde ${mesAno(m.inicio)} (membro ativo)`;
   const meta = p.pdf_meta || {};
   const prof = document.getElementById('folha');
   prof.innerHTML = topo(p.codigo) + abertura('Avaliação do relatório', 'Relatório de atividades para aproveitamento de AACC',
       `O relatório de <b>${esc(p.nome)}</b> foi aprovado pelas etapas da equipe e aguarda a sua avaliação como professor orientador,
-       nos termos da Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG. A sua aprovação é a que vale perante o Colegiado do curso.`)
-    + `<section class="sec"><span class="kicker">O estudante e o pedido</span><dl>
-        <dt>Estudante</dt><dd>${esc(p.nome)}${m.matricula ? `, matrícula ${esc(m.matricula)}` : ''}</dd>
+       nos termos da ${esc(ped.norma || NORMA)}. A sua aprovação é a que vale perante o Colegiado do curso.`)
+    + `<section class="sec"><span class="kicker">Pedido</span><dl>
+        <dt>Nome</dt><dd>${esc(p.nome)}${m.matricula ? `, matrícula ${esc(m.matricula)}` : ''}</dd>
         <dt>Curso</dt><dd>${esc(m.curso || '')}${m.ingresso ? `, ingresso em ${esc(m.ingresso)}` : ''}</dd>
         <dt>Na equipe</dt><dd>${esc(periodo)}${m.cargo ? `, como ${esc(m.cargo)}` : ''}</dd>
-        <dt>Enquadramento</dt><dd>${esc(CAT[ped.principal] || ped.principal || '')}${(ped.alternativas || []).length
-          ? `<br><span style="color:var(--texto2)">Alternativas: ${(ped.alternativas || []).map(k => esc(CAT[k] || k)).join('; ')}</span>` : ''}</dd>
+        <dt>Enquadramento</dt><dd>${esc(enquadramento(ped.principal, ped))}${(ped.alternativas || []).length
+          ? `<br><span style="color:var(--texto2)">Alternativas: ${(ped.alternativas || []).map(k => esc(enquadramento(k, ped))).join('; ')}</span>` : ''}</dd>
         ${(ped.siex || []).length ? `<dt>Registro no SIEX</dt><dd>${ped.siex.map(esc).join(', ')}</dd>` : ''}
-        ${(ped.ic || []).length ? `<dt>Vínculo de IC</dt><dd>${ped.ic.map(esc).join(', ')}</dd>` : ''}
         <dt>Semestres letivos</dt><dd><div class="semestres">${sem.map(s => `<span class="${s.situacao === 'conta' ? 'conta' : 'fora'}"
           title="${s.meses} meses">${esc(s.rotulo)}</span>`).join('')}</div>
-          <span style="font-size:13px;color:var(--texto2)">${conta.length} ${conta.length === 1 ? 'conta' : 'contam'}, com ao menos quatro meses de participação cada (art. 5º).</span></dd>
+          <span style="font-size:13px;color:var(--texto2)">${conta.length} ${conta.length === 1 ? 'conta' : 'contam'} (art. 5º).</span></dd>
         ${meta.creditos ? `<dt>Créditos declarados</dt><dd>${esc(meta.creditos)}${meta.itens && meta.itens !== '0' ? ` (${esc(meta.principalcreditos || '')} pelo enquadramento e ${esc(meta.itens)} em atividades à parte)` : ''}</dd>` : ''}
         <dt>Relatório</dt><dd>${esc(p.documento || '')}, versão ${esc(p.versao)}, ${esc(p.pdf_paginas)} páginas</dd>
       </dl>
       <div class="acts"><a class="btn sec2" href="${esc(p.pdf_url)}" target="_blank" rel="noopener">Abrir o relatório (PDF)</a></div></section>
-    <section class="sec"><span class="kicker">As aprovações da equipe</span>
+    <section class="sec"><span class="kicker">Aprovações da equipe</span>
       <table class="aprov"><thead><tr><th>Etapa</th><th>Aprovado por</th><th>Em</th></tr></thead><tbody>
         ${(r.aprovacoes || []).map(a => `<tr><td>${a.etapa}. ${esc(a.rotulo)}</td><td>${esc(a.nome)}${a.parecer ? `<small>${esc(a.parecer)}</small>` : ''}</td>
           <td>${esc(momento(a.criado_em))}</td></tr>`).join('')}</tbody></table></section>
@@ -206,7 +208,7 @@ function desenhar(){
           ${esc(periodo.replace(/ \(.*\)$/, ''))}, e aprovo o aproveitamento como Atividade Acadêmica Curricular Complementar com a nota acima
           (art. 11, I e II; art. 3º, II).</span></label>
       <div class="acts"><button class="btn" id="bt-aprovar" disabled onclick="decidir('aprovar')">Aprovar e emitir a folha</button>
-        <button class="btn sec2" id="bt-devolver" onclick="decidir('devolver')">Devolver ao estudante</button></div>
+        <button class="btn sec2" id="bt-devolver" onclick="decidir('devolver')">Devolver</button></div>
       <p class="msg" id="msg" role="status"></p>
       <p style="font-size:12.5px;color:var(--cinza);margin-top:8px">Link pessoal, válido até ${esc(data(p.prof_expira))}. Não o encaminhe.</p>
     </section>` + pe;
@@ -235,8 +237,8 @@ function somar(){
 async function decidir(dec){
   const msg = document.getElementById('msg'), par = document.getElementById('parecer').value.trim();
   const n = notas();
-  if (dec === 'devolver' && !par){ msg.className = 'msg err'; msg.textContent = 'Informe no parecer o que o estudante precisa corrigir.'; return; }
-  if (dec === 'devolver' && !confirm('Devolver o relatório ao estudante? Ele corrige e o pedido passa pelas etapas da equipe outra vez.')) return;
+  if (dec === 'devolver' && !par){ msg.className = 'msg err'; msg.textContent = 'Informe no parecer o que precisa ser corrigido.'; return; }
+  if (dec === 'devolver' && !confirm('Devolver o relatório? Corrigido, o pedido passa pelas etapas da equipe outra vez.')) return;
   document.querySelectorAll('.acts .btn').forEach(b => b.disabled = true);
   msg.className = 'msg'; msg.textContent = dec === 'aprovar' ? 'Emitindo a folha de aprovação…' : 'Devolvendo…';
   try{
@@ -247,10 +249,10 @@ async function decidir(dec){
     if (d?.status === 'ok'){
       const f = document.getElementById('folha');
       f.innerHTML = topo(R.pedido.codigo) + (d.situacao === 'concluido'
-        ? abertura('Avaliação do relatório', 'Relatório aprovado', `Nota ${esc(virgula(d.nota))} de 100. A folha de aprovação foi emitida e o estudante foi avisado por e-mail.`)
+        ? abertura('Avaliação do relatório', 'Relatório aprovado', `Nota ${esc(virgula(d.nota))} de 100. A folha de aprovação foi emitida, e ${esc(R?.pedido?.nome || 'quem pediu')} recebe o aviso por e-mail.`)
           + `<div class="aviso ok">Folha de aprovação <b>${esc(d.codigo)}</b>, conferível em
             <a href="${CONFIG.VALIDACAO}/?c=${encodeURIComponent(d.codigo)}" rel="noopener">auth.neurodynamics.dev</a>.</div>`
-        : abertura('Avaliação do relatório', 'Relatório devolvido', 'O estudante recebe o seu parecer por e-mail. Corrigido, o relatório passa pelas etapas da equipe e volta para a sua avaliação.')) + pe;
+        : abertura('Avaliação do relatório', 'Relatório devolvido', `${esc(R?.pedido?.nome || 'Quem pediu')} recebe o seu parecer por e-mail. Corrigido, o relatório passa pelas etapas da equipe e volta para a sua avaliação.`)) + pe;
       window.scrollTo({ top:0 });
       return;
     }

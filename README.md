@@ -783,23 +783,35 @@ UFMG (`#/servicos/aproveitamento`, `mod-aproveitamento.js`;
 `membro.neurodynamics.dev/aproveitamento` leva até lá). O relatório é escrito
 no template LaTeX do brand (`templates/aacc`, em
 [brand.neurodynamics.dev](https://brand.neurodynamics.dev)); o SOMA conduz o
-resto, em quatro passos e duas aprovações:
+resto, em quatro passos e duas aprovações. O alto da página mostra os passos
+com o mesmo contador do Arquivos (`arq-etapas`): ficha, enquadramento,
+relatório, envio e aprovação.
 
-1. **A ficha.** Os campos do recadastro (os de *Dados pessoais* da ficha) e
-   os dados acadêmicos: curso, matrícula e o semestre de ingresso no curso. A
+1. **A ficha.** Os campos do recadastro (os de *Dados pessoais* da ficha,
+   com os **pronomes**: ela, ele ou elu, com que o relatório concorda) e os
+   dados acadêmicos: o **curso**, de uma lista (as engenharias da UFMG e os
+   cursos da EEFFTO, da Faculdade de Medicina, da Escola de Enfermagem, do
+   ICEx e da FACE, ou *Outro curso*, escrito), a matrícula e o semestre de
+   ingresso. O curso escolhe as competências das DCN que o relatório mostra;
+   a lista (`AAC_CURSOS`) espelha a de `nro/competencias.tex`, no brand. A
    entrada e a saída da equipe são do Depto. de Pessoal, e é por elas que se
    contam os semestres; se estiverem erradas, a tela abre a *Outra
    solicitação* já escrita.
 2. **O enquadramento.** O painel mostra os semestres letivos de participação
-   pela regra da classe LaTeX (o 1º semestre de fevereiro a julho, o 2º de
-   agosto a janeiro; conta o que tem ao menos quatro meses, sem os
-   afastamentos aprovados; o anterior ao ingresso não conta, art. 5º) e o que
+   pela regra da classe LaTeX (conta o semestre com ao menos quatro meses,
+   sem os afastamentos aprovados, e posterior ao ingresso, art. 5º) e o que
    a resolução permite: equipe de competição estudantil (EQC, art. 11, 3
-   créditos por semestre), extensão com registro no SIEX (EXT), iniciação
-   científica (IC) e vivência profissional (VPC, 1 crédito a cada 300 h), com
-   a estimativa de cada um. A pessoa escolhe o principal e as alternativas
-   para o colegiado que não acolher o principal. Guardar cria o pedido,
-   `AAC-7`, cujo relatório é o `NRO-PES-020-7`.
+   créditos por semestre; a participação no Cybathlon está no SIEX como a
+   ação *Competição Cybathlon 2024*, nº 205234), extensão com registro no
+   SIEX (EXT) e vivência profissional (VPC, 1 crédito a cada 300 h), com a
+   estimativa de cada um. Iniciação científica não entra: não é o que a
+   equipe oferece a todos. Para quem é de curso que não segue a Resolução
+   02/2019, há o **OUT**: o nome do enquadramento e a norma do Colegiado,
+   que o `soma.tex` põe no lugar da norma da Escola de Engenharia; os
+   créditos ficam a definir pelo Colegiado, e não há alternativas. A pessoa
+   escolhe o principal e as alternativas para o colegiado que não acolher o
+   principal. Guardar cria o pedido, `AAC-7`, cujo relatório é o
+   `NRO-PES-020-7`.
 3. **O relatório.** O ZIP do template, com o `soma.tex` do pedido: o que o
    SOMA sabe da pessoa (a ficha, o supervisor, os projetos, os afastamentos e
    os treinamentos concluídos), o PN e o enquadramento. Escreve-se no
@@ -810,11 +822,13 @@ resto, em quatro passos e duas aprovações:
    privado `aproveitamento`, na pasta da pessoa.
 
 **As aprovações.** Uma pessoa de cada etapa, na ordem da configuração
-(`NRO_PMO`, `NRO_PESSOAL` e `NRO_COORD_OFFICE` na semente), nunca quem pediu e
-nunca a mesma pessoa em duas etapas da mesma versão. Cada etapa é avisada no
-sino; o estudante, por e-mail, a cada passo. Qualquer etapa devolve, com o
-motivo, e o envio seguinte recomeça da primeira. Na última, quem aprova
-**indica o professor orientador** (nome, título e e-mail institucional): ele
+(`NRO_PMO`, `NRO_PESSOAL` e `NRO_COORD_OFFICE`, a Diretoria, na semente),
+nunca quem pediu e nunca a mesma pessoa em duas etapas da mesma versão. Cada
+etapa é avisada no sino; quem pediu, por e-mail, a cada passo. Qualquer etapa
+devolve, com o motivo, e o envio seguinte recomeça da primeira. Na última, a
+Diretoria **indica o professor orientador** (título, nome, e-mail
+institucional, departamento e unidade acadêmica; os títulos com a abreviatura
+certa: Prof.ª, Dr.ª, Ma., Me.): ele
 recebe um **link pessoal** por e-mail (`aproveitamento/?p=…`, válido pelo
 prazo da configuração) e, sem conta no portal, lê o relatório, dá a nota pelo
 barema (de meio em meio ponto; mínima de 60, art. 3º, II) e aprova ou
@@ -822,15 +836,19 @@ devolve. A aprovação dele é a que vale para a UFMG.
 
 **A folha de aprovação.** Aprovado pelo professor, o banco emite a folha
 (`doc_emitidos`, tipo `aproveitamento`), com código verificador, conferível em
-`auth.neurodynamics.dev`. Ela leva o **selo solene** (`selo-solene.png`, do
-design system, só para atos de chancelaria), as aprovações de cada etapa, a
-declaração e a nota do professor com o barema e a legenda de autenticação.
-O **PDF final** é o relatório com a folha desenhada sobre a folha reservada
-(a página 2): o número de páginas não muda, e os marcadores e links do
-relatório continuam valendo. O estudante o entrega ao colegiado. Se o
-colegiado apontar algo, o estudante **reabre**: a folha é revogada (a
-validação passa a dizer isso) e o relatório corrigido passa pelas aprovações
-outra vez.
+`auth.neurodynamics.dev`. Ela leva a logo original no cabeçalho
+(`logo-nro.png`, o imagotipo preto do design system, que o `doc-nro.js` busca
+ao lado dele, com o do GitHub de reserva), o **selo solene**
+(`selo-solene.png`, do design system, só para atos de chancelaria), as
+aprovações de cada etapa, a declaração e a nota do professor com o barema, o
+e-mail, o departamento e a unidade dele, e a legenda de autenticação. O
+**PDF final** é o relatório com a folha desenhada sobre a folha reservada (a
+página 2): o número de páginas não muda, e os marcadores e links do relatório
+continuam valendo. Na capa, o *Pendente* da avaliação da equipe vira
+*Aprovada em* e a data, na posição que a classe grava na palavra-chave
+`avaliacao`. Quem pediu entrega o PDF ao colegiado. Se o colegiado apontar
+algo, a pessoa **reabre**: a folha é revogada (a validação passa a dizer
+isso) e o relatório corrigido passa pelas aprovações outra vez.
 
 **As configurações** (`admin` e Depto. de Pessoal): as etapas (o grupo e o
 nome de cada uma na folha), o domínio do e-mail do professor, a validade do

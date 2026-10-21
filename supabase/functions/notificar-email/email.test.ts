@@ -491,6 +491,17 @@ const convite = (tipo: EnvioAgenda["tipo"], d: Partial<EnvioAgenda["dados"]> = {
   ok("o botão é o link pessoal", hp.includes('href="https://membro.neurodynamics.dev/aproveitamento/?p=' + "a".repeat(64) + '"'));
   ok("o texto ao professor", aaccTexto(prof).includes("Avaliar o relatório: https://membro.neurodynamics.dev/aproveitamento/?p="));
   ok("sem travessão nem ponto médio", ![hp, conc, dev, t, aaccTexto(prof)].some((x) => /[—·]/.test(x)));
+  ok("a norma da Escola de Engenharia, por padrão", hp.includes("Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG")
+     && hp.includes("como professora orientadora"));
+  const out: EnvioAacc = { ...prof, para_nome: "Prof.ª Ma. Luiza Exemplo",
+    dados: { ...prof.dados, professor: "Prof.ª Ma. Luiza Exemplo", principal: "OUT", outro: "Atividade complementar de extensão",
+             norma: "Resolução nº 05/2020, do Colegiado do Curso de Fisioterapia" } };
+  const ho = aaccHTML(out);
+  ok("Prof.ª é professora", ho.includes("Prezada Prof.ª Ma. Luiza Exemplo,") && aaccTexto(out).startsWith("Prezada Prof.ª Ma. Luiza Exemplo,"));
+  ok("o OUT: o enquadramento que a pessoa deu e a norma do Colegiado", ho.includes("Atividade complementar de extensão")
+     && ho.includes("nos termos da Resolução nº 05/2020, do Colegiado do Curso de Fisioterapia") && !ho.includes("02/2019"));
+  const masc: EnvioAacc = { ...prof, dados: { ...prof.dados, professor: "Prof. Dr. Henrique Resende Martins" } };
+  ok("Prof. Dr. é professor", aaccHTML(masc).includes("Prezado Prof. Dr. Henrique") && aaccHTML(masc).includes("como professor orientador"));
 }
 
 console.log(falhas ? `\n${falhas} falha(s)` : "\nTudo verde.");

@@ -10,22 +10,24 @@
 -- brand (templates/aacc); o SOMA conduz o resto:
 --
 --   1. A PREPARAÇÃO (aacc_meu, aacc_perfil_salvar, aacc_preparar). A
---      página confere a ficha (os dados do recadastro) e os dados
---      acadêmicos, conta os semestres letivos de participação (a mesma
---      regra da classe LaTeX) e guarda o enquadramento escolhido. O
+--      página confere a ficha (os dados do recadastro, com os pronomes,
+--      que o relatório usa) e os dados acadêmicos, conta os semestres
+--      letivos de participação (a mesma regra da classe LaTeX) e guarda
+--      o enquadramento escolhido: EQC, EXT ou VPC, da Resolução 02/2019,
+--      ou OUT, para o curso que segue outra norma. O
 --      pedido nasce aqui, com número: AAC-7, e o relatório é o
 --      NRO-PES-020-7.
 --   2. O ENVIO (aacc_enviar). O PDF sobe para o bucket "aproveitamento"
 --      e o banco confere os metadados que o template escreve: que é
 --      deste template, do pedido, em versão final e sem pendência.
 --   3. AS APROVAÇÕES (aacc_decidir). Uma pessoa de cada grupo, na ordem
---      da configuração (o PMO, o Depto. de Pessoal e a Coordenação, na
+--      da configuração (o PMO, o Depto. de Pessoal e a Diretoria, na
 --      semente), nunca quem pediu e nunca a mesma pessoa em duas
 --      etapas da mesma versão. Qualquer uma devolve, com o motivo; o
 --      envio seguinte recomeça da primeira etapa.
 --   4. O PROFESSOR ORIENTADOR (aacc_professor_ler, _decidir). Na última
 --      etapa, quem aprova indica o professor (nome, título, e-mail
---      institucional). Ele recebe um link pessoal por e-mail e decide
+--      institucional, departamento e unidade acadêmica). Ele recebe um link pessoal por e-mail e decide
 --      sem conta no portal: a nota pelo barema (mínima de 60, art. 3º,
 --      II) e a aprovação. É a aprovação que vale para a UFMG.
 --   5. A FOLHA DE APROVAÇÃO. Aprovado pelo professor, o banco emite o
@@ -82,10 +84,10 @@ create table if not exists public.aacc_config (
   meses_por_semestre   integer not null default 4 check (meses_por_semestre between 1 and 6),
   nota_minima          integer not null default 60 check (nota_minima between 0 and 100),
   barema               jsonb not null default '[
-    {"chave":"aderencia","peso":15,"nome":"Aderência à formação","descritor":"As atividades são de engenharia do curso do estudante, e a relação com as disciplinas e com as competências está demonstrada, não apenas afirmada."},
+    {"chave":"aderencia","peso":15,"nome":"Aderência à formação","descritor":"As atividades se relacionam com o curso, e a relação com as disciplinas e com as competências está demonstrada, não apenas afirmada."},
     {"chave":"profundidade","peso":25,"nome":"Profundidade técnica","descritor":"O desenvolvimento mostra método, cálculos, decisões justificadas e domínio das ferramentas, num nível comparável ao de um relatório de iniciação científica."},
-    {"chave":"contribuicao","peso":20,"nome":"Contribuição individual","descritor":"Fica claro o que o estudante fez, decidiu e entregou, separado do trabalho da equipe, e os registros e os supervisores confirmam."},
-    {"chave":"evidencias","peso":15,"nome":"Evidências e rastreabilidade","descritor":"Cada atividade tem evidências verificáveis (códigos no SOMA, repositórios, arquivos de projeto, documentos emitidos), e as horas são consistentes com elas."},
+    {"chave":"contribuicao","peso":20,"nome":"Contribuição individual","descritor":"Fica claro o que foi feito, decidido e entregue individualmente, separado do trabalho da equipe, e os registros e os supervisores confirmam."},
+    {"chave":"evidencias","peso":15,"nome":"Evidências e rastreabilidade","descritor":"Cada atividade tem evidências verificáveis (registros no SOMA, repositórios, arquivos de projeto, documentos emitidos), e as horas são consistentes com elas."},
     {"chave":"resultados","peso":15,"nome":"Resultados e impacto","descritor":"Há resultados concretos, medidos e comparados com o esperado, e o impacto no projeto, na equipe ou na comunidade está demonstrado."},
     {"chave":"comunicacao","peso":10,"nome":"Comunicação","descritor":"O texto é claro, organizado e correto; figuras e tabelas têm legenda e fonte; a linguagem técnica é precisa."}
   ]'::jsonb,
@@ -103,9 +105,9 @@ drop policy if exists aacc_cfg_select on public.aacc_config;
 create policy aacc_cfg_select on public.aacc_config for select to authenticated using (true);
 grant select on public.aacc_config to authenticated;
 
--- A semente das etapas: NRO_PMO, NRO_PESSOAL e NRO_COORD_OFFICE, pelo
--- nome; sem eles, o grupo com a chave pmo e os grupos cujo nome lembra
--- o Pessoal e a Coordenação. Etapa sem grupo fica nula, e a tela de
+-- A semente das etapas: NRO_PMO, NRO_PESSOAL e NRO_COORD_OFFICE (a
+-- Diretoria), pelo nome; sem eles, o grupo com a chave pmo e os grupos
+-- cujo nome lembra o Pessoal e a Diretoria. Etapa sem grupo fica nula, e a tela de
 -- configurações pede que se escolha: o pedido não anda por ela. Rodar
 -- de novo só preenche a etapa que ficou nula; a escolhida não muda.
 do $$
@@ -125,7 +127,7 @@ begin
   end if;
   select id into v_coo from grupos where upper(nome) = 'NRO_COORD_OFFICE' limit 1;
   if v_coo is null then
-    select id into v_coo from grupos where nome ilike '%coord%' order by id limit 1;
+    select id into v_coo from grupos where nome ilike '%diretoria%' or nome ilike '%coord%' order by id limit 1;
   end if;
   if cardinality(c.grupos) > 0 then
     -- só as nulas, e só se a configuração ainda tem as três da semente
@@ -138,8 +140,24 @@ begin
   end if;
   update aacc_config
      set grupos  = array[v_pmo, v_pes, v_coo],
-         rotulos = array['PMO', 'Departamento de Pessoal', 'Coordenação'];
+         rotulos = array['PMO', 'Departamento de Pessoal', 'Diretoria'];
 end $$;
+
+-- A terceira etapa é a Diretoria, e o barema diz o mesmo que o template
+-- (nro/avaliacao.tex): quem rodou uma versão anterior desta migração
+-- fica com os textos novos. Só troca o que ainda está como era.
+update public.aacc_config set rotulos[3] = 'Diretoria' where rotulos[3] = 'Coordenação';
+update public.aacc_config c
+   set barema = (select jsonb_agg(case e->>'chave'
+                   when 'aderencia' then case when e->>'descritor' like '%engenharia do curso do estudante%'
+                     then jsonb_set(e, '{descritor}', to_jsonb('As atividades se relacionam com o curso, e a relação com as disciplinas e com as competências está demonstrada, não apenas afirmada.'::text)) else e end
+                   when 'contribuicao' then case when e->>'descritor' like 'Fica claro o que o estudante%'
+                     then jsonb_set(e, '{descritor}', to_jsonb('Fica claro o que foi feito, decidido e entregue individualmente, separado do trabalho da equipe, e os registros e os supervisores confirmam.'::text)) else e end
+                   when 'evidencias' then case when e->>'descritor' like '%(códigos no SOMA,%'
+                     then jsonb_set(e, '{descritor}', to_jsonb(replace(e->>'descritor', '(códigos no SOMA,', '(registros no SOMA,'))) else e end
+                   else e end order by i)
+                   from jsonb_array_elements(c.barema) with ordinality x(e, i))
+ where jsonb_typeof(c.barema) = 'array' and jsonb_array_length(c.barema) > 0;
 
 -- A série do relatório: NRO-PES-020, a que o template usa. Se o SN 20
 -- do Pessoal já é de outra coisa, a próxima livre (o soma.tex leva o
@@ -202,6 +220,8 @@ create table if not exists public.aacc_pedidos (
   prof_nome          text,
   prof_titulo        text,
   prof_email         text,
+  prof_departamento  text,
+  prof_unidade       text,
   prof_token_hash    text,
   prof_pdf_url       text,
   prof_expira        timestamptz,
@@ -219,6 +239,8 @@ create table if not exists public.aacc_pedidos (
   concluido_em       timestamptz,
   atualizado_em      timestamptz not null default now()
 );
+alter table public.aacc_pedidos add column if not exists prof_departamento text;
+alter table public.aacc_pedidos add column if not exists prof_unidade text;
 create unique index if not exists aacc_pedidos_numero on public.aacc_pedidos (numero);
 create unique index if not exists aacc_pedidos_um_aberto on public.aacc_pedidos (registro)
   where status in ('preparacao','analise','devolvido','professor');
@@ -459,12 +481,21 @@ begin
   return r;
 end $$;
 
+-- Os pronomes moram no recadastro, ao lado do gênero: ela, ele ou elu.
+-- O relatório concorda com eles (egressa, egresso, egresse).
+do $$
+begin
+  if to_regclass('public.dados_pessoais') is not null then
+    alter table public.dados_pessoais add column if not exists pronomes text;
+  end if;
+end $$;
+
 -- Os campos do recadastro que a página confere, e os acadêmicos. Os
 -- obrigatórios travam o download do template; os opcionais só aparecem.
 create or replace function public.aacc_campos_obrigatorios()
 returns text[] language sql immutable as $$
   select array['email_pessoal','telefone','cpf','data_nascimento','endereco','cidade_origem','instituicao',
-               'curso','matricula','periodo_ingresso','genero','autodeclaracao_racial'];
+               'curso','matricula','periodo_ingresso','genero','pronomes','autodeclaracao_racial'];
 $$;
 create or replace function public.aacc_campos_opcionais()
 returns text[] language sql immutable as $$
@@ -546,6 +577,7 @@ begin
     'perfil', (select jsonb_object_agg(k, dp->>k) from unnest(public.aacc_campos_obrigatorios() || public.aacc_campos_opcionais()) k
                 where k not in ('email_pessoal','telefone')),
     'curso', nullif(trim(coalesce(dp->>'curso', '')), ''),
+    'pronomes', nullif(lower(trim(coalesce(dp->>'pronomes', ''))), ''),
     'matricula', nullif(trim(coalesce(dp->>'matricula', '')), ''),
     'instituicao', nullif(trim(coalesce(dp->>'instituicao', '')), ''),
     'periodo_ingresso', dp->>'periodo_ingresso',
@@ -583,6 +615,7 @@ set search_path = public as $$
     'pdf_paginas', p.pdf_paginas, 'pdf_meta', p.pdf_meta, 'folha', p.folha,
     'motivo', p.motivo, 'emitido', p.emitido, 'nota', p.nota,
     'prof_nome', p.prof_nome, 'prof_titulo', p.prof_titulo,
+    'prof_departamento', p.prof_departamento, 'prof_unidade', p.prof_unidade,
     'criado_em', p.criado_em, 'enviado_em', p.enviado_em, 'concluido_em', p.concluido_em, 'atualizado_em', p.atualizado_em)
   || case when p_completo then jsonb_build_object(
     'dados', p.dados, 'pdf_caminho', p.pdf_caminho, 'pdf_sha256', p.pdf_sha256, 'pdf_bytes', p.pdf_bytes,
@@ -641,7 +674,7 @@ declare
   k     text;
   v     text;
   v_ok  text[] := array['cpf','data_nascimento','endereco','cidade_origem','instituicao','curso','matricula',
-                        'periodo_ingresso','genero','autodeclaracao_racial','lattes','github','instagram',
+                        'periodo_ingresso','genero','pronomes','autodeclaracao_racial','lattes','github','instagram',
                         'acessibilidade','situacao_fump','tempo_deslocamento'];
   v_n   integer := 0;
 begin
@@ -669,6 +702,10 @@ begin
         return jsonb_build_object('status','invalido','campo',k);
       end if;
       if k = 'periodo_ingresso' then v := public.aacc_ingresso(v); end if;
+      if k = 'pronomes' then
+        v := lower(v);
+        if v is not null and v not in ('ela','ele','elu') then return jsonb_build_object('status','invalido','campo',k); end if;
+      end if;
       if length(coalesce(v, '')) > 400 then return jsonb_build_object('status','invalido','campo',k); end if;
       insert into dados_pessoais (registro) values (v_reg) on conflict (registro) do nothing;
       if k = 'data_nascimento' then
@@ -684,9 +721,11 @@ begin
   return jsonb_build_object('status','ok','campos',v_n) || jsonb_build_object('membro', public.aacc_dados_membro(v_reg));
 end $$;
 
--- A estratégia: o principal, as alternativas e os semestres do SIEX e
--- da IC. Cria o pedido (com o número, que é o PN do relatório) ou muda
--- o que está em preparação ou devolvido.
+-- A estratégia: o principal, as alternativas e os semestres do SIEX.
+-- OUT é o curso que não segue a Resolução 02/2019 (outra unidade da
+-- UFMG): pede o nome do enquadramento e a norma do Colegiado, e não tem
+-- alternativas. Cria o pedido (com o número, que é o PN do relatório)
+-- ou muda o que está em preparação ou devolvido.
 create or replace function public.aacc_preparar(p jsonb)
 returns jsonb language plpgsql volatile security definer
 set search_path = public as $$
@@ -698,13 +737,15 @@ declare
   v_pri   text := upper(trim(coalesce(p->>'principal', '')));
   v_alt   text[] := '{}';
   v_siex  text[] := '{}';
-  v_ic    text[] := '{}';
+  v_outro text := nullif(trim(coalesce(p->>'outro', '')), '');
+  v_norma text := nullif(trim(coalesce(p->>'norma', '')), '');
+  v_ncurt text := nullif(trim(coalesce(p->>'normacurta', '')), '');
   x       text;
   v_sem   jsonb;
   v_rot   text[];
   ped     public.aacc_pedidos;
   v_dados jsonb;
-  c_part  constant text[] := array['EQC','EXT','IC','VPC'];
+  c_part  constant text[] := array['EQC','EXT','VPC','OUT'];
 begin
   if v_reg is null then return jsonb_build_object('status','sem_registro'); end if;
   select * into c from aacc_config;
@@ -713,30 +754,37 @@ begin
   if cardinality(b) > 0 then return jsonb_build_object('status','incompleto','bloqueios',to_jsonb(b)); end if;
   if not v_pri = any(c_part) then return jsonb_build_object('status','invalido','campo','principal'); end if;
   for x in select upper(trim(value)) from jsonb_array_elements_text(coalesce(p->'alternativas', '[]'::jsonb)) loop
-    if not x = any(c_part) then return jsonb_build_object('status','invalido','campo','alternativas'); end if;
+    if not x = any(c_part) or x = 'OUT' or v_pri = 'OUT' then
+      return jsonb_build_object('status','invalido','campo','alternativas');
+    end if;
     if x <> v_pri and not x = any(v_alt) then v_alt := v_alt || x; end if;
   end loop;
+  if v_pri = 'OUT' then
+    if v_outro is null or length(v_outro) < 5 or length(v_outro) > 200 then
+      return jsonb_build_object('status','invalido','campo','outro');
+    end if;
+    if v_norma is null or length(v_norma) < 5 or length(v_norma) > 200 then
+      return jsonb_build_object('status','invalido','campo','norma');
+    end if;
+    if length(coalesce(v_ncurt, '')) > 80 then return jsonb_build_object('status','invalido','campo','normacurta'); end if;
+  else
+    v_outro := null; v_norma := null; v_ncurt := null;
+  end if;
   v_sem := public.aacc_semestres((d->>'inicio')::date, (d->>'ate')::date, d->>'ingresso', d->'afastamentos', c.meses_por_semestre);
   select coalesce(array_agg(e->>'rotulo'), '{}') into v_rot from jsonb_array_elements(v_sem) e where e->>'situacao' = 'conta';
   for x in select trim(value) from jsonb_array_elements_text(coalesce(p->'siex', '[]'::jsonb)) loop
     if not x = any(v_rot) then return jsonb_build_object('status','invalido','campo','siex','semestre',x); end if;
     if not x = any(v_siex) then v_siex := v_siex || x; end if;
   end loop;
-  for x in select trim(value) from jsonb_array_elements_text(coalesce(p->'ic', '[]'::jsonb)) loop
-    if not x = any(v_rot) then return jsonb_build_object('status','invalido','campo','ic','semestre',x); end if;
-    if not x = any(v_ic) then v_ic := v_ic || x; end if;
-  end loop;
   if (v_pri = 'EXT' or 'EXT' = any(v_alt)) and cardinality(v_siex) = 0 then
     return jsonb_build_object('status','invalido','campo','siex');
-  end if;
-  if (v_pri = 'IC' or 'IC' = any(v_alt)) and cardinality(v_ic) = 0 then
-    return jsonb_build_object('status','invalido','campo','ic');
   end if;
   if length(coalesce(p->>'colegiado', '')) > 200 then return jsonb_build_object('status','invalido','campo','colegiado'); end if;
 
   v_dados := jsonb_build_object('membro', d, 'semestres', v_sem,
     'pedido', jsonb_build_object('principal', v_pri, 'alternativas', to_jsonb(v_alt),
-                                 'siex', to_jsonb(v_siex), 'ic', to_jsonb(v_ic),
+                                 'siex', to_jsonb(v_siex), 'outro', v_outro, 'norma', v_norma,
+                                 'normacurta', coalesce(v_ncurt, v_norma),
                                  'colegiado', nullif(trim(coalesce(p->>'colegiado', '')), '')));
 
   select * into ped from aacc_pedidos
@@ -851,6 +899,8 @@ declare
   v_pnome text := nullif(trim(coalesce(p#>>'{professor,nome}', '')), '');
   v_ptit  text := nullif(trim(coalesce(p#>>'{professor,titulo}', '')), '');
   v_pmail text := lower(nullif(trim(coalesce(p#>>'{professor,email}', '')), ''));
+  v_pdep  text := nullif(trim(coalesce(p#>>'{professor,departamento}', '')), '');
+  v_puni  text := nullif(trim(coalesce(p#>>'{professor,unidade}', '')), '');
   v_purl  text := nullif(trim(coalesce(p->>'pdf_url', '')), '');
   v_tok   text;
 begin
@@ -893,6 +943,12 @@ begin
     if v_pmail is null or v_pmail !~ '^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]{2,}$' then
       return jsonb_build_object('status','invalido','campo','professor_email');
     end if;
+    if v_pdep is null or length(v_pdep) < 3 or length(v_pdep) > 160 then
+      return jsonb_build_object('status','invalido','campo','professor_departamento');
+    end if;
+    if v_puni is null or length(v_puni) < 3 or length(v_puni) > 160 then
+      return jsonb_build_object('status','invalido','campo','professor_unidade');
+    end if;
     if nullif(c.dominio_professor, '') is not null
        and v_pmail !~ ('@([a-z0-9-]+\.)*' || replace(lower(c.dominio_professor), '.', '\.') || '$') then
       return jsonb_build_object('status','dominio','dominio',c.dominio_professor);
@@ -926,19 +982,22 @@ begin
   v_tok := replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
   update aacc_pedidos
      set status = 'professor', etapa = v_n + 1, prof_nome = v_pnome, prof_titulo = v_ptit, prof_email = v_pmail,
+         prof_departamento = v_pdep, prof_unidade = v_puni,
          prof_token_hash = encode(sha256(convert_to(v_tok, 'UTF8')), 'hex'), prof_pdf_url = v_purl,
          prof_expira = now() + make_interval(days => c.prazo_professor_dias), prof_visto_em = null,
          prof_indicado_por = v_reg, prof_indicado_nome = public.doc_meu_nome(), prof_indicado_em = now(),
          atualizado_em = now()
    where id = ped.id returning * into ped;
-  perform public.aacc_hist(ped.id, 'indicou', v_ptit || ' ' || v_pnome || ' (' || v_pmail || ')');
+  perform public.aacc_hist(ped.id, 'indicou', v_ptit || ' ' || v_pnome || ' (' || v_pmail || '), ' || v_pdep || ', ' || v_puni);
   insert into doc_envios (tipo, codigo, registro, para_nome, para_email, assunto, dados)
   values ('aacc_professor', null, null, v_ptit || ' ' || v_pnome, v_pmail,
           'Relatório de AACC de ' || ped.nome || ' para a sua avaliação',
           jsonb_build_object('pedido', ped.codigo, 'estudante', ped.nome,
             'curso', ped.dados#>>'{membro,curso}', 'principal', ped.dados#>>'{pedido,principal}',
+            'outro', ped.dados#>>'{pedido,outro}', 'norma', ped.dados#>>'{pedido,norma}',
             'creditos', ped.pdf_meta->>'creditos', 'indicado_por', public.doc_meu_nome(),
-            'professor', v_ptit || ' ' || v_pnome, 'prazo', (ped.prof_expira at time zone 'America/Sao_Paulo')::date,
+            'professor', v_ptit || ' ' || v_pnome, 'departamento', v_pdep, 'unidade', v_puni,
+            'prazo', (ped.prof_expira at time zone 'America/Sao_Paulo')::date,
             'url', c.url_portal || '/aproveitamento/?p=' || v_tok));
   perform public.aacc_avisar_estudante(ped, 'professor', ped.codigo || ': aprovado pela equipe',
     'Aprovado nas ' || v_n || ' etapas da equipe. O relatório seguiu para o professor orientador, '
@@ -958,6 +1017,8 @@ declare
   v_pnome text := nullif(trim(coalesce(p#>>'{professor,nome}', '')), '');
   v_ptit  text := nullif(trim(coalesce(p#>>'{professor,titulo}', '')), '');
   v_pmail text := lower(nullif(trim(coalesce(p#>>'{professor,email}', '')), ''));
+  v_pdep  text := nullif(trim(coalesce(p#>>'{professor,departamento}', '')), '');
+  v_puni  text := nullif(trim(coalesce(p#>>'{professor,unidade}', '')), '');
   v_purl  text := nullif(trim(coalesce(p->>'pdf_url', '')), '');
   v_tok   text;
 begin
@@ -969,7 +1030,14 @@ begin
   if not public.aacc_decide_etapa(cardinality(c.grupos), v_reg) then return jsonb_build_object('status','sem_permissao'); end if;
   if ped.registro = v_reg then return jsonb_build_object('status','propria'); end if;
   v_pnome := coalesce(v_pnome, ped.prof_nome); v_ptit := coalesce(v_ptit, ped.prof_titulo); v_pmail := coalesce(v_pmail, ped.prof_email);
+  v_pdep := coalesce(v_pdep, ped.prof_departamento); v_puni := coalesce(v_puni, ped.prof_unidade);
   if length(v_pnome) < 5 then return jsonb_build_object('status','invalido','campo','professor_nome'); end if;
+  if v_pdep is null or length(v_pdep) < 3 or length(v_pdep) > 160 then
+    return jsonb_build_object('status','invalido','campo','professor_departamento');
+  end if;
+  if v_puni is null or length(v_puni) < 3 or length(v_puni) > 160 then
+    return jsonb_build_object('status','invalido','campo','professor_unidade');
+  end if;
   if v_pmail !~ '^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]{2,}$' then return jsonb_build_object('status','invalido','campo','professor_email'); end if;
   if nullif(c.dominio_professor, '') is not null
      and v_pmail !~ ('@([a-z0-9-]+\.)*' || replace(lower(c.dominio_professor), '.', '\.') || '$') then
@@ -981,19 +1049,22 @@ begin
   v_tok := replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
   update aacc_pedidos
      set prof_nome = v_pnome, prof_titulo = v_ptit, prof_email = v_pmail,
+         prof_departamento = v_pdep, prof_unidade = v_puni,
          prof_token_hash = encode(sha256(convert_to(v_tok, 'UTF8')), 'hex'), prof_pdf_url = v_purl,
          prof_expira = now() + make_interval(days => c.prazo_professor_dias), prof_visto_em = null,
          prof_indicado_por = v_reg, prof_indicado_nome = public.doc_meu_nome(), prof_indicado_em = now(),
          atualizado_em = now()
    where id = ped.id returning * into ped;
-  perform public.aacc_hist(ped.id, 'reenviou', v_ptit || ' ' || v_pnome || ' (' || v_pmail || ')');
+  perform public.aacc_hist(ped.id, 'reenviou', v_ptit || ' ' || v_pnome || ' (' || v_pmail || '), ' || v_pdep || ', ' || v_puni);
   insert into doc_envios (tipo, codigo, registro, para_nome, para_email, assunto, dados)
   values ('aacc_professor', null, null, v_ptit || ' ' || v_pnome, v_pmail,
           'Relatório de AACC de ' || ped.nome || ' para a sua avaliação',
           jsonb_build_object('pedido', ped.codigo, 'estudante', ped.nome,
             'curso', ped.dados#>>'{membro,curso}', 'principal', ped.dados#>>'{pedido,principal}',
+            'outro', ped.dados#>>'{pedido,outro}', 'norma', ped.dados#>>'{pedido,norma}',
             'creditos', ped.pdf_meta->>'creditos', 'indicado_por', public.doc_meu_nome(),
-            'professor', v_ptit || ' ' || v_pnome, 'prazo', (ped.prof_expira at time zone 'America/Sao_Paulo')::date,
+            'professor', v_ptit || ' ' || v_pnome, 'departamento', v_pdep, 'unidade', v_puni,
+            'prazo', (ped.prof_expira at time zone 'America/Sao_Paulo')::date,
             'url', c.url_portal || '/aproveitamento/?p=' || v_tok));
   return jsonb_build_object('status','ok');
 end $$;
@@ -1030,7 +1101,7 @@ begin
   end if;
   return jsonb_build_object('status','ok',
     'pedido', public.aacc_pedido_json(ped, false) || jsonb_build_object(
-      'membro', jsonb_build_object('nome', ped.nome, 'curso', ped.dados#>>'{membro,curso}',
+      'membro', jsonb_build_object('nome', ped.nome, 'curso', ped.dados#>>'{membro,curso}', 'pronomes', ped.dados#>>'{membro,pronomes}',
         'matricula', ped.dados#>>'{membro,matricula}', 'ingresso', ped.dados#>>'{membro,ingresso}',
         'situacao', ped.dados#>>'{membro,situacao}', 'inicio', ped.dados#>>'{membro,inicio}',
         'fim', ped.dados#>>'{membro,fim}', 'cargo', ped.dados#>>'{membro,cargo}'),
@@ -1059,7 +1130,6 @@ declare
   v_dados jsonb;
   v       public.doc_emitidos;
   v_conc  text;
-  v_mail  text;
   v_todos integer[];
 begin
   if ped.id is null then return jsonb_build_object('status','nao_encontrado'); end if;
@@ -1107,7 +1177,6 @@ begin
   end if;
   v_conc := case when v_nota >= 90 then 'A' when v_nota >= 80 then 'B' when v_nota >= 70 then 'C'
                  when v_nota >= 60 then 'D' when v_nota >= 40 then 'E' else 'F' end;
-  v_mail := regexp_replace(ped.prof_email, '^(.)[^@]*(@.*)$', '\1•••\2');
 
   update aacc_pedidos set nota = v_nota, barema = v_bar, parecer_prof = v_par where id = ped.id returning * into ped;
   insert into aacc_decisoes (pedido_id, versao, etapa, grupo_id, rotulo, registro, nome, decisao, parecer)
@@ -1118,7 +1187,7 @@ begin
     'pedido', ped.codigo,
     'estudante', jsonb_build_object('nome', ped.nome, 'matricula', ped.dados#>>'{membro,matricula}',
       'curso', ped.dados#>>'{membro,curso}', 'ingresso', ped.dados#>>'{membro,ingresso}',
-      'colegiado', ped.dados#>>'{pedido,colegiado}'),
+      'pronomes', ped.dados#>>'{membro,pronomes}', 'colegiado', ped.dados#>>'{pedido,colegiado}'),
     'equipe', jsonb_build_object('inicio', ped.dados#>>'{membro,inicio}', 'fim', ped.dados#>>'{membro,fim}',
       'situacao', ped.dados#>>'{membro,situacao}', 'cargo', ped.dados#>>'{membro,cargo}'),
     'enquadramento', ped.dados->'pedido',
@@ -1132,11 +1201,12 @@ begin
                     'em', a.criado_em) order by a.etapa)
                     from aacc_decisoes a where a.pedido_id = ped.id and a.versao = ped.versao and a.decisao = 'aprovada'
                       and a.registro is not null), '[]'::jsonb),
-    'professor', jsonb_build_object('nome', ped.prof_nome, 'titulo', ped.prof_titulo, 'email', v_mail,
+    'professor', jsonb_build_object('nome', ped.prof_nome, 'titulo', ped.prof_titulo, 'email', ped.prof_email,
+      'departamento', ped.prof_departamento, 'unidade', ped.prof_unidade,
       'em', now(), 'nota', v_nota, 'conceito', v_conc, 'barema', v_bar, 'parecer', v_par,
       'indicado_por', ped.prof_indicado_nome),
     'serie_titulo', (select s.titulo from doc_series s where s.id = c.serie),
-    'norma', 'Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG',
+    'norma', coalesce(ped.dados#>>'{pedido,norma}', 'Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG'),
     'cidade', cfg.cidade, 'data', (now() at time zone 'America/Sao_Paulo')::date,
     'texto_instituicao', cfg.texto_instituicao);
   if c.serie is null then
@@ -1447,7 +1517,7 @@ begin
 end $$;
 
 insert into public.migracoes (id, descricao) values
-  ('v33_aproveitamento', 'O aproveitamento de AACC: o pedido (AAC-N) com o enquadramento pela Resolução 02/2019 da Congregação, o envio do relatório do template LaTeX, as aprovações por etapa (uma pessoa de cada grupo), o professor orientador pelo link pessoal e a folha de aprovação emitida e autenticável')
+  ('v33_aproveitamento', 'O aproveitamento de AACC: o pedido (AAC-N) com o enquadramento pela Resolução 02/2019 da Congregação (ou pela norma de outro Colegiado), o envio do relatório do template LaTeX, as aprovações por etapa (uma pessoa de cada grupo), o professor orientador pelo link pessoal e a folha de aprovação emitida e autenticável')
 on conflict (id) do nothing;
 
 -- ------------------------------------------------------------

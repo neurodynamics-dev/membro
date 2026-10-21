@@ -2,18 +2,21 @@
    Confere, com asserção (sai com código 1 se algo falhar):
      Serviços — o cartão e o item do menu; o início avisa o pedido que
        espera a decisão de quem está logado;
-     O meu pedido — a ficha que falta (o ingresso que não é semestre
-       volta), os semestres, o painel do enquadramento (a estimativa, a
-       extensão que pede os semestres do SIEX), o pedido que nasce, o ZIP
+     O meu pedido — o contador dos passos (o do Arquivos), a ficha que
+       falta (o ingresso que não é semestre volta, os pronomes, o curso
+       da lista), os semestres, o painel do enquadramento (a estimativa,
+       o OUT com a norma do Colegiado, a extensão que pede os semestres
+       do SIEX), o pedido que nasce, o ZIP
        com o soma.tex do pedido (o template dentro, os afastamentos e os
        treinamentos do SOMA), só o soma.tex, o PDF em rascunho que não
        passa e o final que sobe para a pasta da pessoa e é enviado;
-     Quem aprova — a lista "para aprovar", a última etapa indica o
-       professor (e-mail de fora do domínio volta) com o link assinado do
-       PDF da versão em análise;
+     Quem aprova — a lista "para aprovar", a última etapa (a Diretoria)
+       indica o professor, com o departamento e a unidade (e-mail de fora
+       do domínio volta), e o link assinado do PDF da versão em análise;
      O PDF final — o relatório com a folha de aprovação no lugar da
        página 2, sem mudar o número de páginas, com o link da validação e
-       a marca nos metadados; só a folha, em uma página;
+       a marca nos metadados; na capa, a data da aprovação no lugar do
+       "Pendente"; só a folha, em uma página;
      O professor — sem o link, o portal; o link vencido e o inválido; o
        barema que soma, a nota mínima, a declaração que destrava o botão,
        a aprovação; devolver pede o parecer;
@@ -38,6 +41,7 @@ const PDFLIB = readFileSync(nm('pdf-lib/dist/pdf-lib.min.js'), 'utf8');
 const JSZIPJS = readFileSync(nm('jszip/dist/jszip.min.js'), 'utf8');
 const DOCNRO = readFileSync(new URL('../doc-nro.js', import.meta.url), 'utf8');
 const SELO = readFileSync(new URL('../selo-solene.png', import.meta.url));
+const LOGO = readFileSync(new URL('../logo-nro.png', import.meta.url));
 const DIR = mkdtempSync(join(tmpdir(), 'aacc-'));
 
 /* o PDF que o template gera: as palavras-chave da classe e a folha
@@ -48,12 +52,14 @@ async function fazPdf(kw, paginas = 5){
   for (let i = 1; i <= paginas; i++){
     const p = d.addPage([595.28, 841.89]);
     p.drawText(i === 2 ? 'Folha reservada ao SOMA' : `Pagina ${i} do relatorio`, { x:60, y:760, size:16, font:f });
+    /* a capa: o "Pendente" da avaliação da equipe onde a palavra-chave diz */
+    if (i === 1) p.drawText('Pendente', { x:138 * 72 / 25.4, y:41.8 * 72 / 25.4, size:9, font:f });
   }
   d.setKeywords([kw]);
   return d.save();
 }
 const kw = (doc, extra = {}) => Object.entries({ documento:doc, modo:'final', pendencias:'0', folha:'2', principal:'EQC',
-  creditos:'10', principalcreditos:'9', itens:'1', semestres:'3', exemplo:'nao', ...extra }).reduce((s, [k, v]) => s + `; ${k}=${v}`, 'nro-aacc');
+  creditos:'10', principalcreditos:'9', avaliacao:'138,41.8', itens:'1', semestres:'3', exemplo:'nao', ...extra }).reduce((s, [k, v]) => s + `; ${k}=${v}`, 'nro-aacc');
 const PDF_FINAL = await fazPdf(kw('NRO-PES-020-9'));
 const PDF_RASC = await fazPdf(kw('NRO-PES-020-9', { modo:'rascunho', pendencias:'4' }));
 const PDF_AAC5 = await fazPdf(kw('NRO-PES-020-5'));
@@ -79,6 +85,8 @@ async function rotas(p){
     headers:{ 'access-control-allow-origin':'*' } }));
   await p.route('https://membro.neurodynamics.dev/doc-nro.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:DOCNRO }));
   await p.route('https://membro.neurodynamics.dev/selo-solene.png', r => r.fulfill({ status:200, contentType:'image/png', body:SELO,
+    headers:{ 'access-control-allow-origin':'*' } }));
+  await p.route('https://membro.neurodynamics.dev/logo-nro.png', r => r.fulfill({ status:200, contentType:'image/png', body:LOGO,
     headers:{ 'access-control-allow-origin':'*' } }));
   await p.route(/fonts\.googleapis|fonts\.gstatic|raw\.githubusercontent|youtube\.com|ytimg/, r => r.abort());
 }
@@ -119,22 +127,63 @@ const pdfTexto = (arq, pg) => execFileSync('pdftotext', ['-f', String(pg), '-l',
 
   await ir(p, '#/servicos/aproveitamento', 1500);
   confere('o passo 1 está aberto, e os outros travados', await p.locator('#aac-p1.atual').count() === 1 && await p.locator('#aac-p2.trava').count() === 1);
-  confere('a ficha mostra só os dois campos que faltam', await p.locator('.aac-campos input').count() === 2
-    && await p.locator('#aac-f-periodo_ingresso').count() === 1 && await p.locator('#aac-f-autodeclaracao_racial').count() === 1);
+  confere('o contador dos passos, o mesmo do Arquivos: cinco, na ficha', await p.locator('.arq-etapas.aac-trilha .arq-etapa').count() === 5
+    && /^Ficha/.test(await texto(p, '.aac-trilha .arq-etapa[aria-current="step"]')) && /faltam 3 campos/.test(await texto(p, '.aac-trilha')),
+    await texto(p, '.aac-trilha'));
+  confere('a ficha mostra só os três campos que faltam', await p.locator('.aac-campos [data-k]').count() === 3
+    && await p.locator('#aac-f-periodo_ingresso').count() === 1 && await p.locator('select#aac-f-pronomes').count() === 1
+    && await p.locator('#aac-f-autodeclaracao_racial').count() === 1);
   confere('o menu acende o item', await p.locator('#lt-nav a[href="#/servicos/aproveitamento"][aria-current="page"]').count() === 1);
   confere('as abas de quem também aprova', (await texto(p, 'nav.nav1')).includes('Para aprovar') && (await texto(p, 'nav.nav1')).includes('Configurações'));
   await p.fill('#aac-f-periodo_ingresso', 'segundo de 2022');
+  await p.selectOption('#aac-f-pronomes', 'ela');
   await p.fill('#aac-f-autodeclaracao_racial', 'Parda');
   await p.click('#aac-ficha-btn'); await p.waitForTimeout(500);
   confere('o ingresso que não é semestre volta, com o nome do campo', /Semestre de ingresso no curso/.test(await toasts(p)), await toasts(p));
   await p.fill('#aac-f-periodo_ingresso', '2022/2');
   await p.click('#aac-ficha-btn'); await p.waitForTimeout(1200);
   const salvo = (await rpcs(p, 'aacc_perfil_salvar')).pop();
-  confere('a ficha salva os dois campos', salvo?.p?.periodo_ingresso === '2022/2' && salvo?.p?.autodeclaracao_racial === 'Parda', salvo);
-  confere('o passo 1 fica feito e o 2 abre', await p.locator('#aac-p1.feito').count() === 1 && await p.locator('#aac-p2.atual').count() === 1);
+  confere('a ficha salva os três campos', salvo?.p?.periodo_ingresso === '2022/2' && salvo?.p?.autodeclaracao_racial === 'Parda'
+    && salvo?.p?.pronomes === 'ela', salvo);
+  confere('o passo 1 fica feito e o 2 abre', await p.locator('#aac-p1.feito').count() === 1 && await p.locator('#aac-p2.atual').count() === 1
+    && /^Enquadramento/.test(await texto(p, '.aac-trilha .arq-etapa[aria-current="step"]')));
+  /* o curso vem da lista: as engenharias e as cinco unidades */
+  await p.click('button:has-text("Editar a ficha")'); await p.waitForTimeout(300);
+  confere('o curso é uma lista, por unidade', await p.locator('#aac-f-curso-sel optgroup').count() === 7
+    && await p.locator('#aac-f-curso-sel optgroup[label="EEFFTO"] option').count() === 3
+    && await p.inputValue('#aac-f-curso-sel') === 'Engenharia de Controle e Automação' && await p.locator('#aac-f-curso[hidden]').count() === 1);
+  await p.selectOption('#aac-f-curso-sel', '__outro'); await p.waitForTimeout(100);
+  confere('"Outro curso" abre o campo para escrever', await p.locator('#aac-f-curso:not([hidden])').count() === 1);
+  await p.selectOption('#aac-f-curso-sel', 'Engenharia Elétrica'); await p.waitForTimeout(100);
+  confere('e a lista o fecha de novo', await p.locator('#aac-f-curso[hidden]').count() === 1 && await p.inputValue('#aac-f-curso') === 'Engenharia Elétrica');
+  await p.click('#aac-ficha-btn'); await p.waitForTimeout(1200);
+  confere('a ficha salva o curso da lista', (await rpcs(p, 'aacc_perfil_salvar')).pop()?.p?.curso === 'Engenharia Elétrica');
   confere('os semestres: três contam, um é parcial', await p.locator('.aac-sems .aac-sem.conta').count() === 3 && await p.locator('.aac-sems .aac-sem.parcial').count() === 1);
   confere('a sugestão já vem: EQC principal, VPC alternativa', await p.locator('.aac-op.pri .cod').textContent() === 'EQC' && await p.locator('.aac-op.alt .cod').textContent() === 'VPC');
   confere('a estimativa da equipe de competição: 9 créditos', (await texto(p, '.aac-op.pri .est')) === '9 créditos', await texto(p, '.aac-op.pri .est'));
+  confere('sem iniciação científica no painel', await p.locator('.aac-op .cod:text-is("IC")').count() === 0);
+  /* o OUT: o curso que segue outra norma */
+  await p.locator('.aac-op:has(.cod:text-is("OUT")) input[type=radio]').check(); await p.waitForTimeout(200);
+  confere('o OUT não tem alternativas e pede o enquadramento e a norma', await p.locator('.aac-op.alt').count() === 0
+    && await p.locator('.aac-op input[type=checkbox]:not([disabled])').count() === 0 && await p.locator('#aac-outro').count() === 1
+    && await p.locator('#aac-norma').count() === 1 && (await texto(p, '.aac-op.pri .est')) === 'a definir pelo Colegiado');
+  await p.click('#aac-enq-btn'); await p.waitForTimeout(400);
+  confere('sem o nome do enquadramento, não guarda', /Informe o nome do enquadramento/.test(await toasts(p)), await toasts(p));
+  await p.fill('#aac-outro', 'Atividade complementar de extensão');
+  await p.fill('#aac-norma', 'Resolução nº 05/2020, do Colegiado do Curso de Fisioterapia');
+  await p.fill('#aac-ncurta', 'Resolução nº 05/2020');
+  await p.click('#aac-enq-btn'); await p.waitForTimeout(1300);
+  const prepOut = (await rpcs(p, 'aacc_preparar')).pop();
+  confere('o OUT vai ao banco com o nome e a norma', prepOut?.p?.principal === 'OUT' && prepOut.p.alternativas.length === 0
+    && prepOut.p.outro === 'Atividade complementar de extensão' && prepOut.p.normacurta === 'Resolução nº 05/2020', prepOut);
+  const sOut = await baixa(p, () => p.click('button:has-text("Só o soma.tex")'));
+  const somaOut = readFileSync(sOut.caminho, 'utf8');
+  confere('o soma.tex do OUT troca a norma da equipe', /principal\s+= OUT,/.test(somaOut) && /outro\s+= \{Atividade complementar de extensão\},/.test(somaOut)
+    && /\\equipe\{\s*norma\s+= \{Resolução nº 05\/2020, do Colegiado do Curso de Fisioterapia\},\s*normacurta = \{Resolução nº 05\/2020\},/.test(somaOut), somaOut.slice(-400));
+  /* de volta à equipe de competição, com a vivência de alternativa */
+  await p.locator('.aac-op:has(.cod:text-is("EQC")) input[type=radio]').check(); await p.waitForTimeout(200);
+  confere('voltar ao EQC some com os campos do OUT', await p.locator('#aac-outro').count() === 0);
+  await p.locator('.aac-op:has(.cod:text-is("VPC")) .esc input[type=checkbox]').check(); await p.waitForTimeout(200);
   /* a extensão como alternativa pede os semestres do SIEX */
   await p.locator('.aac-op:has(.cod:text-is("EXT")) .esc input[type=checkbox]').check(); await p.waitForTimeout(200);
   confere('marcar a extensão mostra os semestres que contam', await p.locator('.aac-op:has(.cod:text-is("EXT")) .aac-chip').count() === 3);
@@ -149,6 +198,8 @@ const pdfTexto = (arq, pg) => execFileSync('pdftotext', ['-f', String(pg), '-l',
   confere('o enquadramento vai ao banco', prep?.p?.principal === 'EQC' && JSON.stringify(prep.p.alternativas) === '["EXT","VPC"]'
     && JSON.stringify(prep.p.siex) === '["2024/1"]' && /Controle e Automação/.test(prep.p.colegiado), prep);
   confere('o pedido nasce: AAC-9', /AAC-9/.test(await texto(p, '.aac-faixa')) && /Em preparação/.test(await texto(p, '.aac-faixa')));
+  confere('o contador passa ao relatório', /^Relatório/.test(await texto(p, '.aac-trilha .arq-etapa[aria-current="step"]'))
+    && await p.locator('.aac-trilha .arq-etapa.feita').count() === 2);
 
   /* o ZIP e o soma.tex */
   const z = await baixa(p, () => p.click('#aac-zip-btn'));
@@ -158,6 +209,8 @@ const pdfTexto = (arq, pg) => execFileSync('pdftotext', ['-f', String(pg), '-l',
   confere('o template continua dentro, com o soma.tex na raiz', !!zip.file('relatorio-aacc.tex') && !!zip.file('nro/equipe.tex') && !!soma);
   confere('o soma.tex leva o PN e o pedido', /pn\s+= 9,/.test(soma) && /soma = AAC-9,/.test(soma), soma.slice(0, 400));
   confere('o estudante, com o ingresso e o colegiado', /ingresso\s+= \{2022\/2\}/.test(soma) && /colegiado\s+= \{Colegiado do Curso de Graduação em Engenharia de Controle e Automação\}/.test(soma));
+  confere('os pronomes e o curso da lista', /pronomes\s+= \{ela\},/.test(soma) && /curso\s+= \{Engenharia Elétrica\},/.test(soma));
+  confere('sem IC, com o outro vazio e sem trocar a norma', !/\bic\s+=/.test(soma) && /outro\s+= \{\},/.test(soma) && !/\\equipe\{/.test(soma));
   confere('a entrada na equipe em AAAA-MM e o supervisor', /inicio\s+= \{2024-03\}/.test(soma) && /supervisor\s+= \{Bruno Tavares, Pesquisador\}/.test(soma));
   confere('o pedido, com as alternativas e o SIEX', /principal\s+= EQC,/.test(soma) && /alternativas = \{EXT, VPC\}/.test(soma) && /siex\s+= \{2024\/1\}/.test(soma));
   confere('o afastamento do SOMA', soma.includes('\\afastamento{2025-03}{2025-06}{Intercâmbio, aprovado no SOMA (SOL-0001).}'), soma.match(/\\afastamento.*$/m)?.[0]);
@@ -193,21 +246,28 @@ const pdfTexto = (arq, pg) => execFileSync('pdftotext', ['-f', String(pg), '-l',
   confere('a lista para aprovar traz o AAC-8, que espera a Ana', await p.locator('#main a.evx-card[href="#/servicos/aproveitamento/AAC-8"] .evx-sua').count() === 1);
   confere('a aba conta um', (await texto(p, 'nav.nav1 .n.sua')) === '1');
   await ir(p, '#/servicos/aproveitamento/AAC-8', 1300);
-  confere('a página do pedido: as duas etapas aprovadas e a terceira aguardando', await p.locator('.aac-etapas li.ok').count() === 2 && /Coordenação/.test(await texto(p, '.aac-etapas li.atual')));
+  confere('a página do pedido: as duas etapas aprovadas e a terceira, a Diretoria, aguardando', await p.locator('.aac-etapas li.ok').count() === 2 && /Diretoria/.test(await texto(p, '.aac-etapas li.atual')));
   await p.click('.topo-gestao .acoes button:has-text("Aprovar")'); await p.waitForTimeout(400);
   confere('a última etapa pede o professor orientador', await p.locator('#aac-pn').count() === 1 && /link pessoal, válido por 30 dias/.test(await texto(p, '#modal')));
-  await p.selectOption('#aac-pt', 'Profa. Dra.');
+  confere('os títulos com a abreviatura certa', JSON.stringify(await p.$$eval('#aac-pt option', os => os.map(o => o.value)))
+    === JSON.stringify(['Prof. Dr.', 'Prof.ª Dr.ª', 'Prof. Me.', 'Prof.ª Ma.', 'Prof.', 'Prof.ª']));
+  await p.selectOption('#aac-pt', 'Prof.ª Dr.ª');
   await p.fill('#aac-pn', 'Joana Exemplo'); await p.fill('#aac-pe', 'joana@gmail.com');
+  await p.click('#aac-dbtn'); await p.waitForTimeout(500);
+  confere('sem o departamento, não segue', /Informe o departamento/.test(await toasts(p)), await toasts(p));
+  await p.fill('#aac-pd', 'Departamento de Engenharia Elétrica'); await p.fill('#aac-pu', 'Escola de Engenharia');
   await p.click('#aac-dbtn'); await p.waitForTimeout(700);
   confere('e-mail de fora da UFMG volta', /@ufmg\.br/.test(await toasts(p)), await toasts(p));
   await p.fill('#aac-pe', 'joana@dee.ufmg.br');
   await p.click('#aac-dbtn'); await p.waitForTimeout(1300);
   const d = (await rpcs(p, 'aacc_decidir')).pop();
   const ass = await p.evaluate(() => (window.__assinados || []).pop());
-  confere('a decisão leva o professor e o link assinado do PDF desta versão', d?.p?.professor?.nome === 'Joana Exemplo' && d?.p?.professor?.titulo === 'Profa. Dra.'
+  confere('a decisão leva o professor e o link assinado do PDF desta versão', d?.p?.professor?.nome === 'Joana Exemplo' && d?.p?.professor?.titulo === 'Prof.ª Dr.ª'
+    && d?.p?.professor?.departamento === 'Departamento de Engenharia Elétrica' && d?.p?.professor?.unidade === 'Escola de Engenharia'
     && d?.p?.pdf_url?.includes('/object/sign/aproveitamento/11/00000000-0000-4000-8000-000000000008/v1-abababab.pdf'), d);
   confere('o link vale o prazo do professor e mais uma semana', ass?.exp === 37 * 86400, ass);
-  confere('o pedido vai para o professor', /Com o professor/.test(await texto(p, '.evx-selos')) && /Joana Exemplo/.test(await texto(p, '.aac-prof')));
+  confere('o pedido vai para a professora', /Com o professor/.test(await texto(p, '.evx-selos')) && /Professora orientadora/.test(await texto(p, '.aac-prof h3'))
+    && /Joana Exemplo/.test(await texto(p, '.aac-prof')) && /Departamento de Engenharia Elétrica, Escola de Engenharia/.test(await texto(p, '.aac-prof')));
   confere('nenhum erro de página', erros.length === 0, erros);
   await ctx.close();
 }
@@ -221,13 +281,19 @@ const pdfTexto = (arq, pg) => execFileSync('pdftotext', ['-f', String(pg), '-l',
   confere('o barema do professor na página', await p.locator('.aac-barema tbody tr').count() === 7);
   const f = await baixa(p, () => p.click('.topo-gestao .acoes button:has-text("PDF final")'));
   const fin = await PDFDocument.load(readFileSync(f.caminho));
+  if (process.env.AACC_GUARDAR) writeFileSync(process.env.AACC_GUARDAR, readFileSync(f.caminho));
   confere('o nome do PDF final', f.nome === 'NRO-PES-020-5 RELATÓRIO DE ATIVIDADES PARA APROVEITAMENTO DE AACC - Bruno Tavares.pdf', f.nome);
   confere('as páginas são as mesmas cinco', fin.getPageCount() === 5);
   const t2 = pdfTexto(f.caminho, 2), t1 = pdfTexto(f.caminho, 1);
   confere('a página 2 é a folha de aprovação', /Aprovação do relatório de atividades/.test(t2) && /FC6V-TZZ5-N9CV/.test(t2) && !/Folha reservada ao SOMA/.test(t2), t2.slice(0, 300));
   confere('com as três etapas, a nota e a página certa', /Iara Souza/.test(t2) && /Diego Prado/.test(t2) && /Nota final\s+100\s+85\b/.test(t2) && /21,25/.test(t2) && /Página 2 de 5/.test(t2));
+  confere('a terceira etapa é a Diretoria', /3\. Diretoria/.test(t2) && !/Coordenação/.test(t2));
+  confere('a professora: a abreviatura, o departamento, a unidade e o e-mail inteiro', /Prof\.ª Dr\.ª Joana Exemplo/.test(t2) && /Professora orientadora/.test(t2)
+    && /Departamento de Engenharia Elétrica, Escola de\s+Engenharia/.test(t2) && /joana\.exemplo@ufmg\.br/.test(t2), t2.slice(-1600));
+  confere('sem a nota de rodapé e sem a frase sobre a folha', !/Registro destinado/.test(t2) && !/ocupa o lugar/.test(t2));
   confere('sem ponto médio na folha', !/·/.test(t2));
   confere('as outras páginas ficam como estavam', /Pagina 1 do relatorio/.test(t1) && /Pagina 3 do relatorio/.test(pdfTexto(f.caminho, 3)));
+  confere('na capa, a avaliação da equipe com a data', /Aprovada em 20\/09\/2026/.test(t1), t1);
   const an = fin.getPage(1).node.lookup(PDFName.of('Annots'));
   const uri = an ? fin.context.lookup(an.get(0)).lookup(PDFName.of('A')).lookup(PDFName.of('URI'))?.decodeText?.() : null;
   confere('o link da validação sobre a legenda de autenticação', uri === 'https://auth.neurodynamics.dev/?c=FC6V-TZZ5-N9CV', uri);
@@ -291,9 +357,11 @@ const pdfTexto = (arq, pg) => execFileSync('pdftotext', ['-f', String(pg), '-l',
   await rotas(p);
   await p.goto('http://localhost:8765/auth/index.html?c=FC6V-TZZ5-N9CV'); await p.waitForTimeout(1800);
   const t = await texto(p, '#res');
-  confere('autêntica, com o estudante, o professor e a nota', /Documento autêntico/.test(t) && /BRUNO TAVARES/.test(t) && /Profa\. Dra\. Joana Exemplo/.test(t) && /85 de 100, conceito B/.test(t), t.slice(0, 400));
+  confere('autêntica, com o estudante, a professora e a nota', /Documento autêntico/.test(t) && /BRUNO TAVARES/.test(t) && /Professora orientadora\s*Prof\.ª Dr\.ª Joana Exemplo/.test(t)
+    && /Departamento de Engenharia Elétrica, Escola de Engenharia/.test(t) && /joana\.exemplo@ufmg\.br/.test(t) && /85 de 100, conceito B/.test(t), t.slice(0, 600));
   confere('a declaração do professor, do mesmo modelo da folha', /Declaro que BRUNO TAVARES/.test(await texto(p, '#declarado blockquote')));
-  confere('as aprovações e o barema', /As aprovações da equipe \(3\)/.test(await texto(p, '#declarado')) && /Nota final/.test(await texto(p, '#declarado')));
+  confere('as aprovações e o barema', /Aprovações da equipe \(3\)/.test(await texto(p, '#declarado')) && /Barema da professora orientadora/.test(await texto(p, '#declarado'))
+    && /Nota final/.test(await texto(p, '#declarado')));
   const d = await baixa(p, () => p.click('#via'));
   confere('baixa a folha, em uma página', /FOLHA DE APROVAÇÃO/.test(d.nome) && (await PDFDocument.load(readFileSync(d.caminho))).getPageCount() === 1, d.nome);
   confere('nenhum erro de página', erros.length === 0, erros);

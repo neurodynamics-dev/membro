@@ -465,7 +465,7 @@ export function declaracaoTexto(e: EnvioDocumento): string {
 
 /* ============================================================
    O APROVEITAMENTO DE AACC (SOMA 33.0)
-   Pela mesma fila doc_envios, dois e-mails: ao estudante, a cada passo
+   Pela mesma fila doc_envios, dois e-mails: a quem pediu, a cada passo
    do pedido (recebido, aprovado numa etapa, devolvido, com o professor,
    aprovado, reaberto), qualquer que seja a preferência dele; e ao
    professor orientador, que não tem conta no portal, com o link pessoal
@@ -481,15 +481,19 @@ export interface EnvioAacc {
     acao?: string; pedido?: string; corpo?: string; href?: string; url?: string; etapa?: string; proxima?: string;
     motivo?: string; professor?: string; codigo?: string; nota?: number | string; validacao?: string;
     estudante?: string; curso?: string | null; principal?: string; creditos?: string | null; indicado_por?: string;
-    prazo?: string;
+    prazo?: string; outro?: string | null; norma?: string | null; departamento?: string | null; unidade?: string | null;
   };
 }
 const AACC_ENQ: Record<string, string> = {
   EQC: "participação em equipe de competição estudantil",
   EXT: "projeto de extensão com vínculo formal",
-  IC: "iniciação científica com vínculo formal",
   VPC: "vivência profissional complementar",
+  OUT: "outro enquadramento, pela norma do Colegiado",
 };
+const AACC_NORMA = "Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG";
+/* o enquadramento como o e-mail o escreve: no OUT, o nome que a pessoa deu */
+const aaccEnq = (d: EnvioAacc["dados"]) =>
+  d.principal === "OUT" && d.outro ? d.outro : AACC_ENQ[d.principal || ""] || d.principal || "";
 const aaccCaixa = (html: string, cor = "#e3efec", tinta = "#00352f") => `<tr><td style="padding:18px 28px 0">
   <div style="background:${cor};color:${tinta};border-radius:10px;padding:14px 16px;font:400 14px/1.6 Helvetica,Arial,sans-serif">${html}</div></td></tr>`;
 const aaccBotao = (url: string, rot: string) => `<tr><td style="padding:22px 28px 0">
@@ -513,7 +517,10 @@ const aaccPagina = (titulo: string, miolo: string, rodape: string) => `<!doctype
     </td></tr>
   </table>
 </body></html>`;
-const aaccTratamento = (prof?: string) => /^profa/i.test(String(prof || "").trim()) ? "Prezada" : "Prezado";
+/* Prof.ª (e a Profa. de antes): a professora */
+const aaccProfessora = (prof?: string) => /^prof(a\b|\.?ª|essora)/i.test(String(prof || "").trim());
+const aaccTratamento = (prof?: string) => aaccProfessora(prof) ? "Prezada" : "Prezado";
+const aaccOrientador = (prof?: string) => aaccProfessora(prof) ? "professora orientadora" : "professor orientador";
 
 /** O que o e-mail ao estudante diz, por passo: a frase de abertura. */
 export function aaccAbertura(d: EnvioAacc["dados"]): string {
@@ -539,20 +546,19 @@ export function aaccHTML(e: EnvioAacc): string {
         <tr><td style="padding:14px 28px 0">
           <div style="font:400 15px/1.6 Helvetica,Arial,sans-serif;color:#1d1d1f">${aaccTratamento(d.professor)} ${esc(d.professor || e.para_nome)},</div>
           <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:8px">
-            A NeuroDynamics PD&amp;I indica o seu nome como professor orientador para avaliar o relatório de atividades de
+            A NeuroDynamics PD&amp;I indica o seu nome como ${aaccOrientador(d.professor)} para avaliar o relatório de atividades de
             <b style="color:#1d1d1f">${esc(d.estudante || "")}</b>${d.curso ? `, do curso de ${esc(d.curso)}` : ""}, apresentado para o
-            aproveitamento como Atividade Acadêmica Curricular Complementar, nos termos da Resolução nº 02/2019 da Congregação da
-            Escola de Engenharia da UFMG. O relatório já foi aprovado pelas etapas da equipe; a sua aprovação é a que vale perante o
-            Colegiado do curso.</div>
+            aproveitamento como Atividade Acadêmica Curricular Complementar, nos termos da ${esc(d.norma || AACC_NORMA)}. O relatório
+            já foi aprovado pelas etapas da equipe; a sua aprovação é a que vale perante o Colegiado do curso.</div>
           <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:8px">
             Pelo link abaixo, sem cadastro, o relatório se lê, a nota se dá pelo barema (mínima de 60, art. 3º, II) e o pedido se
-            aprova ou se devolve ao estudante com o seu parecer.</div>
+            aprova ou se devolve com o seu parecer.</div>
         </td></tr>
         <tr><td style="padding:20px 28px 0">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d9dedc">
             ${linha("Pedido", esc(d.pedido || ""))}
             ${linha("Estudante", esc(d.estudante || ""))}
-            ${linha("Enquadramento", esc(AACC_ENQ[d.principal || ""] || d.principal || ""))}
+            ${linha("Enquadramento", esc(aaccEnq(d)))}
             ${linha("Créditos declarados", esc(d.creditos || ""))}
             ${linha("Indicado por", esc(d.indicado_por || ""))}
             ${linha("Prazo", esc(dataExtensa(d.prazo)))}
@@ -582,10 +588,10 @@ export function aaccTexto(e: EnvioAacc): string {
   const d = e.dados || {};
   if (e.tipo === "aacc_professor") {
     return `${aaccTratamento(d.professor)} ${d.professor || e.para_nome},\n\n`
-      + `A NeuroDynamics PD&I indica o seu nome como professor orientador para avaliar o relatório de atividades de ${d.estudante || ""}`
+      + `A NeuroDynamics PD&I indica o seu nome como ${aaccOrientador(d.professor)} para avaliar o relatório de atividades de ${d.estudante || ""}`
       + `${d.curso ? `, do curso de ${d.curso}` : ""}, apresentado para o aproveitamento como Atividade Acadêmica Curricular `
-      + `Complementar, nos termos da Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG.\n\n`
-      + `Pedido: ${d.pedido || ""}\nEnquadramento: ${AACC_ENQ[d.principal || ""] || d.principal || ""}\n`
+      + `Complementar, nos termos da ${d.norma || AACC_NORMA}.\n\n`
+      + `Pedido: ${d.pedido || ""}\nEnquadramento: ${aaccEnq(d)}\n`
       + (d.creditos ? `Créditos declarados: ${d.creditos}\n` : "") + `Indicado por: ${d.indicado_por || ""}\nPrazo: ${dataExtensa(d.prazo)}\n\n`
       + `Avaliar o relatório: ${d.url || ""}\n\nO link é pessoal: não o encaminhe.\n\nNeuroDynamics PD&I\n`;
   }

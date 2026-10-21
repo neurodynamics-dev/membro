@@ -283,6 +283,7 @@ function desenhar(d, cod, k){
   const confere = k ? (k === String(d.controle || '').toUpperCase()) : null;
   const dd = d.dados || {}, ev = dd.evento || {}, aac = d.tipo === 'aproveitamento';
   const est = dd.estudante || {}, pr = dd.professor || {};
+  const prof = /^prof(a\b|\.?ª|essora)/i.test(String(pr.titulo || '').trim()) ? 'Professora orientadora' : 'Professor orientador';
   const selo = rev
     ? `<div class="selo bad"><span class="marca" aria-hidden="true">✕</span><div><h3>Documento revogado</h3>
         <p>Este documento foi emitido pelo SOMA, mas foi <b>revogado</b> em ${esc(momento(d.revogado_em))}${d.revogado_motivo
@@ -301,7 +302,8 @@ function desenhar(d, cod, k){
     [d.tipo === 'participacao' ? 'Participante' : aac ? 'Estudante' : 'Titular', esc(String(d.titular || dd.nome || '').toUpperCase())],
     ...(aac ? [['Curso', `${esc(est.curso || '')}${est.matricula ? `, matrícula ${esc(est.matricula)}` : ''}`],
       ['Pedido', `${esc(dd.pedido || '')}, relatório versão ${esc((dd.relatorio || {}).versao || 1)} (${esc((dd.relatorio || {}).paginas || '')} páginas)`],
-      ['Professor orientador', `${esc(pr.titulo || '')} ${esc(pr.nome || '')}`],
+      [prof, `${esc(pr.titulo || '')} ${esc(pr.nome || '')}${[pr.departamento, pr.unidade].filter(Boolean).length
+        ? `<br>${esc([pr.departamento, pr.unidade].filter(Boolean).join(', '))}` : ''}${pr.email ? `<br>${esc(pr.email)}` : ''}`],
       ['Nota', `${esc(String(pr.nota == null ? '' : pr.nota).replace('.', ','))} de 100, conceito ${esc(pr.conceito || '')}`]] : []),
     ...(d.tipo === 'vinculo' && dd.cpf ? [['CPF', `<span class="mono">${esc(dd.cpf)}</span>`]] : []),
     ...(d.tipo === 'participacao' ? [['Evento', `${esc(ev.nome || '')}${ev.codigo ? ` <span class="mono">(${esc(ev.codigo)})</span>` : ''}`],
@@ -354,10 +356,11 @@ async function conteudo(d){
     /* a folha de aprovação: as etapas da equipe, o barema e o parecer */
     const ap = dd.aprovacoes || [], bar = (dd.professor || {}).barema || [], pr = dd.professor || {};
     const v = n => String(n == null ? '' : n).replace('.', ',');
-    h += `<p class="tabela-t">As aprovações da equipe (${ap.length})</p>${ap.length ? `<div class="tabela-w"><table class="tabela"><thead><tr>
+    const fem = /^prof(a\b|\.?ª|essora)/i.test(String(pr.titulo || '').trim());
+    h += `<p class="tabela-t">Aprovações da equipe (${ap.length})</p>${ap.length ? `<div class="tabela-w"><table class="tabela"><thead><tr>
       <th>Etapa</th><th>Aprovado por</th><th>Em</th></tr></thead><tbody>${ap.map(a => `<tr><td>${esc(a.etapa)}. ${esc(a.rotulo)}</td>
       <td>${esc(a.nome)}</td><td>${esc(momento(a.em))}</td></tr>`).join('')}</tbody></table></div>` : ''}
-      <p class="tabela-t">O barema do professor orientador</p>${bar.length ? `<div class="tabela-w"><table class="tabela"><thead><tr>
+      <p class="tabela-t">Barema ${fem ? 'da professora orientadora' : 'do professor orientador'}</p>${bar.length ? `<div class="tabela-w"><table class="tabela"><thead><tr>
       <th>Critério</th><th>Peso</th><th>Nota (0 a 10)</th><th>Pontos</th></tr></thead><tbody>${bar.map(b => `<tr><td>${esc(b.nome)}</td>
       <td>${esc(b.peso)}</td><td>${esc(v(b.nota))}</td><td>${esc(v(b.pontos))}</td></tr>`).join('')}
       <tr><td><b>Nota final</b></td><td>100</td><td></td><td><b>${esc(v(pr.nota))}</b></td></tr></tbody></table></div>` : ''}

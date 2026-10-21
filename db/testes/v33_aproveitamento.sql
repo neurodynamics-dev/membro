@@ -42,7 +42,7 @@ create or replace function url_assinada(p_cam text) returns text language sql as
 --   4  Ana      admin
 --   11 Bruno    NRO_PMO                  aprova a 1ª etapa
 --   17 Carla    Órtese                   pede (ativa)
---   23 Diego    NRO_COORD_OFFICE         aprova a 3ª e indica o professor
+--   23 Diego    NRO_COORD_OFFICE         aprova a 3ª (a Diretoria) e indica o professor
 --   31 Elis     Depto de Pessoal (papel pessoal)
 --   52 Gabi     Depto de Pessoal         aprova a 2ª
 --   60 Hugo     egresso                  pede (desligado)
@@ -104,8 +104,13 @@ create or replace function token_do(p_id uuid) returns text language sql securit
 -- ------------------------------------------------------------
 do $$ begin
   perform ok((select grupos = array[gid('NRO_PMO'), gid('Depto de Pessoal'), gid('NRO_COORD_OFFICE')] from aacc_config),
-             'as etapas nascem PMO, Pessoal e Coordenação, pelo nome dos grupos');
-  perform ok((select rotulos = array['PMO','Departamento de Pessoal','Coordenação'] from aacc_config), 'com os nomes da folha');
+             'as etapas nascem PMO, Pessoal e Diretoria, pelo nome dos grupos');
+  perform ok((select rotulos = array['PMO','Departamento de Pessoal','Diretoria'] from aacc_config), 'com os nomes da folha');
+  perform ok((select barema->0->>'descritor' like 'As atividades se relacionam com o curso%'
+                     and barema->2->>'descritor' like 'Fica claro o que foi feito%' from aacc_config),
+             'o barema diz o mesmo que o template, sem "o estudante"');
+  perform ok(exists (select 1 from information_schema.columns where table_name = 'dados_pessoais' and column_name = 'pronomes'),
+             'o recadastro ganha os pronomes');
   perform ok((select public.doc_codigo(s.prefixo, s.sn, null) from doc_series s where s.id = (select serie from aacc_config))
              = 'NRO-PES-020', 'a série do relatório é a NRO-PES-020');
   perform ok((select pn_origem from doc_series where prefixo = 'PES' and sn = 20) like 'Os PNs desta série não são registrados no rol%',
@@ -134,6 +139,23 @@ do $$ begin
   perform ok((select grupos[2] = gid('Sinais') from aacc_config), 'e não mexe na etapa que alguém escolheu');
 end $$;
 update aacc_config set grupos = array[gid('NRO_PMO'), gid('Depto de Pessoal'), gid('NRO_COORD_OFFICE')];
+-- quem rodou a versão anterior fica com a Diretoria e os textos novos do barema
+update aacc_config set rotulos[3] = 'Coordenação',
+       barema = jsonb_set(jsonb_set(barema, '{0,descritor}', '"As atividades são de engenharia do curso do estudante, e a relação está demonstrada."'),
+                          '{3,descritor}', '"Cada atividade tem evidências verificáveis (códigos no SOMA, repositórios), e as horas batem."');
+\ir ../v33_aproveitamento.sql
+do $$ begin
+  perform ok((select rotulos[3] = 'Diretoria' from aacc_config), 'rodar de novo troca a Coordenação pela Diretoria');
+  perform ok((select barema->0->>'descritor' like 'As atividades se relacionam com o curso%'
+                     and barema->3->>'descritor' = 'Cada atividade tem evidências verificáveis (registros no SOMA, repositórios), e as horas batem.'
+                     and jsonb_array_length(barema) = 6 from aacc_config), 'e os textos antigos do barema, sem mexer nos outros');
+end $$;
+update aacc_config set rotulos[3] = 'Comitê';
+\ir ../v33_aproveitamento.sql
+do $$ begin
+  perform ok((select rotulos[3] = 'Comitê' from aacc_config), 'o nome que alguém escolheu não muda');
+end $$;
+update aacc_config set rotulos[3] = 'Diretoria';
 
 -- ------------------------------------------------------------
 -- 2. o semestre de ingresso e os semestres letivos
@@ -196,11 +218,14 @@ do $$ declare r jsonb; begin
   perform ok(st(aacc_perfil_salvar('{"email_pessoal":"carla@"}')) = 'invalido', 'nem e-mail sem domínio');
   perform ok(st(aacc_perfil_salvar('{"registro":"99"}')) = 'invalido', 'nem campo fora da ficha');
   perform ok(st(aacc_perfil_salvar('{"data_nascimento":"31/02/2001"}')) = 'invalido', 'nem data que não existe');
+  perform ok(aacc_perfil_salvar('{"pronomes":"dela"}')->>'campo' = 'pronomes', 'os pronomes são ela, ele ou elu');
+  perform ok(aacc_meu()#>'{membro,faltam}' ? 'pronomes', 'e faltam na ficha');
   r := aacc_perfil_salvar('{"email_pessoal":"Carla.M@Exemplo.com","telefone":"(31) 99999-0000","cpf":"091.695.076-00",
     "data_nascimento":"2001-04-02","endereco":"Rua A, 1","cidade_origem":"Belo Horizonte","instituicao":"UFMG",
     "curso":"Engenharia Elétrica","matricula":"2022012345","periodo_ingresso":"2º semestre de 2022","genero":"Feminino",
-    "autodeclaracao_racial":"Parda"}');
-  perform ok(st(r) = 'ok' and (r->>'campos')::int = 12, 'a ficha completa salva os doze campos');
+    "pronomes":"Ela","autodeclaracao_racial":"Parda"}');
+  perform ok(st(r) = 'ok' and (r->>'campos')::int = 13, 'a ficha completa salva os treze campos');
+  perform ok(r#>>'{membro,pronomes}' = 'ela', 'os pronomes, em minúsculas');
   perform ok((select email_pessoal from membros where registro = 17) = 'carla.m@exemplo.com', 'o e-mail pessoal vai para a ficha, em minúsculas');
   perform ok((select periodo_ingresso from dados_pessoais where registro = 17) = '2022/2', 'o ingresso se guarda como AAAA/S');
   perform ok(jsonb_array_length(r#>'{membro,faltam}') = 0, 'e não falta mais nada');
@@ -214,16 +239,29 @@ do $$ declare r jsonb; begin
   perform ok(aacc_preparar('{"principal":"EXT"}')->>'campo' = 'siex', 'extensão pede os semestres do SIEX');
   r := aacc_preparar('{"principal":"EXT","siex":["2024/2"]}');
   perform ok(r->>'campo' = 'siex' and r->>'semestre' = '2024/2', 'e só aceita semestre que conta');
-  perform ok(aacc_preparar('{"principal":"EQC","alternativas":["IC"]}')->>'campo' = 'ic', 'IC como alternativa pede os semestres de IC');
+  perform ok(st(aacc_preparar('{"principal":"IC"}')) = 'invalido'
+             and aacc_preparar('{"principal":"EQC","alternativas":["IC"]}')->>'campo' = 'alternativas',
+             'iniciação científica não é enquadramento da equipe');
+  perform ok(aacc_preparar('{"principal":"OUT"}')->>'campo' = 'outro', 'OUT pede o nome do enquadramento');
+  perform ok(aacc_preparar('{"principal":"OUT","outro":"Atividade complementar de extensão"}')->>'campo' = 'norma',
+             'e a norma do Colegiado');
+  perform ok(aacc_preparar('{"principal":"OUT","outro":"Atividade complementar de extensão","norma":"Resolução nº 05/2020",
+             "alternativas":["EQC"]}')->>'campo' = 'alternativas', 'OUT não tem alternativas da Resolução 02/2019');
+  perform ok(aacc_preparar('{"principal":"EQC","alternativas":["OUT"]}')->>'campo' = 'alternativas', 'nem é alternativa');
+  r := aacc_preparar('{"principal":"out","outro":" Atividade complementar de extensão ",
+                       "norma":"Resolução nº 05/2020, do Colegiado do Curso de Fisioterapia"}');
+  perform ok(st(r) = 'ok' and r#>>'{pedido,pedido,principal}' = 'OUT' and r#>>'{pedido,pedido,outro}' = 'Atividade complementar de extensão'
+             and r#>>'{pedido,pedido,normacurta}' = r#>>'{pedido,pedido,norma}', 'OUT guarda o nome e a norma (a curta, se não vier, é a mesma)');
   r := aacc_preparar('{"principal":"eqc","alternativas":["VPC","EQC","vpc","EXT"],"siex":["2023/2","2024/1"],
                        "colegiado":"Colegiado do Curso de Graduação em Engenharia Elétrica"}');
   perform ok(st(r) = 'ok', 'a Carla prepara: EQC, com VPC e EXT de alternativas');
   perform ok(r#>'{pedido,pedido,alternativas}' = '["VPC","EXT"]', 'as alternativas sem repetir nem o principal');
   perform ok(r#>>'{pedido,status}' = 'preparacao' and r#>>'{pedido,codigo}' like 'AAC-%', 'o pedido nasce em preparação, com código AAC');
   perform ok(r#>>'{pedido,documento}' = 'NRO-PES-020-' || (r#>>'{pedido,numero}'), 'o relatório é o NRO-PES-020 com o número do pedido');
+  perform ok(r#>'{pedido,pedido}' ? 'outro' and r#>>'{pedido,pedido,outro}' is null, 'e voltar ao EQC limpa o OUT');
   perform ok(st(aacc_preparar('{"principal":"EQC","alternativas":["VPC"]}')) = 'ok', 'preparar de novo muda o mesmo pedido');
   perform ok((select count(*) from aacc_pedidos where registro = 17) = 1, 'sem criar outro');
-  perform ok((select count(*) from aacc_historico where pedido_id = (ped(17)).id) = 2, 'e cada preparação fica no histórico');
+  perform ok((select count(*) from aacc_historico where pedido_id = (ped(17)).id) = 3, 'e cada preparação fica no histórico');
 end $$;
 
 -- ------------------------------------------------------------
@@ -359,7 +397,7 @@ begin
   perform ok(st(aacc_decidir(jsonb_build_object('id', p.id, 'decisao', 'aprovar'))) = 'ok', 'a Gabi aprova a etapa 2');
   perform eu(70, 'leitura');
   perform ok(st(aacc_decidir(jsonb_build_object('id', p.id, 'decisao', 'aprovar'))) = 'ja_aprovou',
-             'a Iara, também da Coordenação, não aprova duas etapas da mesma versão');
+             'a Iara, também da Diretoria, não aprova duas etapas da mesma versão');
   perform ok(aacc_pendentes() = 0 and not (aacc_ler(p.codigo)#>>'{pode,decidir}')::boolean, 'nem a vê como pendente');
 
   perform eu(23, 'leitura');
@@ -369,6 +407,10 @@ begin
   r := jsonb_build_object('id', p.id, 'decisao', 'aprovar',
          'professor', jsonb_build_object('nome', 'João Modelo', 'titulo', 'Prof. Dr.', 'email', 'joao@gmail.com'),
          'pdf_url', url_assinada(cam));
+  perform ok(aacc_decidir(r)->>'campo' = 'professor_departamento', 'o departamento do professor é obrigatório');
+  r := jsonb_set(r, '{professor,departamento}', '"Departamento de Engenharia Elétrica"');
+  perform ok(aacc_decidir(r)->>'campo' = 'professor_unidade', 'e a unidade acadêmica');
+  r := jsonb_set(r, '{professor,unidade}', '"Escola de Engenharia"');
   perform ok(aacc_decidir(r)->>'dominio' = 'ufmg.br', 'o e-mail do professor é institucional');
   r := jsonb_set(r, '{professor,email}', '"Joao.Modelo@DEE.UFMG.BR"');
   perform ok(aacc_decidir(jsonb_set(r, '{pdf_url}', to_jsonb(url_assinada('17/' || p.id || '/v1-abababab.pdf'))))->>'campo' = 'pdf_url',
@@ -379,12 +421,17 @@ begin
   p := ped(17);
   perform ok(p.status = 'professor' and p.etapa = 4 and p.prof_email = 'joao.modelo@dee.ufmg.br'
              and p.prof_indicado_por = 23, 'o pedido vai para o professor, de subdomínio da UFMG');
+  perform ok(p.prof_departamento = 'Departamento de Engenharia Elétrica' and p.prof_unidade = 'Escola de Engenharia',
+             'com o departamento e a unidade');
   perform ok(p.prof_token_hash ~ '^[0-9a-f]{64}$' and p.prof_expira > now() + interval '29 days', 'o link vale trinta dias');
   perform ok(token_do(p.id) ~ '^[0-9a-f]{64}$', 'o e-mail do professor leva o link');
   perform ok(encode(sha256(convert_to(token_do(p.id), 'UTF8')), 'hex') = p.prof_token_hash, 'e o banco guarda só o SHA-256 dele');
   perform ok(conta('select 1 from doc_envios where tipo = ''aacc_professor'' and para_email = ''joao.modelo@dee.ufmg.br''
                     and dados->>''estudante'' = ''Carla Mendonça'' and dados->>''curso'' = ''Engenharia Elétrica''') = 1,
              'para o e-mail dele, com o nome e o curso da estudante');
+  perform ok(conta('select 1 from doc_envios where tipo = ''aacc_professor'' and dados->>''departamento'' = ''Departamento de Engenharia Elétrica''
+                    and dados->>''unidade'' = ''Escola de Engenharia'' and dados ? ''norma''') = 1,
+             'com o departamento, a unidade e a norma (nula: a da Escola de Engenharia)');
   perform ok(conta('select 1 from doc_envios where registro = 17 and dados->>''acao'' = ''professor''') = 1, 'a Carla é avisada');
   perform ok(conta('select distinct etapa from aacc_decisoes where pedido_id = ' || quote_literal(p.id)
                    || '::uuid and versao = 2 and decisao = ''aprovada''') = 3, 'três aprovações na versão 2, uma por etapa');
@@ -398,8 +445,10 @@ do $$ declare p aacc_pedidos := ped(17); r jsonb; t1 text; t2 text; begin
   perform eu(23, 'leitura');
   perform ok(aacc_professor_trocar(jsonb_build_object('id', p.id))->>'campo' = 'pdf_url', 'trocar pede o link do PDF de novo');
   r := aacc_professor_trocar(jsonb_build_object('id', p.id, 'pdf_url', url_assinada(p.pdf_caminho),
-         'professor', jsonb_build_object('nome', 'Joana Exemplo', 'titulo', 'Profa. Dra.', 'email', 'joana@ufmg.br')));
-  perform ok(st(r) = 'ok' and (ped(17)).prof_nome = 'Joana Exemplo', 'a Coordenação troca o professor');
+         'professor', jsonb_build_object('nome', 'Joana Exemplo', 'titulo', 'Prof.ª Dr.ª', 'email', 'joana@ufmg.br',
+                                         'departamento', 'Departamento de Fisioterapia', 'unidade', 'EEFFTO')));
+  perform ok(st(r) = 'ok' and (ped(17)).prof_nome = 'Joana Exemplo' and (ped(17)).prof_unidade = 'EEFFTO',
+             'a Diretoria troca o professor, com o departamento e a unidade dela');
   t2 := token_do(p.id);
   perform ok(t1 <> t2, 'o e-mail novo leva outro link');
   set local role anon; perform eu(null, 'leitura');
@@ -423,6 +472,7 @@ do $$ declare t text := token_do((ped(17)).id); r jsonb; pegou text; begin
   perform ok(st(aacc_professor_ler('x')) = 'nao_encontrado', 'nem link torto');
   r := aacc_professor_ler(t);
   perform ok(st(r) = 'ok' and r#>>'{pedido,membro,nome}' = 'Carla Mendonça', 'o professor abre o pedido pelo link');
+  perform ok(r#>>'{pedido,membro,pronomes}' = 'ela', 'com os pronomes da estudante');
   perform ok(jsonb_array_length(r->'aprovacoes') = 3 and r#>>'{aprovacoes,0,nome}' = 'Iara Souza', 'com as três aprovações da versão 2');
   perform ok(r#>>'{pedido,pdf_url}' like '%/object/sign/aproveitamento/17/%v2-cdcdcdcd.pdf%', 'o link do PDF da versão 2');
   perform ok(jsonb_array_length(r->'barema') = 6 and (r->>'nota_minima')::int = 60, 'e o barema, com a nota mínima');
@@ -446,8 +496,11 @@ do $$ declare t text := token_do((ped(17)).id); r jsonb; pegou text; begin
   perform ok(r->>'codigo' ~ '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$', 'e a folha sai com código verificador');
   r := doc_validar(r->>'codigo');
   perform ok(r->>'situacao' = 'autentico' and r->>'tipo' = 'aproveitamento', 'que auth.neurodynamics.dev confere');
-  perform ok(r#>>'{dados,professor,email}' = 'j•••@ufmg.br' and r#>>'{dados,professor,conceito}' = 'B',
-             'com o e-mail do professor mascarado e o conceito');
+  perform ok(r#>>'{dados,professor,email}' = 'joana@ufmg.br' and r#>>'{dados,professor,conceito}' = 'B',
+             'com o e-mail da professora por inteiro e o conceito');
+  perform ok(r#>>'{dados,professor,departamento}' = 'Departamento de Fisioterapia' and r#>>'{dados,professor,unidade}' = 'EEFFTO'
+             and r#>>'{dados,estudante,pronomes}' = 'ela', 'o departamento, a unidade e os pronomes da estudante');
+  perform ok(r#>>'{dados,norma}' like 'Resolução nº 02/2019%', 'e a norma, a da Escola de Engenharia');
   perform ok(jsonb_array_length(r#>'{dados,aprovacoes}') = 3 and r#>>'{dados,relatorio,folha}' = '2',
              'as três aprovações da equipe e a folha que ela ocupa');
   perform ok(r#>>'{dados,creditos,principal_creditos}' = '15' and r#>>'{dados,estudante,matricula}' = '2022012345',
@@ -463,13 +516,13 @@ do $$ declare p aacc_pedidos := ped(17); begin
   perform ok(p.status = 'concluido' and p.emitido is not null and p.nota = 85.75, 'o pedido fica concluído, com a folha');
   perform ok(jsonb_array_length(p.barema) = 6 and (p.barema->1->>'pontos')::numeric = 21.25
              and (select sum((b->>'pontos')::numeric) from jsonb_array_elements(p.barema) b) = p.nota, 'o barema com os pontos de cada critério, que somam a nota');
-  perform ok((select emitido_nome from doc_emitidos where codigo = p.emitido) = 'SOMA, aprovação de Profa. Dra. Joana Exemplo',
+  perform ok((select emitido_nome from doc_emitidos where codigo = p.emitido) = 'SOMA, aprovação de Prof.ª Dr.ª Joana Exemplo',
              'a folha diz quem aprovou');
   perform ok(exists (select 1 from doc_envios where registro = 17 and dados->>'acao' = 'concluido' and dados->>'codigo' = p.emitido),
              'a Carla recebe o e-mail de concluído, com o código');
   perform ok((select count(distinct registro) from notificacoes where tipo = 'aacc' and titulo like '%aprovado pelo professor%') = 4,
              'as quatro pessoas que decidiram são avisadas');
-  perform ok(exists (select 1 from aacc_historico where pedido_id = p.id and acao = 'abriu' and nome = 'Profa. Dra. Joana Exemplo'),
+  perform ok(exists (select 1 from aacc_historico where pedido_id = p.id and acao = 'abriu' and nome = 'Prof.ª Dr.ª Joana Exemplo'),
              'o histórico registra quando o professor abriu');
 end $$;
 
@@ -514,8 +567,9 @@ do $$ declare p aacc_pedidos := ped(17); t text; r jsonb; begin
                                         'a Elis aprova a etapa do Pessoal');
   perform eu(23, 'leitura');
   perform ok(st(aacc_decidir(jsonb_build_object('id', p.id, 'decisao', 'aprovar', 'pdf_url', url_assinada(p.pdf_caminho),
-           'professor', jsonb_build_object('nome', 'Joana Exemplo', 'titulo', 'Profa. Dra.', 'email', 'joana@ufmg.br')))) = 'ok',
-           'e a Coordenação indica a professora de novo');
+           'professor', jsonb_build_object('nome', 'Joana Exemplo', 'titulo', 'Prof.ª Dr.ª', 'email', 'joana@ufmg.br',
+                                           'departamento', 'Departamento de Fisioterapia', 'unidade', 'EEFFTO')))) = 'ok',
+           'e a Diretoria indica a professora de novo');
   t := token_do(p.id);
   set local role anon; perform eu(null, 'leitura');
   perform ok(aacc_professor_decidir(t, '{"decisao":"devolver"}')->>'campo' = 'parecer', 'o professor devolve com o motivo');
@@ -534,8 +588,8 @@ end $$;
 -- ------------------------------------------------------------
 reset role;
 insert into dados_pessoais (registro, cpf, data_nascimento, endereco, cidade_origem, instituicao, curso, matricula,
-                            periodo_ingresso, genero, autodeclaracao_racial)
-values (60, '12345678909', '1999-01-01', 'Rua B', 'Contagem', 'UFMG', 'Engenharia Mecânica', '2019000111', '2019/1', 'M', 'Branca')
+                            periodo_ingresso, genero, pronomes, autodeclaracao_racial)
+values (60, '12345678909', '1999-01-01', 'Rua B', 'Contagem', 'UFMG', 'Engenharia Mecânica', '2019000111', '2019/1', 'M', 'ele', 'Branca')
 on conflict (registro) do update set curso = excluded.curso;
 update membros set email_pessoal = 'hugo@exemplo.com', telefone = '31988887777' where registro = 60;
 set role authenticated;
@@ -562,7 +616,8 @@ do $$ declare r jsonb; p aacc_pedidos; t text; cam text; doc text; begin
   perform eu(4, 'admin');
   perform ok((aacc_ler(p.codigo)#>>'{pode,decidir}')::boolean, 'admin decide qualquer etapa');
   perform ok(st(aacc_decidir(jsonb_build_object('id', p.id, 'decisao', 'aprovar', 'pdf_url', url_assinada(cam),
-           'professor', jsonb_build_object('nome', 'João Modelo', 'titulo', 'Prof. Dr.', 'email', 'joao@ufmg.br')))) = 'ok',
+           'professor', jsonb_build_object('nome', 'João Modelo', 'titulo', 'Prof. Dr.', 'email', 'joao@ufmg.br',
+                                           'departamento', 'Departamento de Engenharia Mecânica', 'unidade', 'Escola de Engenharia')))) = 'ok',
            'e a Ana, admin, indica o professor');
   t := token_do(p.id);
   set local role none;
@@ -613,7 +668,8 @@ do $$ declare p aacc_pedidos := ped(17); doc text := 'NRO-PES-020-' || (ped(17))
   perform ok((aacc_ler(p.codigo)#>>'{pode,indicar}')::boolean, 'agora quem indica o professor é o Pessoal');
   perform ok(aacc_decidir(jsonb_build_object('id', p.id, 'decisao', 'aprovar'))->>'campo' = 'professor_nome', 'e precisa indicar');
   perform ok(st(aacc_decidir(jsonb_build_object('id', p.id, 'decisao', 'aprovar', 'pdf_url', url_assinada(cam),
-           'professor', jsonb_build_object('nome', 'Joana Exemplo', 'titulo', 'Profa. Dra.', 'email', 'joana@ufmg.br')))) = 'ok'
+           'professor', jsonb_build_object('nome', 'Joana Exemplo', 'titulo', 'Prof.ª Dr.ª', 'email', 'joana@ufmg.br',
+                                           'departamento', 'Departamento de Fisioterapia', 'unidade', 'EEFFTO')))) = 'ok'
            and (ped(17)).etapa = 3 and (ped(17)).status = 'professor', 'o pedido vai ao professor depois de duas etapas');
   perform ok((ped(17)).prof_expira > now() + interval '44 days', 'com o prazo novo');
 end $$;
