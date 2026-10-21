@@ -1406,7 +1406,7 @@ begin
     if exists (select 1 from aacc_pedidos where status = 'analise' and etapa > cardinality(v_g)) then
       return jsonb_build_object('status','em_uso');
     end if;
-    update aacc_config set grupos = v_g, rotulos = v_r;
+    update aacc_config set grupos = v_g, rotulos = v_r where id;
   end if;
   if p ? 'barema' then
     if jsonb_typeof(p->'barema') <> 'array' or jsonb_array_length(p->'barema') = 0 then
@@ -1420,13 +1420,14 @@ begin
       v_som := v_som + (cr->>'peso')::numeric;
     end loop;
     if v_som <> 100 then return jsonb_build_object('status','invalido','campo','barema','soma',v_som); end if;
-    update aacc_config set barema = p->'barema';
+    update aacc_config set barema = p->'barema' where id;
   end if;
   update aacc_config
      set dominio_professor    = coalesce(lower(trim(p->>'dominio_professor')), dominio_professor),
          prazo_professor_dias = coalesce((p->>'prazo_professor_dias')::integer, prazo_professor_dias),
          template_url         = coalesce(nullif(trim(p->>'template_url'), ''), template_url),
-         atualizado_em = now(), atualizado_por = public.doc_meu_nome();
+         atualizado_em = now(), atualizado_por = public.doc_meu_nome()
+   where id;
   return jsonb_build_object('status','ok');
 end $$;
 
