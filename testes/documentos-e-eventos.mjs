@@ -77,9 +77,9 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
   const blocos = await p.evaluate(() => [...document.querySelectorAll('#main h2.srv-bloco')].map(h => h.textContent));
   confere('Serviços: o que o SOMA faz sozinho vem antes dos pedidos', blocos.join('|') === 'Documentos e acessos|Pedidos ao Depto. de Pessoal', blocos);
   const tiles = await p.evaluate(() => [...document.querySelectorAll('#main a.srv.agora')].map(a => a.getAttribute('href')));
-  /* 2.19.1: o acesso ao LABBIO entra no bloco; 2.19.2: com o mesmo desenho dos vizinhos */
-  confere('os quatro: declaração, registrar evento, acesso ao LABBIO e cofre',
-    tiles.join('|') === '#/servicos/declaracao|#/servicos/eventos/novo|#/servicos/biometria|#/servicos/cofre', tiles);
+  /* 2.19.1: o acesso ao LABBIO entra no bloco; 2.19.2: com o mesmo desenho dos vizinhos; 2.20.0: o aproveitamento de AACC */
+  confere('os cinco: declaração, registrar evento, acesso ao LABBIO, cofre e aproveitamento de AACC',
+    tiles.join('|') === '#/servicos/declaracao|#/servicos/eventos/novo|#/servicos/biometria|#/servicos/cofre|#/servicos/aproveitamento', tiles);
 
   await ir(p, '#/servicos/declaracao', 1400);
   const previa = await texto(p, '.dcl-folha p');

@@ -122,6 +122,9 @@ conforme quem entra é menu que ninguém aprende.
 #/servicos/eventos/EXT-14[/editar]  um evento
 #/servicos/cofre[/<id>]     as contas que você usa (com uma em destaque)
 #/servicos/cofre/gestao|uso|config|nova[/<item>]|editar/<id>
+#/servicos/aproveitamento[/aprovar|todos|config]  o aproveitamento de AACC: o meu pedido, os que esperam a minha decisão
+#/servicos/aproveitamento/AAC-7  um pedido (membro.neurodynamics.dev/aproveitamento leva à primeira;
+                            com ?p=<link pessoal>, é a página do professor orientador)
 #/arquivos/<código>/escrever  escrever o PN no portal (ex.: #/arquivos/NRO-PUB-003-12/escrever)
 #/treinamentos              para você: o que os seus grupos pedem
 #/treinamentos/todos|certificados
@@ -179,6 +182,7 @@ só a lupa, sem caixa nem legenda, no eixo dos outros ícones. Acha **quatro coi
 | **Treinamentos** | código (`NRO-TRE-003`), título |
 | **Eventos registrados** | código (`EXT-14`), nome |
 | **Cofre** | a conta (acesso e rótulo), o usuário, o endereço — nunca a senha |
+| **Aproveitamento de AACC** | código (`AAC-7`), nome de quem pediu |
 | **Notas de versão e relatos** | a versão (`2.16.0`) e o título dela; o código (`BUG-12`) e o título do relato |
 
 **O contrato.** Cada módulo registra as próprias fontes ao carregar:
@@ -269,6 +273,7 @@ Todo objeto que uma pessoa cita em voz alta precisa de um código curto:
 | Treinamento | `NRO-TRE-003` | `treinamentos.codigo` — do número; a revisão (`Rev. B`) fica fora do código, como num arquivo. O prefixo `TRE` não pode virar emissor em Arquivos |
 | Certificado | `CERT-3F9A-C21B` | `treinamento_conclusoes.certificado` — um por conclusão; confere-se em `#/treinamentos/certificado/<código>` |
 | Evento registrado | `EXT-14` | `eventos_ext.codigo` — sequência única; a participação da equipe num evento de fora (o `EVT-012` é um compromisso da agenda) |
+| Pedido de aproveitamento | `AAC-7` | `aacc_pedidos.codigo` — sequência única; o relatório do pedido é o `NRO-PES-020-7` (o PN é o número do pedido) e a folha de aprovação, um documento emitido |
 | Documento emitido | `Q8RT-5WZN-2KDH` | `doc_emitidos.codigo` — o código verificador: 12 caracteres do alfabeto de Crockford, sorteados. O documento em si é `NRO-DIR-004-17` (o PN é o registro) ou `NRO-DIR-006-14` (o PN é o evento); confere-se em `auth.neurodynamics.dev/?c=<código>` |
 | Relato (bug ou sugestão) | `BUG-12`, `SUG-13` | `soma_feedback.id` — um número só para os dois tipos; o prefixo diz o tipo, e o número não muda se a administração reclassificar |
 | Versão do SOMA | `2.17.0` | `VERSAO`, na casca — major.minor.patch (§ 10); as notas moram em `NOTAS_VERSAO` (`mod-versoes.js`) |

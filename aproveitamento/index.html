@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Avaliação do relatório de AACC, NeuroDynamics</title>
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<!--
+  membro.neurodynamics.dev/aproveitamento
+
+  Sem parâmetro, leva o membro ao pedido dele no portal (Serviços,
+  Aproveitamento de AACC).
+
+  Com ?p=<link pessoal>, é a página do professor orientador: o e-mail que
+  o SOMA manda quando a última etapa da equipe aprova traz o link. Ele lê
+  o pedido, abre o relatório, dá a nota pelo barema (mínima de 60, art. 3º,
+  II da Resolução nº 02/2019 da Congregação da Escola de Engenharia) e
+  aprova ou devolve, sem conta no portal: aacc_professor_ler e
+  aacc_professor_decidir são as únicas funções do aproveitamento abertas
+  à chave anônima (migração 2.20.0), e o banco guarda só o SHA-256 do link.
+  Aprovar emite a folha de aprovação, conferível em auth.neurodynamics.dev.
+
+  O visual é o do relatório formal do design system: papel claro, títulos
+  serifados, rótulos na Archivo e o selo solene, que é dos atos de
+  chancelaria.
+-->
+<script>
+  /* sem o link pessoal, é o membro: vai para o portal */
+  if (!new URLSearchParams(location.search).get('p')) location.replace('/#/servicos/aproveitamento');
+</script>
+<style>
+:root{
+  --papel:#FFFFFF; --fundo:#F2F4F3; --tinta:#1D1D1F; --texto2:#4A4F4D; --cinza:#616C68; --regua:#D9DEDC; --pia:#C4CCC9;
+  --cortex:#00352F; --axon:#00594F; --cortex-claro:#E3EFEC; --lumen-claro:#FFF9D6; --lumen-escuro:#594A00;
+  --impulso-claro:#FFE4E6; --impulso-escuro:#6E0A1A; --ok:#1F7A4D;
+  --serif:'Instrument Serif','Times New Roman',Times,Georgia,serif;
+  --fd:'Archivo',-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--f);background:var(--fundo);color:var(--tinta);line-height:1.55;padding:32px 16px 48px;-webkit-text-size-adjust:100%}
+.folha{max-width:820px;margin:0 auto;background:var(--papel);border:1px solid var(--regua);border-radius:6px;padding:40px 48px 36px}
+@media (max-width:640px){.folha{padding:24px 18px 26px}}
+.cab{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--cortex)}
+.cab .marca{font-family:var(--fd);font-weight:600;font-size:15px;letter-spacing:-.01em}
+.cab .marca span{display:block;font-weight:400;font-size:12px;color:var(--cinza);letter-spacing:0}
+.cab .cod{font-family:var(--serif);font-style:italic;font-size:20px;color:var(--cortex);white-space:nowrap}
+.abre{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:24px;align-items:center;margin:26px 0 8px}
+@media (max-width:640px){.abre{grid-template-columns:minmax(0,1fr) 72px;gap:14px}}
+.abre img{width:100%;height:auto;display:block}
+.kicker{font-family:var(--fd);font-weight:500;font-size:12.5px;color:var(--cortex)}
+h1{font-family:var(--serif);font-weight:400;font-size:38px;line-height:1.08;letter-spacing:-.01em;margin:6px 0 12px}
+@media (max-width:640px){h1{font-size:29px}}
+.lead{font-size:15px;color:var(--texto2);max-width:60ch}
+h2{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.2;margin:30px 0 4px}
+.sec{border-top:1px solid var(--cortex);margin-top:28px;padding-top:6px}
+.sec>.kicker{display:block;margin-bottom:10px}
+dl{display:grid;grid-template-columns:150px minmax(0,1fr);gap:7px 16px;font-size:14.5px}
+@media (max-width:640px){dl{grid-template-columns:1fr;gap:0}dd{margin-bottom:8px}}
+dt{font-family:var(--fd);font-size:12.5px;color:var(--cinza);padding-top:2px}
+dd{overflow-wrap:anywhere}
+.semestres{display:flex;flex-wrap:wrap;gap:6px}
+.semestres span{border:1px solid var(--pia);border-radius:6px;padding:1px 8px;font-size:13px}
+.semestres span.conta{border-color:var(--axon);color:var(--cortex);background:var(--cortex-claro)}
+.semestres span.fora{color:var(--cinza);border-style:dashed}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border-radius:8px;
+  border:1px solid var(--cortex);background:var(--cortex);color:#fff;font:600 14px var(--fd);cursor:pointer;text-decoration:none}
+.btn.sec2{background:transparent;color:var(--cortex)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--axon);outline-offset:2px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-family:var(--fd);font-weight:500;font-size:12.5px;color:var(--cinza);text-align:left;padding:6px 8px;border-bottom:1px solid var(--pia)}
+td{padding:9px 8px;border-bottom:1px solid var(--regua);vertical-align:top}
+td.n,th.n{text-align:right;white-space:nowrap}
+td small{display:block;color:var(--texto2);font-size:12.5px;line-height:1.45;margin-top:2px}
+td{overflow-wrap:anywhere}
+@media (max-width:640px){table{font-size:13px}td,th{padding:8px 5px}}
+input.nota-i{width:76px;height:36px;border:1px solid var(--pia);border-radius:6px;padding:0 8px;font:500 15px var(--f);text-align:right}
+input.nota-i.erro{border-color:var(--impulso-escuro);background:var(--impulso-claro)}
+tr.total td{border-bottom:0;border-top:1px solid var(--tinta);font-weight:600}
+.nota{display:flex;align-items:baseline;gap:10px;margin:16px 0 4px}
+.nota b{font-family:var(--serif);font-weight:400;font-size:46px;line-height:1;color:var(--cortex)}
+.nota span{font-size:14px;color:var(--texto2)}
+.nota.baixa b{color:var(--impulso-escuro)}
+label.decl{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.55;margin:16px 0;cursor:pointer}
+label.decl input{margin-top:4px;width:17px;height:17px;flex:none;accent-color:var(--cortex)}
+textarea{width:100%;min-height:96px;border:1px solid var(--pia);border-radius:6px;padding:10px 12px;font:14px/1.5 var(--f);resize:vertical}
+.fld{margin-top:16px}
+.fld label{display:block;font-family:var(--fd);font-size:12.5px;color:var(--cinza);margin-bottom:6px}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.aviso{border-radius:6px;padding:12px 14px;font-size:14px;margin-top:18px}
+.aviso.ok{background:var(--cortex-claro);color:var(--cortex)}
+.aviso.err{background:var(--impulso-claro);color:var(--impulso-escuro)}
+.aviso.warn{background:var(--lumen-claro);color:var(--lumen-escuro)}
+.msg{min-height:22px;margin-top:12px;font-size:14px}
+.msg.err{color:var(--impulso-escuro)} .msg.ok{color:var(--ok)}
+.pe{margin-top:30px;padding-top:12px;border-top:1px solid var(--regua);font-size:12.5px;color:var(--cinza)}
+.pe a{color:var(--cortex)}
+.carregando{color:var(--cinza)}
+</style>
+</head>
+<body>
+<main class="folha" id="folha">
+  <p class="carregando">Carregando o pedido…</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const CONFIG = {
+  SUPABASE_URL: 'https://rxzmkyjttzzpwtodqkve.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_MJFR-aaQqTS1BthxYJG2kg_5XGhs9wg',
+  VALIDACAO: 'https://auth.neurodynamics.dev'
+};
+/* sempre com a chave anônima: quem tem sessão do portal neste navegador
+   continua falando como o professor do link */
+const sb = window.supabase ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY,
+  { auth:{ persistSession:false, autoRefreshToken:false, storageKey:'nd-aacc-professor' } }) : null;
+const esc = v => v == null ? '' : String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TOKEN = new URLSearchParams(location.search).get('p') || '';
+const CAT = {
+  EQC:'Participação em equipe de competição estudantil (art. 1º, II, c; art. 11)',
+  EXT:'Projeto de extensão com vínculo formal (art. 1º, I, c; arts. 3º e 8º)',
+  VPC:'Vivência profissional complementar (art. 1º, IV, a; art. 17)'
+};
+const NORMA = 'Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG';
+/* o enquadramento: no OUT, o nome que a pessoa deu e a norma do Colegiado */
+const enquadramento = (k, ped) => k === 'OUT' ? `${ped.outro || 'Outro enquadramento'}${ped.normacurta || ped.norma ? ` (${ped.normacurta || ped.norma})` : ''}` : CAT[k] || k || '';
+const pron = (p, m, f, n) => { const x = String(p || '').toLowerCase(); return x === 'ela' ? f : x === 'elu' ? n : m; };
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const mesAno = iso => /^\d{4}-\d{2}/.test(String(iso || '')) ? `${MESES[+String(iso).slice(5, 7) - 1]} de ${String(iso).slice(0, 4)}` : '';
+const data = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { timeZone:'America/Sao_Paulo' }); };
+const momento = iso => { const d = new Date(iso); if (isNaN(d)) return '';
+  return d.toLocaleDateString('pt-BR', { timeZone:'America/Sao_Paulo' }) + ', às '
+    + d.toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit' }).replace(':', 'h'); };
+const virgula = n => String(n).replace('.', ',');
+const conceito = n => n >= 90 ? 'A' : n >= 80 ? 'B' : n >= 70 ? 'C' : n >= 60 ? 'D' : n >= 40 ? 'E' : 'F';
+let R = null;
+
+function topo(cod){
+  return `<header class="cab"><div class="marca">NeuroDynamics PD&amp;I<span>Aproveitamento de AACC</span></div>
+    ${cod ? `<span class="cod">${esc(cod)}</span>` : ''}</header>`;
+}
+function abertura(kicker, titulo, lead){
+  return `<div class="abre"><div><span class="kicker">${esc(kicker)}</span><h1>${esc(titulo)}</h1>${lead ? `<p class="lead">${lead}</p>` : ''}</div>
+    <img src="../selo-solene.png" alt="Selo solene da NeuroDynamics"></div>`;
+}
+const pe = `<p class="pe">Dúvidas sobre o pedido: Departamento de Pessoal da NeuroDynamics. Documentos emitidos pelo SOMA se conferem em
+  <a href="${CONFIG.VALIDACAO}" rel="noopener">auth.neurodynamics.dev</a>.</p>`;
+
+function fechado(st, d){
+  const f = document.getElementById('folha');
+  const t = {
+    nao_encontrado: ['Link inválido', 'Este link não abre nenhum pedido. Ele pode ter sido substituído por um novo, enviado por e-mail, ou o pedido foi devolvido.'],
+    expirado: ['Link vencido', 'O prazo deste link terminou. Peça à equipe um link novo.'],
+    fechado: ['Pedido fora de avaliação', 'O pedido não está mais aguardando a avaliação do professor orientador.'],
+    concluido: ['Relatório aprovado', '']
+  }[st] || ['Não disponível', 'Não foi possível abrir o pedido agora. Tente de novo em instantes.'];
+  f.innerHTML = topo(d?.codigo) + abertura('Avaliação do relatório', t[0], t[1] ? esc(t[1]) : '')
+    + (st === 'concluido' ? `<div class="aviso ok">Aprovado com a nota ${esc(virgula(d.nota))} de 100${d.concluido_em ? `, em ${esc(data(d.concluido_em))}` : ''}.
+        Folha de aprovação <b>${esc(d.emitido || '')}</b>, conferível em
+        <a href="${CONFIG.VALIDACAO}/?c=${encodeURIComponent(d.emitido || '')}" rel="noopener">auth.neurodynamics.dev</a>.</div>` : '') + pe;
+}
+
+function desenhar(){
+  const r = R, p = r.pedido, m = p.membro || {}, ped = p.pedido || {};
+  const sem = p.semestres || [], conta = sem.filter(s => s.situacao === 'conta');
+  const periodo = m.situacao === 'egresso' && m.fim ? `de ${mesAno(m.inicio)} a ${mesAno(m.fim)} (${pron(m.pronomes, 'egresso', 'egressa', 'egresse')})` : `desde ${mesAno(m.inicio)} (membro ativo)`;
+  const meta = p.pdf_meta || {};
+  const prof = document.getElementById('folha');
+  prof.innerHTML = topo(p.codigo) + abertura('Avaliação do relatório', 'Relatório de atividades para aproveitamento de AACC',
+      `O relatório de <b>${esc(p.nome)}</b> foi aprovado pelas etapas da equipe e aguarda a sua avaliação como professor orientador,
+       nos termos da ${esc(ped.norma || NORMA)}. A sua aprovação é a que vale perante o Colegiado do curso.`)
+    + `<section class="sec"><span class="kicker">Pedido</span><dl>
+        <dt>Nome</dt><dd>${esc(p.nome)}${m.matricula ? `, matrícula ${esc(m.matricula)}` : ''}</dd>
+        <dt>Curso</dt><dd>${esc(m.curso || '')}${m.ingresso ? `, ingresso em ${esc(m.ingresso)}` : ''}</dd>
+        <dt>Na equipe</dt><dd>${esc(periodo)}${m.cargo ? `, como ${esc(m.cargo)}` : ''}</dd>
+        <dt>Enquadramento</dt><dd>${esc(enquadramento(ped.principal, ped))}${(ped.alternativas || []).length
+          ? `<br><span style="color:var(--texto2)">Alternativas: ${(ped.alternativas || []).map(k => esc(enquadramento(k, ped))).join('; ')}</span>` : ''}</dd>
+        ${(ped.siex || []).length ? `<dt>Registro no SIEX</dt><dd>${ped.siex.map(esc).join(', ')}</dd>` : ''}
+        <dt>Semestres letivos</dt><dd><div class="semestres">${sem.map(s => `<span class="${s.situacao === 'conta' ? 'conta' : 'fora'}"
+          title="${s.meses} meses">${esc(s.rotulo)}</span>`).join('')}</div>
+          <span style="font-size:13px;color:var(--texto2)">${conta.length} ${conta.length === 1 ? 'conta' : 'contam'} (art. 5º).</span></dd>
+        ${meta.creditos ? `<dt>Créditos declarados</dt><dd>${esc(meta.creditos)}${meta.itens && meta.itens !== '0' ? ` (${esc(meta.principalcreditos || '')} pelo enquadramento e ${esc(meta.itens)} em atividades à parte)` : ''}</dd>` : ''}
+        <dt>Relatório</dt><dd>${esc(p.documento || '')}, versão ${esc(p.versao)}, ${esc(p.pdf_paginas)} páginas</dd>
+      </dl>
+      <div class="acts"><a class="btn sec2" href="${esc(p.pdf_url)}" target="_blank" rel="noopener">Abrir o relatório (PDF)</a></div></section>
+    <section class="sec"><span class="kicker">Aprovações da equipe</span>
+      <table class="aprov"><thead><tr><th>Etapa</th><th>Aprovado por</th><th>Em</th></tr></thead><tbody>
+        ${(r.aprovacoes || []).map(a => `<tr><td>${a.etapa}. ${esc(a.rotulo)}</td><td>${esc(a.nome)}${a.parecer ? `<small>${esc(a.parecer)}</small>` : ''}</td>
+          <td>${esc(momento(a.criado_em))}</td></tr>`).join('')}</tbody></table></section>
+    <section class="sec"><span class="kicker">A sua avaliação</span>
+      <h2>O barema</h2>
+      <p style="font-size:14px;color:var(--texto2);margin-bottom:10px">Uma nota de 0 a 10 em cada critério, de meio em meio ponto; os pontos são a nota vezes o peso, sobre 10.
+        A nota final, de 0 a 100, precisa ser de ao menos ${esc(r.nota_minima)} para aprovar (art. 3º, II).</p>
+      <table><thead><tr><th>Critério</th><th class="n">Peso</th><th class="n">Nota</th><th class="n">Pontos</th></tr></thead><tbody>
+        ${(r.barema || []).map(b => `<tr><td>${esc(b.nome)}<small>${esc(b.descritor || '')}</small></td><td class="n">${esc(b.peso)}</td>
+          <td class="n"><input class="nota-i" type="text" inputmode="decimal" maxlength="4" placeholder="0 a 10" data-k="${esc(b.chave)}" data-peso="${esc(b.peso)}"
+            aria-label="Nota em ${esc(b.nome)}" oninput="somar()"></td><td class="n" id="pt-${esc(b.chave)}">—</td></tr>`).join('')}
+        <tr class="total"><td>Nota final</td><td class="n">100</td><td></td><td class="n" id="pt-total">—</td></tr></tbody></table>
+      <div class="nota" id="nota"><b id="nota-n">—</b><span id="nota-c">de 100</span></div>
+      <div class="fld"><label for="parecer">Parecer (opcional para aprovar; obrigatório para devolver)</label>
+        <textarea id="parecer" maxlength="1200" placeholder="O relatório demonstra a relação das atividades com o curso…"></textarea></div>
+      <label class="decl"><input type="checkbox" id="confirmo" onchange="somar()">
+        <span>Declaro que examinei o relatório ${esc(p.documento || '')} e que ele comprova a participação de ${esc(p.nome)} na NeuroDynamics PD&amp;I
+          ${esc(periodo.replace(/ \(.*\)$/, ''))}, e aprovo o aproveitamento como Atividade Acadêmica Curricular Complementar com a nota acima
+          (art. 11, I e II; art. 3º, II).</span></label>
+      <div class="acts"><button class="btn" id="bt-aprovar" disabled onclick="decidir('aprovar')">Aprovar e emitir a folha</button>
+        <button class="btn sec2" id="bt-devolver" onclick="decidir('devolver')">Devolver</button></div>
+      <p class="msg" id="msg" role="status"></p>
+      <p style="font-size:12.5px;color:var(--cinza);margin-top:8px">Link pessoal, válido até ${esc(data(p.prof_expira))}. Não o encaminhe.</p>
+    </section>` + pe;
+}
+function notas(){
+  const o = {}; let total = 0, ok = true;
+  document.querySelectorAll('input[data-k]').forEach(i => {
+    const v = i.value.trim() === '' ? NaN : Number(i.value.replace(',', '.'));
+    const valido = Number.isFinite(v) && v >= 0 && v <= 10 && Number.isInteger(v * 2);
+    i.classList.toggle('erro', i.value.trim() !== '' && !valido);
+    if (!valido){ ok = false; document.getElementById('pt-' + i.dataset.k).textContent = '—'; return; }
+    o[i.dataset.k] = v;
+    const pts = Math.round(v * Number(i.dataset.peso) * 10) / 100; total += pts;
+    document.getElementById('pt-' + i.dataset.k).textContent = virgula(pts);
+  });
+  return { o, ok, total: Math.round(total * 100) / 100 };
+}
+function somar(){
+  const n = notas(), min = Number(R.nota_minima || 60);
+  document.getElementById('pt-total').textContent = n.ok ? virgula(n.total) : '—';
+  document.getElementById('nota-n').textContent = n.ok ? virgula(n.total) : '—';
+  document.getElementById('nota-c').textContent = n.ok ? `de 100, conceito ${conceito(n.total)}${n.total < min ? `, abaixo da mínima de ${min}` : ''}` : 'de 100';
+  document.getElementById('nota').classList.toggle('baixa', n.ok && n.total < min);
+  document.getElementById('bt-aprovar').disabled = !(n.ok && n.total >= min && document.getElementById('confirmo').checked);
+}
+async function decidir(dec){
+  const msg = document.getElementById('msg'), par = document.getElementById('parecer').value.trim();
+  const n = notas();
+  if (dec === 'devolver' && !par){ msg.className = 'msg err'; msg.textContent = 'Informe no parecer o que precisa ser corrigido.'; return; }
+  if (dec === 'devolver' && !confirm('Devolver o relatório? Corrigido, o pedido passa pelas etapas da equipe outra vez.')) return;
+  document.querySelectorAll('.acts .btn').forEach(b => b.disabled = true);
+  msg.className = 'msg'; msg.textContent = dec === 'aprovar' ? 'Emitindo a folha de aprovação…' : 'Devolvendo…';
+  try{
+    const { data:d, error } = await sb.rpc('aacc_professor_decidir', { p_token:TOKEN,
+      p: dec === 'aprovar' ? { decisao:'aprovar', notas:n.o, parecer:par, confirmo:document.getElementById('confirmo').checked }
+                           : { decisao:'devolver', parecer:par } });
+    if (error) throw error;
+    if (d?.status === 'ok'){
+      const f = document.getElementById('folha');
+      f.innerHTML = topo(R.pedido.codigo) + (d.situacao === 'concluido'
+        ? abertura('Avaliação do relatório', 'Relatório aprovado', `Nota ${esc(virgula(d.nota))} de 100. A folha de aprovação foi emitida, e ${esc(R?.pedido?.nome || 'quem pediu')} recebe o aviso por e-mail.`)
+          + `<div class="aviso ok">Folha de aprovação <b>${esc(d.codigo)}</b>, conferível em
+            <a href="${CONFIG.VALIDACAO}/?c=${encodeURIComponent(d.codigo)}" rel="noopener">auth.neurodynamics.dev</a>.</div>`
+        : abertura('Avaliação do relatório', 'Relatório devolvido', `${esc(R?.pedido?.nome || 'Quem pediu')} recebe o seu parecer por e-mail. Corrigido, o relatório passa pelas etapas da equipe e volta para a sua avaliação.`)) + pe;
+      window.scrollTo({ top:0 });
+      return;
+    }
+    if (['nao_encontrado', 'expirado', 'fechado'].includes(d?.status)) return fechado(d.status, R.pedido);
+    const t = { nota_minima: `A nota final (${virgula(d.nota)}) está abaixo da mínima de ${d.minima}.`,
+      invalido: d.campo === 'nota' ? 'Confira a nota de cada critério (de 0 a 10, de meio em meio ponto).' : d.campo === 'confirmo' ? 'Marque a declaração para aprovar.'
+        : d.campo === 'parecer' ? 'O parecer passa de 1.200 caracteres.' : 'Confira os campos.' }[d?.status] || 'Não foi possível registrar agora.';
+    msg.className = 'msg err'; msg.textContent = t;
+  }catch(e){ msg.className = 'msg err'; msg.textContent = 'Não foi possível registrar agora. Tente de novo em instantes.'; }
+  document.getElementById('bt-devolver').disabled = false; somar();
+}
+
+(async () => {
+  if (!TOKEN) return;
+  if (!sb || !/^[0-9a-f]{64}$/.test(TOKEN)) return fechado('nao_encontrado');
+  try{
+    const { data:d, error } = await sb.rpc('aacc_professor_ler', { p_token:TOKEN });
+    if (error) throw error;
+    if (d?.status !== 'ok') return fechado(d?.status, d);
+    R = d; desenhar();
+  }catch(e){ fechado('erro'); }
+})();
+</script>
+</body>
+</html>

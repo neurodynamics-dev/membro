@@ -21,13 +21,13 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- design system (cópia gerada pelo brand: scripts/distribuir.mjs) e o CSS próprio do SOMA -->
-<link rel="stylesheet" href="ds/tokens.css?v=8e2cef9fbd">
-<link rel="stylesheet" href="ds/neuro.css?v=8e2cef9fbd">
-<link rel="stylesheet" href="ds/casca.css?v=8e2cef9fbd">
-<link rel="stylesheet" href="ds/select.css?v=8e2cef9fbd">
-<link rel="stylesheet" href="soma.css?v=8e2cef9fbd">
-<script defer src="ds/select.js?v=8e2cef9fbd"></script>
-<script src="ds/casca.js?v=8e2cef9fbd"></script>
+<link rel="stylesheet" href="ds/tokens.css?v=884d0049eb">
+<link rel="stylesheet" href="ds/neuro.css?v=884d0049eb">
+<link rel="stylesheet" href="ds/casca.css?v=884d0049eb">
+<link rel="stylesheet" href="ds/select.css?v=884d0049eb">
+<link rel="stylesheet" href="soma.css?v=884d0049eb">
+<script defer src="ds/select.js?v=884d0049eb"></script>
+<script src="ds/casca.js?v=884d0049eb"></script>
 </head>
 <body>
 
@@ -266,11 +266,11 @@ const CONFIG = {
    é a 2.16.0. Acompanha a query dos módulos carregados sob demanda, para
    um deploy não deixar módulo velho em cache, e as notas de cada versão
    moram em mod-versoes.js (#/versoes). */
-const VERSAO = '2.19.2';
+const VERSAO = '2.20.0';
 /* O carimbo dos arquivos (scripts/carimbar.mjs): um hash do conteúdo de todo
    CSS e JS. Vai na query de tudo que o portal carrega, para um deploy nunca
    misturar arquivo novo com arquivo velho em cache. */
-const CARIMBO = '8e2cef9fbd';
+const CARIMBO = '884d0049eb';
 const LOGO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
 const LOGO_BRANCO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
@@ -1385,6 +1385,7 @@ function acoesDaCasca(){
     ['Registrar evento', 'A participação da equipe num evento, com a declaração de cada um', '#/servicos/eventos/novo'],
     ['Eventos e participações', 'Os eventos registrados, as aprovações e as declarações', '#/servicos/eventos'],
     ['Cofre de senhas', 'As contas da equipe: usuário, senha e o código de duas etapas', '#/servicos/cofre'],
+    ['Aproveitamento de AACC', 'A participação na equipe como atividade complementar do curso (Resolução 02/2019)', '#/servicos/aproveitamento'],
     ['Treinamentos', 'O que os seus grupos pedem, e o que você já concluiu', '#/treinamentos'],
     ['Todos os treinamentos', 'O catálogo de formação da equipe', '#/treinamentos/todos'],
     ['Meus certificados', 'Os treinamentos concluídos, com o certificado em PDF', '#/treinamentos/certificados'],
@@ -1983,6 +1984,7 @@ function arvoreDoMenu(){
       { sub:'biometria', rot:'Acesso ao LABBIO' },
       { sub:'eventos', rot:'Eventos e participações' },
       { sub:'cofre', rot:'Cofre de senhas' },
+      { sub:'aproveitamento', rot:'Aproveitamento de AACC' },
       { sub:'dados', rot:'Meus dados' },
       ...(state.obrigacao?.recadastro?.status === 'pendente' ? [{ sub:'recadastro', rot:'Recadastro' }] : []),
       ...(state.obrigacao?.termo && state.obrigacao.termo.status !== 'nenhum' ? [{ sub:'termo', rot:'Termo de sigilo do LABBIO' }] : []),
@@ -3154,8 +3156,8 @@ async function carregarPendenciasInicio(){
   const eu = state.membros.find(m => m.registro === state.perfil.registro);
   /* sem foto (nem na ficha, nem no repositório de fotos): enviar é um
      clique, e a equipe inteira passa a reconhecer a pessoa (2.17.0) */
-  const [ev, cf, foto] = await Promise.all([conta('eventos_ext_pendentes'), conta('cofre_pendencias'),
-    eu ? temFoto(eu) : Promise.resolve(null)]);
+  const [ev, cf, foto, ac] = await Promise.all([conta('eventos_ext_pendentes'), conta('cofre_pendencias'),
+    eu ? temFoto(eu) : Promise.resolve(null), conta('aacc_pendentes')]);
   const el = $('#sec-pend'); if (!el) return;
   const it = [];
   if (foto === false) it.push(`<a class="pend-i" id="pend-foto" href="#" onclick="modalFoto(${eu.registro});return false">${ic('camera')}
@@ -3166,6 +3168,10 @@ async function carregarPendenciasInicio(){
     <span class="tx"><b>${ev === 1 ? 'Um evento aguarda' : ev + ' eventos aguardam'} aprovação</b>
     <span class="ds">Registro de participação da equipe</span></span>
     <span class="go">Aprovar →</span></a>`);
+  if (ac) it.push(`<a class="pend-i" href="#/servicos/aproveitamento/aprovar">${ic('capelo')}
+    <span class="tx"><b>${ac === 1 ? 'Um pedido de aproveitamento aguarda' : ac + ' pedidos de aproveitamento aguardam'} a sua decisão</b>
+    <span class="ds">Relatório de AACC, na etapa do seu grupo</span></span>
+    <span class="go">Decidir →</span></a>`);
   if (cf) it.push(`<a class="pend-i" href="#/servicos/cofre">${ic('cofre')}
     <span class="tx"><b>${cf === 1 ? 'Uma senha' : cf + ' senhas'} do cofre para trocar</b>
     <span class="ds">Prazo vencido, a vencer ou exposta por quem saiu</span></span>
@@ -4057,21 +4063,23 @@ const IC_DOC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 /* ============================================================
    SERVIÇOS — solicitações ao Depto de Pessoal
    ============================================================ */
-/* A declaração de vínculo e os eventos (mod-documentos, v25) e o cofre
-   (mod-cofre, v27) moram em módulos: descem na primeira visita, como
-   qualquer outro espaço. */
+/* A declaração de vínculo e os eventos (mod-documentos, v25), o cofre
+   (mod-cofre, v27) e o aproveitamento de AACC (mod-aproveitamento, 2.20.0)
+   moram em módulos: descem na primeira visita, como qualquer outro
+   espaço. */
 const SERVICOS_MODULO = {
-  reporte:    ['reporte',    'pageReporte'],
-  declaracao: ['documentos', 'pageDeclaracao'],
-  eventos:    ['documentos', 'pageEventosExt'],
-  cofre:      ['cofre',      'pageCofre'],
-  dados:      ['cadastro',   'pageDados'],
-  recadastro: ['cadastro',   'pageRecadastro'],
-  termo:      ['termo',      'pageTermo'],
-  biometria:  ['biometria',  'pageBiometria'],
-  feed:       ['feed',       'pageFeed'],
-  newsletter: ['feed',       'pageNewsletter'],
-  indicar:    ['indicar',    'pageIndicar']
+  reporte:        ['reporte',        'pageReporte'],
+  declaracao:     ['documentos',     'pageDeclaracao'],
+  eventos:        ['documentos',     'pageEventosExt'],
+  cofre:          ['cofre',          'pageCofre'],
+  aproveitamento: ['aproveitamento', 'pageAproveitamento'],
+  dados:          ['cadastro',       'pageDados'],
+  recadastro:     ['cadastro',       'pageRecadastro'],
+  termo:          ['termo',          'pageTermo'],
+  biometria:      ['biometria',      'pageBiometria'],
+  feed:           ['feed',           'pageFeed'],
+  newsletter:     ['feed',           'pageNewsletter'],
+  indicar:        ['indicar',        'pageIndicar']
 };
 async function pageServicos(sub, sub2){
   if (sub === 'pedidos') return pagePedidos();
@@ -4121,6 +4129,12 @@ async function pageServicos(sub, sub2){
         <h3>Cofre de senhas</h3>
         <p>Usuário, senha e código de duas etapas das contas da equipe.</p>
         <span class="go">Abrir →</span>
+      </a>
+      <a class="srv agora" href="#/servicos/aproveitamento">
+        <span class="lb">${ic('capelo')} Membros e egressos</span>
+        <h3>Aproveitamento de AACC</h3>
+        <p>A participação na equipe como atividade complementar do curso, com o relatório e a folha de aprovação.</p>
+        <span class="go">Começar →</span>
       </a>
     </div>
     <h2 class="srv-bloco">Relações institucionais</h2>

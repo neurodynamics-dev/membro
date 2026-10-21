@@ -127,6 +127,7 @@ psql -X -v ON_ERROR_STOP=1 -d t219 -f testes/2.19.0.sql
 | `2.19.2_recursos_semente.sql` | a semente da Biblioteca, 283 itens (padrões VS Code e Git Bash, softwares, extensões do VS Code e do navegador, bases de pesquisa em saúde, gravação de microcontroladores, benefícios de estudante, repositórios da NSA e as indicações da equipe), com a função e, nos softwares, as instruções de baixar e usar. Não repete: o que já existe pelo endereço fica como está. Depois da `2.19.2_recursos` |
 | `2.19.2_ri.sql` | Relações institucionais, só para NRO_RELAC e NRO_COORD_OFFICE: conexões (`ri_contatos`, `ri_relacoes`, `ri_interacoes`), missões (`ri_missoes`), financiamento (`ri_editais`: cronograma, checklist e arranjo de cada edital) e as indicações que qualquer membro faz pelos Serviços (`ri_indicacoes`, com aviso a quem indicou). Tudo por função (`ri_*`); nenhuma tabela é legível pela API. Teste: `testes/2.19.2_ri.sql`. |
 | `2.19.2_termo_existente.sql` | o termo de sigilo que o membro já tinha: `termo_registrar_envio` ganha `p_existente` (sem exigir o termo baixado pelo portal, só os dados conferidos), e o admin envia por um membro pelo painel do LABBIO (`termo_admin_caminho`, `termo_registrar_envio_admin`, com aviso à pessoa). O painel do Pessoal mostra a marca e quem enviou. Depois da `2.19.1_termo`. Teste: `testes/2.19.2_termo_existente.sql`. |
+| `2.20.0_aproveitamento.sql` | o aproveitamento de AACC (Resolução 02/2019 da Congregação da Escola de Engenharia): o pedido `AAC-N` (`aacc_pedidos`), cujo relatório é o `NRO-PES-020-N` (a série nasce aqui, com os PNs fora do rol); a página de quem pede (`aacc_meu`), que confere o recadastro (com os pronomes, `dados_pessoais.pronomes`, que nasce aqui) e os dados acadêmicos e conta os semestres letivos pela mesma regra da classe LaTeX (`aacc_semestres`); a ficha que a própria pessoa completa (`aacc_perfil_salvar`); o enquadramento (`aacc_preparar`: EQC, EXT ou VPC, ou OUT, com o nome e a norma do Colegiado, para curso fora da Resolução 02/2019; sem iniciação científica); o envio do PDF, conferido pelos metadados que o template escreve (`aacc_enviar`, bucket privado `aproveitamento`); as etapas de aprovação, uma pessoa de cada grupo, na ordem da configuração (`aacc_config`: NRO_PMO, NRO_PESSOAL e NRO_COORD_OFFICE, a Diretoria, na semente), com devolução em qualquer uma (`aacc_decidir`); o professor orientador indicado na última etapa (com o departamento e a unidade acadêmica), que decide pelo link pessoal sem conta no portal (`aacc_professor_ler`, `aacc_professor_decidir`, as duas abertas à chave anônima) com o barema e a nota mínima de 60; a folha de aprovação emitida em `doc_emitidos` (tipo `aproveitamento`), conferível em auth.neurodynamics.dev; reabrir, que revoga a folha (`aacc_reabrir`); e os avisos: os grupos no sino, quem pediu por e-mail (`doc_envios`, tipos `aacc_membro` e `aacc_professor`). Depois dela, publique de novo a `notificar-email` e o portal |
 
 A ordem é essa: primeiro o recadastro, depois o termo. Ligar o recadastro de
 2026/2 com o termo: Administração › Recadastro, marcar "Incluir o termo de
@@ -617,5 +618,13 @@ psql -X -v ON_ERROR_STOP=1 -d t218 -f testes/2.18.0_reporte.sql -f testes/2.18.0
 ```
 
 O teste principal tem 193 asserções e reaplica a migração. Os complementos verificam isolamento de rascunhos, sinalização idempotente, votos/versionamento, descadastro, ata com PN reutilizado, permissões da Marca e paginação com datas empatadas. Todos usam fixtures locais; não executar os testes no Supabase de produção.
+
+O aproveitamento de AACC (2.20.0), sobre a base com a 25.0 (o teste cria os grupos NRO_PMO e NRO_COORD_OFFICE e roda a migração cinco vezes):
+
+```sh
+createdb -T tbase t220
+psql -d t220 -f v25_documentos_eventos.sql
+psql -X -v ON_ERROR_STOP=1 -d t220 -f testes/2.20.0_aproveitamento.sql  # 236 asserções (anon, RLS e Storage inclusos)
+```
 
 Nos testes históricos de Agenda, use `PGOPTIONS='-c timezone=America/Sao_Paulo'`: os lembretes têm hora local. `v29_presenca.sql` valida o contrato da versão 29.0 (Pessoal ainda podia gerar a folha); `2.18.0_soma.sql` valida a restrição nova a admin. Os testes históricos não devem ser executados sobre um banco já migrado para a 2.18.0.

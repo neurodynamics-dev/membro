@@ -10,7 +10,8 @@
 <link rel="icon" href="favicon.png">
 <!--
   auth.neurodynamics.dev — a validação pública dos documentos que o SOMA
-  emite (a declaração de vínculo, a de participação em evento). Uma página
+  emite (a declaração de vínculo, a de participação em evento e a folha de
+  aprovação do aproveitamento de AACC, desde a 2.20.0). Uma página
   só, de propósito: o que um externo precisa é digitar o código do rodapé
   (ou ler o QR Code) e ver, do nosso lado, o que foi impresso.
 
@@ -20,7 +21,7 @@
   membro.neurodynamics.dev, e nunca há duas cópias dele. O passo a passo
   para publicar está no README desta pasta.
 -->
-<link rel="stylesheet" href="../ds/tokens.css?v=8e2cef9fbd">
+<link rel="stylesheet" href="../ds/tokens.css?v=884d0049eb">
 <style>
 :root{
   --tinta:var(--sulco-medium); --texto:var(--pia-dark); --cinza:var(--sulco-light); --claro:var(--sulco-light);
@@ -283,7 +284,9 @@ function desenhar(d, cod, k){
   ultimo = d;
   const rev = d.situacao === 'revogado';
   const confere = k ? (k === String(d.controle || '').toUpperCase()) : null;
-  const dd = d.dados || {}, ev = dd.evento || {};
+  const dd = d.dados || {}, ev = dd.evento || {}, aac = d.tipo === 'aproveitamento';
+  const est = dd.estudante || {}, pr = dd.professor || {};
+  const prof = /^prof(a\b|\.?ª|essora)/i.test(String(pr.titulo || '').trim()) ? 'Professora orientadora' : 'Professor orientador';
   const selo = rev
     ? `<div class="selo bad"><span class="marca" aria-hidden="true">×</span><div><h3>Documento revogado</h3>
         <p>Este documento foi emitido pelo SOMA, mas foi <b>revogado</b> em ${esc(momento(d.revogado_em))}${d.revogado_motivo
@@ -299,7 +302,12 @@ function desenhar(d, cod, k){
     ['Documento', `<span class="mono">${esc(d.documento)}</span>${d.revisao ? ' Rev. ' + esc(d.revisao) : ''}`],
     ['Espécie', esc(d.titulo || '')],
     ['Emitente', `NeuroDynamics PD&amp;I${d.emissor ? ', ' + esc(d.emissor) : ''}`],
-    [d.tipo === 'participacao' ? 'Participante' : 'Titular', esc(String(d.titular || dd.nome || '').toUpperCase())],
+    [d.tipo === 'participacao' ? 'Participante' : aac ? 'Estudante' : 'Titular', esc(String(d.titular || dd.nome || '').toUpperCase())],
+    ...(aac ? [['Curso', `${esc(est.curso || '')}${est.matricula ? `, matrícula ${esc(est.matricula)}` : ''}`],
+      ['Pedido', `${esc(dd.pedido || '')}, relatório versão ${esc((dd.relatorio || {}).versao || 1)} (${esc((dd.relatorio || {}).paginas || '')} páginas)`],
+      [prof, `${esc(pr.titulo || '')} ${esc(pr.nome || '')}${[pr.departamento, pr.unidade].filter(Boolean).length
+        ? `<br>${esc([pr.departamento, pr.unidade].filter(Boolean).join(', '))}` : ''}${pr.email ? `<br>${esc(pr.email)}` : ''}`],
+      ['Nota', `${esc(String(pr.nota == null ? '' : pr.nota).replace('.', ','))} de 100, conceito ${esc(pr.conceito || '')}`]] : []),
     ...(d.tipo === 'vinculo' && dd.cpf ? [['CPF', `<span class="mono">${esc(dd.cpf)}</span>`]] : []),
     ...(d.tipo === 'participacao' ? [['Evento', `${esc(ev.nome || '')}${ev.codigo ? ` <span class="mono">(${esc(ev.codigo)})</span>` : ''}`],
       ['Período', esc(periodo(ev.data_inicio, ev.data_fim))], ['Horas', esc(horas(dd.horas))]] : []),
@@ -314,6 +322,7 @@ function desenhar(d, cod, k){
     <div class="declarado" id="declarado"></div>
     <div class="acoes no-print">
       ${d.segunda_via && !rev ? '<button type="button" id="via" onclick="segundaVia()">Baixar a segunda via (PDF)</button>' : ''}
+      ${aac && !rev ? '<button type="button" id="via" onclick="segundaVia()">Baixar a folha de aprovação (PDF)</button>' : ''}
       <button type="button" class="sec" onclick="window.print()">Imprimir o comprovante da consulta</button>
       <button type="button" class="sec" onclick="novaConsulta()">Nova consulta</button>
     </div>
@@ -330,7 +339,8 @@ async function conteudo(d){
   let frase = '';
   try{
     await precisaDocNRO();
-    const partes = d.tipo === 'participacao' ? DocNRO.textoParticipacao(dd) : DocNRO.textoVinculo(dd);
+    const partes = d.tipo === 'participacao' ? DocNRO.textoParticipacao(dd)
+      : d.tipo === 'aproveitamento' ? DocNRO.textoAproveitamento(dd, d.documento) : DocNRO.textoVinculo(dd);
     frase = partes.map(p => p.b ? `<b>${esc(p.t)}</b>` : esc(p.t)).join('');
   }catch(e){ frase = ''; }
   let h = frase ? `<h4>O que o documento declara</h4><blockquote>${frase}</blockquote>` : '';
@@ -345,6 +355,20 @@ async function conteudo(d){
       <td>${esc(v.codigo)}</td><td>${esc(v.nome)}</td><td>${esc(periodo(v.data_inicio, v.data_fim))}</td>
       <td>${esc(v.papel || 'Participante')}</td><td>${esc(horas(v.horas))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vazio">Nenhum até a data de emissão.</p>'}`;
   }
+  if (d.tipo === 'aproveitamento'){
+    /* a folha de aprovação: as etapas da equipe, o barema e o parecer */
+    const ap = dd.aprovacoes || [], bar = (dd.professor || {}).barema || [], pr = dd.professor || {};
+    const v = n => String(n == null ? '' : n).replace('.', ',');
+    const fem = /^prof(a\b|\.?ª|essora)/i.test(String(pr.titulo || '').trim());
+    h += `<p class="tabela-t">Aprovações da equipe (${ap.length})</p>${ap.length ? `<div class="tabela-w"><table class="tabela"><thead><tr>
+      <th>Etapa</th><th>Aprovado por</th><th>Em</th></tr></thead><tbody>${ap.map(a => `<tr><td>${esc(a.etapa)}. ${esc(a.rotulo)}</td>
+      <td>${esc(a.nome)}</td><td>${esc(momento(a.em))}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      <p class="tabela-t">Barema ${fem ? 'da professora orientadora' : 'do professor orientador'}</p>${bar.length ? `<div class="tabela-w"><table class="tabela"><thead><tr>
+      <th>Critério</th><th>Peso</th><th>Nota (0 a 10)</th><th>Pontos</th></tr></thead><tbody>${bar.map(b => `<tr><td>${esc(b.nome)}</td>
+      <td>${esc(b.peso)}</td><td>${esc(v(b.nota))}</td><td>${esc(v(b.pontos))}</td></tr>`).join('')}
+      <tr><td><b>Nota final</b></td><td>100</td><td></td><td><b>${esc(v(pr.nota))}</b></td></tr></tbody></table></div>` : ''}
+      ${pr.parecer ? `<p class="tabela-t">Parecer</p><blockquote>${esc(pr.parecer)}</blockquote>` : ''}`;
+  }
   el.innerHTML = h;
 }
 
@@ -353,10 +377,10 @@ async function segundaVia(){
   b.disabled = true; b.textContent = 'Gerando o PDF…';
   try{
     await precisaDocNRO();
-    await DocNRO.precisa();
-    DocNRO.baixar(DocNRO.declaracaoParticipacao(ultimo));
+    await DocNRO.precisa({ selo: ultimo.tipo === 'aproveitamento' });
+    DocNRO.baixar(ultimo.tipo === 'aproveitamento' ? DocNRO.folhaAprovacaoAacc(ultimo) : DocNRO.declaracaoParticipacao(ultimo));
   }catch(e){ alert('Não foi possível gerar o PDF agora: ' + (e.message || 'erro') + '. Tente de novo em instantes.'); }
-  finally{ b.disabled = false; b.textContent = 'Baixar a segunda via (PDF)'; }
+  finally{ b.disabled = false; b.textContent = ultimo && ultimo.tipo === 'aproveitamento' ? 'Baixar a folha de aprovação (PDF)' : 'Baixar a segunda via (PDF)'; }
 }
 function novaConsulta(){
   ultimo = null; $('#res-bloco').hidden = true; $('#c').value = ''; $('#k').value = '';

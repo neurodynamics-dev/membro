@@ -33,6 +33,11 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.20.0', data:'2026-10-21', titulo:'Aproveitamento de AACC', itens:[
+    ['novo', '**Aproveitamento de AACC**, em Serviços: membros e egressos pedem ao Colegiado do curso o aproveitamento da participação na equipe como atividade complementar, pela Resolução nº 02/2019 da Congregação da Escola de Engenharia ou, para outros cursos, pela norma do próprio Colegiado. A página confere a ficha (com os pronomes e o curso de uma lista), mostra os semestres que contam e o que cada enquadramento rende, e gera o template LaTeX com os dados da pessoa.'],
+    ['novo', 'O relatório passa por uma pessoa do **PMO**, do **Departamento de Pessoal** e da **Diretoria**, e a Diretoria indica o **professor orientador**, que avalia pelo barema num link pessoal, sem conta no SOMA.'],
+    ['novo', 'Aprovado, sai a **folha de aprovação**, conferível em auth.neurodynamics.dev, no lugar da folha reservada do relatório; na capa, a avaliação da equipe ganha a data. Se o Colegiado apontar algo, o pedido se reabre.']
+  ]},
   { v:'2.19.2', data:'2026-10-11', titulo:'Menu reorganizado, filtros e ajustes', itens:[
     ['melhoria', '**Recadastro e termo de sigilo**: quem já tem o termo preenchido e assinado pode enviar esse mesmo arquivo, se estiver conforme (o link da pasta dos termos está no recadastro e no envio). O campo de testemunhas não precisa ser preenchido. O envio fica marcado como "termo que já tinha" para o Pessoal conferir.'],
     ['melhoria', '**Painel do LABBIO**: o admin do SOMA envia o termo assinado de um membro direto do perfil dele; a pessoa é avisada e o Pessoal confere.'],

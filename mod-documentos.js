@@ -77,7 +77,9 @@ async function docBaixarEmissao(e){
   const t = setTimeout(() => toast('Preparando o PDF…'), 350);
   try{
     await precisaDocNRO();
-    const doc = e.tipo === 'participacao' ? DocNRO.declaracaoParticipacao(e) : DocNRO.declaracaoVinculo(e);
+    if (e.tipo === 'aproveitamento') await DocNRO.precisa({ selo:true });
+    const doc = e.tipo === 'participacao' ? DocNRO.declaracaoParticipacao(e)
+      : e.tipo === 'aproveitamento' ? DocNRO.folhaAprovacaoAacc(e) : DocNRO.declaracaoVinculo(e);
     DocNRO.baixar(doc);
   }catch(err){ falha(err, 'Não foi possível gerar o PDF'); }
   finally{ clearTimeout(t); }

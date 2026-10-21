@@ -443,6 +443,145 @@ export function declaracaoTexto(e: EnvioDocumento): string {
 }
 
 /* ============================================================
+   O APROVEITAMENTO DE AACC (SOMA 2.20.0)
+   Pela mesma fila doc_envios, dois e-mails: a quem pediu, a cada passo
+   do pedido (recebido, aprovado numa etapa, devolvido, com o professor,
+   aprovado, reaberto), qualquer que seja a preferência dele; e ao
+   professor orientador, que não tem conta no portal, com o link pessoal
+   da avaliação. Nada de travessão nem de ponto médio no texto.
+   ============================================================ */
+export interface EnvioAacc {
+  id: number;
+  tipo: "aacc_membro" | "aacc_professor";
+  para_nome: string;
+  para_email: string;
+  assunto: string;
+  dados: {
+    acao?: string; pedido?: string; corpo?: string; href?: string; url?: string; etapa?: string; proxima?: string;
+    motivo?: string; professor?: string; codigo?: string; nota?: number | string; validacao?: string;
+    estudante?: string; curso?: string | null; principal?: string; creditos?: string | null; indicado_por?: string;
+    prazo?: string; outro?: string | null; norma?: string | null; departamento?: string | null; unidade?: string | null;
+  };
+}
+const AACC_ENQ: Record<string, string> = {
+  EQC: "participação em equipe de competição estudantil",
+  EXT: "projeto de extensão com vínculo formal",
+  VPC: "vivência profissional complementar",
+  OUT: "outro enquadramento, pela norma do Colegiado",
+};
+const AACC_NORMA = "Resolução nº 02/2019 da Congregação da Escola de Engenharia da UFMG";
+/* o enquadramento como o e-mail o escreve: no OUT, o nome que a pessoa deu */
+const aaccEnq = (d: EnvioAacc["dados"]) =>
+  d.principal === "OUT" && d.outro ? d.outro : AACC_ENQ[d.principal || ""] || d.principal || "";
+const aaccCaixa = (html: string, cor = "#e3efec", tinta = "#00352f") => `<tr><td style="padding:18px 28px 0">
+  <div style="background:${cor};color:${tinta};border-radius:10px;padding:14px 16px;font:400 14px/1.6 Helvetica,Arial,sans-serif">${html}</div></td></tr>`;
+const aaccBotao = (url: string, rot: string) => `<tr><td style="padding:22px 28px 0">
+  <a href="${esc(url)}" style="display:inline-block;background:#00594F;color:#ffffff;font:600 14px/1 Helvetica,Arial,sans-serif;
+     text-decoration:none;padding:13px 20px;border-radius:9px">${esc(rot)}</a></td></tr>`;
+const aaccPagina = (titulo: string, miolo: string, rodape: string) => `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width"><title>${esc(titulo)}</title></head>
+<body style="margin:0;padding:0;background:#f4f6f4">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f4">
+    <tr><td align="center" style="padding:32px 16px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="max-width:560px;background:#ffffff;border:1px solid #e3e6e3;border-radius:14px">
+        <tr><td style="padding:28px 28px 8px">
+          <img src="${esc(IMG)}/logo-00594f.png" width="188" alt="NeuroDynamics" style="display:block;border:0;outline:none">
+        </td></tr>
+        ${miolo}
+        <tr><td style="padding:22px 28px 28px">
+          <div style="font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#8a908a;border-top:1px solid #e3e6e3;padding-top:16px">${rodape}</div>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+/* Prof.ª (e a Profa. de antes): a professora */
+const aaccProfessora = (prof?: string) => /^prof(a\b|\.?ª|essora)/i.test(String(prof || "").trim());
+const aaccTratamento = (prof?: string) => aaccProfessora(prof) ? "Prezada" : "Prezado";
+const aaccOrientador = (prof?: string) => aaccProfessora(prof) ? "professora orientadora" : "professor orientador";
+
+/** O que o e-mail ao estudante diz, por passo: a frase de abertura. */
+export function aaccAbertura(d: EnvioAacc["dados"]): string {
+  const p = d.pedido || "o pedido";
+  switch (d.acao) {
+    case "recebido": return `O relatório do pedido ${p} foi recebido e entrou na aprovação da equipe.`;
+    case "etapa": return `O pedido ${p} foi aprovado na etapa ${d.etapa || ""} e seguiu para a etapa ${d.proxima || "seguinte"}.`;
+    case "devolvido": return `O relatório do pedido ${p} voltou para ajuste${d.etapa ? `, na etapa ${d.etapa}` : ""}.`;
+    case "professor": return `O pedido ${p} foi aprovado pela equipe e seguiu para o professor orientador${d.professor ? `, ${d.professor}` : ""}.`;
+    case "concluido": return `O relatório do pedido ${p} foi aprovado pelo professor orientador.`;
+    case "reaberto": return `O pedido ${p} foi reaberto para correção.`;
+    default: return d.corpo || `Há novidade no pedido ${p}.`;
+  }
+}
+
+export function aaccHTML(e: EnvioAacc): string {
+  const d = e.dados || {};
+  if (e.tipo === "aacc_professor") {
+    const linha = (rot: string, val: string) => val ? `<tr>
+      <td style="padding:7px 12px;border-top:1px solid #d9dedc;font:400 12.5px/1.4 Helvetica,Arial,sans-serif;color:#616c68;width:38%">${rot}</td>
+      <td style="padding:7px 12px;border-top:1px solid #d9dedc;font:400 14px/1.45 Helvetica,Arial,sans-serif;color:#1d1d1f">${val}</td></tr>` : "";
+    return aaccPagina(e.assunto, `
+        <tr><td style="padding:14px 28px 0">
+          <div style="font:400 15px/1.6 Helvetica,Arial,sans-serif;color:#1d1d1f">${aaccTratamento(d.professor)} ${esc(d.professor || e.para_nome)},</div>
+          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:8px">
+            A NeuroDynamics PD&amp;I indica o seu nome como ${aaccOrientador(d.professor)} para avaliar o relatório de atividades de
+            <b style="color:#1d1d1f">${esc(d.estudante || "")}</b>${d.curso ? `, do curso de ${esc(d.curso)}` : ""}, apresentado para o
+            aproveitamento como Atividade Acadêmica Curricular Complementar, nos termos da ${esc(d.norma || AACC_NORMA)}. O relatório
+            já foi aprovado pelas etapas da equipe; a sua aprovação é a que vale perante o Colegiado do curso.</div>
+          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:8px">
+            Pelo link abaixo, sem cadastro, o relatório se lê, a nota se dá pelo barema (mínima de 60, art. 3º, II) e o pedido se
+            aprova ou se devolve com o seu parecer.</div>
+        </td></tr>
+        <tr><td style="padding:20px 28px 0">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #d9dedc">
+            ${linha("Pedido", esc(d.pedido || ""))}
+            ${linha("Estudante", esc(d.estudante || ""))}
+            ${linha("Enquadramento", esc(aaccEnq(d)))}
+            ${linha("Créditos declarados", esc(d.creditos || ""))}
+            ${linha("Indicado por", esc(d.indicado_por || ""))}
+            ${linha("Prazo", esc(dataExtensa(d.prazo)))}
+          </table>
+        </td></tr>
+        ${aaccBotao(d.url || "", "Avaliar o relatório")}`,
+      `O link é pessoal e vale até ${esc(dataExtensa(d.prazo))}: não o encaminhe. Aprovado o relatório, o SOMA emite a folha de
+       aprovação, com código verificador, conferível em auth.neurodynamics.dev. Dúvidas: Departamento de Pessoal da NeuroDynamics PD&amp;I.`);
+  }
+  const conc = d.acao === "concluido", dev = d.acao === "devolvido" || d.acao === "reaberto";
+  return aaccPagina(e.assunto, `
+        <tr><td style="padding:14px 28px 0">
+          <div style="font:400 15px/1.6 Helvetica,Arial,sans-serif;color:#1d1d1f">Olá, ${esc(primeiroNome(e.para_nome))}.</div>
+          <div style="font:400 14px/1.6 Helvetica,Arial,sans-serif;color:#4a514a;margin-top:6px">${esc(aaccAbertura(d))}</div>
+        </td></tr>
+        ${dev && d.motivo ? aaccCaixa(`<b>Motivo:</b> ${esc(d.motivo)}`, "#fff9d6", "#594a00") : ""}
+        ${!dev && d.corpo && !conc ? aaccCaixa(esc(d.corpo)) : ""}
+        ${conc ? aaccCaixa(`Nota <b>${esc(String(d.nota ?? "").replace(".", ","))}</b> de 100. Folha de aprovação <b>${esc(d.codigo || "")}</b>.
+           Baixe no portal o PDF final, o relatório com a folha, e entregue ao Colegiado do seu curso.`) : ""}
+        ${aaccBotao(d.url || linkDe(d.href || null), conc ? "Baixar o PDF final no portal" : dev ? "Corrigir e enviar de novo" : "Acompanhar o pedido")}`,
+    `${conc && d.validacao ? `A folha se confere em <a href="${esc(d.validacao)}" style="color:#00594F;text-decoration:none">${esc(hostDe(d.validacao))}</a>. ` : ""}
+     Você recebe este e-mail porque pediu o aproveitamento de AACC no portal. Ele sai a cada passo do pedido, qualquer que seja a sua
+     preferência de avisos.`);
+}
+
+export function aaccTexto(e: EnvioAacc): string {
+  const d = e.dados || {};
+  if (e.tipo === "aacc_professor") {
+    return `${aaccTratamento(d.professor)} ${d.professor || e.para_nome},\n\n`
+      + `A NeuroDynamics PD&I indica o seu nome como ${aaccOrientador(d.professor)} para avaliar o relatório de atividades de ${d.estudante || ""}`
+      + `${d.curso ? `, do curso de ${d.curso}` : ""}, apresentado para o aproveitamento como Atividade Acadêmica Curricular `
+      + `Complementar, nos termos da ${d.norma || AACC_NORMA}.\n\n`
+      + `Pedido: ${d.pedido || ""}\nEnquadramento: ${aaccEnq(d)}\n`
+      + (d.creditos ? `Créditos declarados: ${d.creditos}\n` : "") + `Indicado por: ${d.indicado_por || ""}\nPrazo: ${dataExtensa(d.prazo)}\n\n`
+      + `Avaliar o relatório: ${d.url || ""}\n\nO link é pessoal: não o encaminhe.\n\nNeuroDynamics PD&I\n`;
+  }
+  return `Olá, ${primeiroNome(e.para_nome)}.\n\n${aaccAbertura(d)}\n`
+    + (d.motivo ? `\nMotivo: ${d.motivo}\n` : "")
+    + (d.acao === "concluido" ? `\nNota ${String(d.nota ?? "").replace(".", ",")} de 100. Folha de aprovação ${d.codigo || ""}. `
+      + `Baixe no portal o PDF final e entregue ao Colegiado do seu curso.\n` : "")
+    + `\nNo portal: ${d.url || linkDe(d.href || null)}\n\nNeuroDynamics PD&I\n`;
+}
+
+/* ============================================================
    A AGENDA (SOMA 28.0)
    Convite, alteração, cancelamento e lembrete de um evento — um
    e-mail por pessoa e por evento, qualquer que seja a preferência do
@@ -580,7 +719,8 @@ async function enviarAgenda(): Promise<Record<string, unknown>> {
   return { agenda: enviados.length, agenda_falhas: falhas.length, ...(erro ? { agenda_detalhe: erro } : {}) };
 }
 
-/** Manda as declarações da fila e dá baixa. Sem a 25.0, diz isso e segue. */
+/** Manda as declarações da fila (e os e-mails do aproveitamento, da
+    2.20.0, que usam a mesma fila) e dá baixa. Sem a 25.0, diz isso e segue. */
 async function enviarDocumentos(): Promise<Record<string, unknown>> {
   let lote: EnvioDocumento[];
   try {
@@ -594,7 +734,10 @@ async function enviarDocumentos(): Promise<Record<string, unknown>> {
   let erro = "";
   for (const e of lote) {
     try {
-      const m = await enviarUm(e.para_email, e.para_nome, e.assunto, declaracaoHTML(e), declaracaoTexto(e));
+      const aacc = e.tipo === "aacc_membro" || e.tipo === "aacc_professor";
+      const m = await enviarUm(e.para_email, e.para_nome, e.assunto,
+        aacc ? aaccHTML(e as unknown as EnvioAacc) : declaracaoHTML(e),
+        aacc ? aaccTexto(e as unknown as EnvioAacc) : declaracaoTexto(e));
       if (m) { falhas.push(e.id); erro = m; } else { enviados.push(e.id); }
     } catch (x) { falhas.push(e.id); erro = String(x); }
   }
