@@ -10,7 +10,8 @@
    Rotas:
      #/projetos                    todos os projetos
      #/projetos/novo               idem, com o formulário de projeto novo aberto
-     #/projetos/<CÓDIGO>           o projeto: equipe, supervisor, resumo do rol
+     #/projetos/<CÓDIGO>           o projeto: equipe, supervisor, resumo do rol e a
+                                   página dele no site (mod-site.js)
      #/projetos/<CÓDIGO>/arquivos  o rol de arquivos do projeto
 
    Precisa da migração db/v20_projetos_arquivos.sql. O rol é desenhado
@@ -187,7 +188,10 @@ async function pjPagina(p, aba){
         <div><b>${pr.rascunho}</b><span>rascunho</span></div><div><b>${Math.max(0, pr.total - pr.ativos - pr.revisao - pr.rascunho)}</b><span>a criar</span></div></div>
       <a class="btn ghost mini" style="margin-top:14px" href="#/projetos/${esc(p.codigo)}/arquivos">Abrir o rol ${ic('chevron')}</a>
       <p class="small muted" style="margin-top:14px;line-height:1.6">Criado em ${fmtD(p.criado_em)}.</p>
-    </div></div>`;
+    </div></div>
+    <div id="pj-site"></div>`;
+  /* a página do projeto em neurodynamics.dev (2.21.0): números e produção */
+  carregarModulo('site').then(() => { if ($('#pj-site')) siteNoProjeto($('#pj-site'), p); }).catch(() => {});
 }
 
 /* ---------------- novo projeto ---------------- */

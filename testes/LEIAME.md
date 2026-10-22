@@ -66,6 +66,12 @@ devolve o PDF de `window.__aaccPdf` no download) e à `doc_validar` da folha
 de aprovação. O teste monta os PDFs e o ZIP do template com o pdf-lib e o
 jszip, e confere o PDF final com o `pdftotext`.
 
+As tabelas do site institucional (2.21.0: `site_projetos`,
+`site_projeto_numeros` e `site_projeto_saidas`) o stub grava de verdade, para a
+lista voltar com o resultado, e com a guarda do banco: quem não é da gestão do
+site grava só rascunho, e o que está no ar volta com o erro `no_ar`. O Nebula
+do site está ligado ao projeto `pj1`; o Órtese, fora do ar, não.
+
 As da 32.0 (`notificacoes_limpar`, `fila_empurrar`, `fila_situacao`,
 `push_inscrever`, `push_cancelar`, `push_meus`, `push_teste`) apagam, inscrevem
 e cancelam no stub como o banco; `push_chave_publica` devolve uma chave P-256 de
@@ -135,6 +141,7 @@ e rode daqui.
 | `versoes-fotos-e-cartoes.mjs` | a 2.17.0: a versão no rodapé (a que está no ar, lida da casca) e nenhum aviso de versão nova aberto sozinho (2.17.1); as notas (a versão no ar, o número antigo ao lado, a versão em foco pelo endereço, as antigas recolhidas, a busca); os bugs e sugestões (em aberto por votos, filtros, votar, o relato em Markdown, comentar, o andamento pela administração, relatar com a tela de onde se veio e os parecidos, quem não é admin); a foto (o aviso do início, enquadrar e enviar, o arquivo no bucket, a ficha, a câmera no organograma e na ficha só para quem pode); os OKRs (o título inteiro, a mesma altura na linha, a roda que dá zoom e o Shift que move, o fio do pé do pai); os cartões (etiquetas, pessoas e a checklist no quadro, o filtro por etiqueta, a descrição em Markdown com a barra e o Ver, a checklist, pessoas e etiquetas pelo seletor, o @ que marca, o comentário corrigido, a menção antiga, espelhar em outro quadro, tirar o espelho e mover (2.18.0), os arquivados, a atividade nova com pessoas e etiquetas, quem só lê); e o celular — com asserções |
 | `papeis-por-grupo.mjs` | os papéis por grupo (2.18.0): a liderança (Administração só com a lista de escrita, o quadro de pessoal, a Seleção, a ficha sem ocorrências e sem editar), a conta bloqueada ("Acesso encerrado." e o portal fechado), o banco sem a 2.18.0 (vale o papel da conta), o papel do grupo em Administração › Grupos (só admin muda) e o papel efetivo com a origem em Contas — com asserções |
 | `ps-entrevistas.mjs` | as entrevistas online do PS (v31), em Seleção › Agenda: o link da chamada no lugar do local, com "Criar no Meet"; sem link ou sem https:// não cria; quem abre fica responsável; a dinâmica continua com local; o chip online com o nome; o horário antigo tracejado; o horário com o link, quem abriu e o último e-mail; reagendar o candidato com motivo; mudar hora e link avisando; assumir o horário antigo; excluir avisando; a ficha com a chamada; o celular; e a entrevista reservada na agenda de quem conduz (2.17.1): a camada Entrevistas do PS, só o horário com candidato, a janela com a chamada e a ficha, desligar a camada, o mês, a semana do início e quem não é do comitê sem a camada — com asserções |
+| `site-projetos.mjs` | o site institucional (2.21.0), em Administração › Site institucional: as três abas e seus endereços, a página do projeto (família, animação, o projeto do SOMA, os textos por idioma, o que se recusa ao salvar), o projeto novo fora do ar, os números (a prévia como o site escreve, faixa, decimal com vírgula, a fonte da literatura obrigatória e com https, sem fonte para dado do projeto), a produção (a parceria pede a logo e não o veículo; logo só https ou de assets/), publicar e tirar do ar; o cartão No site na página do projeto: o supervisor acrescenta rascunho e não mexe no que está no ar, o membro só lê; o celular — com asserções |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install
@@ -162,6 +169,7 @@ node tour.mjs
 node aproveitamento.mjs                 # precisa do pdftotext (poppler-utils)
 node versoes-fotos-e-cartoes.mjs
 node papeis-por-grupo.mjs
+node site-projetos.mjs
 ```
 
 Os testes que baixam PDF lançam o Chromium com `LANG=C.UTF-8`: o nome dos
