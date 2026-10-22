@@ -3,7 +3,7 @@
    Os painéis que antes eram páginas soltas, agora dentro do mesmo
    site, em abas: quadro de avisos, biblioteca de documentos,
    triagem de solicitações, ouvidoria, estado das agendas, o site
-   institucional e a trilha de auditoria.
+   institucional (mod-site.js) e a trilha de auditoria.
 
    Rotas: #/admin[/<aba>]. Só para admin e pessoal — a barreira é a
    RLS do banco; a rota apenas não oferece porta fechada.
@@ -23,8 +23,7 @@ const adminP = {
   pronto:false, aba:'avisos',
   avisos:[], sel:null,
   sols:[], filtro:'pendentes', solAbertas:new Set(),
-  ouvidoria:[], agendas:[], links:[],
-  projetos:[], projSel:null, projIdioma:'en'
+  ouvidoria:[], agendas:[], links:[]
 };
 
 
@@ -68,7 +67,7 @@ async function pageAdmin(sub, sub2){
     ${PAINEIS.filter(painelPermitido).map(([x]) => `<section id="sec-${x}" ${x===k?'':'hidden'}>${
       x===k ? '<div class="carregando"><span class="spin"></span> Carregando…</div>' : ''}</section>`).join('')}`;
 
-  if (k === 'site')       return admCarregarProjetos();
+  if (k === 'site')       return comModulo('site', () => siteAdmin($('#sec-site'), sub2));
   if (k === 'relatorios') return comModulo('relatorios', () => pageRelatorios());
   if (k === 'emails')     return comModulo('mailer', () => pageMailer(sub2));
   if (k === 'auditoria')  return comModulo('gestao', async () => {
@@ -1106,164 +1105,10 @@ A conta começa com acesso de consulta; papéis adicionais são atribuídos pelo
 
 /* ============================================================
    ABA · SITE INSTITUCIONAL
-   Veio do admin.html do repositório website. Os projetos que
-   aparecem em neurodynamics.dev, em três idiomas.
+   Mora em mod-site.js desde a 2.21.0: o mesmo editor serve a página
+   do projeto no portal, onde o supervisor acrescenta números e
+   produção.
    ============================================================ */
-const IDIOMAS = [ { k:'en', lb:'EN', sf:'' }, { k:'pt', lb:'PT', sf:'_pt' }, { k:'fr', lb:'FR', sf:'_fr' } ];
-
-async function admCarregarProjetos(){
-  $('#sec-site').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando os projetos…</div>`;
-  const { data, error } = await sb.from('site_projetos').select('*')
-    .order('ordem', { ascending:true }).order('nome', { ascending:true });
-  if (error){
-    $('#sec-site').innerHTML = `<div class="aviso-box err">Erro ao carregar os projetos: ${esc(error.message)}.
-      As migrações <b>soma_v09_site.sql</b> e <b>soma_v13_site_idiomas.sql</b> foram aplicadas?</div>`;
-    return;
-  }
-  adminP.projetos = data || [];
-  if (!adminP.projSel || !adminP.projetos.find(p => p.id === adminP.projSel))
-    adminP.projSel = adminP.projetos[0]?.id || null;
-  admDesenhaSite();
-}
-
-function admDesenhaSite(){
-  $('#sec-site').innerHTML = `
-    <p class="small muted" style="margin-bottom:12px">Vídeos e matérias da seção Quem somos: ${podeStudio()
-      ? `<a href="#/studio/config/imprensa" style="text-decoration:underline">Studio › Configurações › Imprensa</a>.`
-      : 'Studio, pela gestão do Studio.'}</p>
-    <div class="adm-grade">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px">
-          <div><h3>Projetos</h3><p class="sub">no ar em neurodynamics.dev</p></div>
-          <button class="btn ghost" style="height:34px;padding:0 13px;font-size:12.5px"
-            onclick="admNovoProjeto()">Novo</button>
-        </div>
-        <div id="site-lista"></div>
-      </div>
-      <div class="card"><div id="site-form"></div></div>
-    </div>`;
-  $('#site-lista').innerHTML = adminP.projetos.length ? adminP.projetos.map(p => `
-    <button class="adm-item ${p.id===adminP.projSel?'on':''}" onclick="admSelProjeto('${p.id}')">
-      <span class="ordem">${esc(p.ordem)}</span>
-      <span class="tx"><span class="nm">${esc(p.nome)}</span>
-      <span class="sl">/${esc(p.slug)}</span></span>
-      ${p.publicado ? '' : '<span class="off">oculto</span>'}</button>`).join('')
-    : '<div class="kb-vazio" style="text-align:left">Nenhum projeto.</div>';
-  admDesenhaFormProjeto();
-}
-function admSelProjeto(id){ adminP.projSel = id; admDesenhaSite(); }
-
-function admDesenhaFormProjeto(){
-  const p = adminP.projetos.find(x => x.id === adminP.projSel);
-  const el = $('#site-form');
-  if (!p){ el.innerHTML = '<div class="kb-vazio" style="text-align:left">Selecione ou crie um projeto.</div>'; return; }
-  el.innerHTML = `
-    <h3>${esc(p.nome)}</h3>
-    <p class="sub" style="margin-bottom:16px">id ${esc(String(p.id).slice(0,8))},
-      atualizado ${p.atualizado_em ? fmtD(p.atualizado_em) : '—'}</p>
-    <div class="form-grid">
-      <div class="fld"><label>Nome</label><input id="sp-nome" value="${esc(p.nome)}"></div>
-      <div class="fld"><label>Slug (url)</label><input id="sp-slug" value="${esc(p.slug)}">
-        <p class="mini">minúsculas, sem espaço ou acento</p></div>
-      <div class="fld full">
-        <div class="seg" role="group" aria-label="Idioma" style="margin-bottom:14px">${IDIOMAS.map(l =>
-          `<button class="${l.k===adminP.projIdioma?'on':''}" aria-pressed="${l.k===adminP.projIdioma}"
-            onclick="admTrocaIdioma('${l.k}')">${l.lb}</button>`).join('')}</div>
-        <p class="mini" style="margin:-8px 0 12px">O que ficar vazio em PT ou FR cai no texto em inglês.</p>
-        ${IDIOMAS.map(l => `<div data-idioma="${l.k}" ${l.k===adminP.projIdioma?'':'hidden'}>
-          <div class="fld"><label>Tagline (${l.lb})</label>
-            <input id="sp-tagline${l.sf}" value="${esc(p['tagline'+l.sf]||'')}"></div>
-          <div class="fld"><label>Resumo (${l.lb}), cartão do início</label>
-            <textarea id="sp-resumo${l.sf}" rows="2">${esc(p['resumo'+l.sf]||'')}</textarea></div>
-          <div class="fld"><label>Descrição (${l.lb})</label>
-            <textarea id="sp-descricao${l.sf}" rows="5">${esc(p['descricao'+l.sf]||'')}</textarea></div>
-        </div>`).join('')}
-      </div>
-      <div class="fld"><label>Status</label><input id="sp-status" list="sp-status-sug" value="${esc(p.status||'')}">
-        <datalist id="sp-status-sug"><option value="Applied research"><option value="Prototype">
-        <option value="In development"><option value="Field pilot"></datalist></div>
-      <div class="fld"><label>Ordem de exibição</label>
-        <input id="sp-ordem" type="number" value="${esc(p.ordem)}"></div>
-      <div class="fld full"><label>Tags (separadas por vírgula)</label>
-        <input id="sp-tags" value="${esc((p.tags||[]).join(', '))}"></div>
-      <div class="fld full"><label>URL da imagem (em branco = placeholder)</label>
-        <input id="sp-imagem" value="${esc(p.imagem_url||'')}" placeholder="https://…"></div>
-      <div class="fld full"><label class="check"><input id="sp-pub" type="checkbox" ${p.publicado?'checked':''}>
-        Publicado no site</label></div>
-    </div>
-    <div class="acts">
-      <button class="btn solid" id="sp-salvar" onclick="admSalvarProjeto('${p.id}')">Salvar alterações</button>
-      <button class="btn perigo" onclick="admExcluirProjeto('${p.id}')">Excluir</button>
-      <a class="btn ghost" href="https://neurodynamics.dev/#/projects" target="_blank" rel="noopener">ver o site ↗</a>
-    </div>`;
-}
-function admTrocaIdioma(k){
-  adminP.projIdioma = k;
-  document.querySelectorAll('#site-form .seg button').forEach(b => {
-    const on = b.textContent.trim() === IDIOMAS.find(l=>l.k===k).lb;
-    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-  document.querySelectorAll('[data-idioma]').forEach(d => d.hidden = (d.dataset.idioma !== k));
-}
-function admLerProjeto(){
-  const v = {
-    nome: $('#sp-nome').value.trim(),
-    slug: $('#sp-slug').value.trim().toLowerCase(),
-    status: $('#sp-status').value.trim() || 'In development',
-    ordem: parseInt($('#sp-ordem').value, 10) || 100,
-    tags: $('#sp-tags').value.split(',').map(s => s.trim()).filter(Boolean),
-    imagem_url: $('#sp-imagem').value.trim() || null,
-    publicado: $('#sp-pub').checked
-  };
-  IDIOMAS.forEach(l => ['tagline','resumo','descricao'].forEach(c => {
-    v[c + l.sf] = $('#sp-' + c + l.sf).value.trim() || null;
-  }));
-  return v;
-}
-async function admSalvarProjeto(id){
-  const v = admLerProjeto();
-  if (!v.nome || !v.slug){ toast('Nome e slug são obrigatórios.', true); return; }
-  $('#sp-salvar').disabled = true;
-  try{
-    const { error } = await sb.from('site_projetos').update(v).eq('id', id);
-    if (error){ toast('Erro ao salvar: ' + error.message, true); return; }
-    toast('Projeto salvo e publicado.');
-    await admCarregarProjetos();
-  }catch(e){
-    falha(e, 'Não foi possível salvar');
-  }finally{
-    const b = $('#sp-salvar'); if (b) b.disabled = false;
-  }
-}
-async function admNovoProjeto(){
-  const nome = prompt('Nome do novo projeto:');
-  if (!nome) return;
-  const slug = nome.normalize('NFD').replace(/[̀-ͯ]/g,'')
-    .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-  const { data, error } = await sb.from('site_projetos')
-    .insert({ nome, slug, publicado:false, ordem: 100 + adminP.projetos.length * 10 })
-    .select().single();
-  if (error){ toast('Erro ao criar: ' + error.message, true); return; }
-  toast('Projeto criado como oculto.');
-  adminP.projSel = data.id;
-  await admCarregarProjetos();
-}
-async function admExcluirProjeto(id){
-  const p = adminP.projetos.find(x => x.id === id);
-  abreModal(`<h3>Excluir projeto</h3>
-    <p style="color:var(--muted);font-size:13.5px">Excluir <b>${esc(p?.nome||'')}</b> não tem volta.
-      Se for temporário, prefira desmarcar "Publicado".</p>
-    <div class="acts" style="justify-content:flex-end">
-      <button class="btn ghost" onclick="fechaModal()">Cancelar</button>
-      <button class="btn perigo" onclick="admConfirmaExcluirProjeto('${id}')">Excluir</button></div>`);
-}
-async function admConfirmaExcluirProjeto(id){
-  fechaModal();
-  const { error } = await sb.from('site_projetos').delete().eq('id', id);
-  if (error){ toast('Erro ao excluir: ' + error.message, true); return; }
-  toast('Projeto excluído.');
-  adminP.projSel = null;
-  await admCarregarProjetos();
-}
 
 /* ============================================================
    O QUE ESTE MÓDULO SABE ACHAR
@@ -1273,8 +1118,7 @@ registrarBusca({
   buscar: (t) => {
     if (!can()) return [];
     const itens = [
-      ...adminP.avisos.map(a => ({ titulo:a.titulo, sub:'Aviso', href:'#/admin/avisos' })),
-      ...adminP.projetos.map(p => ({ titulo:p.nome, sub:'Projeto do site', href:'#/admin/site' }))
+      ...adminP.avisos.map(a => ({ titulo:a.titulo, sub:'Aviso', href:'#/admin/avisos' }))
     ];
     return filtrarSimples(itens, t, 6);
   }

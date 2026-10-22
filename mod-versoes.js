@@ -33,6 +33,13 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.21.0', data:'2026-10-22', titulo:'Os projetos no site', itens:[
+    ['novo', '**Site institucional**, em Administração, passa a ter três abas: **Páginas**, **Números** e **Produção**. Cada projeto do site vira uma página com animação, os números de impacto e o que o projeto produziu.'],
+    ['novo', '**Números de impacto**: valor ou faixa, unidade e rótulo em português, inglês e francês. Número da literatura só entra com a fonte e o link; o do projeto é marcado como dado nosso. A prévia mostra como o site escreve.'],
+    ['novo', '**Produção**: artigos, apresentações, estudos, parcerias, prêmios, patentes e software, com situação e data. As parcerias formam a linha de parceiros da página.'],
+    ['novo', 'Cada projeto do site escolhe a **família** de cor, a **animação** e o projeto do SOMA a que corresponde.'],
+    ['novo', 'Na página do projeto, o cartão **No site**: o supervisor acrescenta números e produção como rascunho, e a gestão do site publica.']
+  ]},
   { v:'2.20.0', data:'2026-10-21', titulo:'Aproveitamento de AACC', itens:[
     ['novo', '**Aproveitamento de AACC**, em Serviços: membros e egressos pedem ao Colegiado do curso o aproveitamento da participação na equipe como atividade complementar, pela Resolução nº 02/2019 da Congregação da Escola de Engenharia ou, para outros cursos, pela norma do próprio Colegiado. A página confere a ficha (com os pronomes e o curso de uma lista), mostra os semestres que contam e o que cada enquadramento rende, e gera o template LaTeX com os dados da pessoa.'],
     ['novo', 'O relatório passa por uma pessoa do **PMO**, do **Departamento de Pessoal** e da **Diretoria**, e a Diretoria indica o **professor orientador**, que avalia pelo barema num link pessoal, sem conta no SOMA.'],

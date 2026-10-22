@@ -456,6 +456,28 @@ arquivos**:
   ainda não existe;
 - criar projeto é do PMO (e de `admin`); quem está na equipe quando o
   projeto nasce é avisado.
+- quando o projeto tem página no site institucional (vínculo feito em
+  **Administração › Site institucional**), a página do projeto no portal mostra
+  o cartão **No site**: os números de impacto e a produção (artigos,
+  apresentações, estudos, parcerias…) que estão no ar e os rascunhos. O
+  supervisor acrescenta números e produção como rascunho; a gestão do site
+  revisa e publica. Ver [O site institucional](#o-site-institucional).
+
+### O site institucional
+
+Em **Administração › Site institucional** (`#/admin/site`, `mod-site.js`),
+para `admin` e `pessoal`, em três abas:
+
+| Aba | Endereço | O que se edita |
+|---|---|---|
+| **Páginas** | `#/admin/site` | cada projeto do site: nome, slug, fase, ordem, a **família** de cor (as secundárias da marca, uma por projeto), a **animação** da página, o projeto do SOMA vinculado, os textos em PT, EN e FR (frase, resumo e "por que existe"), áreas, imagem e publicação |
+| **Números** | `#/admin/site/numeros` | os números de impacto: valor ou faixa, unidade, prefixo, rótulo nos três idiomas e a origem. Da **literatura**, fonte e link são obrigatórios; do **projeto**, é dado nosso. A prévia mostra como o site escreve |
+| **Produção** | `#/admin/site/producao` | artigos, apresentações, estudos, parcerias, prêmios, patentes e software, com situação, data, link e, nas parcerias, a logo |
+
+Número sem fonte verificável não entra. O site mostra pouco texto de
+propósito: a animação, os números e a produção. Como cada parte aparece na
+página está no README do repositório `website` ("Páginas de projeto").
+Migração: `db/2.21.0_site_projetos.sql`.
 
 ## Arquivos
 

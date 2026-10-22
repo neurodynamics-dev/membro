@@ -169,9 +169,27 @@
         corpo:'Novo comentário.', href:'#/atividades/card/ORT-1', lida:true,
         criado_em:'2026-09-15T14:00:00Z' }
     ],
+    /* o site (2.21.0): a Nebula ligada ao projeto NEBULA do SOMA, com um
+       número no ar e uma apresentação em rascunho do Bruno, supervisor */
     site_projetos: [
-      { id:'p1', nome:'Órtese ativa', slug:'ortese-ativa', status:'Prototype', ordem:10,
-        tags:['FES'], publicado:true, tagline:'Walk again', resumo:'…', descricao:'…' }
+      { id:'p1', nome:'Nebula', slug:'nebula', status:'In progress', ordem:10, tags:['EEG'], publicado:true,
+        familia:'dendrito', animacao:'nebula', projeto_id:'pj1', imagem_url:null,
+        tagline:'Think of the movement, and the muscle answers.', tagline_pt:'Pensar no movimento, e o músculo responde.',
+        resumo:'A brain-computer interface.', resumo_pt:'Uma interface cérebro-máquina.', descricao:'…', descricao_pt:'…',
+        atualizado_em:'2026-10-01T12:00:00Z' },
+      { id:'p2', nome:'Órtese ativa', slug:'ortese-ativa', status:'Prototype', ordem:20,
+        tags:['FES'], publicado:false, tagline:'Walk again', resumo:'…', descricao:'…' }
+    ],
+    site_projeto_numeros: [
+      { id:'n1', site_projeto_id:'p1', valor:15, valor_ate:null, casas:0, prefixo:'mais_de', unidade:'milhoes', origem:'literatura',
+        rotulo:'people live with a spinal cord injury worldwide', rotulo_pt:'de pessoas vivem com lesão medular no mundo',
+        fonte:'World Health Organization, Spinal cord injury fact sheet', fonte_url:'https://www.who.int/news-room/fact-sheets/detail/spinal-cord-injury',
+        ordem:10, publicado:true, criado_em:'2026-10-01T12:00:00Z' }
+    ],
+    site_projeto_saidas: [
+      { id:'s1', site_projeto_id:'p1', tipo:'apresentacao', titulo:'BCI-FES Integration for Motor Rehabilitation', veiculo:'CBEB 2026',
+        situacao:'apresentado', data:null, url:null, imagem_url:null, nota_pt:'Revisão de escopo apresentada no CBEB.',
+        ordem:10, publicado:false, criado_por:11, criado_em:'2026-10-02T12:00:00Z' }
     ],
     eventos: [{ id:'e1', numero:12, titulo:'Reunião geral', tipo:'Reunião geral',
       data:'2026-10-05', hora:'14:00 às 15:30', hora_inicio:'14:00:00', hora_fim:'15:30:00',
@@ -782,6 +800,11 @@
   DADOS.doc_arquivos = DADOS.doc_rol.map(r => ({ id:r.id, projeto_id:r.projeto_id || null, serie_id:r.serie_id,
     status:r.status, rev_pendente:r.rev_pendente }));
 
+  /* as tabelas do site (2.21.0) gravam de verdade, com a guarda do banco:
+     quem não é gestão grava rascunho e não mexe no que está no ar */
+  const PERSISTE = ['site_projetos','site_projeto_numeros','site_projeto_saidas'];
+  let seqStub = 0;
+  const gestaoStub = () => ['admin','pessoal','lideranca'].includes(DADOS.perfis[0].papel);
   function builder(tabela){
     let linhas = (DADOS[tabela] || []).map(r => ({ ...r }));
     const filtros = [];
@@ -795,17 +818,30 @@
       or(){ return b; }, not(){ return b; }, is(){ return b; }, ilike(){ return b; },
       order(){ return b; }, limit(){ return b; },
       /* as escritas ficam em window.__escritas, para o teste conferir */
-      insert(d){ (window.__escritas ||= []).push({ tabela, op:'insert', dados:d }); return b; },
+      insert(d){ (window.__escritas ||= []).push({ tabela, op:'insert', dados:d }); if (PERSISTE.includes(tabela)) b._ins = d; return b; },
       update(d){ (window.__escritas ||= []).push({ tabela, op:'update', dados:d });
         if (tabela === 'treinamento_config') Object.assign(DADOS.treinamento_config[0], d, d.readme !== undefined ? { readme_atualizado_em:new Date().toISOString(), readme_atualizado_por:'Ana Figueiredo' } : {});
         /* as pílulas (v30) mudam de verdade: a tela volta com o resultado */
-        if (tabela === 'email_roteiros') b._muda = d;
+        if (tabela === 'email_roteiros' || PERSISTE.includes(tabela)) b._muda = d;
         return b; },
       upsert(d){ (window.__escritas ||= []).push({ tabela, op:'upsert', dados:d }); return b; },
-      delete(){ (window.__escritas ||= []).push({ tabela, op:'delete' }); return b; },
+      delete(){ (window.__escritas ||= []).push({ tabela, op:'delete' }); if (PERSISTE.includes(tabela)) b._apaga = true; return b; },
       maybeSingle(){ b._um = true; return b; },
       single(){ b._um = true; return b; },
       then(ok){
+        const item = tabela !== 'site_projetos' && PERSISTE.includes(tabela);
+        if (item && !gestaoStub() && (b._muda || b._apaga)
+            && DADOS[tabela].some(r => filtros.every(f => f(r)) && r.publicado))
+          return Promise.resolve(ok({ data:null, error:{ message:'no_ar', code:'42501' } }));
+        if (b._ins){
+          const novos = [].concat(b._ins).map(x => ({ id: tabela + '-' + (++seqStub), criado_em: new Date().toISOString(), publicado:false, ...x,
+            ...(item ? { criado_por: DADOS.perfis[0].registro } : {}), ...(item && !gestaoStub() ? { publicado:false } : {}) }));
+          (DADOS[tabela] ||= []).push(...novos); b._ins = null;
+          return Promise.resolve(ok({ data: b._um ? { ...novos[0] } : novos.map(r => ({ ...r })), error:null }));
+        }
+        if (b._apaga){ DADOS[tabela] = DADOS[tabela].filter(r => !filtros.every(f => f(r))); b._apaga = false;
+          return Promise.resolve(ok({ data:null, error:null })); }
+        if (b._muda && item && !gestaoStub()) b._muda = { ...b._muda, publicado:false };
         if (b._muda){ DADOS[tabela].filter(r => filtros.every(f => f(r))).forEach(r => Object.assign(r, b._muda)); b._muda = null;
           linhas = DADOS[tabela].map(r => ({ ...r })); }
         let res = linhas.filter(r => filtros.every(f => f(r)));
