@@ -1120,7 +1120,17 @@
           /* ---- 2.18.0: os papéis por grupo ---- */
           const papeisStub = () => { const pf = DADOS.perfis[0];
             return pf.papeis || ['admin','pessoal','lideranca','selecao','leitura'].filter(k => k === (pf.papel || 'leitura') || k === 'leitura'); };
-          if (nome === 'conta_ativa') return { data: !(window.__teste || {}).bloqueada, error:null };
+          if (nome === 'conta_ativa') return { data: !((window.__teste || {}).bloqueada || (window.__teste || {}).restrita), error:null };
+          /* ---- 2.22.0: o modo restrito. window.__teste.restrita = { status:'Egresso'|'Desligado' }:
+             a conta é a da Kátia (45); só a bloqueada (Sob demanda) recebe nao_restrita ---- */
+          if (nome === 'inicio_restrito'){
+            (window.__rpcs ||= []).push({ nome, p:args });
+            const R = (window.__teste || {}).restrita;
+            if (!R) return { data:{ status:'nao_restrita' }, error:null };
+            return { data:{ status:'ok', eu:{ id:'00000000-0000-0000-0000-000000000045', email:'katia@nro.dev', registro:45,
+                nome:'Kátia Dias', status:R.status || 'Egresso' },
+              avisos:(R.avisos || []), links:DADOS.portal_links.filter(l => l.ativo) }, error:null };
+          }
           /* ---- 2.19.1: gestores do LABBIO (db/2.19.1_labbio_base.sql).
              window.__teste.labbio = { conta: 'nao_gestor'|'convidado'|'ativo'|'revogado',
              principal: true|false }. Sem ele, a conta é de membro (nao_gestor).
@@ -1483,7 +1493,8 @@
             const pub = f => ({ id:f.id, tipo:f.tipo, slug:f.slug, titulo:f.titulo, subtitulo:f.subtitulo, texto:f.texto, autor:f.autor,
               publicado_em:f.publicado_em, publico:f.publico, imagens:f.imagens, reacoes:f.reacoes, minha_reacao:f.minha_reacao });
             const publicados = () => FD.itens.filter(f => f.estado === 'publicado').sort((a, b) => b.publicado_em.localeCompare(a.publicado_em));
-            if (nome === 'feed_lista') return r(publicados().filter(f => !args.p_tipo || f.tipo === args.p_tipo).map(pub));
+            if (nome === 'feed_lista') return r(publicados().filter(f => (!args.p_tipo || f.tipo === args.p_tipo)
+              && (f.publico || !(window.__teste || {}).restrita)).map(pub));
             if (nome === 'feed_editor') return r(editor);
             if (nome === 'noticias_publicas') return r(publicados().filter(f => f.publico).map(f => ({ tipo:f.tipo, slug:f.slug, titulo:f.titulo,
               resumo:f.subtitulo, texto: f.tipo === 'topico' ? f.texto : null, autor:f.autor, publicado_em:f.publicado_em,
@@ -2744,6 +2755,10 @@
               id:'au:' + a.id, origem:'ausencia', ref:a.id, tipo:a.tipo, titulo:a.tipo === 'ferias' ? 'Férias' : 'Fora do escritório', cor:'#4C6FBF',
               data_inicio:a.inicio.slice(0, 10), data_fim:agDiaAntes(a.fim.slice(0, 10)), hora_inicio:null, hora_fim:null, dia_inteiro:true,
               registro:a.registro, sou_dono:a.registro === eu, recorrencia:'Única', visibilidade:'privado' }));
+            /* o modo restrito (2.22.0): o calendário da equipe, sem ausências, sem link nem pauta */
+            if ((window.__teste || {}).restrita)
+              return { data:[...evs.filter(e => e.visibilidade === 'equipe'), ...mks.filter(m => m.registro == null)]
+                .map(i => ({ ...i, meet_url:null, pauta:null, sou_dono:false, sou_convidado:false, minha_resposta:null })), error:null };
             return { data:[...evs, ...mks, ...aus], error:null };
           }
           if (nome === 'agenda_evento'){

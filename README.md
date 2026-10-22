@@ -995,6 +995,44 @@ isso) e o relatório corrigido passa pelas aprovações outra vez.
 nome de cada uma na folha), o domínio do e-mail do professor, a validade do
 link e o endereço do template.
 
+### O modo restrito: quem saiu da equipe
+
+Desde a 2.18.0, a conta ligada a um membro Desligado, Egresso ou Sob demanda
+não lê nada do banco (`conta_ativa()` falsa, e a política restritiva
+`conta_ativa` em toda tabela). Na **2.22.0**, Desligado e Egresso voltam a
+entrar, no **modo restrito**, para pedir o aproveitamento; Sob demanda
+continua com "Acesso encerrado.".
+
+- **A entrada.** `abrirPortal()` pergunta `inicio_restrito()` quando a conta
+  não está ativa: com `status: ok`, o portal abre no modo restrito
+  (`abrirModoRestrito`, `body.modo-restrito`), com "Modo restrito" no lugar
+  do papel. Sem a migração, ou para Sob demanda, a sessão termina como antes.
+- **O que abre.** O início, `#/servicos/aproveitamento` e `#/servicos/feed`.
+  As outras rotas voltam ao início (`#/servicos` leva ao aproveitamento). O
+  menu é só Serviços, com esses dois itens. Sem busca, sino, push, rodapé
+  vivo, obrigações de entrada nem troca de foto; o rodapé esconde a Ajuda,
+  as preferências de avisos e o Google Agenda (`.so-equipe`).
+- **O início.** O quadro de avisos e os links úteis vêm de
+  `inicio_restrito()` (o link do portal que a conta não abre fica de fora);
+  o calendário da semana, de `agenda_itens()`, que para essa conta devolve
+  só os eventos abertos à equipe e os marcos da equipe, sem ausências, sem
+  link de reunião e sem pauta, e se lê sem abrir a Agenda; as últimas
+  publicações, de `feed_lista()`, só as que estão no site. O placar, as
+  tarefas e os abertos por último ficam no lugar, sob um **vidro**
+  (`cardVidro`, `.ini-vidro`): o título nítido, a forma do widget fosca e o
+  selo "Só para quem está na equipe". Embaixo do vidro não há dado nenhum:
+  o banco não manda.
+- **O aproveitamento.** As funções de quem pede reconhecem a pessoa por
+  `aacc_registro_atual()`, que aceita Desligado e Egresso; as de quem aprova
+  continuam com `portal_registro_atual()`, e `aacc_aprovador` e
+  `aacc_decide_etapa` recusam quem saiu, mesmo com os grupos de antes na
+  ficha. Sem a data de saída na ficha, "Pedir a correção" abre a
+  solicitação ao Pessoal por `aacc_pedir_correcao()` (o mesmo protocolo e o
+  mesmo card), uma de cada vez.
+
+Migração: `db/2.22.0_modo_restrito.sql` (rode de novo depois de qualquer
+nova execução da 2.20.0, que reescreve as funções do aproveitamento).
+
 ## E-mails
 
 O Full mailer e os envios programados, em `#/admin/emails` (`mod-mailer.js`).
@@ -1315,7 +1353,10 @@ remove, quando a equipe decidir.
 ## Papéis e permissões
 
 - **Qualquer conta do SOMA** entra no portal, vê avisos publicados,
-  agenda, presença, calendário e organograma.
+  agenda, presença, calendário e organograma. A de membro Desligado ou
+  Egresso entra no **modo restrito** (2.22.0; ver
+  [Aproveitamento de AACC](#o-modo-restrito-quem-saiu-da-equipe)); a de Sob
+  demanda não entra.
 - **Solicitações** exigem conta **vinculada a um registro de membro
   ativo** (vínculo feito pelo Depto. de Pessoal no SOMA · Gestão).
 - **Criar eventos** exige conta vinculada a um registro: o evento é criado em

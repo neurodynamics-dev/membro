@@ -33,6 +33,12 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.22.0', data:'2026-10-22', titulo:'O modo restrito', itens:[
+    ['novo', '**Modo restrito**: quem saiu da equipe (Desligado ou Egresso) volta a entrar no SOMA com a própria conta, para pedir o **aproveitamento de AACC** e acompanhar a equipe. Antes, a entrada terminava em "Acesso encerrado".'],
+    ['novo', 'A tela inicial do modo restrito mostra o **quadro de avisos**, o **calendário da equipe** (os eventos abertos à equipe e os marcos, só para ler), as **publicações** que estão no site e os **links úteis**. O placar, as tarefas e os abertos por último ficam atrás de um vidro, só para quem está na equipe.'],
+    ['novo', 'Sem a data de saída na ficha, quem saiu pede a correção ao Departamento de Pessoal pela própria página do aproveitamento, com protocolo.'],
+    ['melhoria', 'Quem saiu da equipe nunca aprova um pedido de aproveitamento, mesmo que a ficha ainda guarde os grupos de antes. Sob demanda continua sem acesso.']
+  ]},
   { v:'2.21.0', data:'2026-10-22', titulo:'Os projetos no site', itens:[
     ['novo', '**Site institucional**, em Administração, passa a ter três abas: **Páginas**, **Números** e **Produção**. Cada projeto do site vira uma página com animação, os números de impacto e o que o projeto produziu.'],
     ['novo', '**Números de impacto**: valor ou faixa, unidade e rótulo em português, inglês e francês. Número da literatura só entra com a fonte e o link; o do projeto é marcado como dado nosso. A prévia mostra como o site escreve.'],

@@ -25,7 +25,13 @@ e certo e confere o que volta. O progresso da pessoa logada fica em
 As da 2.18.0: `papeis_atuais` devolve o papel da conta do stub (ou
 `perfis[0].papeis`, se o teste puser a lista), `conta_ativa` responde falso com
 `window.__teste.bloqueada`, e `window.__teste.v218 = 'falta'` faz as funções
-novas não existirem, como num banco sem a migração. `grupo_papel_definir`
+novas não existirem, como num banco sem a migração. Da 2.22.0:
+`window.__teste.restrita = { status, avisos }` faz a conta ser a da Kátia (45),
+egressa no modo restrito: `conta_ativa` falso, `inicio_restrito` com os
+avisos e os links, `agenda_itens` só com o calendário da equipe e `feed_lista`
+só com o que está no site; no `stub-aacc.js`, a ficha sem a data de saída,
+sem aprovar nem gerir, e `aacc_pedir_correcao`. Sem ela, `inicio_restrito`
+responde `nao_restrita` (a conta Sob demanda). `grupo_papel_definir`
 muda `grupo_papeis` (só admin), `contas_papeis` dá o papel efetivo de cada
 conta, e `atividade_espelhar`, `atividade_espelho_remover` e `atividade_mover`
 mudam os espelhos do cartão (`espelhos`, `espelhos_ordem`) como o banco.
@@ -142,6 +148,7 @@ e rode daqui.
 | `papeis-por-grupo.mjs` | os papéis por grupo (2.18.0): a liderança (Administração só com a lista de escrita, o quadro de pessoal, a Seleção, a ficha sem ocorrências e sem editar), a conta bloqueada ("Acesso encerrado." e o portal fechado), o banco sem a 2.18.0 (vale o papel da conta), o papel do grupo em Administração › Grupos (só admin muda) e o papel efetivo com a origem em Contas — com asserções |
 | `ps-entrevistas.mjs` | as entrevistas online do PS (v31), em Seleção › Agenda: o link da chamada no lugar do local, com "Criar no Meet"; sem link ou sem https:// não cria; quem abre fica responsável; a dinâmica continua com local; o chip online com o nome; o horário antigo tracejado; o horário com o link, quem abriu e o último e-mail; reagendar o candidato com motivo; mudar hora e link avisando; assumir o horário antigo; excluir avisando; a ficha com a chamada; o celular; e a entrevista reservada na agenda de quem conduz (2.17.1): a camada Entrevistas do PS, só o horário com candidato, a janela com a chamada e a ficha, desligar a camada, o mês, a semana do início e quem não é do comitê sem a camada — com asserções |
 | `site-projetos.mjs` | o site institucional (2.21.0), em Administração › Site institucional: as três abas e seus endereços, a página do projeto (família, animação, o projeto do SOMA, os textos por idioma, o que se recusa ao salvar), o projeto novo fora do ar, os números (a prévia como o site escreve, faixa, decimal com vírgula, a fonte da literatura obrigatória e com https, sem fonte para dado do projeto), a produção (a parceria pede a logo e não o veículo; logo só https ou de assets/), publicar e tirar do ar; o cartão No site na página do projeto: o supervisor acrescenta rascunho e não mexe no que está no ar, o membro só lê; o celular — com asserções |
+| `modo-restrito.mjs` | o modo restrito (2.22.0), da conta Desligado ou Egresso: a casca com "Modo restrito", o menu só com o aproveitamento e o feed; o início com o quadro de avisos, o calendário da equipe só para ler, as publicações do site, os links úteis (sem o atalho do portal que a conta não abre) e o vidro sobre o placar, as tarefas e os abertos por último (cobre o card, fosco, sem dado embaixo); nenhuma tabela lida; sem busca, sino, foto e rodapé vivo, e o rodapé sem a Ajuda; as outras rotas voltam ao início; o aproveitamento sem "Para aprovar" e o pedido de correção da ficha pela função do modo restrito, uma vez; o feed só com o que está no site; o celular e o tema claro; a conta Sob demanda segue com "Acesso encerrado."; a ativa não vê vidro — com asserções. `CAPTURAS=pasta` grava as telas |
 
 ```bash
 node colisoes.mjs                       # não precisa de servidor nem de npm install
