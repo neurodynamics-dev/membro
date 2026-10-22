@@ -750,6 +750,34 @@ h1.evp-tit{border:0;word-break:break-word}
 .ini-duo{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:900px){.ini-duo{grid-template-columns:1fr}}
 @media (max-width:1100px) and (min-width:701px){.ini-lado{display:grid;grid-template-columns:1fr 1fr;align-items:start}}
+/* o modo restrito (2.22.0): o vidro sobre o que é de quem está na equipe. O
+   título do card fica nítido; o corpo é a forma do widget, sem dado nenhum,
+   vista através do vidro fosco, e o selo diz por quê */
+.ini-vidro{position:relative;overflow:hidden}
+.ini-vidro .head{position:relative;z-index:1}
+.vidro-forma{display:flex;flex-direction:column;gap:15px;padding-bottom:6px}
+.vidro-forma span{display:flex;align-items:center;gap:10px;min-height:26px}
+.vidro-forma i{display:block;flex:none;height:9px;border-radius:999px;background:rgba(var(--ink-rgb),.2)}
+.vidro-forma i.l{width:var(--w)}
+.vidro-forma i.d{width:var(--w);margin-bottom:14px;position:relative}
+.vidro-forma i.d::after{content:"";position:absolute;left:0;top:15px;width:60%;height:7px;border-radius:999px;background:rgba(var(--ink-rgb),.1)}
+.vidro-forma i.a{width:var(--w);height:6px;margin-left:auto;background:rgba(var(--syn-rgb),.5)}
+.vidro-forma i.n{width:20px;margin-left:auto}
+.vidro-forma i.a+i.n{margin-left:0}
+.vidro-forma i.c{width:26px;height:26px;background:rgba(var(--ink-rgb),.16)}
+.vidro-forma i.q{width:28px;height:28px;border-radius:9px;background:rgba(var(--ink-rgb),.12)}
+.vidro-forma i.p1,.vidro-forma i.p2{width:8px;height:8px;background:var(--warn)}
+.vidro-forma i.p2{background:var(--info)}
+.vidro-forma i.caixa{flex:1;height:54px;border-radius:12px;background:none;border:1px solid var(--line2)}
+.ini-vidro .vidro{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:58px 18px 18px;
+  background:linear-gradient(135deg,rgba(var(--ink-rgb),.05),transparent 55%),rgba(var(--fundo-rgb),.3);
+  backdrop-filter:blur(5px) saturate(1.2);-webkit-backdrop-filter:blur(5px) saturate(1.2)}
+.ini-vidro .selo{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line2);border-radius:999px;
+  background:var(--glass);backdrop-filter:var(--blur-glass);-webkit-backdrop-filter:var(--blur-glass);
+  font-family:var(--fd);font-weight:600;font-size:12.5px;color:var(--ink);text-align:center}
+.ini-vidro .selo .ic{width:16px;height:16px;color:var(--dim);flex:none}
+.modo-restrito .so-equipe{display:none}
+.modo-restrito #busca-abre,.modo-restrito #busca-abre-m{display:none}
 .ini-grp{display:flex;align-items:center;gap:6px;font-family:var(--fd);font-weight:600;font-size:9.5px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--dim);margin:14px 0 6px}
 .ini-grp:first-child{margin-top:0}
@@ -769,7 +797,7 @@ h1.evp-tit{border:0;word-break:break-word}
 .ini-dh{display:flex;align-items:baseline;gap:6px;padding:0 4px}
 .ini-dh .dw{font-family:var(--fd);font-weight:600;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .ini-dh .dn{font-family:var(--fd);font-weight:700;font-size:18px;line-height:1}
-.ini-dia.hoje .dn,.ini-dh:hover .dn{color:var(--syn-tx)}
+.ini-dia.hoje .dn,a.ini-dh:hover .dn{color:var(--syn-tx)}
 .ini-carga{display:block;height:4px;margin:0 4px;border-radius:3px;background:rgba(var(--tom),.07);overflow:hidden}
 .ini-carga i{display:block;height:100%;border-radius:3px;background:var(--syn)}
 .ini-evs{display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -782,7 +810,7 @@ a.ini-ev:hover{background:rgba(var(--tom),.09)}
 .ini-ev.pend{border:1px dashed var(--cc);border-left-width:3px;border-left-style:solid;background:transparent}
 .ini-ev.nao .t{text-decoration:line-through;opacity:.6}
 .ini-mais{font-size:11px;font-weight:600;color:var(--muted);padding:1px 6px}
-.ini-mais:hover{color:var(--ink)}
+a.ini-mais:hover{color:var(--ink)}
 @media (max-width:700px){
   .ini-semana{grid-template-columns:1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .ini-dia{display:grid;grid-template-columns:54px minmax(0,1fr);grid-template-rows:auto auto;column-gap:10px;row-gap:4px;

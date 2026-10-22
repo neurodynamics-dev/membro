@@ -21,13 +21,13 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- design system (cópia gerada pelo brand: scripts/distribuir.mjs) e o CSS próprio do SOMA -->
-<link rel="stylesheet" href="ds/tokens.css?v=9073b8ea9f">
-<link rel="stylesheet" href="ds/neuro.css?v=9073b8ea9f">
-<link rel="stylesheet" href="ds/casca.css?v=9073b8ea9f">
-<link rel="stylesheet" href="ds/select.css?v=9073b8ea9f">
-<link rel="stylesheet" href="soma.css?v=9073b8ea9f">
-<script defer src="ds/select.js?v=9073b8ea9f"></script>
-<script src="ds/casca.js?v=9073b8ea9f"></script>
+<link rel="stylesheet" href="ds/tokens.css?v=993985676e">
+<link rel="stylesheet" href="ds/neuro.css?v=993985676e">
+<link rel="stylesheet" href="ds/casca.css?v=993985676e">
+<link rel="stylesheet" href="ds/select.css?v=993985676e">
+<link rel="stylesheet" href="soma.css?v=993985676e">
+<script defer src="ds/select.js?v=993985676e"></script>
+<script src="ds/casca.js?v=993985676e"></script>
 </head>
 <body>
 
@@ -163,7 +163,7 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
       stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
   <a class="tm-marca" href="#/" aria-label="Início do SOMA">
     <img class="lt-imagotipo" src="https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png" alt="NeuroDynamics"></a>
-  <button class="tm-bt" onclick="abrirPaleta()" aria-label="Buscar">
+  <button class="tm-bt" id="busca-abre-m" onclick="abrirPaleta()" aria-label="Buscar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
       stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg></button>
   <button class="tm-bt sino-bt" id="sino-m" onclick="abrirSino(event)" aria-label="Notificações" hidden>
@@ -212,7 +212,7 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
         <p>O sistema da equipe: agenda, trabalho, arquivos e pessoas.</p>
         <a class="nd-versao" id="ft-ver" href="#/versoes" title="Notas de versão"></a>
       </div>
-      <nav class="nd-rod-col" aria-label="Ajuda">
+      <nav class="nd-rod-col so-equipe" aria-label="Ajuda">
         <h2 class="nd-rod-rot">Ajuda</h2>
         <ul>
           <li><a href="tour">Tour do SOMA</a></li>
@@ -228,8 +228,8 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
         <h2 class="nd-rod-rot">Sua conta</h2>
         <ul>
           <li id="ft-foto" hidden><button type="button" onclick="modalFoto(state.perfil?.registro)">Foto de perfil</button></li>
-          <li><button type="button" onclick="modalPreferenciaNotif()">Preferências de avisos</button></li>
-          <li><a href="#/agenda/config/google">Google Agenda</a></li>
+          <li class="so-equipe"><button type="button" onclick="modalPreferenciaNotif()">Preferências de avisos</button></li>
+          <li class="so-equipe"><a href="#/agenda/config/google">Google Agenda</a></li>
           <li><button type="button" id="ft-tema" onclick="alternarTema()">Tema claro</button></li>
           <li><button type="button" onclick="sair()">Sair da conta</button></li>
         </ul>
@@ -266,11 +266,11 @@ const CONFIG = {
    é a 2.16.0. Acompanha a query dos módulos carregados sob demanda, para
    um deploy não deixar módulo velho em cache, e as notas de cada versão
    moram em mod-versoes.js (#/versoes). */
-const VERSAO = '2.21.0';
+const VERSAO = '2.22.0';
 /* O carimbo dos arquivos (scripts/carimbar.mjs): um hash do conteúdo de todo
    CSS e JS. Vai na query de tudo que o portal carrega, para um deploy nunca
    misturar arquivo novo com arquivo velho em cache. */
-const CARIMBO = '9073b8ea9f';
+const CARIMBO = '993985676e';
 const LOGO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
 const LOGO_BRANCO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
@@ -471,7 +471,7 @@ function desenharMeuAvatar(){
   const eu = state.membros.find(x => x.registro === state.perfil?.registro);
   const el = $('#lt-avatar'); if (!el) return;
   el.innerHTML = avatarFoto(eu || { nome: state.perfil?.nome || state.perfil?.email }, 28, 10.5);
-  if (eu){ el.title = 'Foto de perfil'; el.classList.add('lt-foto'); el.onclick = () => modalFoto(eu.registro); }
+  if (eu && !state.restrito){ el.title = 'Foto de perfil'; el.classList.add('lt-foto'); el.onclick = () => modalFoto(eu.registro); }
 }
 function modalFoto(reg){
   if (!podeFotoDe(reg)) return;
@@ -1592,15 +1592,15 @@ document.addEventListener('keydown', e=>{
   }
   if (e.key==='Escape'){ fechaModal(); fecharMenu(); fecharSino(); fecharPaleta(); }
   /* busca: "/" ou Ctrl/⌘ K, desde que não se esteja digitando em outro campo */
-  if (!state.perfil) return;
+  if (!state.perfil || state.restrito) return;
   const digitando = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable;
   if ((e.key === '/' && !digitando) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')){
     e.preventDefault(); abrirPaleta();
   }
 });
 
-/* Conta de membro Desligado, Egresso ou Sob demanda (2.18.0): a sessão
-   termina e o login diz por quê. */
+/* Conta de membro Sob demanda (2.18.0), e Desligado ou Egresso num banco
+   sem a 2.22.0: a sessão termina e o login diz por quê. */
 async function acessoEncerrado(){
   try { await sb.auth.signOut(); } catch(e){ /* a tela sai do mesmo jeito */ }
   state.perfil = null;
@@ -1610,15 +1610,20 @@ async function acessoEncerrado(){
 }
 async function abrirPortal(){
   const { data:{ user } } = await sb.auth.getUser();
-  /* conta de membro Desligado, Egresso ou Sob demanda: o banco já nega
-     tudo; aqui só não se abre a casca */
+  /* conta de membro Sob demanda: o banco já nega tudo, e aqui só não se
+     abre a casca; Desligado e Egresso abrem no modo restrito (2.22.0) */
   /* 2.19.1 (L2): conta de gestor do LABBIO é externa e só chama labbio_*;
      vai para o painel dela antes de qualquer outra chamada. Sem a
      migração, a chamada falha e o portal segue como sempre. */
   const lb = await sb.rpc('labbio_eu').then(r => r, () => ({}));
   if (['ok', 'convidado', 'revogado'].includes(lb.data?.status)){ location.replace('labbio/'); return; }
   const [ativa, papeis] = await Promise.all([sb.rpc('conta_ativa'), sb.rpc('papeis_atuais')]);
-  if (ativa.data === false){ return acessoEncerrado(); }
+  if (ativa.data === false){
+    /* 2.22.0: Desligado e Egresso entram no modo restrito. Sob demanda,
+       ou sem a migração, o acesso termina como antes. */
+    const r = await sb.rpc('inicio_restrito').then(x => x, () => ({}));
+    return r.data?.status === 'ok' ? abrirModoRestrito(r.data) : acessoEncerrado();
+  }
   const [p, m] = await Promise.all([
     sb.from('perfis').select('id,nome,email,papel,registro').eq('id', user.id).single(),
     sb.from('membros').select('registro,nome,cargo,departamento,status,grupos,gestor_registro,foto_url,email_nro,email_pessoal,telefone').order('nome')
@@ -1643,29 +1648,8 @@ async function abrirPortal(){
      a nada — e nenhuma dessas telas explica por quê. Dizer uma vez, no
      alto, evita a caça ao defeito que não existe. */
   if (!state.perfil.registro) mostrarAvisoSemVinculo();
-  const nome = state.perfil.nome || state.perfil.email;
   const eu = state.membros.find(x => x.registro === state.perfil.registro);
-  $('#u-nome').textContent = nome;
-  $('#u-nome-voo').textContent = nome;
-  $('#u-papel').textContent = PAPEIS[state.perfil.papeis[0]] || eu?.cargo || 'Membro';
-  desenharMeuAvatar();
-  const lf = $('#logo-ft');
-  if (lf){   /* o handler de erro troca a <img> por um <span>: na segunda
-                passada ela não existe mais, e ler .onerror de null derrubava
-                o resto desta função — inclusive mostrar o cabeçalho */
-    lf.onerror = () => { const sp=document.createElement('span'); sp.className='logotype';
-      sp.textContent='NeuroDynamics'; lf.replaceWith(sp); };
-    lf.src = temaAtual()==='claro' ? LOGO_URL : LOGO_BRANCO_URL;
-  }
-  $('#ft-ano').textContent = new Date().getFullYear();
-  $('#ft-ver').textContent = 'SOMA ' + VERSAO;
-  /* o rodapé da casca (ds/casca.js): o sinal e os quatro endereços */
-  if (window.NDCasca){
-    const eco = $('#ft-eco'); if (eco) eco.outerHTML = NDCasca.ecossistema('soma', 'pt');
-    NDCasca.ligar();
-  }
-  $('#ft-foto').hidden = !state.perfil.registro;
-  if (GITHUB_CTA_URL){ $('#ft-cta').hidden = false; $('#ft-cta-a').href = GITHUB_CTA_URL; }
+  montarCasca(PAPEIS[state.perfil.papeis[0]] || eu?.cargo || 'Membro');
   /* Administração é o único espaço que some por papel — os outros
      degradam. A barreira de verdade é a RLS do banco; isto aqui é só
      não oferecer porta fechada. É o menu que decide, ao se montar. */
@@ -1683,6 +1667,53 @@ async function abrirPortal(){
     await carregarModulo('cadastro').then(() => recadastroPedir()).catch(() => {});
   reporteAvisarEntrada();
   state.reporteTimer ||= setInterval(reporteReavaliarCobranca, 5 * 60e3);
+}
+/* O nome e o papel no menu, a logo, o rodapé: o mesmo nos dois modos. */
+function montarCasca(papel){
+  const nome = state.perfil.nome || state.perfil.email;
+  $('#u-nome').textContent = nome;
+  $('#u-nome-voo').textContent = nome;
+  $('#u-papel').textContent = papel;
+  desenharMeuAvatar();
+  const lf = $('#logo-ft');
+  if (lf){   /* o handler de erro troca a <img> por um <span>: na segunda
+                passada ela não existe mais, e ler .onerror de null derrubava
+                o resto desta função — inclusive mostrar o cabeçalho */
+    lf.onerror = () => { const sp=document.createElement('span'); sp.className='logotype';
+      sp.textContent='NeuroDynamics'; lf.replaceWith(sp); };
+    lf.src = temaAtual()==='claro' ? LOGO_URL : LOGO_BRANCO_URL;
+  }
+  $('#ft-ano').textContent = new Date().getFullYear();
+  $('#ft-ver').textContent = 'SOMA ' + VERSAO;
+  if (state.restrito) $('#ft-ver').removeAttribute('href');   /* as notas de versão são de quem está na equipe */
+  /* o rodapé da casca (ds/casca.js): o sinal e os quatro endereços */
+  if (window.NDCasca){
+    const eco = $('#ft-eco'); if (eco) eco.outerHTML = NDCasca.ecossistema('soma', 'pt');
+    NDCasca.ligar();
+  }
+  $('#ft-foto').hidden = !state.perfil.registro || !!state.restrito;
+  if (GITHUB_CTA_URL){ $('#ft-cta').hidden = false; $('#ft-cta-a').href = GITHUB_CTA_URL; }
+}
+/* O modo restrito (2.22.0): a conta de quem saiu da equipe, Desligado
+   ou Egresso. O banco continua sem deixar ler tabela nenhuma; o que esta
+   conta vê vem de inicio_restrito() (quem é, os avisos, os links úteis),
+   de agenda_itens() (o calendário da equipe) e de feed_lista() (o que
+   está no site). O portal abre no início, com o vidro sobre o resto, e
+   leva ao Aproveitamento de AACC e ao feed; as outras telas voltam ao
+   início. Sem notificações, busca, push nem obrigações de entrada. */
+const ROTAS_RESTRITAS = ['aproveitamento', 'feed'];
+const rotaRestritaOk = rt => rt.r === 'home' || (rt.r === 'servicos' && ROTAS_RESTRITAS.includes(rt.sub));
+async function abrirModoRestrito(d){
+  const e = d.eu || {};
+  state.restrito = { status: e.status, avisos: d.avisos || [], links: d.links || [] };
+  state.perfil = { id:e.id, nome:e.nome, email:e.email, papel:'leitura', registro:e.registro, papeis:[] };
+  state.membros = [{ registro:e.registro, nome:e.nome, status:e.status }];
+  state.itensAcesso = []; state.grupos = []; state.grupoPapeis = [];
+  montarCasca('Modo restrito');
+  document.body.classList.add('modo-restrito');
+  desenharMenu();
+  mostrarCasca(true); $('#v-login').hidden = true;
+  await render(route());
 }
 /* As obrigações da entrada (2.19.1): o recadastro semestral (que, em
    2026/2, inclui o termo de sigilo do LABBIO). Sem a 2.19.1 no banco, a
@@ -1822,6 +1853,13 @@ window.addEventListener('hashchange', e => {
 
 async function render(rt){
   pararBoard();
+  /* o modo restrito (2.22.0) abre o início, o aproveitamento e o feed;
+     Serviços leva ao aproveitamento, e o resto volta ao início */
+  if (state.restrito && !rotaRestritaOk(rt)){
+    const h = rt.r === 'servicos' && !rt.sub ? '#/servicos/aproveitamento' : '#/';
+    history.replaceState(null, '', location.pathname + h);
+    rt = route();
+  }
   const forcar = obrigacaoBloqueia();
   const liberados = forcar === '#/servicos/recadastro' ? ['recadastro', 'dados', 'termo'] : ['reporte'];
   if (forcar && !(rt.r === 'servicos' && liberados.includes(rt.sub)) && rt.r !== 'versoes'){
@@ -1887,6 +1925,10 @@ function quadrosDoMenu(){
 }
 
 function arvoreDoMenu(){
+  /* o modo restrito (2.22.0): só o que a conta de quem saiu alcança */
+  if (state.restrito) return [{ r:'servicos', rot:'Serviços', ic:'servicos', filhos: [
+    { sub:'aproveitamento', rot:'Aproveitamento de AACC' },
+    { sub:'feed', rot:'Feed da equipe' }] }];
   const quadros = quadrosDoMenu();
   const arv = [
     /* sem "Início": a logo e a casinha ao lado dela levam para lá */
@@ -2506,6 +2548,7 @@ function mostrarCasca(sim){
 let plSel = 0, plItens = [];
 
 function abrirPaleta(){
+  if (state.restrito) return;
   $('#paleta').hidden = false;
   const q = $('#pl-q'); q.value = ''; q.focus();
   buscarNaPaleta();
@@ -3116,6 +3159,7 @@ document.addEventListener('keydown', e => {
    ============================================================ */
 const inicio = { semana:0, pedido:0, itens:[], erro:null, ini:null, treinos:null };
 async function pageHome(){
+  if (state.restrito) return pageHomeRestrito();
   const spin = '<div class="carregando" style="padding:26px 0"><span class="spin"></span></div>';
   $('#main').innerHTML = `
     <section id="sec-board"><div class="carregando"><span class="spin"></span></div></section>
@@ -3144,6 +3188,53 @@ async function pageHome(){
   carregarLinksInicio();
   carregarFeedInicio();
   desenharRecentes();
+}
+
+/* ---------- o início do modo restrito (2.22.0) ----------
+   O mesmo início, com o quadro de avisos, o calendário da equipe, as
+   publicações e os links úteis. O placar, as tarefas e os abertos por
+   último ficam no lugar, sob um vidro: são de quem está na equipe, e o
+   banco não manda esses dados. Embaixo do vidro, só a forma de cada um.
+   A faixa do alto diz por quê e leva ao aproveitamento. */
+/* cada linha da forma: c círculo, q quadrado, p1 e p2 o ponto da
+   prioridade, l:N barra de texto (N%), d:N texto em duas linhas, a:N
+   barra de progresso, n o número à direita, caixa o destaque do placar */
+const VIDRO_FORMAS = {
+  placar:   ['caixa caixa caixa', 'c l:30 a:40 n', 'c l:40 a:32 n', 'c l:25 a:26 n', 'c l:35 a:18 n'],
+  tarefas:  ['p1 d:62 n', 'p2 d:45 n', 'p1 d:70 n', 'p2 d:52 n'],
+  recentes: ['q d:55', 'q d:40', 'q d:65']
+};
+function cardVidro(id, titulo, forma){
+  const linha = l => `<span>${l.split(' ').map(t => { const [k, w] = t.split(':');
+    return `<i class="${k}"${w ? ` style="--w:${w}%"` : ''}></i>`; }).join('')}</span>`;
+  return `<div class="card ini-vidro" id="${id}">
+    <div class="head"><h3>${esc(titulo)}</h3></div>
+    <div class="vidro-forma" aria-hidden="true">${VIDRO_FORMAS[forma].map(linha).join('')}</div>
+    <div class="vidro"><span class="selo">${ic('cadeado')}<b>Só para quem está na equipe</b></span></div></div>`;
+}
+function pageHomeRestrito(){
+  const spin = '<div class="carregando" style="padding:26px 0"><span class="spin"></span></div>';
+  $('#main').innerHTML = `
+    <section id="sec-board"><div class="carregando"><span class="spin"></span></div></section>
+    <section id="sec-pend"><div class="pend-faixa"><a class="pend-i" id="pend-restrito" href="#/servicos/aproveitamento">${ic('capelo')}
+      <span class="tx"><b>Sua conta está no modo restrito</b>
+      <span class="ds">Quem saiu da equipe pede aqui o aproveitamento de AACC e acompanha os avisos, o calendário e as publicações</span></span>
+      <span class="go">Aproveitamento de AACC →</span></a></div></section>
+    <div class="ini-grid">
+      <div class="ini-main">
+        <div class="card" id="card-semana">${spin}</div>
+        <div class="ini-duo">${cardVidro('card-placar', 'Placar do LABBIO', 'placar')}${cardVidro('card-tarefas', 'Suas tarefas', 'tarefas')}</div>
+      </div>
+      <aside class="ini-lado" aria-label="Atalhos">
+        <div class="card" id="card-feed"><div class="head"><h3>Últimas publicações</h3><a href="#/servicos/feed">feed completo →</a></div>${spin}</div>
+        <div class="card" id="card-links"><div class="head"><h3>Links úteis</h3></div>${spin}</div>
+        ${cardVidro('card-recentes', 'Abertos por último', 'recentes')}
+      </aside>
+    </div>`;
+  carregarBoard();
+  carregarSemana(0);
+  carregarLinksInicio();
+  carregarFeedInicio();
 }
 
 /* ---------- o que espera a sua ação, fora dos quadros ----------
@@ -3248,10 +3339,13 @@ const LINKS_PADRAO = [
 ];
 const linkSeguro = u => /^(https?:\/\/|#\/)/i.test(String(u || '').trim());
 async function carregarLinksInicio(){
-  const r = await sb.from('portal_links').select('titulo,url,descricao,grupo,ordem').eq('ativo', true).order('ordem')
-    .then(x => x, () => ({ error:true }));
+  const r = state.restrito ? { data: state.restrito.links }
+    : await sb.from('portal_links').select('titulo,url,descricao,grupo,ordem').eq('ativo', true).order('ordem')
+      .then(x => x, () => ({ error:true }));
   const el = $('#card-links'); if (!el) return;
-  const links = (r.error ? LINKS_PADRAO : (r.data || [])).filter(l => linkSeguro(l.url));
+  /* no modo restrito, link do portal só para o que essa conta abre */
+  const abre = u => !state.restrito || !/^#\//.test(u.trim()) || rotaRestritaOk({ r:u.trim().split('/')[1], sub:u.trim().split(/[/?]/)[2] || null });
+  const links = (r.error ? LINKS_PADRAO : (r.data || [])).filter(l => linkSeguro(l.url) && abre(l.url));
   const grupos = [];
   links.forEach(l => { const g = l.grupo || ''; let x = grupos.find(y => y[0] === g); if (!x) grupos.push(x = [g, []]); x[1].push(l); });
   el.innerHTML = `<div class="head"><h3>Links úteis</h3>${podeGerir() ? `<a class="ini-cfg" href="#/admin/links" title="Editar os links" aria-label="Editar os links">${ic('engrenagem')}</a>` : ''}</div>
@@ -3301,7 +3395,7 @@ function limparRecentes(){ try { localStorage.removeItem(chaveRecentes()); } cat
 const rodape = { em:0, dados:null, lendo:null };
 async function atualizarRodape(rt){
   const el = $('#ft-vivo'); if (!el) return;
-  if (rt.r === 'home' || !state.perfil){ el.hidden = true; return; }
+  if (rt.r === 'home' || !state.perfil || state.restrito){ el.hidden = true; return; }
   if (!rodape.dados || Date.now() - rodape.em > 5 * 60e3){
     rodape.lendo ||= lerRodape().finally(() => { rodape.lendo = null; });
     await rodape.lendo;
@@ -3445,7 +3539,8 @@ function slideAviso(a){
 /* 2.19.2: os avisos passam em rodízio; a grade saiu */
 function modoBoard(){ return 'rodizio'; }
 async function carregarBoard(){
-  const { data, error } = await sb.from('portal_avisos').select('*')
+  /* no modo restrito, os avisos vieram com inicio_restrito() */
+  const { data, error } = state.restrito ? { data: state.restrito.avisos } : await sb.from('portal_avisos').select('*')
     .order('ordem').order('criado_em', {ascending:false});
   const el = $('#sec-board'); if(!el) return;
   if (error){
@@ -3539,10 +3634,12 @@ function desenharSemana(){
   const nEv = daSemana.filter(i => i.camada === 'eventos').length;
   const nEnt = daSemana.filter(i => i.camada === 'entrevistas').length;
   const nOutros = daSemana.filter(i => ['tarefas', 'publicacoes', 'treinamentos'].includes(i.camada)).length;
+  /* no modo restrito a Agenda não abre: o calendário fica só para ler */
+  const ag = !state.restrito;
   const chip = i => {
     const cls = ['ini-ev', i.dia ? 'dia' : '', i.convidado && i.resposta === 'pendente' ? 'pend' : '', i.resposta === 'nao' ? 'nao' : ''].filter(Boolean).join(' ');
-    const tag = i.href ? 'a' : 'span';
-    return `<${tag} class="${cls}"${i.href ? ` href="${esc(i.href)}"` : ''} style="--cc:${esc(i.cor)}" title="${esc(i.titulo)}">
+    const tag = i.href && ag ? 'a' : 'span';
+    return `<${tag} class="${cls}"${tag === 'a' ? ` href="${esc(i.href)}"` : ''} style="--cc:${esc(i.cor)}" title="${esc(i.titulo)}">
       ${i.dia ? '' : `<span class="h">${minHHMM(i.hi)}</span>`}<span class="t">${esc(i.titulo)}</span></${tag}>`;
   };
   const colunas = dias.map(d => {
@@ -3553,10 +3650,10 @@ function desenharSemana(){
     const pct = Math.min(100, Math.round(100 * ocup / exp));
     const fds = isoDow(d) > 5;
     return `<div class="ini-dia${iso === hoje ? ' hoje' : ''}${fds ? ' fds' : ''}${iso < hoje ? ' passou' : ''}">
-      <a class="ini-dh" href="#/agenda/dia/${iso}"><span class="dw">${DIAS_SEMANA[isoDow(d) - 1]}</span><span class="dn">${d.getDate()}</span></a>
+      <${ag ? `a href="#/agenda/dia/${iso}"` : 'span'} class="ini-dh"><span class="dw">${DIAS_SEMANA[isoDow(d) - 1]}</span><span class="dn">${d.getDate()}</span></${ag ? 'a' : 'span'}>
       <span class="ini-carga" title="${ocup ? duracaoTexto(ocup) + ' em compromissos' : 'Sem compromissos no expediente'}"><i style="width:${pct}%"></i></span>
       <div class="ini-evs">${doDia.slice(0, 4).map(chip).join('')}
-        ${doDia.length > 4 ? `<a class="ini-mais" href="#/agenda/dia/${iso}">mais ${doDia.length - 4}</a>` : ''}</div></div>`;
+        ${doDia.length > 4 ? `<${ag ? `a href="#/agenda/dia/${iso}"` : 'span'} class="ini-mais">mais ${doDia.length - 4}</${ag ? 'a' : 'span'}>` : ''}</div></div>`;
   }).join('');
   const convites = inicio.itens.filter(i => i.camada === 'eventos' && i.convidado && i.resposta === 'pendente' && i.ate >= hoje)
     .sort((a, b) => a.de.localeCompare(b.de) || (a.hi ?? 0) - (b.hi ?? 0));
@@ -3569,7 +3666,7 @@ function desenharSemana(){
       <span class="ini-sem-nav">
         ${inicio.semana ? '<button class="btn ghost mini" onclick="carregarSemana(0)">Hoje</button>' : ''}
         ${ibtn('back', 'Semana anterior', 'carregarSemana(-1)', 'sm')}${ibtn('chevron', 'Próxima semana', 'carregarSemana(1)', 'sm')}
-        <a class="btn ghost mini" href="#/agenda/semana/${de}">Agenda</a></span></div>
+        ${ag ? `<a class="btn ghost mini" href="#/agenda/semana/${de}">Agenda</a>` : ''}</span></div>
     ${inicio.erro ? `<div class="aviso-box err" style="margin-bottom:12px">A agenda não carregou: ${esc(inicio.erro.message || String(inicio.erro))}</div>` : ''}
     ${!state.perfil?.registro ? '<div class="aviso-box info" style="margin-bottom:12px">Conta sem vínculo com um registro de membro: convites e tarefas não aparecem.</div>' : ''}
     <div class="ini-semana">${colunas}</div>
@@ -3731,7 +3828,8 @@ const AUSENCIAS_AGENDA = { ausente:'Fora do escritório', ferias:'Férias', afas
    Equipe › Presença. espera: uma promessa a aguardar antes de ler os
    treinamentos (a do início, que os busca). */
 async function carregarAgendaPessoal(de, ate, espera){
-  const eu = state.perfil?.registro ?? null;
+  /* no modo restrito não há tarefa, publicação nem entrevista a ler: só o calendário da equipe */
+  const eu = state.restrito ? null : state.perfil?.registro ?? null;
   const lerTab = q => q.then(r => r.error ? [] : (r.data || []), () => []);
   let erro = null;
   const [itens, tarefas, pubs, ents] = await Promise.all([

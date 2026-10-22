@@ -70,7 +70,13 @@
         parecer:'Relatório consistente, com evidências rastreáveis.', indicado_por:'Diego Prado' },
       cidade:'Belo Horizonte', data:'2026-09-20' } };
 
-  const reg = () => 4;
+  /* window.__teste.restrita (2.22.0): a conta é a da Kátia (45), egressa, no
+     modo restrito, sem a data de saída na ficha; não aprova nem gere, e a
+     lista é só a dela */
+  const R = (window.__teste || {}).restrita;
+  if (R) Object.assign(A.membro, { registro:45, nome:'Kátia Dias', email:'katia@nro.dev', email_nro:'katia@nro.dev',
+    email_pessoal:'katia@exemplo.com', status:R.status || 'Egresso', situacao:'egresso', fim:null, ate:null });
+  const reg = () => R ? 45 : 4;
   const camposObrig = ['email_pessoal','telefone','cpf','data_nascimento','endereco','cidade_origem','instituicao','curso','matricula','periodo_ingresso','genero','pronomes','autodeclaracao_racial'];
   function recontar(){
     const m = A.membro, p = m.perfil;
@@ -78,7 +84,8 @@
     m.curso = p.curso; m.matricula = p.matricula; m.periodo_ingresso = p.periodo_ingresso; m.pronomes = p.pronomes || null;
     const g = /^(\d{4})\/([12])$/.exec(p.periodo_ingresso || ''); m.ingresso = g ? p.periodo_ingresso : null;
   }
-  const bloqueios = () => { const b = []; if (A.membro.faltam.length) b.push('recadastro'); if (!A.membro.ingresso) b.push('ingresso'); return b; };
+  const bloqueios = () => { const b = []; if (A.membro.faltam.length) b.push('recadastro'); if (!A.membro.ingresso) b.push('ingresso');
+    if (A.membro.situacao === 'egresso' && !A.membro.fim) b.push('saida'); return b; };
   const meu = () => A.pedidos.find(p => p.registro === reg() && ['preparacao','analise','devolvido','professor','concluido'].includes(p.status));
   const pend = p => p.status === 'analise' && p.registro !== reg() && !(A.dec[p.codigo] || []).some(d => d.versao === p.versao && d.nome === 'Ana Figueiredo');
   const hist = (p, acao, detalhe, nome) => (A.hist[p.codigo] ||= []).push({ nome: nome || 'Ana Figueiredo', acao, detalhe, criado_em:agora() });
@@ -90,7 +97,7 @@
       case 'aacc_meu': {
         const p = meu();
         return r({ status:'ok', membro:A.membro, semestres:SEM, bloqueios:bloqueios(), pedido:p || null,
-          anteriores:[], aprovador:true, gere:true,
+          anteriores:[], aprovador:!R, gere:!R,
           serie:{ codigo:'NRO-PES-020', revisao:'A', emissor:'Departamento de Pessoal' },
           config:{ template_url:A.cfg.template_url, meses_por_semestre:4, rotulos:A.cfg.rotulos, n_etapas:3, nota_minima:60, dominio_professor:'ufmg.br', horas_por_credito:15 } });
       }
@@ -134,7 +141,13 @@
         return r({ status:'ok', situacao:'analise', etapa:1, avisados:2 });
       }
       case 'aacc_lista':
-        return r(A.pedidos.map(p => ({ ...p, meu:p.registro === reg(), posso_decidir:pend(p) })));
+        return r(A.pedidos.filter(p => !R || p.registro === reg()).map(p => ({ ...p, meu:p.registro === reg(), posso_decidir:!R && pend(p) })));
+      case 'aacc_pedir_correcao': {
+        if (!R) return r({ status:'sem_registro' });
+        if (String(a.p_texto || '').trim().length < 5) return r({ status:'invalido', campo:'descricao' });
+        if (A.correcao) return r({ status:'ja_pedido', protocolo:A.correcao });
+        A.correcao = 'SOL26-0042'; return r({ status:'ok', protocolo:A.correcao });
+      }
       case 'aacc_pendentes':
         return r(A.pedidos.filter(pend).length);
       case 'aacc_ler': {

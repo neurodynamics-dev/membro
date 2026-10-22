@@ -359,6 +359,7 @@ async function aacSalvarFicha(){
 }
 function aacPedirCorrecao(){
   const d = aac.meu?.membro || {};
+  if (state.restrito) return aacCorrecaoRestrita(d);
   location.hash = '#/servicos/outro';
   setTimeout(() => {
     const t = $('#f-titulo'), x = $('#f-desc');
@@ -366,6 +367,23 @@ function aacPedirCorrecao(){
     if (x) x.value = `Para o pedido de aproveitamento de AACC: a minha ficha está com entrada ${d.inicio ? fmtD(d.inicio) : 'em branco'}`
       + `${d.situacao === 'egresso' ? ` e saída ${d.fim ? fmtD(d.fim) : 'em branco'}` : ''}. O certo é: `;
   }, 400);
+}
+/* no modo restrito (2.22.0) a solicitação "outro" não abre: a mesma
+   solicitação, com protocolo e card no quadro do Pessoal, sai por aqui */
+function aacCorrecaoRestrita(d){
+  abreModal(`<h3>Pedir a correção da ficha</h3>
+    <p class="sub" style="margin-bottom:14px">A entrada e a saída da equipe são registradas pelo Depto. de Pessoal. O pedido vai para a fila dele, com protocolo.</p>
+    <div class="fld"><label for="aac-cor">O que corrigir</label><textarea id="aac-cor" rows="4">${esc(`A minha ficha está com entrada ${d.inicio ? fmtD(d.inicio) : 'em branco'}`
+      + `${d.situacao === 'egresso' ? ` e saída ${d.fim ? fmtD(d.fim) : 'em branco'}` : ''}. O certo é: `)}</textarea></div>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Voltar</button>
+      <button class="btn solid" onclick="aacCorrecaoEnviar()">Enviar o pedido</button></div>`);
+}
+async function aacCorrecaoEnviar(){
+  const { data, error } = await sb.rpc('aacc_pedir_correcao', { p_texto: $('#aac-cor')?.value || '' });
+  if (data?.status === 'ja_pedido') return toast(`Já há um pedido de correção aberto, o ${data.protocolo}.`, true);
+  if (error || data?.status !== 'ok') return toast(aacMotivo(data, error, 'Não foi possível enviar o pedido'), true);
+  fechaModal();
+  toast(`Pedido ${data.protocolo} enviado ao Depto. de Pessoal.`);
 }
 
 /* ---------------- 2. o enquadramento ---------------- */
