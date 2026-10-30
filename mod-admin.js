@@ -70,13 +70,8 @@ async function pageAdmin(sub, sub2){
   if (k === 'site')       return comModulo('site', () => siteAdmin($('#sec-site'), sub2));
   if (k === 'relatorios') return comModulo('relatorios', () => pageRelatorios());
   if (k === 'emails')     return comModulo('mailer', () => pageMailer(sub2));
-  if (k === 'auditoria')  return comModulo('gestao', async () => {
-    await pageAuditoria();
-    /* pageAuditoria desenha em #main; aqui ela mora dentro do painel */
-    const corpo = $('#main').innerHTML;
-    $('#main').innerHTML = guardaTopo + `<section id="sec-auditoria">${corpo}</section>`;
-    renderTabelaAud();
-  });
+  /* o painel já tem o cabeçalho: a trilha desenha só o corpo (2.23.0) */
+  if (k === 'auditoria')  return comModulo('gestao', () => pageAuditoria($('#sec-auditoria')));
   if (k === 'recadastro') return comModulo('cadastro', () => painelRecadastro($('#sec-recadastro')));
   if (k === 'termo')      return comModulo('termo', () => painelTermo($('#sec-termo')));
   if (k === 'contas')     return pageContas();

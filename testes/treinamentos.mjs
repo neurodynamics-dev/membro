@@ -45,6 +45,8 @@ async function abrir({ vp = { width:1440, height:960 }, hash = '#/', stub = stub
   await p.route('**/cdnjs.cloudflare.com/**/jspdf.umd.min.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:JSPDF }));
   await p.route(/fonts\.googleapis|raw\.githubusercontent|youtube\.com|youtube-nocookie|ytimg/, r => r.abort());
   await p.addInitScript(() => { try { localStorage.setItem('nd.menu', 'aberto'); } catch(e){} });
+  /* 2.23.0: as pastas são o padrão de Arquivos; este teste confere a lista (trabalhos.mjs confere as pastas) */
+  await p.addInitScript(() => { try { localStorage.setItem('nd.arq.visao', 'lista'); } catch(e){} });
   await p.goto('http://localhost:8765/index.html' + hash, { waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])');
   await p.waitForTimeout(1100);

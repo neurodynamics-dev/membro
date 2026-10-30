@@ -90,7 +90,10 @@ e inclua os `.html` alterados no commit. `node testes/carimbo.mjs` acusa o carim
   o README de conteúdo. Ver [Treinamentos](#treinamentos).
 - **Projetos** — cada projeto com código, um **Pokémon**, supervisor, equipe
   (um grupo dentro de `NRO_PROJECTS`) e o rol de arquivos que todo projeto
-  deve ter.
+  deve ter. E os **trabalhos** (2.23.0): projetos pequenos, citados pelo
+  número (`TRB-5`), com a ficha de trabalho, o quadro, os documentos, os
+  responsáveis e convidados de fora; em **Pessoas e trabalhos**, a equipe de
+  cada um se monta arrastando os rostos. Ver [Trabalhos](#trabalhos).
 - **Arquivos** — o controle de documentos e registros que era a planilha
   NRO-PUB-001: código `NRO-XXX-YYY-Z`, revisão, status, template, relações
   entre arquivos, e nenhuma versão valendo antes de alguém revisar. A ata de
@@ -463,6 +466,41 @@ arquivos**:
   supervisor acrescenta números e produção como rascunho; a gestão do site
   revisa e publica. Ver [O site institucional](#o-site-institucional).
 
+### Trabalhos
+
+Em `#/projetos/trabalhos` (`mod-trabalhos.js`, 2.23.0). Um trabalho é um
+projeto pequeno: um conjunto de atividades, quase sempre passado a trainees.
+Pode ser um estudo de viabilidade, o começo de um projeto, uma etapa de um
+projeto que já existe ou uma campanha (estruturar os treinamentos, montar o
+banco de fotos e ideias). Não tem nome: tem um **número**, que é o código
+(`TRB-5`), e uma **referência** ("Projeto Calima (firmware)").
+
+| Endereço | O que é |
+|---|---|
+| `#/projetos/trabalhos[/novo]` | os trabalhos, como cartões com o número em destaque |
+| `#/projetos/TRB-5` | a ficha: PS de origem, datas, alocação, complexidade e esforço, escopo, justificativa, entregáveis, dependências, critérios de sucesso, o cenário (forças, fraquezas, oportunidades, ameaças), a equipe e o projeto, se houver |
+| `#/projetos/TRB-5/quadro` | o quadro: é o quadro de Atividades do grupo do trabalho (`T5-1`, `T5-2`…), desenhado dentro da página |
+| `#/projetos/TRB-5/documentos` | os documentos e registros do trabalho: arquivos do rol (sem padrão, como nos projetos) e links para o que mora fora |
+| `#/projetos/alocacao` | **Pessoas e trabalhos**: uma linha por trabalho e, à esquerda, a galeria dos rostos. Arrastar um rosto para a linha põe a pessoa no trabalho; sem mouse, escolher o rosto e usar *Pôr aqui*. Passar o mouse mostra o que a pessoa já sabe e o que quer desenvolver. A outra visão lista cada pessoa com os trabalhos e projetos dela |
+
+- a **equipe** é um grupo, `NRO_TRABALHO_<N>`, dentro de `NRO_TRABALHOS`;
+  os **responsáveis** entram nele e cuidam dele (põem e tiram gente, editam
+  o trabalho). Criar trabalho e trocar responsáveis é da gestão: admin,
+  Depto. de Pessoal, liderança e PMO;
+- **convidados** são gente de fora (integração, intercâmbio, convite,
+  conveniência): entram nos trabalhos sem conta no SOMA, sempre com um
+  **membro efetivo** (ativo e não trainee) que responde por eles. O e-mail
+  só a gestão e o responsável veem;
+- as **habilidades** de cada pessoa (o que já sabe, o que quer desenvolver)
+  começam com as competências da inscrição no processo seletivo; cada um
+  edita as suas em *Minhas habilidades*. A ficha do membro tem a aba
+  **Projetos e trabalhos**, e o organograma mostra os de quem está em foco;
+- **Importar a ficha (.docx)**: a ficha de trabalho em Word (a tabela do
+  alto, as seções e o cenário) preenche o formulário do trabalho novo. Os
+  responsáveis são achados pelo nome; "trabalho 1" vira `TRB-1`, que é link.
+
+Migração: `db/2.23.0_trabalhos.sql`.
+
 ### O site institucional
 
 Em **Administração › Site institucional** (`#/admin/site`, `mod-site.js`),
@@ -516,7 +554,18 @@ alto, em *O que é este arquivo*:
 O `NRO-PUB-002` é o caso à parte: documento sem PN com subtipo template — o
 modelo de base dos outros —, e a coluna de estrutura dele veio vazia.
 
-**A primeira tela** (`#/arquivos`) já é a lista de todos os arquivos, como
+**As pastas** (2.23.0). A primeira tela (`#/arquivos`) mostra o rol como o
+Finder: cada **emissor** é uma pasta, na cor dele (uma família secundária da
+marca, escolhida em *Configurações › Emissores*; sem escolha, a da ordem);
+dentro, cada **série com PN** é uma pasta (`#/arquivos/PUB/003`) e o
+documento único é um arquivo; dentro da série, o **template** e os **PNs**.
+O ícone diz o formato (DOCX, XLSX, PPTX, MD, PDF), tirado do arquivo em vigor
+ou, sem arquivo, da série; o template é de **vidro fosco**, com luz atrás. A
+busca da pasta acha em qualquer nível abaixo dela. A estrutura técnica é a
+mesma: só a tela muda. O botão *Pastas, Lista* troca a visão, e a escolha
+fica no navegador.
+
+**A lista** (a outra visão de `#/arquivos`) é a de todos os arquivos, como
 uma lista do Drive: código, título, revisão, última alteração e quem a fez,
 status. Filtra por **emissor** — escolher um leva ao rol dele
 (`#/arquivos/PES`), que é a aba daquela planilha —, por status, natureza,
@@ -1387,6 +1436,13 @@ remove, quando a equipe decidir.
   `pessoal`.
 - **Projetos** (`#/projetos`) todos veem; criar é do PMO e de `admin`, e
   editar e cuidar da equipe é deles e do supervisor do projeto.
+- **Trabalhos** (`#/projetos/trabalhos`) todos veem; criar e trocar os
+  responsáveis é de `admin`, do Depto. de Pessoal, da liderança e do PMO;
+  editar e pôr e tirar gente é deles e dos responsáveis; pôr e tirar
+  documentos, também de quem está na equipe. Convidar alguém de fora é da
+  gestão e de quem responde por algum trabalho, e o convidado tem sempre
+  um membro efetivo responsável. As habilidades, cada um as suas (`admin` e
+  Depto. de Pessoal, as de todos). A escrita é só pelas funções do banco.
 - **Arquivos** (`#/arquivos`): o rol é de todos; o conteúdo segue a classe
   da série; revisar é do grupo revisor da série (sem ele, do PMO), nunca de
   quem enviou; configurar é do PMO e de `admin`.

@@ -33,6 +33,16 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.23.0', data:'2026-10-30', titulo:'Os trabalhos e os arquivos em pastas', itens:[
+    ['novo', '**Trabalhos**, em Projetos: projetos pequenos, citados pelo número (**TRB-5**) e com uma referência no lugar do nome. Cada um tem a ficha de trabalho (PS de origem, datas, alocação, complexidade e esforço, escopo, justificativa, entregáveis, dependências, critérios de sucesso e o cenário em quatro quadrantes), os responsáveis, um projeto se houver, e o tipo: estudo de viabilidade, início de projeto, etapa de projeto ou campanha.'],
+    ['novo', 'O **quadro** do trabalho é um quadro de Atividades (T5-1, T5-2…), aberto dentro da página do trabalho. Os **documentos** são os arquivos do rol que dizem respeito a ele, e links para o que mora fora.'],
+    ['novo', '**Importar a ficha (.docx)**: ao criar um trabalho, a ficha de trabalho preenche o formulário, com os responsáveis encontrados pelo nome e "trabalho 1" virando TRB-1.'],
+    ['novo', '**Pessoas e trabalhos**: cada trabalho é uma linha; à esquerda, os rostos. Arrastar um rosto para a linha põe a pessoa no trabalho (sem mouse: escolher o rosto e usar "Pôr aqui"). Passar o mouse mostra o que a pessoa já sabe e o que quer desenvolver. A outra visão lista cada pessoa com os trabalhos e projetos dela.'],
+    ['novo', '**Convidados**: gente de fora da equipe entra num trabalho por integração, intercâmbio, convite ou conveniência, sempre com um membro efetivo que responde por ela.'],
+    ['novo', '**Habilidades**: cada pessoa registra o que já sabe e o que quer desenvolver; quem veio do processo seletivo começa com as competências da inscrição. A ficha do membro ganha a aba **Projetos e trabalhos**, e o organograma mostra os projetos e trabalhos de quem está em foco.'],
+    ['novo', '**Arquivos em pastas**: cada emissor é uma pasta, na cor dele; dentro, cada série com PN é uma pasta, com o template e os PNs. O ícone diz o formato (DOCX, XLSX, PPTX, MD, PDF) e o template é de vidro fosco. A lista continua a um clique, e a escolha fica no navegador.'],
+    ['correcao', 'Em **Administração, Auditoria**, o título aparecia duas vezes.']
+  ]},
   { v:'2.22.0', data:'2026-10-22', titulo:'O modo restrito', itens:[
     ['novo', '**Modo restrito**: quem saiu da equipe (Desligado ou Egresso) volta a entrar no SOMA com a própria conta, para pedir o **aproveitamento de AACC** e acompanhar a equipe. Antes, a entrada terminava em "Acesso encerrado".'],
     ['novo', 'A tela inicial do modo restrito mostra o **quadro de avisos**, o **calendário da equipe** (os eventos abertos à equipe e os marcos, só para ler), as **publicações** que estão no site e os **links úteis**. O placar, as tarefas e os abertos por último ficam atrás de um vidro, só para quem está na equipe.'],

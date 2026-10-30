@@ -34,6 +34,8 @@ async function abrir({ vp = { width:1440, height:960 }, hash = '#/', stub = stub
   await p.route('**/fonts.googleapis.com/**', r => r.abort());
   await p.route('**/raw.githubusercontent.com/**', r => r.abort());
   if (menu) await p.addInitScript(v => { try { localStorage.setItem('nd.menu', v); } catch(e){} }, menu);
+  /* 2.23.0: as pastas são o padrão de Arquivos; este teste confere a lista (trabalhos.mjs confere as pastas) */
+  await p.addInitScript(() => { try { localStorage.setItem('nd.arq.visao', 'lista'); } catch(e){} });
   /* o tema no instante em que o <body> nasce: se já está lá, a página não pisca */
   await p.addInitScript(() => new MutationObserver((m, o) => { if (document.body){
     window.__temaAoAbrirBody = document.documentElement.dataset.tema || 'escuro'; o.disconnect(); } })

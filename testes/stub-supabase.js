@@ -796,6 +796,8 @@
     sequencias: [{ registro:11, nome:'Bruno Tavares', atual:9, recorde:14 }, { registro:4, nome:'Ana Figueiredo', atual:3, recorde:6 }],
     eu: { dias:12, posicao:2, atual:3, recorde:6 } };
 
+  /* os complementos (stub-aacc.js, stub-trabalhos.js) mexem nos mesmos dados */
+  window.__stubDados = DADOS;
   /* doc_arquivos é o que a lista de projetos lê para o progresso: sai do rol */
   DADOS.doc_arquivos = DADOS.doc_rol.map(r => ({ id:r.id, projeto_id:r.projeto_id || null, serie_id:r.serie_id,
     status:r.status, rev_pendente:r.rev_pendente }));

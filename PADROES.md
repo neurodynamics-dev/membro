@@ -21,7 +21,7 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **Agenda** | tempo — eventos, marcos, ausências, e o que tem prazo (tarefas, publicações, treinamentos) | todos |
 | **Atividades** | trabalho — o quadro do seu grupo | todos |
 | **OKRs** | planejamento — os objetivos e o desdobramento de cada um | todos (edição: `admin`, `pessoal` e os responsáveis) |
-| **Projetos** | cada projeto: equipe, supervisor e o rol de arquivos | todos (criar: PMO e `admin`; editar: eles e o supervisor) |
+| **Projetos** | cada projeto: equipe, supervisor e o rol de arquivos; os trabalhos e quem está em cada um | todos (criar projeto: PMO e `admin`; trabalho: a gestão; editar: eles, o supervisor e os responsáveis) |
 | **Arquivos** | documentos e registros controlados — código, revisão, status | todos no rol; o conteúdo segue a classe de cada série |
 | **Studio** | comunicação — criar as peças, planejar e aprovar as publicações | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
 | **Marca** | materiais, assinaturas, interfaces e manual da marca | todos; vínculos geridos por quem administra Arquivos |
@@ -110,8 +110,12 @@ conforme quem entra é menu que ninguém aprende.
 #/projetos[/novo]           os projetos
 #/projetos/<CÓDIGO>         um projeto (ex.: #/projetos/NEBULA)
 #/projetos/<CÓDIGO>/arquivos  o rol de arquivos do projeto
-#/arquivos                  todos os arquivos — a primeira tela, que filtra por emissor
-#/arquivos/<EMISSOR>        a lista de um emissor (ex.: #/arquivos/PES)
+#/projetos/trabalhos[/novo] os trabalhos
+#/projetos/alocacao         pessoas e trabalhos: arrastar os rostos, ou a lista por pessoa
+#/projetos/TRB-5[/quadro|documentos]  um trabalho: a ficha, o quadro (o de Atividades) e os documentos
+#/arquivos                  todos os arquivos — a primeira tela: as pastas dos emissores ou a lista
+#/arquivos/<EMISSOR>        a pasta (ou a lista) de um emissor (ex.: #/arquivos/PES)
+#/arquivos/<EMISSOR>/<SN>   a pasta de uma série com PN: o template e os PNs (ex.: #/arquivos/PUB/003)
 #/arquivos/visao            a visão geral: os números de cada emissor
 #/arquivos/revisoes|templates|config
 #/arquivos/<código>         um arquivo (ex.: #/arquivos/NRO-PES-007-2)
@@ -178,6 +182,7 @@ só a lupa, sem caixa nem legenda, no eixo dos outros ícones. Acha **quatro coi
 | **Ações e telas** | "novo evento", "importar", "auditoria", "férias" |
 | **Pessoas** | nome, registro, cargo, grupo, e-mail |
 | **Atividades** | código (`ORT-14`), título, responsável |
+| **Trabalhos** | código (`TRB-5`), referência |
 | **Agenda e documentos** | título do compromisso, nome do documento |
 | **Treinamentos** | código (`NRO-TRE-003`), título |
 | **Eventos registrados** | código (`EXT-14`), nome |
@@ -268,6 +273,7 @@ Todo objeto que uma pessoa cita em voz alta precisa de um código curto:
 | Atividade | `ORT-14` | `atividades.codigo` — prefixo do grupo + sequência |
 | Solicitação | protocolo | `portal_solicitacoes` |
 | Projeto | `NEBULA` | `projetos.codigo` — o grupo da equipe é `NRO_PROJECT_NEBULA` |
+| Trabalho | `TRB-5` | `trabalhos.codigo`, gerado do número — o trabalho não tem nome, tem referência; o grupo da equipe é `NRO_TRABALHO_5` e as atividades do quadro, `T5-1`. O prefixo `TRB` não pode ser de grupo |
 | Arquivo | `NRO-PES-007-2` | `doc_arquivos.codigo` — emissor, série (SN) e part number (PN); a revisão (`Rev. B`) fica fora do código |
 | Publicação | `POST-14` | `studio_publicacoes.codigo` — sequência única; a versão da arte fica fora do código, como a revisão de um arquivo |
 | Treinamento | `NRO-TRE-003` | `treinamentos.codigo` — do número; a revisão (`Rev. B`) fica fora do código, como num arquivo. O prefixo `TRE` não pode virar emissor em Arquivos |

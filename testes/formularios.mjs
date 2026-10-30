@@ -43,6 +43,8 @@ async function abrir({ vp = { width:1440, height:960 }, hash = '#/', stub = stub
   await p.route('**/cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', r => r.fulfill({ status:200, contentType:'application/javascript', body:QR }));
   await p.route(/fonts\.googleapis|raw\.githubusercontent|youtube\.com|ytimg/, r => r.abort());
   await p.addInitScript(d => { try { localStorage.setItem('nd.menu', 'aberto'); } catch(e){} if (d) window.__teste = { dir:true }; }, dir);
+  /* 2.23.0: as pastas são o padrão de Arquivos; este teste confere a lista (trabalhos.mjs confere as pastas) */
+  await p.addInitScript(() => { try { localStorage.setItem('nd.arq.visao', 'lista'); } catch(e){} });
   await p.goto('http://localhost:8765/index.html' + hash, { waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])');
   await p.waitForTimeout(1100);
