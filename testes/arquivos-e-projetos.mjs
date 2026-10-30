@@ -45,6 +45,8 @@ async function abrir({ vp = { width:1440, height:960 }, hash = '#/', stub = stub
   await p.route('**/fonts.googleapis.com/**', r => r.abort());
   await p.route('**/raw.githubusercontent.com/**', r => r.abort());
   await p.addInitScript(() => { try { localStorage.setItem('nd.menu', 'aberto'); } catch(e){} });
+  /* 2.23.0: as pastas são o padrão de Arquivos; este teste confere a lista (trabalhos.mjs confere as pastas) */
+  await p.addInitScript(() => { try { localStorage.setItem('nd.arq.visao', 'lista'); } catch(e){} });
   await p.addInitScript(XLSX_FALSO);
   await p.goto('http://localhost:8765/index.html' + hash, { waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])');

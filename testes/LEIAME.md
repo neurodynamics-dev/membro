@@ -72,6 +72,19 @@ devolve o PDF de `window.__aaccPdf` no download) e à `doc_validar` da folha
 de aprovação. O teste monta os PDFs e o ZIP do template com o pdf-lib e o
 jszip, e confere o PDF final com o `pdftotext`.
 
+Os trabalhos (2.23.0) moram num complemento, `stub-trabalhos.js`, que o
+`trabalhos.mjs` concatena depois do stub de sempre, como o `stub-aacc.js`. O
+stub de sempre põe os dados em `window.__stubDados`, e o complemento acrescenta
+neles os grupos `NRO_TRABALHOS`, `NRO_TRABALHO_5` e `NRO_TRABALHO_3`, os
+trainees Pedro (60) e Sarah (61), a Nádia (62), os cartões `T5-1` e `T5-2`, as
+tabelas dos trabalhos, a convidada Lucía, as habilidades, a cor do PES (Ion) e o
+formato dos arquivos; e responde às funções `trabalho_*`, `convidado_salvar`,
+`convidados_lista`, `habilidades_salvar` e `doc_serie_formato` mudando esses
+dados, para a tela voltar com o resultado (cada chamada em `window.__rpcs`). O
+teste monta uma ficha .docx com o jszip para a importação. Como as pastas viraram
+a primeira tela de Arquivos, os testes que conferem a lista do rol gravam
+`nd.arq.visao = 'lista'` antes de abrir a página.
+
 As tabelas do site institucional (2.21.0: `site_projetos`,
 `site_projeto_numeros` e `site_projeto_saidas`) o stub grava de verdade, para a
 lista voltar com o resultado, e com a guarda do banco: quem não é da gestão do

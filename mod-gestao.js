@@ -528,6 +528,8 @@ function renderFicha(){
   if (can()) abas.push(['ocorr', `Ocorrências (${f.ocorr.length})`]);
   abas.push(['acessos','Acessos'], ['avals', `Avaliações (${f.avals.length})`]);
   if (f.treinos) abas.push(['treinos', `Treinamentos (${f.concl.length})`]);
+  /* 2.23.0: os projetos e trabalhos da pessoa, e as habilidades */
+  abas.push(['trabalhos', `Projetos e trabalhos (${projetosDe(m).filter(p => p.status !== 'encerrado').length + trabalhosDe(m).filter(TRB_ABERTO).length})`]);
   if (podeVerFicha()) abas.push(['pess','Dados pessoais']);
 
   $('#main').innerHTML = cabecalho({
@@ -557,7 +559,7 @@ function renderFicha(){
     <div id="ficha-body"></div>${datalistsHTML()}`;
 
   ({dados:renderTabDados, ocorr:renderTabOcorr, acessos:renderTabAcessos,
-    avals:renderTabAvals, pess:renderTabPess, treinos:renderTabTreinos}[f.tab])();
+    avals:renderTabAvals, pess:renderTabPess, treinos:renderTabTreinos, trabalhos:renderTabTrabalhos}[f.tab])();
 }
 
 /* Os treinamentos da pessoa: o que é obrigatório para ela, onde ela
@@ -589,6 +591,34 @@ function renderTabTreinos(){
           ${ibtn('down', 'Baixar o certificado', `fichaCertificado('${esc(c.certificado)}', this)`, 'sm')}</div>`).join('')
         : '<div class="empty">Nenhum certificado.</div>'}
     </div>`;
+}
+/* Os projetos e os trabalhos da pessoa (2.23.0), com o papel em cada um,
+   e o que ela já sabe e quer desenvolver. As habilidades e os convidados
+   moram em mod-trabalhos, carregado aqui antes de desenhar. */
+async function renderTabTrabalhos(){
+  const m = membroAtual(), el = $('#ficha-body');
+  el.innerHTML = '<div class="carregando"><span class="spin"></span> Carregando…</div>';
+  try { await carregarModulo('trabalhos'); await trbCarregar(); }
+  catch(e){ el.innerHTML = `<div class="aviso-box err">Os trabalhos não carregaram (${esc(e.message)}).</div>`; return; }
+  if (gestao.ficha.tab !== 'trabalhos' || membroAtual() !== m) return;
+  const pjs = projetosDe(m), tbs = trabalhosDe(m);
+  const pjPapel = p => p.supervisor === m.registro ? '<span class="pj-sup">Supervisor</span>' : '';
+  const tbPapel = t => (t.responsaveis || []).includes(m.registro) ? '<span class="pj-sup">Responsável</span>' : '';
+  const pode = m.registro === state.perfil?.registro || can();
+  el.innerHTML = `<div class="pj-cols">
+    <div class="card"><h3>Trabalhos (${tbs.length})</h3>
+      ${tbs.length ? tbs.map(t => `<a class="pj-membro ficha-trb" href="#/projetos/${esc(t.codigo)}"><span class="trb-num mini">${t.numero}</span>
+          <span class="tx"><span class="nm">${esc(t.referencia)}</span><span class="cg">${esc(t.codigo)}, ${esc(TRB_TIPOS[t.tipo] || 'Outro')}</span></span>
+          ${tbPapel(t)}${trbPill(t.status)}</a>`).join('') : '<p class="muted small">Em nenhum trabalho.</p>'}
+      <h3 style="margin-top:20px">Projetos (${pjs.length})</h3>
+      ${pjs.length ? pjs.map(p => `<a class="pj-membro" href="#/projetos/${esc(p.codigo)}">${logoProjeto(p.logo_semente, 32, p.nome)}
+          <span class="tx"><span class="nm">${esc(p.nome)}</span><span class="cg">${esc(p.codigo)}${p.status !== 'ativo' ? ', ' + esc(p.status) : ''}</span></span>
+          ${pjPapel(p)}</a>`).join('') : '<p class="muted small">Em nenhum projeto.</p>'}
+    </div>
+    <div class="card"><h3 style="display:flex;align-items:center;gap:8px">Habilidades
+        ${pode ? `<button class="btn ghost mini" style="margin-left:auto" onclick="modalHabilidades(${m.registro}, renderTabTrabalhos)">${ic('pencil')} Editar</button>` : ''}</h3>
+      ${trbHabilidadesHTML(m.registro)}
+    </div></div>`;
 }
 async function fichaCertificado(cod, bt){
   try { await carregarModulo('treinamentos'); }
@@ -920,10 +950,12 @@ async function salvarPess(){
 }
 
 /* ============================================================
-   #/auditoria — trilha
+   #/admin/auditoria — trilha. Desenha dentro do painel da
+   Administração, que já tem o cabeçalho: aqui só o corpo.
    ============================================================ */
-async function pageAuditoria(){
-  $('#main').innerHTML = `<div class="carregando"><span class="spin"></span> Carregando a trilha de auditoria…</div>`;
+async function pageAuditoria(alvo){
+  const el = alvo || $('#main'); if (!el) return;
+  el.innerHTML = `<div class="carregando"><span class="spin"></span> Carregando a trilha de auditoria…</div>`;
   try{
     await gestaoCarregar();
     const { data, error } = await sb.from('auditoria').select('*')
@@ -931,11 +963,7 @@ async function pageAuditoria(){
     if (error) throw error;
     gestao.aud = data || [];
     const tabelas = [...new Set(gestao.aud.map(r => r.tabela))];
-    $('#main').innerHTML = cabecalho({
-      espaco: 'Administração',
-      titulo: 'Auditoria',
-      lead: 'Últimos 400 eventos registrados.'
-    }) + `
+    el.innerHTML = `
       <div class="filtros">
         <div class="fld cresce"><label>Buscar</label>
           <input id="au-q" placeholder="Campo, valor, responsável ou membro" oninput="renderTabelaAud()"></div>
@@ -945,8 +973,7 @@ async function pageAuditoria(){
       <div class="card" style="padding:8px 14px"><div id="tb-aud"></div></div>`;
     renderTabelaAud();
   }catch(e){
-    $('#main').innerHTML = cabecalho({ espaco:'Administração', titulo:'Auditoria' })
-      + `<div class="aviso-box err">Não foi possível carregar a trilha: ${esc(e.message)}</div>`;
+    el.innerHTML = `<div class="aviso-box err">Não foi possível carregar a trilha: ${esc(e.message)}</div>`;
   }
 }
 function nomePorRef(ref){
@@ -978,7 +1005,7 @@ function renderTabelaAud(){
           <td title="${esc(r.valor_anterior)}">${esc(r.valor_anterior) || '—'}</td>
           <td title="${esc(r.valor_novo)}">${esc(r.valor_novo) || '—'}</td></tr>`;
       }).join('')}</tbody></table></div>
-    <div class="small muted" style="padding:10px 4px">Exibindo ${Math.min(rows.length,200)} de ${rows.length} eventos</div>`
+    <div class="small muted" style="padding:10px 4px">Exibindo ${Math.min(rows.length,200)} de ${rows.length} eventos ${dica('A trilha traz os últimos 400 eventos registrados.')}</div>`
     : '<div class="empty">Nenhum evento encontrado.</div>';
 }
 

@@ -13,6 +13,8 @@
      #/projetos/<CÓDIGO>           o projeto: equipe, supervisor, resumo do rol e a
                                    página dele no site (mod-site.js)
      #/projetos/<CÓDIGO>/arquivos  o rol de arquivos do projeto
+     #/projetos/trabalhos, #/projetos/alocacao e #/projetos/TRB-5[/quadro|documentos]
+                                   os trabalhos (2.23.0), desenhados por mod-trabalhos
 
    Precisa da migração db/v20_projetos_arquivos.sql. O rol é desenhado
    por mod-arquivos, carregado antes com carregarModulo('arquivos').
@@ -86,6 +88,13 @@ function pjBarra(pr){
 
 /* ---------------- rota ---------------- */
 async function pageProjetos(sub, sub2){
+  /* os trabalhos (2.23.0) moram em mod-trabalhos, que desce aqui */
+  if (sub === 'trabalhos' || sub === 'alocacao' || /^TRB-\d+$/i.test(sub || '')){
+    $('#main').innerHTML = '<div class="carregando"><span class="spin"></span> Carregando os trabalhos…</div>';
+    try { await carregarModulo('trabalhos'); }
+    catch(e){ $('#main').innerHTML = cabecalho({ espaco:'Projetos', titulo:'Não carregou', lead:`Os trabalhos não puderam ser carregados (${esc(e.message)}). Recarregue a página.` }); return; }
+    return pageTrabalhos(sub, sub2);
+  }
   $('#main').innerHTML = '<div class="carregando"><span class="spin"></span> Carregando os projetos…</div>';
   await pjCarregar();
   if (projetosM.erro){
@@ -114,7 +123,7 @@ function pjLista(){
   const f = projetosM;
   const mostra = f.lista.filter(p => (f.ver === 'todos' || pjSouDaEquipe(p)) && (!f.status || p.status === f.status));
   const meus = f.lista.filter(pjSouDaEquipe).length;
-  $('#main').innerHTML = cabecalho({ espaco:'Projetos', titulo:'Carteira de projetos',
+  $('#main').innerHTML = cabecalho({ espaco:'Projetos', titulo:'Carteira de projetos', secoes:secoesProjetos(''),
       acoes:docGestor() ? `<button class="btn solid" onclick="pjModalNovo()">${ic('plus')} Novo projeto</button>` : '' }) + `
     <div class="filtros" style="align-items:center">
       <div class="seg" role="group" aria-label="Quais projetos">
@@ -189,9 +198,19 @@ async function pjPagina(p, aba){
       <a class="btn ghost mini" style="margin-top:14px" href="#/projetos/${esc(p.codigo)}/arquivos">Abrir o rol ${ic('chevron')}</a>
       <p class="small muted" style="margin-top:14px;line-height:1.6">Criado em ${fmtD(p.criado_em)}.</p>
     </div></div>
+    ${pjTrabalhosHTML(p)}
     <div id="pj-site"></div>`;
   /* a página do projeto em neurodynamics.dev (2.21.0): números e produção */
   carregarModulo('site').then(() => { if ($('#pj-site')) siteNoProjeto($('#pj-site'), p); }).catch(() => {});
+}
+
+/* Os trabalhos ligados ao projeto (2.23.0): etapas, estudos, o começo dele. */
+function pjTrabalhosHTML(p){
+  const ts = (state.trabalhos || []).filter(t => t.projeto_id === p.id);
+  if (!ts.length) return '';
+  return `<div class="card" style="margin-top:18px"><h3>Trabalhos (${ts.length})</h3>${ts.map(t =>
+    `<a class="pj-membro" href="#/projetos/${esc(t.codigo)}"><span class="trb-num mini">${t.numero}</span>
+      <span class="tx"><span class="nm">${esc(t.referencia)}</span><span class="cg">${esc(t.codigo)}${TRB_ABERTO(t) ? '' : ', encerrado'}</span></span></a>`).join('')}</div>`;
 }
 
 /* ---------------- novo projeto ---------------- */
@@ -244,6 +263,8 @@ async function pjCriar(){
   if (n.semente) p.logo_semente = n.semente;
   if (!p.nome) return toast('O nome é obrigatório.', true);
   if (!/^[A-Z][A-Z0-9]{1,15}$/.test(p.codigo)) return toast('Código: 2 a 16 letras e números, começando por letra (ex.: NEBULA, ORION2).', true);
+  /* os endereços de Projetos que não são projeto */
+  if (['NOVO', 'TRABALHOS', 'ALOCACAO'].includes(p.codigo)) return toast(`${p.codigo} é um endereço do portal. Escolha outro código.`, true);
   if (!p.supervisor) return toast('Escolha o supervisor.', true);
   const b = $('#pn-btn'); if (b){ b.disabled = true; b.textContent = 'Criando…'; }
   try{

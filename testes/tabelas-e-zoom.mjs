@@ -19,6 +19,8 @@ async function abrir(hash, { celular = false } = {}){
   await p.route('**/*supabase*.js', r => r.fulfill({ contentType:'application/javascript', body:stub }));
   await p.route(/fonts\.googleapis|raw\.githubusercontent/, r => r.abort());
   await p.addInitScript(() => { try { localStorage.setItem('nd.menu', 'recolhido'); } catch(e){} });
+  /* 2.23.0: as pastas são o padrão de Arquivos; este teste confere a lista (trabalhos.mjs confere as pastas) */
+  await p.addInitScript(() => { try { localStorage.setItem('nd.arq.visao', 'lista'); } catch(e){} });
   await p.goto('http://localhost:8765/index.html' + hash, { waitUntil:'domcontentloaded' });
   await p.waitForSelector('#hd:not([hidden])');
   return { ctx, p, erros };

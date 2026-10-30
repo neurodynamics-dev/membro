@@ -6,8 +6,10 @@
    versão nova passando por revisão antes de valer.
 
    Rotas:
-     #/arquivos                       o rol: todos os arquivos, com filtro por emissor
-     #/arquivos/<PES>                 o mesmo rol, já filtrado por um emissor (uma aba da planilha)
+     #/arquivos                       o rol: as pastas dos emissores, ou a lista de todos os
+                                      arquivos (a escolha fica no navegador, 2.23.0)
+     #/arquivos/<PES>                 a pasta de um emissor, ou o rol já filtrado por ele (uma aba da planilha)
+     #/arquivos/<PES>/<SN>            a pasta de uma série com PN: o template e os PNs (2.23.0)
      #/arquivos/NRO-PES-007[-2]       a tela de um arquivo
      #/arquivos/NRO-PUB-003-4/escrever  escrever o PN no portal (mod-formularios, v26)
      #/arquivos/revisoes              tudo o que aguarda revisão
@@ -144,7 +146,7 @@ async function pageArquivos(sub, sub2){
   $('#main').innerHTML = '<div class="carregando"><span class="spin"></span> Carregando o rol…</div>';
   await arqCarregar();
   if (arq.erro) return arqSemMigracao();
-  if (!sub) return arqLista('');
+  if (!sub) return arqVisaoPref() === 'pastas' ? arqPastas('') : arqLista('');
   if (sub === 'visao')     return arqVisao();
   if (sub === 'revisoes')  return arqRevisoes();
   if (sub === 'templates') return arqTemplates();
@@ -152,9 +154,13 @@ async function pageArquivos(sub, sub2){
     if (!docGestor()){ history.replaceState(null, '', location.pathname + '#/arquivos'); return arqLista(''); }
     return arqConfig(sub2);
   }
-  if (/^[A-Za-z]{3}$/.test(sub) && arqEmissor(sub.toUpperCase())) return arqLista(sub.toUpperCase());
+  if (/^[A-Za-z]{3}$/.test(sub) && arqEmissor(sub.toUpperCase())){
+    const pf = sub.toUpperCase();
+    if (/^\d{1,3}$/.test(sub2 || '')) return arqPastas(pf, Number(sub2));
+    return arqVisaoPref() === 'pastas' ? arqPastas(pf) : arqLista(pf);
+  }
   history.replaceState(null, '', location.pathname + '#/arquivos');
-  arqLista('');
+  arqVisaoPref() === 'pastas' ? arqPastas('') : arqLista('');
 }
 
 /* A navegação de dentro de Arquivos. O rol é a tela; o que aguarda
@@ -318,6 +324,7 @@ function arqLista(pref){
     `<button class="btn ghost mini" onclick="arqExportar(${arg})">${ic('down')} Exportar</button>
      ${arqPossoAdicionar(pref) ? `<button class="btn solid mini" onclick="arqModalAdicionar(${arg})">${ic('plus')} Adicionar</button>` : ''}`)
   + arqNavHTML('')
+  + `<div class="arq-barra">${arqVisaoSeg('lista')}</div>`
   + arqLegendaHTML(arq.rol.filter(r => r.pn == null && (!pref || r.prefixo === pref)), true)
   + arqFiltrosHTML() + '<div id="arq-rol"></div>';
   fbDesenhar('arq-fb');
@@ -390,6 +397,122 @@ function arqRedesenharRol(digitando){
     ? 'Nenhum arquivo com esse filtro.' : arq.rolAtual ? 'Nenhuma série neste emissor.' : 'Nenhum arquivo no rol.' });
   const tot = document.querySelector('#arq-fb .fb-total');
   if (tot){ tot.hidden = total == null; tot.innerHTML = `<b>${total}</b> ${total === 1 ? 'resultado' : 'resultados'}`; }
+}
+
+/* ============================================================
+   AS PASTAS (2.23.0)
+   A mesma estrutura técnica (emissor, série, PN), desenhada como o
+   Finder: cada emissor é uma pasta, na cor dele; dentro, cada série
+   com PN é uma pasta e o documento único é um arquivo; dentro da
+   série, o template (vidro fosco, com luz atrás) e os PNs. O ícone
+   diz o formato (docx, xlsx, pptx, md, pdf). A lista continua a um
+   clique, e a escolha fica no navegador.
+   ============================================================ */
+function arqVisaoPref(){
+  try { return localStorage.getItem('nd.arq.visao') === 'lista' ? 'lista' : 'pastas'; } catch(_){ return 'pastas'; }
+}
+function arqTrocarVisao(v){
+  try { localStorage.setItem('nd.arq.visao', v); } catch(_){}
+  const r = route();
+  if (v === 'lista' && r.sub && /^\d{1,3}$/.test(r.sub2 || '')){ location.hash = '#/arquivos/' + r.sub; return; }
+  v === 'pastas' ? arqPastas(arq.rolAtual || '') : arqLista(arq.rolAtual || '');
+}
+const arqVisaoSeg = atual => `<div class="seg" role="group" aria-label="Visão">${[['pastas', 'Pastas'], ['lista', 'Lista']].map(([k, l]) =>
+  `<button class="${atual === k ? 'on' : ''}" aria-pressed="${atual === k}" onclick="arqTrocarVisao('${k}')">${l}</button>`).join('')}</div>`;
+/* os títulos da planilha vêm em maiúsculas: na pasta, em caixa de frase, com as siglas */
+const ARQ_SIGLAS = new Set(['NRO', 'LABBIO', 'PS', 'CEP', 'USRS', 'DHF', 'DMF', 'ISC', 'UFMG', 'TCLE', 'AACC', 'RI', 'PMO', 'SOMA', 'TI', 'EPI', 'FMEA', 'RH', 'LGPD']);
+function arqTitulo(t){
+  const x = String(t || '');
+  if (x !== x.toUpperCase() || !/[A-ZÀ-Ý]/.test(x)) return x;
+  let primeira = true;
+  return x.split(/(\s+)/).map(w => {
+    if (/^\s+$/.test(w) || !w) return w;
+    const nu = w.replace(/[^A-Za-zÀ-ÿ]/g, '');
+    if (ARQ_SIGLAS.has(nu) || /^\(.*\)$/.test(w)) return w;
+    const lo = w.toLocaleLowerCase('pt-BR');
+    if (primeira && nu){ primeira = false; return lo.replace(/[a-zà-ÿ]/, c => c.toLocaleUpperCase('pt-BR')); }
+    return lo;
+  }).join('');
+}
+const arqSnPasta = sn => String(sn).padStart(3, '0');
+function arqPastaHTML({ href, nome, sub, codigo, prefixo, papel, pend }){
+  return `<a class="pasta-it" href="${href}">
+    <span class="pasta" style="${estiloFamilia(familiaDoEmissor(prefixo))}" aria-hidden="true">
+      <span class="fundo"></span><span class="papel"><i>${esc(papel || '')}</i><b></b><b></b><b></b></span><span class="frente"></span>
+      ${pend ? `<span class="pend" title="${pend} em revisão">${pend}</span>` : ''}</span>
+    <span class="nm">${codigo ? `<span class="cd">${esc(codigo)}</span>` : ''}<span class="tt">${esc(nome)}</span></span>
+    <span class="sub">${sub}</span></a>`;
+}
+function arqItemHTML(r){
+  const st = ARQ_STATUS[r.status] || ARQ_STATUS.rascunho;
+  const rev = r.natureza === 'registro' ? (r.template_rev ? 'tpl Rev. ' + esc(r.template_rev) : '') : (r.rev_vigente ? 'Rev. ' + esc(r.rev_vigente) : '');
+  const tit = r.pn != null ? (r.complemento || r.projeto_nome || arqTitulo(r.serie_titulo)) : arqTitulo(r.serie_titulo || r.titulo);
+  return `<a class="arq-item${r.natureza === 'template' ? ' tpl' : ''}" href="#/arquivos/${esc(r.codigo)}"
+      title="${esc(r.codigo + ' ' + r.titulo)}">${iconeArquivo(r, 78)}
+    <span class="nm"><span class="cd">${esc(r.codigo)}</span><span class="tt">${esc(tit)}</span>
+      <span class="st"><span class="dt dt-${st[1]}"></span>${r.natureza === 'template' ? 'Template' : st[0]}${rev ? ', ' + rev : ''}${
+        r.rev_pendente ? ', <span class="arq-pend-mini">em revisão</span>' : ''}${r.classe === 'confidencial' ? ` ${ic('cadeado')}` : ''}</span></span></a>`;
+}
+function arqPastas(pref, sn){
+  arq.rolAtual = pref || '';
+  /* a busca é da pasta: trocar de pasta a limpa */
+  const chave = (pref || '') + '/' + (sn || '');
+  if (arq.pastaChave !== chave){ arq.pq = ''; arq.pastaChave = chave; }
+  const e = pref ? arqEmissor(pref) : null;
+  const cab = sn ? arq.rol.find(r => r.prefixo === pref && r.sn === sn && r.pn == null) : null;
+  if (sn && !cab){ history.replaceState(null, '', location.pathname + '#/arquivos/' + pref); return arqPastas(pref); }
+  const curto = n => String(n || '').replace(/^Departamento\s+(de|d[oa]s?)\s+/i, '');
+  const arg = pref ? `'${pref}'` : '';
+  const migalha = [['Arquivos', pref ? '#/arquivos' : null], ...(e ? [[`NRO-${pref} ${curto(e.nome)}`, cab ? '#/arquivos/' + pref : null]] : []),
+    ...(cab ? [[`${cab.codigo} ${arqTitulo(cab.serie_titulo)}`, null]] : [])];
+  $('#main').innerHTML = arqTopo('Arquivos', cab ? arqTitulo(cab.serie_titulo) : e ? e.nome : 'Todos os arquivos', '',
+    `<button class="btn ghost mini" onclick="arqExportar(${arg})">${ic('down')} Exportar</button>
+     ${arqPossoAdicionar(pref) ? `<button class="btn solid mini" onclick="arqModalAdicionar(${arg})">${ic('plus')} Adicionar</button>` : ''}`)
+  + arqNavHTML('')
+  + `<div class="arq-barra"><nav class="arq-migalha" aria-label="Pastas">${migalha.map(([l, h], i) =>
+        (i ? '<span aria-hidden="true">›</span>' : '') + (h ? `<a href="${h}">${esc(l)}</a>` : `<span aria-current="page">${esc(l)}</span>`)).join('')}</nav>
+      <input type="search" id="arq-pq" class="fb-busca" placeholder="Buscar ${cab ? 'nesta pasta' : e ? 'em NRO-' + esc(pref) : 'em todos os arquivos'}"
+        aria-label="Buscar arquivos" value="${esc(arq.pq || '')}" oninput="arq.pq=this.value;clearTimeout(_arqQ);_arqQ=setTimeout(arqPastasDesenhar,120)">
+      ${arqVisaoSeg('pastas')}</div>
+    <div id="arq-pastas"></div>`;
+  arq.pastaAtual = { pref, sn: cab ? sn : null };
+  arqPastasDesenhar();
+}
+function arqPastasDesenhar(){
+  const el = $('#arq-pastas'); if (!el) return;
+  const { pref, sn } = arq.pastaAtual || {}, q = norm(arq.pq);
+  const pendDe = rs => rs.filter(r => arqPendente(r.id)).length;
+  const escopo = arq.rol.filter(r => (!pref || r.prefixo === pref) && (!sn || r.sn === sn));
+  const ordena = (a, b) => (a.natureza === 'template' ? -1 : 0) - (b.natureza === 'template' ? -1 : 0) || a.sn - b.sn || (a.pn || 0) - (b.pn || 0);
+  /* com busca, a pasta fica plana: os arquivos que casam, de qualquer nível abaixo */
+  if (q){
+    const achados = escopo.filter(r => norm(r.codigo).includes(q) || norm(r.titulo).includes(q)).sort(ordena);
+    el.innerHTML = achados.length ? `<p class="small muted" style="margin:4px 0 12px">${achados.length} ${achados.length === 1 ? 'arquivo' : 'arquivos'}</p>
+      <div class="arq-grade">${achados.map(arqItemHTML).join('')}</div>`
+      : estado.vazio({ texto:'Nenhum arquivo com essa busca.', acao:`<button class="btn ghost" onclick="arq.pq='';$('#arq-pq').value='';arqPastasDesenhar()">Limpar a busca</button>` });
+    return;
+  }
+  let itens;
+  if (!pref){
+    itens = arq.emissores.map(e => { const d = arq.rol.filter(r => r.prefixo === e.prefixo), ns = d.filter(r => r.pn == null).length;
+      return arqPastaHTML({ href:'#/arquivos/' + e.prefixo, prefixo:e.prefixo, papel:'NRO-' + e.prefixo, codigo:'NRO-' + e.prefixo,
+        nome:e.nome.replace(/^Departamento\s+(de|d[oa]s?)\s+/i, ''), pend:pendDe(d),
+        sub:`${ns} ${ns === 1 ? 'série' : 'séries'}, ${d.length} ${d.length === 1 ? 'arquivo' : 'arquivos'}` }); });
+  } else if (!sn){
+    const cabs = escopo.filter(r => r.pn == null).sort((a, b) => a.sn - b.sn);
+    itens = cabs.map(c => {
+      if (!c.multiplo) return arqItemHTML(c);
+      const pns = escopo.filter(r => r.serie_id === c.serie_id && r.pn != null), reg = c.tipo === 'registro';
+      return arqPastaHTML({ href:`#/arquivos/${pref}/${arqSnPasta(c.sn)}`, prefixo:pref, papel:c.codigo, codigo:c.codigo,
+        nome:arqTitulo(c.serie_titulo), pend:pendDe([c, ...pns]),
+        sub:`template, ${pns.length} ${reg ? (pns.length === 1 ? 'registro' : 'registros') : (pns.length === 1 ? 'documento' : 'documentos')}` });
+    });
+  } else {
+    itens = escopo.sort(ordena).map(arqItemHTML);
+  }
+  el.innerHTML = itens.length ? `<div class="arq-grade">${itens.join('')}</div>`
+    : estado.vazio({ texto: !pref ? 'Nenhum emissor cadastrado.' : sn ? 'Nenhum PN nesta série.' : 'Nenhuma série neste emissor.',
+        acao: sn && arqPossoAdicionar(pref) ? `<button class="btn ghost" onclick="arqModalAdicionar('${pref}')">Adicionar</button>` : '' });
 }
 
 /* ============================================================
@@ -1277,6 +1400,9 @@ function arqModalSerie(id, prefixo, estrutura){
       <div class="fld full"><label>Grupos que também leem</label><div class="multi" id="as-leit">${grupos.map(g =>
         `<label class="check"><input type="checkbox" value="${g.id}" ${(s?.grupos_leitura || []).includes(g.id) ? 'checked' : ''}> ${esc(g.nome)}</label>`).join('')}</div>
         <span class="mailer-sub tight">Na classe confidencial, são os únicos (com o grupo revisor). Quem está num subgrupo também lê.</span></div>
+      ${!s || 'formato' in s ? `<div class="fld"><label for="as-fmt">Formato ${dica('O ícone da série nas pastas enquanto ninguém enviou o arquivo. Depois, vale o formato do arquivo em vigor.')}</label>
+        <select id="as-fmt"><option value="">Pelo subtipo</option>${Object.entries(FORMATOS).map(([k, l]) =>
+          `<option value="${k}" ${s?.formato === k ? 'selected' : ''}>${k === 'outro' ? 'Outro' : l}</option>`).join('')}</select></div>` : ''}
       <div class="fld full"><label for="as-desc">Observação</label><textarea id="as-desc" rows="2">${esc(s?.descricao || '')}</textarea></div>
     </div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
@@ -1303,6 +1429,10 @@ async function arqSalvarSerie(id){
     const msg = { duplicado:'Esse SN já existe neste emissor.', tem_pn:'A série já tem PN: a estrutura não muda mais.',
                   no_padrao:'A série está no padrão de projeto e precisa ter PN.' }[data?.status];
     if (data?.status !== 'ok') return toast(msg || motivoRPC(data, null, 'Não foi possível salvar'), true);
+    /* o formato da série tem função própria (2.23.0) */
+    const fmt = $('#as-fmt'), s0 = id ? arq.series.find(x => x.id === id) : null;
+    if (fmt && (fmt.value || null) !== (s0?.formato || null) && (id || data.id))
+      await sb.rpc('doc_serie_formato', { p_serie: id || data.id, p_formato: fmt.value || null });
     fechaModal();
     toast(id ? 'Série salva.' : `${data.codigo} criada, em rascunho.`);
     await arqCarregar(true);
@@ -1323,6 +1453,9 @@ function arqCfgEmissores(){
         <input class="nm" value="${esc(e.nome)}" aria-label="Nome do emissor ${esc(e.prefixo)}" id="em-n-${e.prefixo}" style="height:34px">
         <select id="em-g-${e.prefixo}" aria-label="Grupo do emissor ${esc(e.prefixo)}" style="height:34px;max-width:240px">
           <option value="">Sem grupo</option>${grupos.map(g => `<option value="${g.id}" ${g.id === e.grupo_id ? 'selected' : ''}>${esc(g.nome)}</option>`).join('')}</select>
+        ${'familia' in e ? `<span class="em-cor" style="${estiloFamilia(familiaDoEmissor(e.prefixo))}" aria-hidden="true"></span>
+          <select id="em-f-${e.prefixo}" aria-label="Cor do emissor ${esc(e.prefixo)} nas pastas" style="height:34px;max-width:170px">
+          <option value="">Cor pela ordem</option>${FAMILIAS_MARCA.map(([k, l]) => `<option value="${k}" ${e.familia === k ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}
         <button class="btn ghost mini" onclick="arqSalvarEmissor('${e.prefixo}')">Salvar</button></div>`).join('')}
       <div class="acc-row"><input id="em-novo-p" maxlength="3" placeholder="XXX" data-codigo style="width:70px;height:34px">
         <input id="em-novo-n" class="nm" placeholder="Departamento Clínico" style="height:34px">
@@ -1330,8 +1463,11 @@ function arqCfgEmissores(){
 }
 async function arqSalvarEmissor(pref){
   let q;
-  if (pref) q = sb.from('doc_emissores').update({ nome: $('#em-n-' + pref).value.trim(),
-    grupo_id: $('#em-g-' + pref).value ? Number($('#em-g-' + pref).value) : null }).eq('prefixo', pref);
+  if (pref){
+    const d = { nome: $('#em-n-' + pref).value.trim(), grupo_id: $('#em-g-' + pref).value ? Number($('#em-g-' + pref).value) : null };
+    if ($('#em-f-' + pref)) d.familia = $('#em-f-' + pref).value || null;   /* 2.23.0: a cor nas pastas */
+    q = sb.from('doc_emissores').update(d).eq('prefixo', pref);
+  }
   else {
     const p = $('#em-novo-p').value.trim().toUpperCase(), n = $('#em-novo-n').value.trim();
     if (!/^[A-Z]{3}$/.test(p) || !n) return toast('O prefixo tem três letras, e o nome é obrigatório.', true);

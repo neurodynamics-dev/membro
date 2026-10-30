@@ -21,13 +21,13 @@ try{ if (localStorage.getItem('nd.tema') === 'claro') document.documentElement.d
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- design system (cópia gerada pelo brand: scripts/distribuir.mjs) e o CSS próprio do SOMA -->
-<link rel="stylesheet" href="ds/tokens.css?v=993985676e">
-<link rel="stylesheet" href="ds/neuro.css?v=993985676e">
-<link rel="stylesheet" href="ds/casca.css?v=993985676e">
-<link rel="stylesheet" href="ds/select.css?v=993985676e">
-<link rel="stylesheet" href="soma.css?v=993985676e">
-<script defer src="ds/select.js?v=993985676e"></script>
-<script src="ds/casca.js?v=993985676e"></script>
+<link rel="stylesheet" href="ds/tokens.css?v=78013e460b">
+<link rel="stylesheet" href="ds/neuro.css?v=78013e460b">
+<link rel="stylesheet" href="ds/casca.css?v=78013e460b">
+<link rel="stylesheet" href="ds/select.css?v=78013e460b">
+<link rel="stylesheet" href="soma.css?v=78013e460b">
+<script defer src="ds/select.js?v=78013e460b"></script>
+<script src="ds/casca.js?v=78013e460b"></script>
 </head>
 <body>
 
@@ -266,11 +266,11 @@ const CONFIG = {
    é a 2.16.0. Acompanha a query dos módulos carregados sob demanda, para
    um deploy não deixar módulo velho em cache, e as notas de cada versão
    moram em mod-versoes.js (#/versoes). */
-const VERSAO = '2.22.0';
+const VERSAO = '2.23.0';
 /* O carimbo dos arquivos (scripts/carimbar.mjs): um hash do conteúdo de todo
    CSS e JS. Vai na query de tudo que o portal carrega, para um deploy nunca
    misturar arquivo novo com arquivo velho em cache. */
-const CARIMBO = '993985676e';
+const CARIMBO = '78013e460b';
 const LOGO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-black.png';
 const LOGO_BRANCO_URL = 'https://brand.neurodynamics.dev/assets/logo-imagotipo-white.png';
 const FOTOS_BASE = 'https://raw.githubusercontent.com/neurodynamics-dev/nro-pessoal/refs/heads/main/fotos/';
@@ -969,7 +969,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && _dica.alvo
      listas (-, 1.), aninhadas, e de tarefas (- [ ], - [x]) · > citação ·
      --- · tabelas · links (https, mailto e as telas do portal, #/…) e o
      endereço solto · os códigos do SOMA viram link (ORT-14, NRO-PES-007,
-     NRO-TRE-003, POST-14, EXT-14, BUG-12) · @Nome vira a menção, com
+     NRO-TRE-003, POST-14, EXT-14, BUG-12, TRB-5) · @Nome vira a menção, com
      op.mencoes = [{ registro, nome }] */
 const MD_ITEM = /^(\s*)([-*+]|\d{1,3}[.)])\s+(.*)$/;
 const MD_SEP  = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
@@ -1005,6 +1005,7 @@ function mdCodigo(x){
   if (/^POST-/.test(x)) return a('#/studio/' + x);
   if (/^EXT-/.test(x)) return a('#/servicos/eventos/' + x);
   if ((m = x.match(/^(?:BUG|SUG)-(\d+)$/))) return a('#/versoes/comentarios/' + m[1]);
+  if (/^TRB-\d+$/.test(x)) return a('#/projetos/' + x);
   const pf = x.split('-')[0];
   return (state.grupos || []).some(g => g.prefixo === pf) ? a('#/atividades/card/' + x) : x;
 }
@@ -1954,7 +1955,12 @@ function arvoreDoMenu(){
     /* os projetos de que a pessoa faz parte; os outros, em "Todos" */
     { r:'projetos', rot:'Projetos', ic:'projeto', filhos: [
       { sub:'', rot:'Todos os projetos' },
-      ...meusProjetos().map(p => ({ sub:p.codigo, rot:p.nome, pf:p.codigo }))] },
+      ...meusProjetos().map(p => ({ sub:p.codigo, rot:p.nome, pf:p.codigo })),
+      /* os trabalhos (2.23.0): a lista, quem está em quê e os da pessoa */
+      { sep:true },
+      { sub:'trabalhos', rot:'Trabalhos', tambem:'^trb-\\d+$' },
+      { sub:'alocacao', rot:'Pessoas e trabalhos' },
+      ...meusTrabalhos().map(t => ({ sub:t.codigo, rot:t.referencia, pf:t.codigo }))] },
     /* a primeira tela é o rol inteiro; cada emissor é o mesmo rol, já
        filtrado, e a tela de um arquivo (#/arquivos/NRO-PES-007) acende o
        emissor dele. Revisar, templates, visão geral e configurações vêm
@@ -2079,10 +2085,13 @@ function carregarOKRsDoMenu(){
 function carregarProjetosEArquivos(){
   return Promise.all([
     sb.from('projetos').select('id,codigo,nome,grupo_id,supervisor,status,logo_semente').order('nome'),
-    sb.from('doc_emissores').select('prefixo,nome,grupo_id,ordem').order('ordem').order('prefixo')
-  ]).then(([pj, em]) => {
+    sb.from('doc_emissores').select('*').order('ordem').order('prefixo'),
+    /* os trabalhos (2.23.0): o menu, a busca, o organograma e a ficha leem daqui */
+    sb.from('trabalhos').select('id,numero,codigo,referencia,tipo,status,grupo_id,projeto_id,responsaveis').order('numero')
+  ]).then(([pj, em, tb]) => {
     state.projetos  = pj.error ? [] : (pj.data || []);
     state.emissores = em.error ? [] : (em.data || []);
+    state.trabalhos = tb.error ? [] : (tb.data || []);
     desenharMenu();
   }, () => {});
 }
@@ -2092,6 +2101,82 @@ function meusProjetos(){
   const eu = state.membros.find(m => m.registro === state.perfil?.registro);
   const meus = gruposEfetivos(eu);
   return (state.projetos || []).filter(p => p.status !== 'encerrado' && meus.has(grupoPorId(p.grupo_id)?.nome));
+}
+/* Os trabalhos (2.23.0): projetos pequenos, citados pelo número (TRB-5).
+   A equipe é o grupo do trabalho, como num projeto; os convidados de fora
+   moram à parte (mod-trabalhos). A regra de quem está em quê é uma só, e
+   o menu, o organograma, a ficha e a alocação perguntam para ela. */
+const TRB_ABERTO = t => !['concluido', 'cancelado'].includes(t?.status);
+function projetosDe(m){
+  const gs = gruposEfetivos(m);
+  return (state.projetos || []).filter(p => gs.has(grupoPorId(p.grupo_id)?.nome));
+}
+function trabalhosDe(m){
+  const gs = gruposEfetivos(m);
+  return (state.trabalhos || []).filter(t => gs.has(grupoPorId(t.grupo_id)?.nome));
+}
+function meusTrabalhos(){
+  return trabalhosDe(state.membros.find(m => m.registro === state.perfil?.registro)).filter(TRB_ABERTO);
+}
+/* Quem gere os trabalhos: admin, Depto. de Pessoal, liderança e o PMO.
+   A mesma regra de trabalho_gestor() no banco. */
+const trabalhoGestor = () => docGestor() || can();
+/* As seções de Projetos: a carteira, os trabalhos e quem está em quê. */
+const secoesProjetos = atual => navNivel1([['', 'Projetos', '#/projetos'], ['trabalhos', 'Trabalhos', '#/projetos/trabalhos'],
+  ['alocacao', 'Pessoas e trabalhos', '#/projetos/alocacao']], atual, 'Projetos');
+/* Os projetos e trabalhos de uma pessoa, em chips: o organograma e a ficha
+   mostram os mesmos. */
+function projetosETrabalhosHTML(m, vazio){
+  const pjs = projetosDe(m).filter(p => p.status !== 'encerrado');
+  const tbs = trabalhosDe(m).filter(TRB_ABERTO);
+  if (!pjs.length && !tbs.length) return vazio == null ? '' : vazio;
+  return `<span class="pt-chips">${pjs.map(p => `<a class="chip mini pt-pj" href="#/projetos/${esc(p.codigo)}"
+      title="Projeto ${esc(p.nome)}">${logoProjeto(p.logo_semente, 16, p.nome)}${esc(p.nome)}</a>`).join('')}${tbs.map(t =>
+    `<a class="chip mini pt-trb" href="#/projetos/${esc(t.codigo)}" title="${esc(t.referencia)}"><b>${esc(t.codigo)}</b>${
+      esc(t.referencia)}</a>`).join('')}</span>`;
+}
+
+/* ---------------- arquivos: a cor do emissor e o ícone do formato ----------------
+   2.23.0. Cada emissor tem uma família secundária da marca (doc_emissores.familia;
+   sem escolha, a da ordem) e cada arquivo um formato (doc_rol.formato, do nome do
+   arquivo enviado; sem arquivo, o da série ou o que o subtipo sugere). O ícone é o
+   mesmo nas pastas de Arquivos e nos documentos de um trabalho. O template não é
+   documento: é vidro fosco, com luz atrás. */
+const FAMILIAS_MARCA = [['retina', 'Retina'], ['ion', 'Ion'], ['ritmo', 'Ritmo'], ['nexo', 'Nexo'], ['neuron', 'Neuron'],
+  ['plexo', 'Plexo'], ['lumen', 'Lúmen'], ['dendrito', 'Dendrito'], ['impulso', 'Impulso'], ['iris', 'Íris'], ['glia', 'Glia']];
+function familiaDoEmissor(prefixo){
+  const es = state.emissores || [], i = es.findIndex(e => e.prefixo === prefixo);
+  if (i < 0) return 'glia';
+  /* vai para um style: só as famílias da marca passam */
+  return FAMILIAS_MARCA.some(([k]) => k === es[i].familia) ? es[i].familia : FAMILIAS_MARCA[i % FAMILIAS_MARCA.length][0];
+}
+/* sobre o primary, o dark da família; Retina e Nexo levam branco (o pareamento da marca) */
+const estiloFamilia = f => `--fam-l:var(--${f}-light);--fam-m:var(--${f}-medium);--fam-p:var(--${f}-primary);--fam-d:var(--${f}-dark);--fam-on:${
+  ['retina', 'nexo'].includes(f) ? 'var(--medula-light)' : `var(--${f}-dark)`}`;
+const FORMATOS = { docx:'DOCX', xlsx:'XLSX', pptx:'PPTX', md:'MD', pdf:'PDF', outro:'ARQ' };
+function formatoDe(r){
+  const f = r?.formato || r?.serie_formato;
+  if (FORMATOS[f]) return f;
+  return ['planilha', 'inventario'].includes(r?.subtipo) ? 'xlsx' : 'docx';
+}
+/* o desenho de dentro da folha, um por formato */
+const GLIFO_FORMATO = {
+  docx:'<path d="M9 13h14M9 17h14M9 21h10M9 25h12"/>',
+  xlsx:'<rect x="8.5" y="12.5" width="15" height="13" rx="1"/><path d="M8.5 17h15M8.5 21.5h15M13.5 12.5v13M18.5 12.5v13"/>',
+  pptx:'<rect x="8.5" y="12.5" width="15" height="10" rx="1.2"/><path d="M12 19.5v-2.5M15.5 19.5v-4.5M19 19.5v-3M13 26h6"/>',
+  md:'<path d="M8.5 23v-8l3.5 4 3.5-4v8M20.5 15v8M18 20.5l2.5 2.5 2.5-2.5"/>',
+  pdf:'<path d="M10 25c2.5-4 4.5-8.5 5-12.5.4 3.6 3 7.5 7 9.5-4.2-.4-8.4.6-12 3z"/>',
+  outro:'<circle cx="16" cy="19" r="4.5"/>'
+};
+/* r: uma linha do rol (ou { formato, natureza, prefixo }); px: a altura */
+function iconeArquivo(r, px){
+  const f = formatoDe(r), tpl = r?.natureza === 'template';
+  return `<span class="arqv${tpl ? ' vidro' : ''}" style="--h:${px || 64}px;${estiloFamilia(familiaDoEmissor(r?.prefixo))}" aria-hidden="true">
+    <svg viewBox="0 0 32 40" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path class="folha" d="M5 3.5h15.5L27 10v25.5a1.5 1.5 0 0 1-1.5 1.5h-19A1.5 1.5 0 0 1 5 35.5v-30A2 2 0 0 1 7 3.5z"/>
+      <path class="dobra" d="M20.5 3.5V10H27"/>
+      <g class="glifo" stroke-width="1.5">${GLIFO_FORMATO[f]}</g>
+    </svg><span class="ext">${FORMATOS[f]}</span></span>`;
 }
 /* Quem administra a documentação: admin, liderança e quem está no grupo do PMO
    (grupos.chave = 'pmo'). É a mesma regra de doc_gestor() no banco —
@@ -2640,6 +2725,14 @@ registrarBusca({
     sub: [x.revisao ? 'Rev. ' + x.revisao : null, x.obrigatorio ? 'obrigatório' : x.obrigatorio === false ? 'opcional' : null,
       x.situacao === 'concluido' ? 'concluído' : x.situacao === 'andamento' ? 'em andamento' : null].filter(Boolean).join(', '),
     href: '#/treinamentos/' + x.codigo })), t, 6)
+});
+/* os trabalhos (2.23.0) a casca lê no login, para o menu: a fonte mora aqui */
+registrarBusca({
+  fonte:'trabalhos', rotulo:'Trabalhos',
+  buscar: (t) => filtrarSimples((state.trabalhos || []).map(x => ({
+    titulo: x.referencia, codigo: x.codigo,
+    sub: 'Trabalho ' + x.numero + (TRB_ABERTO(x) ? '' : x.status === 'concluido' ? ', concluído' : ', cancelado'),
+    href: '#/projetos/' + x.codigo })), t, 6)
 });
 registrarBusca({
   fonte:'agenda', rotulo:'Na agenda',
@@ -4139,6 +4232,7 @@ function desenhaOrg(filtro){
           <span class="nm-linha"><span class="nm" style="font-size:15px;white-space:normal">${esc(foco.nome)}</span>${pontoTrainee(foco)}</span>
           <span class="cg" style="white-space:normal">${esc(foco.cargo||'—')}${foco.departamento?', '+esc(foco.departamento):''}</span>
           <span class="small" style="display:block;margin-top:3px">${esc(foco.email_nro||foco.email_pessoal||'')}</span>
+          ${projetosETrabalhosHTML(foco)}
         </span>
         <span class="pill"><span class="dt" style="background:${foco.status==='Ativo'?'var(--ok)':'var(--warn)'}"></span>${esc(foco.status)}</span>
         ${podeQuadro() ? `<a class="btn ghost" style="height:34px;padding:0 14px;font-size:12.5px"
