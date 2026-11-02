@@ -23,7 +23,7 @@ body{min-height:0;overflow:hidden;overscroll-behavior:none}
 .entrada{min-height:100%;max-width:420px;margin:0 auto;display:flex;flex-direction:column;justify-content:center;gap:14px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   padding-block:max(32px,env(safe-area-inset-top,0px)) max(32px,env(safe-area-inset-bottom,0px))}
-.entrada-simbolo{width:40px;height:auto}
+.entrada-simbolo{width:36px;height:36px}
 .entrada h1{font-size:26px;font-weight:600;line-height:1.12;text-wrap:balance;margin-bottom:4px}
 .entrada form{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .entrada input{width:100%;min-height:44px;font-size:15px}
@@ -35,7 +35,7 @@ body{min-height:0;overflow:hidden;overscroll-behavior:none}
 
 /* ---------- topo ------------------------------------------ */
 .topo{display:flex;align-items:center;gap:var(--s2);min-height:60px}
-.topo-simbolo{width:28px;height:auto;flex:none;margin-right:4px}
+.topo-simbolo{width:26px;height:26px;flex:none;margin-right:6px}
 .topo-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .topo-t .rotulo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topo-cont{font-size:var(--fs-sm);color:var(--muted)}
