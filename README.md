@@ -718,7 +718,8 @@ paisagem, thumbnail do YouTube e vídeo 16:9 e 9:16.
   sublinha), alinhamento, tamanho do título, caixa alta, a posição e o
   tamanho da logo, **a logo do LABBIO ao lado da nossa**, rodapé e contador
   do carrossel. Nos temas claros, o acento de texto escurece para ler;
-- **fotos**: enviar, do **Unsplash** (com a chave em *Configurações*, a busca
+- **fotos**: enviar, da **galeria** (as fotos aprovadas na curadoria, com a
+  busca por tag e o crédito), do **Unsplash** (com a chave em *Configurações*, a busca
   acontece ali mesmo e o crédito entra sozinho), **da equipe** (o nome, o
   cargo e a foto da ficha, para aniversário e boas-vindas) ou por link. Cada
   uma com enquadramento, zoom e filtro (natural, preto e branco, duotone da
@@ -771,13 +772,49 @@ o que é (aniversário, na mídia…), o **formato** diz o que ela é na rede
 (imagem única, carrossel, stories, reels, documento, vídeo, só texto) e as
 **redes** dizem onde.
 
+### A curadoria de fotos
+
+Em `#/studio/curadoria` (`mod-fotos.js`, 2.24.0): o banco de fotos da marca
+passa por aqui antes de chegar à galeria. Uma foto de cada vez aparece dentro
+de uma peça da marca, chapada, sem degradê: **Feed** 4:5 (a foto e a faixa no
+dark da família), **Story** 9:16 (o modelo de story), **Banda** 1:1 (a banda de
+família com o símbolo) e **Site** 4:5 (o cartão de projeto do site), na paleta
+escolhida (Cortex, as onze secundárias ou **Auto**, a família do tema da foto).
+
+- **Votar**: *Aprovar*, *Descartar* ou *Talvez*, pelos botões, arrastando o
+  cartão (direita, esquerda, para cima) ou pelas setas do teclado; tocar na
+  foto troca a peça; *Desfazer* apaga o último voto. A peça e a paleta em que
+  a pessoa viu a foto vão junto com o voto;
+- **aprovada é o voto que diz**: a foto entra na galeria quando os "sim"
+  chegam a *quantas aprovações bastam* (as mesmas das publicações) e passam os
+  "não"; descartada, quando os "não" chegam lá primeiro. *Talvez* não conta. A
+  gestão do Studio aprova ou tira da galeria à mão;
+- **a fila**: primeiro o que acabou de entrar, depois a seleção da equipe,
+  depois as sugestões, um tema de cada vez. Os **temas** (`foto_temas`) filtram
+  a fila e dão a frase das peças de prova e os termos de busca;
+- **pôr fotos na fila**: *Pôr por link* lê endereços do Unsplash e do Pexels
+  colados (um por linha ou todos juntos, também os em português); *Buscar nos
+  bancos* busca no Unsplash e no Pexels, com as chaves de *Configurações*, e
+  põe as marcadas na fila, com o tema e as tags;
+- **o endereço da imagem**: com a chave do banco, a página pergunta à API pela
+  imagem e a guarda no banco de fotos (`fotos.imagem`). É ela que o criador usa
+  no canvas; sem ela, a foto aparece na curadoria e na galeria, mas não entra
+  numa peça;
+- **Meus votos** (`#/studio/curadoria/votos`): as fotos em que a pessoa votou,
+  com o status de cada uma, para mudar ou desfazer o voto.
+
+Vota e põe fotos na fila quem entra no Studio. A primeira campanha já vem na
+migração: 11 temas e 90 fotos (as 11 escolhidas pela equipe e as sugestões
+buscadas por tema, só de licença livre).
+
 ### Configurações
 
 Em `#/studio/config`: os **grupos de acesso** e os **grupos aprovadores**,
 quantas aprovações bastam e o lembrete; as **contas** da equipe em cada rede,
 com o usuário (entra no rodapé das artes e na tela de encerramento) e o
 **link** (entra no rodapé dos e-mails do Full mailer; sem link, o e-mail monta
-o endereço pelo usuário quando a rede permite), e a chave do Unsplash;
+o endereço pelo usuário quando a rede permite), e as chaves do Unsplash e do
+Pexels (2.24.0);
 a **imprensa do site** — os vídeos e as matérias da seção *Quem somos* do site
 institucional e da página *A NeuroDynamics* do site do processo seletivo, que
 os dois leem na hora por `site_imprensa_publico()`; e os **recursos de
@@ -1573,4 +1610,4 @@ O envio de newsletter exige três votos distintos de integrantes ativos da lider
 
 Tipos de evento com ata usam a série NRO-PUB-003 por padrão. O botão cria e salva o rascunho antes de abrir Arquivos, respeitando a permissão de criação da série. Reabrir o evento reutiliza o PN.
 
-Marca guarda só o que exige login: os modelos e templates (miniaturas do `brand.neurodynamics.dev`, documentos controlados resolvidos pelo rol e por `doc_pode_ler`), a assinatura de e-mail e o vínculo de cada modelo com uma série. Logos, wallpapers, kit de interface e prompts ficam no manual público. Configure a série de cada peça em `#/marca/config`. O importador do Studio aceita JSON ou Markdown com bloco JSON, validado contra o README gerado no próprio editor; fotos são adicionadas na interface.
+Marca guarda só o que exige login: os modelos e templates (miniaturas do `brand.neurodynamics.dev`, documentos controlados resolvidos pelo rol e por `doc_pode_ler`), a **galeria de fotos** (`#/marca/fotos`, 2.24.0: as aprovadas na curadoria do Studio, com busca por texto, por tag e por tema, o detalhe de cada uma com autor, licença e a peça da aprovação, e *Copiar a lista*, que leva as fotos filtradas em JSON para colar numa conversa com o Claude ou em outra ferramenta), a assinatura de e-mail e o vínculo de cada modelo com uma série. Logos, wallpapers, kit de interface e prompts ficam no manual público. Configure a série de cada peça em `#/marca/config`. O importador do Studio aceita JSON ou Markdown com bloco JSON, validado contra o README gerado no próprio editor; fotos são adicionadas na interface.

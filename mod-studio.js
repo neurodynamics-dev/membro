@@ -15,6 +15,7 @@
      #/studio/ideias               as ideias soltas, e a captura rápida
      #/studio/criar[/<modelo>]     o criador (mod-criador)
      #/studio/modelos              a galeria dos modelos (mod-criador)
+     #/studio/curadoria[/votos]    a curadoria de fotos e os meus votos (mod-fotos, 2.24.0)
      #/studio/POST-14              uma publicação
      #/studio/POST-14/arte         a arte dela, no criador
      #/studio/config[/<aba>]       acesso, contas, imprensa, recursos
@@ -101,6 +102,13 @@ async function pageStudio(sub, sub2){
     return;
   }
   if (!sub) return stQuadro();
+  if (sub === 'curadoria'){
+    try { await carregarModulo('fotos'); }
+    catch(e){ $('#main').innerHTML = `<div class="aviso-box err">A curadoria não carregou (${esc(e.message)}). Recarregue a página.</div>`; return; }
+    return fotoCuradoria(sub2, acoes => stTopo('Curadoria de fotos',
+      dica('Uma foto de cada vez, dentro de uma peça da marca. Arraste para a direita para aprovar, para a esquerda para descartar e para cima para talvez; tocar na foto troca a peça. A foto entra na galeria da Marca quando chega ao número de aprovações das configurações.'),
+      acoes) + stNav('curadoria'));
+  }
   if (sub === 'calendario') return stCalendario();
   if (sub === 'ideias') return stIdeias();
   if (sub === 'config') return stConfig(sub2 || 'acesso');
@@ -124,7 +132,7 @@ function stNaoAchou(cod){
 /* nível 1 do Studio: o seletor segmentado, como em todo espaço */
 function stNav(atual){
   const n = studioM.pubs.filter(stEsperaMim).length;
-  const it = [['', 'Quadro'], ['calendario', 'Calendário'], ['ideias', 'Ideias'], ['criar', 'Criar'], ['modelos', 'Modelos'], ['config', 'Configurações']];
+  const it = [['', 'Quadro'], ['calendario', 'Calendário'], ['ideias', 'Ideias'], ['criar', 'Criar'], ['modelos', 'Modelos'], ['curadoria', 'Curadoria'], ['config', 'Configurações']];
   return `<nav class="nav1" aria-label="Studio">${it.map(([k, l]) =>
     `<a href="#/studio${k ? '/' + k : ''}" class="${atual === k ? 'on' : ''}">${l}${k === '' && n
       ? ` <span class="n sua" title="Esperando a sua aprovação">${n}</span>` : ''}</a>`).join('')}</nav>`;
@@ -822,6 +830,13 @@ function stCfgContas(){
       <ol class="st-passos-txt"><li>Entre em <a href="https://unsplash.com/oauth/applications" target="_blank" rel="noopener">unsplash.com/oauth/applications</a> com a conta da equipe.</li>
         <li><b>New Application</b>, aceite os termos e dê um nome (ex.: Studio NeuroDynamics).</li>
         <li>Copie a <b>Access Key</b> e cole aqui. A chave de demonstração permite 50 buscas por hora.</li></ol>
+    </section>
+    <section class="card"><h3>Pexels</h3>
+      <p class="small muted" style="line-height:1.6;margin:4px 0 12px">Com a chave, a curadoria de fotos busca também no Pexels
+        e acha o endereço das fotos de lá.</p>
+      <div class="fld"><label for="ct-px">API Key</label><input id="ct-px" value="${esc(c.pexels_chave || '')}" placeholder="a chave da API do Pexels" ${pode ? '' : 'disabled'}></div>
+      <ol class="st-passos-txt"><li>Entre em <a href="https://www.pexels.com/api/" target="_blank" rel="noopener">pexels.com/api</a> com a conta da equipe.</li>
+        <li>Peça a chave e copie a <b>API Key</b> para cá.</li></ol>
     </section></div>
     ${pode ? `<div class="acts" style="justify-content:flex-end;margin-top:14px"><button class="btn solid" onclick="stCfgSalvarContas()">${ic('check')} Salvar</button></div>` : ''}`;
 }
@@ -834,9 +849,14 @@ async function stCfgSalvarContas(){
   const links = Object.fromEntries(ST_CONTAS.map(([k]) => [k, $('#lk-' + k).value.trim()]).filter(([, v]) => v));
   const ruim = Object.entries(links).find(([, v]) => !/^https?:\/\/\S+$/i.test(v));
   if (ruim) return toast(`O link de ${ST_CONTAS.find(([k]) => k === ruim[0])[1]} precisa começar com https://.`, true);
-  const dados = { contas, links, unsplash_chave: $('#ct-us').value.trim() || null };
+  const dados = { contas, links, unsplash_chave: $('#ct-us').value.trim() || null, pexels_chave: $('#ct-px').value.trim() || null };
   let { data, error } = await sb.from('studio_config').update(dados).eq('id', true).select();
   let semLinks = false;
+  /* sem a 2.24.0, a coluna da chave do Pexels não existe: salva o resto */
+  if (error && /pexels/.test(error.message || '')){
+    delete dados.pexels_chave;
+    ({ data, error } = await sb.from('studio_config').update(dados).eq('id', true).select());
+  }
   /* sem a v30, a coluna dos links não existe: salva o resto e avisa */
   if (error && /links/.test(error.message || '')){
     delete dados.links; semLinks = true;

@@ -1,0 +1,636 @@
+/* ============================================================
+   MÓDULO · FOTOS — o banco de fotos da marca (2.24.0)
+   A curadoria mora no Studio; a galeria das aprovadas, na Marca; e o
+   criador pede uma foto daqui (fotoEscolher). Quem chama passa o
+   cabeçalho da própria tela, para este módulo não depender de outro.
+
+   Rotas (anunciadas por mod-studio e mod-marca):
+     #/studio/curadoria          a fila: uma foto de cada vez, dentro de uma peça da marca
+     #/studio/curadoria/votos    os meus votos: mudar ou desfazer
+     #/marca/fotos               a galeria das aprovadas, com busca por texto e por tag
+
+   Aprovada é o voto que diz (db/2.24.0_fotos.sql): a foto entra na
+   galeria quando os "sim" chegam ao número de aprovações do Studio e
+   passam os "não". A gestão do Studio aprova ou tira à mão.
+
+   O endereço da imagem: com a chave do Unsplash (ou do Pexels) em
+   Studio › Configurações, a página pergunta à API do banco e guarda o
+   endereço no banco de fotos (foto_imagem_definir). É ele que o canvas
+   do criador aceita. Sem chave, a prévia usa o endereço público da foto.
+
+   Precisa da migração db/2.24.0_fotos.sql.
+   Depende da casca para: sb, $, esc, norm, state, toast, abreModal,
+   fechaModal, confirma, falha, motivoRPC, copiar, fmtD, ic, ibtn,
+   navNivel2, ferramentas, estado, spec, dica, podeStudio,
+   podeAprovarStudio.
+   ============================================================ */
+
+const fotosM = { temas:null, fila:[], restantes:0, minimas:1, enq:'feed', pal:'cortex', hist:[], pulei:[],
+  filtroTemas:[], votos:null, votoFiltro:'sim', galeria:null, gq:'', gtags:[], gtema:'', imgs:{},
+  busca:{ banco:'u', q:'', res:[], marcadas:new Set(), pagina:1 }, escolher:null, cab:null, erro:null };
+
+const FT_FAMS = [['cortex','Cortex'], ['ion','Ion'], ['neuron','Neuron'], ['glia','Glia'], ['retina','Retina'], ['nexo','Nexo'],
+  ['dendrito','Dendrito'], ['lumen','Lúmen'], ['ritmo','Ritmo'], ['impulso','Impulso'], ['plexo','Plexo'], ['iris','Íris']];
+const FT_FAM_NOME = Object.fromEntries(FT_FAMS);
+const FT_ENQ = [['feed','Feed 4:5', 4 / 5], ['story','Story 9:16', 9 / 16], ['banda','Banda 1:1', 1], ['site','Site 4:5', 4 / 5]];
+const FT_BANCO = { unsplash:'Unsplash', pexels:'Pexels', link:'link' };
+const FT_DECISAO = { sim:'Aprovar', nao:'Descartar', talvez:'Talvez' };
+const FT_STATUS = { fila:['Na fila', ''], aprovada:['Aprovada', 'p-ok'], descartada:['Descartada', 'p-warn'] };
+const FT_COLS = 'id,banco,banco_id,pagina,imagem,descricao,tema,tags,autor,licenca,busca,origem,status,votos_sim,votos_nao,votos_talvez,enquadramento,paleta,decidida_em';
+
+/* ---------------- dados comuns ---------------- */
+async function ftTemas(){
+  if (fotosM.temas) return fotosM.temas;
+  const { data, error } = await sb.from('foto_temas').select('chave,nome,familia,titulo,sub,termos,ordem').order('ordem');
+  if (error) throw error;
+  fotosM.temas = data || [];
+  return fotosM.temas;
+}
+const ftTema = k => (fotosM.temas || []).find(t => t.chave === k) || { chave:k || '', nome:'Sem tema', familia:'cortex', titulo:'Sistemas inteligentes para a saúde humana.', sub:'', termos:[] };
+const ftFam = f => fotosM.pal === 'auto' ? (ftTema(f.tema).familia || 'cortex') : fotosM.pal;
+const ftCurador = () => podeStudio();
+const ftChave = b => b === 'pexels' ? state.studioCfg?.pexels_chave : b === 'unsplash' ? state.studioCfg?.unsplash_chave : null;
+const ftPill = (t, c) => `<span class="pill ${c || ''}"><span class="dt ${c === 'p-ok' ? 'dt-ok' : c === 'p-warn' ? 'dt-warn' : ''}"></span>${esc(t)}</span>`;
+
+/* ---------------- o endereço da imagem ---------------- */
+function ftComLargura(url, w){
+  try {
+    const u = new URL(url);
+    if (u.hostname === 'images.unsplash.com'){ u.searchParams.set('auto', 'format'); u.searchParams.set('fit', 'max'); u.searchParams.set('q', '80'); u.searchParams.set('w', String(w)); }
+    else if (u.hostname === 'images.pexels.com'){ u.searchParams.set('auto', 'compress'); u.searchParams.set('cs', 'tinysrgb'); u.searchParams.set('w', String(w)); }
+    return u.toString();
+  } catch(e){ return url; }
+}
+function ftImgUrl(f, w = 1080){
+  const im = fotosM.imgs[f.id]?.url || f.imagem;
+  if (im) return ftComLargura(im, w);
+  if (f.banco === 'unsplash') return `https://unsplash.com/photos/${encodeURIComponent(f.banco_id)}/download?w=${w}`;
+  if (f.banco === 'pexels') return `https://images.pexels.com/photos/${encodeURIComponent(f.banco_id)}/pexels-photo-${encodeURIComponent(f.banco_id)}.jpeg?auto=compress&cs=tinysrgb&w=${w}`;
+  return f.banco_id;
+}
+const ftPagina = f => f.pagina || (f.banco === 'unsplash' ? `https://unsplash.com/photos/${encodeURIComponent(f.banco_id)}`
+  : f.banco === 'pexels' ? `https://www.pexels.com/photo/${encodeURIComponent(f.banco_id)}/` : f.imagem || f.banco_id);
+
+/* pergunta à API do banco pelo endereço da imagem e guarda no banco de fotos */
+async function ftResolver(f){
+  const k = ftChave(f.banco); if (!k || f.imagem) return !!f.imagem;
+  try {
+    let url = null, autor = null;
+    if (f.banco === 'unsplash'){
+      const r = await fetch(`https://api.unsplash.com/photos/${encodeURIComponent(f.banco_id)}?client_id=${encodeURIComponent(k)}`);
+      if (!r.ok) return false;
+      const j = await r.json(); url = j.urls?.raw || j.urls?.regular; autor = j.user?.name || null;
+    } else if (f.banco === 'pexels'){
+      const r = await fetch(`https://api.pexels.com/v1/photos/${encodeURIComponent(f.banco_id)}`, { headers:{ Authorization:k } });
+      if (!r.ok) return false;
+      const j = await r.json(); url = j.src?.original || j.src?.large2x; autor = j.photographer || null;
+    }
+    if (!url) return false;
+    f.imagem = url; if (!f.autor && autor) f.autor = autor;
+    sb.rpc('foto_imagem_definir', { p_foto:f.id, p_imagem:url, p_autor:autor }).then(() => {}, () => {});
+    return true;
+  } catch(e){ return false; }
+}
+/* carrega a prévia; se falhar e houver chave, tenta pela API */
+function ftCarrega(f){
+  const st = fotosM.imgs[f.id];
+  if (st?.p) return st.p;
+  const s = fotosM.imgs[f.id] = { s:'carregando', url:null };
+  s.p = new Promise(ok => {
+    const tenta = (url, ultima) => {
+      const i = new Image(); i.decoding = 'async';
+      i.onload = () => { s.s = 'ok'; s.url = url; ok(true); };
+      i.onerror = async () => {
+        if (!ultima && await ftResolver(f)) tenta(ftComLargura(f.imagem, 1080), true);
+        else { s.s = 'falhou'; ok(false); }
+      };
+      i.src = url;
+    };
+    tenta(ftImgUrl(f, 1080), false);
+  });
+  return s.p;
+}
+
+/* ---------------- as peças de prova ----------------
+   Tudo chapado: foto retangular ou com raio de 18px, sem filtro; cada
+   superfície numa família. Medidas em cqw, frações da largura da peça. */
+function ftArte(f, enq, fam){
+  const T = ftTema(f.tema), st = fotosM.imgs[f.id];
+  const url = st?.url || ftImgUrl(f, 1080);
+  const foto = `<div class="ft-moldura"><img class="ft-foto${st?.s === 'ok' ? ' ok' : ''}" src="${esc(url)}" alt="${esc(f.descricao)}" draggable="false"></div>`;
+  const logo = '<span class="ft-logo" role="img" aria-label="NeuroDynamics"></span>';
+  const eb = `<span class="ft-eb"><i></i>${esc(T.nome)}</span>`;
+  const pe = '<div class="ft-pe"><span>LABBIO, UFMG</span><span>neurodynamics.dev</span></div>';
+  const c = `ft-arte ft-${enq} f-${fam}`;
+  if (enq === 'feed') return `<div class="${c}">${foto}<div class="ft-faixa"><div class="ft-topo">${logo}${eb}</div><h2>${esc(T.titulo)}</h2>${pe}</div></div>`;
+  if (enq === 'story') return `<div class="${c}"><div class="ft-grade"></div><div class="ft-topo">${logo}<span class="ft-data">2026</span></div>${foto}
+    <div class="ft-texto">${eb}<h2>${esc(T.titulo)}</h2><p>${esc(T.sub)}</p></div><span class="ft-cta">Conheça o trabalho</span></div>`;
+  if (enq === 'banda') return `<div class="${c}">${foto}<div class="ft-faixab"><span class="ft-icone"></span><div class="ft-topo">${eb}${logo}</div><h2>${esc(T.titulo)}</h2></div></div>`;
+  return `<div class="${c}"><div class="ft-grade"></div><div class="ft-topo">${logo}<span class="ft-menu" aria-hidden="true"><i></i><i></i><i></i></span></div>
+    <div class="ft-cartao-site">${foto}<div class="ft-corpo"><span class="ft-tag"><i></i>${esc(T.nome)}</span><h2>${esc(T.titulo)}</h2><p>${esc(T.sub)}</p><span class="ft-link">Ver projeto</span></div></div></div>`;
+}
+
+/* ============================================================
+   A CURADORIA (Studio)
+   ============================================================ */
+async function fotoCuradoria(sub, cab){
+  fotosM.cab = cab;
+  $('#main').innerHTML = ftCab(sub) + estado.carregando();
+  try { await ftTemas(); }
+  catch(e){ return ftSemBanco(e); }
+  if (sub === 'votos') return ftCurVotos();
+  return ftCurFila();
+}
+function ftCab(sub){
+  const n = sub === 'votos' ? '' : fotosM.restantes ? ` <span class="n">${fotosM.restantes}</span>` : '';
+  return fotosM.cab([`<button class="btn ghost" onclick="ftModalBusca()">${ic('lupa')} Buscar nos bancos</button>`,
+      `<button class="btn ghost" onclick="ftModalLinks()">${ic('link')} Pôr por link</button>`])
+    + navNivel2([['', 'Fila', '#/studio/curadoria', n], ['votos', 'Meus votos', '#/studio/curadoria/votos']], sub || '', 'Curadoria');
+}
+function ftSemBanco(e){
+  $('#main').innerHTML = ftCab('') + `<div class="aviso-box err"><b>O banco de fotos ainda não está no banco.</b> ${esc(e?.message || '')}<br>
+    <span class="small">Falta aplicar a migração <code>db/2.24.0_fotos.sql</code>.</span></div>`;
+}
+
+async function ftCurFila(){
+  const { data, error } = await sb.rpc('fotos_fila', { p_temas: fotosM.filtroTemas.length ? fotosM.filtroTemas : null, p_limite:40 });
+  if (error) return ftSemBanco(error);
+  if (data?.status !== 'ok'){ $('#main').innerHTML = ftCab('') + estado.erro({ texto: motivoRPC(data, null, 'A fila não abriu') }); return; }
+  fotosM.fila = (data.fotos || []).filter(f => !fotosM.pulei.includes(f.id)).concat((data.fotos || []).filter(f => fotosM.pulei.includes(f.id)));
+  fotosM.restantes = data.restantes || 0; fotosM.minimas = data.minimas || 1;
+  ftCurDesenha();
+}
+function ftCurDesenha(){
+  const f = fotosM.fila[0];
+  $('#main').innerHTML = ftCab('') + `<div class="ft-cur">
+    <div class="ft-palco card" id="ft-palco"><div class="ft-pilha" id="ft-pilha"></div></div>
+    <aside class="ft-lado">
+      <section class="ft-bloco" id="ft-meta"></section>
+      <section class="ft-bloco">
+        <span class="rotulo">Peça</span>
+        <div class="seg ft-seg" role="radiogroup" aria-label="Peça">${FT_ENQ.map(([k, l]) =>
+          `<button type="button" role="radio" class="${fotosM.enq === k ? 'on' : ''}" aria-checked="${fotosM.enq === k}" onclick="ftEnq('${k}')">${esc(l.split(' ')[0])}</button>`).join('')}</div>
+        <span class="rotulo">Paleta ${dica('Auto usa a família do tema da foto. A peça e a paleta em que a foto foi aprovada ficam guardadas com ela.')}</span>
+        <div class="ft-pals" role="radiogroup" aria-label="Paleta">
+          <button type="button" role="radio" class="chip ft-auto${fotosM.pal === 'auto' ? ' on' : ''}" aria-checked="${fotosM.pal === 'auto'}" onclick="ftPal('auto')">Auto</button>
+          ${FT_FAMS.map(([k, n]) => `<button type="button" role="radio" class="ft-pal f-${k}${fotosM.pal === k ? ' on' : ''}" aria-checked="${fotosM.pal === k}"
+            title="${esc(n)}" aria-label="${esc(n)}" onclick="ftPal('${k}')"><span></span></button>`).join('')}</div>
+      </section>
+      <section class="ft-bloco ft-acoes">
+        <button class="btn ghost ft-nao" id="ft-nao" onclick="ftVotar('nao')"${f ? '' : ' disabled'}>${ic('x')} Descartar</button>
+        <button class="icon-btn" id="ft-desfazer" title="Desfazer o último voto" aria-label="Desfazer o último voto" onclick="ftDesfazer()"${fotosM.hist.length ? '' : ' disabled'}>${ic('refazer')}</button>
+        <button class="btn ghost" id="ft-talvez" onclick="ftVotar('talvez')"${f ? '' : ' disabled'}>Talvez</button>
+        <button class="btn solid" id="ft-sim" onclick="ftVotar('sim')"${f ? '' : ' disabled'}>${ic('check')} Aprovar</button>
+      </section>
+      <section class="ft-bloco">
+        <span class="rotulo">Temas na fila</span>
+        <div class="ft-temas">${(fotosM.temas || []).map(t => {
+          const on = !fotosM.filtroTemas.length || fotosM.filtroTemas.includes(t.chave);
+          return `<button type="button" class="chip${on && fotosM.filtroTemas.length ? ' on' : ''}" aria-pressed="${on && !!fotosM.filtroTemas.length}" onclick="ftFiltroTema('${t.chave}')">${esc(t.nome)}</button>`; }).join('')}</div>
+        ${fotosM.filtroTemas.length ? '<button class="btn ghost mini" onclick="fotosM.filtroTemas=[];ftCurFila()">Todos os temas</button>' : ''}
+      </section>
+    </aside></div>`;
+  ftCurCartao();
+}
+function ftMedida(){
+  const p = $('#ft-pilha'); if (!p) return { w:0, h:0 };
+  const r = p.getBoundingClientRect(), ar = FT_ENQ.find(e => e[0] === fotosM.enq)[2];
+  let w = r.width, h = w / ar; if (h > r.height){ h = r.height; w = h * ar; }
+  return { w:Math.floor(w), h:Math.floor(h) };
+}
+function ftCurCartao(){
+  const pilha = $('#ft-pilha'); if (!pilha) return;
+  const [f, prox] = fotosM.fila;
+  pilha.innerHTML = '';
+  if (!f){
+    pilha.innerHTML = `<div class="vazio ft-vazio"><p>${fotosM.filtroTemas.length ? 'Nada para votar nestes temas.' : 'Nada para votar. A fila está em dia.'}</p>
+      <button class="btn ghost" onclick="ftModalBusca()">${ic('lupa')} Buscar nos bancos</button></div>`;
+  } else {
+    if (prox) pilha.appendChild(ftCartaoEl(prox, true));
+    const el = ftCartaoEl(f, false); pilha.appendChild(el); ftArrasta(el);
+    fotosM.fila.slice(1, 3).forEach(ftCarrega);
+  }
+  ftCurMeta(f);
+  ['#ft-nao', '#ft-talvez', '#ft-sim'].forEach(s => { const b = $(s); if (b) b.disabled = !f; });
+  const d = $('#ft-desfazer'); if (d) d.disabled = !fotosM.hist.length;
+  const n = document.querySelector('.abas a .n'); if (n) n.textContent = fotosM.restantes;
+}
+function ftCartaoEl(f, atras){
+  const el = document.createElement('div'), m = ftMedida();
+  el.className = 'ft-cartao' + (atras ? ' atras' : '');
+  el.style.width = m.w + 'px'; el.style.height = m.h + 'px';
+  el.innerHTML = ftArte(f, fotosM.enq, ftFam(f)) + '<span class="ft-carimbo sim">Aprovada</span><span class="ft-carimbo nao">Descartada</span><span class="ft-carimbo talvez">Talvez</span>';
+  if (!atras){ el.tabIndex = 0; el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', `${f.descricao}, em ${FT_ENQ.find(e => e[0] === fotosM.enq)[1]}, paleta ${FT_FAM_NOME[ftFam(f)]}`); }
+  const img = el.querySelector('.ft-foto');
+  img.addEventListener('load', () => img.classList.add('ok'));
+  ftCarrega(f).then(ok => {
+    if (!el.isConnected) return;
+    if (ok){ const u = fotosM.imgs[f.id].url; if (img.getAttribute('src') !== u) img.src = u; img.classList.add('ok'); }
+    else if (!atras) ftFalhou(el, f);
+  });
+  return el;
+}
+function ftFalhou(el, f){
+  const d = document.createElement('div'); d.className = 'ft-falhou';
+  const banco = FT_BANCO[f.banco] || 'banco';
+  d.innerHTML = `<h3>A prévia não carregou</h3>
+    <p>${ftChave(f.banco) ? 'Abra a foto na página do banco para avaliar, ou pule.' : `Abra a foto no ${esc(banco)} para avaliar. Com a chave do ${esc(banco)} em Studio, Configurações, a prévia sai pela API.`}</p>
+    <div class="ft-falhou-acoes"><a class="btn ghost mini" href="${esc(ftPagina(f))}" target="_blank" rel="noopener">${ic('externo')} Abrir no ${esc(banco)}</a>
+    <button class="btn ghost mini" onclick="ftPular()">Pular</button></div>`;
+  el.appendChild(d);
+}
+function ftCurMeta(f){
+  const m = $('#ft-meta'); if (!m) return;
+  if (!f){ m.innerHTML = `<p class="small muted">${fotosM.restantes} para votar.</p>`; return; }
+  const T = ftTema(f.tema);
+  const origem = { equipe:'Seleção da equipe', sugestao:'Sugestão', link:'Posta por link', busca:'Busca nos bancos' }[f.origem] || '';
+  m.innerHTML = `<div class="ft-meta-l1">${ftPill(T.nome)}${f.origem === 'equipe' ? ftPill(origem, 'p-ok') : ''}</div>
+    <h3 class="ft-meta-t">${esc(f.descricao)}</h3>
+    ${spec([['Tags', (f.tags || []).map(t => `<span class="chip mini">${esc(t)}</span>`).join(' ') || '—'],
+      ['Autor', esc(f.autor || '—')], ['Banco', `<a href="${esc(ftPagina(f))}" target="_blank" rel="noopener">${esc(FT_BANCO[f.banco] || f.banco)} ${ic('externo')}</a>`],
+      f.busca ? ['Busca', esc(f.busca)] : null, f.origem !== 'equipe' ? ['Origem', esc(origem)] : null,
+      ['Votos', `${f.votos_sim || 0} sim, ${f.votos_nao || 0} não, ${f.votos_talvez || 0} talvez <span class="muted">(${fotosM.minimas} ${fotosM.minimas === 1 ? 'aprovação basta' : 'aprovações bastam'})</span>`]])}
+    <p class="small muted">${fotosM.restantes} para votar.</p>`;
+}
+function ftEnq(k){ fotosM.enq = k; document.querySelectorAll('.ft-seg button').forEach(b => { const on = b.getAttribute('onclick').includes(`'${k}'`);
+  b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); ftCurCartao(); }
+function ftPal(k){ fotosM.pal = k; document.querySelectorAll('.ft-pals [role=radio]').forEach(b => { const on = b.getAttribute('onclick').includes(`'${k}'`);
+  b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); ftCurCartao(); }
+function ftFiltroTema(k){
+  const a = fotosM.filtroTemas;
+  fotosM.filtroTemas = a.includes(k) ? a.filter(x => x !== k) : [...a, k];
+  ftCurFila();
+}
+function ftPular(){ const f = fotosM.fila.shift(); if (!f) return; fotosM.pulei.push(f.id); fotosM.fila.push(f); ftCurCartao(); }
+
+async function ftVotar(d){
+  const f = fotosM.fila[0]; if (!f) return;
+  const fam = ftFam(f), el = document.querySelector('.ft-cartao:not(.atras)');
+  const { data, error } = await sb.rpc('foto_votar', { p_foto:f.id, p_decisao:d, p_enquadramento:fotosM.enq, p_paleta:fam });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'O voto não entrou'), true);
+  fotosM.hist.push(f.id); fotosM.fila.shift(); fotosM.restantes = Math.max(0, fotosM.restantes - 1);
+  if (data.foto_status === 'aprovada') toast('Aprovada: a foto entrou na galeria.');
+  const fim = () => { ftCurCartao(); if (fotosM.fila.length < 4 && fotosM.restantes > fotosM.fila.length) ftCurFila(); };
+  if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return fim();
+  const c = el.querySelector('.ft-carimbo.' + d); if (c) c.style.opacity = 1;
+  el.classList.add('saindo');
+  const dx = d === 'sim' ? innerWidth : d === 'nao' ? -innerWidth : 0, dy = d === 'talvez' ? -innerHeight : 0;
+  el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${dx / 30}deg)`; el.style.opacity = 0;
+  setTimeout(fim, 260);
+}
+async function ftDesfazer(){
+  const id = fotosM.hist.pop(); if (!id) return;
+  const { data, error } = await sb.rpc('foto_voto_desfazer', { p_foto:id });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para desfazer'), true);
+  const { data:f } = await sb.from('fotos').select(FT_COLS).eq('id', id).maybeSingle();
+  if (f){ fotosM.fila.unshift(f); fotosM.restantes++; }
+  toast('O voto foi desfeito.');
+  ftCurCartao();
+}
+function ftArrasta(el){
+  let x0 = 0, y0 = 0, dx = 0, dy = 0, ativo = false, moveu = false, id = null;
+  const mover = () => {
+    el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${dx / 22}deg)`;
+    const L = el.offsetWidth * .28, v = x => Math.max(0, Math.min(1, x));
+    el.querySelector('.ft-carimbo.sim').style.opacity = v(dx / L);
+    el.querySelector('.ft-carimbo.nao').style.opacity = v(-dx / L);
+    el.querySelector('.ft-carimbo.talvez').style.opacity = Math.abs(dy) > Math.abs(dx) ? v(-dy / L) : 0;
+  };
+  el.addEventListener('pointerdown', e => {
+    if (e.button > 0 || e.target.closest('a,button')) return;
+    ativo = true; moveu = false; id = e.pointerId; x0 = e.clientX; y0 = e.clientY; dx = dy = 0;
+    try { el.setPointerCapture(id); } catch(err){ /* o ponteiro já saiu */ }
+    el.classList.add('arrastando');
+  });
+  el.addEventListener('pointermove', e => {
+    if (!ativo || e.pointerId !== id) return;
+    dx = e.clientX - x0; dy = e.clientY - y0;
+    if (Math.abs(dx) + Math.abs(dy) > 8) moveu = true;
+    if (moveu) mover();
+  });
+  const fim = e => {
+    if (!ativo) return; ativo = false; el.classList.remove('arrastando');
+    const L = el.offsetWidth * .28;
+    if (dx > L) return ftVotar('sim');
+    if (dx < -L) return ftVotar('nao');
+    if (dy < -L && Math.abs(dy) > Math.abs(dx)) return ftVotar('talvez');
+    dx = dy = 0; mover(); el.style.transform = '';
+    if (!moveu && e.type === 'pointerup'){ const i = FT_ENQ.findIndex(x => x[0] === fotosM.enq); ftEnq(FT_ENQ[(i + 1) % FT_ENQ.length][0]); }
+  };
+  el.addEventListener('pointerup', fim); el.addEventListener('pointercancel', fim);
+}
+/* as setas votam; E troca a peça; Z desfaz (só na fila da curadoria) */
+document.addEventListener('keydown', e => {
+  if (!$('#ft-pilha') || $('#modal')?.classList.contains('open') || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable) return;
+  const k = e.key.toLowerCase();
+  if (k === 'arrowright'){ e.preventDefault(); ftVotar('sim'); }
+  else if (k === 'arrowleft'){ e.preventDefault(); ftVotar('nao'); }
+  else if (k === 'arrowup'){ e.preventDefault(); ftVotar('talvez'); }
+  else if (k === 'z'){ e.preventDefault(); ftDesfazer(); }
+  else if (k === 'e'){ const i = FT_ENQ.findIndex(x => x[0] === fotosM.enq); ftEnq(FT_ENQ[(i + 1) % FT_ENQ.length][0]); }
+});
+window.addEventListener('resize', () => { if (!$('#ft-pilha')) return; const m = ftMedida();
+  document.querySelectorAll('.ft-cartao').forEach(c => { c.style.width = m.w + 'px'; c.style.height = m.h + 'px'; }); });
+
+/* ---------------- os meus votos ---------------- */
+async function ftCurVotos(){
+  const v = await sb.from('foto_votos').select('foto_id,decisao,enquadramento,paleta,criado_em').order('criado_em', { ascending:false });
+  if (v.error) return ftSemBanco(v.error);
+  const ids = (v.data || []).map(x => x.foto_id);
+  const f = ids.length ? await sb.from('fotos').select(FT_COLS).in('id', ids) : { data:[] };
+  if (f.error) return ftSemBanco(f.error);
+  const porId = Object.fromEntries((f.data || []).map(x => [x.id, x]));
+  fotosM.votos = (v.data || []).filter(x => porId[x.foto_id]).map(x => ({ ...x, foto:porId[x.foto_id] }));
+  ftVotosDesenha();
+}
+function ftVotosDesenha(){
+  const filtro = fotosM.votoFiltro, todos = fotosM.votos || [];
+  const lista = todos.filter(x => x.decisao === filtro);
+  const n = d => todos.filter(x => x.decisao === d).length;
+  $('#main').innerHTML = ftCab('votos') + ferramentas({
+      filtros:`<div class="seg" role="group" aria-label="Voto">${[['sim', 'Aprovei'], ['talvez', 'Talvez'], ['nao', 'Descartei']].map(([k, l]) =>
+        `<button type="button" class="${filtro === k ? 'on' : ''}" aria-pressed="${filtro === k}" onclick="fotosM.votoFiltro='${k}';ftVotosDesenha()">${l} (${n(k)})</button>`).join('')}</div>`,
+      total:lista.length })
+    + (lista.length ? `<div class="marca-grid ft-galeria">${lista.map(x => {
+        const f = x.foto, [rs, cs] = FT_STATUS[f.status] || ['', ''];
+        return `<article class="card marca-tile ft-tile"><a class="ft-tile-foto" href="${esc(ftPagina(f))}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(ftImgUrl(f, 480))}" alt=""></a>
+          <div class="marca-tile-corpo"><h3>${esc(f.descricao)}</h3><div class="marca-tile-meta">${ftPill(rs, cs)}<span class="small muted">${f.votos_sim} sim, ${f.votos_nao} não</span></div>
+          <div class="seg ft-mudar" role="group" aria-label="Mudar o voto">${['sim', 'talvez', 'nao'].map(d =>
+            `<button type="button" class="${x.decisao === d ? 'on' : ''}" aria-pressed="${x.decisao === d}" onclick="ftMudarVoto('${f.id}','${d}')">${FT_DECISAO[d]}</button>`).join('')}
+            <button type="button" onclick="ftTirarVoto('${f.id}')" title="Desfazer o voto" aria-label="Desfazer o voto">${ic('refazer')}</button></div></div></article>`; }).join('')}</div>`
+      : estado.vazio({ texto:'Nenhum voto com esse filtro.', acao:'<a class="btn ghost" href="#/studio/curadoria">Ir para a fila</a>' }));
+}
+async function ftMudarVoto(id, d){
+  const x = (fotosM.votos || []).find(v => v.foto_id === id); if (!x || x.decisao === d) return;
+  const { data, error } = await sb.rpc('foto_votar', { p_foto:id, p_decisao:d, p_enquadramento:x.enquadramento, p_paleta:x.paleta });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'O voto não mudou'), true);
+  toast('Voto mudado.'); ftCurVotos();
+}
+async function ftTirarVoto(id){
+  const { data, error } = await sb.rpc('foto_voto_desfazer', { p_foto:id });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para desfazer'), true);
+  toast('Voto desfeito: a foto volta para a sua fila.'); ftCurVotos();
+}
+
+/* ---------------- pôr fotos na fila ---------------- */
+const ftOpcoesTema = sel => (fotosM.temas || []).map(t => `<option value="${esc(t.chave)}"${t.chave === sel ? ' selected' : ''}>${esc(t.nome)}</option>`).join('');
+const ftTagsDe = s => String(s || '').split(',').map(t => t.trim()).filter(Boolean);
+function ftModalLinks(){
+  const t = fotosM.fila[0]?.tema || fotosM.temas?.[0]?.chave;
+  abreModal(`<h3>${ic('link')} Pôr por link</h3>
+    <div class="fld"><label for="ft-lk">Links das fotos ${dica('Endereços do Unsplash ou do Pexels, um por linha ou todos juntos. Também vale o endereço direto de uma imagem (images.unsplash.com, images.pexels.com).')}</label>
+      <textarea id="ft-lk" rows="5" placeholder="https://unsplash.com/photos/..."></textarea></div>
+    <div class="fld"><label for="ft-lk-tema">Tema</label><select id="ft-lk-tema">${ftOpcoesTema(t)}</select></div>
+    <div class="fld"><label for="ft-lk-tags">Tags, separadas por vírgula</label><input id="ft-lk-tags" placeholder="UTI, monitor"></div>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
+      <button class="btn solid" onclick="ftLinksOk()">Pôr na fila</button></div>`);
+  setTimeout(() => $('#ft-lk')?.focus(), 30);
+}
+const ftLegivel = slug => { const s = String(slug || '').replace(/[-_]+/g, ' ').trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; };
+function ftLerLinks(txt){
+  const out = [];
+  for (const p of String(txt || '').split(/(?=https?:\/\/)|\s+/).map(s => s.trim()).filter(Boolean)){
+    let m = p.match(/unsplash\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:photos|fotografias|fotos|photographies|fotografien)\/([A-Za-z0-9_-]+)/i);
+    if (m){ const slug = m[1], id = slug.length > 11 && slug.charAt(slug.length - 12) === '-' ? slug.slice(-11) : slug;
+      out.push({ banco:'unsplash', banco_id:id, pagina:`https://unsplash.com/photos/${id}`, descricao:ftLegivel(slug.length > 11 ? slug.slice(0, -12) : '') }); continue; }
+    m = p.match(/pexels\.com\/(?:[a-z]{2}(?:-[a-z]{2})?\/)?(?:photo|foto)\/(?:([^/?#\s]*?)-)?(\d+)/i);
+    if (m){ out.push({ banco:'pexels', banco_id:m[2], pagina:`https://www.pexels.com/photo/${m[2]}/`, descricao:ftLegivel(m[1]) }); continue; }
+    m = p.match(/^https:\/\/images\.(unsplash|pexels)\.com\/[^\s]+/);
+    if (m) out.push({ banco:'link', banco_id:p.split('?')[0], imagem:p, pagina:p, descricao:'' });
+  }
+  return out;
+}
+async function ftLinksOk(){
+  const lista = ftLerLinks($('#ft-lk').value), tema = $('#ft-lk-tema').value, tags = ftTagsDe($('#ft-lk-tags').value);
+  if (!lista.length) return toast('Nenhum link do Unsplash ou do Pexels no texto.', true);
+  await ftPorNaFila(lista.map(f => ({ ...f, tema, tags, origem:'link' })));
+}
+async function ftPorNaFila(lista){
+  const { data, error } = await sb.rpc('fotos_adicionar', { p_fotos:lista });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'As fotos não entraram'), true);
+  fechaModal();
+  toast(data.novas ? `${data.novas} ${data.novas === 1 ? 'foto entrou' : 'fotos entraram'} na fila${data.repetidas ? `; ${data.repetidas} já estavam` : ''}.` : 'Essas fotos já estavam no banco.');
+  if ($('#ft-pilha')) ftCurFila();
+}
+
+function ftModalBusca(){
+  const b = fotosM.busca, temChave = ftChave('unsplash') || ftChave('pexels');
+  if (!ftChave(b.banco === 'p' ? 'pexels' : 'unsplash')) b.banco = ftChave('unsplash') ? 'u' : 'p';
+  const t = fotosM.fila[0]?.tema || fotosM.temas?.[0]?.chave;
+  abreModal(`<h3>${ic('lupa')} Buscar nos bancos</h3>
+    ${temChave ? `<div class="ft-busca-linha">
+        <div class="seg" role="group" aria-label="Banco">${[['u', 'Unsplash'], ['p', 'Pexels']].map(([k, l]) =>
+          `<button type="button" class="${b.banco === k ? 'on' : ''}" aria-pressed="${b.banco === k}"${ftChave(k === 'u' ? 'unsplash' : 'pexels') ? '' : ' disabled'}
+            onclick="fotosM.busca.banco='${k}';ftModalBusca()">${l}</button>`).join('')}</div>
+        <div class="fld cresce"><label class="sr" for="ft-bq">Termo</label><input id="ft-bq" placeholder="Em inglês rende mais: lab automation" value="${esc(b.q)}"
+          onkeydown="if(event.key==='Enter')ftBusca(1)"></div>
+        <button class="btn ghost" onclick="ftBusca(1)">Buscar</button></div>
+      <div class="ft-busca-sug" id="ft-bsug"></div>
+      <div id="ft-bres" class="ft-bres"></div>
+      <div class="ft-busca-pe">
+        <div class="fld"><label for="ft-b-tema">Tema</label><select id="ft-b-tema" onchange="ftBuscaSugestoes()">${ftOpcoesTema(t)}</select></div>
+        <div class="fld cresce"><label for="ft-b-tags">Tags, separadas por vírgula</label><input id="ft-b-tags" placeholder="laboratório, automação"></div>
+      </div>
+      <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button>
+        <button class="btn solid" id="ft-b-ok" onclick="ftBuscaOk()" disabled>Pôr na fila</button></div>`
+    : `<div class="aviso-box info">Para buscar daqui, ponha a chave do Unsplash ou do Pexels em
+        <a href="#/studio/config/contas" onclick="fechaModal()">Studio, Configurações</a>. Sem chave, use <b>Pôr por link</b>.</div>
+      <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`}`, 'largo');
+  if (temChave){ ftBuscaSugestoes(); if (b.res.length) ftBuscaDesenha(); setTimeout(() => $('#ft-bq')?.focus(), 30); }
+}
+function ftBuscaSugestoes(){
+  const T = ftTema($('#ft-b-tema')?.value), s = $('#ft-bsug'); if (!s) return;
+  s.innerHTML = (T.termos || []).map(q => `<button type="button" class="chip" onclick="$('#ft-bq').value='${esc(q)}';ftBusca(1)">${esc(q)}</button>`).join('');
+}
+async function ftBusca(pagina){
+  const b = fotosM.busca, q = $('#ft-bq')?.value.trim(); if (!q) return;
+  b.q = q; b.pagina = pagina; b.marcadas = new Set();
+  $('#ft-bres').innerHTML = estado.carregando();
+  try {
+    if (b.banco === 'u'){
+      const r = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=24&page=${pagina}&content_filter=high&client_id=${encodeURIComponent(ftChave('unsplash'))}`);
+      if (!r.ok) throw new Error(r.status === 401 ? 'a chave do Unsplash foi recusada' : 'o Unsplash respondeu ' + r.status);
+      const j = await r.json();
+      b.res = (j.results || []).map(p => ({ banco:'unsplash', banco_id:p.id, pagina:p.links?.html || `https://unsplash.com/photos/${p.id}`, imagem:p.urls?.raw,
+        mini:p.urls?.small, descricao:p.alt_description || p.description || q, autor:p.user?.name || null }));
+      b.total = j.total_pages || 1;
+    } else {
+      const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=24&page=${pagina}`, { headers:{ Authorization:ftChave('pexels') } });
+      if (!r.ok) throw new Error(r.status === 401 ? 'a chave do Pexels foi recusada' : 'o Pexels respondeu ' + r.status);
+      const j = await r.json();
+      b.res = (j.photos || []).map(p => ({ banco:'pexels', banco_id:String(p.id), pagina:p.url, imagem:p.src?.original, mini:p.src?.medium,
+        descricao:p.alt || q, autor:p.photographer || null }));
+      b.total = j.next_page ? pagina + 1 : pagina;
+    }
+    ftBuscaDesenha();
+  } catch(e){ $('#ft-bres').innerHTML = estado.erro({ texto:'A busca falhou: ' + e.message + '.' }); }
+}
+function ftBuscaDesenha(){
+  const b = fotosM.busca;
+  $('#ft-bres').innerHTML = b.res.length ? `<div class="cr-us-grade">${b.res.map((f, i) => `
+      <button type="button" class="cr-us-f ft-bf${b.marcadas.has(i) ? ' on' : ''}" aria-pressed="${b.marcadas.has(i)}" onclick="ftBuscaMarca(${i})" title="${esc(f.descricao)}">
+        <img src="${esc(f.mini)}" alt="" loading="lazy"><span>${esc(f.autor || '')}</span><i class="ft-bf-ok">${ic('check')}</i></button>`).join('')}</div>
+    <div class="cr-us-pag">${b.pagina > 1 ? `<button class="btn ghost mini" onclick="ftBusca(${b.pagina - 1})">Anteriores</button>` : ''}
+      ${b.pagina < b.total ? `<button class="btn ghost mini" onclick="ftBusca(${b.pagina + 1})">Mais fotos</button>` : ''}</div>`
+    : estado.vazio({ texto:'Nada com essa busca. Tente em inglês, ou mais genérico.' });
+  const ok = $('#ft-b-ok'); if (ok){ ok.disabled = !b.marcadas.size; ok.textContent = b.marcadas.size ? `Pôr ${b.marcadas.size} na fila` : 'Pôr na fila'; }
+}
+function ftBuscaMarca(i){ const s = fotosM.busca.marcadas; s.has(i) ? s.delete(i) : s.add(i); ftBuscaDesenha(); }
+async function ftBuscaOk(){
+  const b = fotosM.busca, tema = $('#ft-b-tema').value, tags = ftTagsDe($('#ft-b-tags').value);
+  const lista = [...b.marcadas].map(i => b.res[i]).filter(Boolean).map(({ mini, ...f }) => ({ ...f, tema, tags, busca:b.q, origem:'busca' }));
+  if (lista.length) await ftPorNaFila(lista);
+}
+
+/* ============================================================
+   A GALERIA (Marca)
+   ============================================================ */
+async function fotoGaleria(cab){
+  fotosM.cab = cab;
+  $('#main').innerHTML = cab('Galeria de fotos', 'fotos') + estado.carregando('lista');
+  try {
+    await ftTemas();
+    const { data, error } = await sb.from('fotos').select(FT_COLS).eq('status', 'aprovada').order('decidida_em', { ascending:false });
+    if (error) throw error;
+    fotosM.galeria = data || [];
+  } catch(e){
+    $('#main').innerHTML = cab('Galeria de fotos', 'fotos') + estado.erro({ texto:'A galeria não abriu: ' + e.message + '. Falta aplicar a migração db/2.24.0_fotos.sql?' });
+    return;
+  }
+  ftGalDesenha();
+}
+function ftGalFiltradas(){
+  const q = norm(fotosM.gq).trim(), termos = q ? q.split(/\s+/) : [];
+  return (fotosM.galeria || []).filter(f => {
+    if (fotosM.gtema && f.tema !== fotosM.gtema) return false;
+    const tags = (f.tags || []).map(norm);
+    if (fotosM.gtags.some(t => !tags.includes(norm(t)))) return false;
+    if (!termos.length) return true;
+    const texto = norm([f.descricao, f.autor, ftTema(f.tema).nome, ...(f.tags || [])].join(' '));
+    return termos.every(t => texto.includes(t));
+  });
+}
+function ftGalDesenha(){
+  const lista = ftGalFiltradas(), todas = fotosM.galeria || [];
+  const conta = {}; todas.forEach(f => (f.tags || []).forEach(t => { conta[t] = (conta[t] || 0) + 1; }));
+  const tops = Object.entries(conta).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 18).map(x => x[0]);
+  fotosM.gtags.forEach(t => { if (!tops.includes(t)) tops.unshift(t); });
+  $('#main').innerHTML = fotosM.cab('Galeria de fotos', 'fotos', {
+      lead:`As fotos aprovadas na curadoria do Studio. ${dica('Copiar a lista leva as fotos filtradas em JSON (descrição, tema, tags, autor, licença e os links), para colar numa conversa com o Claude ou em outra ferramenta.')}`,
+      acoes:[`<button class="btn ghost" onclick="ftCopiarLista()"${lista.length ? '' : ' disabled'}>${ic('copy')} Copiar a lista</button>`,
+        ...(podeStudio() ? ['<a class="btn ghost" href="#/studio/curadoria">Curadoria</a>'] : [])] })
+    + ferramentas({ busca:{ id:'ft-gq', rotulo:'Buscar', exemplo:'UTI, microscópio, equipe', valor:fotosM.gq, oninput:'ftGalBusca(this.value)' },
+        filtros:`<div class="fld"><label for="ft-gtema">Tema</label><select id="ft-gtema" onchange="fotosM.gtema=this.value;ftGalDesenha()">
+          <option value="">Todos</option>${ftOpcoesTema(fotosM.gtema)}</select></div>`, total:lista.length })
+    + `<div class="ft-tags" role="group" aria-label="Tags">${tops.map(t => { const on = fotosM.gtags.includes(t);
+        return `<button type="button" class="chip${on ? ' on' : ''}" aria-pressed="${on}" onclick="ftGalTag(this.dataset.t)" data-t="${esc(t)}">${esc(t)}${conta[t] ? ` <b>${conta[t]}</b>` : ''}</button>`; }).join('')}</div>`
+    + (lista.length ? `<div class="marca-grid ft-galeria">${lista.map(f => `<article class="card marca-tile ft-tile">
+        <button type="button" class="ft-tile-foto" onclick="ftDetalhe('${f.id}')" aria-label="${esc(f.descricao)}"><img loading="lazy" src="${esc(ftImgUrl(f, 480))}" alt=""></button>
+        <div class="marca-tile-corpo"><h3>${esc(f.descricao)}</h3>
+          <div class="marca-tile-meta">${(f.tags || []).slice(0, 3).map(t => `<span class="chip mini">${esc(t)}</span>`).join('')}</div>
+          <span class="small muted">${esc(ftTema(f.tema).nome)}${f.autor ? ', ' + esc(f.autor) : ''}</span></div></article>`).join('')}</div>`
+      : todas.length ? estado.vazio({ texto:'Nenhuma foto com esse filtro.', acao:'<button class="btn ghost" onclick="ftGalLimpar()">Limpar filtros</button>' })
+      : estado.vazio({ texto:'Nenhuma foto aprovada ainda.', acao: podeStudio() ? '<a class="btn ghost" href="#/studio/curadoria">Abrir a curadoria</a>' : '' }));
+}
+function ftGalBusca(v){
+  fotosM.gq = v; clearTimeout(fotosM._q);
+  fotosM._q = setTimeout(() => { ftGalDesenha(); const e = $('#ft-gq'); if (e){ e.focus(); e.setSelectionRange(e.value.length, e.value.length); } }, 220);
+}
+function ftGalTag(t){ const a = fotosM.gtags; fotosM.gtags = a.includes(t) ? a.filter(x => x !== t) : [...a, t]; ftGalDesenha(); }
+function ftGalLimpar(){ fotosM.gq = ''; fotosM.gtags = []; fotosM.gtema = ''; ftGalDesenha(); }
+
+function ftDetalhe(id){
+  const f = (fotosM.galeria || []).find(x => x.id === id); if (!f) return;
+  const banco = FT_BANCO[f.banco] || f.banco;
+  abreModal(`<div class="ft-det"><img src="${esc(ftImgUrl(f, 1600))}" alt="${esc(f.descricao)}"></div>
+    <h3>${esc(f.descricao)}</h3>
+    ${spec([['Tema', esc(ftTema(f.tema).nome)], ['Tags', (f.tags || []).map(t => `<span class="chip mini">${esc(t)}</span>`).join(' ') || '—'],
+      ['Autor', esc(f.autor || '—')], ['Banco e licença', `${esc(banco)}${f.licenca ? ', ' + esc(f.licenca) : ''}`],
+      ['Aprovada em', fmtD(f.decidida_em)], f.enquadramento ? ['Peça da aprovação', `${esc(FT_ENQ.find(e => e[0] === f.enquadramento)?.[1] || f.enquadramento)}${f.paleta ? ', ' + esc(FT_FAM_NOME[f.paleta] || f.paleta) : ''}`] : null])}
+    <div class="acts ft-det-acoes">
+      <a class="btn ghost" href="${esc(ftPagina(f))}" target="_blank" rel="noopener">${ic('externo')} Abrir no ${esc(banco)}</a>
+      ${f.imagem ? `<button class="btn ghost" onclick="copiar('${esc(ftComLargura(f.imagem, 2400))}')">${ic('copy')} Copiar o link da imagem</button>` : ''}
+      ${ftCurador() ? `<button class="btn ghost" onclick="ftEditar('${f.id}')">${ic('pencil')} Editar</button>` : ''}
+      ${podeAprovarStudio() ? `<button class="btn ghost" onclick="ftTirar('${f.id}')">${ic('trash')} Tirar da galeria</button>` : ''}
+      <button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`, 'largo');
+}
+function ftEditar(id){
+  const f = (fotosM.galeria || []).find(x => x.id === id); if (!f) return;
+  abreModal(`<h3>${ic('pencil')} Editar a foto</h3>
+    <div class="fld"><label for="ft-e-d">Descrição</label><input id="ft-e-d" value="${esc(f.descricao)}"></div>
+    <div class="fld"><label for="ft-e-t">Tema</label><select id="ft-e-t">${ftOpcoesTema(f.tema)}</select></div>
+    <div class="fld"><label for="ft-e-tags">Tags, separadas por vírgula</label><input id="ft-e-tags" value="${esc((f.tags || []).join(', '))}"></div>
+    <div class="fld"><label for="ft-e-a">Autor</label><input id="ft-e-a" value="${esc(f.autor || '')}"></div>
+    <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="ftDetalhe('${f.id}')">Cancelar</button>
+      <button class="btn solid" onclick="ftSalvarEdicao('${f.id}')">Salvar</button></div>`);
+}
+async function ftSalvarEdicao(id){
+  const p = { id, descricao:$('#ft-e-d').value, tema:$('#ft-e-t').value, tags:ftTagsDe($('#ft-e-tags').value), autor:$('#ft-e-a').value };
+  const { data, error } = await sb.rpc('foto_salvar', { p });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'A foto não foi salva'), true);
+  const f = (fotosM.galeria || []).find(x => x.id === id);
+  if (f) Object.assign(f, { descricao:p.descricao.trim() || f.descricao, tema:p.tema, tags:[...new Set(p.tags)].slice(0, 12), autor:p.autor.trim() || null });
+  toast('Foto salva.'); fechaModal(); ftGalDesenha();
+}
+async function ftTirar(id){
+  if (!await confirma('A foto sai da galeria e do criador. Os votos continuam guardados.', 'Tirar da galeria')) return;
+  const { data, error } = await sb.rpc('foto_status_definir', { p_foto:id, p_status:'descartada' });
+  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'A foto não saiu da galeria'), true);
+  fotosM.galeria = (fotosM.galeria || []).filter(x => x.id !== id);
+  toast('A foto saiu da galeria.'); ftGalDesenha();
+}
+function ftCopiarLista(){
+  const lista = ftGalFiltradas().map(f => ({ descricao:f.descricao, tema:ftTema(f.tema).nome, tags:f.tags || [], autor:f.autor || null,
+    banco:FT_BANCO[f.banco] || f.banco, licenca:f.licenca || null, pagina:ftPagina(f), imagem:f.imagem ? ftComLargura(f.imagem, 2400) : null }));
+  copiar(JSON.stringify({ fonte:'Galeria de fotos da NeuroDynamics (SOMA, Marca)', exportado_em:new Date().toISOString(), fotos:lista }, null, 2));
+}
+
+/* ============================================================
+   O SELETOR DO CRIADOR
+   fotoEscolher(aoEscolher): a galeria num modal; ao escolher, chama
+   aoEscolher(foto, url) com o endereço que o canvas aceita.
+   ============================================================ */
+async function fotoEscolher(aoEscolher){
+  fotosM.escolher = { ao:aoEscolher, q:'' };
+  abreModal(`<h3>${ic('galeria')} Fotos da galeria</h3>
+    <div class="fld"><label class="sr" for="ft-esc-q">Buscar</label><input id="ft-esc-q" placeholder="Buscar por tag ou descrição: UTI, microscópio" oninput="fotosM.escolher.q=this.value;ftEscolherLista()"></div>
+    <div id="ft-esc" class="ft-esc">${estado.carregando()}</div>
+    <div class="acts" style="justify-content:flex-end;margin-top:12px"><a class="btn ghost" href="#/marca/fotos" onclick="fechaModal()">Abrir a galeria</a>
+      <button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`, 'largo');
+  setTimeout(() => $('#ft-esc-q')?.focus(), 30);
+  try {
+    await ftTemas();
+    if (!fotosM.galeria){
+      const { data, error } = await sb.from('fotos').select(FT_COLS).eq('status', 'aprovada').order('decidida_em', { ascending:false });
+      if (error) throw error; fotosM.galeria = data || [];
+    }
+    ftEscolherLista();
+  } catch(e){ const el = $('#ft-esc'); if (el) el.innerHTML = estado.erro({ texto:'A galeria não abriu: ' + e.message + '.' }); }
+}
+function ftEscolherLista(){
+  const el = $('#ft-esc'); if (!el) return;
+  const termos = norm(fotosM.escolher?.q || '').trim().split(/\s+/).filter(Boolean);
+  const lista = (fotosM.galeria || []).filter(f => !termos.length
+    || termos.every(t => norm([f.descricao, f.autor, ftTema(f.tema).nome, ...(f.tags || [])].join(' ')).includes(t)));
+  el.innerHTML = lista.length ? `<div class="cr-us-grade">${lista.map(f => `<button type="button" class="cr-us-f" onclick="ftEscolhe('${f.id}')" title="${esc(f.descricao)}">
+      <img src="${esc(ftImgUrl(f, 400))}" alt="" loading="lazy"><span>${esc((f.tags || []).slice(0, 2).join(', '))}</span></button>`).join('')}</div>`
+    : estado.vazio({ texto: (fotosM.galeria || []).length ? 'Nenhuma foto com essa busca.' : 'Nenhuma foto aprovada ainda. A curadoria fica no Studio.' });
+}
+async function ftEscolhe(id){
+  const f = (fotosM.galeria || []).find(x => x.id === id); if (!f || !fotosM.escolher) return;
+  const url = await fotoUrlCanvas(f);
+  if (!url) return;
+  fotosM.escolher.ao(f, url, `${f.autor || FT_BANCO[f.banco] || 'Foto'} / ${FT_BANCO[f.banco] || 'link'}`);
+}
+/* o endereço que o canvas aceita (o CDN do banco); o Unsplash pede que o uso seja avisado */
+async function fotoUrlCanvas(f){
+  if (!f.imagem && !await ftResolver(f)){
+    toast(`Esta foto ainda não tem o endereço da imagem. Ponha a chave do ${FT_BANCO[f.banco] || 'banco'} em Studio, Configurações.`, true);
+    return null;
+  }
+  const k = ftChave('unsplash');
+  if (f.banco === 'unsplash' && k) fetch(`https://api.unsplash.com/photos/${encodeURIComponent(f.banco_id)}/download?client_id=${encodeURIComponent(k)}`).catch(() => {});
+  return f.banco === 'link' ? f.imagem : ftComLargura(f.imagem, 2400);
+}
