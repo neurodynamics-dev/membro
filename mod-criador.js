@@ -1759,7 +1759,7 @@ function crPinta(cv, peca, i, k, opt = {}){
 }
 
 /* ============================================================
-   IMAGENS — enviar, do banco de fotos (2.24.0; sozinhas desde a 2.25.0), Unsplash, da equipe, por link
+   IMAGENS — enviar, do banco de imagens (2.24.0; sozinhas desde a 2.25.0), Unsplash, da equipe, por link
    Toda imagem vira uma referência (f1, f2…) na peça; a lâmina guarda
    a referência, o modo e o enquadramento. O arquivo enviado sobe para
    o Storage só quando a peça é salva no quadro.
@@ -1898,8 +1898,8 @@ async function crUnsplashUsa(n){
   if (await crFotoDeLink(criador.unsplash.chave, url, credito, 'unsplash')) fechaModal();
 }
 
-/* Da galeria (2.24.0): uma foto do banco de fotos, escolhida, com o crédito.
-   O banco de fotos é de mod-fotos, carregado aqui antes de abrir. */
+/* Da galeria (2.24.0): uma foto do banco de imagens, escolhida, com o crédito.
+   O banco de imagens é de mod-fotos, carregado aqui antes de abrir. */
 async function crGaleria(chave){
   try { await carregarModulo('fotos'); }
   catch(e){ return toast('A galeria não carregou: ' + e.message, true); }
@@ -1915,13 +1915,13 @@ async function crFotoDoBanco(evitar = []){
 }
 async function crDoBanco(chave){
   try { await carregarModulo('fotos'); }
-  catch(e){ return toast('O banco de fotos não carregou: ' + e.message, true); }
+  catch(e){ return toast('O banco de imagens não carregou: ' + e.message, true); }
   /* outra que a peça ainda não usa; se todas já estão nela, ao menos outra que não a desta foto */
   const atual = criador.imgs[crLamina().fotos?.[chave]?.ref]?.fotoId;
   let r;
   try { r = await crFotoDoBanco() || await fotoDoBanco({ familia:crFamiliaPeca(), evitar: atual ? [atual] : [] }); }
-  catch(e){ return toast('O banco de fotos não abriu: ' + e.message, true); }
-  if (!r) return toast('O banco de fotos ainda não tem outra foto pronta para o criador.', true);
+  catch(e){ return toast('O banco de imagens não abriu: ' + e.message, true); }
+  if (!r) return toast('O banco de imagens ainda não tem outra foto pronta para o criador.', true);
   await crFotoDeLink(chave, r.url, r.credito, 'galeria', { fotoId:r.f.id });
 }
 /* a peça nova (ou o modelo novo) já vem com fotos do banco nas lâminas
@@ -1955,7 +1955,7 @@ async function crAutoFotos(){
   }
   if (n && criador.peca === peca){
     crMudou(true);
-    toast(n === 1 ? 'A foto veio do banco de fotos. Troque em Foto, se quiser.' : `As ${n} fotos vieram do banco de fotos. Troque em Foto, se quiser.`);
+    toast(n === 1 ? 'A foto veio do banco de imagens. Troque em Foto, se quiser.' : `As ${n} fotos vieram do banco de imagens. Troque em Foto, se quiser.`);
   }
   return n;
 }

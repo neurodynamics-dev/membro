@@ -15,7 +15,7 @@
      #/studio/ideias               as ideias soltas, e a captura rápida
      #/studio/criar[/<modelo>]     o criador (mod-criador)
      #/studio/modelos              a galeria dos modelos (mod-criador)
-     #/studio/curadoria[/descartadas]  a curadoria de fotos: o que entra no banco (mod-fotos, 2.25.0)
+     #/studio/banco[/rejeitadas]   o banco de imagens: avaliar uma foto de cada vez (mod-fotos, 2.26.0)
      #/studio/POST-14              uma publicação
      #/studio/POST-14/arte         a arte dela, no criador
      #/studio/config[/<aba>]       acesso, contas, imprensa, recursos
@@ -102,12 +102,12 @@ async function pageStudio(sub, sub2){
     return;
   }
   if (!sub) return stQuadro();
-  if (sub === 'curadoria'){
+  if (sub === 'banco'){
     try { await carregarModulo('fotos'); }
-    catch(e){ $('#main').innerHTML = `<div class="aviso-box err">A curadoria não carregou (${esc(e.message)}). Recarregue a página.</div>`; return; }
-    return fotoCuradoria(sub2, acoes => stTopo('Curadoria de fotos',
-      dica('Quem gere o Studio escolhe nas sugestões, busca nos bancos ou põe por link, e a foto entra direto no banco de fotos da Marca. O criador usa qualquer foto do banco, e o Claude lê o banco para criar peças.'),
-      acoes) + stNav('curadoria'));
+    catch(e){ $('#main').innerHTML = `<div class="aviso-box err">O banco de imagens não carregou (${esc(e.message)}). Recarregue a página.</div>`; return; }
+    return fotoBancoImagens(sub2, acoes => stTopo('Banco de imagens',
+      dica('Uma foto de cada vez, dentro das peças da marca: quem gere o Studio aprova (a foto entra no banco) ou rejeita. Fotos novas, só o admin põe, pela busca nos bancos ou por link. O criador usa qualquer foto do banco, e o Claude lê o banco para criar peças.'),
+      acoes) + stNav('banco'));
   }
   if (sub === 'calendario') return stCalendario();
   if (sub === 'ideias') return stIdeias();
@@ -132,7 +132,7 @@ function stNaoAchou(cod){
 /* nível 1 do Studio: o seletor segmentado, como em todo espaço */
 function stNav(atual){
   const n = studioM.pubs.filter(stEsperaMim).length;
-  const it = [['', 'Quadro'], ['calendario', 'Calendário'], ['ideias', 'Ideias'], ['criar', 'Criar'], ['modelos', 'Modelos'], ['curadoria', 'Curadoria'], ['config', 'Configurações']];
+  const it = [['', 'Quadro'], ['calendario', 'Calendário'], ['ideias', 'Ideias'], ['criar', 'Criar'], ['modelos', 'Modelos'], ['banco', 'Banco de imagens'], ['config', 'Configurações']];
   return `<nav class="nav1" aria-label="Studio">${it.map(([k, l]) =>
     `<a href="#/studio${k ? '/' + k : ''}" class="${atual === k ? 'on' : ''}">${l}${k === '' && n
       ? ` <span class="n sua" title="Esperando a sua aprovação">${n}</span>` : ''}</a>`).join('')}</nav>`;
@@ -832,7 +832,7 @@ function stCfgContas(){
         <li>Copie a <b>Access Key</b> e cole aqui. A chave de demonstração permite 50 buscas por hora.</li></ol>
     </section>
     <section class="card"><h3>Pexels</h3>
-      <p class="small muted" style="line-height:1.6;margin:4px 0 12px">Com a chave, a curadoria de fotos busca também no Pexels
+      <p class="small muted" style="line-height:1.6;margin:4px 0 12px">Com a chave, o banco de imagens busca também no Pexels
         e acha o endereço das fotos de lá.</p>
       <div class="fld"><label for="ct-px">API Key</label><input id="ct-px" value="${esc(c.pexels_chave || '')}" placeholder="a chave da API do Pexels" ${pode ? '' : 'disabled'}></div>
       <ol class="st-passos-txt"><li>Entre em <a href="https://www.pexels.com/api/" target="_blank" rel="noopener">pexels.com/api</a> com a conta da equipe.</li>
