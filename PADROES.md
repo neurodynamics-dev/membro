@@ -23,8 +23,8 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **OKRs** | planejamento — os objetivos e o desdobramento de cada um | todos (edição: `admin`, `pessoal` e os responsáveis) |
 | **Projetos** | cada projeto: equipe, supervisor e o rol de arquivos; os trabalhos e quem está em cada um | todos (criar projeto: PMO e `admin`; trabalho: a gestão; editar: eles, o supervisor e os responsáveis) |
 | **Arquivos** | documentos e registros controlados — código, revisão, status | todos no rol; o conteúdo segue a classe de cada série |
-| **Studio** | comunicação — criar as peças, planejar e aprovar as publicações | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
-| **Marca** | materiais, assinaturas, interfaces e manual da marca | todos; vínculos geridos por quem administra Arquivos |
+| **Studio** | comunicação — criar as peças, planejar e aprovar as publicações, a curadoria de fotos | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
+| **Marca** | materiais, a galeria de fotos, assinaturas, interfaces e manual da marca | todos; vínculos geridos por quem administra Arquivos |
 | **Equipe** | pessoas — organograma, fichas, presença, reporte e feed | todos (a profundidade varia) |
 | **Treinamentos** | formação — o que os seus grupos pedem, fazer, os certificados | todos (gerir: `admin`, `pessoal` e os grupos gestores) |
 | **Serviços** | pedidos ao Depto. de Pessoal — e, em *Meus pedidos*, o andamento deles | todos |
@@ -100,6 +100,7 @@ conforme quem entra é menu que ninguém aprende.
 #/equipe/<registro>         a ficha
 #/marca                    os modelos controlados e templates (Arquivos é o dono do download)
 #/marca/assinatura|config  a assinatura de e-mail; o vínculo de cada modelo com uma série
+#/marca/fotos              a galeria das fotos aprovadas na curadoria (2.24.0)
 #/equipe/quadro|presenca|feed|newsletter
 #/equipe/reporte            o ciclo da semana
 #/equipe/reporte/<frente>/<1-4>  preencher ou consultar uma frente (apontamentos, escalonamentos, feed, revisão)
@@ -142,6 +143,7 @@ conforme quem entra é menu que ninguém aprende.
 #/studio                    o quadro das publicações
 #/studio/calendario|ideias|modelos
 #/studio/criar[/<modelo>]   o criador (ex.: #/studio/criar/aniversario)
+#/studio/curadoria[/votos]  a curadoria de fotos e os meus votos (2.24.0)
 #/studio/POST-14            uma publicação
 #/studio/POST-14/arte       a arte dela, no criador
 #/studio/config[/<aba>]     acesso, contas, imprensa, recursos
@@ -486,6 +488,21 @@ A escrita das publicações é só pelas funções (`studio_publicacao_salvar`,
 `studio_mover`, `studio_decidir`, `studio_excluir`): a tabela não tem política
 de escrita. É nelas que moram os avisos — quem aprova é avisado quando algo
 chega, quem responde é avisado da decisão.
+
+### Fotos: aprovada é o voto que diz
+
+Uma foto do banco de fotos (2.24.0) fica na **fila** até os votos da
+curadoria decidirem: entra na galeria quando os "sim" chegam ao número de
+aprovações do Studio e passam os "não"; sai quando os "não" chegam lá
+primeiro. *Talvez* não conta. A conta mora no banco (`foto_recontar`), não na
+tela. A gestão do Studio decide à mão (`foto_status_definir`), e então os votos
+deixam de mudar o status até a foto voltar para a fila.
+
+A escrita é só pelas funções (`fotos_fila`, `foto_votar`,
+`foto_voto_desfazer`, `fotos_adicionar`, `foto_salvar`,
+`foto_imagem_definir`, `foto_status_definir`). A galeria (as aprovadas) é de
+toda conta ativa; a fila e as descartadas, de quem entra no Studio; os votos,
+cada um os seus.
 
 ### Documentos emitidos: o modelo tem um dono só
 

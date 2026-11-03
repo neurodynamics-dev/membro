@@ -1786,7 +1786,7 @@ function crPinta(cv, peca, i, k, opt = {}){
 }
 
 /* ============================================================
-   IMAGENS — enviar, Unsplash, da equipe, por link
+   IMAGENS — enviar, da galeria (2.24.0), Unsplash, da equipe, por link
    Toda imagem vira uma referência (f1, f2…) na peça; a lâmina guarda
    a referência, o modo e o enquadramento. O arquivo enviado sobe para
    o Storage só quando a peça é salva no quadro.
@@ -1923,6 +1923,14 @@ async function crUnsplashUsa(n){
   if (f.links?.download_location)
     fetch(f.links.download_location + (f.links.download_location.includes('?') ? '&' : '?') + 'client_id=' + encodeURIComponent(state.studioCfg.unsplash_chave)).catch(() => {});
   if (await crFotoDeLink(criador.unsplash.chave, url, credito, 'unsplash')) fechaModal();
+}
+
+/* Da galeria (2.24.0): as fotos aprovadas na curadoria, com o crédito.
+   O banco de fotos é de mod-fotos, carregado aqui antes de abrir. */
+async function crGaleria(chave){
+  try { await carregarModulo('fotos'); }
+  catch(e){ return toast('A galeria não carregou: ' + e.message, true); }
+  fotoEscolher(async (f, url, credito) => { if (await crFotoDeLink(chave, url, credito, 'galeria')) fechaModal(); });
 }
 
 /* Da equipe: a foto e os dados da ficha — aniversário e boas-vindas
@@ -2163,6 +2171,7 @@ function crFotoHTML(lam, [chave, rot, modos]){
       <div class="cr-foto-prev">${im ? `<img src="${esc(im.img.src)}" alt="">` : ic('imagem')}</div>
       <div class="cr-foto-bts">
         <label class="btn ghost mini">${ic('subir')} Enviar<input type="file" accept="image/*" hidden onchange="crEnviarFoto('${chave}', this)"></label>
+        ${chave === 'foto2' ? '' : `<button class="btn ghost mini" onclick="crGaleria('${chave}')">${ic('galeria')} Galeria</button>`}
         ${chave === 'foto2' ? '' : `<button class="btn ghost mini" onclick="crUnsplash('${chave}')">${ic('lupa')} Unsplash</button>`}
         ${pessoa ? `<button class="btn ghost mini" onclick="crEquipe('${chave}')">${ic('users')} Da equipe</button>` : ''}
         <button class="btn ghost mini" onclick="crModalLink('${chave}')">${ic('link')} Link</button>

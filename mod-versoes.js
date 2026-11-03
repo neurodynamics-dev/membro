@@ -33,6 +33,15 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.24.0', data:'2026-11-03', titulo:'O banco de fotos: a curadoria no Studio e a galeria na Marca', itens:[
+    ['novo', '**Curadoria de fotos**, no Studio: uma foto de cada vez, dentro de uma peça da marca (Feed, Story, Banda ou Site), na paleta escolhida. *Aprovar*, *Descartar* ou *Talvez* pelos botões, arrastando o cartão ou pelas setas; *Desfazer* apaga o último voto. A fila já traz a primeira campanha: 90 fotos em 11 temas.'],
+    ['novo', 'A foto entra na galeria quando chega ao número de aprovações do Studio, com mais "sim" que "não". A gestão do Studio aprova ou tira da galeria à mão. Em *Meus votos*, cada um muda ou desfaz os seus.'],
+    ['novo', '**Pôr por link** e **Buscar nos bancos**: endereços do Unsplash e do Pexels colados, ou a busca nos dois bancos com as chaves das configurações, com o tema e as tags.'],
+    ['novo', '**Galeria de fotos**, em Serviços, Marca: as fotos aprovadas para toda a equipe, com busca por texto, por tag e por tema, o autor, a licença e *Copiar a lista* (em JSON, para colar numa conversa com o Claude ou em outra ferramenta).'],
+    ['novo', 'No **criador**, a fonte **Galeria**: as fotos aprovadas entram na peça com o crédito.'],
+    ['melhoria', 'Em *Studio, Configurações, Contas*, a chave do **Pexels**, ao lado da do Unsplash.'],
+    ['aviso', 'A página avulsa `/curadoria/` leva agora à curadoria no Studio.']
+  ]},
   { v:'2.23.0', data:'2026-10-30', titulo:'Os trabalhos e os arquivos em pastas', itens:[
     ['novo', '**Trabalhos**, em Projetos: projetos pequenos, citados pelo número (**TRB-5**) e com uma referência no lugar do nome. Cada um tem a ficha de trabalho (PS de origem, datas, alocação, complexidade e esforço, escopo, justificativa, entregáveis, dependências, critérios de sucesso e o cenário em quatro quadrantes), os responsáveis, um projeto se houver, e o tipo: estudo de viabilidade, início de projeto, etapa de projeto ou campanha.'],
     ['novo', 'O **quadro** do trabalho é um quadro de Atividades (T5-1, T5-2…), aberto dentro da página do trabalho. Os **documentos** são os arquivos do rol que dizem respeito a ele, e links para o que mora fora.'],

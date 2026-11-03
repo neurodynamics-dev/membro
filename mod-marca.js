@@ -3,6 +3,7 @@
      #/marca              os modelos controlados e templates, ligados a Arquivos (Lista)
      #/marca/assinatura   a assinatura de e-mail, com os dados da ficha (Fluxo simples)
      #/marca/config       o vínculo de cada modelo com uma série de Arquivos (Ajustes)
+     #/marca/fotos        a galeria das fotos aprovadas na curadoria do Studio (mod-fotos, 2.24.0)
    Arquivos é o único dono do download controlado. */
 const marca={vinculos:[],rol:[],pode:new Map(),assinatura:{},filtro:'todos',tipo:'completa',cliente:'gmail'};
 const MARCA_BASE='https://brand.neurodynamics.dev/';
@@ -15,11 +16,16 @@ const MARCA_ITENS=[
 ];
 
 const marcaPill=(t,c)=>`<span class="pill ${c||''}"><span class="dt ${c==='p-ok'?'dt-ok':c==='p-warn'?'dt-warn':''}"></span>${esc(t)}</span>`;
-const marcaSecoes=atual=>navNivel1([['','Modelos','#/marca'],['assinatura','Assinatura de e-mail','#/marca/assinatura'],...(docGestor()?[['config','Configurações','#/marca/config']]:[])],atual,'Marca');
+const marcaSecoes=atual=>navNivel1([['','Modelos','#/marca'],['fotos','Galeria de fotos','#/marca/fotos'],['assinatura','Assinatura de e-mail','#/marca/assinatura'],...(docGestor()?[['config','Configurações','#/marca/config']]:[])],atual,'Marca');
 const marcaTopo=(titulo,atual,extra={})=>cabecalho({espaco:'Marca',titulo,secoes:marcaSecoes(atual),...extra});
 
 async function pageMarca(sub){
  if(sub==='interfaces')return marcaInterfaces();
+ if(sub==='fotos'){
+  try{await carregarModulo('fotos');}
+  catch(e){$('#main').innerHTML=marcaTopo('Galeria de fotos','fotos')+estado.erro({texto:'A galeria não carregou ('+e.message+'). Recarregue a página.'});return;}
+  return fotoGaleria(marcaTopo);
+ }
  if(sub==='assinatura')return marcaAssinatura();
  if(sub==='config'&&!docGestor()){location.hash='#/marca';return;}
  $('#main').innerHTML=marcaTopo(sub==='config'?'Configurações':'Modelos',sub||'')+estado.carregando('lista');
