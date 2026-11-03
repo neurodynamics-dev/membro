@@ -3,7 +3,7 @@
      #/marca              os modelos controlados e templates, ligados a Arquivos (Lista)
      #/marca/assinatura   a assinatura de e-mail, com os dados da ficha (Fluxo simples)
      #/marca/config       o vínculo de cada modelo com uma série de Arquivos (Ajustes)
-     #/marca/fotos        a galeria das fotos aprovadas na curadoria do Studio (mod-fotos, 2.24.0)
+     #/marca/fotos        a galeria: as fotos aprovadas no banco de imagens do Studio (mod-fotos, 2.24.0)
    Arquivos é o único dono do download controlado. */
 const marca={vinculos:[],rol:[],pode:new Map(),assinatura:{},filtro:'todos',tipo:'completa',cliente:'gmail'};
 const MARCA_BASE='https://brand.neurodynamics.dev/';

@@ -33,6 +33,13 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.26.0', data:'2026-11-03', titulo:'O banco de imagens, uma foto de cada vez', itens:[
+    ['novo', 'A curadoria agora se chama **Banco de imagens** (Studio › Banco de imagens). A avaliação voltou a mostrar **uma foto de cada vez, dentro das peças da NRO** (feed, story, banda e site, na paleta que quiser): **Aprovar** põe a foto no banco na hora, com a peça e a paleta em que foi vista; **Rejeitar** manda para as rejeitadas. Uma decisão basta, sem votação.'],
+    ['novo', 'Arrastar para a direita aprova e para a esquerda rejeita; para cima, ou *Pular*, deixa para depois. As setas fazem o mesmo, **Z** desfaz a última decisão e **E** troca a peça. Tocar na foto também troca a peça.'],
+    ['melhoria', 'Fotos novas (*Buscar nos bancos* e *Pôr por link*) só o **admin** põe, e elas vão para a avaliação, não direto para o banco. Uma rejeitada posta de novo volta para a avaliação.'],
+    ['melhoria', 'Em **Rejeitadas**, escolha as fotos e ponha no banco ou devolva à avaliação. Quem só entra no Studio vê as peças, sem decidir.'],
+    ['aviso', 'O endereço antigo, `#/studio/curadoria`, leva ao banco de imagens. Precisa da migração `db/2.26.0_banco_de_imagens.sql`, depois da 2.25.0.']
+  ]},
   { v:'2.25.0', data:'2026-11-03', titulo:'O banco de fotos sem votação, e as peças chapadas', itens:[
     ['novo', '**Curadoria de fotos sem votação**: quem gere o Studio escolhe as fotos que servem nas **sugestões** e *Pôr no banco* leva todas de uma vez. Uma foto escolhida na busca dos bancos ou posta por link entra direto no banco. O que não serve vai para **Descartadas**, de onde volta quando quiser.'],
     ['novo', 'No **criador**, a peça nova já vem com fotos do banco nas lâminas que pedem foto, na família da peça quando o banco tem, sem repetir foto. O botão **Do banco** troca por outra a cada clique. As lâminas de pessoa (aniversário, boas-vindas) continuam esperando a foto da equipe.'],

@@ -1,14 +1,14 @@
-/* O banco de fotos (2.24.0, sem votação desde a 2.25.0) no Supabase falso.
+/* O banco de imagens (2.24.0; 2.26.0) no Supabase falso.
    Vem DEPOIS do stub-supabase.js (o teste concatena os dois): põe nos
    dados de sempre (window.__stubDados) os temas e as fotos, e responde
-   às funções fotos_adicionar, fotos_decidir, foto_salvar,
-   foto_imagem_definir e foto_status_definir com as regras do banco:
-   quem gere o Studio põe e decide, e a foto entra direto no banco. Cada
-   chamada entra em window.__rpcs como { nome, p }.
+   às funções fotos_adicionar, foto_decidir, fotos_decidir, foto_salvar,
+   foto_imagem_definir e foto_status_definir com as regras do banco: o
+   admin põe fotos novas, que vão para a avaliação; quem gere o Studio
+   aprova ou rejeita. Cada chamada entra em window.__rpcs como { nome, p }.
 
-   A pessoa logada é a Ana (4, admin): gere o Studio. Nas sugestões:
-   uma posta por link e quatro sugestões, em dois temas. No banco: três
-   (com tags; duas com o endereço da imagem) e uma descartada. */
+   A pessoa logada é a Ana (4, admin): gere o Studio. Na avaliação: uma
+   posta por link e quatro sugestões, em dois temas. No banco: três
+   (com tags; duas com o endereço da imagem) e uma rejeitada. */
 (function(){
   const D = window.__stubDados;
   const agora = () => new Date().toISOString();
@@ -39,12 +39,16 @@
     foto('pfAnqlk3Oiw', 'Corredor vazio entre paredes brancas', 'hospital', ['corredor'], { status:'descartada', manual:true })
   ];
 
-  const gestor = () => true;   /* a Ana é admin */
+  /* as mesmas regras da casca: o teste troca os papéis em state.perfil */
+  const admin = () => typeof souAdmin === 'function' ? souAdmin() : true;
+  const gestor = () => typeof podeAprovarStudio === 'function' ? podeAprovarStudio() : true;
   const r = d => ({ data:d, error:null });
-  const decidir = (ids, st) => {
+  const decidir = (ids, st, enq, pal) => {
     let k = 0;
     for (const f of D.fotos) if (ids.includes(f.id)){
       k++; f.status = st; f.manual = st !== 'fila'; f.decidida_em = st === 'fila' ? null : agora();
+      if (st === 'fila'){ f.enquadramento = null; f.paleta = null; }
+      else if (st === 'aprovada'){ f.enquadramento = enq || f.enquadramento; f.paleta = pal || f.paleta; }
     }
     return k;
   };
@@ -55,20 +59,29 @@
     c.rpc = async (nome, args) => {
       if (nome === 'fotos_adicionar'){
         rpcs(nome, args);
-        if (!gestor()) return r({ status:'sem_permissao' });
+        if (!admin()) return r({ status:'sem_permissao' });
         let novas = 0, reativadas = 0, repetidas = 0;
         for (const e of args.p_fotos || []){
           const ja = D.fotos.find(f => f.banco === e.banco && f.banco_id === e.banco_id);
-          if (ja){ if (ja.status === 'aprovada') repetidas++; else { reativadas++; ja.status = 'aprovada'; ja.manual = true; ja.decidida_em = agora(); ja.imagem ||= e.imagem || null; } continue; }
+          if (ja){ if (ja.status !== 'descartada') repetidas++; else { reativadas++; decidir([ja.id], 'fila'); ja.imagem ||= e.imagem || null; } continue; }
           D.fotos.push(foto(e.banco_id, e.descricao || 'Foto adicionada por link', e.tema || null, e.tags || [],
             { banco:e.banco, pagina:e.pagina || null, imagem:e.imagem || null, autor:e.autor || null, busca:e.busca || null,
-              origem:e.origem === 'busca' ? 'busca' : 'link', status:'aprovada', manual:true, decidida_em:agora(), criado_em:agora() }));
+              origem:e.origem === 'busca' ? 'busca' : 'link', criado_em:agora() }));
           novas++;
         }
         return r({ status:'ok', novas, reativadas, repetidas });
       }
+      if (nome === 'foto_decidir'){
+        rpcs(nome, args);
+        if (!gestor()) return r({ status:'sem_permissao' });
+        if (!['fila','aprovada','descartada'].includes(args.p_status)) return r({ status:'invalido', campo:'status' });
+        if (!D.fotos.some(x => x.id === args.p_foto)) return r({ status:'nao_encontrada' });
+        decidir([args.p_foto], args.p_status, args.p_enquadramento, args.p_paleta);
+        return r({ status:'ok', foto_status:args.p_status });
+      }
       if (nome === 'fotos_decidir'){
         rpcs(nome, args);
+        if (!gestor()) return r({ status:'sem_permissao' });
         if (!['fila','aprovada','descartada'].includes(args.p_status)) return r({ status:'invalido', campo:'status' });
         if (!args.p_ids?.length) return r({ status:'invalido', campo:'ids' });
         return r({ status:'ok', fotos:decidir(args.p_ids, args.p_status) });

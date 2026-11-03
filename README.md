@@ -720,7 +720,7 @@ paisagem, thumbnail do YouTube e vídeo 16:9 e 9:16.
   do carrossel. Nos temas claros, o acento de texto escurece para ler;
 - **fotos**: a peça nova já vem com **fotos do banco** nas lâminas que pedem
   foto (na família da peça, sem repetir; *Do banco* troca por outra a cada
-  clique). Também: enviar, da **galeria** (o banco de fotos, com a busca por
+  clique). Também: enviar, da **galeria** (o banco de imagens, com a busca por
   tag e o crédito), do **Unsplash** (com a chave em *Configurações*, a busca
   acontece ali mesmo e o crédito entra sozinho), **da equipe** (o nome, o
   cargo e a foto da ficha, para aniversário e boas-vindas) ou por link. Cada
@@ -774,31 +774,37 @@ o que é (aniversário, na mídia…), o **formato** diz o que ela é na rede
 (imagem única, carrossel, stories, reels, documento, vídeo, só texto) e as
 **redes** dizem onde.
 
-### A curadoria de fotos
+### O banco de imagens
 
-Em `#/studio/curadoria` (`mod-fotos.js`, 2.24.0; sem votação desde a 2.25.0):
-é por aqui que as fotos entram no banco de fotos da marca, a galeria da Marca.
-Quem gere o Studio escolhe, e a foto entra direto:
+Em `#/studio/banco` (`mod-fotos.js`, 2.24.0; o nome e a avaliação de agora,
+2.26.0): é por aqui que as fotos entram no banco de imagens da marca, a
+galeria da Marca. Uma decisão basta, sem votação:
 
-- **Sugestões**: as fotos que chegaram e ninguém escolheu ainda, em cartões
-  com o tema, as tags, o autor e o link do banco. A busca (por tag, sem
-  acento) e o tema filtram. Escolher os cartões abre a barra das escolhidas:
-  *Pôr no banco* leva todas de uma vez, *Descartar* tira das sugestões;
-- **Descartadas** (`#/studio/curadoria/descartadas`): o que não serviu, para
-  pôr no banco ou devolver às sugestões;
-- **pôr no banco por fora das sugestões**: *Pôr por link* lê endereços do
-  Unsplash e do Pexels colados (um por linha ou todos juntos, também os em
-  português); *Buscar nos bancos* busca no Unsplash e no Pexels, com as chaves
-  de *Configurações*. As fotos marcadas entram direto, com o tema e as tags;
+- **Para avaliar**: uma foto de cada vez, dentro de uma peça da NRO (Feed
+  4:5, Story 9:16, Banda 1:1, Site 4:5), na paleta escolhida ou na família do
+  tema (*Auto*), com o tema, as tags, o autor, a origem e o link do banco.
+  *Aprovar* põe no banco na hora, e a foto guarda a peça e a paleta em que foi
+  vista; *Rejeitar* manda para as rejeitadas; *Pular* deixa para o fim da
+  fila. Arrastar o cartão para a direita aprova, para a esquerda rejeita e
+  para cima pula; as setas fazem o mesmo, **Z** desfaz a última decisão e
+  **E** (ou tocar na foto) troca a peça. Os temas filtram;
+- **Rejeitadas** (`#/studio/banco/rejeitadas`): em grade, para escolher e pôr
+  no banco ou devolver à avaliação;
+- **fotos novas, só o admin**: *Pôr por link* lê endereços do Unsplash e do
+  Pexels colados (um por linha ou todos juntos, também os em português);
+  *Buscar nos bancos* busca no Unsplash e no Pexels, com as chaves de
+  *Configurações*. As fotos vão para a avaliação, com o tema e as tags; uma
+  rejeitada posta de novo volta para ela;
 - **o endereço da imagem**: com a chave do banco, a página pergunta à API pela
-  imagem e a guarda no banco de fotos (`fotos.imagem`). É ela que o criador usa
-  no canvas; sem ela, a foto aparece na galeria, mas não entra numa peça.
+  imagem e a guarda no banco de imagens (`fotos.imagem`). É ela que o criador
+  usa no canvas; sem ela, a foto aparece na galeria, mas não entra numa peça.
 
-Escolhe, descarta e põe por link ou pela busca a gestão do Studio (quem
-aprova as publicações, e `admin`). Quem só entra no Studio vê as sugestões.
-O banco também se lê sem conta, pela função `fotos_banco_publico` (as
-aprovadas, só os campos públicos): é por ela que o Claude busca fotos para
-peças, wallpapers e banners.
+Aprova e rejeita a gestão do Studio (quem aprova as publicações, e `admin`);
+fotos novas, só `admin`. Quem só entra no Studio vê a avaliação, sem decidir.
+O endereço antigo, `#/studio/curadoria`, leva ao banco de imagens. O banco
+também se lê sem conta, pela função `fotos_banco_publico` (as aprovadas, só
+os campos públicos): é por ela que o Claude busca fotos para peças,
+wallpapers e banners.
 
 ### Configurações
 
@@ -1603,4 +1609,4 @@ O envio de newsletter exige três votos distintos de integrantes ativos da lider
 
 Tipos de evento com ata usam a série NRO-PUB-003 por padrão. O botão cria e salva o rascunho antes de abrir Arquivos, respeitando a permissão de criação da série. Reabrir o evento reutiliza o PN.
 
-Marca guarda só o que exige login: os modelos e templates (miniaturas do `brand.neurodynamics.dev`, documentos controlados resolvidos pelo rol e por `doc_pode_ler`), a **galeria de fotos** (`#/marca/fotos`, 2.24.0: o banco de fotos que a gestão do Studio escolhe na curadoria, com busca por texto, por tag e por tema, o detalhe de cada uma com autor, licença e a peça da aprovação, e *Copiar a lista*, que leva as fotos filtradas em JSON para colar numa conversa com o Claude ou em outra ferramenta), a assinatura de e-mail e o vínculo de cada modelo com uma série. Logos, wallpapers, kit de interface e prompts ficam no manual público. Configure a série de cada peça em `#/marca/config`. O importador do Studio aceita JSON ou Markdown com bloco JSON, validado contra o README gerado no próprio editor; fotos são adicionadas na interface.
+Marca guarda só o que exige login: os modelos e templates (miniaturas do `brand.neurodynamics.dev`, documentos controlados resolvidos pelo rol e por `doc_pode_ler`), a **galeria de fotos** (`#/marca/fotos`, 2.24.0: as fotos aprovadas no banco de imagens do Studio, com busca por texto, por tag e por tema, o detalhe de cada uma com autor, licença e a peça da aprovação, e *Copiar a lista*, que leva as fotos filtradas em JSON para colar numa conversa com o Claude ou em outra ferramenta), a assinatura de e-mail e o vínculo de cada modelo com uma série. Logos, wallpapers, kit de interface e prompts ficam no manual público. Configure a série de cada peça em `#/marca/config`. O importador do Studio aceita JSON ou Markdown com bloco JSON, validado contra o README gerado no próprio editor; fotos são adicionadas na interface.

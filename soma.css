@@ -3894,10 +3894,53 @@ a.pj-membro{color:var(--ink)}
 .trd-op .arqv{--h:30px}
 .em-cor{width:16px;height:16px;border-radius:5px;flex:none;background:var(--fam-p)}
 
-/* ============ FOTOS: CURADORIA E GALERIA (2.24.0, 2.25.0) ============
-   A curadoria (Studio) e o banco, a galeria (Marca), de mod-fotos.js.
-   Desde a 2.25.0, sem votação: a gestão escolhe os cartões das
-   sugestões e a barra das escolhidas põe no banco. */
+/* ============ FOTOS: O BANCO DE IMAGENS E A GALERIA (2.24.0, 2.26.0) ============
+   O banco de imagens (Studio) e a galeria (Marca), de mod-fotos.js.
+   A avaliação mostra uma foto de cada vez dentro de uma peça da marca
+   (.ft-arte): chapada, foto retangular ou com raio de 18px, sem filtro,
+   nenhum degradê; cada superfície numa família (.f-ion, .f-retina...).
+   Medidas em cqw, frações da largura da peça. As rejeitadas escolhem
+   em grade (.ft-escolha) com a barra das escolhidas. */
+.ft-cur{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--s5);align-items:start}
+@media (max-width:900px){.ft-cur{grid-template-columns:1fr}}
+.ft-palco{position:relative;padding:var(--s4);height:min(64vh,720px);min-height:420px}
+/* no celular, as decisões vêm logo depois da peça; o resto, embaixo */
+@media (max-width:900px){.ft-palco{height:min(62vh,600px);min-height:340px;padding:var(--s3)} .ft-lado .ft-acoes{order:-1}}
+.ft-pilha{position:relative;width:100%;height:100%}
+.ft-cartao{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:var(--r);overflow:hidden;
+  border:1px solid var(--line2);background:var(--void);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;
+  transition:transform var(--t) var(--ease),opacity var(--t) var(--ease)}
+.ft-cartao.arrastando{transition:none;cursor:grabbing}
+.ft-cartao.atras{transform:translate(-50%,calc(-50% + 12px)) scale(.94);opacity:.5;pointer-events:none}
+.ft-cartao.saindo{transition:transform .26s var(--ease),opacity .26s var(--ease)}
+.ft-cartao img{-webkit-user-drag:none;pointer-events:none}
+.ft-carimbo{position:absolute;z-index:5;top:7%;padding:6px 12px;border:2px solid currentColor;border-radius:var(--r-chip);
+  font:600 13px/1 var(--fd);letter-spacing:.16em;text-transform:uppercase;opacity:0;pointer-events:none;background:rgba(var(--fundo-rgb),.8)}
+.ft-carimbo.sim{left:6%;color:var(--ok-tx);transform:rotate(-9deg)}
+.ft-carimbo.nao{right:6%;color:var(--bad-tx);transform:rotate(9deg)}
+.ft-falhou{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;justify-content:center;gap:var(--s3);padding:var(--s6);background:var(--panel)}
+.ft-falhou h3{margin:0;font-size:17px;font-weight:600}
+.ft-falhou p{margin:0;font-size:var(--fs-sm);line-height:1.55;color:var(--muted)}
+.ft-falhou-acoes{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.ft-vazio{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:var(--s3);text-align:center}
+.ft-lado{display:flex;flex-direction:column;gap:var(--s5);min-width:0}
+.ft-bloco{display:flex;flex-direction:column;gap:var(--s2);min-width:0}
+.ft-bloco .rotulo{display:flex;align-items:center;gap:6px}
+.ft-meta-l1{display:flex;gap:6px;flex-wrap:wrap}
+.ft-meta-t{margin:2px 0 4px;font-size:17px;font-weight:600;line-height:1.3}
+.ft-seg{display:flex}
+.ft-seg button{flex:1;min-height:36px}
+.ft-pals{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.ft-pal{width:36px;height:36px;padding:0;border-radius:var(--r-sm);display:grid;place-items:center;border:1px solid transparent;background:none;cursor:pointer}
+.ft-pal span{width:22px;height:22px;border-radius:var(--r-chip);background:var(--fam-primary);box-shadow:inset 0 0 0 1px rgba(var(--tom),.14)}
+.ft-pal:hover{background:rgba(var(--tom),.05)}
+.ft-pal.on{background:rgba(var(--tom),.09);border-color:var(--line2)}
+.ft-acoes{display:grid;grid-template-columns:1fr auto 1fr;gap:var(--s2);align-items:center}
+.ft-acoes .btn{justify-content:center}
+.ft-acoes .btn.solid{grid-column:1/-1;height:48px}
+.ft-acoes .icon-btn{width:44px;height:44px}
+.ft-nao .ic{color:var(--bad-tx)}
+.ft-temas{display:flex;flex-wrap:wrap;gap:6px}
 .ft-escolha .ft-tile{position:relative}
 .ft-marcar{position:relative}
 .ft-marcar .ft-bf-ok{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:var(--r-chip);display:grid;place-items:center;
@@ -3925,3 +3968,74 @@ a.pj-membro{color:var(--ink)}
 .ft-bf .ft-bf-ok .ic{width:14px;height:14px}
 .ft-bf.on{box-shadow:inset 0 0 0 2px var(--ink)}
 .ft-bf.on .ft-bf-ok{display:grid}
+
+/* as peças de prova */
+.ft-arte{position:absolute;inset:0;container-type:size;overflow:hidden;background:var(--void);color:var(--paper);--fam-on:var(--fam-dark)}
+.ft-arte.f-cortex,.ft-arte.f-retina,.ft-arte.f-nexo{--fam-on:var(--paper)}
+.ft-moldura{position:absolute;overflow:hidden;background:color-mix(in srgb,var(--paper) 5%,transparent)}
+.ft-foto{display:block;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s var(--ease)}
+.ft-foto.ok{opacity:1}
+.ft-arte h2{margin:0;font-family:var(--fd);font-weight:600;letter-spacing:-.025em;line-height:1.04;text-wrap:balance}
+.ft-arte p{margin:0;font-family:var(--f);line-height:1.45}
+.ft-logo{display:block;aspect-ratio:600/102;background:currentColor;
+  -webkit-mask:url(ds/marca/imagotipo-branco.webp) left center/contain no-repeat;mask:url(ds/marca/imagotipo-branco.webp) left center/contain no-repeat}
+.ft-eb{display:inline-flex;align-items:center;font-family:var(--fd);font-weight:600;text-transform:uppercase;letter-spacing:.16em;line-height:1}
+.ft-eb i{flex:none;background:var(--synapse)}
+.ft-grade{position:absolute;inset:0;background:var(--void)}
+.ft-grade::after{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(color-mix(in srgb,var(--paper) 4.5%,transparent) 1px,transparent 1px),
+                   linear-gradient(90deg,color-mix(in srgb,var(--paper) 4.5%,transparent) 1px,transparent 1px);
+  background-size:6.66cqw 6.66cqw}
+/* Feed 4:5: a foto em cima e a faixa no dark da família */
+.ft-feed .ft-moldura{inset:0 0 auto 0;height:57%}
+.ft-feed .ft-faixa{position:absolute;left:0;right:0;bottom:0;height:43%;background:var(--fam-dark);padding:6.4cqw 8cqw 7cqw;display:flex;flex-direction:column}
+.ft-feed .ft-topo{display:flex;align-items:center;justify-content:space-between;gap:4cqw;margin-bottom:auto}
+.ft-feed .ft-logo{width:27cqw;color:var(--paper)}
+.ft-feed .ft-eb{gap:1.6cqw;font-size:2.4cqw;color:var(--fam-light)}
+.ft-feed .ft-eb i{width:1.5cqw;height:1.5cqw;background:var(--fam-medium)}
+.ft-feed.f-cortex .ft-eb i{background:var(--synapse)}
+.ft-feed h2{margin-top:4cqw;font-size:6.3cqw;color:var(--paper)}
+.ft-feed .ft-pe{margin-top:4cqw;padding-top:3cqw;border-top:1px solid var(--fam-primary);display:flex;justify-content:space-between;gap:4cqw;
+  font:500 2.7cqw/1.2 var(--f);color:var(--fam-medium)}
+/* Story 9:16: o modelo de story da marca */
+.ft-story .ft-topo{position:absolute;left:9cqw;right:9cqw;top:11cqw;display:flex;align-items:center;justify-content:space-between}
+.ft-story .ft-logo{width:25cqw;color:var(--paper)}
+.ft-story .ft-data{font:500 3cqw/1 var(--f);color:var(--pia-primary)}
+.ft-story .ft-moldura{left:9cqw;right:9cqw;top:31cqw;height:66cqw;border-radius:2.3cqw;border:1px solid color-mix(in srgb,var(--paper) 10%,transparent)}
+.ft-story .ft-texto{position:absolute;left:9cqw;right:9cqw;top:105cqw}
+.ft-story .ft-eb{gap:1.8cqw;font-size:2.4cqw;color:var(--pia-medium)}
+.ft-story .ft-eb i{width:1.6cqw;height:1.6cqw}
+.ft-story:not(.f-cortex) .ft-eb i{background:var(--fam-medium)}
+.ft-story h2{margin-top:3.2cqw;font-size:7cqw;color:var(--paper)}
+.ft-story p{margin-top:2.4cqw;font-size:3.5cqw;color:var(--pia-primary)}
+.ft-story .ft-cta{position:absolute;left:9cqw;right:9cqw;bottom:13cqw;height:8.6cqw;border-radius:1.4cqw;display:grid;place-items:center;
+  font:600 3.3cqw/1 var(--fd);background:var(--synapse);color:var(--cortex-dark)}
+.ft-story:not(.f-cortex) .ft-cta{background:var(--fam-medium);color:var(--fam-dark)}
+/* Banda 1:1: a foto e a banda de família, com o símbolo na borda */
+.ft-banda .ft-moldura{inset:0 0 auto 0;height:58%}
+.ft-banda .ft-faixab{position:absolute;left:0;right:0;bottom:0;height:42%;overflow:hidden;background:var(--fam-primary);color:var(--fam-on);padding:6cqw 7cqw}
+.ft-banda .ft-icone{position:absolute;right:-7cqw;top:50%;width:46cqw;aspect-ratio:1;transform:translateY(-50%);background:currentColor;opacity:.13;
+  -webkit-mask:url(studio/nro-simbolo.png) center/contain no-repeat;mask:url(studio/nro-simbolo.png) center/contain no-repeat}
+.ft-banda .ft-topo{position:relative;display:flex;align-items:center;justify-content:space-between;gap:4cqw}
+.ft-banda .ft-eb{gap:1.6cqw;font-size:2.4cqw;color:currentColor}
+.ft-banda .ft-eb i{width:1.5cqw;height:1.5cqw;background:currentColor}
+.ft-banda .ft-logo{width:21cqw;color:currentColor}
+.ft-banda h2{position:relative;margin-top:4.4cqw;font-size:5.6cqw;max-width:74cqw}
+/* Site 4:5: o cartão de projeto do site institucional */
+.ft-site .ft-topo{position:absolute;left:7cqw;right:7cqw;top:7.4cqw;display:flex;align-items:center;justify-content:space-between}
+.ft-site .ft-logo{width:25cqw;color:var(--paper)}
+.ft-site .ft-menu{display:flex;flex-direction:column;gap:1cqw}
+.ft-site .ft-menu i{display:block;width:5cqw;height:.5cqw;background:var(--pia-primary)}
+.ft-site .ft-cartao-site{position:absolute;left:7cqw;right:7cqw;top:19cqw;overflow:hidden;border-radius:2.6cqw;
+  border:1px solid color-mix(in srgb,var(--paper) 14%,transparent);background:color-mix(in srgb,var(--paper) 3%,transparent)}
+.ft-site .ft-moldura{position:relative;width:100%;aspect-ratio:16/10}
+.ft-site .ft-corpo{padding:4.6cqw 5cqw 5.2cqw}
+.ft-site .ft-tag{display:inline-flex;align-items:center;gap:1.4cqw;padding:1.1cqw 1.8cqw;border-radius:.9cqw;border:1px solid color-mix(in srgb,var(--paper) 16%,transparent);
+  font:600 2.1cqw/1 var(--fd);letter-spacing:.14em;text-transform:uppercase;color:var(--pia-medium)}
+.ft-site .ft-tag i{width:1.4cqw;height:1.4cqw;border-radius:50%;background:var(--fam-primary)}
+.ft-site.f-cortex .ft-tag i{background:var(--synapse)}
+.ft-site h2{margin-top:3cqw;font-size:5cqw;color:var(--paper)}
+.ft-site p{margin-top:1.8cqw;font-size:2.9cqw;color:var(--pia-primary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ft-site .ft-link{display:inline-block;margin-top:3.4cqw;font:600 2.9cqw/1 var(--fd);color:var(--synapse)}
+.ft-site:not(.f-cortex) .ft-link{color:var(--fam-medium)}
+@media (prefers-reduced-motion:reduce){.ft-cartao,.ft-cartao.saindo,.ft-foto{transition:none}}

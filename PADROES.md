@@ -23,7 +23,7 @@ A navegação passa a ser organizada por **o que você está fazendo**:
 | **OKRs** | planejamento — os objetivos e o desdobramento de cada um | todos (edição: `admin`, `pessoal` e os responsáveis) |
 | **Projetos** | cada projeto: equipe, supervisor e o rol de arquivos; os trabalhos e quem está em cada um | todos (criar projeto: PMO e `admin`; trabalho: a gestão; editar: eles, o supervisor e os responsáveis) |
 | **Arquivos** | documentos e registros controlados — código, revisão, status | todos no rol; o conteúdo segue a classe de cada série |
-| **Studio** | comunicação — criar as peças, planejar e aprovar as publicações, a curadoria de fotos | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
+| **Studio** | comunicação — criar as peças, planejar e aprovar as publicações, o banco de imagens | os grupos de acesso e os aprovadores (Studio › Configurações), e `admin` |
 | **Marca** | materiais, a galeria de fotos, assinaturas, interfaces e manual da marca | todos; vínculos geridos por quem administra Arquivos |
 | **Equipe** | pessoas — organograma, fichas, presença, reporte e feed | todos (a profundidade varia) |
 | **Treinamentos** | formação — o que os seus grupos pedem, fazer, os certificados | todos (gerir: `admin`, `pessoal` e os grupos gestores) |
@@ -143,7 +143,7 @@ conforme quem entra é menu que ninguém aprende.
 #/studio                    o quadro das publicações
 #/studio/calendario|ideias|modelos
 #/studio/criar[/<modelo>]   o criador (ex.: #/studio/criar/aniversario)
-#/studio/curadoria[/descartadas]  a curadoria de fotos: o que entra no banco (2.25.0)
+#/studio/banco[/rejeitadas]   o banco de imagens: avaliar uma foto de cada vez (2.26.0)
 #/studio/POST-14            uma publicação
 #/studio/POST-14/arte       a arte dela, no criador
 #/studio/config[/<aba>]     acesso, contas, imprensa, recursos
@@ -489,18 +489,20 @@ A escrita das publicações é só pelas funções (`studio_publicacao_salvar`,
 de escrita. É nelas que moram os avisos — quem aprova é avisado quando algo
 chega, quem responde é avisado da decisão.
 
-### Fotos: quem gere o Studio escolhe
+### Fotos: o admin põe, quem gere o Studio decide
 
-Desde a 2.25.0, a foto entra no banco de fotos porque a gestão do Studio
-(`studio_gestor`) escolheu, sem votação: nas sugestões (`fotos_decidir`, várias
-de uma vez), na busca dos bancos ou por link (`fotos_adicionar`, que já põe
-como aprovada). Aprovada é o banco; fila são as sugestões; descartada saiu e
-pode voltar. Os votos da 2.24.0 ficam em `foto_votos`, só como histórico.
+Desde a 2.26.0, a foto nova entra pela avaliação do banco de imagens: só
+`admin` põe fotos novas (`fotos_adicionar`, na busca dos bancos ou por link),
+e elas vão para a fila; a gestão do Studio (`studio_gestor`) vê uma de cada
+vez numa peça da marca e decide (`foto_decidir`, com a peça e a paleta ao
+aprovar). Uma decisão basta, sem votação. Aprovada é o banco; fila é a
+avaliação; descartada é rejeitada e pode voltar (`fotos_decidir`, várias de
+uma vez). Os votos da 2.24.0 ficam em `foto_votos`, só como histórico.
 
-A escrita é só pelas funções (`fotos_adicionar`, `fotos_decidir`,
-`foto_salvar`, `foto_imagem_definir`, `foto_status_definir`). O banco (as
-aprovadas) é de toda conta ativa e também se lê sem conta, por
-`fotos_banco_publico` (só os campos públicos); as sugestões e as descartadas,
+A escrita é só pelas funções (`fotos_adicionar`, `foto_decidir`,
+`fotos_decidir`, `foto_salvar`, `foto_imagem_definir`, `foto_status_definir`).
+O banco (as aprovadas) é de toda conta ativa e também se lê sem conta, por
+`fotos_banco_publico` (só os campos públicos); a avaliação e as rejeitadas,
 de quem entra no Studio.
 
 ### Documentos emitidos: o modelo tem um dono só
