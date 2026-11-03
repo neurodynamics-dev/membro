@@ -33,6 +33,13 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.25.0', data:'2026-11-03', titulo:'O banco de fotos sem votação, e as peças chapadas', itens:[
+    ['novo', '**Curadoria de fotos sem votação**: quem gere o Studio escolhe as fotos que servem nas **sugestões** e *Pôr no banco* leva todas de uma vez. Uma foto escolhida na busca dos bancos ou posta por link entra direto no banco. O que não serve vai para **Descartadas**, de onde volta quando quiser.'],
+    ['novo', 'No **criador**, a peça nova já vem com fotos do banco nas lâminas que pedem foto, na família da peça quando o banco tem, sem repetir foto. O botão **Do banco** troca por outra a cada clique. As lâminas de pessoa (aniversário, boas-vindas) continuam esperando a foto da equipe.'],
+    ['novo', 'O banco de fotos também se lê **sem conta**, pela função `fotos_banco_publico`, só com as aprovadas e os campos públicos. É por ela que o Claude busca fotos para peças, wallpapers e banners do LinkedIn.'],
+    ['melhoria', 'As peças do criador ficaram **chapadas**: o tema Cortex perdeu o degradê e os halos, a foto de fundo ganhou um véu uniforme (na força de *Escurecer*) no lugar dos degradês, e a foto em faixa termina numa borda reta, com o fio de acento.'],
+    ['aviso', 'As fotos escolhidas pela equipe na primeira campanha que ainda estavam na fila entraram no banco. Os votos da 2.24.0 ficam guardados, só como histórico, e *Meus votos* saiu.']
+  ]},
   { v:'2.24.0', data:'2026-11-03', titulo:'O banco de fotos: a curadoria no Studio e a galeria na Marca', itens:[
     ['novo', '**Curadoria de fotos**, no Studio: uma foto de cada vez, dentro de uma peça da marca (Feed, Story, Banda ou Site), na paleta escolhida. *Aprovar*, *Descartar* ou *Talvez* pelos botões, arrastando o cartão ou pelas setas; *Desfazer* apaga o último voto. A fila já traz a primeira campanha: 90 fotos em 11 temas.'],
     ['novo', 'A foto entra na galeria quando chega ao número de aprovações do Studio, com mais "sim" que "não". A gestão do Studio aprova ou tira da galeria à mão. Em *Meus votos*, cada um muda ou desfaz os seus.'],

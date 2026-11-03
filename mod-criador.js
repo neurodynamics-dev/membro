@@ -602,32 +602,18 @@ function crData(iso){
 /* ============================================================
    FUNDO, FOTO E DECORAÇÃO
    ============================================================ */
+/* as peças são chapadas: cor sólida, sem degradê nem halo (2.25.0) */
 function crFundo(ctx, g){
-  if(g.t.familia!=='cortex'){ctx.fillStyle=g.t.fundo[0];ctx.fillRect(0,0,g.W,g.H);return;}
-  const [a, b, c] = g.t.fundo;
-  const lg = ctx.createLinearGradient(0, 0, g.W * .6, g.H);
-  lg.addColorStop(0, a); lg.addColorStop(.62, b); lg.addColorStop(1, c);
-  ctx.fillStyle = lg; ctx.fillRect(0, 0, g.W, g.H);
-  const M = Math.max(g.W, g.H);
-  crHalo(ctx, g.W * .92, -g.H * .08, M * .62, g.t.halo, g.escuro ? .24 : .13);
-  crHalo(ctx, -g.W * .1, g.H * 1.04, M * .5, g.ac, g.escuro ? .11 : .09);
-}
-function crHalo(ctx, cx, cy, r, cor, alfa){
-  const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-  rg.addColorStop(0, crRgba(cor, 1)); rg.addColorStop(1, crRgba(cor, 0));
-  ctx.save(); ctx.globalAlpha = alfa; ctx.fillStyle = rg; ctx.fillRect(cx - r, cy - r, r * 2, r * 2); ctx.restore();
+  ctx.fillStyle = g.t.fundo[0]; ctx.fillRect(0, 0, g.W, g.H);
 }
 /* o fundo quadriculado da prévia da barra de nome — só na tela; o PNG
    sai transparente */
 function crFundoPrevia(ctx, g){
   if(g.t.familia!=='cortex'){ctx.fillStyle=g.t.fundo[0];ctx.fillRect(0,0,g.W,g.H);return;}
-  const lg = ctx.createLinearGradient(0, 0, g.W, g.H);
-  lg.addColorStop(0, '#39443F'); lg.addColorStop(.5, '#59625D'); lg.addColorStop(1, '#2B3230');
-  ctx.fillStyle = lg; ctx.fillRect(0, 0, g.W, g.H);
+  ctx.fillStyle = '#454F4B'; ctx.fillRect(0, 0, g.W, g.H);
   const p = Math.round(g.u * 26);
   ctx.fillStyle = 'rgba(255,255,255,.035)';
   for (let y = 0; y < g.H; y += p) for (let x = ((y / p) % 2) * p; x < g.W; x += p * 2) ctx.fillRect(x, y, p, p);
-  crHalo(ctx, g.W * .5, g.H * .42, g.H * .55, '#C9D6D0', .22);
 }
 function crGrade(ctx, g){
   const passo = Math.round(g.W / 9);
@@ -787,13 +773,7 @@ function crSemFoto(ctx, g, x, y, w, h, forma, rotulo){
 function crFotoFundo(ctx, g, foto){
   crFotoEm(ctx, g, foto, 0, 0, g.W, g.H);
   const f = g.estilo.escurecer / 100, base = g.t.escuro ? g.t.base : '4,12,10';
-  ctx.fillStyle = `rgba(${base},${f * .5})`; ctx.fillRect(0, 0, g.W, g.H);
-  const lg = ctx.createLinearGradient(0, g.H * .22, 0, g.H);
-  lg.addColorStop(0, `rgba(${base},0)`); lg.addColorStop(1, `rgba(${base},${Math.min(.96, f + .3)})`);
-  ctx.fillStyle = lg; ctx.fillRect(0, 0, g.W, g.H);
-  const tg = ctx.createLinearGradient(0, 0, 0, g.H * .26);
-  tg.addColorStop(0, `rgba(${base},${f * .55})`); tg.addColorStop(1, `rgba(${base},0)`);
-  ctx.fillStyle = tg; ctx.fillRect(0, 0, g.W, g.H * .26);
+  ctx.fillStyle = `rgba(${base},${Math.min(.9, f * .82 + .1)})`; ctx.fillRect(0, 0, g.W, g.H);
 }
 /* sobre foto, o texto é claro — em qualquer tema */
 function crSobreFoto(g){
@@ -932,9 +912,7 @@ function crLCapa(ctx, g, c, lam){
   if (modo === 'topo'){
     const hF = Math.round(g.H * (crVertical(g) ? .5 : g.H > g.W ? .5 : .46));
     crFaixaFoto(ctx, g, lam, 0, 0, g.W, hF, 0);
-    const tg = ctx.createLinearGradient(0, 0, 0, g.topo * 2.6);
-    tg.addColorStop(0, 'rgba(4,10,9,.55)'); tg.addColorStop(1, 'rgba(4,10,9,0)');
-    ctx.fillStyle = tg; ctx.fillRect(0, 0, g.W, g.topo * 2.6);
+    ctx.fillStyle = 'rgba(4,10,9,.3)'; ctx.fillRect(0, 0, g.W, hF);
     ctx.fillStyle = g.ac; ctx.fillRect(0, hF - Math.max(3, u * 6), g.W * .22, Math.max(3, u * 6));
     g.corLogo = '#E8EDEB'; g.corSelo = '#E8EDEB';
     y0 = hF + u * 58; pref = .2;
@@ -1142,9 +1120,7 @@ function crLEvento(ctx, g, c, lam){
   if (modo === 'topo'){
     const hF = Math.round(g.H * .36);
     crFaixaFoto(ctx, g, lam, 0, 0, g.W, hF, 0);
-    const tg = ctx.createLinearGradient(0, 0, 0, g.topo * 2.6);
-    tg.addColorStop(0, 'rgba(4,10,9,.55)'); tg.addColorStop(1, 'rgba(4,10,9,0)');
-    ctx.fillStyle = tg; ctx.fillRect(0, 0, g.W, g.topo * 2.6);
+    ctx.fillStyle = 'rgba(4,10,9,.3)'; ctx.fillRect(0, 0, g.W, hF);
     g.corLogo = '#E8EDEB'; y0 = hF + u * 50;
   }
   const d = crData(c.data);
@@ -1221,9 +1197,7 @@ function crLMidia(ctx, g, c, lam){
   if (foto) crFotoEm(ctx, g, foto, telaX, telaY, telaW, telaH, cc => crRetArred(cc, telaX, telaY, telaW, telaH, r));
   else {
     ctx.save(); crRetArred(ctx, telaX, telaY, telaW, telaH, r); ctx.clip();
-    const lg = ctx.createLinearGradient(telaX, telaY, telaX + telaW, telaY + telaH);
-    lg.addColorStop(0, '#00594F'); lg.addColorStop(1, '#00352F'); ctx.fillStyle = lg; ctx.fillRect(telaX, telaY, telaW, telaH);
-    crHalo(ctx, telaX + telaW * .8, telaY, telaW * .6, g.ac, .35); ctx.restore();
+    ctx.fillStyle = '#00594F'; ctx.fillRect(telaX, telaY, telaW, telaH); ctx.restore();
   }
   ctx.save(); ctx.strokeStyle = crRgba(g.fg, .22); ctx.lineWidth = Math.max(1.5, u * 2.5);
   crRetArred(ctx, telaX, telaY, telaW, telaH, r); ctx.stroke(); ctx.restore();
@@ -1427,8 +1401,7 @@ function crLThumb(ctx, g, c, lam){
   } else {
     const hF = g.H * .56;
     if (foto) crFotoEm(ctx, g, foto, 0, 0, g.W, hF); else crSemFoto(ctx, g, 0, 0, g.W, hF, null, 'foto');
-    const lg = ctx.createLinearGradient(0, hF * .7, 0, hF); lg.addColorStop(0, crRgba(g.t.fundo[0], 0)); lg.addColorStop(1, crRgba(g.t.fundo[0], 1));
-    ctx.fillStyle = lg; ctx.fillRect(0, hF * .7, g.W, hF * .3 + 1);
+    ctx.fillStyle = g.ac; ctx.fillRect(0, hF - Math.max(3, u * 6), g.W * .22, Math.max(3, u * 6));
   }
   const tw = largo ? g.W * .5 - m : g.W - m * 2;
   let y = largo ? m : g.H * .56 + u * 30;
@@ -1786,7 +1759,7 @@ function crPinta(cv, peca, i, k, opt = {}){
 }
 
 /* ============================================================
-   IMAGENS — enviar, da galeria (2.24.0), Unsplash, da equipe, por link
+   IMAGENS — enviar, do banco de fotos (2.24.0; sozinhas desde a 2.25.0), Unsplash, da equipe, por link
    Toda imagem vira uma referência (f1, f2…) na peça; a lâmina guarda
    a referência, o modo e o enquadramento. O arquivo enviado sobe para
    o Storage só quando a peça é salva no quadro.
@@ -1843,12 +1816,12 @@ async function crEnviarFoto(chave, input){
   } catch(e){ falha(e, 'A foto não abriu'); }
   input.value = '';
 }
-async function crFotoDeLink(chave, url, credito, origem){
+async function crFotoDeLink(chave, url, credito, origem, extra){
   try {
     const img = await crCarregaImg(url, true);
     if (!crImgLimpa(img)) throw new Error('esse endereço não deixa usar a imagem aqui — baixe e envie o arquivo');
     const ref = crNovaRef();
-    criador.imgs[ref] = { img, origem: origem || 'url', url, credito: credito || '' };
+    criador.imgs[ref] = { img, origem: origem || 'url', url, credito: credito || '', ...(extra || {}) };
     crPoeFoto(chave, ref);
     return true;
   } catch(e){ toast('A imagem não entrou: ' + e.message, true); return false; }
@@ -1925,12 +1898,66 @@ async function crUnsplashUsa(n){
   if (await crFotoDeLink(criador.unsplash.chave, url, credito, 'unsplash')) fechaModal();
 }
 
-/* Da galeria (2.24.0): as fotos aprovadas na curadoria, com o crédito.
+/* Da galeria (2.24.0): uma foto do banco de fotos, escolhida, com o crédito.
    O banco de fotos é de mod-fotos, carregado aqui antes de abrir. */
 async function crGaleria(chave){
   try { await carregarModulo('fotos'); }
   catch(e){ return toast('A galeria não carregou: ' + e.message, true); }
-  fotoEscolher(async (f, url, credito) => { if (await crFotoDeLink(chave, url, credito, 'galeria')) fechaModal(); });
+  fotoEscolher(async (f, url, credito) => { if (await crFotoDeLink(chave, url, credito, 'galeria', { fotoId:f.id })) fechaModal(); });
+}
+
+/* Do banco (2.25.0): sem escolher. A família da peça manda, quando o
+   banco tem foto dela; a peça não repete foto; cada clique traz outra. */
+const crFamiliaPeca = () => CR_TEMAS[CR_TEMA_ALIAS[criador.peca.estilo.tema] || criador.peca.estilo.tema]?.familia || 'cortex';
+async function crFotoDoBanco(evitar = []){
+  const usadas = Object.values(criador.imgs).map(i => i.fotoId).filter(Boolean);
+  return fotoDoBanco({ familia:crFamiliaPeca(), evitar:[...usadas, ...evitar] });
+}
+async function crDoBanco(chave){
+  try { await carregarModulo('fotos'); }
+  catch(e){ return toast('O banco de fotos não carregou: ' + e.message, true); }
+  /* outra que a peça ainda não usa; se todas já estão nela, ao menos outra que não a desta foto */
+  const atual = criador.imgs[crLamina().fotos?.[chave]?.ref]?.fotoId;
+  let r;
+  try { r = await crFotoDoBanco() || await fotoDoBanco({ familia:crFamiliaPeca(), evitar: atual ? [atual] : [] }); }
+  catch(e){ return toast('O banco de fotos não abriu: ' + e.message, true); }
+  if (!r) return toast('O banco de fotos ainda não tem outra foto pronta para o criador.', true);
+  await crFotoDeLink(chave, r.url, r.credito, 'galeria', { fotoId:r.f.id });
+}
+/* a peça nova (ou o modelo novo) já vem com fotos do banco nas lâminas
+   que pedem foto; as de pessoa (aniversário, boas-vindas) esperam a foto
+   da equipe, e foto2 é sempre escolhida à mão */
+async function crAutoFotos(){
+  const peca = criador.peca, alvos = [];
+  peca.laminas.forEach((l, i) => {
+    const L = CR_LAYOUTS[l.layout]; if (!L || L.pessoa) return;
+    (L.fotos || []).forEach(([chave, , modos]) => {
+      if (chave === 'foto2' || l.fotos?.[chave]?.ref) return;
+      const modo = l.fotos?.[chave]?.modo || modos[0];
+      if (modo && modo !== 'nenhuma') alvos.push([i, chave, modos]);
+    });
+  });
+  if (!alvos.length) return 0;
+  try { await carregarModulo('fotos'); } catch(e){ return 0; }
+  let n = 0;
+  for (const [i, chave, modos] of alvos){
+    let r = null;
+    try { r = await crFotoDoBanco(); } catch(e){ break; }
+    if (!r || criador.peca !== peca) break;
+    try {
+      const img = await crCarregaImg(r.url, true); if (!crImgLimpa(img)) continue;
+      const ref = crNovaRef(), l = peca.laminas[i]; l.fotos = l.fotos || {};
+      criador.imgs[ref] = { img, origem:'galeria', url:r.url, credito:r.credito, fotoId:r.f.id };
+      const antes = l.fotos[chave]?.modo;
+      l.fotos[chave] = { ref, modo: antes && antes !== 'nenhuma' ? antes : (modos.find(m => m !== 'nenhuma') || modos[0]), x:50, y:50, zoom:1 };
+      n++;
+    } catch(e){ /* a imagem não carregou: a lâmina fica sem foto */ }
+  }
+  if (n && criador.peca === peca){
+    crMudou(true);
+    toast(n === 1 ? 'A foto veio do banco de fotos. Troque em Foto, se quiser.' : `As ${n} fotos vieram do banco de fotos. Troque em Foto, se quiser.`);
+  }
+  return n;
 }
 
 /* Da equipe: a foto e os dados da ficha — aniversário e boas-vindas
@@ -2021,6 +2048,7 @@ async function crPaginaCriar(modelo){
   criador.peca = crPecaNova(CR_MODELOS[modelo] ? modelo : (modelo ? 'livre' : 'livre'));
   criador.titulo = ''; criador.legendaIA='';
   await crMonta();
+  crAutoFotos();
   if (rasc?.peca && !modelo && Date.now() - rasc.quando < 14 * 864e5){
     $('#cr-rasc').innerHTML = `<div class="aviso-box info cr-rasc">Há uma peça que você começou em ${fmtDT(new Date(rasc.quando).toISOString())}
       ${rasc.titulo ? '(' + esc(rasc.titulo) + ')' : ''} e não salvou.
@@ -2171,6 +2199,7 @@ function crFotoHTML(lam, [chave, rot, modos]){
       <div class="cr-foto-prev">${im ? `<img src="${esc(im.img.src)}" alt="">` : ic('imagem')}</div>
       <div class="cr-foto-bts">
         <label class="btn ghost mini">${ic('subir')} Enviar<input type="file" accept="image/*" hidden onchange="crEnviarFoto('${chave}', this)"></label>
+        ${chave === 'foto2' ? '' : `<button class="btn ghost mini" onclick="crDoBanco('${chave}')" title="Uma foto do banco, sem escolher; outra a cada clique">${ic('dado')} Do banco</button>`}
         ${chave === 'foto2' ? '' : `<button class="btn ghost mini" onclick="crGaleria('${chave}')">${ic('galeria')} Galeria</button>`}
         ${chave === 'foto2' ? '' : `<button class="btn ghost mini" onclick="crUnsplash('${chave}')">${ic('lupa')} Unsplash</button>`}
         ${pessoa ? `<button class="btn ghost mini" onclick="crEquipe('${chave}')">${ic('users')} Da equipe</button>` : ''}
@@ -2311,7 +2340,7 @@ function crTrocarModeloOk(id){
   nova.laminas.forEach((l, i) => { const v = velhas[i]; if (v?.fotos?.foto?.ref && (CR_LAYOUTS[l.layout].fotos || []).some(f => f[0] === 'foto'))
     l.fotos.foto = { ...v.fotos.foto, modo: l.fotos.foto?.modo || CR_LAYOUTS[l.layout].fotos[0][2][0] }; });
   criador.peca = nova; criador.atual = 0;
-  fechaModal(); crMudou(true);
+  fechaModal(); crMudou(true); crAutoFotos();
 }
 
 /* ---------------- painel da direita: o estilo ---------------- */
@@ -2324,7 +2353,7 @@ function crPainelDir(){
     `<button class="chip-b${e[campo] === k ? ' on' : ''}" onclick="crEstilo('${campo}','${k}')">${esc(l)}</button>`).join('')}</div>`;
   return `<section class="cr-sec"><h4>Tema</h4>
       <div class="cr-temas">${Object.entries(CR_TEMAS).map(([k, t]) => `<button class="cr-tema${e.tema === k ? ' on' : ''}" onclick="crEstilo('tema','${k}')"
-        title="${esc(t.l)}" style="background:linear-gradient(135deg,${t.fundo[0]},${t.fundo[1]} 70%,${t.fundo[2]})"><span style="color:${t.fg}">${esc(t.l)}</span></button>`).join('')}</div></section>
+        title="${esc(t.l)}" style="background:${t.fundo[0]}"><span style="color:${t.fg}">${esc(t.l)}</span></button>`).join('')}</div></section>
     <section class="cr-sec"><h4>Acento</h4>
       <div class="cr-acentos">${Object.entries(CR_ACENTOS).map(([k, a]) => `<button class="cr-ac${!e.acentoLivre && (e.acento || CR_TEMAS[e.tema].acento) === k ? ' on' : ''}"
         onclick="crEstilo('acento','${k}')" title="${esc(a.l)}" aria-label="${esc(a.l)}" style="--c:${a.c}"></button>`).join('')}
