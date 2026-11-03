@@ -15,7 +15,7 @@
      #/studio/ideias               as ideias soltas, e a captura rápida
      #/studio/criar[/<modelo>]     o criador (mod-criador)
      #/studio/modelos              a galeria dos modelos (mod-criador)
-     #/studio/curadoria[/votos]    a curadoria de fotos e os meus votos (mod-fotos, 2.24.0)
+     #/studio/curadoria[/descartadas]  a curadoria de fotos: o que entra no banco (mod-fotos, 2.25.0)
      #/studio/POST-14              uma publicação
      #/studio/POST-14/arte         a arte dela, no criador
      #/studio/config[/<aba>]       acesso, contas, imprensa, recursos
@@ -106,7 +106,7 @@ async function pageStudio(sub, sub2){
     try { await carregarModulo('fotos'); }
     catch(e){ $('#main').innerHTML = `<div class="aviso-box err">A curadoria não carregou (${esc(e.message)}). Recarregue a página.</div>`; return; }
     return fotoCuradoria(sub2, acoes => stTopo('Curadoria de fotos',
-      dica('Uma foto de cada vez, dentro de uma peça da marca. Arraste para a direita para aprovar, para a esquerda para descartar e para cima para talvez; tocar na foto troca a peça. A foto entra na galeria da Marca quando chega ao número de aprovações das configurações.'),
+      dica('Quem gere o Studio escolhe nas sugestões, busca nos bancos ou põe por link, e a foto entra direto no banco de fotos da Marca. O criador usa qualquer foto do banco, e o Claude lê o banco para criar peças.'),
       acoes) + stNav('curadoria'));
   }
   if (sub === 'calendario') return stCalendario();

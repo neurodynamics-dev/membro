@@ -100,7 +100,7 @@ conforme quem entra é menu que ninguém aprende.
 #/equipe/<registro>         a ficha
 #/marca                    os modelos controlados e templates (Arquivos é o dono do download)
 #/marca/assinatura|config  a assinatura de e-mail; o vínculo de cada modelo com uma série
-#/marca/fotos              a galeria das fotos aprovadas na curadoria (2.24.0)
+#/marca/fotos              a galeria: o banco de fotos da marca (2.24.0)
 #/equipe/quadro|presenca|feed|newsletter
 #/equipe/reporte            o ciclo da semana
 #/equipe/reporte/<frente>/<1-4>  preencher ou consultar uma frente (apontamentos, escalonamentos, feed, revisão)
@@ -143,7 +143,7 @@ conforme quem entra é menu que ninguém aprende.
 #/studio                    o quadro das publicações
 #/studio/calendario|ideias|modelos
 #/studio/criar[/<modelo>]   o criador (ex.: #/studio/criar/aniversario)
-#/studio/curadoria[/votos]  a curadoria de fotos e os meus votos (2.24.0)
+#/studio/curadoria[/descartadas]  a curadoria de fotos: o que entra no banco (2.25.0)
 #/studio/POST-14            uma publicação
 #/studio/POST-14/arte       a arte dela, no criador
 #/studio/config[/<aba>]     acesso, contas, imprensa, recursos
@@ -489,20 +489,19 @@ A escrita das publicações é só pelas funções (`studio_publicacao_salvar`,
 de escrita. É nelas que moram os avisos — quem aprova é avisado quando algo
 chega, quem responde é avisado da decisão.
 
-### Fotos: aprovada é o voto que diz
+### Fotos: quem gere o Studio escolhe
 
-Uma foto do banco de fotos (2.24.0) fica na **fila** até os votos da
-curadoria decidirem: entra na galeria quando os "sim" chegam ao número de
-aprovações do Studio e passam os "não"; sai quando os "não" chegam lá
-primeiro. *Talvez* não conta. A conta mora no banco (`foto_recontar`), não na
-tela. A gestão do Studio decide à mão (`foto_status_definir`), e então os votos
-deixam de mudar o status até a foto voltar para a fila.
+Desde a 2.25.0, a foto entra no banco de fotos porque a gestão do Studio
+(`studio_gestor`) escolheu, sem votação: nas sugestões (`fotos_decidir`, várias
+de uma vez), na busca dos bancos ou por link (`fotos_adicionar`, que já põe
+como aprovada). Aprovada é o banco; fila são as sugestões; descartada saiu e
+pode voltar. Os votos da 2.24.0 ficam em `foto_votos`, só como histórico.
 
-A escrita é só pelas funções (`fotos_fila`, `foto_votar`,
-`foto_voto_desfazer`, `fotos_adicionar`, `foto_salvar`,
-`foto_imagem_definir`, `foto_status_definir`). A galeria (as aprovadas) é de
-toda conta ativa; a fila e as descartadas, de quem entra no Studio; os votos,
-cada um os seus.
+A escrita é só pelas funções (`fotos_adicionar`, `fotos_decidir`,
+`foto_salvar`, `foto_imagem_definir`, `foto_status_definir`). O banco (as
+aprovadas) é de toda conta ativa e também se lê sem conta, por
+`fotos_banco_publico` (só os campos públicos); as sugestões e as descartadas,
+de quem entra no Studio.
 
 ### Documentos emitidos: o modelo tem um dono só
 

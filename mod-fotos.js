@@ -1,41 +1,39 @@
 /* ============================================================
-   MÓDULO · FOTOS — o banco de fotos da marca (2.24.0)
-   A curadoria mora no Studio; a galeria das aprovadas, na Marca; e o
-   criador pede uma foto daqui (fotoEscolher). Quem chama passa o
-   cabeçalho da própria tela, para este módulo não depender de outro.
+   MÓDULO · FOTOS — o banco de fotos da marca (2.24.0; sem votação desde a 2.25.0)
+   A curadoria mora no Studio; o banco (a galeria), na Marca; e o
+   criador pede fotos daqui (fotoEscolher, fotoDoBanco). Quem chama
+   passa o cabeçalho da própria tela, para este módulo não depender de
+   outro.
 
    Rotas (anunciadas por mod-studio e mod-marca):
-     #/studio/curadoria          a fila: uma foto de cada vez, dentro de uma peça da marca
-     #/studio/curadoria/votos    os meus votos: mudar ou desfazer
-     #/marca/fotos               a galeria das aprovadas, com busca por texto e por tag
+     #/studio/curadoria               as sugestões: escolher o que entra no banco
+     #/studio/curadoria/descartadas   as descartadas: pôr no banco ou devolver
+     #/marca/fotos                    o banco (a galeria), com busca por texto e por tag
 
-   Aprovada é o voto que diz (db/2.24.0_fotos.sql): a foto entra na
-   galeria quando os "sim" chegam ao número de aprovações do Studio e
-   passam os "não". A gestão do Studio aprova ou tira à mão.
+   Sem votação (db/2.25.0_fotos_sem_votacao.sql): quem gere o Studio
+   escolhe nas sugestões, busca nos bancos ou põe por link, e a foto
+   entra direto no banco. Quem só entra no Studio vê as sugestões.
+   O banco também se lê sem conta, por fotos_banco_publico: é por ali
+   que o Claude busca fotos para peças, wallpapers e banners.
 
    O endereço da imagem: com a chave do Unsplash (ou do Pexels) em
    Studio › Configurações, a página pergunta à API do banco e guarda o
-   endereço no banco de fotos (foto_imagem_definir). É ele que o canvas
-   do criador aceita. Sem chave, a prévia usa o endereço público da foto.
+   endereço (foto_imagem_definir). É ele que o canvas do criador aceita.
 
-   Precisa da migração db/2.24.0_fotos.sql.
+   Precisa das migrações db/2.24.0_fotos.sql e db/2.25.0_fotos_sem_votacao.sql.
    Depende da casca para: sb, $, esc, norm, state, toast, abreModal,
-   fechaModal, confirma, falha, motivoRPC, copiar, fmtD, ic, ibtn,
-   navNivel2, ferramentas, estado, spec, dica, podeStudio,
-   podeAprovarStudio.
+   fechaModal, confirma, motivoRPC, copiar, fmtD, ic, navNivel2,
+   ferramentas, estado, spec, dica, podeStudio, podeAprovarStudio.
    ============================================================ */
 
-const fotosM = { temas:null, fila:[], restantes:0, minimas:1, enq:'feed', pal:'cortex', hist:[], pulei:[],
-  filtroTemas:[], votos:null, votoFiltro:'sim', galeria:null, gq:'', gtags:[], gtema:'', imgs:{},
-  busca:{ banco:'u', q:'', res:[], marcadas:new Set(), pagina:1 }, escolher:null, cab:null, erro:null };
+const fotosM = { temas:null, lista:[], aba:'', sel:new Set(), cq:'', ctema:'', galeria:null, gq:'', gtags:[], gtema:'', imgs:{},
+  busca:{ banco:'u', q:'', res:[], marcadas:new Set(), pagina:1 }, escolher:null, cab:null };
 
 const FT_FAMS = [['cortex','Cortex'], ['ion','Ion'], ['neuron','Neuron'], ['glia','Glia'], ['retina','Retina'], ['nexo','Nexo'],
   ['dendrito','Dendrito'], ['lumen','Lúmen'], ['ritmo','Ritmo'], ['impulso','Impulso'], ['plexo','Plexo'], ['iris','Íris']];
 const FT_FAM_NOME = Object.fromEntries(FT_FAMS);
 const FT_ENQ = [['feed','Feed 4:5', 4 / 5], ['story','Story 9:16', 9 / 16], ['banda','Banda 1:1', 1], ['site','Site 4:5', 4 / 5]];
 const FT_BANCO = { unsplash:'Unsplash', pexels:'Pexels', link:'link' };
-const FT_DECISAO = { sim:'Aprovar', nao:'Descartar', talvez:'Talvez' };
-const FT_STATUS = { fila:['Na fila', ''], aprovada:['Aprovada', 'p-ok'], descartada:['Descartada', 'p-warn'] };
 const FT_COLS = 'id,banco,banco_id,pagina,imagem,descricao,tema,tags,autor,licenca,busca,origem,status,votos_sim,votos_nao,votos_talvez,enquadramento,paleta,decidida_em';
 
 /* ---------------- dados comuns ---------------- */
@@ -47,8 +45,8 @@ async function ftTemas(){
   return fotosM.temas;
 }
 const ftTema = k => (fotosM.temas || []).find(t => t.chave === k) || { chave:k || '', nome:'Sem tema', familia:'cortex', titulo:'Sistemas inteligentes para a saúde humana.', sub:'', termos:[] };
-const ftFam = f => fotosM.pal === 'auto' ? (ftTema(f.tema).familia || 'cortex') : fotosM.pal;
 const ftCurador = () => podeStudio();
+const ftGestor = () => podeAprovarStudio();
 const ftChave = b => b === 'pexels' ? state.studioCfg?.pexels_chave : b === 'unsplash' ? state.studioCfg?.unsplash_chave : null;
 const ftPill = (t, c) => `<span class="pill ${c || ''}"><span class="dt ${c === 'p-ok' ? 'dt-ok' : c === 'p-warn' ? 'dt-warn' : ''}"></span>${esc(t)}</span>`;
 
@@ -73,319 +71,136 @@ const ftPagina = f => f.pagina || (f.banco === 'unsplash' ? `https://unsplash.co
 
 /* pergunta à API do banco pelo endereço da imagem e guarda no banco de fotos */
 async function ftResolver(f){
-  const k = ftChave(f.banco); if (!k || f.imagem) return !!f.imagem;
-  try {
-    let url = null, autor = null;
-    if (f.banco === 'unsplash'){
-      const r = await fetch(`https://api.unsplash.com/photos/${encodeURIComponent(f.banco_id)}?client_id=${encodeURIComponent(k)}`);
-      if (!r.ok) return false;
-      const j = await r.json(); url = j.urls?.raw || j.urls?.regular; autor = j.user?.name || null;
-    } else if (f.banco === 'pexels'){
-      const r = await fetch(`https://api.pexels.com/v1/photos/${encodeURIComponent(f.banco_id)}`, { headers:{ Authorization:k } });
-      if (!r.ok) return false;
-      const j = await r.json(); url = j.src?.original || j.src?.large2x; autor = j.photographer || null;
-    }
-    if (!url) return false;
-    f.imagem = url; if (!f.autor && autor) f.autor = autor;
-    sb.rpc('foto_imagem_definir', { p_foto:f.id, p_imagem:url, p_autor:autor }).then(() => {}, () => {});
-    return true;
-  } catch(e){ return false; }
+  if (f.imagem) return true;
+  if (!await ftResolverSemSalvar(f)) return false;
+  sb.rpc('foto_imagem_definir', { p_foto:f.id, p_imagem:f.imagem, p_autor:f.autor || null }).then(() => {}, () => {});
+  return true;
 }
-/* carrega a prévia; se falhar e houver chave, tenta pela API */
-function ftCarrega(f){
-  const st = fotosM.imgs[f.id];
-  if (st?.p) return st.p;
-  const s = fotosM.imgs[f.id] = { s:'carregando', url:null };
-  s.p = new Promise(ok => {
-    const tenta = (url, ultima) => {
-      const i = new Image(); i.decoding = 'async';
-      i.onload = () => { s.s = 'ok'; s.url = url; ok(true); };
-      i.onerror = async () => {
-        if (!ultima && await ftResolver(f)) tenta(ftComLargura(f.imagem, 1080), true);
-        else { s.s = 'falhou'; ok(false); }
-      };
-      i.src = url;
-    };
-    tenta(ftImgUrl(f, 1080), false);
-  });
-  return s.p;
+/* a miniatura que não carregou: com a chave, pergunta à API pelo endereço */
+async function ftImgFalhou(img, id){
+  if (img.dataset.tentou) return; img.dataset.tentou = '1';
+  const f = [...(fotosM.lista || []), ...(fotosM.galeria || [])].find(x => x.id === id);
+  if (f && await ftResolver(f)) img.src = ftComLargura(f.imagem, 480);
 }
-
-/* ---------------- as peças de prova ----------------
-   Tudo chapado: foto retangular ou com raio de 18px, sem filtro; cada
-   superfície numa família. Medidas em cqw, frações da largura da peça. */
-function ftArte(f, enq, fam){
-  const T = ftTema(f.tema), st = fotosM.imgs[f.id];
-  const url = st?.url || ftImgUrl(f, 1080);
-  const foto = `<div class="ft-moldura"><img class="ft-foto${st?.s === 'ok' ? ' ok' : ''}" src="${esc(url)}" alt="${esc(f.descricao)}" draggable="false"></div>`;
-  const logo = '<span class="ft-logo" role="img" aria-label="NeuroDynamics"></span>';
-  const eb = `<span class="ft-eb"><i></i>${esc(T.nome)}</span>`;
-  const pe = '<div class="ft-pe"><span>LABBIO, UFMG</span><span>neurodynamics.dev</span></div>';
-  const c = `ft-arte ft-${enq} f-${fam}`;
-  if (enq === 'feed') return `<div class="${c}">${foto}<div class="ft-faixa"><div class="ft-topo">${logo}${eb}</div><h2>${esc(T.titulo)}</h2>${pe}</div></div>`;
-  if (enq === 'story') return `<div class="${c}"><div class="ft-grade"></div><div class="ft-topo">${logo}<span class="ft-data">2026</span></div>${foto}
-    <div class="ft-texto">${eb}<h2>${esc(T.titulo)}</h2><p>${esc(T.sub)}</p></div><span class="ft-cta">Conheça o trabalho</span></div>`;
-  if (enq === 'banda') return `<div class="${c}">${foto}<div class="ft-faixab"><span class="ft-icone"></span><div class="ft-topo">${eb}${logo}</div><h2>${esc(T.titulo)}</h2></div></div>`;
-  return `<div class="${c}"><div class="ft-grade"></div><div class="ft-topo">${logo}<span class="ft-menu" aria-hidden="true"><i></i><i></i><i></i></span></div>
-    <div class="ft-cartao-site">${foto}<div class="ft-corpo"><span class="ft-tag"><i></i>${esc(T.nome)}</span><h2>${esc(T.titulo)}</h2><p>${esc(T.sub)}</p><span class="ft-link">Ver projeto</span></div></div></div>`;
+/* o erro de uma função do banco de fotos; sem a 2.25.0, diz qual migração falta */
+function ftMotivo(data, error, base){
+  if (error && /fotos_decidir|could not find|schema cache/i.test(error.message || '')) return base + ': falta aplicar a migração db/2.25.0_fotos_sem_votacao.sql.';
+  return motivoRPC(data, error, base);
 }
 
 /* ============================================================
-   A CURADORIA (Studio)
+   A CURADORIA (Studio), sem votação
+   As sugestões são as fotos que chegaram e ninguém escolheu ainda.
+   A gestão marca as que servem e elas entram no banco; o resto pode
+   ser descartado (e volta das descartadas quando quiser).
    ============================================================ */
 async function fotoCuradoria(sub, cab){
-  fotosM.cab = cab;
-  $('#main').innerHTML = ftCab(sub) + estado.carregando();
-  try { await ftTemas(); }
+  fotosM.cab = cab; fotosM.aba = sub === 'descartadas' ? 'descartadas' : ''; fotosM.sel = new Set();
+  $('#main').innerHTML = ftCab() + estado.carregando('lista');
+  try { await ftTemas(); await ftCurCarrega(); }
   catch(e){ return ftSemBanco(e); }
-  if (sub === 'votos') return ftCurVotos();
-  return ftCurFila();
-}
-function ftCab(sub){
-  const n = sub === 'votos' ? '' : fotosM.restantes ? ` <span class="n">${fotosM.restantes}</span>` : '';
-  return fotosM.cab([`<button class="btn ghost" onclick="ftModalBusca()">${ic('lupa')} Buscar nos bancos</button>`,
-      `<button class="btn ghost" onclick="ftModalLinks()">${ic('link')} Pôr por link</button>`])
-    + navNivel2([['', 'Fila', '#/studio/curadoria', n], ['votos', 'Meus votos', '#/studio/curadoria/votos']], sub || '', 'Curadoria');
-}
-function ftSemBanco(e){
-  $('#main').innerHTML = ftCab('') + `<div class="aviso-box err"><b>O banco de fotos ainda não está no banco.</b> ${esc(e?.message || '')}<br>
-    <span class="small">Falta aplicar a migração <code>db/2.24.0_fotos.sql</code>.</span></div>`;
-}
-
-async function ftCurFila(){
-  const { data, error } = await sb.rpc('fotos_fila', { p_temas: fotosM.filtroTemas.length ? fotosM.filtroTemas : null, p_limite:40 });
-  if (error) return ftSemBanco(error);
-  if (data?.status !== 'ok'){ $('#main').innerHTML = ftCab('') + estado.erro({ texto: motivoRPC(data, null, 'A fila não abriu') }); return; }
-  fotosM.fila = (data.fotos || []).filter(f => !fotosM.pulei.includes(f.id)).concat((data.fotos || []).filter(f => fotosM.pulei.includes(f.id)));
-  fotosM.restantes = data.restantes || 0; fotosM.minimas = data.minimas || 1;
   ftCurDesenha();
 }
+function ftCab(){
+  const acoes = ftGestor() ? [`<button class="btn ghost" onclick="ftModalBusca()">${ic('lupa')} Buscar nos bancos</button>`,
+    `<button class="btn ghost" onclick="ftModalLinks()">${ic('link')} Pôr por link</button>`] : [];
+  const n = !fotosM.aba && fotosM.lista.length ? ` <span class="n">${fotosM.lista.length}</span>` : '';
+  return fotosM.cab(acoes) + navNivel2([['', 'Sugestões', '#/studio/curadoria', n], ['descartadas', 'Descartadas', '#/studio/curadoria/descartadas']],
+    fotosM.aba, 'Curadoria');
+}
+function ftSemBanco(e){
+  $('#main').innerHTML = ftCab() + `<div class="aviso-box err"><b>O banco de fotos ainda não está no banco.</b> ${esc(e?.message || '')}<br>
+    <span class="small">Falta aplicar as migrações <code>db/2.24.0_fotos.sql</code> e <code>db/2.25.0_fotos_sem_votacao.sql</code>.</span></div>`;
+}
+async function ftCurCarrega(){
+  const st = fotosM.aba === 'descartadas' ? 'descartada' : 'fila';
+  const { data, error } = await sb.from('fotos').select(FT_COLS).eq('status', st).order('criado_em', { ascending:false });
+  if (error) throw error;
+  /* a seleção da equipe e o que acabou de chegar por link ou busca vêm antes das sugestões por tema */
+  const peso = f => f.origem === 'equipe' ? 0 : ['link', 'busca'].includes(f.origem) ? 1 : 2;
+  fotosM.lista = (data || []).map((f, i) => [f, i]).sort((x, y) => peso(x[0]) - peso(y[0]) || x[1] - y[1]).map(x => x[0]);
+  const ids = new Set(fotosM.lista.map(f => f.id)); fotosM.sel.forEach(id => { if (!ids.has(id)) fotosM.sel.delete(id); });
+}
+function ftCurFiltradas(){
+  const termos = norm(fotosM.cq).trim().split(/\s+/).filter(Boolean);
+  return fotosM.lista.filter(f => (!fotosM.ctema || f.tema === fotosM.ctema)
+    && (!termos.length || termos.every(t => norm([f.descricao, f.autor, f.busca, ftTema(f.tema).nome, ...(f.tags || [])].join(' ')).includes(t))));
+}
 function ftCurDesenha(){
-  const f = fotosM.fila[0];
-  $('#main').innerHTML = ftCab('') + `<div class="ft-cur">
-    <div class="ft-palco card" id="ft-palco"><div class="ft-pilha" id="ft-pilha"></div></div>
-    <aside class="ft-lado">
-      <section class="ft-bloco" id="ft-meta"></section>
-      <section class="ft-bloco">
-        <span class="rotulo">Peça</span>
-        <div class="seg ft-seg" role="radiogroup" aria-label="Peça">${FT_ENQ.map(([k, l]) =>
-          `<button type="button" role="radio" class="${fotosM.enq === k ? 'on' : ''}" aria-checked="${fotosM.enq === k}" onclick="ftEnq('${k}')">${esc(l.split(' ')[0])}</button>`).join('')}</div>
-        <span class="rotulo">Paleta ${dica('Auto usa a família do tema da foto. A peça e a paleta em que a foto foi aprovada ficam guardadas com ela.')}</span>
-        <div class="ft-pals" role="radiogroup" aria-label="Paleta">
-          <button type="button" role="radio" class="chip ft-auto${fotosM.pal === 'auto' ? ' on' : ''}" aria-checked="${fotosM.pal === 'auto'}" onclick="ftPal('auto')">Auto</button>
-          ${FT_FAMS.map(([k, n]) => `<button type="button" role="radio" class="ft-pal f-${k}${fotosM.pal === k ? ' on' : ''}" aria-checked="${fotosM.pal === k}"
-            title="${esc(n)}" aria-label="${esc(n)}" onclick="ftPal('${k}')"><span></span></button>`).join('')}</div>
-      </section>
-      <section class="ft-bloco ft-acoes">
-        <button class="btn ghost ft-nao" id="ft-nao" onclick="ftVotar('nao')"${f ? '' : ' disabled'}>${ic('x')} Descartar</button>
-        <button class="icon-btn" id="ft-desfazer" title="Desfazer o último voto" aria-label="Desfazer o último voto" onclick="ftDesfazer()"${fotosM.hist.length ? '' : ' disabled'}>${ic('refazer')}</button>
-        <button class="btn ghost" id="ft-talvez" onclick="ftVotar('talvez')"${f ? '' : ' disabled'}>Talvez</button>
-        <button class="btn solid" id="ft-sim" onclick="ftVotar('sim')"${f ? '' : ' disabled'}>${ic('check')} Aprovar</button>
-      </section>
-      <section class="ft-bloco">
-        <span class="rotulo">Temas na fila</span>
-        <div class="ft-temas">${(fotosM.temas || []).map(t => {
-          const on = !fotosM.filtroTemas.length || fotosM.filtroTemas.includes(t.chave);
-          return `<button type="button" class="chip${on && fotosM.filtroTemas.length ? ' on' : ''}" aria-pressed="${on && !!fotosM.filtroTemas.length}" onclick="ftFiltroTema('${t.chave}')">${esc(t.nome)}</button>`; }).join('')}</div>
-        ${fotosM.filtroTemas.length ? '<button class="btn ghost mini" onclick="fotosM.filtroTemas=[];ftCurFila()">Todos os temas</button>' : ''}
-      </section>
-    </aside></div>`;
-  ftCurCartao();
+  const g = ftGestor(), lista = ftCurFiltradas(), desc = fotosM.aba === 'descartadas';
+  $('#main').innerHTML = ftCab()
+    + (g ? '' : `<div class="aviso-box info">Quem gere o Studio escolhe o que entra no banco. As escolhidas ficam na <a href="#/marca/fotos">Galeria de fotos</a>, para toda a equipe.</div>`)
+    + ferramentas({ busca:{ id:'ft-cq', rotulo:'Buscar', exemplo:'UTI, microscópio, equipe', valor:fotosM.cq, oninput:'ftCurBusca(this.value)' },
+        filtros:`<div class="fld"><label for="ft-ctema">Tema</label><select id="ft-ctema" onchange="fotosM.ctema=this.value;ftCurDesenha()">
+          <option value="">Todos</option>${ftOpcoesTema(fotosM.ctema)}</select></div>`, total:lista.length })
+    + (lista.length ? `<div class="marca-grid ft-galeria ft-escolha">${lista.map(f => ftEscolhaTile(f, g)).join('')}</div>`
+      : fotosM.lista.length ? estado.vazio({ texto:'Nenhuma foto com esse filtro.', acao:'<button class="btn ghost" onclick="fotosM.cq=\'\';fotosM.ctema=\'\';ftCurDesenha()">Limpar filtros</button>' })
+      : estado.vazio({ texto: desc ? 'Nenhuma foto descartada.' : 'Nenhuma sugestão esperando. O banco está em dia.',
+          acao: g && !desc ? `<button class="btn ghost" onclick="ftModalBusca()">${ic('lupa')} Buscar nos bancos</button>` : '' }))
+    + (g ? `<div class="ft-barra" id="ft-barra" role="region" aria-label="As fotos escolhidas" hidden>
+        <span class="ft-barra-n" id="ft-barra-n"></span>
+        <button class="btn ghost mini" onclick="ftMarcarTodas()">Escolher todas</button>
+        <button class="btn ghost mini" onclick="fotosM.sel=new Set();ftCurDesenha()">Limpar</button>
+        <span class="cresce"></span>
+        ${desc ? `<button class="btn ghost" onclick="ftDecidir('fila')">Devolver às sugestões</button>`
+               : `<button class="btn ghost" onclick="ftDecidir('descartada')">${ic('x')} Descartar</button>`}
+        <button class="btn solid" id="ft-por" onclick="ftDecidir('aprovada')">${ic('check')} Pôr no banco</button></div>` : '');
+  ftBarra();
 }
-function ftMedida(){
-  const p = $('#ft-pilha'); if (!p) return { w:0, h:0 };
-  const r = p.getBoundingClientRect(), ar = FT_ENQ.find(e => e[0] === fotosM.enq)[2];
-  let w = r.width, h = w / ar; if (h > r.height){ h = r.height; w = h * ar; }
-  return { w:Math.floor(w), h:Math.floor(h) };
+function ftEscolhaTile(f, g){
+  const on = fotosM.sel.has(f.id);
+  const img = `<img loading="lazy" src="${esc(ftImgUrl(f, 480))}" alt="" onerror="ftImgFalhou(this,'${f.id}')">`;
+  return `<article class="card marca-tile ft-tile${on ? ' on' : ''}">
+    ${g ? `<button type="button" class="ft-tile-foto ft-marcar" aria-pressed="${on}" onclick="ftMarcar('${f.id}')" aria-label="Escolher: ${esc(f.descricao)}">${img}<i class="ft-bf-ok">${ic('check')}</i></button>`
+        : `<a class="ft-tile-foto" href="${esc(ftPagina(f))}" target="_blank" rel="noopener" aria-label="${esc(f.descricao)}">${img}</a>`}
+    <div class="marca-tile-corpo"><h3>${esc(f.descricao)}</h3>
+      <div class="marca-tile-meta">${ftPill(ftTema(f.tema).nome)}${f.origem === 'equipe' ? ftPill('Seleção da equipe', 'p-ok') : ''}</div>
+      <span class="small muted">${(f.tags || []).slice(0, 3).map(esc).join(', ')}</span>
+      <span class="small muted">${f.autor ? esc(f.autor) + ', ' : ''}<a href="${esc(ftPagina(f))}" target="_blank" rel="noopener">${esc(FT_BANCO[f.banco] || f.banco)}</a></span></div></article>`;
 }
-function ftCurCartao(){
-  const pilha = $('#ft-pilha'); if (!pilha) return;
-  const [f, prox] = fotosM.fila;
-  pilha.innerHTML = '';
-  if (!f){
-    pilha.innerHTML = `<div class="vazio ft-vazio"><p>${fotosM.filtroTemas.length ? 'Nada para votar nestes temas.' : 'Nada para votar. A fila está em dia.'}</p>
-      <button class="btn ghost" onclick="ftModalBusca()">${ic('lupa')} Buscar nos bancos</button></div>`;
-  } else {
-    if (prox) pilha.appendChild(ftCartaoEl(prox, true));
-    const el = ftCartaoEl(f, false); pilha.appendChild(el); ftArrasta(el);
-    fotosM.fila.slice(1, 3).forEach(ftCarrega);
-  }
-  ftCurMeta(f);
-  ['#ft-nao', '#ft-talvez', '#ft-sim'].forEach(s => { const b = $(s); if (b) b.disabled = !f; });
-  const d = $('#ft-desfazer'); if (d) d.disabled = !fotosM.hist.length;
-  const n = document.querySelector('.abas a .n'); if (n) n.textContent = fotosM.restantes;
+function ftBarra(){
+  const b = $('#ft-barra'); if (!b) return;
+  const n = fotosM.sel.size; b.hidden = !n;
+  $('#ft-barra-n').textContent = n === 1 ? '1 escolhida' : `${n} escolhidas`;
+  $('#ft-por').innerHTML = `${ic('check')} Pôr ${n === 1 ? 'a foto' : n} no banco`;
 }
-function ftCartaoEl(f, atras){
-  const el = document.createElement('div'), m = ftMedida();
-  el.className = 'ft-cartao' + (atras ? ' atras' : '');
-  el.style.width = m.w + 'px'; el.style.height = m.h + 'px';
-  el.innerHTML = ftArte(f, fotosM.enq, ftFam(f)) + '<span class="ft-carimbo sim">Aprovada</span><span class="ft-carimbo nao">Descartada</span><span class="ft-carimbo talvez">Talvez</span>';
-  if (!atras){ el.tabIndex = 0; el.setAttribute('role', 'img');
-    el.setAttribute('aria-label', `${f.descricao}, em ${FT_ENQ.find(e => e[0] === fotosM.enq)[1]}, paleta ${FT_FAM_NOME[ftFam(f)]}`); }
-  const img = el.querySelector('.ft-foto');
-  img.addEventListener('load', () => img.classList.add('ok'));
-  ftCarrega(f).then(ok => {
-    if (!el.isConnected) return;
-    if (ok){ const u = fotosM.imgs[f.id].url; if (img.getAttribute('src') !== u) img.src = u; img.classList.add('ok'); }
-    else if (!atras) ftFalhou(el, f);
-  });
-  return el;
+function ftMarcar(id){
+  fotosM.sel.has(id) ? fotosM.sel.delete(id) : fotosM.sel.add(id);
+  const on = fotosM.sel.has(id), bt = document.querySelector(`.ft-marcar[onclick="ftMarcar('${id}')"]`);
+  if (bt){ bt.setAttribute('aria-pressed', on); bt.closest('.ft-tile').classList.toggle('on', on); }
+  ftBarra();
 }
-function ftFalhou(el, f){
-  const d = document.createElement('div'); d.className = 'ft-falhou';
-  const banco = FT_BANCO[f.banco] || 'banco';
-  d.innerHTML = `<h3>A prévia não carregou</h3>
-    <p>${ftChave(f.banco) ? 'Abra a foto na página do banco para avaliar, ou pule.' : `Abra a foto no ${esc(banco)} para avaliar. Com a chave do ${esc(banco)} em Studio, Configurações, a prévia sai pela API.`}</p>
-    <div class="ft-falhou-acoes"><a class="btn ghost mini" href="${esc(ftPagina(f))}" target="_blank" rel="noopener">${ic('externo')} Abrir no ${esc(banco)}</a>
-    <button class="btn ghost mini" onclick="ftPular()">Pular</button></div>`;
-  el.appendChild(d);
+function ftMarcarTodas(){ ftCurFiltradas().forEach(f => fotosM.sel.add(f.id)); ftCurDesenha(); }
+function ftCurBusca(v){
+  fotosM.cq = v; clearTimeout(fotosM._cq);
+  fotosM._cq = setTimeout(() => { ftCurDesenha(); const e = $('#ft-cq'); if (e){ e.focus(); e.setSelectionRange(e.value.length, e.value.length); } }, 220);
 }
-function ftCurMeta(f){
-  const m = $('#ft-meta'); if (!m) return;
-  if (!f){ m.innerHTML = `<p class="small muted">${fotosM.restantes} para votar.</p>`; return; }
-  const T = ftTema(f.tema);
-  const origem = { equipe:'Seleção da equipe', sugestao:'Sugestão', link:'Posta por link', busca:'Busca nos bancos' }[f.origem] || '';
-  m.innerHTML = `<div class="ft-meta-l1">${ftPill(T.nome)}${f.origem === 'equipe' ? ftPill(origem, 'p-ok') : ''}</div>
-    <h3 class="ft-meta-t">${esc(f.descricao)}</h3>
-    ${spec([['Tags', (f.tags || []).map(t => `<span class="chip mini">${esc(t)}</span>`).join(' ') || '—'],
-      ['Autor', esc(f.autor || '—')], ['Banco', `<a href="${esc(ftPagina(f))}" target="_blank" rel="noopener">${esc(FT_BANCO[f.banco] || f.banco)} ${ic('externo')}</a>`],
-      f.busca ? ['Busca', esc(f.busca)] : null, f.origem !== 'equipe' ? ['Origem', esc(origem)] : null,
-      ['Votos', `${f.votos_sim || 0} sim, ${f.votos_nao || 0} não, ${f.votos_talvez || 0} talvez <span class="muted">(${fotosM.minimas} ${fotosM.minimas === 1 ? 'aprovação basta' : 'aprovações bastam'})</span>`]])}
-    <p class="small muted">${fotosM.restantes} para votar.</p>`;
-}
-function ftEnq(k){ fotosM.enq = k; document.querySelectorAll('.ft-seg button').forEach(b => { const on = b.getAttribute('onclick').includes(`'${k}'`);
-  b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); ftCurCartao(); }
-function ftPal(k){ fotosM.pal = k; document.querySelectorAll('.ft-pals [role=radio]').forEach(b => { const on = b.getAttribute('onclick').includes(`'${k}'`);
-  b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); ftCurCartao(); }
-function ftFiltroTema(k){
-  const a = fotosM.filtroTemas;
-  fotosM.filtroTemas = a.includes(k) ? a.filter(x => x !== k) : [...a, k];
-  ftCurFila();
-}
-function ftPular(){ const f = fotosM.fila.shift(); if (!f) return; fotosM.pulei.push(f.id); fotosM.fila.push(f); ftCurCartao(); }
-
-async function ftVotar(d){
-  const f = fotosM.fila[0]; if (!f) return;
-  const fam = ftFam(f), el = document.querySelector('.ft-cartao:not(.atras)');
-  const { data, error } = await sb.rpc('foto_votar', { p_foto:f.id, p_decisao:d, p_enquadramento:fotosM.enq, p_paleta:fam });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'O voto não entrou'), true);
-  fotosM.hist.push(f.id); fotosM.fila.shift(); fotosM.restantes = Math.max(0, fotosM.restantes - 1);
-  if (data.foto_status === 'aprovada') toast('Aprovada: a foto entrou na galeria.');
-  const fim = () => { ftCurCartao(); if (fotosM.fila.length < 4 && fotosM.restantes > fotosM.fila.length) ftCurFila(); };
-  if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return fim();
-  const c = el.querySelector('.ft-carimbo.' + d); if (c) c.style.opacity = 1;
-  el.classList.add('saindo');
-  const dx = d === 'sim' ? innerWidth : d === 'nao' ? -innerWidth : 0, dy = d === 'talvez' ? -innerHeight : 0;
-  el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${dx / 30}deg)`; el.style.opacity = 0;
-  setTimeout(fim, 260);
-}
-async function ftDesfazer(){
-  const id = fotosM.hist.pop(); if (!id) return;
-  const { data, error } = await sb.rpc('foto_voto_desfazer', { p_foto:id });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para desfazer'), true);
-  const { data:f } = await sb.from('fotos').select(FT_COLS).eq('id', id).maybeSingle();
-  if (f){ fotosM.fila.unshift(f); fotosM.restantes++; }
-  toast('O voto foi desfeito.');
-  ftCurCartao();
-}
-function ftArrasta(el){
-  let x0 = 0, y0 = 0, dx = 0, dy = 0, ativo = false, moveu = false, id = null;
-  const mover = () => {
-    el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${dx / 22}deg)`;
-    const L = el.offsetWidth * .28, v = x => Math.max(0, Math.min(1, x));
-    el.querySelector('.ft-carimbo.sim').style.opacity = v(dx / L);
-    el.querySelector('.ft-carimbo.nao').style.opacity = v(-dx / L);
-    el.querySelector('.ft-carimbo.talvez').style.opacity = Math.abs(dy) > Math.abs(dx) ? v(-dy / L) : 0;
-  };
-  el.addEventListener('pointerdown', e => {
-    if (e.button > 0 || e.target.closest('a,button')) return;
-    ativo = true; moveu = false; id = e.pointerId; x0 = e.clientX; y0 = e.clientY; dx = dy = 0;
-    try { el.setPointerCapture(id); } catch(err){ /* o ponteiro já saiu */ }
-    el.classList.add('arrastando');
-  });
-  el.addEventListener('pointermove', e => {
-    if (!ativo || e.pointerId !== id) return;
-    dx = e.clientX - x0; dy = e.clientY - y0;
-    if (Math.abs(dx) + Math.abs(dy) > 8) moveu = true;
-    if (moveu) mover();
-  });
-  const fim = e => {
-    if (!ativo) return; ativo = false; el.classList.remove('arrastando');
-    const L = el.offsetWidth * .28;
-    if (dx > L) return ftVotar('sim');
-    if (dx < -L) return ftVotar('nao');
-    if (dy < -L && Math.abs(dy) > Math.abs(dx)) return ftVotar('talvez');
-    dx = dy = 0; mover(); el.style.transform = '';
-    if (!moveu && e.type === 'pointerup'){ const i = FT_ENQ.findIndex(x => x[0] === fotosM.enq); ftEnq(FT_ENQ[(i + 1) % FT_ENQ.length][0]); }
-  };
-  el.addEventListener('pointerup', fim); el.addEventListener('pointercancel', fim);
-}
-/* as setas votam; E troca a peça; Z desfaz (só na fila da curadoria) */
-document.addEventListener('keydown', e => {
-  if (!$('#ft-pilha') || $('#modal')?.classList.contains('open') || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable) return;
-  const k = e.key.toLowerCase();
-  if (k === 'arrowright'){ e.preventDefault(); ftVotar('sim'); }
-  else if (k === 'arrowleft'){ e.preventDefault(); ftVotar('nao'); }
-  else if (k === 'arrowup'){ e.preventDefault(); ftVotar('talvez'); }
-  else if (k === 'z'){ e.preventDefault(); ftDesfazer(); }
-  else if (k === 'e'){ const i = FT_ENQ.findIndex(x => x[0] === fotosM.enq); ftEnq(FT_ENQ[(i + 1) % FT_ENQ.length][0]); }
-});
-window.addEventListener('resize', () => { if (!$('#ft-pilha')) return; const m = ftMedida();
-  document.querySelectorAll('.ft-cartao').forEach(c => { c.style.width = m.w + 'px'; c.style.height = m.h + 'px'; }); });
-
-/* ---------------- os meus votos ---------------- */
-async function ftCurVotos(){
-  const v = await sb.from('foto_votos').select('foto_id,decisao,enquadramento,paleta,criado_em').order('criado_em', { ascending:false });
-  if (v.error) return ftSemBanco(v.error);
-  const ids = (v.data || []).map(x => x.foto_id);
-  const f = ids.length ? await sb.from('fotos').select(FT_COLS).in('id', ids) : { data:[] };
-  if (f.error) return ftSemBanco(f.error);
-  const porId = Object.fromEntries((f.data || []).map(x => [x.id, x]));
-  fotosM.votos = (v.data || []).filter(x => porId[x.foto_id]).map(x => ({ ...x, foto:porId[x.foto_id] }));
-  ftVotosDesenha();
-}
-function ftVotosDesenha(){
-  const filtro = fotosM.votoFiltro, todos = fotosM.votos || [];
-  const lista = todos.filter(x => x.decisao === filtro);
-  const n = d => todos.filter(x => x.decisao === d).length;
-  $('#main').innerHTML = ftCab('votos') + ferramentas({
-      filtros:`<div class="seg" role="group" aria-label="Voto">${[['sim', 'Aprovei'], ['talvez', 'Talvez'], ['nao', 'Descartei']].map(([k, l]) =>
-        `<button type="button" class="${filtro === k ? 'on' : ''}" aria-pressed="${filtro === k}" onclick="fotosM.votoFiltro='${k}';ftVotosDesenha()">${l} (${n(k)})</button>`).join('')}</div>`,
-      total:lista.length })
-    + (lista.length ? `<div class="marca-grid ft-galeria">${lista.map(x => {
-        const f = x.foto, [rs, cs] = FT_STATUS[f.status] || ['', ''];
-        return `<article class="card marca-tile ft-tile"><a class="ft-tile-foto" href="${esc(ftPagina(f))}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(ftImgUrl(f, 480))}" alt=""></a>
-          <div class="marca-tile-corpo"><h3>${esc(f.descricao)}</h3><div class="marca-tile-meta">${ftPill(rs, cs)}<span class="small muted">${f.votos_sim} sim, ${f.votos_nao} não</span></div>
-          <div class="seg ft-mudar" role="group" aria-label="Mudar o voto">${['sim', 'talvez', 'nao'].map(d =>
-            `<button type="button" class="${x.decisao === d ? 'on' : ''}" aria-pressed="${x.decisao === d}" onclick="ftMudarVoto('${f.id}','${d}')">${FT_DECISAO[d]}</button>`).join('')}
-            <button type="button" onclick="ftTirarVoto('${f.id}')" title="Desfazer o voto" aria-label="Desfazer o voto">${ic('refazer')}</button></div></div></article>`; }).join('')}</div>`
-      : estado.vazio({ texto:'Nenhum voto com esse filtro.', acao:'<a class="btn ghost" href="#/studio/curadoria">Ir para a fila</a>' }));
-}
-async function ftMudarVoto(id, d){
-  const x = (fotosM.votos || []).find(v => v.foto_id === id); if (!x || x.decisao === d) return;
-  const { data, error } = await sb.rpc('foto_votar', { p_foto:id, p_decisao:d, p_enquadramento:x.enquadramento, p_paleta:x.paleta });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'O voto não mudou'), true);
-  toast('Voto mudado.'); ftCurVotos();
-}
-async function ftTirarVoto(id){
-  const { data, error } = await sb.rpc('foto_voto_desfazer', { p_foto:id });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'Não deu para desfazer'), true);
-  toast('Voto desfeito: a foto volta para a sua fila.'); ftCurVotos();
+async function ftDecidir(status){
+  const ids = [...fotosM.sel]; if (!ids.length) return;
+  /* no banco, a foto precisa do endereço da imagem para o criador: com a chave, já pergunta */
+  if (status === 'aprovada') await Promise.all(fotosM.lista.filter(f => ids.includes(f.id) && !f.imagem).map(ftResolver));
+  const { data, error } = await sb.rpc('fotos_decidir', { p_ids:ids, p_status:status });
+  if (error || data?.status !== 'ok') return toast(ftMotivo(data, error, 'As fotos não mudaram'), true);
+  const n = data.fotos, um = n === 1;
+  toast(status === 'aprovada' ? `${n} ${um ? 'foto entrou' : 'fotos entraram'} no banco.`
+    : status === 'descartada' ? `${n} ${um ? 'foto descartada' : 'fotos descartadas'}.` : `${n} de volta às sugestões.`);
+  fotosM.sel = new Set(); fotosM.galeria = null;
+  try { await ftCurCarrega(); } catch(e){ return ftSemBanco(e); }
+  ftCurDesenha();
 }
 
-/* ---------------- pôr fotos na fila ---------------- */
+/* ---------------- pôr no banco: por link e pela busca ---------------- */
 const ftOpcoesTema = sel => (fotosM.temas || []).map(t => `<option value="${esc(t.chave)}"${t.chave === sel ? ' selected' : ''}>${esc(t.nome)}</option>`).join('');
 const ftTagsDe = s => String(s || '').split(',').map(t => t.trim()).filter(Boolean);
 function ftModalLinks(){
-  const t = fotosM.fila[0]?.tema || fotosM.temas?.[0]?.chave;
+  const t = fotosM.ctema || fotosM.temas?.[0]?.chave;
   abreModal(`<h3>${ic('link')} Pôr por link</h3>
     <div class="fld"><label for="ft-lk">Links das fotos ${dica('Endereços do Unsplash ou do Pexels, um por linha ou todos juntos. Também vale o endereço direto de uma imagem (images.unsplash.com, images.pexels.com).')}</label>
       <textarea id="ft-lk" rows="5" placeholder="https://unsplash.com/photos/..."></textarea></div>
     <div class="fld"><label for="ft-lk-tema">Tema</label><select id="ft-lk-tema">${ftOpcoesTema(t)}</select></div>
     <div class="fld"><label for="ft-lk-tags">Tags, separadas por vírgula</label><input id="ft-lk-tags" placeholder="UTI, monitor"></div>
     <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Cancelar</button>
-      <button class="btn solid" onclick="ftLinksOk()">Pôr na fila</button></div>`);
+      <button class="btn solid" onclick="ftLinksOk()">Pôr no banco</button></div>`);
   setTimeout(() => $('#ft-lk')?.focus(), 30);
 }
 const ftLegivel = slug => { const s = String(slug || '').replace(/[-_]+/g, ' ').trim(); return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; };
@@ -402,23 +217,47 @@ function ftLerLinks(txt){
   }
   return out;
 }
+/* com a chave, já leva o endereço da imagem e o autor de cada foto posta por link */
+async function ftComImagem(f){
+  if (f.imagem || f.banco === 'link') return f;
+  const x = { ...f }; return await ftResolverSemSalvar(x) ? x : f;
+}
+/* o endereço da imagem, o autor e a descrição pela API do banco (com a chave), sem gravar */
+async function ftResolverSemSalvar(f){
+  const k = ftChave(f.banco); if (!k) return false;
+  try {
+    if (f.banco === 'unsplash'){
+      const r = await fetch(`https://api.unsplash.com/photos/${encodeURIComponent(f.banco_id)}?client_id=${encodeURIComponent(k)}`); if (!r.ok) return false;
+      const j = await r.json(); f.imagem = j.urls?.raw || j.urls?.regular; f.autor = f.autor || j.user?.name || null;
+      if (!f.descricao) f.descricao = j.alt_description || j.description || '';
+    } else if (f.banco === 'pexels'){
+      const r = await fetch(`https://api.pexels.com/v1/photos/${encodeURIComponent(f.banco_id)}`, { headers:{ Authorization:k } }); if (!r.ok) return false;
+      const j = await r.json(); f.imagem = j.src?.original || j.src?.large2x; f.autor = f.autor || j.photographer || null;
+      if (!f.descricao) f.descricao = j.alt || '';
+    }
+    return !!f.imagem;
+  } catch(e){ return false; }
+}
 async function ftLinksOk(){
   const lista = ftLerLinks($('#ft-lk').value), tema = $('#ft-lk-tema').value, tags = ftTagsDe($('#ft-lk-tags').value);
   if (!lista.length) return toast('Nenhum link do Unsplash ou do Pexels no texto.', true);
-  await ftPorNaFila(lista.map(f => ({ ...f, tema, tags, origem:'link' })));
+  const prontas = await Promise.all(lista.map(ftComImagem));
+  await ftPorNoBanco(prontas.map(f => ({ ...f, tema, tags, origem:'link' })));
 }
-async function ftPorNaFila(lista){
+async function ftPorNoBanco(lista){
   const { data, error } = await sb.rpc('fotos_adicionar', { p_fotos:lista });
-  if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'As fotos não entraram'), true);
-  fechaModal();
-  toast(data.novas ? `${data.novas} ${data.novas === 1 ? 'foto entrou' : 'fotos entraram'} na fila${data.repetidas ? `; ${data.repetidas} já estavam` : ''}.` : 'Essas fotos já estavam no banco.');
-  if ($('#ft-pilha')) ftCurFila();
+  if (error || data?.status !== 'ok') return toast(ftMotivo(data, error, 'As fotos não entraram'), true);
+  fechaModal(); fotosM.galeria = null;
+  const n = (data.novas || 0) + (data.reativadas || 0);
+  toast(n ? `${n} ${n === 1 ? 'foto entrou' : 'fotos entraram'} no banco${data.repetidas ? `; ${data.repetidas} já ${data.repetidas === 1 ? 'estava' : 'estavam'}` : ''}.`
+    : 'Essas fotos já estavam no banco.');
+  if ($('#ft-cq')){ try { await ftCurCarrega(); ftCurDesenha(); } catch(e){ ftSemBanco(e); } }
 }
 
 function ftModalBusca(){
   const b = fotosM.busca, temChave = ftChave('unsplash') || ftChave('pexels');
   if (!ftChave(b.banco === 'p' ? 'pexels' : 'unsplash')) b.banco = ftChave('unsplash') ? 'u' : 'p';
-  const t = fotosM.fila[0]?.tema || fotosM.temas?.[0]?.chave;
+  const t = fotosM.ctema || fotosM.temas?.[0]?.chave;
   abreModal(`<h3>${ic('lupa')} Buscar nos bancos</h3>
     ${temChave ? `<div class="ft-busca-linha">
         <div class="seg" role="group" aria-label="Banco">${[['u', 'Unsplash'], ['p', 'Pexels']].map(([k, l]) =>
@@ -434,7 +273,7 @@ function ftModalBusca(){
         <div class="fld cresce"><label for="ft-b-tags">Tags, separadas por vírgula</label><input id="ft-b-tags" placeholder="laboratório, automação"></div>
       </div>
       <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button>
-        <button class="btn solid" id="ft-b-ok" onclick="ftBuscaOk()" disabled>Pôr na fila</button></div>`
+        <button class="btn solid" id="ft-b-ok" onclick="ftBuscaOk()" disabled>Pôr no banco</button></div>`
     : `<div class="aviso-box info">Para buscar daqui, ponha a chave do Unsplash ou do Pexels em
         <a href="#/studio/config/contas" onclick="fechaModal()">Studio, Configurações</a>. Sem chave, use <b>Pôr por link</b>.</div>
       <div class="acts" style="justify-content:flex-end"><button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`}`, 'largo');
@@ -475,13 +314,13 @@ function ftBuscaDesenha(){
     <div class="cr-us-pag">${b.pagina > 1 ? `<button class="btn ghost mini" onclick="ftBusca(${b.pagina - 1})">Anteriores</button>` : ''}
       ${b.pagina < b.total ? `<button class="btn ghost mini" onclick="ftBusca(${b.pagina + 1})">Mais fotos</button>` : ''}</div>`
     : estado.vazio({ texto:'Nada com essa busca. Tente em inglês, ou mais genérico.' });
-  const ok = $('#ft-b-ok'); if (ok){ ok.disabled = !b.marcadas.size; ok.textContent = b.marcadas.size ? `Pôr ${b.marcadas.size} na fila` : 'Pôr na fila'; }
+  const ok = $('#ft-b-ok'); if (ok){ ok.disabled = !b.marcadas.size; ok.textContent = b.marcadas.size ? `Pôr ${b.marcadas.size} no banco` : 'Pôr no banco'; }
 }
 function ftBuscaMarca(i){ const s = fotosM.busca.marcadas; s.has(i) ? s.delete(i) : s.add(i); ftBuscaDesenha(); }
 async function ftBuscaOk(){
   const b = fotosM.busca, tema = $('#ft-b-tema').value, tags = ftTagsDe($('#ft-b-tags').value);
   const lista = [...b.marcadas].map(i => b.res[i]).filter(Boolean).map(({ mini, ...f }) => ({ ...f, tema, tags, busca:b.q, origem:'busca' }));
-  if (lista.length) await ftPorNaFila(lista);
+  if (lista.length) await ftPorNoBanco(lista);
 }
 
 /* ============================================================
@@ -518,7 +357,7 @@ function ftGalDesenha(){
   const tops = Object.entries(conta).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 18).map(x => x[0]);
   fotosM.gtags.forEach(t => { if (!tops.includes(t)) tops.unshift(t); });
   $('#main').innerHTML = fotosM.cab('Galeria de fotos', 'fotos', {
-      lead:`As fotos aprovadas na curadoria do Studio. ${dica('Copiar a lista leva as fotos filtradas em JSON (descrição, tema, tags, autor, licença e os links), para colar numa conversa com o Claude ou em outra ferramenta.')}`,
+      lead:`O banco de fotos da marca, escolhido pela gestão do Studio. ${dica('Copiar a lista leva as fotos filtradas em JSON (descrição, tema, tags, autor, licença e os links). O Claude também lê o banco direto, pela função fotos_banco_publico.')}`,
       acoes:[`<button class="btn ghost" onclick="ftCopiarLista()"${lista.length ? '' : ' disabled'}>${ic('copy')} Copiar a lista</button>`,
         ...(podeStudio() ? ['<a class="btn ghost" href="#/studio/curadoria">Curadoria</a>'] : [])] })
     + ferramentas({ busca:{ id:'ft-gq', rotulo:'Buscar', exemplo:'UTI, microscópio, equipe', valor:fotosM.gq, oninput:'ftGalBusca(this.value)' },
@@ -532,7 +371,7 @@ function ftGalDesenha(){
           <div class="marca-tile-meta">${(f.tags || []).slice(0, 3).map(t => `<span class="chip mini">${esc(t)}</span>`).join('')}</div>
           <span class="small muted">${esc(ftTema(f.tema).nome)}${f.autor ? ', ' + esc(f.autor) : ''}</span></div></article>`).join('')}</div>`
       : todas.length ? estado.vazio({ texto:'Nenhuma foto com esse filtro.', acao:'<button class="btn ghost" onclick="ftGalLimpar()">Limpar filtros</button>' })
-      : estado.vazio({ texto:'Nenhuma foto aprovada ainda.', acao: podeStudio() ? '<a class="btn ghost" href="#/studio/curadoria">Abrir a curadoria</a>' : '' }));
+      : estado.vazio({ texto:'O banco ainda está vazio.', acao: podeStudio() ? '<a class="btn ghost" href="#/studio/curadoria">Abrir a curadoria</a>' : '' }));
 }
 function ftGalBusca(v){
   fotosM.gq = v; clearTimeout(fotosM._q);
@@ -548,12 +387,12 @@ function ftDetalhe(id){
     <h3>${esc(f.descricao)}</h3>
     ${spec([['Tema', esc(ftTema(f.tema).nome)], ['Tags', (f.tags || []).map(t => `<span class="chip mini">${esc(t)}</span>`).join(' ') || '—'],
       ['Autor', esc(f.autor || '—')], ['Banco e licença', `${esc(banco)}${f.licenca ? ', ' + esc(f.licenca) : ''}`],
-      ['Aprovada em', fmtD(f.decidida_em)], f.enquadramento ? ['Peça da aprovação', `${esc(FT_ENQ.find(e => e[0] === f.enquadramento)?.[1] || f.enquadramento)}${f.paleta ? ', ' + esc(FT_FAM_NOME[f.paleta] || f.paleta) : ''}`] : null])}
+      ['No banco desde', fmtD(f.decidida_em)], f.enquadramento ? ['Peça da aprovação', `${esc(FT_ENQ.find(e => e[0] === f.enquadramento)?.[1] || f.enquadramento)}${f.paleta ? ', ' + esc(FT_FAM_NOME[f.paleta] || f.paleta) : ''}`] : null])}
     <div class="acts ft-det-acoes">
       <a class="btn ghost" href="${esc(ftPagina(f))}" target="_blank" rel="noopener">${ic('externo')} Abrir no ${esc(banco)}</a>
       ${f.imagem ? `<button class="btn ghost" onclick="copiar('${esc(ftComLargura(f.imagem, 2400))}')">${ic('copy')} Copiar o link da imagem</button>` : ''}
       ${ftCurador() ? `<button class="btn ghost" onclick="ftEditar('${f.id}')">${ic('pencil')} Editar</button>` : ''}
-      ${podeAprovarStudio() ? `<button class="btn ghost" onclick="ftTirar('${f.id}')">${ic('trash')} Tirar da galeria</button>` : ''}
+      ${ftGestor() ? `<button class="btn ghost" onclick="ftTirar('${f.id}')">${ic('trash')} Tirar da galeria</button>` : ''}
       <button class="btn ghost" onclick="fechaModal()">Fechar</button></div>`, 'largo');
 }
 function ftEditar(id){
@@ -575,7 +414,7 @@ async function ftSalvarEdicao(id){
   toast('Foto salva.'); fechaModal(); ftGalDesenha();
 }
 async function ftTirar(id){
-  if (!await confirma('A foto sai da galeria e do criador. Os votos continuam guardados.', 'Tirar da galeria')) return;
+  if (!await confirma('A foto sai do banco e do criador, e fica nas descartadas da curadoria.', 'Tirar da galeria')) return;
   const { data, error } = await sb.rpc('foto_status_definir', { p_foto:id, p_status:'descartada' });
   if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'A foto não saiu da galeria'), true);
   fotosM.galeria = (fotosM.galeria || []).filter(x => x.id !== id);
@@ -616,13 +455,29 @@ function ftEscolherLista(){
     || termos.every(t => norm([f.descricao, f.autor, ftTema(f.tema).nome, ...(f.tags || [])].join(' ')).includes(t)));
   el.innerHTML = lista.length ? `<div class="cr-us-grade">${lista.map(f => `<button type="button" class="cr-us-f" onclick="ftEscolhe('${f.id}')" title="${esc(f.descricao)}">
       <img src="${esc(ftImgUrl(f, 400))}" alt="" loading="lazy"><span>${esc((f.tags || []).slice(0, 2).join(', '))}</span></button>`).join('')}</div>`
-    : estado.vazio({ texto: (fotosM.galeria || []).length ? 'Nenhuma foto com essa busca.' : 'Nenhuma foto aprovada ainda. A curadoria fica no Studio.' });
+    : estado.vazio({ texto: (fotosM.galeria || []).length ? 'Nenhuma foto com essa busca.' : 'O banco ainda está vazio. Quem gere o Studio põe fotos em Studio, Curadoria.' });
 }
 async function ftEscolhe(id){
   const f = (fotosM.galeria || []).find(x => x.id === id); if (!f || !fotosM.escolher) return;
   const url = await fotoUrlCanvas(f);
   if (!url) return;
   fotosM.escolher.ao(f, url, `${f.autor || FT_BANCO[f.banco] || 'Foto'} / ${FT_BANCO[f.banco] || 'link'}`);
+}
+/* uma foto do banco para o criador, sem escolher (2.25.0): da família pedida, se houver,
+   sem repetir as que a peça já usa; só as que já têm o endereço da imagem */
+async function fotoDoBanco({ familia, evitar = [] } = {}){
+  await ftTemas();
+  if (!fotosM.galeria){
+    const { data, error } = await sb.from('fotos').select(FT_COLS).eq('status', 'aprovada').order('decidida_em', { ascending:false });
+    if (error) throw error; fotosM.galeria = data || [];
+  }
+  const usaveis = fotosM.galeria.filter(f => f.imagem && !evitar.includes(f.id));
+  if (!usaveis.length) return null;
+  const daFam = familia ? usaveis.filter(f => (f.paleta || ftTema(f.tema).familia) === familia) : [];
+  const lista = daFam.length ? daFam : usaveis;
+  const f = lista[Math.floor(Math.random() * lista.length)];
+  const url = await fotoUrlCanvas(f);
+  return url ? { f, url, credito:`${f.autor || FT_BANCO[f.banco] || 'Foto'} / ${FT_BANCO[f.banco] || 'link'}` } : null;
 }
 /* o endereço que o canvas aceita (o CDN do banco); o Unsplash pede que o uso seja avisado */
 async function fotoUrlCanvas(f){
