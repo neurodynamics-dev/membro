@@ -34,15 +34,23 @@ const capa=(id,idioma,estilo,frase)=>({id,idioma,estilo,frase,familia:'cortex',p
  perfil:{arquivo:`downloads/linkedin/perfil/${id}.jpg`,largura:3168,altura:792},empresa:{arquivo:`downloads/linkedin/empresa/${id}.jpg`,largura:2256,altura:382},
  foto:{descricao:'Foto',autor:'Fulana',banco:'Unsplash',licenca:'Licença Unsplash',pagina:'https://unsplash.com/photos/x'}});
 const MANIFESTO={capas:[capa('en-tools-for-health','en','foto','Tools for health.'),capa('en-health-engineered','en','faixa','Health, engineered.'),capa('pt-da-bancada-a-clinica','pt','faixa','Da bancada à clínica.')]};
-for(const falha of [false,true]){
+const SO_EN={capas:MANIFESTO.capas.filter(c=>c.idioma==='en')};
+for(const modo of ['ok','falha','so-en']){const falha=modo==='falha';
  const p=await nav.newPage({viewport:{width:390,height:844},acceptDownloads:true});const erros=[];p.on('pageerror',e=>erros.push(e.message));
  await p.route('**/*supabase*.js',r=>r.fulfill({contentType:'application/javascript',body:stub}));
  await p.route('https://brand.neurodynamics.dev/**',r=>r.abort());await p.route('https://fonts.googleapis.com/**',r=>r.abort());
  const pedidos=[];
- await p.route('https://brand.neurodynamics.dev/downloads/linkedin/index.json',r=>falha?r.fulfill({status:404,body:''}):r.fulfill({contentType:'application/json',body:JSON.stringify(MANIFESTO),headers:{'Access-Control-Allow-Origin':'*'}}));
+ await p.route('https://brand.neurodynamics.dev/downloads/linkedin/index.json',r=>falha?r.fulfill({status:404,body:''}):r.fulfill({contentType:'application/json',body:JSON.stringify(modo==='so-en'?SO_EN:MANIFESTO),headers:{'Access-Control-Allow-Origin':'*'}}));
  await p.route(/brand\.neurodynamics\.dev\/(assets\/manual|downloads)\/linkedin\/.*\.jpg$/,r=>{pedidos.push(new URL(r.request().url()).pathname);r.fulfill({contentType:'image/jpeg',body:JPG,headers:{'Access-Control-Allow-Origin':'*'}});});
  await p.goto('http://localhost:8765/#/marca/linkedin');await p.getByRole('heading',{name:'Capas do LinkedIn',exact:true}).waitFor();
- if(falha){
+ if(modo==='so-en'){
+  /* 2.27.1: com as capas todas em inglês, o filtro de idioma não aparece; o de estilo, sim */
+  await p.locator('.li-tile').first().waitFor();assert.equal(await p.locator('.li-tile').count(),2);n++;
+  assert.equal(await p.getByRole('group',{name:'Idioma'}).count(),0);n++;
+  assert.ok(await p.getByRole('group',{name:'Estilo'}).isVisible());n++;
+  await p.getByRole('group',{name:'Estilo'}).getByRole('button',{name:'Foto e faixa'}).click();
+  assert.deepEqual(await p.locator('.li-tile h3').allTextContents(),['Health, engineered.']);n++;
+ }else if(falha){
   await p.locator('.estado-erro').waitFor();assert.ok((await p.locator('.estado-erro').textContent()).includes('As capas não abriram'));n++;
   assert.ok(await p.getByRole('button',{name:'Tentar de novo'}).isVisible());n++;
  }else{

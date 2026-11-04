@@ -33,6 +33,11 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.27.1', data:'2026-11-04', titulo:'Capas do LinkedIn em inglês, mais nítidas', itens:[
+    ['melhoria', 'As **capas do LinkedIn** agora são todas em inglês: 19 capas, 7 com a foto inteira e 12 com a foto e a faixa. As fotos que só tinham versão em português ganharam a sua em inglês.'],
+    ['melhoria', 'Os downloads ficaram **mais nítidos**: as capas saem das fotos no tamanho original do banco de imagens, em JPG de alta qualidade, sem borrar o texto.'],
+    ['melhoria', 'Os filtros só aparecem quando há o que escolher: com tudo em inglês, sai o de idioma e fica o de estilo.']
+  ]},
   { v:'2.27.0', data:'2026-11-04', titulo:'Capas do LinkedIn na Marca', itens:[
     ['novo', '**Marca › Capas do LinkedIn**: 25 capas feitas com as fotos do banco de imagens, cada uma em dois tamanhos: **Perfil**, para o banner do seu perfil, com a logo, e **Página da empresa**, para a capa da página da NeuroDynamics. Filtre por idioma (inglês ou português) e por estilo (a foto inteira com uma frase, como nas grandes marcas, ou a foto com a faixa chapada).'],
     ['melhoria', 'Os arquivos vêm no dobro do tamanho que o LinkedIn pede, para ficarem nítidos, e já baixam com o nome certo. As capas moram no manual da marca (Downloads, LinkedIn), e esta tela lê de lá: capa nova no manual aparece aqui sozinha.']
