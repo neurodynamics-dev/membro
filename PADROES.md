@@ -101,6 +101,7 @@ conforme quem entra é menu que ninguém aprende.
 #/marca                    os modelos controlados e templates (Arquivos é o dono do download)
 #/marca/assinatura|config  a assinatura de e-mail; o vínculo de cada modelo com uma série
 #/marca/fotos              a galeria: o banco de fotos da marca (2.24.0)
+#/marca/linkedin           as capas do LinkedIn, lidas do manual (2.27.0)
 #/equipe/quadro|presenca|feed|newsletter
 #/equipe/reporte            o ciclo da semana
 #/equipe/reporte/<frente>/<1-4>  preencher ou consultar uma frente (apontamentos, escalonamentos, feed, revisão)

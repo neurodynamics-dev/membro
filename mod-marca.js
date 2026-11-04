@@ -4,8 +4,11 @@
      #/marca/assinatura   a assinatura de e-mail, com os dados da ficha (Fluxo simples)
      #/marca/config       o vínculo de cada modelo com uma série de Arquivos (Ajustes)
      #/marca/fotos        a galeria: as fotos aprovadas no banco de imagens do Studio (mod-fotos, 2.24.0)
-   Arquivos é o único dono do download controlado. */
-const marca={vinculos:[],rol:[],pode:new Map(),assinatura:{},filtro:'todos',tipo:'completa',cliente:'gmail'};
+     #/marca/linkedin     as capas do LinkedIn, para o perfil de cada pessoa e para a página (2.27.0)
+   Arquivos é o único dono do download controlado. As capas do LinkedIn moram
+   no manual (downloads/linkedin/): esta tela lê o manifesto de lá e baixa os
+   arquivos de lá, sem cópia no portal. */
+const marca={vinculos:[],rol:[],pode:new Map(),assinatura:{},filtro:'todos',tipo:'completa',cliente:'gmail',capas:null,liIdioma:'todos',liEstilo:'todos'};
 const MARCA_BASE='https://brand.neurodynamics.dev/';
 const MARCA_ITENS=[
  ['relatorio','Relatório formal','relatorio-capa'],['apresentacao-formal','Apresentação formal','deck-formal-capa'],
@@ -16,7 +19,7 @@ const MARCA_ITENS=[
 ];
 
 const marcaPill=(t,c)=>`<span class="pill ${c||''}"><span class="dt ${c==='p-ok'?'dt-ok':c==='p-warn'?'dt-warn':''}"></span>${esc(t)}</span>`;
-const marcaSecoes=atual=>navNivel1([['','Modelos','#/marca'],['fotos','Galeria de fotos','#/marca/fotos'],['assinatura','Assinatura de e-mail','#/marca/assinatura'],...(docGestor()?[['config','Configurações','#/marca/config']]:[])],atual,'Marca');
+const marcaSecoes=atual=>navNivel1([['','Modelos','#/marca'],['fotos','Galeria de fotos','#/marca/fotos'],['linkedin','Capas do LinkedIn','#/marca/linkedin'],['assinatura','Assinatura de e-mail','#/marca/assinatura'],...(docGestor()?[['config','Configurações','#/marca/config']]:[])],atual,'Marca');
 const marcaTopo=(titulo,atual,extra={})=>cabecalho({espaco:'Marca',titulo,secoes:marcaSecoes(atual),...extra});
 
 async function pageMarca(sub){
@@ -26,6 +29,7 @@ async function pageMarca(sub){
   catch(e){$('#main').innerHTML=marcaTopo('Galeria de fotos','fotos')+estado.erro({texto:'A galeria não carregou ('+e.message+'). Recarregue a página.'});return;}
   return fotoGaleria(marcaTopo);
  }
+ if(sub==='linkedin')return marcaLinkedin();
  if(sub==='assinatura')return marcaAssinatura();
  if(sub==='config'&&!docGestor()){location.hash='#/marca';return;}
  $('#main').innerHTML=marcaTopo(sub==='config'?'Configurações':'Modelos',sub||'')+estado.carregando('lista');
@@ -53,6 +57,40 @@ function marcaModelos(){
   +`<section class="band" style="margin-top:var(--s9)"><div class="band-txt"><span class="eyebrow">Manual da marca</span><h2>Logos, cores, wallpapers e o kit de interface</h2>
    <p>Os arquivos públicos ficam no manual, sem login: imagotipo, paleta, tipografia, fundos e componentes.</p>
    <a class="btn solid" href="${MARCA_BASE}" target="_blank" rel="noopener">Abrir o manual ↗</a></div></section>`;
+}
+
+/* L: as capas do LinkedIn (2.27.0), do manifesto do manual (downloads/linkedin/index.json).
+   "perfil" é o banner de cada pessoa, com a logo; "empresa", a capa da página da NeuroDynamics. */
+const MARCA_LI_IDIOMA={en:'Inglês',pt:'Português'},MARCA_LI_ESTILO={foto:'Foto inteira',faixa:'Foto e faixa'};
+async function marcaLinkedin(){
+ const topo=()=>marcaTopo('Capas do LinkedIn','linkedin',{lead:`Para o perfil de cada pessoa, com a logo, e para a página da NeuroDynamics. As fotos são do banco de imagens. ${dica('No perfil, o canto de baixo à esquerda fica sob a sua foto: ali vai só foto. Os arquivos vêm no dobro do tamanho que o LinkedIn pede, para ficarem nítidos.')}`,
+  acoes:[`<a class="btn ghost" href="${MARCA_BASE}downloads#linkedin" target="_blank" rel="noopener">Abrir no manual ↗</a>`]});
+ if(!marca.capas){
+  $('#main').innerHTML=topo()+estado.carregando('lista');
+  try{const r=await fetch(MARCA_BASE+'downloads/linkedin/index.json',{cache:'no-cache'});if(!r.ok)throw new Error('o manual respondeu '+r.status);
+   marca.capas=(await r.json()).capas||[];}
+  catch(e){$('#main').innerHTML=topo()+estado.erro({texto:'As capas não abriram: '+e.message+'.',acao:`<button class="btn ghost mini" onclick="marcaLinkedin()">Tentar de novo</button>`});return;}
+ }
+ const seg=(rot,chave,ops)=>`<div class="seg" role="group" aria-label="${rot}">${[['todos','Todas'],...Object.entries(ops)].map(([k,l])=>`<button type="button" class="${marca[chave]===k?'on':''}" aria-pressed="${marca[chave]===k}" onclick="marca.${chave}='${k}';marcaLinkedin()">${l}</button>`).join('')}</div>`;
+ const lista=marca.capas.filter(c=>(marca.liIdioma==='todos'||c.idioma===marca.liIdioma)&&(marca.liEstilo==='todos'||c.estilo===marca.liEstilo));
+ const tile=c=>`<article class="card marca-tile li-tile"><img loading="lazy" src="${esc(MARCA_BASE+c.previa)}" alt="" onerror="this.remove()">
+  <div class="marca-tile-corpo"><h3>${esc(c.frase)}</h3><div class="marca-tile-meta">${marcaPill(MARCA_LI_IDIOMA[c.idioma]||c.idioma)}${marcaPill(MARCA_LI_ESTILO[c.estilo]||c.estilo)}</div>
+  <span class="small muted">Foto: ${esc(c.foto?.autor||'')} / ${esc(c.foto?.banco||'Unsplash')}</span>
+  <div class="marca-tile-acoes li-acoes"><button type="button" class="btn ghost mini" onclick="marcaBaixarCapa('${esc(c.id)}','perfil')">${ic('down')} Perfil</button><button type="button" class="btn ghost mini" onclick="marcaBaixarCapa('${esc(c.id)}','empresa')">${ic('down')} Página da empresa</button></div></div></article>`;
+ $('#main').innerHTML=topo()
+  +ferramentas({filtros:seg('Idioma','liIdioma',MARCA_LI_IDIOMA)+seg('Estilo','liEstilo',MARCA_LI_ESTILO),total:lista.length})
+  +(lista.length?`<div class="marca-grid li-grid">${lista.map(tile).join('')}</div>`
+   :marca.capas.length?estado.vazio({texto:'Nenhuma capa com esse filtro.',acao:`<button class="btn ghost mini" onclick="marca.liIdioma='todos';marca.liEstilo='todos';marcaLinkedin()">Ver todas</button>`})
+   :estado.vazio({texto:'O manual ainda não tem capas do LinkedIn.'}));
+}
+/* baixa do manual com o nome certo (o atributo download não vale entre domínios); sem rede, abre a imagem */
+async function marcaBaixarCapa(id,tipo){
+ const c=(marca.capas||[]).find(x=>x.id===id);if(!c)return;const url=MARCA_BASE+c[tipo].arquivo;
+ try{const r=await fetch(url);if(!r.ok)throw new Error(r.status);const b=await r.blob(),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=`neurodynamics-linkedin-${tipo==='perfil'?'perfil':'empresa'}-${id}.jpg`;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);
+  toast(tipo==='perfil'?'Capa do perfil baixada.':'Capa da página baixada.');}
+ catch(e){window.open(url,'_blank','noopener');}
 }
 
 /* A: o vínculo de cada modelo com uma série de Arquivos */
