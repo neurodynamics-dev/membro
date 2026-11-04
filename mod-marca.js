@@ -71,14 +71,19 @@ async function marcaLinkedin(){
    marca.capas=(await r.json()).capas||[];}
   catch(e){$('#main').innerHTML=topo()+estado.erro({texto:'As capas não abriram: '+e.message+'.',acao:`<button class="btn ghost mini" onclick="marcaLinkedin()">Tentar de novo</button>`});return;}
  }
- const seg=(rot,chave,ops)=>`<div class="seg" role="group" aria-label="${rot}">${[['todos','Todas'],...Object.entries(ops)].map(([k,l])=>`<button type="button" class="${marca[chave]===k?'on':''}" aria-pressed="${marca[chave]===k}" onclick="marca.${chave}='${k}';marcaLinkedin()">${l}</button>`).join('')}</div>`;
+ /* o filtro só aparece quando há mais de uma opção no manifesto (2.27.1: as capas ficaram todas em inglês) */
+ const seg=(rot,chave,campo,nomes)=>{const ha=[...new Set(marca.capas.map(c=>c[campo]))];
+  if(ha.length<2){marca[chave]='todos';return '';}
+  const ops=ha.map(k=>[k,nomes[k]||k]);
+  return `<div class="seg" role="group" aria-label="${rot}">${[['todos','Todas'],...ops].map(([k,l])=>`<button type="button" class="${marca[chave]===k?'on':''}" aria-pressed="${marca[chave]===k}" onclick="marca.${chave}='${esc(k)}';marcaLinkedin()">${esc(l)}</button>`).join('')}</div>`;};
+ const filtros=seg('Idioma','liIdioma','idioma',MARCA_LI_IDIOMA)+seg('Estilo','liEstilo','estilo',MARCA_LI_ESTILO);
  const lista=marca.capas.filter(c=>(marca.liIdioma==='todos'||c.idioma===marca.liIdioma)&&(marca.liEstilo==='todos'||c.estilo===marca.liEstilo));
  const tile=c=>`<article class="card marca-tile li-tile"><img loading="lazy" src="${esc(MARCA_BASE+c.previa)}" alt="" onerror="this.remove()">
   <div class="marca-tile-corpo"><h3>${esc(c.frase)}</h3><div class="marca-tile-meta">${marcaPill(MARCA_LI_IDIOMA[c.idioma]||c.idioma)}${marcaPill(MARCA_LI_ESTILO[c.estilo]||c.estilo)}</div>
   <span class="small muted">Foto: ${esc(c.foto?.autor||'')} / ${esc(c.foto?.banco||'Unsplash')}</span>
   <div class="marca-tile-acoes li-acoes"><button type="button" class="btn ghost mini" onclick="marcaBaixarCapa('${esc(c.id)}','perfil')">${ic('down')} Perfil</button><button type="button" class="btn ghost mini" onclick="marcaBaixarCapa('${esc(c.id)}','empresa')">${ic('down')} Página da empresa</button></div></div></article>`;
  $('#main').innerHTML=topo()
-  +ferramentas({filtros:seg('Idioma','liIdioma',MARCA_LI_IDIOMA)+seg('Estilo','liEstilo',MARCA_LI_ESTILO),total:lista.length})
+  +ferramentas({filtros,total:lista.length})
   +(lista.length?`<div class="marca-grid li-grid">${lista.map(tile).join('')}</div>`
    :marca.capas.length?estado.vazio({texto:'Nenhuma capa com esse filtro.',acao:`<button class="btn ghost mini" onclick="marca.liIdioma='todos';marca.liEstilo='todos';marcaLinkedin()">Ver todas</button>`})
    :estado.vazio({texto:'O manual ainda não tem capas do LinkedIn.'}));
