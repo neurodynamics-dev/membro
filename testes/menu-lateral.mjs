@@ -160,10 +160,11 @@ console.log('\nAberto (admin, 1440px)');
     /* 2.19.2: Comunicação (o feed e as newsletters) e a Marca entram em Serviços */
     /* 2.19.2: "Indicar contato ou evento" em Comunicação */
     /* 2.24.0: a Galeria de fotos entra na Marca, depois de Modelos */
-    srv.aberta && srv.seta === 'true' && srv.visiveis === 23 && srv.filhos[1] === 'Meus pedidos'
+    /* 2.27.0: as Capas do LinkedIn, depois da Galeria de fotos */
+    srv.aberta && srv.seta === 'true' && srv.visiveis === 24 && srv.filhos[1] === 'Meus pedidos'
       && srv.filhos[2] === 'Reporte semanal'
-      && srv.filhos.slice(3, 11).join('|') === 'Feed da equipe|Indicar contato ou evento|Newsletters|Modelos|Galeria de fotos|Assinatura de e-mail|Configurações da marca|Manual da marca'
-      && srv.filhos.slice(11, 17).join('|') === 'Declaração de vínculo|Acesso ao LABBIO|Eventos e participações|Cofre de senhas|Aproveitamento de AACC|Meus dados'
+      && srv.filhos.slice(3, 12).join('|') === 'Feed da equipe|Indicar contato ou evento|Newsletters|Modelos|Galeria de fotos|Capas do LinkedIn|Assinatura de e-mail|Configurações da marca|Manual da marca'
+      && srv.filhos.slice(12, 18).join('|') === 'Declaração de vínculo|Acesso ao LABBIO|Eventos e participações|Cofre de senhas|Aproveitamento de AACC|Meus dados'
       && srv.rotulos.join('|') === 'Comunicação|Marca|Documentos e acessos|Ao Depto. de Pessoal'
       && await p.evaluate(() => location.hash) === '#/', srv);
   const equipe = await secao(p, 'equipe');

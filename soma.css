@@ -2899,6 +2899,10 @@ a.evx-card:hover{border-color:var(--line2);background:rgba(var(--tom),.04)}
 .marca-tile h3{margin:0;font-size:var(--fs-body);font-weight:600}
 .marca-tile-meta{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s2)}
 .marca-tile-acoes{margin-top:auto}
+/* as capas do LinkedIn (2.27.0): a prévia na proporção do banner, em colunas mais largas */
+.li-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+.li-tile>img{aspect-ratio:4/1}
+.li-acoes{display:flex;flex-wrap:wrap;gap:var(--s2)}
 /* só para leitor de tela: o rótulo de um campo dentro de uma tabela */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* a marca do projeto (o Pokémon) e a linha evolutiva, logo abaixo do cabeçalho */

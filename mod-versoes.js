@@ -33,6 +33,10 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.27.0', data:'2026-11-04', titulo:'Capas do LinkedIn na Marca', itens:[
+    ['novo', '**Marca › Capas do LinkedIn**: 25 capas feitas com as fotos do banco de imagens, cada uma em dois tamanhos: **Perfil**, para o banner do seu perfil, com a logo, e **Página da empresa**, para a capa da página da NeuroDynamics. Filtre por idioma (inglês ou português) e por estilo (a foto inteira com uma frase, como nas grandes marcas, ou a foto com a faixa chapada).'],
+    ['melhoria', 'Os arquivos vêm no dobro do tamanho que o LinkedIn pede, para ficarem nítidos, e já baixam com o nome certo. As capas moram no manual da marca (Downloads, LinkedIn), e esta tela lê de lá: capa nova no manual aparece aqui sozinha.']
+  ]},
   { v:'2.26.0', data:'2026-11-03', titulo:'O banco de imagens, uma foto de cada vez', itens:[
     ['novo', 'A curadoria agora se chama **Banco de imagens** (Studio › Banco de imagens). A avaliação voltou a mostrar **uma foto de cada vez, dentro das peças da NRO** (feed, story, banda e site, na paleta que quiser): **Aprovar** põe a foto no banco na hora, com a peça e a paleta em que foi vista; **Rejeitar** manda para as rejeitadas. Uma decisão basta, sem votação.'],
     ['novo', 'Arrastar para a direita aprova e para a esquerda rejeita; para cima, ou *Pular*, deixa para depois. As setas fazem o mesmo, **Z** desfaz a última decisão e **E** troca a peça. Tocar na foto também troca a peça.'],
