@@ -360,7 +360,7 @@ const CR_BARRAS     = { solida:'Sólida', vidro:'Vidro', clara:'Clara', linha:'S
 
 /* o estilo que toda peça tem, antes do que o modelo muda */
 const CR_ESTILO_PADRAO = {
-  tema:'void', acento:'', acentoLivre:'', decoracao:'rede', grade:true, cortes:false,
+  tema:'void', acento:'', acentoLivre:'', decoracao:'nenhuma', grade:false, cortes:false,
   destaque:'cor', alinhar:'esquerda', escala:1, caixaAlta:false,
   logo:'topo', logoTam:1, labbio:false, rodape:'', contador:true,
   filtro:'natural', escurecer:62, barra:'solida', formatoArquivo:'auto'
@@ -555,10 +555,38 @@ function crCorpoQueCabe(ctx, txt, largura, peso, maximo, fam){
   const l = ctx.measureText(String(txt)).width || 1; ctx.restore();
   return Math.min(maximo, largura / l * 100);
 }
-/* o olho: rótulo curto em mono, caixa alta, espaçado */
+/* o claro de cada família: a cor do eyebrow nas peças escuras (2.28.0) */
+const CR_CLARO = { cortex:'#E3EFEC', ion:'#D9F7F2', neuron:'#E4F2E3', glia:'#E9EFEA', retina:'#E0E6FC', nexo:'#E7E5FA',
+  dendrito:'#EEE8FE', lumen:'#FFF9D6', ritmo:'#FFEDE0', impulso:'#FFE4E6', plexo:'#FFE6F0', iris:'#F8E7FC' };
+function crCorOlho(g){
+  if (g.sobreFoto) return '#E8EDEB';
+  if (!g.escuro) return g.fg2;
+  const k = CR_TEMA_ALIAS[g.estilo?.tema] || g.estilo?.tema;
+  return CR_CLARO[k] || '#E8EDEB';
+}
+/* o eyebrow (o olho), como no manual: o quadrado no acento e o rótulo em
+   Archivo, caixa alta, espaçado, no claro da família. Alinha à
+   esquerda, no centro ou à direita; devolve o rodapé do bloco. */
 function crOlho(ctx, g, txt, x, y, o = {}){
-  return crEscreve(ctx, txt, { fonte: crFonte(500, g.u * (o.tam || 23)), lh: g.u * (o.tam || 23) * 1.42,
-    cor: o.cor || g.acT, maxL: o.maxL || g.larg, x, y, esp: g.u * 4.2, caixaAlta: true, alinhar: o.alinhar || g.alinhar });
+  if (!String(txt ?? '').trim()) return y;
+  const tam = g.u * (o.tam || 21), lado = Math.round(tam * .6), gap = Math.round(tam * .65);
+  const al = o.alinhar || g.alinhar, maxL = o.maxL || g.larg;
+  const op = { fonte: crFonte(600, tam), lh: tam * 1.42, esp: tam * .16, caixaAlta: true, maxL: maxL - lado - gap };
+  ctx.save();
+  const { linhas, sp } = crLinhas(ctx, txt, op);
+  const textoDe = ln => ln.pals.map(p => p.segs.map(s2 => s2.t).join('')).join(' ');
+  const w0 = linhas[0]?.w || 0;
+  const xq = al === 'direita' ? x + maxL - w0 - gap - lado : al === 'centro' ? x + (maxL - w0 - gap - lado) / 2 : x;
+  ctx.fillStyle = o.quadrado || g.ac;
+  ctx.fillRect(Math.round(xq), Math.round(y + (op.lh - lado) / 2), lado, lado);
+  ctx.fillStyle = o.cor || crCorOlho(g); ctx.textBaseline = 'alphabetic';
+  linhas.forEach((ln, i) => {
+    const lx = al === 'direita' ? x + maxL - ln.w : al === 'centro' ? xq + lado + gap + (i ? (w0 - ln.w) / 2 : 0) : x + lado + gap;
+    ctx.fillText(textoDe(ln), lx, y + op.lh * i + op.lh * .74);
+  });
+  ctx.restore();
+  void sp;
+  return y + linhas.length * op.lh;
 }
 /* a régua de acento sob um título */
 function crRegua(ctx, g, x, y, larg){
@@ -569,7 +597,7 @@ function crRegua(ctx, g, x, y, larg){
 }
 /* o título de cada leiaute: Archivo, destaque do estilo, escala do estilo */
 function crTituloOp(g, base, maxA, extra = {}){
-  return { peso: extra.peso || 800, lhF: extra.lhF || .98, espF: extra.espF ?? -.012, maxL: extra.maxL || g.larg, maxA,
+  return { peso: extra.peso || 600, lhF: extra.lhF || 1.03, espF: extra.espF ?? -.024, maxL: extra.maxL || g.larg, maxA,
     x: extra.x ?? g.x0, cor: extra.cor || g.fg, corD: g.acT, fundoD: g.ac, sobreD: g.sobreAc,
     destaque: g.estilo.destaque, alinhar: extra.alinhar || g.alinhar, caixaAlta: g.estilo.caixaAlta, _base: base * g.estilo.escala };
 }
@@ -785,7 +813,7 @@ function crSobreFoto(g){
 /* ============================================================
    MOLDURA — logo, contador, rodapé e crédito
    ============================================================ */
-function crAltLogo(g){ return Math.round(g.u * 44 * (g.estilo.logoTam || 1)); }
+function crAltLogo(g){ return Math.round(g.u * 38 * (g.estilo.logoTam || 1)); }
 function crLarguraMarcas(g, alt){
   let w = crLarguraLogo('nro', alt);
   if (g.estilo.labbio) w += alt * 1.1 + crLarguraLogo('labbio', alt * 1.5);
@@ -906,14 +934,56 @@ function crFaixaFoto(ctx, g, lam, x, y, w, h, raio, rotulo){
   return foto;
 }
 
+/* FOTO E FAIXA, o leiaute principal (2.28.0): a foto como está, em cima
+   (ao lado, nas peças largas), e a faixa chapada na cor da família, com
+   a logo, o eyebrow à direita, o título e o subtítulo. É o "Feed com
+   foto" do manual da marca (templates/social/FeedFoto.html). */
+function crLFaixa(ctx, g, c, lam){
+  const u = g.u, largo = g.W / g.H > 1.2, vert = crVertical(g);
+  let bx = 0, by = 0, bw = g.W, bh = g.H;
+  if (largo){
+    const fw = Math.round(g.W * .45);
+    crFaixaFoto(ctx, g, lam, 0, 0, fw, g.H, 0, 'foto');
+    bx = fw; bw = g.W - fw;
+  } else {
+    const fh = Math.round(g.H * (vert ? .55 : g.H > g.W ? .57 : .55));
+    crFaixaFoto(ctx, g, lam, 0, 0, g.W, fh, 0, 'foto');
+    by = fh; bh = g.H - fh;
+  }
+  const pl = largo ? u * 64 : Math.round(g.W * .08), pr = pl;
+  const pt = largo ? u * 56 : Math.round(g.W * .064);
+  let fim = by + bh - (largo ? u * 56 : Math.round(g.W * .07));
+  if (g.T.seguro) fim = Math.min(fim, g.base - u * 24);
+  const x = bx + pl, larg = bw - pl - pr;
+  /* a logo à esquerda e o eyebrow à direita, na mesma linha */
+  const alt = crAltLogo(g), cor = g.fg;
+  let lw = 0;
+  if (g.estilo.logo !== 'nenhum') lw = crMarcas(ctx, g, x, by + pt, alt, cor);
+  let topoTexto = by + pt + alt;
+  if (c.olho){
+    const tamO = largo ? 17 : 20, lhO = u * tamO * 1.42;
+    const livre = larg - (lw ? lw + u * 40 : 0);
+    const fimO = crOlho(ctx, g, c.olho, x + larg - livre, by + pt + (alt - lhO) / 2, { tam: tamO, maxL: livre, alinhar:'direita' });
+    topoTexto = Math.max(topoTexto, fimO);
+  }
+  /* o título e o subtítulo, ancorados embaixo */
+  const sub = crApoioOp(g, { tam: largo ? 24 : vert ? 38 : 30, x, maxL: Math.min(larg, u * 860), alinhar:'esquerda' });
+  const hSub = c.sub ? crAltura(ctx, c.sub, sub) : 0;
+  const gap = c.sub ? u * (largo ? 16 : 24) : 0;
+  const livreT = fim - topoTexto - u * (largo ? 28 : 40) - hSub - gap;
+  const tit = crTitulo(ctx, g, c.titulo, u * (largo ? 50 : vert ? 92 : 66), livreT, { x, maxL: larg, alinhar:'esquerda' });
+  const hTit = crAltura(ctx, c.titulo, tit);
+  const yT = fim - hSub - gap - hTit;
+  crEscreve(ctx, c.titulo, { ...tit, y: yT });
+  if (c.sub) crEscreve(ctx, c.sub, { ...sub, y: fim - hSub });
+}
+
 function crLCapa(ctx, g, c, lam){
   const u = g.u, modo = lam.fotos?.foto?.modo || 'fundo';
   let y0 = g.y0, pref = 1;
   if (modo === 'topo'){
     const hF = Math.round(g.H * (crVertical(g) ? .5 : g.H > g.W ? .5 : .46));
     crFaixaFoto(ctx, g, lam, 0, 0, g.W, hF, 0);
-    ctx.fillStyle = 'rgba(4,10,9,.3)'; ctx.fillRect(0, 0, g.W, hF);
-    ctx.fillStyle = g.ac; ctx.fillRect(0, hF - Math.max(3, u * 6), g.W * .22, Math.max(3, u * 6));
     g.corLogo = '#E8EDEB'; g.corSelo = '#E8EDEB';
     y0 = hF + u * 58; pref = .2;
   }
@@ -949,7 +1019,7 @@ function crLTexto(ctx, g, c, lam){
   const hItens = itens.reduce((t, it) => t + crAltura(ctx, it, itemOp) + u * 18, 0);
   const hCorpo = c.corpo ? crAltura(ctx, c.corpo, corpo) + u * 40 : 0;
   const curto = !itens.length && String(c.corpo || '').length < 140;
-  const tit = crTitulo(ctx, g, c.titulo, u * (curto ? 96 : 80), Math.max(u * 80, (g.y1 - y0 - rot - hItens - hCorpo - u * 44)), { peso:700, lhF:1.05 });
+  const tit = crTitulo(ctx, g, c.titulo, u * (curto ? 96 : 80), Math.max(u * 80, (g.y1 - y0 - rot - hItens - hCorpo - u * 44)), { peso:600, lhF:1.05 });
   const hTit = crAltura(ctx, c.titulo, tit) + u * 44;
   let y = crAncora(g, rot + hTit + hCorpo + hItens, modo === 'moldura' ? 0 : curto ? .62 : .42, y0);
   if (c.olho && numerico){
@@ -1133,7 +1203,7 @@ function crLEvento(ctx, g, c, lam){
   const detOp = { fonte: crFonte(500, u * 30), lh: u * 30 * 1.34, cor: g.fg2, maxL: g.larg - u * 56, x: g.x0 + u * 56, alinhar:'esquerda' };
   const hDet = det.reduce((t, [, v]) => t + crAltura(ctx, v, detOp) + u * 14, 0);
   const hCta = c.cta ? u * 76 + u * 36 : 0;
-  const tit = crTitulo(ctx, g, c.titulo, u * 84, g.y1 - y0 - olhoH - tamDia - u * 40 - hDet - hCta - u * 40, { peso:800, lhF:1 , alinhar:'esquerda' });
+  const tit = crTitulo(ctx, g, c.titulo, u * 84, g.y1 - y0 - olhoH - tamDia - u * 40 - hDet - hCta - u * 40, { peso:600, lhF:1.02, alinhar:'esquerda' });
   const hTit = crAltura(ctx, c.titulo, tit) + u * 38;
   let y = crAncora(g, olhoH + tamDia * .86 + u * 40 + hTit + hDet + hCta, modo === 'topo' ? 0 : .3, y0);
   if (c.olho) y = crOlho(ctx, g, c.olho, g.x0, y, { alinhar:'esquerda' }) + u * 26;
@@ -1309,7 +1379,7 @@ function crLFoto(ctx, g, c, lam){
   if (!crFoto(lam, 'foto')) crSemFoto(ctx, g, g.x0, g.y0, g.larg, (g.y1 - g.y0) * .62, null, 'a foto é a peça');
   const leg = crApoioOp(g, { tam: 31, cor: g.fg2 });
   const hLeg = c.sub ? crAltura(ctx, c.sub, leg) + u * 28 : 0;
-  const tit = crTitulo(ctx, g, c.titulo, u * 72, (g.y1 - g.y0) * .4, { peso:700, lhF:1.06 });
+  const tit = crTitulo(ctx, g, c.titulo, u * 72, (g.y1 - g.y0) * .4, { peso:600, lhF:1.06 });
   const hTit = c.titulo ? crAltura(ctx, c.titulo, tit) + u * 24 : 0;
   const hTag = c.olho ? u * 62 + u * 30 : 0;
   let y = crAncora(g, hTag + hTit + hLeg, 1);
@@ -1417,7 +1487,7 @@ function crLThumb(ctx, g, c, lam){
   }
   const altLogo = u * (largo ? 38 : 44);
   const fimTexto = largo ? g.H - m - altLogo - u * 34 : g.H - g.m * 1.4 - altLogo - u * 30;
-  const tit = crEncaixa(ctx, c.titulo, u * (largo ? 150 : 128) * g.estilo.escala, { ...crTituloOp(g, 0, fimTexto - y, { maxL: tw, x: m, lhF:.96, alinhar:'esquerda' }), maxA: fimTexto - y });
+  const tit = crEncaixa(ctx, c.titulo, u * (largo ? 150 : 128) * g.estilo.escala, { ...crTituloOp(g, 0, fimTexto - y, { maxL: tw, x: m, peso:700, lhF:.98, alinhar:'esquerda' }), maxA: fimTexto - y });
   const hT = crAltura(ctx, c.titulo, tit);
   y = largo ? Math.max(y, y + (fimTexto - y - hT) * .5) : y;
   crEscreve(ctx, c.titulo, { ...tit, y });
@@ -1515,24 +1585,28 @@ function crLBarra(ctx, g, c){
 }
 
 /* cartela de título: o começo do vídeo, ou o começo de um bloco */
+/* a cartela de título (e os takes do meio de um vídeo), na gramática do
+   modelo principal (2.28.0): a logo e o eyebrow no alto, o título e o
+   apoio à esquerda, no meio da área livre. Chapada, sem régua. */
 function crLCartela(ctx, g, c){
-  const u = g.u;
-  const al = { ...g, alinhar:'centro' };
-  const alt = u * 40;
-  const olhoH = c.olho ? g.u * 23 * 1.42 + u * 30 : 0;
-  const sub = crApoioOp(al, { tam: 32, alinhar:'centro' });
-  const hSub = c.sub ? crAltura(ctx, c.sub, sub) + u * 64 : u * 30;
-  const tit = crTitulo(ctx, al, c.titulo, u * 124, g.H * .5, { alinhar:'centro' });
-  const hTit = crAltura(ctx, c.titulo, tit);
-  let y = (g.H - (olhoH + hTit + hSub)) / 2 - u * 20;
-  if (c.olho) y = crOlho(ctx, al, c.olho, g.x0, y, { alinhar:'centro' }) + u * 30;
-  y = crEscreve(ctx, c.titulo, { ...tit, y });
-  crRegua(ctx, al, g.x0, y + u * 28);
-  if (c.sub) crEscreve(ctx, c.sub, { ...sub, y: y + u * 64 });
-  if (g.estilo.logo !== 'nenhum'){
-    const w = crLarguraMarcas(g, alt);
-    crMarcas(ctx, g, (g.W - w) / 2, g.H - g.m - alt, alt, g.corLogo || g.fg);
+  const u = g.u, largo = g.W > g.H * 1.2, vert = crVertical(g);
+  const x = largo ? g.m : Math.round(g.W * .08), larg = g.W - x * 2;
+  const alt = crAltLogo(g), topo = g.topo;
+  let lw = 0;
+  if (g.estilo.logo !== 'nenhum') lw = crMarcas(ctx, g, x, topo, alt, g.corLogo || g.fg);
+  let y0 = topo + alt;
+  if (c.olho){
+    const tamO = vert ? 24 : 20, livre = larg - (lw ? lw + u * 40 : 0);
+    y0 = Math.max(y0, crOlho(ctx, g, c.olho, x + larg - livre, topo + (alt - u * tamO * 1.42) / 2, { tam: tamO, maxL: livre, alinhar:'direita' }));
   }
+  const y1 = g.base;
+  const sub = crApoioOp(g, { tam: vert ? 40 : largo ? 34 : 34, x, maxL: Math.min(larg, u * 900), alinhar:'esquerda' });
+  const hSub = c.sub ? crAltura(ctx, c.sub, sub) : 0, gap = c.sub ? u * 32 : 0;
+  const tit = crTitulo(ctx, g, c.titulo, u * (vert ? 112 : largo ? 104 : 96), (y1 - y0) * .62 - hSub, { x, maxL: larg, alinhar:'esquerda' });
+  const hTit = crAltura(ctx, c.titulo, tit);
+  const y = Math.max(y0 + u * 60, y0 + (y1 - y0 - hTit - gap - hSub) * .5);
+  const yS = crEscreve(ctx, c.titulo, { ...tit, y }) + gap;
+  if (c.sub) crEscreve(ctx, c.sub, { ...sub, y: yS });
 }
 
 /* ============================================================
@@ -1541,7 +1615,10 @@ function crLCartela(ctx, g, c){
    (um item por linha), data, sel:<a|b>. fotos: [chave, rótulo, modos].
    ============================================================ */
 const CR_LAYOUTS = {
-  capa:     { l:'Capa', d:'Título grande, olho e apoio; a foto de fundo ou em faixa', desenha: crLCapa,
+  faixa:    { l:'Foto e faixa', d:'O principal: a foto como está e a faixa chapada da família, com a logo, o eyebrow à direita, o título e o subtítulo', desenha: crLFaixa, semMoldura:true,
+              campos:[['olho','Eyebrow (à direita)','texto'],['titulo','Título','area'],['sub','Subtítulo','area']],
+              fotos:[['foto','Foto',['topo']]] },
+  capa:     { l:'Capa com véu', d:'Secundária: título grande sobre a foto de fundo, com véu, ou a foto em faixa', desenha: crLCapa,
               campos:[['olho','Olho','texto'],['titulo','Título','area'],['sub','Apoio','area']],
               fotos:[['foto','Foto',['fundo','topo','nenhuma']]] },
   texto:    { l:'Texto', d:'Rótulo, título, parágrafo e tópicos', desenha: crLTexto,
@@ -1587,7 +1664,7 @@ const CR_LAYOUTS = {
               campos:[['titulo','Título','area'],['sub','Apoio','area']], fotos:[] },
   barra:    { l:'Barra de nome', d:'Nome e cargo sobre o vídeo, fundo transparente', desenha: crLBarra, semMoldura:true, transparente:true,
               campos:[['titulo','Nome','texto'],['sub','Cargo','texto']], fotos:[] },
-  cartela:  { l:'Cartela de título', d:'Olho, título e apoio, no centro', desenha: crLCartela, semMoldura:true,
+  cartela:  { l:'Cartela de título', d:'Para vídeo: a logo e o eyebrow no alto, o título e o apoio à esquerda (os takes do meio do Reel)', desenha: crLCartela, semMoldura:true,
               campos:[['olho','Olho','texto'],['titulo','Título','area'],['sub','Apoio','area']],
               fotos:[['foto','Foto',['nenhuma','fundo']]] }
 };
@@ -1603,13 +1680,17 @@ const CR_MODOS = { fundo:'De fundo', topo:'Em faixa, em cima', nenhuma:'Sem foto
 const CR_HASH = '#NeuroDynamics #UFMG #LABBIO #Bioengenharia';
 const crL = (layout, campos, fotos) => ({ layout, campos, fotos: fotos || {} });
 const CR_MODELOS = {
-  na_midia: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'ondas' },
+  publicacao: { tamanhos:['feed','quadrado','stories','reels','documento','paisagem'], estilo:{ tema:'cortex', decoracao:'nenhuma', grade:false },
+    laminas:[ crL('faixa', { olho:'Cuidado e consulta', titulo:'O cuidado acompanhado entre as consultas.',
+      sub:'Saúde digital que chega ao médico como informação pronta para agir.' }, { foto:{ modo:'topo' } }) ],
+    legenda: c => `${String(c.titulo || '').replace(/\*/g, '')}\n\n${c.sub || ''}\n\n${CR_HASH}` },
+  na_midia: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'nenhuma' },
     laminas:[ crL('midia', { olho:'Na mídia', veiculo:'Jornal Nacional', titulo:'Tecnologia criada na UFMG leva atleta paraplégico a competir na Suíça',
       sub:'TV Globo, outubro de 2024', cta:'Assista no link da bio', tipo:'video' }, { foto:{ modo:'tela' } }) ],
     legenda: c => `Saímos no ${c.veiculo || 'jornal'}! \n\n${String(c.titulo || '').replace(/[“”"]/g, '')}\n\nA reportagem completa está no link da bio.\n\n${CR_HASH} #NaMídia` },
-  projeto: { tamanhos:['feed','quadrado','documento','stories'], estilo:{ tema:'cortex', decoracao:'rede' },
+  projeto: { tamanhos:['feed','quadrado','documento','stories'], estilo:{ tema:'cortex', decoracao:'nenhuma' },
     laminas:[
-      crL('capa', { olho:'Projeto em foco', titulo:'Órion: *instrumentação* sem concessões', sub:'Hardware, firmware e software projetados como um sistema só.' }, { foto:{ modo:'fundo' } }),
+      crL('faixa', { olho:'Projeto em foco', titulo:'Órion: instrumentação sem concessões', sub:'Hardware, firmware e software projetados como um sistema só.' }, { foto:{ modo:'topo' } }),
       crL('texto', { olho:'01, O problema', titulo:'Em procedimentos críticos, precisão não é negociável', corpo:'Equipamentos genéricos resolvem o caso médio. O caso que importa quase nunca é o médio.' }),
       crL('texto', { olho:'02, A solução', titulo:'Um sistema pensado de ponta a ponta', itens:'Sensores e eletrônica projetados aqui\nFirmware em tempo real\nSoftware que o clínico entende' }),
       crL('numero', { olho:'03, Onde estamos', valor:'0,1 mm', titulo:'de resolução nos testes de bancada', corpo:'Próximo passo: validação com a equipe clínica parceira.' }),
@@ -1622,13 +1703,13 @@ const CR_MODELOS = {
   parabens: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'confete', alinhar:'centro', grade:false },
     laminas:[ crL('parceiro', { olho:'Parabéns', titulo:'Parabéns, equipe *Bem-te-vi*!', corpo:'Pelo 1º lugar na competição. Orgulho de caminhar junto com vocês.', parceiro:'Bem-te-vi' }, { foto2:{ modo:'logo' } }) ],
     legenda: c => `${String(c.titulo || 'Parabéns!').replace(/\*/g, '')} \n\n${c.corpo || ''}\n\n#NeuroDynamics #Parceria` },
-  boas_vindas: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'void', decoracao:'rede', alinhar:'centro' },
+  boas_vindas: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'void', decoracao:'nenhuma', alinhar:'centro' },
     laminas:[ crL('pessoa', { olho:'Boas-vindas', titulo:'Nome da pessoa', sub:'Engenharia de Software, Firmware', corpo:'Chega para somar ao time de firmware. Seja muito bem-vinda!' }, { foto:{ modo:'circulo' } }) ],
     legenda: c => `Boas-vindas, ${c.titulo || ''}! \n\n${c.corpo || ''}\n\n#NeuroDynamics #NovoMembro` },
-  conquista: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'cortex', decoracao:'formas' },
+  conquista: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'cortex', decoracao:'nenhuma' },
     laminas:[ crL('numero', { olho:'Conquista', valor:'1º lugar', titulo:'no Cybathlon Challenges 2024', corpo:'Na categoria de estimulação elétrica funcional, em Zurique, com a bicicleta desenvolvida no LABBIO.' }, { foto:{ modo:'nenhuma' } }) ],
     legenda: c => `${c.valor || ''} ${c.titulo || ''}! \n\n${c.corpo || ''}\n\nObrigado a quem fez isso acontecer.\n\n${CR_HASH}` },
-  evento: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'rede' },
+  evento: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'nenhuma' },
     laminas:[ crL('evento', { olho:'Save the date', titulo:'Demo Day NeuroDynamics', data:'', hora:'14h às 17h', local:'LABBIO, Escola de Engenharia da UFMG', cta:'Inscrições no link da bio' }, { foto:{ modo:'nenhuma' } }) ],
     legenda: c => ` ${c.titulo || 'Evento'}\n\n ${c.hora || ''}\n ${c.local || ''}\n\n${c.cta || ''}\n\n${CR_HASH}` },
   aviso: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'aura', decoracao:'nenhuma' },
@@ -1637,13 +1718,13 @@ const CR_MODELOS = {
   frase: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'synapse', decoracao:'nenhuma', grade:false },
     laminas:[ crL('citacao', { titulo:'A engenharia só faz sentido quando devolve *autonomia* a alguém.', autor:'NeuroDynamics', cargo:'Manifesto da equipe' }) ],
     legenda: c => `“${String(c.titulo || '').replace(/\*/g, '')}”\n\n— ${c.autor || ''}\n\n#NeuroDynamics #Inspiração` },
-  dado: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'plasma', decoracao:'formas' },
+  dado: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'plasma', decoracao:'nenhuma' },
     laminas:[ crL('numero', { olho:'Em números', valor:'+2.000', titulo:'horas de teste em bancada em 2026', corpo:'Cada protótipo passa por aqui antes de encontrar uma pessoa.' }) ],
     legenda: c => `${c.valor || ''} ${c.titulo || ''}.\n\n${c.corpo || ''}\n\n${CR_HASH}` },
   bastidores: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'void', decoracao:'nenhuma', grade:false, escurecer:48 },
     laminas:[ crL('foto', { olho:'Bastidores', titulo:'Sexta-feira no LABBIO: calibração do encoder da órtese', sub:'' }, { foto:{ modo:'fundo' } }) ],
     legenda: c => `${c.titulo || 'Bastidores'} \n\n${c.sub || ''}\n\n#NeuroDynamics #Bastidores #LABBIO` },
-  dicas: { tamanhos:['feed','quadrado','documento'], estilo:{ tema:'void', decoracao:'rede' },
+  dicas: { tamanhos:['feed','quadrado','documento'], estilo:{ tema:'void', decoracao:'nenhuma' },
     laminas:[
       crL('capa', { olho:'Guia rápido', titulo:'5 coisas que ninguém te conta sobre *prototipar* hardware', sub:'Aprendidas do jeito difícil, no LABBIO.' }, { foto:{ modo:'nenhuma' } }),
       crL('texto', { olho:'01', titulo:'O primeiro protótipo é para aprender, não para funcionar', corpo:'Faça rápido, meça tudo e aceite jogar fora.' }),
@@ -1653,27 +1734,27 @@ const CR_MODELOS = {
       crL('texto', { olho:'05', titulo:'Mostre cedo para quem vai usar', corpo:'A pessoa que usa enxerga o que a bancada não mostra.' }),
       crL('cta', { titulo:'Salve para consultar depois', sub:'E mande para quem está no primeiro protótipo.', site:'' }) ],
     legenda: c => `${String(c.titulo || '').replace(/\*/g, '')} \n\nSalve para consultar depois.\n\n${CR_HASH} #Engenharia #Dicas` },
-  vaga: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'cortex', decoracao:'rede' },
+  vaga: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'cortex', decoracao:'nenhuma' },
     laminas:[
-      crL('capa', { olho:'Processo seletivo', titulo:'Venha construir *tecnologia* que devolve movimento', sub:'Inscrições abertas até 15 de outubro.' }, { foto:{ modo:'fundo' } }),
+      crL('faixa', { olho:'Processo seletivo', titulo:'Venha construir tecnologia que devolve movimento', sub:'Inscrições abertas até 15 de outubro.' }, { foto:{ modo:'topo' } }),
       crL('texto', { olho:'Quem procuramos', titulo:'Estudantes de qualquer curso da UFMG', itens:'Engenharias, computação e design\nVontade de aprender fazendo\n8 horas por semana' }),
       crL('lista', { olho:'Como funciona', titulo:'As etapas', itens:'Inscrição — pelo site, em 5 minutos\nDinâmica em grupo — um desafio de verdade\nEntrevista — uma conversa com a equipe' }),
       crL('cta', { titulo:'Inscreva-se', sub:'Edital, cronograma e perguntas frequentes:', site:'selecao.neurodynamics.dev' }) ],
     legenda: c => `${String(c.titulo || '').replace(/\*/g, '')} \n\n${c.sub || ''}\n\nTudo sobre o processo em selecao.neurodynamics.dev (link na bio).\n\n${CR_HASH} #ProcessoSeletivo` },
-  artigo: { tamanhos:['feed','quadrado','paisagem'], estilo:{ tema:'cortex', decoracao:'rede' },
+  artigo: { tamanhos:['feed','quadrado','paisagem'], estilo:{ tema:'cortex', decoracao:'nenhuma' },
     laminas:[ crL('artigo', { olho:'Artigo publicado', revista:'Journal of NeuroEngineering and Rehabilitation', titulo:'Functional electrical stimulation cycling for people with spinal cord injury: a field study',
       autores:'A. Figueiredo, B. Tavares, C. Mendonça et al.', ano:'2026', doi:'doi.org/10.0000/jner.2026', cta:'Leia o artigo, link na bio' }) ],
     legenda: c => `Artigo publicado! \n\n“${c.titulo || ''}”\n\n${c.revista || ''}${c.ano ? ', ' + c.ano : ''}.\n\nO texto completo está no link da bio.\n\n${CR_HASH} #Ciência` },
-  agradecimento: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'ondas' },
+  agradecimento: { tamanhos:['feed','quadrado','stories','paisagem'], estilo:{ tema:'void', decoracao:'nenhuma' },
     laminas:[ crL('texto', { olho:'Obrigado', titulo:'Nada disso seria possível sem quem caminha com a gente', itens:'LABBIO — Laboratório de Bioengenharia\nEscola de Engenharia da UFMG\nCNPq\nAs famílias e os atletas parceiros' }) ],
     legenda: c => `${c.titulo || 'Obrigado!'} \n\n${crItens(c.itens).join('\n')}\n\n#NeuroDynamics #Gratidão` },
-  data: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'dendrito', decoracao:'ondas' },
+  data: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'dendrito', decoracao:'nenhuma' },
     laminas:[ crL('capa', { olho:'8 de março', titulo:'Dia Internacional da *Mulher*', sub:'Às engenheiras, pesquisadoras e estudantes que constroem a NeuroDynamics todos os dias.' }, { foto:{ modo:'nenhuma' } }) ],
     legenda: c => `${String(c.titulo || '').replace(/\*/g, '')}.\n\n${c.sub || ''}\n\n#NeuroDynamics` },
-  depoimento: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'ion', decoracao:'rede' },
+  depoimento: { tamanhos:['feed','quadrado','stories'], estilo:{ tema:'ion', decoracao:'nenhuma' },
     laminas:[ crL('citacao', { titulo:'Voltar a pedalar mudou a minha *rotina* — e a minha cabeça.', autor:'Nome do atleta', cargo:'Atleta parceiro do projeto' }, { foto:{ modo:'circulo' } }) ],
     legenda: c => `“${String(c.titulo || '').replace(/\*/g, '')}”\n\n— ${c.autor || ''}, ${c.cargo || ''}\n\n${CR_HASH}` },
-  enquete: { tamanhos:['stories','feed','quadrado'], estilo:{ tema:'void', decoracao:'formas' },
+  enquete: { tamanhos:['stories','feed','quadrado'], estilo:{ tema:'void', decoracao:'nenhuma' },
     laminas:[ crL('enquete', { olho:'Enquete', titulo:'Qual projeto você quer ver nos próximos stories?', itens:'Órion\nDeriva\nCalima' }) ],
     legenda: c => `${c.titulo || ''}\n\nResponda nos stories! ` },
   thumbnail: { tamanhos:['thumb','reels'], estilo:{ tema:'void', decoracao:'nenhuma', grade:false, destaque:'marca', caixaAlta:true },
@@ -1683,7 +1764,7 @@ const CR_MODELOS = {
     laminas:[ crL('encerramento', { titulo:'Obrigado por assistir!', sub:'Inscreva-se para acompanhar os próximos episódios.' }) ] },
   barra_nome: { tamanhos:['video','video_v'], estilo:{ tema:'cortex', barra:'solida' },
     laminas:[ crL('barra', { titulo:'Ana Figueiredo', sub:'Gerente de projeto, NeuroDynamics' }) ] },
-  cartela: { tamanhos:['video','video_v','thumb'], estilo:{ tema:'cortex', decoracao:'ondas' },
+  cartela: { tamanhos:['video','video_v','thumb'], estilo:{ tema:'cortex', decoracao:'nenhuma' },
     laminas:[ crL('cartela', { olho:'Episódio 03', titulo:'Do protótipo à pista', sub:'Uma série sobre o caminho até o Cybathlon' }) ] },
   livre: { tamanhos:Object.keys(CR_TAMANHOS), estilo:{},
     laminas:[ crL('capa', { olho:'', titulo:'Seu título *aqui*', sub:'Troque o leiaute, o tema, a foto: tudo é seu.' }, { foto:{ modo:'nenhuma' } }) ] }
@@ -2045,7 +2126,7 @@ async function crReabreFotos(peca){
 async function crPaginaCriar(modelo){
   const rasc = crLeRascunho();
   criador.pub = null; criador.imgs = {}; criador.atual = 0; criador.sujo = false;
-  criador.peca = crPecaNova(CR_MODELOS[modelo] ? modelo : (modelo ? 'livre' : 'livre'));
+  criador.peca = crPecaNova(CR_MODELOS[modelo] ? modelo : (modelo ? 'livre' : 'publicacao'));
   criador.titulo = ''; criador.legendaIA='';
   await crMonta();
   crAutoFotos();
@@ -2606,6 +2687,7 @@ async function crSalvar(mandar){
    A GALERIA DOS MODELOS
    ============================================================ */
 const CR_GRUPOS_MODELOS = [
+  ['Principal', 'A foto como está e a faixa chapada da família: comece por aqui', ['publicacao']],
   ['Institucional', 'O que a equipe fez, onde apareceu, o que publicou', ['na_midia', 'conquista', 'projeto', 'artigo', 'dado', 'aviso']],
   ['Pessoas e parceiros', 'Gente: quem chega, quem faz aniversário, quem caminha com a gente', ['aniversario', 'boas_vindas', 'parabens', 'agradecimento', 'depoimento', 'bastidores']],
   ['Educar, inspirar, convidar', 'Carrosséis que ensinam, datas, frases, chamadas', ['dicas', 'vaga', 'evento', 'data', 'frase', 'enquete']],

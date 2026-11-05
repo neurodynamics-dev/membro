@@ -1,0 +1,292 @@
+-- ============================================================
+-- SOMA 2.28.0, MIGRAÇÃO, NeuroDynamics
+-- AS PROPOSTAS DE PUBLICAÇÃO, NO QUADRO DO STUDIO, COM A ARTE PRONTA.
+--
+-- Registra 15 ideias de publicação (12 para o Instagram, 4 delas
+-- Reels, e 3 documentos para o LinkedIn), escolhidas entre as de
+-- prioridade A do Anexo do Plano de Publicações (Trabalho Trainee #10),
+-- na ordem do calendário da Fase 1 (de 10/11/2026 a 22/12/2026):
+--
+--   IG-005  Instagram Reels            NRO Explica: implante coclear
+--   IG-033  Instagram Reels            NRO Explica: como a eletroestimulação faz pedalar
+--   IG-002  Instagram Reels            NRO Explica: por que a ressonância é tão barulhenta
+--   IG-032  Instagram Reels            NRO Explica: o músculo que enfraquece no ventilador
+--   IG-006  Instagram Carrossel        Como funciona: o sensor contínuo de glicose
+--   IG-001  Instagram Carrossel        Como funciona: o aparelho de tomografia
+--   IG-009  Instagram Carrossel        Oxímetro e tom de pele
+--   IG-011  Instagram Carrossel        Telepatia: o quão perto estamos?
+--   IG-004  Instagram Carrossel        Como funciona: as próteses
+--   IG-029  Instagram Carrossel        Como Stephen Hawking escrevia
+--   IG-003  Instagram Carrossel        TC ou ressonância?
+--   IG-022  Instagram Carrossel        Copenhague, 1952
+--   LI-013  LinkedIn  Documento (PDF)  Qualidade em uma equipe universitária
+--   LI-002  LinkedIn  Documento (PDF)  Calima: sincronizar estímulo e pedalada
+--   LI-015  LinkedIn  Documento (PDF)  Software também é dispositivo
+--
+-- Cada uma entra como IDEIA (sem data: a data sugerida do calendário
+-- está nas notas, para quem pegar a publicação marcar), com o tipo, o
+-- pilar, a rede, o formato, a legenda, o texto alternativo e as notas
+-- (o ID do plano, as dependências e, nos Reels, o roteiro). A arte vai
+-- em "peca": abre no criador (Studio, a publicação, Arte) no modelo
+-- principal, foto e faixa, com a foto do banco de imagens na capa. Nos
+-- Reels, a lâmina 1 é a capa (a thumbnail) e as outras são os takes,
+-- as cartelas do meio do vídeo.
+--
+-- Os fatos seguem o plano: antes de publicar, confira cada um na fonte
+-- primária e passe pela revisão indicada nas notas.
+--
+-- Pré-requisito: v23 (o Studio). Idempotente: uma ideia com o mesmo
+-- título que já está no quadro não entra de novo.
+-- COMO USAR: cole o arquivo INTEIRO no SQL Editor e Run. Depois
+-- publique o portal (o modelo principal e as cartelas novas moram no
+-- criador da 2.28.0).
+-- ============================================================
+
+do $$
+begin
+  if to_regclass('public.studio_publicacoes') is null then
+    raise exception using message = 'Falta aplicar a v23 (o Studio) antes desta migração.';
+  end if;
+end $$;
+
+insert into public.studio_publicacoes
+  (titulo, status, modelo, categoria, pilar, redes, formato, legenda, texto_alt, notas, peca)
+select v.titulo, 'ideia', 'publicacao', v.categoria, v.pilar, v.redes, v.formato, v.legenda, v.texto_alt, v.notas, v.peca
+  from (values
+  ($q$NRO Explica: implante coclear$q$, $q$publicacao$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$reels$q$,
+   $q$Como um implante transforma som em eletricidade?
+
+Um microfone capta o som, uma bobina leva o sinal através da pele e eletrodos na cóclea estimulam o nervo auditivo. O resto é o cérebro aprendendo a ouvir de novo.
+
+O implante coclear é uma escolha, não a única forma de viver a surdez. Respeitamos a Libras e a comunidade surda.
+
+Salve e mande para quem tem curiosidade sobre o assunto.
+
+#NROExplica #ImplanteCoclear #Surdez #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Feixes de luz azul e roxa formando uma cabeça$q$,
+   $q$Ideia IG-005 do Plano de Publicações (prioridade A). Data sugerida: ter 10/11/2026, 18h (gancho: 10/11, Dia Nacional de Prevenção e Combate à Surdez).
+Dependências: respeitar a comunidade surda; revisão da Clínica.
+Reel de 30 a 40 s. Roteiro: 0 a 3 s, a capa (lâmina 1) com o gancho em voz; depois os takes 1 a 4 (lâminas 2 a 5), cada um com 5 a 8 s, sobre imagens do processador, da bobina e de uma animação simples da cóclea; fecho com a logo. Legendar a fala (acessibilidade).
+A capa é a thumbnail do Reel (9:16; o recorte de 3:4 do perfil pega a faixa inteira). Os takes são as cartelas que aparecem no meio do vídeo.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"reels","estilo":{"tema":"iris","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"NRO Explica","titulo":"Como um implante transforma som em eletricidade?","sub":"Em 30 segundos, do microfone ao nervo auditivo."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"cartela","campos":{"olho":"Take 1","titulo":"Um microfone capta o som","sub":"O processador, atrás da orelha, transforma o som em sinal digital."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 2","titulo":"O sinal atravessa a pele","sub":"Uma bobina envia o sinal, sem fios, para o implante sob a pele."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 3","titulo":"Eletrodos estimulam o nervo","sub":"Na cóclea, cada eletrodo cuida de uma faixa de frequências."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 4","titulo":"O cérebro aprende a ouvir","sub":"A adaptação leva tempo, com acompanhamento da fonoaudiologia."},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1764336312138-14a5368a6cd3?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzI3Mzg0fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Mirella Callage / Unsplash"}}}$q$::jsonb),
+  ($q$NRO Explica: como a eletroestimulação faz pedalar$q$, $q$publicacao$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$reels$q$,
+   $q$Como um estímulo faz a perna pedalar sem a força habitual?
+
+Na eletroestimulação funcional (FES), eletrodos na pele levam pequenos pulsos aos músculos da perna. Sensores acompanham a posição do pedal, e cada músculo é ativado no momento certo da volta.
+
+Na NeuroDynamics, o projeto Calima trabalha justamente nessa sincronia entre estímulo e pedalada.
+
+Salve para entender de vez o FES.
+
+#NROExplica #FES #Eletroestimulação #Reabilitação #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Mulher em bicicleta ergométrica com tablet$q$,
+   $q$Ideia IG-033 do Plano de Publicações (prioridade A), projeto Calima; também é a ideia 003 da NRO-MKT-005. Data sugerida: ter 24/11/2026, 18h, no mesmo dia do documento do Calima no LinkedIn (LI-002).
+Dependências: sem participantes em cena; conferir com o NRO-MKT-002 o que pode ser dito do Calima.
+Reel de 30 a 40 s. Roteiro: capa (lâmina 1) com o gancho; takes 1 a 4 (lâminas 2 a 5) sobre imagens da bicicleta e dos eletrodos sem pessoas identificáveis, ou uma animação da perna com os músculos acendendo em sequência; fecho com a logo e o nome do Calima.
+A capa é a thumbnail do Reel; os takes são as cartelas do meio do vídeo.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"reels","estilo":{"tema":"ritmo","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"NRO Explica","titulo":"Como um estímulo faz a perna pedalar?","sub":"A eletroestimulação funcional (FES), passo a passo."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"cartela","campos":{"olho":"Take 1","titulo":"Eletrodos sobre os músculos","sub":"Pequenos pulsos elétricos na pele fazem o músculo contrair."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 2","titulo":"Cada músculo na hora certa","sub":"Coxa da frente, de trás e glúteos são ativados em sequência."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 3","titulo":"Sensores sabem onde está o pedal","sub":"A cada instante, o sistema decide qual músculo estimular."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 4","titulo":"A pedalada vira exercício","sub":"Na lesão medular, ajuda a manter os músculos ativos."},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1637578371283-d9076f66ba8e?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzI3NDc5fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Intenza Fitness / Unsplash"}}}$q$::jsonb),
+  ($q$NRO Explica: por que a ressonância é tão barulhenta$q$, $q$publicacao$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$reels$q$,
+   $q$Esse barulho não é defeito. É a máquina funcionando.
+
+A ressonância usa um ímã muito forte e bobinas que ligam e desligam muito rápido para formar a imagem. Dentro do campo magnético, essas bobinas vibram, como um alto-falante. Cada etapa do exame tem o seu som.
+
+É por isso que você recebe um protetor de ouvido.
+
+Marque alguém que já fez ressonância.
+
+#NROExplica #Ressonância #EngenhariaBiomédica #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Cérebro humano sobre fundo preto$q$,
+   $q$Ideia IG-002 do Plano de Publicações (prioridade A). Data sugerida: ter 08/12/2026, 18h.
+Dependências: revisão técnica.
+Reel de 25 a 35 s, com áudio real (ou bem reproduzido) do aparelho nos primeiros 3 s, que é o gancho. Roteiro: capa (lâmina 1); takes 1 a 4 (lâminas 2 a 5); fecho com a logo.
+A capa é a thumbnail do Reel; os takes são as cartelas do meio do vídeo.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"reels","estilo":{"tema":"dendrito","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"NRO Explica","titulo":"Esse barulho não é defeito. É a máquina funcionando.","sub":"Por que a ressonância magnética faz tanto barulho."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"cartela","campos":{"olho":"Take 1","titulo":"Um ímã muito forte","sub":"Dezenas de milhares de vezes mais forte que o campo da Terra."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 2","titulo":"Bobinas que ligam e desligam","sub":"Para formar a imagem, o campo muda muitas vezes por segundo."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 3","titulo":"Elas vibram como um alto-falante","sub":"A corrente dentro do campo magnético faz as bobinas vibrarem."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 4","titulo":"Cada sequência, um som","sub":"Por isso o barulho muda ao longo do exame."},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1711409645921-ef3db0501f96?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzI3MzY2fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Shawn Day / Unsplash"}}}$q$::jsonb),
+  ($q$NRO Explica: o músculo que enfraquece no ventilador$q$, $q$publicacao$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$reels$q$,
+   $q$O que acontece com o diafragma quando a máquina respira por você?
+
+Na ventilação mecânica, o diafragma, principal músculo da respiração, pode trabalhar tão pouco que perde força em poucos dias. Isso torna mais difícil sair do ventilador.
+
+Estimular o músculo no ritmo da máquina é uma das ideias em estudo, e é o tema do projeto Opalina, na NeuroDynamics.
+
+Quem já teve alguém na UTI vai entender. Compartilhe.
+
+#NROExplica #UTI #VentilaçãoMecânica #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Batimento verde sobre fundo preto$q$,
+   $q$Ideia IG-032 do Plano de Publicações (prioridade A), projeto Opalina. Data sugerida: ter 22/12/2026, 18h.
+Dependências: revisão da Clínica; conferir com o NRO-MKT-002 o que pode ser dito do Opalina.
+Reel de 30 a 40 s, com tom cuidadoso (sem imagens de pacientes). Roteiro: capa (lâmina 1); takes 1 a 4 (lâminas 2 a 5) sobre uma animação do diafragma e do ritmo do ventilador; fecho com a logo e o nome do Opalina.
+A capa é a thumbnail do Reel; os takes são as cartelas do meio do vídeo.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"reels","estilo":{"tema":"neuron","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"NRO Explica","titulo":"O que acontece com o diafragma quando a máquina respira por você?","sub":"Ventilação mecânica e o músculo da respiração."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"cartela","campos":{"olho":"Take 1","titulo":"O diafragma é o músculo da respiração","sub":"Ele contrai a cada inspiração, sem a gente perceber."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 2","titulo":"No ventilador, ele trabalha pouco","sub":"Quando a máquina faz quase tudo, ele pode perder força em poucos dias."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 3","titulo":"Sair do ventilador fica mais difícil","sub":"Um diafragma fraco pode atrasar o desmame."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cartela","campos":{"olho":"Take 4","titulo":"Estímulo no ritmo da máquina","sub":"Estimular o músculo junto com o ventilador é uma das ideias em estudo."},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1682706841289-9d7ddf5eb999?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzM4Njk5fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Joshua Chehov / Unsplash"}}}$q$::jsonb),
+  ($q$Como funciona: o sensor contínuo de glicose$q$, $q$dicas$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$carrossel$q$,
+   $q$Como um sensor no braço acompanha a glicose o dia todo?
+
+Um filamento fino sob a pele mede a glicose no líquido entre as células e manda uma leitura a cada poucos minutos para o celular. A curva ao longo do dia ajuda a prevenir picos e quedas.
+
+Arraste para ver como funciona, e mande para quem convive com diabetes.
+
+#ComoFunciona #Diabetes #DiaMundialDoDiabetes #SaúdeDigital #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Close de smartwatch no pulso$q$,
+   $q$Ideia IG-006 do Plano de Publicações (prioridade A). Data sugerida: qui 12/11/2026, 12h (gancho: 14/11, Dia Mundial do Diabetes).
+Dependências: revisão da Clínica. Não citar marcas de sensor.
+Carrossel de 6 lâminas, até 25 palavras em cada.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"feed","estilo":{"tema":"plexo","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Como funciona","titulo":"Como um sensor no braço acompanha a glicose o dia todo?","sub":"14 de novembro é o Dia Mundial do Diabetes."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"Um filamento fino sob a pele","corpo":"O sensor mede a glicose no líquido entre as células, e não direto no sangue."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"Uma leitura a cada poucos minutos","corpo":"O transmissor envia os dados para o celular ou para um leitor, dia e noite."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"A curva diz mais que o número","corpo":"Ver se a glicose sobe ou desce ajuda a prevenir picos e quedas."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"O acompanhamento continua","corpo":"O sensor ajuda, mas não substitui a orientação da equipe de saúde."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Mande para quem convive com diabetes","sub":"E siga para mais Como funciona:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1698729616358-4fadac492844?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzI3NDQxfA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Al Amin Mir / Unsplash"}}}$q$::jsonb),
+  ($q$Como funciona: o aparelho de tomografia$q$, $q$dicas$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$carrossel$q$,
+   $q$Como uma máquina vê dentro de você sem abrir nada?
+
+Na tomografia, raios X giram em volta do corpo, os detectores medem quanto cada tecido absorve e o computador monta fatias, que empilhadas viram uma imagem em 3D.
+
+Arraste para ver passo a passo, e salve para lembrar no próximo exame.
+
+#ComoFunciona #Tomografia #EngenhariaBiomédica #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Corredor longo com luz do sol$q$,
+   $q$Ideia IG-001 do Plano de Publicações (prioridade A). Data sugerida: ter 17/11/2026, 18h.
+Dependências: revisão técnica.
+Carrossel de 6 lâminas. Combina com o IG-003 (TC ou ressonância?), em 15/12.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"feed","estilo":{"tema":"glia","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Como funciona","titulo":"Como uma máquina vê dentro de você sem abrir nada?","sub":"A tomografia computadorizada, em quatro passos."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"Raios X girando em volta do corpo","corpo":"O tubo e os detectores giram juntos e medem quanto cada tecido absorve."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"Muitos ângulos, uma fatia","corpo":"O computador combina as medidas de vários ângulos e monta a imagem de uma fatia."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"As fatias viram 3D","corpo":"Empilhadas, as fatias formam uma imagem em três dimensões do corpo."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"Osso claro, ar escuro","corpo":"Quanto mais o tecido absorve os raios X, mais claro ele aparece."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Salve para lembrar no próximo exame","sub":"E siga para mais Como funciona:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1779062553594-7c84878a9266?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzI3NTEwfA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Chris Wang / Unsplash"}}}$q$::jsonb),
+  ($q$Oxímetro e tom de pele$q$, $q$dicas$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$carrossel$q$,
+   $q$O aparelho do seu dedo mede igual para todo mundo?
+
+O oxímetro estima o oxigênio do sangue pela luz que atravessa o dedo. Como a melanina também absorve luz, estudos mostraram que alguns aparelhos superestimam o oxigênio em pessoas de pele escura, e isso pode atrasar o cuidado.
+
+No mês da Consciência Negra, um lembrete para quem faz tecnologia: dispositivo bom é testado com todo mundo.
+
+#ConsciênciaNegra #Oxímetro #ViésEmTecnologia #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Tela de monitor com batimento cardíaco$q$,
+   $q$Ideia IG-009 do Plano de Publicações (prioridade A). Data sugerida: qui 19/11/2026, 12h (gancho: 20/11, Dia da Consciência Negra).
+Dependências: revisão da Clínica; checar os estudos e citar a fonte na legenda ou no primeiro comentário (por exemplo, Sjoding et al., NEJM, 2020).
+Carrossel de 6 lâminas.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"feed","estilo":{"tema":"neuron","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Mitos e dúvidas","titulo":"O aparelho do seu dedo mede igual para todo mundo?","sub":"Oxímetros, tom de pele e viés em tecnologia."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"Luz vermelha e infravermelha","corpo":"O oxímetro mede quanto de cada luz atravessa o dedo para estimar o oxigênio do sangue."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"A melanina também absorve luz","corpo":"Estudos mostraram que alguns aparelhos superestimam o oxigênio em pessoas de pele escura."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"Um número alto demais","corpo":"Uma leitura superestimada pode atrasar o cuidado de quem precisa de oxigênio."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"Testar com todo mundo","corpo":"Validar dispositivos em pessoas de todos os tons de pele é parte de projetar bem."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Tecnologia justa se testa com todo mundo","sub":"Compartilhe com quem trabalha com saúde:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1682706841297-5524ba1faa9c?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzI3NDg1fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Joshua Chehov / Unsplash"}}}$q$::jsonb),
+  ($q$Telepatia: o quão perto estamos?$q$, $q$dicas$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$carrossel$q$,
+   $q$O quão perto a humanidade já chegou da telepatia?
+
+Interfaces cérebro-computador não leem pensamentos: elas captam sinais elétricos do cérebro e aprendem a ligar esses padrões a intenções. Em estudos clínicos, pessoas com paralisia já escreveram textos e moveram braços robóticos assim.
+
+Telepatia de verdade? Ainda não. Arraste para entender a diferença.
+
+E você, usaria uma? Conte nos comentários.
+
+#FronteiraDaCiência #BCI #Neurotecnologia #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Cérebro humano gerado por computador$q$,
+   $q$Ideia IG-011 do Plano de Publicações (prioridade A), projeto Nebula; liga com a ideia 002 da NRO-MKT-005 (como funcionam as interfaces cérebro-máquina). Data sugerida: qui 26/11/2026, 12h.
+Dependências: checar os estudos citados (fonte no primeiro comentário).
+Carrossel de 6 lâminas, pensado para gerar comentários.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"feed","estilo":{"tema":"dendrito","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Fronteira da ciência","titulo":"O quão perto a humanidade já chegou da telepatia?","sub":"O que as interfaces cérebro-computador já fazem, e o que ainda é filme."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"Ler sinais, não pensamentos","corpo":"Interfaces cérebro-computador captam a atividade elétrica do cérebro, não ideias prontas."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"Do sinal ao comando","corpo":"Algoritmos aprendem a ligar padrões dessa atividade a intenções, como mover um cursor."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"Já acontece em estudos","corpo":"Pessoas com paralisia já escreveram textos e moveram braços robóticos em pesquisas clínicas."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"Telepatia, ainda não","corpo":"Mandar pensamentos de um cérebro a outro continua longe do que os filmes mostram."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"E você, usaria uma?","sub":"Conte nos comentários e siga a NRO:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1711409664431-4e7914ac2370?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzQxNTU2fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Shawn Day / Unsplash"}}}$q$::jsonb),
+  ($q$Como funciona: as próteses$q$, $q$dicas$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$carrossel$q$,
+   $q$Como uma prótese entende o que você quer fazer?
+
+Nas próteses mioelétricas, sensores na pele captam o sinal elétrico dos músculos do coto (a eletromiografia) e o controlador transforma esse sinal em movimento: abrir, fechar, girar.
+
+Arraste para ver do músculo ao motor.
+
+#ComoFunciona #Próteses #EMG #TecnologiaAssistiva #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$blue robotic prosthetic hand against teal background$q$,
+   $q$Ideia IG-004 do Plano de Publicações (prioridade A). Data sugerida: ter 01/12/2026, 18h.
+Dependências: revisão técnica. A foto é a mão protética nova do banco de imagens.
+Carrossel de 6 lâminas. Antecede o IG-029 (Stephen Hawking), em 03/12, Dia Internacional da Pessoa com Deficiência.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"feed","estilo":{"tema":"ion","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Como funciona","titulo":"Como uma prótese entende o que você quer fazer?","sub":"As próteses mioelétricas, do músculo ao motor."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"O músculo ainda fala","corpo":"Mesmo após a amputação, os músculos do coto contraem quando a pessoa pensa no movimento."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"Sensores escutam a contração","corpo":"Eletrodos na pele captam esse sinal elétrico, a eletromiografia (EMG)."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"O motor responde","corpo":"O controlador traduz o sinal em comandos: abrir, fechar, girar o punho."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"Treino faz parte","corpo":"Controlar bem a prótese leva tempo, com apoio de fisioterapia e terapia ocupacional."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Salve e compartilhe","sub":"Para mais engenharia que devolve autonomia:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1581090464777-f3220bbe1b8b?ixid=M3wxMTIyNDQ2fDB8MXxzZWFyY2h8NHx8cHJvc3RoZXRpY3xlbnwxfHx8fDE3OTM4ODU0MjZ8MA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"ThisisEngineering / Unsplash"}}}$q$::jsonb),
+  ($q$Como Stephen Hawking escrevia$q$, $q$dicas$q$, $q$inspirar$q$, array[$q$instagram$q$]::text[], $q$carrossel$q$,
+   $q$Como Stephen Hawking escrevia quase sem mover o corpo?
+
+Nos últimos anos, um sensor nos óculos detectava o movimento de um músculo da bochecha. Com ele, Hawking escolhia letras e palavras numa tela, com ajuda de um sistema de previsão, e o texto virava a voz sintetizada que ficou famosa.
+
+No Dia Internacional da Pessoa com Deficiência, um exemplo de engenharia a serviço da autonomia.
+
+#DiaDaPessoaComDeficiência #TecnologiaAssistiva #Acessibilidade #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Mão segurando um tablet branco$q$,
+   $q$Ideia IG-029 do Plano de Publicações (prioridade A), projeto Zéfiro. Data sugerida: qui 03/12/2026, 12h (gancho: 3/12, Dia Internacional da Pessoa com Deficiência).
+Dependências: checar a fonte primária (o sistema ACAT da Intel e a descrição do sensor).
+Carrossel de 6 lâminas. Combina com o LI-043 (projetar com pessoas com deficiência), no mesmo dia.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"feed","estilo":{"tema":"plexo","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Tecnologia assistiva","titulo":"Como ele escrevia quase sem mover o corpo?","sub":"3 de dezembro, Dia Internacional da Pessoa com Deficiência."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"Um músculo da bochecha","corpo":"Nos últimos anos, um sensor nos óculos detectava o movimento de um músculo do rosto."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"Um cursor que percorre as letras","corpo":"O programa varria letras e palavras na tela, e o gesto escolhia a certa."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"Previsão de palavras","corpo":"Um sistema de previsão sugeria as próximas palavras e acelerava a escrita."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"Uma voz sintetizada","corpo":"O texto pronto virava fala, na voz que ficou conhecida no mundo todo."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Engenharia para a autonomia","sub":"É o que move a NeuroDynamics:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1612886649688-ef2912f17921?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzI3MzgwfA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Tom Claes / Unsplash"}}}$q$::jsonb),
+  ($q$TC ou ressonância?$q$, $q$dicas$q$, $q$educar$q$, array[$q$instagram$q$]::text[], $q$carrossel$q$,
+   $q$TC ou ressonância? Por que pediram um exame e não o outro?
+
+A tomografia usa raios X: é rápida e ótima para ossos e emergências. A ressonância usa ímã e ondas de rádio, sem radiação, e mostra muito bem os tecidos moles. Quem escolhe é a equipe, pela pergunta que o exame precisa responder.
+
+Arraste para comparar, e mande para quem vai fazer exame.
+
+#MitosEDúvidas #Tomografia #Ressonância #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Close de um modelo de cérebro$q$,
+   $q$Ideia IG-003 do Plano de Publicações (prioridade A). Data sugerida: ter 15/12/2026, 18h.
+Dependências: revisão da Clínica. Sem orientação médica individual.
+Carrossel de 6 lâminas. Fecha a sequência do IG-001 (TC, 17/11) e do IG-002 (Reel da ressonância, 08/12).$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"feed","estilo":{"tema":"dendrito","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Mitos e dúvidas","titulo":"Por que pediram um exame e não o outro?","sub":"Tomografia e ressonância, lado a lado."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"A tomografia usa raios X","corpo":"É rápida e ótima para ossos, sangramentos e emergências."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"A ressonância usa ímã e ondas de rádio","corpo":"Não usa radiação e mostra muito bem tecidos moles, como cérebro e ligamentos."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"Tempo e conforto","corpo":"A tomografia leva minutos; a ressonância costuma demorar mais e faz barulho."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"Quem decide é a equipe","corpo":"A escolha depende da pergunta clínica. Na dúvida, pergunte a quem pediu o exame."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Mande para quem vai fazer exame","sub":"E siga para mais Mitos e dúvidas:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1647613561332-3d88a6a0048e?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzQxNTYyfA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Lisa Yount / Unsplash"}}}$q$::jsonb),
+  ($q$Copenhague, 1952$q$, $q$dicas$q$, $q$inspirar$q$, array[$q$instagram$q$]::text[], $q$carrossel$q$,
+   $q$Quando estudantes viraram ventiladores humanos.
+
+Na epidemia de pólio de 1952, em Copenhague, faltavam máquinas para tantos pacientes sem conseguir respirar. A solução foi ventilar à mão: estudantes de medicina e odontologia se revezaram, dia e noite, apertando bolsas de ar. Dali nasceu a terapia intensiva.
+
+Marque um colega de saúde que precisa conhecer essa história.
+
+#HistóriaDaMedicina #UTI #VentilaçãoMecânica #NeuroDynamics #UFMG #LABBIO #Bioengenharia$q$,
+   $q$Equipe cirúrgica no centro cirúrgico$q$,
+   $q$Ideia IG-022 do Plano de Publicações (prioridade A), projeto Opalina. Data sugerida: qui 17/12/2026, 12h.
+Dependências: checar a fonte primária, sobretudo o número de estudantes e de pacientes (a lâmina 03 diz "mais de mil"; ajuste se a fonte disser outro número).
+Carrossel de 6 lâminas. Prepara o Reel IG-032 (o diafragma no ventilador), em 22/12.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"feed","estilo":{"tema":"glia","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"História surpreendente","titulo":"Quando estudantes viraram ventiladores humanos","sub":"Copenhague, 1952: a epidemia que criou a terapia intensiva."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"Uma epidemia de pólio","corpo":"Em 1952, Copenhague recebeu centenas de pacientes com paralisia dos músculos da respiração."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"Faltavam máquinas","corpo":"Não havia pulmões de aço suficientes. A saída foi ventilar à mão, por uma traqueostomia."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"Turnos de estudantes","corpo":"Mais de mil estudantes de medicina e odontologia se revezaram apertando bolsas de ar."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"Nasce a terapia intensiva","corpo":"A experiência abriu caminho para as UTIs e a ventilação mecânica moderna."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Hoje, o desafio é outro","sub":"O projeto Opalina estuda como proteger o diafragma de quem está no ventilador:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1504439468489-c8920d796a29?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzI3MzY2fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Piron Guillaume / Unsplash"}}}$q$::jsonb),
+  ($q$Qualidade em uma equipe universitária$q$, $q$dicas$q$, $q$institucional$q$, array[$q$linkedin$q$]::text[], $q$documento$q$,
+   $q$Qualidade não começa na certificação.
+
+Na NeuroDynamics, uma equipe de P&D da Escola de Engenharia da UFMG, adotamos a disciplina de dispositivos médicos desde o primeiro protótipo: requisitos escritos e revisados, análise de risco antes da solução e rastreabilidade do requisito ao teste.
+
+Não é burocracia. É o que permite que um projeto de graduação converse com hospitais e com a indústria, e que quem passa pela equipe saia sabendo trabalhar como a saúde exige.
+
+Como a sua equipe trata qualidade nos projetos?
+
+#DispositivosMédicos #Qualidade #ISO14971 #EngenhariaBiomédica #UFMG$q$,
+   $q$Quadro branco com post-its$q$,
+   $q$Ideia LI-013 do Plano de Publicações (prioridade A), NRO geral. Data sugerida: ter 10/11/2026, 8h30.
+Porta-voz sugerido: Matheus Marcondes.
+Dependências: não afirmar certificação (a equipe segue as práticas, não é certificada).
+Documento (PDF) de 6 páginas, 4:5.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"documento","estilo":{"tema":"impulso","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Engenharia e qualidade","titulo":"Qualidade não começa na certificação","sub":"Por que uma equipe universitária adota a disciplina de dispositivos médicos desde a graduação."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"Requisitos antes do código","corpo":"Cada função nasce de uma necessidade escrita e revisada, que depois vira teste."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"Risco desde o primeiro esboço","corpo":"Perguntamos o que pode dar errado antes de escolher a solução, como pede a ISO 14971."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"Tudo rastreável","corpo":"Decisões, versões e testes ficam registrados, para quem chegar depois entender o porquê."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"Formação, não só entrega","corpo":"Quem passa pela equipe aprende a trabalhar como a indústria de saúde trabalha."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Como sua equipe trata qualidade?","sub":"Conte nos comentários. Saiba mais em","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1676277757211-ebd7fdeb3d5b?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzM4Nzg2fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Walls.io / Unsplash"}}}$q$::jsonb),
+  ($q$Calima: sincronizar estímulo e pedalada$q$, $q$projeto$q$, $q$institucional$q$, array[$q$linkedin$q$]::text[], $q$documento$q$,
+   $q$Sincronizar estímulo e pedalada: o problema de engenharia do projeto Calima.
+
+No FES cycling, a eletroestimulação faz os músculos da perna pedalarem. Mas cada músculo tem o seu momento na volta do pedal: estimular fora dele desperdiça força e antecipa a fadiga.
+
+No Calima, apostamos em sensores inerciais (IMU) para estimar a posição do pedal em tempo real, com a menor latência possível entre medir, decidir e estimular.
+
+No documento, o problema, a abordagem e os próximos passos.
+
+#FES #Reabilitação #EngenhariaBiomédica #SistemasEmbarcados #UFMG$q$,
+   $q$Protoboard com sensores vista de cima$q$,
+   $q$Ideia LI-002 do Plano de Publicações (prioridade A), projeto Calima. Data sugerida: ter 24/11/2026, 8h30, no mesmo dia do Reel IG-033.
+Porta-voz sugerido: Pedro Caversan.
+Dependências: NRO-MKT-002; confirmar dados e o status do projeto antes de publicar (a página "Próximos passos" é uma proposta de texto).
+Documento (PDF) de 6 páginas, 4:5.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"documento","estilo":{"tema":"lumen","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Calima, projeto em andamento","titulo":"Sincronizar estímulo e pedalada","sub":"O problema de engenharia por trás do FES cycling, e a nossa aposta em sensores inerciais."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"O problema","titulo":"Cada músculo tem o seu momento","corpo":"Estimular fora do ângulo certo do pedal desperdiça força e cansa o músculo mais rápido."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"A abordagem","titulo":"Sensores inerciais no lugar certo","corpo":"Unidades inerciais (IMU) estimam a posição do pedal e o movimento em tempo real."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"O desafio","titulo":"Cada milissegundo conta","corpo":"Entre medir, decidir e estimular, a latência define se o músculo contrai na hora certa."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"Próximos passos","titulo":"Da bancada aos testes","corpo":"Validar a sincronia em bancada e, depois, com a equipe clínica parceira."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Quer conversar sobre FES?","sub":"Fale com a equipe:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1555664424-778a1e5e1b48?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzM4NzE4fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Robin Glauser / Unsplash"}}}$q$::jsonb),
+  ($q$Software também é dispositivo$q$, $q$dicas$q$, $q$educar$q$, array[$q$linkedin$q$]::text[], $q$documento$q$,
+   $q$Software também é dispositivo médico.
+
+Quando o software participa do diagnóstico, do tratamento ou do monitoramento de alguém, ele precisa do mesmo rigor de um equipamento. A IEC 62304 organiza esse rigor: classes de segurança, um ciclo de vida definido, processo para problemas e atenção ao software de terceiros (SOUP).
+
+No documento, os pontos que guiam o time de desenvolvimento da NeuroDynamics.
+
+#IEC62304 #SoftwareMédico #DispositivosMédicos #Qualidade #UFMG$q$,
+   $q$Notebook e celular com código aberto$q$,
+   $q$Ideia LI-015 do Plano de Publicações (prioridade A), NRO geral. Data sugerida: ter 08/12/2026, 8h30.
+Porta-voz sugerido: time de desenvolvimento.
+Dependências: revisão técnica.
+Documento (PDF) de 6 páginas, 4:5.$q$,
+   $q${"v":1,"modelo":"publicacao","tamanho":"documento","estilo":{"tema":"impulso","decoracao":"nenhuma","grade":false,"rodape":"neurodynamics.dev"},"laminas":[{"layout":"faixa","campos":{"olho":"Engenharia e qualidade","titulo":"Software também é dispositivo médico","sub":"O que a IEC 62304 pede de quem desenvolve software para a saúde."},"fotos":{"foto":{"ref":"f1","modo":"topo","x":50,"y":50,"zoom":1}}},{"layout":"texto","campos":{"olho":"01","titulo":"Classe de segurança","corpo":"O rigor depende do dano que uma falha pode causar: classes A, B e C."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"02","titulo":"Um ciclo de vida definido","corpo":"Planejamento, requisitos, arquitetura, implementação, verificação e liberação, tudo documentado."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"03","titulo":"Problemas também têm processo","corpo":"Defeitos achados depois da liberação são registrados, analisados e corrigidos com o mesmo cuidado."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"texto","campos":{"olho":"04","titulo":"Software de terceiros","corpo":"Bibliotecas prontas (SOUP) entram na análise de risco, com versão e motivo de uso."},"fotos":{"foto":{"modo":"nenhuma"}}},{"layout":"cta","campos":{"titulo":"Desenvolve software para a saúde?","sub":"Vamos trocar experiências:","site":"neurodynamics.dev"},"fotos":{"foto":{"modo":"nenhuma"}}}],"fotos":{"f1":{"origem":"galeria","url":"https://images.unsplash.com/photo-1778146476147-5f8d4bd03c79?ixid=M3wxMTIyNDQ2fDB8MXxhbGx8fHx8fHx8fHwxNzkzNzM4Nzg5fA&ixlib=rb-4.1.0&w=2160&fm=jpg&q=85&fit=max","caminho":null,"credito":"Bayu Syaits / Unsplash"}}}$q$::jsonb)
+  ) as v(titulo, categoria, pilar, redes, formato, legenda, texto_alt, notas, peca)
+ where not exists (select 1 from public.studio_publicacoes p where p.titulo = v.titulo);
+
+insert into public.migracoes (id, descricao) values
+  ('2.28.0_studio_ideias', '15 ideias de publicação do Plano de Publicações (12 Instagram, 4 delas Reels, e 3 LinkedIn), com a arte no modelo principal, foto e faixa, e as fotos do banco de imagens')
+on conflict (id) do nothing;
+
+-- ============================================================
+-- CONFERÊNCIA
+-- ------------------------------------------------------------
+select codigo, titulo, formato, redes, status, jsonb_array_length(peca->'laminas') as "lâminas"
+  from public.studio_publicacoes
+ where notas like 'Ideia %Plano de Publicações%'
+ order by numero;
+
+-- ============================================================
+-- FIM, SOMA 2.28.0
+--
+-- Depois de rodar, publique o portal. As 15 ideias aparecem em Studio,
+-- Ideias; abra cada uma e use Arte para ver e ajustar as lâminas.
+-- ============================================================
