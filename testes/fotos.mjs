@@ -1,7 +1,7 @@
 /* 2.24.0 a 2.26.0: o banco de imagens. A avaliação no Studio (uma foto
    de cada vez nas peças da NRO, aprovar e rejeitar sem votação, a peça
    e a paleta, desfazer, pular, arrastar, o filtro de tema, pôr por link
-   só para admin e para a avaliação, as rejeitadas, quem gere sem ser
+   só para admin e para a avaliação, nenhuma tela de rejeitadas, quem gere sem ser
    admin, quem só entra no Studio, o celular e os endereços antigos), a
    galeria na Marca (busca por texto e por tag, o detalhe, editar,
    tirar, copiar a lista), o criador (a fonte Galeria, as fotos do banco
@@ -46,7 +46,8 @@ try {
     const t = await abrir('#/studio/banco'), { p } = t;
     await p.waitForSelector('.ft-cartao:not(.atras) .ft-arte');
     confere('a tela é do Studio: o título, a seção Banco de imagens e as abas', (await p.locator('.cab h1').innerText()) === 'Banco de imagens'
-      && (await p.locator('.nav1 a.on').innerText()).startsWith('Banco de imagens') && (await p.locator('.abas a').allInnerTexts()).join('|').replace(/\s*\d+/g, '') === 'Para avaliar|Rejeitadas');
+      && (await p.locator('.nav1 a.on').innerText()).startsWith('Banco de imagens') && (await p.locator('.abas').count()) === 0);
+    confere('nada de rejeitadas na tela', (await p.locator('#main').innerText()).match(/Rejeitadas/) === null && (await p.locator('a[href*="rejeitadas"]').count()) === 0);
     confere('um só botão sólido na tela: Aprovar', (await p.locator('#main .btn.solid').count()) === 1 && (await p.locator('#main .btn.solid').innerText()).includes('Aprovar'));
     confere('aprovar, rejeitar, pular e desfazer', (await p.locator('#ft-nao').innerText()).includes('Rejeitar') && (await p.locator('#ft-pular').count()) === 1
       && (await p.locator('#ft-desfazer').count()) === 1);
@@ -118,19 +119,12 @@ try {
     confere('sem chave, a busca manda para as configurações', (await p.locator('#modal .aviso-box').innerText()).includes('Configurações'));
     await p.click('#modal button:has-text("Fechar")');
 
-    await ir(p, '#/studio/banco/rejeitadas', 700);
-    confere('as rejeitadas: a de agora e a de antes', (await p.locator('.ft-escolha .ft-tile').count()) === 2 && (await p.locator('.abas a.on').innerText()) === 'Rejeitadas');
-    await p.click('.ft-marcar[aria-label="Escolher: Corredor vazio entre paredes brancas"]');
-    await p.click('#ft-barra button:has-text("Devolver à avaliação")'); await p.waitForTimeout(500);
-    confere('devolver à avaliação', (await rpcs(p, 'fotos_decidir')).at(-1)?.p?.p_status === 'fila' && (await stub(p, 'pfAnqlk3Oiw')) === 'fila');
-    await p.click('.ft-marcar[aria-label="Escolher: Silhueta de pessoa ao microscópio"]');
-    await p.click('#ft-por'); await p.waitForTimeout(500);
-    confere('ou pôr no banco', (await rpcs(p, 'fotos_decidir')).at(-1)?.p?.p_status === 'aprovada' && (await stub(p, 'ct10qdGv1hQ')) === 'aprovada');
-
     await ir(p, '#/studio/curadoria', 800);
     confere('o endereço antigo da curadoria leva ao banco de imagens', /#\/studio\/banco$/.test(p.url()) && (await p.locator('.cab h1').innerText()) === 'Banco de imagens', p.url());
     await ir(p, '#/studio/curadoria/descartadas', 800);
-    confere('e o das descartadas, às rejeitadas', /#\/studio\/banco\/rejeitadas$/.test(p.url()), p.url());
+    confere('o das descartadas também, sem tela de rejeitadas', /#\/studio\/banco$/.test(p.url()) && (await p.locator('.ft-cartao:not(.atras) .ft-arte').count()) === 1, p.url());
+    await ir(p, '#/studio/banco/rejeitadas', 800);
+    confere('e o das rejeitadas, de antes, leva à avaliação', /#\/studio\/banco$/.test(p.url()) && (await p.locator('.ft-cartao:not(.atras) .ft-arte').count()) === 1, p.url());
 
     await ir(p, '#/studio/banco', 800);
     await p.evaluate(() => { state.perfil.papeis = ['lideranca']; state.perfil.papel = 'lideranca'; ftCurDesenha(); });

@@ -784,24 +784,23 @@ galeria da Marca. Uma decisão basta, sem votação:
   4:5, Story 9:16, Banda 1:1, Site 4:5), na paleta escolhida ou na família do
   tema (*Auto*), com o tema, as tags, o autor, a origem e o link do banco.
   *Aprovar* põe no banco na hora, e a foto guarda a peça e a paleta em que foi
-  vista; *Rejeitar* manda para as rejeitadas; *Pular* deixa para o fim da
-  fila. Arrastar o cartão para a direita aprova, para a esquerda rejeita e
+  vista; *Rejeitar* tira a foto de vista (não há tela de rejeitadas); *Pular*
+  deixa para o fim da fila. Arrastar o cartão para a direita aprova, para a esquerda rejeita e
   para cima pula; as setas fazem o mesmo, **Z** desfaz a última decisão e
   **E** (ou tocar na foto) troca a peça. Os temas filtram;
-- **Rejeitadas** (`#/studio/banco/rejeitadas`): em grade, para escolher e pôr
-  no banco ou devolver à avaliação;
 - **fotos novas, só o admin**: *Pôr por link* lê endereços do Unsplash e do
   Pexels colados (um por linha ou todos juntos, também os em português);
   *Buscar nos bancos* busca no Unsplash e no Pexels, com as chaves de
   *Configurações*. As fotos vão para a avaliação, com o tema e as tags; uma
-  rejeitada posta de novo volta para ela;
+  rejeitada posta de novo (a foto continua no banco de dados, só fora de vista)
+  volta para a avaliação;
 - **o endereço da imagem**: com a chave do banco, a página pergunta à API pela
   imagem e a guarda no banco de imagens (`fotos.imagem`). É ela que o criador
   usa no canvas; sem ela, a foto aparece na galeria, mas não entra numa peça.
 
 Aprova e rejeita a gestão do Studio (quem aprova as publicações, e `admin`);
 fotos novas, só `admin`. Quem só entra no Studio vê a avaliação, sem decidir.
-O endereço antigo, `#/studio/curadoria`, leva ao banco de imagens. O banco
+Os endereços antigos, `#/studio/curadoria` e `#/studio/banco/rejeitadas`, levam ao banco de imagens. O banco
 também se lê sem conta, pela função `fotos_banco_publico` (as aprovadas, só
 os campos públicos): é por ela que o Claude busca fotos para peças,
 wallpapers e banners.
