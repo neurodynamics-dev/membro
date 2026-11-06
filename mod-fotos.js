@@ -1,21 +1,21 @@
 /* ============================================================
    MÓDULO · FOTOS — o banco de imagens da marca (2.24.0; 2.26.0)
    O banco de imagens mora no Studio: a avaliação, uma foto de cada
-   vez dentro de uma peça da marca, e as rejeitadas. As aprovadas são
+   vez dentro de uma peça da marca. As aprovadas são
    a galeria da Marca, e o criador pede fotos daqui (fotoEscolher,
    fotoDoBanco). Quem chama passa o cabeçalho da própria tela, para
    este módulo não depender de outro.
 
    Rotas (anunciadas por mod-studio e mod-marca):
      #/studio/banco              a avaliação: uma foto de cada vez, numa peça da NRO
-     #/studio/banco/rejeitadas   as rejeitadas: pôr no banco ou devolver à avaliação
      #/marca/fotos               a galeria (as aprovadas), com busca por texto e por tag
-   (#/studio/curadoria, de antes, leva ao banco de imagens.)
+   (#/studio/curadoria e #/studio/banco/rejeitadas, de antes, levam ao banco de imagens.)
 
    Uma decisão basta, sem votação (db/2.26.0_banco_de_imagens.sql): o
    admin põe fotos novas (busca nos bancos ou por link) e elas vão
    para a avaliação; quem gere o Studio aprova (a foto entra no banco,
-   com a peça e a paleta em que foi vista) ou rejeita. Quem só entra
+   com a peça e a paleta em que foi vista) ou rejeita. A rejeitada sai de
+   vista: o Studio não tem tela de rejeitadas. Quem só entra
    no Studio vê a avaliação, sem decidir. O banco também se lê sem
    conta, por fotos_banco_publico: é por ali que o Claude busca fotos
    para peças, wallpapers e banners.
@@ -32,7 +32,7 @@
    souAdmin.
    ============================================================ */
 
-const fotosM = { temas:null, lista:[], fila:[], aba:'', sel:new Set(), cq:'', ctema:'', filtroTemas:[], enq:'feed', pal:'cortex',
+const fotosM = { temas:null, lista:[], fila:[], filtroTemas:[], enq:'feed', pal:'cortex',
   hist:[], pulei:[], ocupado:false, galeria:null, gq:'', gtags:[], gtema:'', imgs:{},
   busca:{ banco:'u', q:'', res:[], marcadas:new Set(), pagina:1 }, escolher:null, cab:null };
 
@@ -139,24 +139,21 @@ function ftArte(f, enq, fam){
 /* ============================================================
    O BANCO DE IMAGENS (Studio)
    A avaliação mostra uma foto de cada vez, dentro de uma peça da NRO:
-   aprovar põe no banco, rejeitar manda para as rejeitadas, pular
-   deixa para depois. Uma decisão basta. As rejeitadas, em grade,
-   voltam para o banco ou para a avaliação.
+   aprovar põe no banco, rejeitar tira a foto de vista, pular deixa
+   para depois. Uma decisão basta.
    ============================================================ */
-async function fotoBancoImagens(sub, cab){
-  fotosM.cab = cab; fotosM.aba = sub === 'rejeitadas' ? 'rejeitadas' : ''; fotosM.sel = new Set();
-  $('#main').innerHTML = ftCab() + estado.carregando(fotosM.aba ? 'lista' : undefined);
+async function fotoBancoImagens(cab){
+  fotosM.cab = cab;
+  $('#main').innerHTML = ftCab() + estado.carregando();
   try { await ftTemas(); await ftCurCarrega(); }
   catch(e){ return ftSemBanco(e); }
   ftCurDesenha();
 }
-const ftCurDesenha = () => fotosM.aba ? ftRejDesenha() : ftAvDesenha();
+const ftCurDesenha = () => ftAvDesenha();
 function ftCab(){
   const acoes = ftAdmin() ? [`<button class="btn ghost" onclick="ftModalBusca()">${ic('lupa')} Buscar nos bancos</button>`,
     `<button class="btn ghost" onclick="ftModalLinks()">${ic('link')} Pôr por link</button>`] : [];
-  const n = !fotosM.aba && fotosM.lista.length ? ` <span class="n">${fotosM.lista.length}</span>` : '';
-  return fotosM.cab(acoes) + navNivel2([['', 'Para avaliar', '#/studio/banco', n], ['rejeitadas', 'Rejeitadas', '#/studio/banco/rejeitadas']],
-    fotosM.aba, 'Banco de imagens');
+  return fotosM.cab(acoes);
 }
 function ftSemBanco(e){
   $('#main').innerHTML = ftCab() + `<div class="aviso-box err"><b>O banco de imagens ainda não abriu.</b> ${esc(e?.message || '')}<br>
@@ -164,13 +161,11 @@ function ftSemBanco(e){
     e <code>db/2.26.0_banco_de_imagens.sql</code>?</span></div>`;
 }
 async function ftCurCarrega(){
-  const st = fotosM.aba === 'rejeitadas' ? 'descartada' : 'fila';
-  const { data, error } = await sb.from('fotos').select(FT_COLS).eq('status', st).order('criado_em', { ascending:false });
+  const { data, error } = await sb.from('fotos').select(FT_COLS).eq('status', 'fila').order('criado_em', { ascending:false });
   if (error) throw error;
   /* a seleção da equipe e o que o admin acabou de pôr vêm antes das sugestões por tema */
   const peso = f => f.origem === 'equipe' ? 0 : ['link', 'busca'].includes(f.origem) ? 1 : 2;
   fotosM.lista = (data || []).map((f, i) => [f, i]).sort((x, y) => peso(x[0]) - peso(y[0]) || x[1] - y[1]).map(x => x[0]);
-  const ids = new Set(fotosM.lista.map(f => f.id)); fotosM.sel.forEach(id => { if (!ids.has(id)) fotosM.sel.delete(id); });
   ftMontaFila();
 }
 /* a fila da avaliação: a lista no filtro de temas, com as puladas no fim */
@@ -376,77 +371,12 @@ document.addEventListener('keydown', e => {
 window.addEventListener('resize', () => { if (!$('#ft-pilha')) return; const m = ftMedida();
   document.querySelectorAll('.ft-cartao').forEach(c => { c.style.width = m.w + 'px'; c.style.height = m.h + 'px'; }); });
 
-/* ---------------- as rejeitadas: em grade, para voltar ---------------- */
-function ftCurFiltradas(){
-  const termos = norm(fotosM.cq).trim().split(/\s+/).filter(Boolean);
-  return fotosM.lista.filter(f => (!fotosM.ctema || f.tema === fotosM.ctema)
-    && (!termos.length || termos.every(t => norm([f.descricao, f.autor, f.busca, ftTema(f.tema).nome, ...(f.tags || [])].join(' ')).includes(t))));
-}
-function ftRejDesenha(){
-  const g = ftGestor(), lista = ftCurFiltradas();
-  $('#main').innerHTML = ftCab()
-    + ferramentas({ busca:{ id:'ft-cq', rotulo:'Buscar', exemplo:'UTI, microscópio, equipe', valor:fotosM.cq, oninput:'ftCurBusca(this.value)' },
-        filtros:`<div class="fld"><label for="ft-ctema">Tema</label><select id="ft-ctema" onchange="fotosM.ctema=this.value;ftRejDesenha()">
-          <option value="">Todos</option>${ftOpcoesTema(fotosM.ctema)}</select></div>`, total:lista.length })
-    + (lista.length ? `<div class="marca-grid ft-galeria ft-escolha">${lista.map(f => ftEscolhaTile(f, g)).join('')}</div>`
-      : fotosM.lista.length ? estado.vazio({ texto:'Nenhuma foto com esse filtro.', acao:'<button class="btn ghost" onclick="fotosM.cq=\'\';fotosM.ctema=\'\';ftRejDesenha()">Limpar filtros</button>' })
-      : estado.vazio({ texto:'Nenhuma foto rejeitada.' }))
-    + (g ? `<div class="ft-barra" id="ft-barra" role="region" aria-label="As fotos escolhidas" hidden>
-        <span class="ft-barra-n" id="ft-barra-n"></span>
-        <button class="btn ghost mini" onclick="ftMarcarTodas()">Escolher todas</button>
-        <button class="btn ghost mini" onclick="fotosM.sel=new Set();ftRejDesenha()">Limpar</button>
-        <span class="cresce"></span>
-        <button class="btn ghost" onclick="ftDecidir('fila')">Devolver à avaliação</button>
-        <button class="btn solid" id="ft-por" onclick="ftDecidir('aprovada')">${ic('check')} Pôr no banco</button></div>` : '');
-  ftBarra();
-}
-function ftEscolhaTile(f, g){
-  const on = fotosM.sel.has(f.id);
-  const img = `<img loading="lazy" src="${esc(ftImgUrl(f, 480))}" alt="" onerror="ftImgFalhou(this,'${f.id}')">`;
-  return `<article class="card marca-tile ft-tile${on ? ' on' : ''}">
-    ${g ? `<button type="button" class="ft-tile-foto ft-marcar" aria-pressed="${on}" onclick="ftMarcar('${f.id}')" aria-label="Escolher: ${esc(f.descricao)}">${img}<i class="ft-bf-ok">${ic('check')}</i></button>`
-        : `<a class="ft-tile-foto" href="${esc(ftPagina(f))}" target="_blank" rel="noopener" aria-label="${esc(f.descricao)}">${img}</a>`}
-    <div class="marca-tile-corpo"><h3>${esc(f.descricao)}</h3>
-      <div class="marca-tile-meta">${ftPill(ftTema(f.tema).nome)}${f.origem === 'equipe' ? ftPill('Seleção da equipe', 'p-ok') : ''}</div>
-      <span class="small muted">${(f.tags || []).slice(0, 3).map(esc).join(', ')}</span>
-      <span class="small muted">${f.autor ? esc(f.autor) + ', ' : ''}<a href="${esc(ftPagina(f))}" target="_blank" rel="noopener">${esc(FT_BANCO[f.banco] || f.banco)}</a></span></div></article>`;
-}
-function ftBarra(){
-  const b = $('#ft-barra'); if (!b) return;
-  const n = fotosM.sel.size; b.hidden = !n;
-  $('#ft-barra-n').textContent = n === 1 ? '1 escolhida' : `${n} escolhidas`;
-  $('#ft-por').innerHTML = `${ic('check')} Pôr ${n === 1 ? 'a foto' : n} no banco`;
-}
-function ftMarcar(id){
-  fotosM.sel.has(id) ? fotosM.sel.delete(id) : fotosM.sel.add(id);
-  const on = fotosM.sel.has(id), bt = document.querySelector(`.ft-marcar[onclick="ftMarcar('${id}')"]`);
-  if (bt){ bt.setAttribute('aria-pressed', on); bt.closest('.ft-tile').classList.toggle('on', on); }
-  ftBarra();
-}
-function ftMarcarTodas(){ ftCurFiltradas().forEach(f => fotosM.sel.add(f.id)); ftRejDesenha(); }
-function ftCurBusca(v){
-  fotosM.cq = v; clearTimeout(fotosM._cq);
-  fotosM._cq = setTimeout(() => { ftRejDesenha(); const e = $('#ft-cq'); if (e){ e.focus(); e.setSelectionRange(e.value.length, e.value.length); } }, 220);
-}
-async function ftDecidir(status){
-  const ids = [...fotosM.sel]; if (!ids.length) return;
-  /* no banco, a foto precisa do endereço da imagem para o criador: com a chave, já pergunta */
-  if (status === 'aprovada') await Promise.all(fotosM.lista.filter(f => ids.includes(f.id) && !f.imagem).map(ftResolver));
-  const { data, error } = await sb.rpc('fotos_decidir', { p_ids:ids, p_status:status });
-  if (error || data?.status !== 'ok') return toast(ftMotivo(data, error, 'As fotos não mudaram'), true);
-  const n = data.fotos, um = n === 1;
-  toast(status === 'aprovada' ? `${n} ${um ? 'foto entrou' : 'fotos entraram'} no banco.` : `${n} de volta à avaliação.`);
-  fotosM.sel = new Set(); fotosM.galeria = null;
-  try { await ftCurCarrega(); } catch(e){ return ftSemBanco(e); }
-  ftRejDesenha();
-}
-
 /* ---------------- fotos novas (só admin): por link e pela busca, para a avaliação ---------------- */
 const ftOpcoesTema = sel => (fotosM.temas || []).map(t => `<option value="${esc(t.chave)}"${t.chave === sel ? ' selected' : ''}>${esc(t.nome)}</option>`).join('');
 const ftTagsDe = s => String(s || '').split(',').map(t => t.trim()).filter(Boolean);
 function ftModalLinks(){
   if (!ftAdmin()) return;
-  const t = fotosM.filtroTemas[0] || fotosM.ctema || fotosM.temas?.[0]?.chave;
+  const t = fotosM.filtroTemas[0] || fotosM.temas?.[0]?.chave;
   abreModal(`<h3>${ic('link')} Pôr por link</h3>
     <div class="fld"><label for="ft-lk">Links das fotos ${dica('Endereços do Unsplash ou do Pexels, um por linha ou todos juntos. Também vale o endereço direto de uma imagem (images.unsplash.com, images.pexels.com).')}</label>
       <textarea id="ft-lk" rows="5" placeholder="https://unsplash.com/photos/..."></textarea></div>
@@ -505,14 +435,14 @@ async function ftPorParaAvaliar(lista){
   const n = (data.novas || 0) + (data.reativadas || 0), r = data.repetidas || 0;
   toast(n ? `${n} ${n === 1 ? 'foto foi' : 'fotos foram'} para a avaliação${r ? `; ${r} já ${r === 1 ? 'estava' : 'estavam'} no banco de imagens` : ''}.`
     : 'Essas fotos já estavam no banco de imagens.');
-  if ($('#ft-pilha') || $('#ft-cq')){ try { await ftCurCarrega(); ftCurDesenha(); } catch(e){ ftSemBanco(e); } }
+  if ($('#ft-pilha')){ try { await ftCurCarrega(); ftCurDesenha(); } catch(e){ ftSemBanco(e); } }
 }
 
 function ftModalBusca(){
   if (!ftAdmin()) return;
   const b = fotosM.busca, temChave = ftChave('unsplash') || ftChave('pexels');
   if (!ftChave(b.banco === 'p' ? 'pexels' : 'unsplash')) b.banco = ftChave('unsplash') ? 'u' : 'p';
-  const t = fotosM.filtroTemas[0] || fotosM.ctema || fotosM.temas?.[0]?.chave;
+  const t = fotosM.filtroTemas[0] || fotosM.temas?.[0]?.chave;
   abreModal(`<h3>${ic('lupa')} Buscar nos bancos</h3>
     ${temChave ? `<div class="ft-busca-linha">
         <div class="seg" role="group" aria-label="Banco">${[['u', 'Unsplash'], ['p', 'Pexels']].map(([k, l]) =>
@@ -669,7 +599,7 @@ async function ftSalvarEdicao(id){
   toast('Foto salva.'); fechaModal(); ftGalDesenha();
 }
 async function ftTirar(id){
-  if (!await confirma('A foto sai do banco e do criador, e fica nas rejeitadas do banco de imagens.', 'Tirar da galeria')) return;
+  if (!await confirma('A foto sai do banco e do criador, e não aparece mais no Studio.', 'Tirar da galeria')) return;
   const { data, error } = await sb.rpc('foto_status_definir', { p_foto:id, p_status:'descartada' });
   if (error || data?.status !== 'ok') return toast(motivoRPC(data, error, 'A foto não saiu da galeria'), true);
   fotosM.galeria = (fotosM.galeria || []).filter(x => x.id !== id);

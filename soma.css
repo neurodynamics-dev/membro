@@ -3903,8 +3903,7 @@ a.pj-membro{color:var(--ink)}
    A avaliação mostra uma foto de cada vez dentro de uma peça da marca
    (.ft-arte): chapada, foto retangular ou com raio de 18px, sem filtro,
    nenhum degradê; cada superfície numa família (.f-ion, .f-retina...).
-   Medidas em cqw, frações da largura da peça. As rejeitadas escolhem
-   em grade (.ft-escolha) com a barra das escolhidas. */
+   Medidas em cqw, frações da largura da peça. */
 .ft-cur{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--s5);align-items:start}
 @media (max-width:900px){.ft-cur{grid-template-columns:1fr}}
 .ft-palco{position:relative;padding:var(--s4);height:min(64vh,720px);min-height:420px}
@@ -3945,19 +3944,7 @@ a.pj-membro{color:var(--ink)}
 .ft-acoes .icon-btn{width:44px;height:44px}
 .ft-nao .ic{color:var(--bad-tx)}
 .ft-temas{display:flex;flex-wrap:wrap;gap:6px}
-.ft-escolha .ft-tile{position:relative}
-.ft-marcar{position:relative}
-.ft-marcar .ft-bf-ok{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:var(--r-chip);display:grid;place-items:center;
-  background:rgba(var(--fundo-rgb),.72);border:1px solid var(--line2);color:transparent}
-.ft-marcar .ft-bf-ok .ic{width:15px;height:15px}
-.ft-tile.on{box-shadow:inset 0 0 0 2px var(--ink)}
-.ft-tile.on .ft-bf-ok{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .ft-tile .marca-tile-corpo .small a{color:inherit}
-.ft-barra{position:sticky;bottom:var(--s4);z-index:6;display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s5);
-  padding:var(--s3) var(--s4);border:1px solid var(--line2);border-radius:var(--r);background:var(--panel)}
-.ft-barra[hidden]{display:none}
-.ft-barra .cresce{flex:1}
-.ft-barra-n{font-weight:600}
 .ft-tags{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 var(--s4)}
 .ft-tags .chip b{font-family:var(--fm);font-weight:500;color:var(--dim);margin-left:2px}
 .ft-tile-foto{display:block;width:100%;padding:0;border:0;border-bottom:1px solid var(--line);background:rgba(var(--tom),.04);cursor:pointer}

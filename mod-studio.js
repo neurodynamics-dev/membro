@@ -15,7 +15,7 @@
      #/studio/ideias               as ideias soltas, e a captura rápida
      #/studio/criar[/<modelo>]     o criador (mod-criador)
      #/studio/modelos              a galeria dos modelos (mod-criador)
-     #/studio/banco[/rejeitadas]   o banco de imagens: avaliar uma foto de cada vez (mod-fotos, 2.26.0)
+     #/studio/banco                o banco de imagens: avaliar uma foto de cada vez (mod-fotos, 2.26.0)
      #/studio/POST-14              uma publicação
      #/studio/POST-14/arte         a arte dela, no criador
      #/studio/config[/<aba>]       acesso, contas, imprensa, recursos
@@ -105,7 +105,7 @@ async function pageStudio(sub, sub2){
   if (sub === 'banco'){
     try { await carregarModulo('fotos'); }
     catch(e){ $('#main').innerHTML = `<div class="aviso-box err">O banco de imagens não carregou (${esc(e.message)}). Recarregue a página.</div>`; return; }
-    return fotoBancoImagens(sub2, acoes => stTopo('Banco de imagens',
+    return fotoBancoImagens(acoes => stTopo('Banco de imagens',
       dica('Uma foto de cada vez, dentro das peças da marca: quem gere o Studio aprova (a foto entra no banco) ou rejeita. Fotos novas, só o admin põe, pela busca nos bancos ou por link. O criador usa qualquer foto do banco, e o Claude lê o banco para criar peças.'),
       acoes) + stNav('banco'));
   }

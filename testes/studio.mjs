@@ -54,7 +54,7 @@ const toasts = p => p.evaluate(() => [...document.querySelectorAll('.toast')].ma
 const semRolagem = p => p.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
 /* quantos pixels diferentes entre duas leituras do canvas da prévia */
 const pixels = p => p.evaluate(() => { const c = document.getElementById('cr-cv'); const x = c.getContext('2d');
-  return Array.from(x.getImageData(0, 0, c.width, c.height).data.filter((v, i) => i % 97 === 0)); });
+  return Array.from(x.getImageData(0, 0, c.width, c.height).data.filter((v, i) => i % 23 === 0)); });
 const difere = (a, b) => a.length !== b.length || a.some((v, i) => v !== b[i]);
 
 /* ================= admin: o quadro ================= */
@@ -108,7 +108,7 @@ const difere = (a, b) => a.length !== b.length || a.some((v, i) => v !== b[i]);
   /* a galeria */
   await ir(p, '#/studio/modelos', 4500);
   const cards = await p.evaluate(() => [...document.querySelectorAll('.cr-card')].map(c => !!c.querySelector('canvas')));
-  confere('a galeria tem os 23 modelos, cada um com a prévia', cards.length === 23 && cards.every(Boolean), cards.length);
+  confere('a galeria tem os 24 modelos, cada um com a prévia', cards.length === 24 && cards.every(Boolean), cards.length);
 
   /* o criador */
   await ir(p, '#/studio/criar/aniversario', 2500);

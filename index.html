@@ -1286,6 +1286,7 @@ const STUDIO_PILARES = {
 };
 /* o que é a publicação. O id é também o modelo que o criador abre. */
 const STUDIO_TIPOS = [
+  ['publicacao',   'Publicação com foto',     'educar',        'imagem'],
   ['na_midia',     'Na mídia',                'institucional', 'imagem'],
   ['projeto',      'Projeto em foco',         'educar',        'carrossel'],
   ['aniversario',  'Aniversário',             'conectar',      'imagem'],
@@ -1844,8 +1845,9 @@ function route(){
     history.replaceState(null, '', location.pathname + location.search + '#/' + [r, sub, sub2].filter(Boolean).join('/'));
   }
   /* a curadoria de fotos virou o banco de imagens (2.26.0) */
-  if (r === 'studio' && sub === 'curadoria'){
-    [sub, sub2] = ['banco', ['descartadas', 'rejeitadas'].includes(sub2) ? 'rejeitadas' : null];
+  /* e a tela das rejeitadas saiu do banco: o endereço dela leva à avaliação */
+  if (r === 'studio' && (sub === 'curadoria' || (sub === 'banco' && ['descartadas', 'rejeitadas'].includes(sub2)))){
+    [sub, sub2] = ['banco', null];
     history.replaceState(null, '', location.pathname + location.search + '#/' + [r, sub, sub2].filter(Boolean).join('/'));
   }
   return { r: ROTAS[r] ? r : 'home', sub: sub || null, sub2: sub2 || null };
