@@ -315,3 +315,5 @@ body{font-family:var(--f);overscroll-behavior:none}
 .ed-q .alt .av{width:20px;height:20px;font-size:9px}
 .alt-ed select,.alt-ed input[data-txt]{width:100%}
 .na-tv{overflow:hidden}
+.tv-proxima{font-size:calc(var(--u)*2.4);color:var(--ink)}
+.tv-proxima b{font-weight:800}

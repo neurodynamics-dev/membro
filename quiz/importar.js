@@ -115,7 +115,7 @@
     const kahoot = s => s.replace(/kahoot/gi, 'NeuroQuiz');
 
     q.tipo = tipo;
-    q.tempo_s = 20; q.pontos = 1000; q.extra = {};
+    q.tempo_s = 8; q.pontos = 1000; q.extra = {};
     if (tipo === 'whatsapp') {
       const quem = zap[1].trim();
       const r = /^membro\s*(\d+)$/i.test(quem) ? { membro: ix.porReg.get(+quem.match(/\d+/)[0]) } : porNome(ix, quem);
