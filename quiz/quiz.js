@@ -398,6 +398,7 @@
       NQSom.ligar();
       if (e.code === 'Space' || e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); avancar(); }
       else if (e.key === 'm' || e.key === 'M') alternarSom();
+      else if (e.key === 'p' || e.key === 'P') { T.pausado = !T.pausado; T.proxTxt = ''; tickT(); }
       else if (e.key === 'f' || e.key === 'F') telaCheia();
     });
     escuta(document, 'pointerdown', () => NQSom.ligar());
@@ -430,7 +431,7 @@
     if (T.st.sessao.fase === 'fim' && T.podio && T.podio.passo < 4) return pularPodio();
     T.busy = true;
     try { aplicaT(await rpc('quiz_avancar', { p_sessao: T.sid, p_seq: T.st.sessao.seq }, { tentativas: 4 })); }
-    catch (e) { toast('Não consegui falar com o banco. Tente de novo.', 'erro'); }
+    catch (e) { toast('Não consegui falar com o banco. Tento de novo sozinho.', 'erro'); setTimeout(() => { if (T) T.fechando = false; }, 1500); }
     finally { T.busy = false; }
   }
   function alternarSom() { NQSom.definirMudo(!NQSom.mudo()); const b = $('#tv-som'); if (b) b.textContent = NQSom.mudo() ? 'Ligar o som' : 'Som'; }
@@ -455,7 +456,9 @@
   function desenhaT(antes) {
     const s = T.st.sessao;
     const corpo = { lobby: lobbyT, pergunta: perguntaT, revelacao: revelacaoT, placar: placarT, fim: podioT }[s.fase]();
-    app.innerHTML = `<div class="tv">${topoT()}<main class="tv-corpo">${corpo}</main>${s.fase === 'lobby' ? '<div class="tv-dica"><kbd>Espaço</kbd> começa · <kbd>M</kbd> som · <kbd>F</kbd> tela cheia</div>' : ''}</div>`;
+    const prox = (s.fase === 'revelacao' || s.fase === 'placar') ? '<div class="tv-dica tv-proxima" id="prox"></div>' : '';
+    app.innerHTML = `<div class="tv">${topoT()}<main class="tv-corpo">${corpo}</main>${s.fase === 'lobby' ? '<div class="tv-dica"><kbd>Espaço</kbd> começa · <kbd>M</kbd> som · <kbd>F</kbd> tela cheia</div>' : prox}</div>`;
+    T.proxTxt = '';
     ligaTopo();
     somT(antes);
     if (s.fase === 'fim') animaPodio();
@@ -599,6 +602,7 @@
   function tickT() {
     if (!T || !T.st) return;
     const s = T.st.sessao;
+    if (s.fase === 'revelacao' || s.fase === 'placar') return tickIntervalo(s);
     if (s.fase !== 'pergunta') return;
     const t = agora(), ini = Date.parse(s.iniciada_em), pz = Date.parse(s.prazo), lib = Date.parse(s.liberada_em || s.iniciada_em);
     const sub = t < ini ? 'leitura' : 'aberta';
@@ -613,6 +617,22 @@
     if (T.fechando || T.busy) return;
     const todos = T.st.ativos_n > 0 && (T.st.respostas_n || 0) >= T.st.ativos_n && t > ini + 300;
     if (t > pz + 600 || todos) { T.fechando = true; avancar(); }
+  }
+
+  // na revelação e no placar, a TV avança sozinha depois de intervalo_s (da hora do banco em que a fase começou)
+  function tickIntervalo(s) {
+    const el = $('#prox'), iv = s.mudou_em ? +(s.intervalo_s || 0) : 0;   // banco sem a 2.30.0: só no espaço
+    const ultima = s.fase === 'revelacao' && s.rodada >= s.total;
+    const destino = ultima ? 'o pódio' : (s.fase === 'revelacao' && s.placar_cada > 0 && s.rodada % s.placar_cada === 0) ? 'o placar' : 'a próxima pergunta';
+    let txt;
+    if (!iv) txt = `<kbd>Espaço</kbd> ${destino}`;
+    else if (T.pausado) txt = `Pausado · <kbd>P</kbd> continua · <kbd>Espaço</kbd> ${destino}`;
+    else {
+      const resta = Math.max(0, Math.ceil((Date.parse(s.mudou_em) + iv * 1000 - agora()) / 1000));
+      txt = `${destino[0].toUpperCase() + destino.slice(1)} em <b>${resta}</b> · <kbd>P</kbd> pausa`;
+      if (resta <= 0 && !T.busy && !T.fechando) { T.fechando = true; avancar(); }
+    }
+    if (el && txt !== T.proxTxt) { el.innerHTML = txt; T.proxTxt = txt; }
   }
 
   /* ============================================================
@@ -659,7 +679,7 @@
     const at = E.lista.filter(q => q.ativa).length, prob = E.lista.filter(q => (q.problemas || []).some(p => BLOQ.includes(p))).length;
     if (!E.lista.length) return `<div class="vazio" style="padding:60px 0;text-align:center"><p class="nota" style="margin-bottom:16px">Nenhuma pergunta ainda.</p>
       <button class="btn solid" id="vz-imp">Importar o docx</button></div>`;
-    return `<p class="ed-resumo">${E.lista.length} perguntas · ${at} ativas · ${prob ? `<b style="color:var(--bad-tx)">${prob} com problema</b>` : 'nenhuma com problema'} · uns ${Math.round(E.lista.filter(q => q.ativa).reduce((s, q) => s + q.tempo_s + 18, 0) / 60)} min de jogo</p>
+    return `<p class="ed-resumo">${E.lista.length} perguntas · ${at} ativas · ${prob ? `<b style="color:var(--bad-tx)">${prob} com problema</b>` : 'nenhuma com problema'} · uns ${Math.round(E.lista.filter(q => q.ativa).reduce((s, q) => s + q.tempo_s + 13, 0) / 60)} min de jogo</p>
       <div class="ed-lista">${E.lista.map((q, i) => linhaQ(q, i)).join('')}</div>`;
   }
   function altChip(a) {
@@ -725,7 +745,7 @@
       .map(m => `<option value="${m.registro}" ${m.registro === sel ? 'selected' : ''}>${esc(m.nome)} (${String(m.registro).padStart(3, '0')})</option>`).join('');
   }
   function formPergunta(q) {
-    const f = q ? JSON.parse(JSON.stringify(q)) : { tipo: 'classica', texto: '', tempo_s: 20, pontos: 1000, ativa: true, extra: {},
+    const f = q ? JSON.parse(JSON.stringify(q)) : { tipo: 'classica', texto: '', tempo_s: 8, pontos: 1000, ativa: true, extra: {},
       alternativas: [0, 1, 2, 3].map(l => ({ letra: l, texto: '', correta: l === 0 })) };
     while ((f.alternativas || []).length < 2) f.alternativas.push({ letra: f.alternativas.length, texto: '', correta: false });
     const desenha = () => {
@@ -742,7 +762,7 @@
               <label><input type="checkbox" data-ok="${i}" ${a.correta ? 'checked' : ''}> certa</label>
               <button type="button" class="icbtn" data-tira="${i}" aria-label="Tirar" ${f.alternativas.length <= 2 ? 'disabled' : ''}>${IC.lixo}</button></div>`).join('')}</div>
             ${f.alternativas.length < 4 ? '<button type="button" class="btn ghost" id="fq-mais" style="margin-top:8px">Mais uma alternativa</button>' : ''}</div>
-          <div class="duas"><div class="fld"><label for="fq-tempo">Tempo</label><select id="fq-tempo">${[5, 10, 20, 30, 60, 90, 120, 240].map(t => `<option value="${t}" ${f.tempo_s === t ? 'selected' : ''}>${t} segundos</option>`).join('')}</select></div>
+          <div class="duas"><div class="fld"><label for="fq-tempo">Tempo</label><select id="fq-tempo">${[...new Set([5, 8, 10, 15, 20, 30, 60, 90, 120, 240, f.tempo_s])].sort((a, b) => a - b).map(t => `<option value="${t}" ${f.tempo_s === t ? 'selected' : ''}>${t} segundos</option>`).join('')}</select></div>
             <div class="fld"><label for="fq-pontos">Pontos</label><select id="fq-pontos"><option value="1000" ${f.pontos === 1000 ? 'selected' : ''}>Padrão (até 1000)</option>
               <option value="2000" ${f.pontos === 2000 ? 'selected' : ''}>Dobro (até 2000)</option><option value="0" ${f.pontos === 0 ? 'selected' : ''}>Sem pontos</option></select></div></div>
           <div class="fld"><label for="fq-nota">Nota para quem conduz (aparece na TV)</label><input id="fq-nota" maxlength="300" value="${esc(f.nota || '')}"></div>
@@ -839,22 +859,25 @@
   /* uma partida nova: a TV abre com o PIN */
   function novaPartida() {
     const at = E.lista.filter(q => q.ativa).length;
-    abreDlg(`<h3>Nova partida</h3><p>${at} perguntas ativas, na ordem do editor. A TV abre com o PIN e o QR; quem conduz avança com o espaço.</p>
+    abreDlg(`<h3>Nova partida</h3><p>${at} perguntas ativas. A TV abre com o PIN e o QR. Quando todos respondem, a revelação vem na hora; depois, a TV avança sozinha (o espaço avança antes, o P pausa).</p>
       <form class="ed-form" id="fp">
         <div class="fld"><label for="fp-t">Título</label><input id="fp-t" maxlength="80" value="NeuroQuiz de integração"></div>
         <div><span class="lb">Placar parcial</span><div class="seg" id="fp-placar">${[[1, 'A cada pergunta'], [3, 'A cada 3'], [5, 'A cada 5'], [0, 'Só no fim']].map(([v, t]) => `<button type="button" data-v="${v}" class="${v === 3 ? 'on' : ''}">${t}</button>`).join('')}</div></div>
+        <div><span class="lb">Da revelação para a próxima pergunta</span><div class="seg" id="fp-intervalo">${[[3, '3 s'], [5, '5 s'], [8, '8 s'], [0, 'Só no espaço']].map(([v, t]) => `<button type="button" data-v="${v}" class="${v === 5 ? 'on' : ''}">${t}</button>`).join('')}</div></div>
         <div><span class="lb">Leitura antes das alternativas</span><div class="seg" id="fp-leitura">${[0, 3, 5, 8].map(v => `<button type="button" data-v="${v}" class="${v === 5 ? 'on' : ''}">${v} s</button>`).join('')}</div></div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:var(--fs-sm)"><input type="checkbox" id="fp-aleatoria" checked> Ordem aleatória (desmarcado: a ordem do editor)</label>
         <label style="display:flex;gap:8px;align-items:center;font-size:var(--fs-sm)"><input type="checkbox" id="fp-bonus" checked> Bônus de sequência (+100 por acerto seguido, até +500)</label>
         <label style="display:flex;gap:8px;align-items:center;font-size:var(--fs-sm)"><input type="checkbox" id="fp-texto"> Mostrar a pergunta e as alternativas também no celular</label>
         <p class="nq-msg ruim" id="fp-erro"></p>
         <div class="acts"><button type="button" class="btn ghost" id="fp-c">Cancelar</button><button type="submit" class="btn solid" ${at ? '' : 'disabled'}>Abrir a partida na TV</button></div></form>`);
-    ['#fp-placar', '#fp-leitura'].forEach(sel => $(sel).querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    ['#fp-placar', '#fp-leitura', '#fp-intervalo'].forEach(sel => $(sel).querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
       $(sel).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); })));
     $('#fp-c').addEventListener('click', fechaDlg);
     $('#fp').addEventListener('submit', async ev => {
       ev.preventDefault();
       const r = await rpc('quiz_sessao_criar', { p: { titulo: $('#fp-t').value, placar_cada: +$('#fp-placar .on').dataset.v, leitura_s: +$('#fp-leitura .on').dataset.v,
-        bonus_sequencia: $('#fp-bonus').checked, texto_no_celular: $('#fp-texto').checked } });
+        bonus_sequencia: $('#fp-bonus').checked, texto_no_celular: $('#fp-texto').checked,
+        aleatoria: $('#fp-aleatoria').checked, intervalo_s: +$('#fp-intervalo .on').dataset.v } });
       if (r.status !== 'ok') { $('#fp-erro').textContent = r.status === 'sem_perguntas' ? 'Nenhuma pergunta ativa.' : 'Confira: ' + (r.campo || r.status); return; }
       fechaDlg(); location.hash = 'tv/' + r.id;
     });

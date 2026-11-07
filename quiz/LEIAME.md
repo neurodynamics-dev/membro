@@ -25,9 +25,15 @@ O quiz ao vivo da equipe, dentro do SOMA. Fica em `membro.neurodynamics.dev/quiz
 - **Mais de uma certa:** qualquer uma das certas vale.
 - **Tolerância:** a resposta que chega até 0,5 s depois do prazo ainda vale, para cobrir o atraso da rede.
 
+## O ritmo (2.30.0)
+
+- **Tempo padrão:** 8 s por pergunta (pergunta nova e importada). Dá para mudar pergunta por pergunta no editor.
+- **Ordem aleatória:** cada partida nova embaralha as perguntas ativas. Desmarque "Ordem aleatória" ao criar a partida para usar a ordem do editor.
+- **Avanço sozinho:** quando todos respondem, a revelação vem na hora. Depois, a TV avança sozinha: em 5 s, da revelação para a próxima pergunta, passando pelo placar quando for a vez dele, e da última revelação para o pódio. Ao criar a partida dá para escolher 3, 5 ou 8 s, ou "Só no espaço". O **espaço** avança antes e o **P** pausa e continua.
+
 ## Antes do dia (uma vez)
 
-1. **O banco.** No Supabase, SQL Editor, cole `db/2.29.0_neuroquiz.sql` inteiro e clique em Run. No fim deve aparecer 32 funções, 12 políticas e "Realtime disponível" = `true`.
+1. **O banco.** No Supabase, SQL Editor, cole `db/2.29.0_neuroquiz.sql` inteiro e clique em Run. No fim deve aparecer 32 funções, 12 políticas e "Realtime disponível" = `true`. Depois faça o mesmo com `db/2.30.0_neuroquiz_ritmo.sql` (8 s, ordem aleatória e o avanço sozinho).
 2. **O portal.** Faça o merge do PR no `main`. O GitHub Pages publica em um ou dois minutos.
 3. **As perguntas.** Abra `membro.neurodynamics.dev/quiz/#editor` com uma conta da gestão e use **Importar docx**. A revisão mostra:
    - os nomes que vieram do SOMA pelo registro;
@@ -52,7 +58,7 @@ O quiz ao vivo da equipe, dentro do SOMA. Fica em `membro.neurodynamics.dev/quiz
    - texto no celular desligado; ligue se o projetor estiver muito apagado, aí o celular mostra também as alternativas.
 4. **Ligue a TV.** A TV abre no lobby. Tecle **F** para tela cheia e **clique uma vez na tela** (o navegador só libera o som depois de um clique). **M** liga e desliga o som.
 5. **Coloque todo mundo para dentro.** Peça para lerem o QR ou digitarem `membro.neurodynamics.dev/quiz` e o PIN. Todo mundo precisa saber a senha do SOMA: avise antes da reunião.
-6. **Espaço** começa e avança. A pergunta fecha sozinha quando o tempo acaba ou quando todos respondem; espaço durante a pergunta fecha antes. Depois da última pergunta, espaço mostra o pódio (3º, 2º e 1º, com rufar e fanfarra).
+6. **Espaço** começa a partida. A pergunta fecha sozinha quando o tempo acaba ou quando todos respondem, e a TV avança sozinha 5 s depois de cada revelação, até o pódio (3º, 2º e 1º, com rufar e fanfarra). Espaço adianta qualquer passo; **P** pausa e continua o avanço, para quando a sala quiser rir de uma resposta.
 
 ## Se algo falhar
 
@@ -87,4 +93,4 @@ As alternativas usam cor, forma e letra:
 | C | círculo | Impulso |
 | D | cruz | Neuron |
 
-As perguntas **não** moram no repositório, que é público: elas entram pelo editor e ficam no banco. Os testes do banco estão em `db/testes/2.29.0_neuroquiz.sql` (102 asserções) e `db/testes/2.29.0_neuroquiz_carga.sh` (40 conexões ao mesmo tempo).
+As perguntas **não** moram no repositório, que é público: elas entram pelo editor e ficam no banco. Os testes do banco estão em `db/testes/2.29.0_neuroquiz.sql` (102 asserções), `db/testes/2.30.0_neuroquiz.sql` (16) e `db/testes/2.29.0_neuroquiz_carga.sh` (40 conexões ao mesmo tempo).
