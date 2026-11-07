@@ -330,7 +330,7 @@ begin
                     or m.registro in (select registro from quiz_alternativas where pergunta_id = p_id))) then
     v := v || 'membro_inativo'::text;
   end if;
-  if n > 1 and (select count(distinct coalesce(registro::text, lower(btrim(texto)))) from quiz_alternativas where pergunta_id = p_id) < n then
+  if n > 1 and (select count(distinct coalesce(registro::text, btrim(texto))) from quiz_alternativas where pergunta_id = p_id) < n then
     v := v || 'alternativas_iguais'::text;
   end if;
   return v;

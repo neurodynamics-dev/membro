@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050807"><!-- auditar: ok, a meta theme-color não lê token; é o Void -->
+<meta name="robots" content="noindex,nofollow">
+<title>NeuroQuiz | NeuroDynamics</title>
+<meta name="description" content="O quiz ao vivo da equipe NeuroDynamics. Só com a conta do SOMA.">
+<link rel="icon" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../ds/tokens.css?v=b5f5da61eb">
+<link rel="stylesheet" href="../ds/neuro.css?v=b5f5da61eb">
+<link rel="stylesheet" href="quiz.css?v=b5f5da61eb">
+</head>
+<body>
+<!-- O NeuroQuiz: nenhum menu do SOMA aponta para cá. O celular entra pelo QR da TV
+     (#PIN); a TV (#tv/<partida>) e o editor (#editor) são da gestão. -->
+<div id="app" aria-live="polite"></div>
+<div class="nd-toast" id="toast" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../vendor/qrcode-generator-1.4.4.js?v=b5f5da61eb"></script>
+<script src="sons.js?v=b5f5da61eb"></script>
+<script src="importar.js?v=b5f5da61eb"></script>
+<script src="quiz.js?v=b5f5da61eb"></script>
+</body>
+</html>
