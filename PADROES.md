@@ -145,7 +145,7 @@ conforme quem entra é menu que ninguém aprende.
 #/studio/calendario|ideias|modelos
 #/studio/criar[/<modelo>]   o criador (ex.: #/studio/criar/aniversario)
 #/studio/banco[/rejeitadas]   o banco de imagens: avaliar uma foto de cada vez (2.26.0)
-#/studio/POST-14            uma publicação
+#/studio/POST-14            uma publicação (e Subir artes prontas, 2.31.0)
 #/studio/POST-14/arte       a arte dela, no criador
 #/studio/config[/<aba>]     acesso, contas, imprensa, recursos
 #/selecao[/<aba>]           processo seletivo (candidatos, avaliacao, agenda,

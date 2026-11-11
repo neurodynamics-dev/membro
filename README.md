@@ -736,6 +736,29 @@ paisagem, thumbnail do YouTube e vídeo 16:9 e 9:16.
   (`#/studio/POST-14/arte`). Uma peça que ainda não foi salva fica guardada
   no navegador, para continuar depois.
 
+### Artes prontas
+
+Para a arte feita fora do criador (Figma, Canva, um carrossel gerado por
+código), **Subir artes prontas** (2.31.0) põe as imagens no Studio **como
+estão**, sem redesenhar: PNG ou JPG, até 25 MB cada (o limite do bucket
+`studio`), na ordem do nome do arquivo (01, 02… 10), com a prévia de cada uma
+para reordenar ou tirar antes de salvar. Avisa quando os tamanhos não batem e
+quando passam das 20 imagens de um carrossel do Instagram.
+
+- No **topo do Studio**, ao lado de *Criar publicação*, o botão cria a
+  publicação: o plano e as imagens na mesma janela. Entra em produção, ou
+  direto em aprovação com *Salvar e mandar para aprovação*;
+- na **página de uma publicação**, *Subir artes prontas* (sem arte) ou
+  *Trocar as artes* troca as imagens. A arte nova é uma **versão nova**, pelo
+  mesmo caminho do criador (`studio_publicacao_salvar` com as `imagens`):
+  aprovada volta para aprovação, e as aprovações em curso eram da anterior.
+  As imagens antigas saem do bucket. A peça do criador, se havia, sai junto
+  (`peca` vazia): a arte passa a ser as imagens, e *Fazer no criador* começa
+  uma peça nova. Uma ideia que ganha arte vai para produção.
+
+Não há migração: as imagens vão para o mesmo lugar e o mesmo campo que as do
+criador.
+
 ### O planejamento
 
 Cada publicação tem código (`POST-14`) e anda por cinco colunas no **quadro**
