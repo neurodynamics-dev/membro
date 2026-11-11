@@ -2034,6 +2034,18 @@ tr.ml-fora td{opacity:.6}
 .st-car-pts{display:flex;justify-content:center;gap:6px;margin-top:10px}
 .st-car-pts button{width:20px;height:4px;border-radius:3px;background:var(--line2)} .st-car-pts button.on{background:var(--syn-borda)}
 .st-baixar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px}
+/* artes prontas (2.31.0): a área de soltar e as imagens, na ordem */
+.st-solta{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px;padding:22px 16px;border:1.5px dashed var(--line2);border-radius:12px;color:var(--muted);font-size:13.5px;text-align:center;cursor:pointer}
+.st-solta:hover,.st-solta.sobre{border-color:var(--syn-borda);color:var(--ink);background:rgba(var(--syn-rgb),.05)}
+.st-solta b{color:var(--ink);font-weight:600}
+.st-artes{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:12px;margin-top:14px}
+.st-artes:empty{display:none}
+.st-arte-i{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.st-arte-i img{display:block;width:100%;aspect-ratio:4/5;object-fit:contain;border-radius:8px;background:rgba(var(--tom),.05)}
+.st-arte-i figcaption{display:flex;align-items:baseline;gap:8px;font-size:12px;color:var(--muted)}
+.st-arte-i figcaption b{color:var(--ink);font-variant-numeric:tabular-nums}
+.st-arte-bt{display:flex;gap:2px}
+#sa-aviso .aviso-box{margin-top:12px}
 .st-aprov-barra{height:6px;border-radius:4px;background:var(--line2);overflow:hidden}
 .st-aprov-barra span{display:block;height:100%;background:var(--syn-borda)}
 .st-como h4{font-family:var(--fd);font-weight:600;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:14px 0 6px}

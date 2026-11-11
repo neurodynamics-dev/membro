@@ -33,6 +33,11 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.31.0', data:'2026-11-11', titulo:'Artes prontas no Studio', itens:[
+    ['novo', '**Subir artes prontas**: imagens feitas fora do criador (Figma, Canva, um carrossel já pronto) entram no Studio **como estão**, sem ser redesenhadas, e seguem o caminho de sempre até a aprovação. No topo do Studio, o botão cria a publicação: o plano (nome, data, rede, legenda) e as imagens na mesma janela, e *Salvar e mandar para aprovação* faz tudo de uma vez.'],
+    ['novo', 'Na página de uma publicação, *Subir artes prontas* põe a arte que falta, e *Trocar as artes* troca a que já tem (a feita no criador também). A arte nova é uma versão nova: numa publicação aprovada, ela volta para aprovação, como acontece ao editar a arte.'],
+    ['melhoria', 'As imagens entram na ordem do nome do arquivo (01, 02… 10) e podem ser reordenadas ou tiradas antes de salvar. PNG ou JPG, até 25 MB cada. O Studio avisa quando os tamanhos não batem (no carrossel do Instagram, todas saem no formato da primeira) e quando passam de 20 imagens.']
+  ]},
   { v:'2.27.1', data:'2026-11-04', titulo:'Capas do LinkedIn em inglês, mais nítidas', itens:[
     ['melhoria', 'As **capas do LinkedIn** agora são todas em inglês: 19 capas, 7 com a foto inteira e 12 com a foto e a faixa. As fotos que só tinham versão em português ganharam a sua em inglês.'],
     ['melhoria', 'Os downloads ficaram **mais nítidos**: as capas saem das fotos no tamanho original do banco de imagens, em JPG de alta qualidade, sem borrar o texto.'],

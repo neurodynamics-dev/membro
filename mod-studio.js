@@ -16,7 +16,7 @@
      #/studio/criar[/<modelo>]     o criador (mod-criador)
      #/studio/modelos              a galeria dos modelos (mod-criador)
      #/studio/banco                o banco de imagens: avaliar uma foto de cada vez (mod-fotos, 2.26.0)
-     #/studio/POST-14              uma publicação
+     #/studio/POST-14              uma publicação (e, nela, Subir artes prontas: 2.31.0)
      #/studio/POST-14/arte         a arte dela, no criador
      #/studio/config[/<aba>]       acesso, contas, imprensa, recursos
 
@@ -140,6 +140,7 @@ function stNav(atual){
 function stTopo(titulo, lead, acoes){
   return cabecalho({ espaco:'Studio', titulo, lead,
     acoes: acoes ?? [`<button class="btn ghost" onclick="stModalIdeia()">${ic('lampada')} Nova ideia</button>`,
+      `<button class="btn ghost" onclick="stModalArtes()">${ic('subir')} Subir artes prontas</button>`,
       `<a class="btn solid" href="#/studio/criar">${ic('plus')} Criar publicação</a>`] });
 }
 
@@ -577,7 +578,8 @@ async function stPublicacao(cod){
   $('#main').innerHTML = cabecalho({ espaco:'Studio', titulo:pub.titulo, codigo:pub.codigo, voltar:['Quadro', '#/studio'],
       lead:`${[tipo?.[1], pub.formato && STUDIO_FORMATOS[pub.formato], (pub.redes || []).map(r => STUDIO_REDES[r]?.l).filter(Boolean).join(', ')].filter(Boolean).map(esc).join(', ') || 'Sem tipo nem rede ainda'}
         ${pub.data_publicacao ? `, <b>${esc(stQuando(pub.data_publicacao))}</b>` : ''}`,
-      acoes:[`${pub.formato === 'texto' ? '' : `<a class="btn ${pub.imagens?.length ? 'ghost' : 'solid'} mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} ${pub.imagens?.length ? 'Editar a arte' : 'Criar a arte'}</a>`}
+      acoes:[`${pub.formato === 'texto' ? '' : `<a class="btn ${pub.imagens?.length ? 'ghost' : 'solid'} mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} ${!pub.imagens?.length ? 'Criar a arte' : pub.peca ? 'Editar a arte' : 'Fazer no criador'}</a>
+        <button class="btn ghost mini" onclick="stModalArtes('${pub.id}')">${ic('subir')} ${!pub.imagens?.length ? 'Subir artes prontas' : pub.peca ? 'Trocar por artes prontas' : 'Trocar as artes'}</button>`}
         ${pub.status !== 'arquivada' ? `<button class="btn ghost mini" onclick="stArquivar('${pub.id}')">Arquivar</button>` : `<button class="btn ghost mini" onclick="stMover('${pub.id}','ideia')">Desarquivar</button>`}
         ${podeApagar ? ibtn('trash', 'Apagar', `stExcluir('${pub.id}')`) : ''}`] }) + `
     ${stNav('')}
@@ -587,7 +589,9 @@ async function stPublicacao(cod){
         <section class="card st-arte"><h3>Arte${pub.imagens?.length ? `, ${pub.imagens.length} ${pub.imagens.length === 1 ? 'imagem' : 'imagens'}` : ''}${pub.versao > 1 ? ` <span class="small muted">versão ${pub.versao}</span>` : ''}</h3>
           <div id="st-arte-corpo">${pub.imagens?.length ? '<div class="carregando"><span class="spin"></span></div>'
             : pub.formato === 'texto' ? '<p class="small muted" style="margin-top:8px">Publicação só de texto: não precisa de arte.</p>'
-            : `<div class="vazio" style="padding:26px"><p>Ainda sem arte.</p><a class="btn solid mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} Criar a arte</a></div>`}</div>
+            : `<div class="vazio" style="padding:26px"><p>Ainda sem arte.</p><div class="acts" style="justify-content:center">
+                <a class="btn solid mini" href="#/studio/${esc(pub.codigo)}/arte">${ic('imagem')} Criar a arte</a>
+                <button class="btn ghost mini" onclick="stModalArtes('${pub.id}')">${ic('subir')} Subir artes prontas</button></div></div>`}</div>
         </section>
         <section class="card st-aprov">${stAprovHTML(pub, validas, aprov)}</section>
         ${redesComo.length || pub.colaboradores || pub.notas ? `<section class="card st-como"><h3>Para quem for publicar</h3>
@@ -719,6 +723,141 @@ async function stBaixarTodas(){
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = pub.codigo.toLowerCase() + '.zip';
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   } catch(e){ falha(e, 'Não foi possível baixar'); }
+}
+/* ============================================================
+   ARTES PRONTAS (2.31.0)
+   Imagens feitas fora do criador (Figma, Canva, código) entram como
+   estão, na ordem escolhida, e seguem o caminho de sempre: viram a
+   versão nova da publicação e passam pela aprovação. Nada é
+   redesenhado. Do topo do Studio, cria a publicação (com o plano);
+   da página de uma, troca a arte dela. A peça do criador, se havia,
+   sai: a arte agora é outra.
+   ============================================================ */
+const ST_ARTE_TIPOS = ['image/png', 'image/jpeg'];
+const ST_ARTE_MAX = 25 * 1024 * 1024;   // o limite do bucket "studio" (v23)
+const ST_ARTE_CARROSSEL = 20;           // o máximo de um carrossel do Instagram
+function stModalArtes(id){
+  const pub = id ? (studioM.atual?.id === id ? studioM.atual : studioM.pubs.find(x => x.id === id)) : null;
+  if (id && !pub) return toast('Publicação não encontrada. Recarregue a página.', true);
+  stArtesSoltar();
+  studioM.artesPub = pub;
+  const avisos = pub ? [
+    `As imagens viram a versão ${(pub.versao || 1) + 1} da arte${pub.imagens?.length ? '; as de agora saem' : ''}.`,
+    pub.peca ? 'A peça feita no criador sai junto: a arte passa a ser estas imagens.' : '',
+    pub.status === 'pronta' ? '<b>A publicação estava aprovada</b>: com a arte nova, ela volta para aprovação.' : '',
+    pub.status === 'aprovacao' ? 'Ela está em aprovação: as aprovações que já houve eram da versão anterior.' : ''
+  ].filter(Boolean).join(' ') : 'A publicação entra em <b>Em produção</b>. Para ficar <b>pronta para publicar</b>, passa pela aprovação.';
+  abreModal(`<h3>${ic('subir')} Subir artes prontas${pub ? ' para ' + esc(pub.codigo) : ''}</h3>
+    <p class="small muted" style="line-height:1.6;margin-bottom:14px">As imagens entram <b>como estão</b>, na ordem abaixo, sem passar pelo criador:
+      PNG ou JPG, até 25 MB cada. ${avisos}</p>
+    ${pub ? '' : stPlanoHTML({ redes:['instagram'], formato:'carrossel', responsavel: state.perfil?.registro })}
+    <label class="st-solta" id="sa-solta" ondragover="event.preventDefault();this.classList.add('sobre')" ondragleave="this.classList.remove('sobre')"
+      ondrop="event.preventDefault();this.classList.remove('sobre');stArtesEscolher(event.dataTransfer.files)">
+      ${ic('subir')} <span id="sa-solta-t"><b>Escolher as imagens</b> ou soltar aqui</span>
+      <input type="file" id="sa-arq" accept="image/png,image/jpeg" multiple hidden onchange="stArtesEscolher(this.files);this.value=''"></label>
+    <div id="sa-lista" class="st-artes"></div>
+    <div id="sa-aviso"></div>
+    <div id="cr-prog" class="cr-prog"></div>
+    <div class="acts" style="justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn ghost" onclick="stArtesSoltar();fechaModal()">Cancelar</button>
+      ${!pub || ['ideia', 'producao'].includes(pub.status) ? `<button class="btn ghost" onclick="stArtesSalvar(true)">Salvar e mandar para aprovação</button>` : ''}
+      <button class="btn solid" onclick="stArtesSalvar(false)">Salvar</button></div>`, pub ? 'largo' : 'imenso', true);
+  if (!pub) stPlanoLigar();
+}
+/* as imagens escolhidas: em ordem de nome (01, 02… 10), depois das que já estavam */
+async function stArtesEscolher(lista){
+  const arqs = [...(lista || [])].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { numeric:true }));
+  const recusadas = [];
+  for (const arq of arqs){
+    if (!ST_ARTE_TIPOS.includes(arq.type)){ recusadas.push(`${arq.name}: não é PNG nem JPG`); continue; }
+    if (arq.size > ST_ARTE_MAX){ recusadas.push(`${arq.name}: passa de 25 MB`); continue; }
+    const url = URL.createObjectURL(arq);
+    const dim = await new Promise(ok => { const im = new Image();
+      im.onload = () => ok([im.naturalWidth, im.naturalHeight]); im.onerror = () => ok(null); im.src = url; });
+    if (!dim){ URL.revokeObjectURL(url); recusadas.push(`${arq.name}: a imagem não abriu`); continue; }
+    (studioM.artes ||= []).push({ arq, url, w: dim[0], h: dim[1] });
+  }
+  stArtesDesenha(recusadas);
+}
+function stArtesDesenha(recusadas = []){
+  const a = studioM.artes || [], el = $('#sa-lista'); if (!el) return;
+  el.innerHTML = a.map((x, i) => `<figure class="st-arte-i">
+      <img src="${esc(x.url)}" alt="Imagem ${i + 1}: ${esc(x.arq.name)}">
+      <figcaption><b>${String(i + 1).padStart(2, '0')}</b><span>${x.w} × ${x.h}</span></figcaption>
+      <div class="st-arte-bt">${i ? ibtn('back', 'Para antes', `stArtesMover(${i},-1)`) : ''}${i < a.length - 1 ? ibtn('chevron', 'Para depois', `stArtesMover(${i},1)`) : ''}${ibtn('x', 'Tirar', `stArtesTirar(${i})`)}</div>
+    </figure>`).join('');
+  const tamanhos = [...new Set(a.map(x => x.w + ' × ' + x.h))];
+  const av = [
+    recusadas.length ? `<div class="aviso-box err">Fic${recusadas.length > 1 ? 'aram' : 'ou'} de fora: ${recusadas.map(esc).join('; ')}.</div>` : '',
+    tamanhos.length > 1 ? `<div class="aviso-box warn">As imagens têm tamanhos diferentes (${tamanhos.join(', ')}). No carrossel do Instagram, todas saem no formato da primeira.</div>` : '',
+    a.length > ST_ARTE_CARROSSEL ? `<div class="aviso-box warn">São ${a.length} imagens: o carrossel do Instagram aceita até ${ST_ARTE_CARROSSEL}.</div>` : ''
+  ].join('');
+  $('#sa-aviso').innerHTML = av;
+  $('#sa-solta-t').innerHTML = a.length ? `<b>Pôr mais imagens</b> ou soltar aqui` : `<b>Escolher as imagens</b> ou soltar aqui`;
+  /* publicação nova: o formato acompanha a quantidade, enquanto for imagem ou carrossel */
+  const f = $('#sp-formato');
+  if (f && a.length && ['', 'imagem', 'carrossel'].includes(f.value)) f.value = a.length > 1 ? 'carrossel' : 'imagem';
+}
+function stArtesMover(i, d){
+  const a = studioM.artes, j = i + d; if (!a?.[i] || !a[j]) return;
+  [a[i], a[j]] = [a[j], a[i]]; stArtesDesenha();
+}
+function stArtesTirar(i){
+  const [x] = studioM.artes.splice(i, 1); if (x) URL.revokeObjectURL(x.url);
+  stArtesDesenha();
+}
+function stArtesSoltar(){ (studioM.artes || []).forEach(x => URL.revokeObjectURL(x.url)); studioM.artes = []; }
+async function stArtesSalvar(mandar){
+  const a = studioM.artes || [], pub = studioM.artesPub;
+  if (!a.length) return toast('Escolha as imagens primeiro.', true);
+  let plano = null;
+  if (!pub){ plano = stPlanoLer(); if (plano.erro) return toast(plano.erro, true); }
+  const prog = t => { const e = $('#cr-prog'); if (e) e.innerHTML = t ? `<span class="spin"></span> ${esc(t)}` : ''; };
+  const botoes = on => document.querySelectorAll('#modal .acts .btn').forEach(b => b.disabled = !on);
+  botoes(false);
+  let id = pub?.id, codigo = pub?.codigo;
+  const subidas = [];
+  try {
+    if (!id){
+      prog('Criando a publicação…');
+      const { data, error } = await sb.rpc('studio_publicacao_salvar', { p: { ...plano, status:'producao' } });
+      if (error || data?.status !== 'ok') throw new Error(motivoRPC(data, error, 'o banco recusou a publicação'));
+      id = data.id; codigo = data.codigo;
+    }
+    const marca = Date.now().toString(36), imagens = [];
+    for (const [i, x] of a.entries()){
+      prog(`Subindo a imagem ${i + 1} de ${a.length}…`);
+      const cam = `${id}/arte-${marca}-${String(i + 1).padStart(2, '0')}.${x.arq.type === 'image/png' ? 'png' : 'jpg'}`;
+      const { error } = await sb.storage.from('studio').upload(cam, x.arq, { contentType: x.arq.type });
+      if (error) throw new Error(`a imagem ${i + 1} não subiu (${error.message})`);
+      subidas.push(cam);
+      imagens.push({ caminho: cam, largura: x.w, altura: x.h, tipo: x.arq.type });
+    }
+    prog('Registrando…');
+    const { data, error } = await sb.rpc('studio_publicacao_salvar', { p: { id, imagens, peca: null } });
+    if (error || data?.status !== 'ok') throw new Error(motivoRPC(data, error, 'o banco recusou a arte'));
+    subidas.length = 0;
+    const velhas = (pub?.imagens || []).map(x => x.caminho).filter(Boolean);
+    if (velhas.length) sb.storage.from('studio').remove(velhas).catch(() => {});
+    /* com arte, uma ideia já está em produção (o criador faz o mesmo, pela peça) */
+    if (mandar){
+      prog('Mandando para aprovação…');
+      const r = await sb.rpc('studio_mover', { p_id: id, p_status: 'aprovacao' });
+      if (r.error || r.data?.status !== 'ok') toast('Salvou, mas não foi para aprovação: ' + motivoRPC(r.data, r.error, 'recusado'), true);
+    } else if (data.situacao === 'ideia'){
+      await sb.rpc('studio_mover', { p_id: id, p_status: 'producao' });
+    }
+    stArtesSoltar(); fechaModal();
+    toast(`${codigo}: ${imagens.length} ${imagens.length === 1 ? 'imagem salva' : 'imagens salvas'}${mandar ? ' e mandada' + (imagens.length > 1 ? 's' : '') + ' para aprovação' : ''}.`);
+    await stCarregar();
+    if (location.hash === '#/studio/' + codigo) await stRecarregarTela(); else location.hash = '#/studio/' + codigo;
+  } catch(e){
+    /* o que subiu e não foi registrado não fica perdido no bucket */
+    if (subidas.length) sb.storage.from('studio').remove(subidas).catch(() => {});
+    if (id && !pub) studioM.artesPub = { id, codigo, status:'producao', versao:1, imagens:[] };
+    prog(''); botoes(true);
+    toast('Não foi possível salvar: ' + e.message + (id && !pub ? `. ${codigo} foi criada; tente de novo para pôr as imagens.` : ''), true);
+  }
 }
 
 /* ============================================================
