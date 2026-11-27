@@ -730,7 +730,8 @@
       recorrencia:'Única', serie_id:null, visibilidade:'convidados', cor:null, predefinido_id:null, lembretes:[30] },
     { id:'e4', numero:15, titulo:'Daily do grupo', tipo:'Evento', data:agDia(1), data_fim:null, hora_inicio:'09:00:00', hora_fim:'09:15:00',
       local:null, espaco_id:null, meet_url:'https://meet.google.com/dai-ly', pauta:null, status:'Preparação', owner_registro:4,
-      recorrencia:'Semanal', serie_id:'e4', visibilidade:'convidados', cor:'#4ADE97', predefinido_id:null, lembretes:[10] },
+      recorrencia:'Semanal', serie_id:'e4', visibilidade:'convidados', cor:'#4ADE97', predefinido_id:null, lembretes:[10],
+      grupos:['Órtese'] },
     { id:'e5', numero:16, titulo:'CBEB 2026', tipo:'Evento', data:agDia(3), data_fim:agDia(5), hora_inicio:null, hora_fim:null,
       local:'Vitória (ES)', espaco_id:null, meet_url:null, pauta:null, status:'Preparação', owner_registro:17,
       recorrencia:'Única', serie_id:null, visibilidade:'equipe', cor:'#F5C36A', predefinido_id:null, lembretes:[] }
@@ -2805,6 +2806,7 @@
                 if (!x){ x = { missao_id:e.id, registro:r, resposta:r === e.owner_registro ? 'vou' : 'pendente' }; DADOS.evento_participantes.push(x); }
                 x.papel = (p.opcionais || []).includes(r) ? 'opcional' : 'obrigatorio'; });
             }
+            if ('grupos' in p) e.grupos = (p.grupos || []).map(id => DADOS.grupos.find(g => g.id === id)?.nome).filter(Boolean);
             if ('externos' in p){ DADOS.evento_externos = DADOS.evento_externos.filter(x => x.missao_id !== e.id);
               (p.externos || []).forEach((x, i) => DADOS.evento_externos.push({ id:'x' + e.id + i, missao_id:e.id, email:x.email, nome:x.nome, resposta:'pendente' })); }
             const mudou = antes ? [antes.data !== e.data && 'data', (antes.hora_inicio !== e.hora_inicio || antes.hora_fim !== e.hora_fim) && 'horário'].filter(Boolean) : [];

@@ -1441,6 +1441,24 @@ São mantidos em *Agenda › Configurações › Eventos predefinidos* por `admi
 verdade, cada uma com os seus convidados e respostas. Editar, reagendar ou
 excluir pergunta: **este evento** ou **este e os seguintes**.
 
+**Grupos convidados** (2.31.1). Convidar um grupo liga o grupo ao evento
+(`eventos.grupo_ids`), além de convidar as pessoas dele e dos grupos abaixo.
+O grupo aparece na lista de convidados; tirar sozinha uma pessoa que está
+nele pede para desvincular o grupo antes, e desvincular deixa as pessoas
+convidadas. Num evento que se repete, **quem entra no grupo** (pela ficha,
+por um subgrupo ou voltando a Ativo) passa a ser convidado das ocorrências
+de hoje em diante, com um convite só por série; as ocorrências que a série
+gera depois copiam a lista do último encontro e já nascem com quem está no
+grupo. Sair do grupo não tira ninguém das reuniões.
+
+**Desligamento.** Quando a ficha passa a Desligado ou Egresso, a pessoa sai
+dos convidados de todo evento que ainda não terminou, e os e-mails da agenda
+que ainda não saíram para ela são descartados, sem aviso de cancelamento. As
+reuniões que já passaram ficam como estavam. Quem está desligado também não
+entra em convite novo. Tudo isso roda no banco, pelo gatilho
+`agenda_membro_mudou` em `membros`, valha a mudança da ficha, de Grupos ou de
+Trabalhos.
+
 **Reagendar sem apagar.** Mudar data ou horário (na página ou arrastando na
 grade) mantém o evento, os convidados e as respostas, e pergunta se avisa os
 convidados por e-mail.

@@ -33,6 +33,12 @@
    um módulo, um recurso) vai no minor (2.19.0); os patches (2.19.1,
    2.19.2) só têm melhorias e correções. */
 const NOTAS_VERSAO = [
+  { v:'2.31.1', data:'2026-11-27', titulo:'A agenda segue os grupos e o desligamento', itens:[
+    ['melhoria', 'Convidar um **grupo** para um evento agora liga o grupo ao evento: ele aparece na lista de convidados, com as pessoas dele. Num evento que se repete, **quem entrar no grupo** depois passa a ser convidado das próximas ocorrências, e recebe um convite só para a série.'],
+    ['melhoria', 'Quem é **desligado** (ou vira egresso) sai dos convites de todos os eventos que ainda vão acontecer, sem e-mail de cancelamento. As reuniões que já passaram ficam como estavam.'],
+    ['correcao', 'As novas ocorrências de uma série copiam os convidados do último encontro: uma mudança feita em *este e os seguintes* não some mais nas semanas geradas depois. E quem veio pelo grupo e foi marcado como **opcional** continua opcional ao salvar.'],
+    ['aviso', 'Para tirar sozinha uma pessoa que está num grupo convidado, desvincule o grupo antes (as pessoas continuam convidadas). Precisa da migração `db/2.31.1_agenda_grupos.sql`, depois da 28.0.']
+  ]},
   { v:'2.31.0', data:'2026-11-11', titulo:'Artes prontas no Studio', itens:[
     ['novo', '**Subir artes prontas**: imagens feitas fora do criador (Figma, Canva, um carrossel já pronto) entram no Studio **como estão**, sem ser redesenhadas, e seguem o caminho de sempre até a aprovação. No topo do Studio, o botão cria a publicação: o plano (nome, data, rede, legenda) e as imagens na mesma janela, e *Salvar e mandar para aprovação* faz tudo de uma vez.'],
     ['novo', 'Na página de uma publicação, *Subir artes prontas* põe a arte que falta, e *Trocar as artes* troca a que já tem (a feita no criador também). A arte nova é uma versão nova: numa publicação aprovada, ela volta para aprovação, como acontece ao editar a arte.'],

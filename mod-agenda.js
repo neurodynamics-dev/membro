@@ -603,7 +603,7 @@ async function agEventoNovo(s){
   else { const a = new Date(); const ini = Math.min(Math.ceil((a.getHours() * 60 + a.getMinutes()) / 30) * 30, 22*60); f.hi = minHHMM(ini); f.hf = minHHMM(ini + 60); }
   const eu = (state.membros || []).find(x => x.registro === agEu());
   agenda.ev = { novo:true, pode:true, f, orig:null, conv:new Map([[agEu(), { nome: eu?.nome || 'Você', opcional:false, resposta:'vou' }]]),
-    ext:[], dono: agEu(), organizador: eu?.nome, ocup:null, busca:'' };
+    ext:[], grupos:new Set(), dono: agEu(), organizador: eu?.nome, ocup:null, busca:'' };
   const r = agenda.rascunho; agenda.rascunho = null;
   if (r?.titulo) f.titulo = r.titulo;
   if (r?.predefinido_id) agAplicarPredefinido(r.predefinido_id, true);
@@ -629,8 +629,9 @@ async function agEventoPagina(id){
   agenda.ev = { id, novo:false, pode:!!data.pode_editar && !e.cancelado, cancelado:e.cancelado, numero:e.numero, serie:!!e.serie_id && e.recorrencia !== 'Única',
     f, orig: JSON.parse(JSON.stringify(f)), minha:data.minha_resposta, dono:e.owner_registro, organizador:e.organizador,
     conv: new Map(data.participantes.map(p => [p.registro, { nome:p.nome, opcional:p.papel === 'opcional', resposta:p.resposta }])),
-    ext: (data.externos || []).map(x => ({ ...x })), ocup:null, busca:'', corEvento: e.cor };
+    ext: (data.externos || []).map(x => ({ ...x })), grupos: new Set(e.grupos || []), ocup:null, busca:'', corEvento: e.cor };
   agenda.ev.convOrig = JSON.stringify([...agenda.ev.conv].map(([r, v]) => [r, v.opcional]).sort());
+  agenda.ev.gruposOrig = JSON.stringify([...agenda.ev.grupos].sort());
   agenda.ev.extOrig = JSON.stringify(agenda.ev.ext.map(x => x.email).sort());
   agEventoDesenhar();
   agConsultaLabbioCarregar(agenda.ev);
@@ -726,6 +727,7 @@ function agEventoLeitura(volta){
     </div>
     <aside class="evp-conv"><h3>Convidados <span class="n">${conv.length + ev.ext.length}</span></h3>
       <p class="evp-sub">${[['vou', 'sim'], ['talvez', 'talvez'], ['nao', 'não'], ['pendente', 'aguardando']].map(([k, l]) => conta(k) ? `${conta(k)} ${l}` : '').filter(Boolean).join(', ')}</p>
+      ${[...ev.grupos].map(g => agGrupoLinha(g, false)).join('')}
       ${conv.map(([r, v]) => agConvLinha(r, v, false)).join('')}
       ${ev.ext.map(x => agExtLinha(x, false)).join('')}</aside></div></div>`;
 }
@@ -796,6 +798,7 @@ function agAplicarPredefinido(id, silencioso){
   f.lembretes = [...(pd.lembretes || [])];
   if (pd.recorrencia && pd.recorrencia !== 'Única') f.recorrencia = pd.recorrencia;
   agConvidadosDoPredefinido(pd).obrigatorios.forEach(r => { if (!ev.conv.has(r)) ev.conv.set(r, { nome: nomeDe(r), opcional:false, resposta:'pendente' }); });
+  (pd.grupos || []).forEach(id => { const g = grupoPorId(id); if (g) ev.grupos.add(g.nome); });
   if (!silencioso) agEventoDesenhar();
 }
 
@@ -815,23 +818,43 @@ function agExtLinha(x, pode, i){
     <span class="tx"><span class="nm">${esc(x.nome || x.email)}</span><span class="sb">${x.nome && x.email ? esc(x.email) + ', ' : ''}externo</span></span>
     ${pode ? ibtn('x', 'Tirar ' + esc(x.email), `agenda.ev.ext.splice(${i},1);agConvDesenhar()`, 'sm') : ''}</div>`;
 }
+/* Um grupo ligado ao evento (2.31.1): todos os dele são convidados e,
+   num evento que se repete, quem entrar no grupo passa a ser convidado
+   das próximas ocorrências. Desligado sai dos convites sozinho. */
+function agGrupoLinha(nome, pode){
+  const n = membrosDoGrupo(nome).length, rep = agenda.ev.f.recorrencia !== 'Única';
+  return `<div class="evp-p"><span class="avx" style="width:30px;height:30px">${ic('users')}</span>
+    <span class="tx"><span class="nm">${esc(nome)}</span><span class="sb" style="white-space:normal">Grupo, ${n} pessoa${n === 1 ? '' : 's'}${rep ? '. Quem entrar vem para as próximas' : ''}</span></span>
+    ${pode ? ibtn('x', 'Desvincular ' + esc(nome) + ' (as pessoas continuam convidadas)', `agGrupoTirar(${esc(JSON.stringify(nome))})`, 'sm') : ''}</div>`;
+}
+function agGrupoTirar(nome){ agenda.ev.grupos.delete(nome); agConvDesenhar(); }
+/* O grupo ligado em que a pessoa está, se houver: tirá-la sozinha não
+   adianta, o banco a convida de novo pelo grupo. */
+function agGrupoDe(r){
+  return [...agenda.ev.grupos].find(g => membrosDoGrupo(g).some(x => x.registro === r)) || null;
+}
 function agConvDesenhar(){
   const ev = agenda.ev, conv = [...ev.conv].sort(([a], [b]) => (b === ev.dono) - (a === ev.dono) || nomeDe(a).localeCompare(nomeDe(b), 'pt-BR'));
   const n = $('#ev-conv-n'); if (n) n.textContent = conv.length + ev.ext.length;
   const el = $('#ev-conv-lista'); if (!el) return;
-  el.innerHTML = conv.map(([r, v]) => agConvLinha(r, v, true)).join('') + ev.ext.map((x, i) => agExtLinha(x, true, i)).join('');
+  el.innerHTML = [...ev.grupos].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(g => agGrupoLinha(g, true)).join('')
+    + conv.map(([r, v]) => agConvLinha(r, v, true)).join('') + ev.ext.map((x, i) => agExtLinha(x, true, i)).join('');
   agDispDesenhar();
 }
 function agConvOpcional(r){ const v = agenda.ev.conv.get(r); v.opcional = !v.opcional; agConvDesenhar(); }
-function agConvTirar(r){ agenda.ev.conv.delete(r); agConvDesenhar(); agDispCarregar(); }
+function agConvTirar(r){
+  const g = agGrupoDe(r);
+  if (g) return toast(`${nomeDe(r)} está no grupo ${g}. Para tirar a pessoa, desvincule o grupo antes.`, true);
+  agenda.ev.conv.delete(r); agConvDesenhar(); agDispCarregar();
+}
 function agOpcoesConv(q){
   const t = norm(q).trim(); if (!t) return [];
   const ev = agenda.ev, out = [];
   if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.trim()) && !ev.ext.some(x => x.email === q.trim().toLowerCase()))
     out.push({ tipo:'email', id:q.trim().toLowerCase(), rot:q.trim(), sub:'Convidar por e-mail (de fora da equipe)' });
-  gruposDaEquipe().filter(g => norm(g).includes(t)).slice(0, 4).forEach(g => {
+  gruposDaEquipe().filter(g => norm(g).includes(t) && !ev.grupos.has(g)).slice(0, 4).forEach(g => {
     const n = membrosDoGrupo(g).filter(m => !ev.conv.has(m.registro)).length;
-    if (n) out.push({ tipo:'grupo', id:g, rot:g, sub:`Grupo, ${n} pessoa${n === 1 ? '' : 's'}` });
+    out.push({ tipo:'grupo', id:g, rot:g, sub: n ? `Grupo, mais ${n} pessoa${n === 1 ? '' : 's'}` : 'Grupo, todos já convidados' });
   });
   (state.membros || []).filter(m => ['Ativo', 'Em pausa / avaliação', 'Sob demanda'].includes(m.status) && !ev.conv.has(m.registro)
     && (norm(m.nome).includes(t) || norm(m.email_nro || '').includes(t))).slice(0, 7)
@@ -851,7 +874,10 @@ function agAddPrimeiro(){ if ((agenda.ev.opcoes || []).length) agAddConv(0); }
 function agAddConv(i){
   const ev = agenda.ev, o = ev.opcoes[i]; if (!o) return;
   if (o.tipo === 'pessoa') ev.conv.set(o.id, { nome:o.rot, opcional:false, resposta:'pendente' });
-  if (o.tipo === 'grupo') membrosDoGrupo(o.id).forEach(m => { if (!ev.conv.has(m.registro)) ev.conv.set(m.registro, { nome:m.nome, opcional:false, resposta:'pendente' }); });
+  if (o.tipo === 'grupo'){
+    ev.grupos.add(o.id);
+    membrosDoGrupo(o.id).forEach(m => { if (!ev.conv.has(m.registro)) ev.conv.set(m.registro, { nome:m.nome, opcional:false, resposta:'pendente' }); });
+  }
   if (o.tipo === 'email') ev.ext.push({ email:o.id, nome:'', resposta:'pendente' });
   const b = $('#ev-busca'); b.value = ''; $('#ev-res').hidden = true; b.focus();
   agConvDesenhar(); agDispCarregar();
@@ -953,9 +979,10 @@ function agPayload(){
   if (muda('predefinido_id')) p.predefinido_id = f.predefinido_id;
   if (muda('lembretes')) p.lembretes = [...new Set(f.lembretes)];
   const convAgora = JSON.stringify([...ev.conv].map(([r, v]) => [r, v.opcional]).sort());
-  if (ev.novo || convAgora !== ev.convOrig){
+  if (ev.novo || convAgora !== ev.convOrig || JSON.stringify([...ev.grupos].sort()) !== ev.gruposOrig){
     p.obrigatorios = [...ev.conv].filter(([, v]) => !v.opcional).map(([r]) => r);
     p.opcionais = [...ev.conv].filter(([, v]) => v.opcional).map(([r]) => r);
+    p.grupos = [...ev.grupos].map(n => grupoPorNome(n)?.id).filter(Boolean);
   }
   if (ev.novo || JSON.stringify(ev.ext.map(x => x.email).sort()) !== ev.extOrig) p.externos = ev.ext.map(x => ({ email:x.email, nome:x.nome }));
   return p;
