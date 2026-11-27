@@ -124,6 +124,34 @@ const dia = d => { const x = new Date(); x.setDate(x.getDate() + d);
     && !('titulo' in re), re);
   confere('nenhuma exclusão para reagendar', (await rpcs(p, 'agenda_evento_excluir')).length === 0);
 
+  /* o grupo fica ligado ao evento (2.31.1): quem entrar nele depois é
+     convidado das próximas, e tirar sozinha quem está nele não adianta */
+  await ir(p, `#/agenda/novo/${dia(5)}T09:00~10:00`, 1200);
+  await p.fill('#ev-tit', 'Reunião dos gestores');
+  await p.fill('#ev-busca', 'NRO_MANAGERS'); await p.waitForTimeout(300); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+  const lista = await texto(p, '#ev-conv-lista');
+  confere('o grupo aparece na lista, com as pessoas dele', /NRO_MANAGERS/.test(lista) && /Grupo, 1 pessoa/.test(lista) && /Carla/.test(lista), lista);
+  await p.click('#ev-conv-lista button[title="Tirar Carla Mendonça"]'); await p.waitForTimeout(300);
+  confere('tirar quem está no grupo pede para desvincular o grupo', /desvincule o grupo/.test(await texto(p, '#toast'))
+    && /Carla/.test(await texto(p, '#ev-conv-lista')));
+  await p.selectOption('#ev-rep', 'Semanal'); await p.waitForTimeout(100);
+  await p.click('#ev-salvar'); await p.waitForTimeout(900);
+  const comGrupo = (await rpcs(p, 'agenda_evento_salvar')).pop();
+  confere('o evento novo grava o grupo pelo id, com a lista', JSON.stringify(comGrupo?.grupos) === '[6]'
+    && comGrupo.obrigatorios.includes(17) && comGrupo.recorrencia === 'Semanal', comGrupo);
+
+  await ir(p, '#/agenda/evento/e4', 1200);
+  const daily = await texto(p, '#ev-conv-lista');
+  confere('a série aberta mostra o grupo ligado, e que quem entrar vem para as próximas', /Órtese/.test(daily) && /Quem entrar vem para as próximas/.test(daily), daily);
+  const antesDe = (await rpcs(p, 'agenda_evento_salvar')).length;
+  await p.click('#ev-conv-lista button[title^="Desvincular Órtese"]'); await p.waitForTimeout(200);
+  await p.click('#ev-salvar'); await p.waitForTimeout(400);
+  if (await p.locator('#modal.open .acts .btn.solid').count()) await p.click('#modal.open .acts .btn.solid');
+  await p.waitForTimeout(900);
+  const salvos = await rpcs(p, 'agenda_evento_salvar'), semGrupo = salvos.pop();
+  confere('desvincular o grupo grava a lista sem ele, e as pessoas continuam', salvos.length === antesDe && semGrupo?.id === 'e4'
+    && JSON.stringify(semGrupo.grupos) === '[]' && semGrupo.obrigatorios.includes(4), semGrupo);
+
   /* os eventos predefinidos */
   await ir(p, '#/agenda/config/predefinidos', 1200);
   const pds = await p.evaluate(() => [...document.querySelectorAll('#agc-corpo tbody tr')].map(t => t.textContent.replace(/\s+/g, ' ').trim()));
